@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.material.dao.MtlBdPdMapper">
+
+	<!-- 查询物品分类列表 -->
+	<select id="queryBdPdcateList" parameterType="java.util.Map" resultType="DynaBean">
+		 select pdcate.* ,
+   				pdtype.name name_pdtype,
+   				pdfa.name_pdcate name_father
+   	       from bd_pdcate pdcate
+     	   left join bd_defdoc pdtype on pdtype.code = pdcate.dt_pdtype 
+     	         and pdtype.code_defdoclist = '080001' 
+     	   left join bd_pdcate pdfa on pdfa.pk_pdcate = pdcate.pk_father 
+ 	      where pdcate.del_flag = '0'
+          order by pdcate.code_pdcate
+	</select>
+	
+	<!-- 查询物品基本信息 -->
+	<select id="queryPdBaseList" parameterType="java.util.Map" 
+			resultType="com.zebone.nhis.scm.material.vo.BdPdBaseVo">
+		select fac.name name_factory,
+			   unit.name name_unit_min,
+			   pdtype.name name_pdtype,
+			   abrd.name name_abrd,
+			   storetype.name name_storetype,
+			   pdcate.name_pdcate,
+			   item.name name_item,
+			   pd.*
+		  from bd_pd pd
+		 inner join bd_pdcate pdcate on pdcate.pk_pdcate = pd.pk_pdcate
+		  left join bd_unit unit on unit.pk_unit = pd.pk_unit_min
+		  left join bd_factory fac on fac.pk_factory = pd.pk_factory
+		  left join bd_defdoc pdtype on pdtype.code = pd.dt_pdtype and pdtype.code_defdoclist = '080001'
+		  left join bd_defdoc abrd on abrd.code = pd.dt_abrd and abrd.code_defdoclist = '080003'
+		  left join bd_defdoc storetype on storetype.code = pd.dt_storetype and storetype.code_defdoclist = '080012'
+		  left join bd_item item on item.pk_item = pd.pk_item
+		 where pd.del_flag = '0'
+	<if test = "pkPd != null  and  pkPd != ''">
+   	       and pd.pk_pd = #{pkPd,jdbcType=CHAR}
+	</if>
+	<if test = "pkPdcate != null  and  pkPdcate != ''">
+   	       and pd.pk_pdcate = #{pkPdcate,jdbcType=CHAR} 
+	</if>
+	<if test = "name != null  and  name != ''">
+   	       and (pd.name like '%'||#{name} or pd.name like #{name}||'%')
+	</if>
+	<if test = "spcode != null  and  spcode != ''">
+   	       and pd.spcode like #{spcode}||'%'
+	</if>
+		 order by pdcate.code_pdcate,pd.code
+	</select>
+
+	<!-- 查询物品 - 别名 -->
+	<select id="queryBdPdAsList" parameterType="java.util.Map" 
+			resultType="com.zebone.nhis.common.module.scm.pub.BdPdAs">
+		select * from bd_pd_as pdas
+		 where pdas.del_flag = '0' 
+		   and pdas.pk_pd = #{pkPd,jdbcType=CHAR}
+		 order by pdas.alias
+	</select>
+	
+	<!-- 查询物品 - 附加属性【新增】 -->
+	<select id="queryBdPdDefNew" parameterType="java.util.Map" 
+			resultType="com.zebone.nhis.scm.material.vo.BdPdAttVo">
+		select def.pk_pdattdef,
+               def.code_att,
+               def.name_att,
+               def.dt_pdtype,
+               def.val_def,
+               def.desc_val
+          from bd_pd_att_define def
+ 		 where def.del_flag = '0'
+           and def.dt_pdtype = #{dtPdtype,jdbcType=CHAR}
+		 order by def.code_att
+	</select>
+	
+	<!-- 查询物品 - 附加属性【新增 + 已存在】 -->
+	<select id="queryBdPdDef" parameterType="java.util.Map" 
+			resultType="com.zebone.nhis.scm.material.vo.BdPdAttVo">
+		select null pk_pdatt,
+       		   null pk_pd,
+       		   def.pk_pdattdef,
+       		   def.code_att,
+       		   def.name_att,
+       		   def.dt_pdtype,
+       		   def.val_def,
+       		   null val_att,
+       		   def.desc_val
+  		  from bd_pd_att_define def
+ 		 where def.del_flag = '0'
+           and def.dt_pdtype = #{dtPdtype,jdbcType=CHAR}
+ 		   and not exists (
+ 		       select 1 from bd_pd_att att
+ 		        where att.pk_pdattdef=def.pk_pdattdef
+                  and att.del_flag ='0'
+                  and att.pk_pd = #{pkPd,jdbcType=CHAR} )
+		 union all
+		select att.pk_pdatt,
+			   att.pk_pd,
+			   att.pk_pdattdef,
+			   def.code_att,
+			   def.name_att,
+			   def.dt_pdtype,
+			   def.val_def,
+			   att.val_att,
+			   def.desc_val
+  		  from bd_pd_att att
+         inner join bd_pd_att_define def on att.pk_pdattdef=def.pk_pdattdef
+ 		 where att.del_flag = '0'
+           and att.pk_pd = #{pkPd,jdbcType=CHAR}
+		 order by code_att
+	</select>
+	
+	<!-- 查询物品 - 仓库物品【新增】 -->
+	<select id="queryBdPdStoreNew" parameterType="java.util.Map" 
+			resultType="com.zebone.nhis.scm.material.vo.BdPdStoreInfo">
+		select sto.pk_org, 
+			   org.name_org,
+			   sto.pk_dept,
+			   dept.name_dept,
+			   sto.pk_store,
+			   sto.code code_store,
+			   sto.name name_store
+  		  from bd_store sto
+         inner join bd_ou_org org on sto.pk_org=org.pk_org
+         inner join bd_ou_dept dept on sto.pk_dept=dept.pk_dept
+         where sto.del_flag = 0
+         order by sto.code
+	</select>
+	
+	<!-- 查询物品 - 仓库物品【新增 + 已存在】 -->
+	<select id="queryBdPdStore" parameterType="java.util.Map" 
+			resultType="com.zebone.nhis.scm.material.vo.BdPdStoreInfo">
+		select sto.pk_org,
+               org.name_org,
+               sto.pk_dept,
+               dept.name_dept, 
+               sto.pk_store,
+               sto.code code_store,
+               sto.name name_store,
+               pds.pk_pd,
+               pds.pk_pdstore
+          from bd_store sto
+         inner join bd_ou_org org on sto.pk_org=org.pk_org
+         inner join bd_ou_dept dept on sto.pk_dept=dept.pk_dept
+          left join (
+               select pk_pdstore, pk_store,pk_pd
+                 from bd_pd_store 
+                where del_flag = '0' 
+                  and pk_pd = #{pkPd,jdbcType=CHAR}) pds on sto.pk_store=pds.pk_store
+ 		where sto.del_flag = 0
+		order by sto.code
+	</select>
+	
+	<select id="getPdConvert" parameterType="java.lang.String" resultType="DynaBean">
+		select
+		  cvt.pk_pdconvert,
+		  cvt.spec,
+		  cvt.pack_size,
+		  cvt.pk_unit,
+		  cvt.flag_ip,
+		  case when bps.pk_pd is null
+		    then '0'
+		  else '1' end num
+		from bd_pd_convert cvt
+		  left join bd_pd_store bps on bps.pk_pd = cvt.pk_pd and cvt.pk_pdconvert = bps.pk_pdconvert
+		where cvt.pk_pd = #{pkPd,jdbcType=VARCHAR}
+		GROUP BY  
+		  	  cvt.pk_pdconvert,
+			  cvt.spec,
+			  cvt.pack_size,
+			  cvt.pk_unit,
+			  cvt.flag_ip,
+			  bps.PK_PD
+	</select>
+	
+	<select id="getPdStore" parameterType="java.lang.String" resultType="DynaBean">
+		SELECT
+		  sto.pk_org,
+		  org.name_org,
+		  sto.pk_dept,
+		  dept.name_dept,
+		  sto.pk_store,
+		  sto.code code_store,
+		  sto.name name_store,
+		  pds.pk_pd,
+		  pds.pk_pdstore,
+		  case when pds.pk_pdstore is null then '0' else '1' end flag_chk 
+		FROM bd_store sto INNER JOIN bd_ou_org org ON sto.pk_org = org.pk_org
+		  INNER JOIN bd_ou_dept dept ON sto.pk_dept = dept.pk_dept
+		  LEFT JOIN (SELECT
+		               pk_pdstore,
+		               pk_store,
+		               pk_pd
+		             FROM bd_pd_store
+		             WHERE del_flag = '0' AND pk_pd = #{pkPd,jdbcType=VARCHAR}) pds ON sto.pk_store = pds.pk_store
+		WHERE sto.del_flag = 0 and sto.eu_type is not null
+		ORDER BY sto.code
+	</select>
+</mapper>

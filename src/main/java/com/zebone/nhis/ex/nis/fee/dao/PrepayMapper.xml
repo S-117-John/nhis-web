@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.fee.dao.PrepayMapper">
+    <!-- 查询患者预交金 -->
+    <select id="queryPrePay" parameterType="java.util.Map" resultType="DynaBean">
+	     select distinct 
+	     		diag.diagname name_diag,
+	     		pv.pk_pv,
+		  		pv.bed_no,
+		  		pv.code_pv,
+		  		pv.dt_sex,
+				pv.name_emp_phy,
+				pv.age_pv,
+		  		doc.name name_sex,
+		  		pi.code_ip,
+		  		pv.name_pi,
+		  		pv.date_begin,
+		  		dept.name_dept,
+		  		dept.pk_dept,
+		  		deptns.name_dept as name_dept_ns,
+		  	    hp.pk_hp,
+		  		hp.name as hpname,
+		  		Nvl(dep.yjpaysum,'0') as yjpaysum, 
+          		Nvl(cg.fytotal,'0') as fytotal,
+          		Nvl(case dep.yjpaysum when 0 then cg.fytotal else cg.fytotal/dep.yjpaysum end,'0') as cpt,
+           		Nvl(stbud.amount_insu,'0') as amount_insu, 
+           		Nvl(dep.yjpaysum,'0')-Nvl((cg.fytotal-Nvl(stbud.amount_insu,'0')),'0') as ye ,
+           		attr.VAL_ATTR hp_amount
+		  from pv_encounter pv
+		  inner join pi_master pi on pi.pk_pi = pv.pk_pi
+		  inner join bd_ou_dept dept on dept.pk_dept = pv.pk_dept and dept.del_flag = '0'
+		  inner join bd_ou_dept deptns on deptns.pk_dept = pv.pk_dept_ns  and deptns.del_flag = '0'
+		  inner join bd_hp hp on hp.pk_hp = pv.pk_insu and hp.del_flag = '0'
+		   inner join pi_cate cate on pv.pk_picate=cate.pk_picate
+		   left join pv_diag pvdiag on pvdiag.pk_pv = pv.pk_pv and flag_maj = '1' and pvdiag.del_flag = '0'
+		   left join bd_term_diag diag on diag.pk_diag = pvdiag.pk_diag and diag.del_flag = '0'
+		   left join bd_defdoc doc on doc.code_defdoclist = '000000' and doc.code = pv.dt_sex
+		   left join ( select sum(amount) as yjpaysum,pk_pv from bl_deposit where eu_dptype = '9' and flag_settle &lt;&gt; '1' group by pk_pv) dep on dep.pk_pv  = pv.pk_pv
+		   left join ( select sum(amount) as fytotal,pk_pv from bl_ip_dt  where  flag_settle &lt;&gt; '1' group by pk_pv ) cg on cg.pk_pv = pv.pk_pv
+		   left join (select dicatt.PK_DICT,dicatt.VAL_ATTR
+             from bd_dictattr dicatt
+               inner join BD_DICTATTR_TEMP temp on temp.PK_DICTATTRTEMP=dicatt.PK_DICTATTRTEMP
+             where temp.CODE_ATTR='0327' GROUP BY dicatt.PK_DICT,dicatt.VAL_ATTR
+             ) attr on attr.PK_DICT=hp.PK_HP
+		   Left Join bl_settle_budget stbud  On pv.pk_pv=stbud.pk_pv
+		  where pv.flag_in ='1' 
+		    and pv.eu_pvtype ='3' 
+		    and pv.pk_dept_ns = #{pkDeptNs}  
+		    and (dep.yjpaysum is null or (case  dep.yjpaysum when 0 then cg.fytotal else cg.fytotal/dep.yjpaysum end) &gt; #{num})
+		<if test='ye != null and ye!=""'>
+			and (case when dep.yjpaysum is null then 0 else dep.yjpaysum end) - cg.fytotal &lt; #{ye}
+	    </if>
+	    <if test='ye == null or ye==""'>
+			and (case when dep.yjpaysum is null then 0 else dep.yjpaysum end) - cg.fytotal &lt; nvl(attr.VAL_ATTR,0)
+	    </if>
+		<if test=" code != null ">
+			and cate.CODE not in
+			<foreach collection="code" item="item" index="index" open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		<if test = " pkDept != null and pkDept != '' ">
+			and pv.pk_dept = #{pkDept}
+		</if>
+		order by pv.bed_no
+    </select>
+    <select id="queryPrePaySql" resultType="DynaBean">
+
+		select distinct
+		diag.diagname name_diag,
+		pv.pk_pv,
+		pv.bed_no,
+		pv.code_pv,
+		pv.dt_sex,
+		pv.name_emp_phy,
+		pv.age_pv,
+		doc.name name_sex,
+		pi.code_ip,
+		pv.name_pi,
+		pv.date_begin,
+		dept.name_dept,
+		dept.pk_dept,
+		deptns.name_dept as name_dept_ns,
+		hp.pk_hp,
+		hp.name as hpname,
+		isnull(dep.yjpaysum,'0') as yjpaysum,
+		isnull(cg.fytotal,'0') as fytotal,
+		isnull(case dep.yjpaysum when 0 then cg.fytotal else cg.fytotal/dep.yjpaysum end,'0') as cpt,
+		isnull(stbud.amount_insu,'0') as amount_insu,
+		isnull(dep.yjpaysum,'0')-isnull((cg.fytotal-isnull(stbud.amount_insu,'0')),'0') as ye,
+		attr.VAL_ATTR hp_amount
+		from pv_encounter pv
+		inner join pi_master pi on pi.pk_pi = pv.pk_pi
+		inner join bd_ou_dept dept on dept.pk_dept = pv.pk_dept and dept.del_flag = '0'
+		inner join bd_ou_dept deptns on deptns.pk_dept = pv.pk_dept_ns  and deptns.del_flag = '0'
+		inner join bd_hp hp on hp.pk_hp = pv.pk_insu and hp.del_flag = '0'
+		inner join pi_cate cate on pv.pk_picate=cate.pk_picate
+		left join pv_diag pvdiag on pvdiag.pk_pv = pv.pk_pv and flag_maj = '1' and pvdiag.del_flag = '0'
+		left join bd_term_diag diag on diag.pk_diag = pvdiag.pk_diag and diag.del_flag = '0'
+		LEFT JOIN pv_labor lab ON lab.pk_pv = pv.pk_pv AND lab.flag_in = '1' AND lab.eu_status = '1'
+		left join bd_defdoc doc on doc.code_defdoclist = '000000' and doc.code = pv.dt_sex
+		left join ( select sum(amount) as yjpaysum,pk_pv from bl_deposit where eu_dptype = '9' and flag_settle &lt;&gt; '1' group by pk_pv) dep on dep.pk_pv  = pv.pk_pv
+		left join ( select sum(amount) as fytotal,pk_pv from bl_ip_dt  where  flag_settle &lt;&gt; '1' group by pk_pv ) cg on cg.pk_pv = pv.pk_pv
+		left join (select dicatt.PK_DICT,dicatt.VAL_ATTR
+             from bd_dictattr dicatt
+               inner join BD_DICTATTR_TEMP temp on temp.PK_DICTATTRTEMP=dicatt.PK_DICTATTRTEMP
+             where temp.CODE_ATTR='0327' GROUP BY dicatt.PK_DICT,dicatt.VAL_ATTR
+             ) attr on attr.PK_DICT=hp.PK_HP
+		Left Join bl_settle_budget stbud  On pv.pk_pv=stbud.pk_pv
+		where pv.flag_in ='1'
+		and pv.eu_pvtype ='3'
+		and (pv.pk_dept_ns = #{pkDeptNs} or lab.pk_dept_ns = #{pkDeptNs})
+		and (dep.yjpaysum is null
+		or (case  dep.yjpaysum when 0 then cg.fytotal else cg.fytotal/dep.yjpaysum end) &gt; #{num})
+		<if test="ye != null">
+			and (case when dep.yjpaysum is null then 0 else dep.yjpaysum end) - cg.fytotal &lt; #{ye}
+		</if>
+		<if test='ye != null and ye!=""'>
+			and (case when dep.yjpaysum is null then 0 else dep.yjpaysum end) - cg.fytotal &lt; #{ye}
+	    </if>
+	    <if test='ye == null or ye==""'>
+			and (case when dep.yjpaysum is null then 0 else dep.yjpaysum end) - cg.fytotal &lt; isnull(attr.VAL_ATTR,0)
+	    </if>
+		<if test=" code != null ">
+			and cate.CODE not in
+			<foreach collection="code" item="item" index="index" open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		<if test = " pkDept != null ">
+			and (pv.pk_dept = #{pkDept} or #{pkDept} = '')
+		</if>
+		order by pv.bed_no
+	</select>
+
+</mapper>

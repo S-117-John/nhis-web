@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.compay.other.dao.DrugOptMapper">
+    
+	<!--查询 单人/多人 投票明细-->
+	<select id="qryOptVoteS" parameterType="java.util.Map" resultType="DynaBean">
+			select vote.pk_vote
+				 , vote.pk_emp
+				 , vote.code_emp
+	       		 , vote.name_emp
+	       		 , vote.tel_no
+	       		 , vote.create_time
+	       		 , vote.flag_pass
+	       		 , vote.flag_print
+	       		 , vote.flag_second
+	       		 , ROW_NUMBER() OVER (PARTITION BY EU_BASE + EU_TYPE + vote.pk_emp ORDER BY EU_TYPE,name_pd) AS sort_no
+	       		 , pd.pk_pd
+	       		 , pd.eu_base
+	       		 , pd.eu_type
+	       		 , pd.name_pd
+	       		 , pd.dosage
+	       		 , pd.spec
+	       		 , pd.desc_pd
+	       		 , pd.hp_type
+	       		 , pd.assess
+			from drug_opt_pd pd
+	 		left join drug_opt_vote vote on vote.pk_pd = pd.pk_pd 
+		   where pd.del_flag = '0'
+		     and vote.del_flag = '0'
+        <if test='flagSecond == "1"'>
+            and vote.flag_second = '1'
+        </if>   
+		<if test="pkEmp != null  and  pkEmp != ''">
+			 and vote.pk_emp = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+	</select>
+	 
+	<!--查询 二次 投票明细-->
+	<select id="qryOptVoteSecond" parameterType="java.util.Map" resultType="DynaBean">
+			select vote.pk_vote
+				 , vote.pk_emp
+				 , vote.code_emp
+	       		 , vote.name_emp
+	       		 , vote.tel_no
+	       		 , vote.create_time
+	       		 , vote.flag_pass
+	       		 , vote.flag_print
+	       		 , ROW_NUMBER() OVER (PARTITION BY EU_BASE + EU_TYPE + isnull(PK_EMP,'')  ORDER BY EU_TYPE,NAME_PD ) AS sort_no
+	       		 , pd.pk_pd
+	       		 , pd.eu_base
+	       		 , pd.eu_type
+	       		 , pd.name_pd
+	       		 , pd.dosage
+	       		 , pd.spec
+	       		 , pd.desc_pd
+	       		 , pd.hp_type
+	       		 , pd.assess
+	       		 , rs.ratio
+	       		 , rs.quan
+	       		 , rs.flag_pass flag_pass_rs
+	       		 , rs.flag_second
+	       		 , rs.quan_second
+			from drug_opt_pd pd
+	 		left join drug_opt_vote vote on vote.pk_pd = pd.pk_pd and vote.flag_second = '1'
+	 	<if test="pkEmp != null  and  pkEmp != ''">
+			 and vote.pk_emp = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+	 		left join drug_opt_result rs on rs.pk_pd = pd.pk_pd and rs.flag_second = '1'
+		   where pd.del_flag = '0'
+			 and (vote.PK_VOTE is null or vote.del_flag = '0')
+       		 and rs.pk_result is not null 
+       		 and rs.del_flag = '0'
+	</select>
+	
+	<!--查询 投票结果【首次结果未出】 -->
+	<select id="qryOptResult" parameterType="java.util.Map" resultType="DynaBean">
+		select * 
+             , ROW_NUMBER() OVER (PARTITION BY EU_BASE + EU_TYPE ORDER BY EU_TYPE,a.quan desc) AS sort_no
+		from (
+			select vote.pk_pd
+	       		 , pd.eu_base
+	       		 , pd.eu_type
+	       		 , pd.name_pd
+	       		 , pd.dosage
+	       		 , pd.spec
+	       		 , pd.desc_pd
+	       		 , pd.hp_type
+	       		 , pd.assess
+	       		 , sum(case when vote.flag_pass = '1' then 1 else 0 end) quan
+			from drug_opt_pd pd
+	 		left join drug_opt_vote vote on vote.pk_pd = pd.pk_pd 
+		   where pd.del_flag = '0'
+		     and vote.del_flag = '0'
+		     and vote.flag_second = '0'
+		   group by vote.pk_pd
+	       		 , pd.eu_base
+	       		 , pd.eu_type
+	       		 , pd.name_pd
+	       		 , pd.dosage
+	       		 , pd.spec
+	       		 , pd.desc_pd
+	       		 , pd.hp_type
+	       		 , pd.assess
+	       )a
+	</select>
+		
+	<!--查询 投票结果【二次结果未出】 -->
+	<select id="qryOptResult2" parameterType="java.util.Map" resultType="com.zebone.nhis.pro.zsba.compay.other.vo.DrugOptResult">
+			select vote.pk_pd
+	       		 , pd.eu_base
+	       		 , pd.eu_type
+	       		 , pd.name_pd
+	       		 , pd.dosage
+	       		 , pd.spec
+	       		 , pd.desc_pd
+	       		 , pd.hp_type
+	       		 , pd.assess
+	       		 , sum(case when vote.flag_pass = '1' then 1 else 0 end) quan_second
+			from drug_opt_pd pd
+	 		left join drug_opt_vote vote on vote.pk_pd = pd.pk_pd
+		   where pd.del_flag = '0'
+		     and vote.del_flag = '0'
+		     and vote.flag_second = '1'
+		   group by vote.pk_pd
+	       		 , pd.eu_base
+	       		 , pd.eu_type
+	       		 , pd.name_pd
+	       		 , pd.dosage
+	       		 , pd.spec
+	       		 , pd.desc_pd
+	       		 , pd.hp_type
+	       		 , pd.assess
+	</select>
+	
+	<!--查询 投票结果【已出】 -->
+	<select id="qryOptResultEnd" parameterType="java.util.Map" resultType="DynaBean">
+			select pd.pk_pd
+	       		 , pd.eu_base
+	       		 , pd.eu_type
+	       		 , pd.name_pd
+	       		 , pd.dosage
+	       		 , pd.spec
+	       		 , pd.desc_pd
+	       		 , pd.hp_type
+	       		 , pd.assess
+	       		 , ROW_NUMBER() OVER (PARTITION BY EU_BASE + EU_TYPE ORDER BY EU_TYPE,rs.quan desc) AS sort_no
+	       		 , rs.quan
+	       		 , rs.ratio
+	       		 , rs.flag_pass
+	       		 , rs.pk_result
+	       		 , rs.flag_second
+	       		 , rs.quan_second
+	       		 , rs.pk_result_second
+			from drug_opt_pd pd
+	 		left join drug_opt_result rs on rs.pk_pd = pd.pk_pd 
+		   where pd.del_flag = '0'
+		     and rs.del_flag = '0'
+	</select>
+</mapper>

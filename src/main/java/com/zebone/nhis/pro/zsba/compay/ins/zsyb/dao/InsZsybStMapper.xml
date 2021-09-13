@@ -1,0 +1,999 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.compay.ins.zsyb.dao.InsZsybStMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybSt">
+        <id column="PK_INSST" jdbcType="CHAR" property="pkInsst"/>
+        <result column="PK_ORG" jdbcType="CHAR" property="pkOrg"/>
+        <result column="YYBH" jdbcType="VARCHAR" property="yybh"/>
+        <result column="PK_HP" jdbcType="CHAR" property="pkHp"/>
+        <result column="PK_PI" jdbcType="CHAR" property="pkPi"/>
+        <result column="PK_PV" jdbcType="CHAR" property="pkPv"/>
+        <result column="PK_SETTLE" jdbcType="CHAR" property="pkSettle"/>
+        <result column="EU_PVTYPE" jdbcType="VARCHAR" property="euPvtype"/>
+        <result column="JZJLH" jdbcType="CHAR" property="jzjlh"/>
+        <result column="JSYWH" jdbcType="CHAR" property="jsywh"/>
+        <result column="XZLX" jdbcType="VARCHAR" property="xzlx"/>
+        <result column="JSBZ" jdbcType="VARCHAR" property="jsbz"/>
+        <result column="GRZFLJ" jdbcType="DECIMAL" property="grzflj"/>
+        <result column="GWYTCXE" jdbcType="DECIMAL" property="gwytcxe"/>
+        <result column="YBZHYE" jdbcType="DECIMAL" property="ybzhye"/>
+        <result column="ND" jdbcType="VARCHAR" property="nd"/>
+        <result column="RYLB" jdbcType="VARCHAR" property="rylb"/>
+        <result column="KH" jdbcType="VARCHAR" property="kh"/>
+        <result column="JYM" jdbcType="VARCHAR" property="jym"/>
+        <result column="PSAM" jdbcType="VARCHAR" property="psam"/>
+        <result column="YLFYZE" jdbcType="DECIMAL" property="ylfyze"/>
+        <result column="GZZFUJE" jdbcType="DECIMAL" property="gzzfuje"/>
+        <result column="GZZFEJE" jdbcType="DECIMAL" property="gzzfeje"/>
+        <result column="TCZFJE" jdbcType="DECIMAL" property="tczfje"/>
+        <result column="GWYTCZF" jdbcType="DECIMAL" property="gwytczf"/>
+        <result column="XJZFUJE" jdbcType="DECIMAL" property="xjzfuje"/>
+        <result column="XJZFEJE" jdbcType="DECIMAL" property="xjzfeje"/>
+        <result column="DEJSBZ" jdbcType="DECIMAL" property="dejsbz"/>
+        <result column="JSQZYTCED" jdbcType="DECIMAL" property="jsqzytced"/>
+        <result column="JSRQ" jdbcType="TIMESTAMP" property="jsrq"/>
+        <result column="BCYLTCZF" jdbcType="DECIMAL" property="bcyltczf"/>
+        <result column="JBYLBZ" jdbcType="VARCHAR" property="jbylbz"/>
+        <result column="BCXSBZ" jdbcType="VARCHAR" property="bcxsbz"/>
+        <result column="GWYXSBZ" jdbcType="VARCHAR" property="gwyxsbz"/>
+        <result column="DBTCZF" jdbcType="DECIMAL" property="dbtczf"/>
+        <result column="DBDXLB" jdbcType="VARCHAR" property="dbdxlb"/>
+        <result column="MZDBTCZF" jdbcType="DECIMAL" property="mzdbtczf"/>
+        <result column="MZDBLJJE" jdbcType="DECIMAL" property="mzdbljje"/>
+        <result column="YFDXLB" jdbcType="VARCHAR" property="yfdxlb"/>
+        <result column="MZYFTCZF" jdbcType="DECIMAL" property="mzyftczf"/>
+        <result column="MZYFLJJE" jdbcType="DECIMAL" property="mzyfljje"/>
+        <result column="JZLB" jdbcType="VARCHAR" property="jzlb"/>
+        <result column="CREATOR" jdbcType="CHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="MODIFIER" jdbcType="CHAR" property="modifier"/>
+        <result column="MODITY_TIME" jdbcType="TIMESTAMP" property="modityTime"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+        <result column="STATUS" jdbcType="CHAR" property="status"/>
+        <result column="TJLB" jdbcType="VARCHAR" property="tjlb"/>
+        <result column="TJJZRQ" jdbcType="VARCHAR" property="tjjzrq"/>
+        <result column="JJYWH" jdbcType="CHAR" property="jjywh"/>
+        <result column="FHZ" jdbcType="VARCHAR" property="fhz"/>
+        <result column="MSG" jdbcType="VARCHAR" property="msg"/>
+    </resultMap>
+    <select id="getInsStById" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+             ins_st
+        WHERE            
+            PK_INSST = #{pkInsst,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllInsSt" resultMap="BaseResultMap">
+          SELECT * FROM ins_st 
+    </select>
+    
+    <delete id="deleteInsSt">
+        DELETE
+        FROM
+             ins_st
+        WHERE            
+            PK_INSST = #{pkInsst,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveInsSt" parameterType="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybSt" >
+        INSERT INTO ins_st
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkInsst != null" >
+                PK_INSST,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="yybh != null" >
+                YYBH,
+            </if>
+            <if test="pkHp != null" >
+                PK_HP,
+            </if>
+            <if test="pkPi != null" >
+                PK_PI,
+            </if>
+            <if test="pkPv != null" >
+                PK_PV,
+            </if>
+            <if test="pkSettle != null" >
+                PK_SETTLE,
+            </if>
+            <if test="euPvtype != null" >
+                EU_PVTYPE,
+            </if>
+            <if test="jzjlh != null" >
+                JZJLH,
+            </if>
+            <if test="jsywh != null" >
+                JSYWH,
+            </if>
+            <if test="xzlx != null" >
+                XZLX,
+            </if>
+            <if test="jsbz != null" >
+                JSBZ,
+            </if>
+            <if test="grzflj != null" >
+                GRZFLJ,
+            </if>
+            <if test="gwytcxe != null" >
+                GWYTCXE,
+            </if>
+            <if test="ybzhye != null" >
+                YBZHYE,
+            </if>
+            <if test="nd != null" >
+                ND,
+            </if>
+            <if test="rylb != null" >
+                RYLB,
+            </if>
+            <if test="kh != null" >
+                KH,
+            </if>
+            <if test="jym != null" >
+                JYM,
+            </if>
+            <if test="psam != null" >
+                PSAM,
+            </if>
+            <if test="ylfyze != null" >
+                YLFYZE,
+            </if>
+            <if test="gzzfuje != null" >
+                GZZFUJE,
+            </if>
+            <if test="gzzfeje != null" >
+                GZZFEJE,
+            </if>
+            <if test="tczfje != null" >
+                TCZFJE,
+            </if>
+            <if test="gwytczf != null" >
+                GWYTCZF,
+            </if>
+            <if test="xjzfuje != null" >
+                XJZFUJE,
+            </if>
+            <if test="xjzfeje != null" >
+                XJZFEJE,
+            </if>
+            <if test="dejsbz != null" >
+                DEJSBZ,
+            </if>
+            <if test="jsqzytced != null" >
+                JSQZYTCED,
+            </if>
+            <if test="jsrq != null" >
+                JSRQ,
+            </if>
+            <if test="bcyltczf != null" >
+                BCYLTCZF,
+            </if>
+            <if test="jbylbz != null" >
+                JBYLBZ,
+            </if>
+            <if test="bcxsbz != null" >
+                BCXSBZ,
+            </if>
+            <if test="gwyxsbz != null" >
+                GWYXSBZ,
+            </if>
+            <if test="dbtczf != null" >
+                DBTCZF,
+            </if>
+            <if test="dbdxlb != null" >
+                DBDXLB,
+            </if>
+            <if test="mzdbtczf != null" >
+                MZDBTCZF,
+            </if>
+            <if test="mzdbljje != null" >
+                MZDBLJJE,
+            </if>
+            <if test="yfdxlb != null" >
+                YFDXLB,
+            </if>
+            <if test="mzyftczf != null" >
+                MZYFTCZF,
+            </if>
+            <if test="mzyfljje != null" >
+                MZYFLJJE,
+            </if>
+            <if test="jzlb != null" >
+                JZLB,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="modifier != null" >
+                MODIFIER,
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+            <if test="status != null" >
+                STATUS,
+            </if>
+            <if test="tjlb != null" >
+                TJLB,
+            </if>
+            <if test="tjjzrq != null" >
+                TJJZRQ,
+            </if>
+            <if test="jjywh != null" >
+                JJYWH,
+            </if>
+            <if test="fhz != null" >
+                FHZ,
+            </if>
+            <if test="msg != null" >
+                MSG,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkInsst != null" >
+                #{pkInsst,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=CHAR},
+            </if> 
+            <if test="yybh != null" >
+                #{yybh,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkHp != null" >
+                #{pkHp,jdbcType=CHAR},
+            </if> 
+            <if test="pkPi != null" >
+                #{pkPi,jdbcType=CHAR},
+            </if> 
+            <if test="pkPv != null" >
+                #{pkPv,jdbcType=CHAR},
+            </if> 
+            <if test="pkSettle != null" >
+                #{pkSettle,jdbcType=CHAR},
+            </if> 
+            <if test="euPvtype != null" >
+                #{euPvtype,jdbcType=VARCHAR},
+            </if> 
+            <if test="jzjlh != null" >
+                #{jzjlh,jdbcType=CHAR},
+            </if> 
+            <if test="jsywh != null" >
+                #{jsywh,jdbcType=CHAR},
+            </if> 
+            <if test="xzlx != null" >
+                #{xzlx,jdbcType=VARCHAR},
+            </if> 
+            <if test="jsbz != null" >
+                #{jsbz,jdbcType=VARCHAR},
+            </if> 
+            <if test="grzflj != null" >
+                #{grzflj,jdbcType=DECIMAL},
+            </if> 
+            <if test="gwytcxe != null" >
+                #{gwytcxe,jdbcType=DECIMAL},
+            </if> 
+            <if test="ybzhye != null" >
+                #{ybzhye,jdbcType=DECIMAL},
+            </if> 
+            <if test="nd != null" >
+                #{nd,jdbcType=VARCHAR},
+            </if> 
+            <if test="rylb != null" >
+                #{rylb,jdbcType=VARCHAR},
+            </if> 
+            <if test="kh != null" >
+                #{kh,jdbcType=VARCHAR},
+            </if> 
+            <if test="jym != null" >
+                #{jym,jdbcType=VARCHAR},
+            </if> 
+            <if test="psam != null" >
+                #{psam,jdbcType=VARCHAR},
+            </if> 
+            <if test="ylfyze != null" >
+                #{ylfyze,jdbcType=DECIMAL},
+            </if> 
+            <if test="gzzfuje != null" >
+                #{gzzfuje,jdbcType=DECIMAL},
+            </if> 
+            <if test="gzzfeje != null" >
+                #{gzzfeje,jdbcType=DECIMAL},
+            </if> 
+            <if test="tczfje != null" >
+                #{tczfje,jdbcType=DECIMAL},
+            </if> 
+            <if test="gwytczf != null" >
+                #{gwytczf,jdbcType=DECIMAL},
+            </if> 
+            <if test="xjzfuje != null" >
+                #{xjzfuje,jdbcType=DECIMAL},
+            </if> 
+            <if test="xjzfeje != null" >
+                #{xjzfeje,jdbcType=DECIMAL},
+            </if> 
+            <if test="dejsbz != null" >
+                #{dejsbz,jdbcType=DECIMAL},
+            </if> 
+            <if test="jsqzytced != null" >
+                #{jsqzytced,jdbcType=DECIMAL},
+            </if> 
+            <if test="jsrq != null" >
+                #{jsrq,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="bcyltczf != null" >
+                #{bcyltczf,jdbcType=DECIMAL},
+            </if> 
+            <if test="jbylbz != null" >
+                #{jbylbz,jdbcType=VARCHAR},
+            </if> 
+            <if test="bcxsbz != null" >
+                #{bcxsbz,jdbcType=VARCHAR},
+            </if> 
+            <if test="gwyxsbz != null" >
+                #{gwyxsbz,jdbcType=VARCHAR},
+            </if> 
+            <if test="dbtczf != null" >
+                #{dbtczf,jdbcType=DECIMAL},
+            </if> 
+            <if test="dbdxlb != null" >
+                #{dbdxlb,jdbcType=VARCHAR},
+            </if> 
+            <if test="mzdbtczf != null" >
+                #{mzdbtczf,jdbcType=DECIMAL},
+            </if> 
+            <if test="mzdbljje != null" >
+                #{mzdbljje,jdbcType=DECIMAL},
+            </if> 
+            <if test="yfdxlb != null" >
+                #{yfdxlb,jdbcType=VARCHAR},
+            </if> 
+            <if test="mzyftczf != null" >
+                #{mzyftczf,jdbcType=DECIMAL},
+            </if> 
+            <if test="mzyfljje != null" >
+                #{mzyfljje,jdbcType=DECIMAL},
+            </if> 
+            <if test="jzlb != null" >
+                #{jzlb,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=CHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="modifier != null" >
+                #{modifier,jdbcType=CHAR},
+            </if> 
+            <if test="modityTime != null" >
+                #{modityTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="status != null" >
+                #{status,jdbcType=CHAR},
+            </if> 
+            <if test="tjlb != null" >
+                #{tjlb,jdbcType=VARCHAR},
+            </if> 
+            <if test="tjjzrq != null" >
+                #{tjjzrq,jdbcType=VARCHAR},
+            </if> 
+            <if test="jjywh != null" >
+                #{jjywh,jdbcType=CHAR},
+            </if> 
+            <if test="fhz != null" >
+                #{fhz,jdbcType=VARCHAR},
+            </if> 
+            <if test="msg != null" >
+                #{msg,jdbcType=VARCHAR},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateInsSt" parameterType="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybSt" >
+        UPDATE ins_st
+        <set>
+            <if test="pkInsst != null" >
+                PK_INSST = #{pkInsst,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=CHAR},
+            </if>
+            <if test="yybh != null" >
+                YYBH = #{yybh,jdbcType=VARCHAR},
+            </if>
+            <if test="pkHp != null" >
+                PK_HP = #{pkHp,jdbcType=CHAR},
+            </if>
+            <if test="pkPi != null" >
+                PK_PI = #{pkPi,jdbcType=CHAR},
+            </if>
+            <if test="pkPv != null" >
+                PK_PV = #{pkPv,jdbcType=CHAR},
+            </if>
+            <if test="pkSettle != null" >
+                PK_SETTLE = #{pkSettle,jdbcType=CHAR},
+            </if>
+            <if test="euPvtype != null" >
+                EU_PVTYPE = #{euPvtype,jdbcType=VARCHAR},
+            </if>
+            <if test="jzjlh != null" >
+                JZJLH = #{jzjlh,jdbcType=CHAR},
+            </if>
+            <if test="jsywh != null" >
+                JSYWH = #{jsywh,jdbcType=CHAR},
+            </if>
+            <if test="xzlx != null" >
+                XZLX = #{xzlx,jdbcType=VARCHAR},
+            </if>
+            <if test="jsbz != null" >
+                JSBZ = #{jsbz,jdbcType=VARCHAR},
+            </if>
+            <if test="grzflj != null" >
+                GRZFLJ = #{grzflj,jdbcType=DECIMAL},
+            </if>
+            <if test="gwytcxe != null" >
+                GWYTCXE = #{gwytcxe,jdbcType=DECIMAL},
+            </if>
+            <if test="ybzhye != null" >
+                YBZHYE = #{ybzhye,jdbcType=DECIMAL},
+            </if>
+            <if test="nd != null" >
+                ND = #{nd,jdbcType=VARCHAR},
+            </if>
+            <if test="rylb != null" >
+                RYLB = #{rylb,jdbcType=VARCHAR},
+            </if>
+            <if test="kh != null" >
+                KH = #{kh,jdbcType=VARCHAR},
+            </if>
+            <if test="jym != null" >
+                JYM = #{jym,jdbcType=VARCHAR},
+            </if>
+            <if test="psam != null" >
+                PSAM = #{psam,jdbcType=VARCHAR},
+            </if>
+            <if test="ylfyze != null" >
+                YLFYZE = #{ylfyze,jdbcType=DECIMAL},
+            </if>
+            <if test="gzzfuje != null" >
+                GZZFUJE = #{gzzfuje,jdbcType=DECIMAL},
+            </if>
+            <if test="gzzfeje != null" >
+                GZZFEJE = #{gzzfeje,jdbcType=DECIMAL},
+            </if>
+            <if test="tczfje != null" >
+                TCZFJE = #{tczfje,jdbcType=DECIMAL},
+            </if>
+            <if test="gwytczf != null" >
+                GWYTCZF = #{gwytczf,jdbcType=DECIMAL},
+            </if>
+            <if test="xjzfuje != null" >
+                XJZFUJE = #{xjzfuje,jdbcType=DECIMAL},
+            </if>
+            <if test="xjzfeje != null" >
+                XJZFEJE = #{xjzfeje,jdbcType=DECIMAL},
+            </if>
+            <if test="dejsbz != null" >
+                DEJSBZ = #{dejsbz,jdbcType=DECIMAL},
+            </if>
+            <if test="jsqzytced != null" >
+                JSQZYTCED = #{jsqzytced,jdbcType=DECIMAL},
+            </if>
+            <if test="jsrq != null" >
+                JSRQ = #{jsrq,jdbcType=TIMESTAMP},
+            </if>
+            <if test="bcyltczf != null" >
+                BCYLTCZF = #{bcyltczf,jdbcType=DECIMAL},
+            </if>
+            <if test="jbylbz != null" >
+                JBYLBZ = #{jbylbz,jdbcType=VARCHAR},
+            </if>
+            <if test="bcxsbz != null" >
+                BCXSBZ = #{bcxsbz,jdbcType=VARCHAR},
+            </if>
+            <if test="gwyxsbz != null" >
+                GWYXSBZ = #{gwyxsbz,jdbcType=VARCHAR},
+            </if>
+            <if test="dbtczf != null" >
+                DBTCZF = #{dbtczf,jdbcType=DECIMAL},
+            </if>
+            <if test="dbdxlb != null" >
+                DBDXLB = #{dbdxlb,jdbcType=VARCHAR},
+            </if>
+            <if test="mzdbtczf != null" >
+                MZDBTCZF = #{mzdbtczf,jdbcType=DECIMAL},
+            </if>
+            <if test="mzdbljje != null" >
+                MZDBLJJE = #{mzdbljje,jdbcType=DECIMAL},
+            </if>
+            <if test="yfdxlb != null" >
+                YFDXLB = #{yfdxlb,jdbcType=VARCHAR},
+            </if>
+            <if test="mzyftczf != null" >
+                MZYFTCZF = #{mzyftczf,jdbcType=DECIMAL},
+            </if>
+            <if test="mzyfljje != null" >
+                MZYFLJJE = #{mzyfljje,jdbcType=DECIMAL},
+            </if>
+            <if test="jzlb != null" >
+                JZLB = #{jzlb,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=CHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="modifier != null" >
+                MODIFIER = #{modifier,jdbcType=CHAR},
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME = #{modityTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=TIMESTAMP},
+            </if>
+            <if test="status != null" >
+                STATUS = #{status,jdbcType=CHAR},
+            </if>
+            <if test="tjlb != null" >
+                TJLB = #{tjlb,jdbcType=VARCHAR},
+            </if>
+            <if test="tjjzrq != null" >
+                TJJZRQ = #{tjjzrq,jdbcType=VARCHAR},
+            </if>
+            <if test="jjywh != null" >
+                JJYWH = #{jjywh,jdbcType=CHAR},
+            </if>
+            <if test="fhz != null" >
+                FHZ = #{fhz,jdbcType=VARCHAR},
+            </if>
+            <if test="msg != null" >
+                MSG = #{msg,jdbcType=VARCHAR},
+            </if>
+        </set>
+        WHERE 
+            PK_INSST = #{pkInsst,jdbcType=CHAR}
+    </update>
+    
+     <!-- 获取住院收费明细 -项目 -->
+    <select id="getChargeDetails" parameterType="java.util.Map" resultType="java.util.Map">
+		select 
+		sum(quan) as quan,
+		 sum(amount) as amount,
+		 min(date_cg) as date_cg, 
+		 JZJLH,
+		 code_ip,
+		 code,
+		 code_wp,
+		 name_cg,
+		 name_wp,
+		 spec,
+		 code_supply,
+		 dosage,
+		 price,
+		 quan_cg,
+		 name,
+		 flag_pd,
+		 eu_always,
+		 flag_fit
+		 from (select
+			bid.pk_cgip,
+		    ip.JZJLH,
+		    pm.code_ip,
+		    bid.date_cg, 
+		    bid.flag_pd, 
+			bi.code,
+			bid.pk_pd,
+			bi.code code_wp,
+			bid.name_cg, 
+			bi.name name_wp,
+			bid.spec, 
+		    co.code_supply,
+		    co.dosage, 
+		 	co.eu_always,
+			cast((bid.amount + (CASE WHEN back.amt is null THEN 0 ELSE back.amt END)) / (bid.quan + (CASE WHEN back.quan is null THEN 0 ELSE back.quan END)) as decimal(18, 6)) price,
+			bid.quan + (CASE WHEN back.quan is null THEN 0 ELSE back.quan END) as quan, 
+			bid.amount + (CASE WHEN back.amt is null THEN 0 ELSE back.amt END) as amount,
+		    co.flag_fit,  
+		    co.quan_cg,   
+		    bu.name, 
+		    co.days,
+		    bid.ratio_disc,
+		    bid.ratio_self,
+		    bid.price_org,
+		    bid.amount_pi
+		from 
+			bl_ip_dt bid INNER JOIN bd_item bi ON bid.pk_item = bi.pk_item
+		    LEFT JOIN cn_order co ON bid.pk_cnord = co.pk_cnord and co.eu_status_ord != '9' and co.del_flag = '0'
+		    INNER JOIN pi_master pm ON bid.pk_pi = pm.pk_pi
+		    INNER JOIN ins_pv ip ON bid.pk_pv = ip.pk_pv   
+		    LEFT JOIN bd_unit bu ON co.pk_unit_cg = bu.pk_unit   
+  			left outer join  
+				(select sum(quan) quan,sum(amount) amt,pk_cgip_back from bl_ip_dt where flag_settle = 0 and flag_pd = 0 and  quan &lt; 0  and pk_pv = #{pkPv,jdbcType=VARCHAR}  group by pk_cgip_back) 
+				back on bid.pk_cgip=back.pk_cgip_back 
+		where 
+			ip.del_flag = '0' 
+			and bid.del_flag = '0' 
+			and bid.flag_settle = '0' 
+			and bid.pk_cgip_back is null
+			and bid.flag_pd = 0
+			and bid.pk_pv = #{pkPv,jdbcType=VARCHAR} 
+			
+			<!-- <if test="dateBegin != null  and  dateBegin!= ''">
+				and bid.date_hap>=to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+				and bid.date_cg &gt;=  to_date(substr(#{dateBegin,jdbcType=VARCHAR} ,1,8)||'000000', 'yyyymmddhh24miss')   
+			</if> -->
+			<if test="dateEnd != null  and  dateEnd != ''">
+				<!-- and bid.date_cg &lt;=  to_date(substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'yyyymmddhh24miss') -->
+				and bid.date_hap&lt;=to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss') 
+			</if>  
+			) temp where temp.quan > 0
+			group by JZJLH, code_ip, code, code_wp, name_cg, name_wp, spec, code_supply, dosage, price, quan_cg, name, flag_pd, eu_always, flag_fit, days
+	</select>
+	
+	 <!-- 获取住院收费明细 -药品 -->
+    <select id="getChargeDetailsYp" parameterType="java.util.Map" resultType="java.util.Map">
+		select 
+		sum(quan) as quan,
+		 sum(amount) as amount,
+		 min(date_cg) as date_cg, 
+		 JZJLH,
+		 code_ip,
+		 code,
+		 code_wp,
+		 name_cg,
+		 name_wp,
+		 spec,
+		 code_supply,
+		 dosage,
+		 price,
+		 quan_cg,
+		 name,
+		 flag_pd,
+		 eu_always,
+		 flag_fit
+		 from (select
+			bid.pk_cgip,
+		    ip.JZJLH,
+		    pm.code_ip,
+		    bid.date_cg, 
+		    bid.flag_pd, 
+			bi.code,
+			bid.pk_pd,
+			bi.code code_wp,
+			bid.name_cg, 
+			bi.name name_wp,
+			bid.spec, 
+		    co.code_supply,
+		    co.dosage, 
+		 	co.eu_always,
+			cast((bid.amount + (CASE WHEN back.amt is null THEN 0 ELSE back.amt END)) / (bid.quan + (CASE WHEN back.quan is null THEN 0 ELSE back.quan END)) as decimal(18, 6)) price,
+			bid.quan + (CASE WHEN back.quan is null THEN 0 ELSE back.quan END) as quan, 
+			bid.amount + (CASE WHEN back.amt is null THEN 0 ELSE back.amt END) as amount,
+		    co.flag_fit,  
+		    co.quan_cg,   
+		    bu.name, 
+		    co.days,
+		    bid.ratio_disc,
+		    bid.ratio_self,
+		    bid.price_org,
+		    bid.amount_pi
+		from 
+			bl_ip_dt bid INNER JOIN bd_pd bi ON bid.pk_item = bi.pk_pd
+		    LEFT JOIN cn_order co ON bid.pk_cnord = co.pk_cnord and co.eu_status_ord != '9' and co.del_flag = '0'
+		    INNER JOIN pi_master pm ON bid.pk_pi = pm.pk_pi
+		    INNER JOIN ins_pv ip ON bid.pk_pv = ip.pk_pv   
+		    LEFT JOIN bd_unit bu ON co.pk_unit_cg = bu.pk_unit   
+  			left outer join  
+				(select sum(quan) quan,sum(amount) amt,pk_cgip_back from bl_ip_dt where flag_settle = 0 and flag_pd = 1 and  quan &lt; 0  and pk_pv = #{pkPv,jdbcType=VARCHAR}  group by pk_cgip_back) 
+				back on bid.pk_cgip=back.pk_cgip_back 
+		where 
+			ip.del_flag = '0' 
+			and bid.del_flag = '0' 
+			and bid.flag_settle = '0' 
+			and bid.pk_cgip_back is null
+			and bid.flag_pd = 1
+			and bid.pk_pv = #{pkPv,jdbcType=VARCHAR} 
+			
+			<!-- <if test="dateBegin != null  and  dateBegin!= ''">
+				and bid.date_hap>=to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+				and bid.date_cg &gt;=  to_date(substr(#{dateBegin,jdbcType=VARCHAR} ,1,8)||'000000', 'yyyymmddhh24miss')   
+			</if> -->
+			<if test="dateEnd != null  and  dateEnd != ''">
+				<!-- and bid.date_cg &lt;=  to_date(substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'yyyymmddhh24miss') -->
+				and bid.date_hap&lt;=to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss') 
+			</if>  
+			) temp where temp.quan > 0
+			group by JZJLH, code_ip, code, code_wp, name_cg, name_wp, spec, code_supply, dosage, price, quan_cg, name, flag_pd, eu_always, flag_fit, days
+	</select>
+	
+	     <!-- 用于修改医保上传标志 -项目 -->
+    <select id="getChargeDetailsUpdate" parameterType="java.util.Map" resultType="java.util.Map">
+		select 
+		*
+		 from (select
+			bid.pk_cgip,
+		    ip.JZJLH,
+		    pm.code_ip,
+		    bid.date_cg, 
+		    bid.flag_pd, 
+			bi.code,
+			bid.pk_pd,
+			bi.code code_wp,
+			bid.name_cg, 
+			bi.name name_wp,
+			bid.spec, 
+		    co.code_supply,
+		    co.dosage, 
+		 	co.eu_always,
+			bid.price, 
+			bid.quan + (CASE WHEN back.quan is null THEN 0 ELSE back.quan END) as quan, 
+			bid.amount + (CASE WHEN back.amt is null THEN 0 ELSE back.amt END) as amount,
+		    co.flag_fit,  
+		    co.quan_cg,   
+		    bu.name, 
+		    co.days,
+		    bid.ratio_disc,
+		    bid.ratio_self,
+		    bid.price_org,
+		    bid.amount_pi
+		from 
+			bl_ip_dt bid INNER JOIN bd_item bi ON bid.pk_item = bi.pk_item
+		    LEFT JOIN cn_order co ON bid.pk_cnord = co.pk_cnord and co.eu_status_ord != '9' and co.del_flag = '0'
+		    INNER JOIN pi_master pm ON bid.pk_pi = pm.pk_pi
+		    INNER JOIN ins_pv ip ON bid.pk_pv = ip.pk_pv   
+		    LEFT JOIN bd_unit bu ON co.pk_unit_cg = bu.pk_unit   
+  			left outer join  
+				(select sum(quan) quan,sum(amount) amt,pk_cgip_back from bl_ip_dt where flag_settle = 0 and flag_pd = 0 and  quan &lt; 0  and pk_pv = #{pkPv,jdbcType=VARCHAR}  group by pk_cgip_back) 
+				back on bid.pk_cgip=back.pk_cgip_back 
+		where 
+			ip.del_flag = '0' 
+			and bid.del_flag = '0' 
+			and bid.flag_settle = '0' 
+			and bid.pk_cgip_back is null
+			and bid.flag_pd = 0
+			and bid.pk_pv = #{pkPv,jdbcType=VARCHAR} 
+			
+			<!-- <if test="dateBegin != null  and  dateBegin!= ''">
+				and bid.date_hap>=to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+				and bid.date_cg &gt;=  to_date(substr(#{dateBegin,jdbcType=VARCHAR} ,1,8)||'000000', 'yyyymmddhh24miss')   
+			</if> -->
+			<if test="dateEnd != null  and  dateEnd != ''">
+				<!-- and bid.date_cg &lt;=  to_date(substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'yyyymmddhh24miss') -->
+				and bid.date_hap&lt;=to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss') 
+			</if>  
+			) temp where temp.quan > 0
+	</select>
+	
+	 <!-- 用于修改医保上传明细标志 -药品 -->
+    <select id="getChargeDetailsYpUpdate" parameterType="java.util.Map" resultType="java.util.Map">
+		select 
+			*
+		 from (select
+			bid.pk_cgip,
+		    ip.JZJLH,
+		    pm.code_ip,
+		    bid.date_cg, 
+		    bid.flag_pd, 
+			bi.code,
+			bid.pk_pd,
+			bi.code code_wp,
+			bid.name_cg, 
+			bi.name name_wp,
+			bid.spec, 
+		    co.code_supply,
+		    co.dosage, 
+		 	co.eu_always,
+			bid.price, 
+			bid.quan + (CASE WHEN back.quan is null THEN 0 ELSE back.quan END) as quan, 
+			bid.amount + (CASE WHEN back.amt is null THEN 0 ELSE back.amt END) as amount,
+		    co.flag_fit,  
+		    co.quan_cg,   
+		    bu.name, 
+		    co.days,
+		    bid.ratio_disc,
+		    bid.ratio_self,
+		    bid.price_org,
+		    bid.amount_pi
+		from 
+			bl_ip_dt bid INNER JOIN bd_pd bi ON bid.pk_item = bi.pk_pd
+		    LEFT JOIN cn_order co ON bid.pk_cnord = co.pk_cnord and co.eu_status_ord != '9' and co.del_flag = '0'
+		    INNER JOIN pi_master pm ON bid.pk_pi = pm.pk_pi
+		    INNER JOIN ins_pv ip ON bid.pk_pv = ip.pk_pv   
+		    LEFT JOIN bd_unit bu ON co.pk_unit_cg = bu.pk_unit   
+  			left outer join  
+				(select sum(quan) quan,sum(amount) amt,pk_cgip_back from bl_ip_dt where flag_settle = 0 and flag_pd = 1 and  quan &lt; 0  and pk_pv = #{pkPv,jdbcType=VARCHAR}  group by pk_cgip_back) 
+				back on bid.pk_cgip=back.pk_cgip_back 
+		where 
+			ip.del_flag = '0' 
+			and bid.del_flag = '0' 
+			and bid.flag_settle = '0' 
+			and bid.pk_cgip_back is null
+			and bid.flag_pd = 1
+			and bid.pk_pv = #{pkPv,jdbcType=VARCHAR} 
+			
+			<!-- <if test="dateBegin != null  and  dateBegin!= ''">
+				and bid.date_hap>=to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+				and bid.date_cg &gt;=  to_date(substr(#{dateBegin,jdbcType=VARCHAR} ,1,8)||'000000', 'yyyymmddhh24miss')   
+			</if> -->
+			<if test="dateEnd != null  and  dateEnd != ''">
+				<!-- and bid.date_cg &lt;=  to_date(substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'yyyymmddhh24miss') -->
+				and bid.date_hap&lt;=to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss') 
+			</if>  
+			) temp where temp.quan > 0
+	</select>
+	
+	
+	    <!--  获取住院收费明细B表  -->
+    <select id="getChargeDetailsB" parameterType="java.util.Map" resultType="java.util.Map">
+		select * from (select 
+			bid.pk_cgip,
+		    ip.JZJLH,
+		    pm.code_ip,
+		    bid.date_cg, 
+		    bid.flag_pd, 
+			bi.code,
+			bid.pk_pd,
+			bp.code code_wp,
+			bid.name_cg, 
+			bp.name name_wp,
+			bid.spec, 
+		    co.code_supply,
+		    co.dosage, 
+		 	co.eu_always,
+			bid.price, 
+			bid.quan + (CASE WHEN back.quan is null THEN 0 ELSE back.quan END) as quan, 
+			bid.amount + (CASE WHEN back.amt is null THEN 0 ELSE back.amt END) as amount,
+		    co.flag_fit,  
+		    co.quan_cg,   
+		    bu.name, 
+		    co.days 
+		from 
+			bl_ip_dt_b bid INNER JOIN bd_item bi ON bid.pk_item = bi.pk_item
+		    LEFT JOIN cn_order co ON bid.pk_cnord = co.pk_cnord and co.eu_status_ord != '9' and co.del_flag = '0'
+		    INNER JOIN pi_master pm ON bid.pk_pi = pm.pk_pi
+		    INNER JOIN ins_pv ip ON bid.pk_pv = ip.pk_pv   
+		    LEFT JOIN bd_unit bu ON co.pk_unit_cg = bu.pk_unit   
+  			LEFT JOIN bd_pd bp ON bid.pk_pd = bp.pk_pd 
+  			left outer join  
+				(select sum(quan) quan,sum(amount) amt,pk_cgip_back from bl_ip_dt where flag_settle = 0 and flag_pd = 0 and  quan &lt; 0  and pk_pv = #{pkPv,jdbcType=VARCHAR} group by pk_cgip_back) 
+				back on bid.pk_cgip=back.pk_cgip_back 
+		where 
+			ip.del_flag = '0' 
+			and  bid.del_flag = '0' 
+			and  bid.flag_settle = '0' 
+			and bid.pk_pv = #{pkPv,jdbcType=VARCHAR} 
+			and bid.pk_cgip_back is null
+			and bid.flag_pd = 0
+			and bid.date_hap>=to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyy/mm/dd hh24:mi:ss')
+			and bid.date_hap&lt;=to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyy/mm/dd hh24:mi:ss')
+			) temp where temp.quan > 0 
+	</select>
+	
+
+	    
+    <select id="getInsStList" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybSt">
+   		select * from ins_st
+		where  JSRQ >= to_date(#{ksrq,jdbcType=VARCHAR}, 'yyyymmddhh24miss')    
+		and JSRQ &lt;= to_date(#{zzrq,jdbcType=VARCHAR}, 'yyyymmddhh24miss')    
+    </select>
+    
+    <select id="getInsSt" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybSt">
+    	select *
+    	from ins_st 
+    	where pk_settle = #{pkSettle,jdbcType=VARCHAR}
+    </select>
+	    
+    <select id="getChargeDetails2" parameterType="java.util.Map" resultType="java.util.Map">
+		select * from (select
+			bid.pk_cgip,
+		    ip.JZJLH,
+		    pm.code_ip,
+		    bid.date_cg, 
+		    bid.flag_pd, 
+			bi.code,
+			bid.pk_pd,
+			bp.code code_wp,
+			bid.name_cg, 
+			bp.name name_wp,
+			bid.spec, 
+		    co.code_supply,
+		    co.dosage, 
+		 	co.eu_always,
+			bid.price, 
+			bid.quan + (CASE WHEN back.quan is null THEN 0 ELSE back.quan END) as quan, 
+			bid.amount + (CASE WHEN back.amt is null THEN 0 ELSE back.amt END) as amount,
+		    co.flag_fit,  
+		    co.quan_cg,   
+		    bu.name, 
+		    co.days,
+		    bid.ratio_disc
+		from 
+			bl_ip_dt bid INNER JOIN bd_item bi ON bid.pk_item = bi.pk_item
+		    LEFT JOIN cn_order co ON bid.pk_cnord = co.pk_cnord and co.eu_status_ord != '9' and co.del_flag = '0'
+		    INNER JOIN pi_master pm ON bid.pk_pi = pm.pk_pi
+		    INNER JOIN ins_pv ip ON bid.pk_pv = ip.pk_pv   
+		    LEFT JOIN bd_unit bu ON co.pk_unit_cg = bu.pk_unit   
+  			LEFT JOIN bd_pd bp ON bid.pk_pd = bp.pk_pd
+  			left outer join  
+				(select sum(quan) quan,sum(amount) amt,pk_cgip_back from bl_ip_dt where  flag_pd = 0 and  quan &lt; 0  and pk_settle = #{pkSettle,jdbcType=VARCHAR}  group by pk_cgip_back) 
+				back on bid.pk_cgip=back.pk_cgip_back 
+		where 
+			ip.del_flag = '0' 
+			and  
+			bid.del_flag = '0' 
+			and bid.pk_cgip_back is null
+			and bid.flag_pd = 0
+			and bid.pk_settle = #{pkSettle,jdbcType=VARCHAR} 
+			) temp where temp.quan > 0
+	</select>
+	
+	<select id="getChargeDetailsYp2" parameterType="java.util.Map" resultType="java.util.Map">
+		select * from (select
+			bid.pk_cgip,
+		    ip.JZJLH,
+		    pm.code_ip,
+		    bid.date_cg, 
+		    bid.flag_pd, 
+			bi.code,
+			bid.pk_pd,
+			bp.code code_wp,
+			bid.name_cg, 
+			bp.name name_wp,
+			bid.spec, 
+		    co.code_supply,
+		    co.dosage, 
+		 	co.eu_always,
+			bid.price, 
+			bid.quan + (CASE WHEN back.quan is null THEN 0 ELSE back.quan END) as quan, 
+			bid.amount + (CASE WHEN back.amt is null THEN 0 ELSE back.amt END) as amount,
+		    co.flag_fit,  
+		    co.quan_cg,   
+		    bu.name, 
+		    co.days,
+		    bid.ratio_disc
+		from 
+			bl_ip_dt bid INNER JOIN bd_pd bi ON bid.pk_item = bi.pk_pd
+		    LEFT JOIN cn_order co ON bid.pk_cnord = co.pk_cnord and co.eu_status_ord != '9' and co.del_flag = '0'
+		    INNER JOIN pi_master pm ON bid.pk_pi = pm.pk_pi
+		    INNER JOIN ins_pv ip ON bid.pk_pv = ip.pk_pv   
+		    LEFT JOIN bd_unit bu ON co.pk_unit_cg = bu.pk_unit   
+  			LEFT JOIN bd_pd bp ON bid.pk_pd = bp.pk_pd
+  			left outer join  
+				(select sum(quan) quan,sum(amount) amt,pk_cgip_back from bl_ip_dt where  flag_pd = 0 and  quan &lt; 0  and pk_settle = #{pkSettle,jdbcType=VARCHAR}  group by pk_cgip_back) 
+				back on bid.pk_cgip=back.pk_cgip_back 
+		where 
+			ip.del_flag = '0' 
+			and  
+			bid.del_flag = '0' 
+			and bid.pk_cgip_back is null
+			and bid.flag_pd = 0
+			and bid.pk_settle = #{pkSettle,jdbcType=VARCHAR} 
+			) temp where temp.quan > 0
+	</select>
+</mapper>

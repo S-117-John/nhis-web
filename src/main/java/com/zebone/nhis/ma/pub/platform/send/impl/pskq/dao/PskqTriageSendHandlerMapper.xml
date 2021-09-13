@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ma.pub.platform.send.impl.pskq.dao.PskqTriageSendHandlerMapper">
+
+    <select id="getUserInfo" resultType="com.zebone.nhis.ma.pub.platform.send.impl.pskq.vo.TriageUserVo" parameterType="map">
+        select ou.PK_USER pk_doctor,ou.NAME_USER name_doctor
+             ,TRUNC(months_between(${now} , nvl(emp.BIRTHDAY,sysdate))/12) AS age
+             ,(case when emp.DT_SEX ='02' then '1' else '0' end) gender,nvl(doc.NAME,'Doctor') job_title
+             ,ou.CODE_USER login_name,ou.PWD password,dept.PK_DEPT pk_dept_belong,nvl(emp.FLAG_ACTIVE,'1') is_actived
+        from BD_OU_EMPLOYEE emp inner join BD_OU_USER ou on emp.PK_EMP=ou.PK_EMP
+        inner join  bd_ou_empjob empjob on empjob.pk_emp = emp.pk_emp
+        inner join bd_ou_dept dept on empjob.pk_dept = dept.pk_dept
+        left join BD_DEFDOC doc on empjob.JOBNAME=doc.CODE and doc.CODE_DEFDOCLIST='010301' and doc.DEL_FLAG='0'
+        where ou.PK_USER=#{pkUser,jdbcType=VARCHAR}
+    </select>
+
+    <select id="getUserDept" resultType="DynaBean">
+        select distinct *
+        from (
+                 select ud.PK_DEPT, ou.PK_USER pk_doctor
+                 from BD_OU_USRGRP_DEPT ud
+                        inner join bd_ou_user ou on ud.PK_USRGRP = ou.PK_USRGRP
+                 where ou.PK_USER =#{pkUser,jdbcType=VARCHAR}
+                 union
+                 select ud.PK_DEPT,ug.PK_USER pk_doctor from bd_ou_user_usrgrp ug
+                     inner join BD_OU_USRGRP_DEPT ud on ud.PK_USRGRP=ug.PK_USRGRP
+                 where del_flag='0' and ug.pk_user = #{pkUser,jdbcType=VARCHAR}
+             ) tmp
+    </select>
+
+    <select id="getRegInfo" resultType="com.zebone.nhis.ma.pub.platform.send.impl.pskq.vo.TriageRegVo">
+        select pv.pk_pv pk_registered,pv.PK_PI pk_patient,pi.CODE_PI code_patient,pi.NAME_PI name_patient
+             ,'' level_patient,pv.AGE_PV age,(case when pi.DT_SEX ='02' then '1' else '2' end) gender
+             ,to_char(pv.DATE_BEGIN,'yyyyMMddHH24miss') date_registered,pv.PK_DEPT pk_dept_registered,plan.PK_DEPTUNIT pk_clinic_registered
+             ,ou.pk_user pk_docto_registered,'' pk_dept_item_registered
+             ,(case srv.eu_srvtype when '0' then '2' when '1' then '1' when '9' then '3' else '2' end) cate_registered
+             ,pv.CODE_PV card_no,(case when op.PK_PVOP is null then er.TICKETNO else op.TICKETNO end) registered_no
+             ,(case when apv.PK_APPTPV is null then '0' else '1' end) is_pre_registered
+             ,hp.NAME medical_insurance,dt.NAME_DATESLOT flag_sch,pi.CODE_OP visiting_no,'' cateDept
+             ,to_char((case when appt.PK_SCHAPPT is not null then appt.BEGIN_TIME else null end),'yyyyMMddHH24miss') pre_begin_time
+             ,to_char((case when appt.PK_SCHAPPT is not null then appt.END_TIME else null end),'yyyyMMddHH24miss') pre_end_time
+             ,nvl(pi.ID_NO,'x') id_no
+        from PV_ENCOUNTER pv
+                 inner join pi_master pi on pv.PK_PI=pi.PK_PI
+                 inner join BD_HP hp on pv.PK_INSU=hp.PK_HP and hp.DEL_FLAG='0'
+                 left join PV_OP op on pv.PK_PV=op.PK_PV and pv.EU_PVTYPE in('1','4')
+                 left join PV_ER er on pv.PK_PV=er.PK_PV and pv.EU_PVTYPE='2'
+                 left join SCH_SRV srv on srv.PK_SCHSRV in(op.PK_SCHSRV,er.PK_SCHSRV)
+                 left join sch_plan plan on plan.PK_schres in(op.PK_res,er.PK_res)
+                 left join SCH_APPT appt on appt.PK_SCHAPPT=op.PK_SCHAPPT
+                 left join SCH_APPT_PV apv on pv.PK_PV=apv.PK_PV
+                 left join BD_CODE_DATESLOT dt on dt.PK_DATESLOT in(op.PK_DATESLOT,er.PK_DATESLOT)
+                 left join BD_OU_USER ou on ou.pk_emp in (op.PK_EMP_PV ,er.PK_EMP_PV)
+        where pv.PK_PV=#{pkPv,jdbcType=VARCHAR}
+    </select>
+</mapper>

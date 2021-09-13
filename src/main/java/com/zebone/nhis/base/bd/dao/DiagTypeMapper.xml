@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.DiagTypeMapper">
+<select id="isQuote" resultType="int" parameterType="java.util.Map">
+select count(1) 
+  from pv_diag pd
+       inner join bd_term_diag diag on pd.pk_diag=diag.pk_diag 
+ where diag.diagcode like #{code,jdbcType=VARCHAR}||'%' and pd.dt_treatway = #{treatway,jdbcType=VARCHAR}
+</select>
+
+<select id="qryDiagtreatway" resultType="com.zebone.nhis.common.module.base.bd.code.BdTermDiagTreatway" parameterType="java.util.Map">
+	select tw.pk_diagtreatway, <!-- 主键 -->
+       tw.pk_org,          <!-- 所属机构 -->
+       tw.code_diag,       <!-- 诊断编码 -->
+       tw.name_diag,       <!-- 诊断名称 -->
+       tw.dt_treatway,     <!-- 诊治方式 -->
+       tw.dt_hppsntype,    <!-- 人员类别 -->
+       tw.eu_type,         <!-- 病种类型 -->
+       tw.code_op,         <!-- 诊治编码 -->
+       tw.name_op,         <!-- 诊治名称 -->
+       tw.val,             <!-- 分值 -->
+       tw.rate,            <!-- 费率 -->
+       tw.amount,          <!-- 预测费用 -->
+       tw.note             <!-- 备注 -->
+  from bd_term_diag_treatway tw
+ where (tw.pk_org=#{pkOrg} or tw.pk_org=#{pkOrg2}) 
+ 		<if test="codeDiag != null and codeDiag !='' ">
+ 			and tw.code_diag like '${codeDiag}%'
+ 		</if>
+ 		
+ 		<if test="nameDiag != null and nameDiag !='' ">
+ 			and tw.name_diag like '%${nameDiag}%'
+ 		</if>
+        
+        <if test="dtTreatway != null and dtTreatway !='' ">
+ 			and tw.dt_treatway=#{dtTreatway}
+ 		</if>
+ 		
+ 		<if test="euType != null and euType !='' ">
+ 			and  tw.eu_type = #{euType}
+ 		</if>
+ 		
+ 		<if test="nameOp != null and nameOp !='' ">
+ 			and tw.name_op like '%${nameOp}%'
+ 		</if>
+ 		
+ 		<if test="dtHppsntype != null and dtHppsntype !='' ">
+ 			and tw.dt_hppsntype=#{dtHppsntype}
+ 		</if>
+</select>
+
+<delete id="delTermDiagTreatway" parameterType="java.lang.String">
+	delete from bd_term_diag_treatway where pk_diagtreatway=#{pkDiagtreatway}
+</delete>
+
+	<update id="updateByPk" parameterType="com.zebone.nhis.common.module.base.bd.code.BdTermDiagTreatway">
+			update bd_term_diag_treatway
+			<set>
+				<if test="note != null">
+					NOTE = #{note},
+				</if>
+				<if test="modifier != null">
+					MODIFIER = #{modifier},
+				</if>
+				<if test="dtHppsntype != null">
+					DT_HPPSNTYPE = #{dtHppsntype},
+				</if>
+				<if test="euType != null">
+					EU_TYPE = #{euType},
+				</if>
+				<if test="codeOp != null">
+					CODE_OP = #{codeOp},
+				</if>
+				<if test="nameOp != null">
+					NAME_OP = #{nameOp},
+				</if>
+				<if test="rate != null">
+					RATE = #{rate},
+				</if>
+				<if test="amount != null">
+					AMOUNT = #{amount},
+				</if>
+				<if test="modityTime != null">
+					MODITY_TIME = #{modityTime},
+				</if>
+				<if test="ts != null">
+					TS = #{ts}
+				</if>
+			</set>
+                where pk_diagtreatway = #{pkDiagtreatway}
+	</update>
+
+
+</mapper>

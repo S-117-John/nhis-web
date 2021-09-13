@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.compay.pub.dao.MedicalInsuranceMapper">
+    <select id="selectCommonMedical" resultType="java.util.Map" 	
+    		parameterType="com.zebone.nhis.compay.pub.vo.InsCommonMedical" statementType="STATEMENT">
+        SELECT
+            *
+        FROM
+             ${tableName}
+        WHERE            
+           1 = 1 
+        <if test=" appendWhere != null and appendWhere != ''">
+				and  ${appendWhere}
+		</if> 
+    </select>
+    <select id="getCodeiP" resultType="java.lang.String">
+       select min(CODE_IP) code_ip
+       from (
+         select pv.PK_PV, PK_PI, EU_PVTYPE, FLAG_CANCEL, pv.NAME_PI
+         from PV_ENCOUNTER pv
+         where not exists(select 1 from PV_ENCOUNTER pv1 where pv1.PK_PI = pv.PK_PI and pv1.FLAG_CANCEL = '0')
+         group by pv.PK_PV, PK_PI, EU_PVTYPE, FLAG_CANCEL, pv.NAME_PI
+         having EU_PVTYPE = '3'
+            and FLAG_CANCEL = '1') A
+         inner join PV_IP ip on A.PK_PV = ip.PK_PV
+         inner join PI_MASTER pi on pi.PK_PI = A.PK_PI
+       where IP_TIMES = '1'
+	</select>
+	
+	<update id="updatrPiMaster" parameterType="com.zebone.nhis.common.module.pi.PiMaster" >
+	  update pi_master
+	  <set>
+	    <if test=" insurNo != null and insurNo != ''">
+	       INSUR_NO = #{insurNo,jdbcType=VARCHAR}
+	    </if>
+	    <if test=" addrcodeBirth != null and addrcodeBirth != ''">
+	     ,   ADDRCODE_BIRTH = #{addrcodeBirth,jdbcType=VARCHAR}
+	    </if>
+	    <if test=" addrBirth != null and addrBirth != ''">
+	      ,  ADDR_BIRTH = #{addrBirth,jdbcType=VARCHAR}
+	    </if>
+	    <if test=" addrcodeOrigin != null and addrcodeOrigin != ''">
+	      ,  ADDRCODE_ORIGIN = #{addrcodeOrigin,jdbcType=VARCHAR}
+	    </if>
+	    <if test=" addrOrigin != null and addrOrigin != ''">
+	      ,  ADDR_ORIGIN = #{addrOrigin,jdbcType=VARCHAR}
+	    </if>
+	    <if test=" addrcodeRegi != null and addrcodeRegi != ''">
+	       , ADDRCODE_REGI = #{addrcodeRegi,jdbcType=VARCHAR}
+	    </if>
+	    <if test=" addrRegiDt != null and addrRegiDt != ''">
+	       , ADDR_REGI_DT = #{addrRegiDt,jdbcType=VARCHAR}
+	    </if>
+	    <if test=" postcodeRegi != null and postcodeRegi != ''">
+	       , POSTCODE_REGI = #{postcodeRegi,jdbcType=VARCHAR}
+	    </if>
+	    <if test=" addrcodeCur != null and addrcodeCur != ''">
+	      , ADDRCODE_CUR = #{addrcodeCur,jdbcType=VARCHAR}
+	    </if>
+	    <if test=" addrCur != null and addrCur != ''">
+	      ,  ADDR_CUR = #{addrCur,jdbcType=VARCHAR}
+	    </if>
+	    <if test=" addrCurDt != null and addrCurDt != ''">
+	      , ADDR_CUR_DT = #{addrCurDt,jdbcType=VARCHAR}
+	    </if>
+	    <if test=" postcodeCur != null and postcodeCur != ''">
+	      ,  POSTCODE_CUR = #{postcodeCur,jdbcType=VARCHAR}
+	    </if>
+	    <if test=" postcodeWork != null and postcodeWork != ''">
+	     , POSTCODE_WORK = #{postcodeWork,jdbcType=VARCHAR}
+	    </if>
+		  <if test=" dtSex != null and dtSex != ''">
+			  , DT_SEX = #{dtSex,jdbcType=VARCHAR}
+		  </if>
+		  <if test=" namePi != null and namePi != ''">
+			  , NAME_Pi = #{namePi,jdbcType=VARCHAR}
+		  </if>
+	  </set>
+	  where del_flag = '0' and pk_pi = #{pkPi,jdbcType=VARCHAR}
+	</update>
+	
+</mapper>

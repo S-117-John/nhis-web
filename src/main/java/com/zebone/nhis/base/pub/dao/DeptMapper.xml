@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.base.pub.dao.DeptMapper">
+    <select id="getDeptInfos" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.base.ou.BdOuDept">
+        select *
+        from bd_ou_dept
+        where 1=1 <!-- del_flag = '0'  -->
+        <if test="pkOrg !=null and pkOrg != ''">
+            and pk_org = #{pkOrg,jdbcType=CHAR}
+        </if>
+        <if test="dtDepttype !=null and dtDepttype != ''">
+            and ( dt_depttype = #{dtDepttype,jdbcType=VARCHAR}
+            <if test=' "1"==flagContentCF '>
+                or dt_depttype ='0310'
+            </if>
+            )
+        </if>
+        <if test="pkDept !=null and pkDept != ''">
+            and pk_dept = #{pkDept,jdbcType=CHAR}
+        </if>
+        <if test="flagActive!=null and flagActive!=''">
+            and flag_active = #{flagActive,jdbcType=VARCHAR}
+        </if>
+        <if test="flagOp!=null and flagOp!=''">
+            and flag_op = #{flagOp,jdbcType=VARCHAR}
+        </if>
+        <if test="flagIp!=null and flagIp!=''">
+            and flag_ip = #{flagIp,jdbcType=VARCHAR}
+        </if>
+        <if test="delFlag !=null and delFlag != ''">
+            and del_flag = #{delFlag,jdbcType=CHAR}
+        </if>
+        order by code_dept
+    </select>
+    <select id="getDeptAndTypeInfos" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.common.module.base.ou.BdOuDept">
+        select distinct dept.*
+        from bd_ou_dept dept
+        left join bd_ou_dept_type type on dept.pk_dept = type.pk_dept
+        where 1=1  <!-- dept.del_flag = '0'  -->
+        <if test="pkOrg !=null and pkOrg != ''">
+            and dept.pk_org = #{pkOrg,jdbcType=CHAR}
+        </if>
+        <if test="dtDepttype !=null and dtDepttype != ''">
+            and (
+            type.dt_depttype = #{dtDepttype,jdbcType=VARCHAR}
+            <if test=' "1"==flagContentCF '>
+                or type.dt_depttype ='0310'
+            </if>
+            )
+        </if>
+        <if test="pkDept !=null and pkDept != ''">
+            and dept.pk_dept = #{pkDept,jdbcType=CHAR}
+        </if>
+        <if test="flagActive!=null and flagActive!=''">
+            and dept.flag_active = #{flagActive,jdbcType=VARCHAR}
+        </if>
+        <if test="flagOp!=null and flagOp!=''">
+            and dept.flag_op = #{flagOp,jdbcType=VARCHAR}
+        </if>
+        <if test="flagIp!=null and flagIp!=''">
+            and dept.flag_ip = #{flagIp,jdbcType=VARCHAR}
+        </if>
+        <if test="delFlag !=null and delFlag != ''">
+            and dept.del_flag = #{delFlag,jdbcType=CHAR}
+        </if>
+        order by dept.code_dept
+    </select>
+    <select id="getCountDept" parameterType="java.util.Map" resultType="java.lang.Integer">
+        SELECT
+        COUNT (1)
+        FROM
+        BD_OU_USRGRP ug
+        LEFT JOIN BD_OU_USRGRP_DEPT ud ON ud.pk_usrgrp = ug.pk_usrgrp
+        LEFT JOIN BD_OU_DEPT od ON od.pk_dept = ud.pk_dept
+        WHERE 1=1
+        <if test="pkDept !=null and pkDept != ''">
+            and od.pk_dept =#{pkDept,jdbcType=CHAR}
+        </if>
+    </select>
+    <select id="queryDeptNsList" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.common.module.base.ou.BdOuDept">
+        select dept.*
+        from bd_ou_dept dept
+        where 1=1  <!-- dept.del_flag = '0'  -->
+        <if test="pkOrg !=null and pkOrg != ''">
+            and dept.pk_org = #{pkOrg,jdbcType=CHAR}
+        </if>
+        and dept.DT_DEPTTYPE='02' and dept.del_flag='0'
+        order by dept.code_dept
+    </select>
+
+    <!-- 根据主键查询科室 -->
+    <select id="qryByPK" resultType="com.zebone.nhis.common.module.base.ou.BdOuDept">
+        select PK_DEPT,
+               CODE_DEPT,
+               NAME_DEPT,
+               PK_FATHER,
+               EU_LEVEL,
+               DEPT_TYPE,
+               SHORTNAME,
+               FLAG_ACTIVE,
+               DT_DEPTTYPE,
+               BEDNUM,
+               BEDNUM_OPEN,
+               NAME_PLACE,
+               DEPT_DESC,
+               SORTNO,
+               FLAG_OP,
+               FLAG_ER,
+               FLAG_IP,
+               FLAG_PE,
+               FLAG_HM,
+               NOTE,
+               PY_CODE,
+               D_CODE,
+               TELNO_DEPT,
+               DT_STDEPTTYPE,
+               DT_ACCTDEPT,
+               PK_ORGAREA,
+               ID_MASTER,
+               DT_MEDICALTYPE,
+               DT_BUILDING,
+               MODIFIER,
+               MODITY_TIME,
+               CREATE_TIME,
+               PK_ORG,
+               CREATOR,
+               TS,
+               DEL_FLAG
+        from BD_OU_DEPT
+        where PK_DEPT = #{pkDept,jdbcType=VARCHAR}
+    </select>
+
+
+</mapper>

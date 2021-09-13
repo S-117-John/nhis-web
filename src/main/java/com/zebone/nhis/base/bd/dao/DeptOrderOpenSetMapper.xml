@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.DeptOrderOpenSetMapper">
+
+	<select id="qryCourt" parameterType="java.lang.String" resultType="DynaBean">
+		select area.pk_orgarea,
+		     area.code_area,
+		     area.name_area
+		from bd_ou_org_area area
+		where area.pk_org=#{pkOrg} 
+		order by area.code_area
+	</select>
+	
+	<select id="qryCourtDetail" parameterType="java.lang.String" resultType="DynaBean">
+		select atd.pk_ordatd,
+		      atd.pk_orgarea,
+		      atd.pk_ord,
+		      atd.eu_type,
+		      ord.code,
+		      ord.name,
+		      ord.spec,
+		      e.name code_ordtype,
+		      ord.note,
+		      ord.spcode  
+		 from bd_ord ord 
+		 inner join bd_ord_atd atd on ord.pk_ord=atd.pk_ord
+		 inner join bd_ordtype e on e.pk_ordtype = ord.pk_ordtype
+		 where atd.eu_type='0' and atd.pk_orgarea=#{pkOrgarea} 
+		 order by atd.create_time
+	</select>
+	
+	<select id="qryDept" parameterType="java.lang.String" resultType="DynaBean">
+		select dept.pk_dept,
+		     dept.code_dept,
+		     dept.name_dept,
+			 dept.pk_father,
+		     sum(case when atd.pk_dept is null then 0 else 1 end ) count 
+		from bd_ou_dept dept
+		left outer join bd_ord_atd atd on dept.pk_dept=atd.pk_dept
+		where dept.pk_org=#{pkOrg}
+		group by dept.pk_dept,
+				 dept.code_dept,
+				 dept.name_dept,
+				 dept.pk_father 
+	    order by dept.code_dept
+	</select>
+	
+	<select id="qryDeptDetail" parameterType="java.lang.String" resultType="DynaBean">
+		select atd.pk_ordatd,
+		      atd.pk_dept,
+		      atd.pk_ord,
+		      atd.eu_type,
+		      ord.code,
+		      ord.name,
+		      ord.spec,
+		      e.name code_ordtype,
+		      ord.note,
+		      ord.spcode  
+		 from bd_ord ord 
+		 inner join bd_ord_atd atd on ord.pk_ord=atd.pk_ord
+		 inner join bd_ordtype e on e.pk_ordtype = ord.pk_ordtype
+		 where atd.eu_type='1' and atd.pk_dept=#{pkDept} 
+		 order by atd.create_time
+	</select>
+	
+	<select id="qryOrdtype" parameterType="java.lang.String" resultType="DynaBean">
+		select 
+			e.pk_ordtype,
+			e.pk_parent,
+			e.code,
+			e.name
+		from bd_ordtype e  
+		left join bd_ord d on e.pk_ordtype = d.pk_ordtype 
+		where d.flag_pd != '1'
+		group by e.pk_ordtype,
+				 e.pk_parent,
+				 e.code,
+				 e.name 
+		order by e.code
+	</select>
+	
+	<select id="qryImportList" parameterType="java.util.Map" resultType="DynaBean">
+		 select ord.pk_ord,       
+		      ord.code,         
+		      ord.name,         
+		      ord.spec,         
+		      ord.code_ordtype, 
+		      ord.spcode,       
+		      ord.note,
+		      e.name typename  
+		 from bd_ord ord
+		      inner join bd_ord_org oo on ord.pk_ord = oo.pk_ord
+		      inner join bd_ordtype e on e.pk_ordtype = ord.pk_ordtype
+		 where oo.pk_org = #{pkOrg} 
+		       and ord.code_ordtype like '${codeOrdtype}%'   
+		       and not exists 
+		       		(select 1 from bd_ord_atd atd 
+	                 	where oo.pk_ord = atd.pk_ord                         
+                        <if test="pkDept != null and pkDept !='' ">
+                        	 and (atd.eu_type = #{euType} and atd.pk_dept = #{pkDept})
+                      	</if>
+                      	<if test="pkOrgarea != null and pkOrgarea !='' ">
+                        	 and (atd.eu_type = #{euType} and atd.pk_orgarea = #{pkOrgarea})
+                      	</if>  	                    
+                    )
+	</select>
+
+	<select id="findOrderList" parameterType="java.util.Map" resultType="DynaBean">
+		select atd.pk_ordatd,
+		      atd.pk_dept,
+		      atd.pk_orgarea,
+		      atd.pk_ord,
+		      atd.eu_type,
+		      ord.code,
+		      ord.name,
+		      ord.spec,
+		      e.name code_ordtype,
+		      ord.note,
+		      ord.spcode
+		 from bd_ord ord
+		 inner join bd_ord_atd atd on ord.pk_ord=atd.pk_ord
+		 inner join bd_ordtype e on e.pk_ordtype = ord.pk_ordtype
+		 where atd.eu_type= #{euType}
+		 <if test="orderName != null and orderName != ''">
+			 and ord.NAME like '%' || #{orderName,jdbcType=VARCHAR} || '%'
+		 </if>
+		<if test="spName != null and spName != ''">
+			and ord.spcode like  '%' || #{spName,jdbcType=VARCHAR} || '%'
+		</if>
+		 order by atd.create_time
+	</select>
+
+	<select id="qryDeptFather" parameterType="java.util.Map" resultType="DynaBean">
+
+		<choose>
+			<when test="dbType == 'sqlserver'">
+
+				with subqry(PK_DEPT) as (
+				select PK_DEPT from BD_OU_DEPT where PK_DEPT = #{pkDept,jdbcType=VARCHAR}
+				union all
+				select bd.PK_DEPT from BD_OU_DEPT bd,subqry where bd.PK_FATHER = subqry.PK_DEPT
+				)
+
+				select atd.pk_ordatd,
+				atd.pk_dept,
+				atd.pk_ord,
+				atd.eu_type,
+				ord.code,
+				ord.name,
+				ord.spec,
+				e.name code_ordtype,
+				ord.note,
+				ord.spcode
+				from bd_ord ord ,(select* from subqry) a,bd_ord_atd atd,bd_ordtype  e
+				where atd.eu_type='1' and atd.pk_dept=a.PK_DEPT and ord.pk_ord=atd.pk_ord and e.pk_ordtype = ord.pk_ordtype
+				order by atd.create_time
+			</when>
+			<otherwise>
+				select atd.pk_ordatd,
+				atd.pk_dept,
+				atd.pk_ord,
+				atd.eu_type,
+				ord.code,
+				ord.name,
+				ord.spec,
+				e.name code_ordtype,
+				ord.note,
+				ord.spcode
+				from bd_ord ord ,(select t.pk_dept,t.NAME_DEPT from bd_ou_dept t
+				start with t.pk_dept = #{pkDept,jdbcType=VARCHAR}
+				connect by PRIOR t.pk_dept = t.pk_father) a,bd_ord_atd atd,bd_ordtype  e
+				where atd.eu_type='1' and atd.pk_dept=a.PK_DEPT and ord.pk_ord=atd.pk_ord and e.pk_ordtype = ord.pk_ordtype
+				order by atd.create_time
+			</otherwise>
+		</choose>
+
+	</select>
+</mapper>

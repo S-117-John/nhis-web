@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.material.dao.MtlPdCcMapper">
+
+	<!-- 查询结账记录表 -->
+	<select id="getPdCcList" parameterType="java.util.Map" resultType="DynaBean">
+	    select * from pd_cc cc
+	     where 1=1
+		   and pk_org = #{pkOrg,jdbcType=VARCHAR}
+	       and pk_store = #{pkStore,jdbcType=VARCHAR}
+	       and exists (select 1 from bd_pd pd
+	                    inner join pd_cc_detail dt on dt.pk_pd = pd.pk_pd
+	                    where dt.pk_pdcc = cc.pk_pdcc and pd.dt_pdtype like '1%')
+	     order by cc.month_fin desc
+	</select>
+
+	<!-- 根据库存结账主键查询库存结账信息 -->
+	<select id="getPdCcById" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.common.module.scm.st.PdCc">
+		select * from pd_cc 
+		 where del_flag = '0'
+		   and pk_pdcc = #{pkPdcc,jdbcType=VARCHAR} 
+		   and exists (select 1 from bd_pd pd
+	                    inner join pd_cc_detail dt on dt.pk_pd = pd.pk_pd
+	                    where dt.pk_pdcc = pd_cc.pk_pdcc and pd.dt_pdtype like '1%')
+	</select>
+
+	<!-- 根据库存结账主键查询库存结账明细列表 -->
+	<select id="getPdCcDetailListById" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.common.module.scm.st.PdCcDetail">
+		select pcd.*,
+		       pd.spec,
+		       pd.pk_factory
+		  from pd_cc_detail pcd
+		inner join bd_pd pd on pd.pk_pd = pcd.pk_pd and pd.del_flag = '0'
+		where pcd.pk_pdcc = #{pkPdcc,jdbcType=VARCHAR} 
+		  and pcd.del_flag = '0'
+		  and pd.dt_pdtype like '1%'
+		order by pcd.pk_pd
+	</select>
+
+	<!-- 获取统计时间段内物品基本信息 -->
+	<select id="getPdBaseParamList" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.scm.material.vo.MtlPdBaseParam">
+		select distinct 
+		       dt.pk_pd, 
+		       dt.pk_unit as pk_unit_pack, 
+		       dt.pack_size
+		  from pd_cc_detail dt
+		 inner join bd_pd pd on pd.pk_pd = dt.pk_pd and pd.del_flag = '0'
+		 inner join pd_cc cc on cc.pk_pdcc = dt.pk_pdcc and cc.del_flag = '0'
+		 where dt.del_flag = '0'
+		   and cc.pk_store = #{pkStore,jdbcType=VARCHAR} 
+		   and cc.month_fin = #{monthFinLast,jdbcType=VARCHAR} 
+		   and pd.dt_pdtype like '1%'
+		union
+		select distinct 
+		       dt.pk_pd,
+		       dt.pk_unit_pack,
+		       dt.pack_size
+		  from pd_st_detail dt
+		 inner join bd_pd pd on pd.pk_pd = dt.pk_pd and pd.del_flag = '0'
+		 inner join pd_st st on dt.pk_pdst=st.pk_pdst and st.del_flag = '0'
+		 where dt.del_flag = '0'
+		   and pd.dt_pdtype like '1%'
+		   and st.pk_store_st = #{pkStore,jdbcType=VARCHAR}
+		   and st.date_chk &gt;= to_date(#{dateBeginStr,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+		   and st.date_chk &lt;= to_date(#{dateEndStr,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+	</select>
+
+</mapper>

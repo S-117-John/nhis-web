@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.ResMapper">
+
+<select id="getBdOuDeptsByOrgDept" resultType="DynaBean" parameterType="java.lang.String">
+	select pk_dept as pk,
+	code_dept as code,
+	name_dept as name,
+	pk_dept as pk_dept_belong 
+	from bd_ou_dept where del_flag = '0' and flag_op = '1' 
+	<if test="pkOrg != null  and  pkOrg != ''">
+	and pk_org like #{pkOrg,jdbcType=VARCHAR}||'%' 
+	</if>
+	<if test="pkDept != null  and  pkDept != ''">
+	and pk_dept = #{pkDept,jdbcType=VARCHAR}
+	</if>
+</select>
+
+<select id="getBdOuEmployeesByOrgDept" resultType="DynaBean" parameterType="java.lang.String">
+	select e.pk_emp as pk,
+	e.code_emp as code,
+	e.name_emp as name,
+	ej.pk_dept as pk_dept_belong 
+	from bd_ou_empjob ej 
+	INNER JOIN bd_ou_employee e on ej.pk_emp = e.pk_emp 
+	INNER JOIN BD_OU_DEPT dept ON dept.PK_DEPT=ej.PK_DEPT
+	where 1=1 
+	AND ej.del_flag = '0' 
+	AND dept.DT_DEPTTYPE='01'<!--临床科室-->
+  	AND dept.FLAG_ACTIVE='1' <!--科室状态启用-->
+	AND e.DT_EMPTYPE='01'<!--医疗人员-->
+	AND FLAG_OP='1'<!-- 门诊使用 -->
+	<if test="pkOrg != null  and  pkOrg != ''">
+	and ej.pk_org = #{pkOrg,jdbcType=VARCHAR}
+	</if>
+	<if test="pkDept != null  and  pkDept != ''">
+	and ej.pk_dept = #{pkDept,jdbcType=VARCHAR}
+	</if>
+</select>
+
+<select id="getBdResOptsByOrgDept" resultType="DynaBean" parameterType="java.lang.String">
+	select pk_opt as pk,
+	code,
+	name,
+	pk_dept as pk_dept_belong 
+	 from bd_res_opt where del_flag = '0' 
+	<if test="pkOrg != null  and  pkOrg != ''">
+	and pk_org like #{pkOrg,jdbcType=VARCHAR}||'%' 
+	</if>
+	<if test="pkDept != null  and  pkDept != ''">
+	and pk_dept = #{pkDept,jdbcType=VARCHAR}
+	</if>
+</select>
+
+<select id="getBdResBedsByOrgDept" resultType="DynaBean" parameterType="java.lang.String">
+	select pk_bed as pk,
+	code,
+	name,
+	pk_dept as pk_dept_belong 
+	 from bd_res_bed where del_flag = '0' 
+	<if test="pkOrg != null  and  pkOrg != ''">
+	and pk_org like #{pkOrg,jdbcType=VARCHAR}||'%' 
+	</if>
+	<if test="pkDept != null  and  pkDept != ''">
+	and pk_dept = #{pkDept,jdbcType=VARCHAR}
+	</if>
+</select>
+
+<select id="getBdResMspsByOrgDept" resultType="DynaBean" parameterType="java.lang.String">
+	select pk_msp as pk,
+	code,
+	name,
+	pk_dept as pk_dept_belong 
+	 from bd_res_msp where del_flag = '0' 
+	<if test="pkOrg != null  and  pkOrg != ''">
+	and pk_org like #{pkOrg,jdbcType=VARCHAR}||'%' 
+	</if>
+	<if test="pkDept != null  and  pkDept != ''">
+	and pk_dept = #{pkDept,jdbcType=VARCHAR}
+	</if>
+</select>
+
+<select id="findAllBeds" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.base.bd.res.BdResBed">
+select * from bd_res_bed where del_flag = '0' and pk_org = #{pkOrg,jdbcType=VARCHAR}
+</select>
+
+<select id="findDeptBeds" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.base.bd.res.BdResBed">
+select * from bd_res_bed where del_flag = '0' and pk_org = #{pkOrg,jdbcType=VARCHAR}  and PK_WARD=#{pkWard,jdbcType=VARCHAR}
+</select>
+
+<select id="findAllDeptUnits" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.base.bd.res.BdDeptUnit">
+select * from bd_dept_unit where del_flag = '0' and pk_org = #{pkOrg,jdbcType=VARCHAR}
+</select>
+
+<!-- 查询待选参数，eu_range应为3 -->
+<select id="getWaitParam" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.base.bd.code.BdSysparamTemp">
+SELECT a.* FROM BD_SYSPARAM_TEMP a
+WHERE a.DEL_FLAG = '0' AND a.EU_RANGE = '3'  
+AND a.PK_PARAMTEMP NOT  IN  
+(SELECT a.PK_PARAMTEMP FROM BD_SYSPARAM_TEMP a,BD_RES_PC_ARGU b 
+ WHERE a.PK_PARAMTEMP = b.PK_ARGU AND b.PK_PC = #{pkPc,jdbcType=VARCHAR} AND b.DEL_FLAG = '0') 
+<if test="name != null  and  name != ''">
+AND a.NAME LIKE '%'||#{name,jdbcType=VARCHAR} ||'%'
+</if>
+</select>
+ 
+
+
+<!-- 查询已选参数 -->
+<select id="getSelectedParam" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.base.bd.code.BdSysparamTemp">
+SELECT a.* FROM BD_SYSPARAM_TEMP a,BD_RES_PC_ARGU b 
+ WHERE a.PK_PARAMTEMP = b.PK_ARGU AND b.PK_PC = #{pkPc,jdbcType=VARCHAR} AND b.DEL_FLAG = '0' 
+ <if test="name != null  and  name != ''">
+  AND a.NAME LIKE '%'||#{name,jdbcType=VARCHAR} ||'%'
+  </if>
+</select>
+
+<select id="getDeptUnit" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.base.bd.res.BdDeptUnit">
+	select du.pk_deptunit,
+       du.code,      
+       du.name,       
+       du.eu_butype,
+       du.note,      
+       du.flag_online,
+       du.flag_open, 
+       du.pk_deptunit_rl,
+       du.cnt_bu,
+       du.pk_dept,
+       du.eu_usecate
+  from bd_dept_unit du
+ where du.pk_dept=#{pkDept} and
+       du.eu_unittype=#{euUnittype} and
+       du.del_flag='0'
+</select>
+
+<select id="getDeptUnitObj" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.base.bd.res.BdDeptUnitObj">
+	select obj.*,
+       dept.code_dept as codeDept,
+       dept.name_dept as nameDept,
+       dept.py_code as pyCode,
+       dept.dt_depttype
+  from bd_dept_unit_obj obj
+       inner join bd_ou_dept dept on obj.pk_dept=dept.pk_dept
+ where obj.pk_deptunit = #{pkDeptunit}
+       <!--and  obj.eu_objtype='0' -->
+       and obj.del_flag='0'
+  <if test="deptName != null  and  deptName != ''">
+  	and dept.name_dept like '%${deptName}%'
+  </if>
+	
+</select>
+<!-- 废弃，不再使用 -->
+<select id="qryOptDept" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.base.ou.BdOuDept">
+	select dept.pk_dept,
+       dept.code_dept,
+       dept.name_dept
+  from bd_ou_dept dept
+ where dept.pk_org=#{pkOrg} and
+       dept.del_flag='0' and
+       dept.flag_op='1' and
+       dept.dt_depttype='01' and
+       dept.flag_active='1'
+	
+</select>
+
+	<select id="getPcDeptByPc" resultType="DynaBean" parameterType="java.lang.String">		
+		SELECT
+			rpd.pk_pcdept,
+			rpd.pk_pc,
+			area.pk_orgarea,
+			area.name_area,
+			pf.pk_qcplatform,
+			pf.name,
+			dept.pk_dept,
+			dept.name_dept 
+		FROM
+			bd_res_pc_dept rpd 
+			left join bd_ou_dept dept ON rpd.pk_dept = dept.pk_dept 
+			left outer join bd_qc_platform pf ON rpd.pk_qcplatform = pf.pk_qcplatform  
+			left outer join bd_ou_org_area area ON pf.pk_orgarea = area.pk_orgarea 
+		WHERE rpd.del_flag = '0' and rpd.pk_pc = #{pkPc}	
+	</select>
+	
+	<select id="qryNotUsePcDept" resultType="DynaBean" parameterType="java.lang.String">		
+		SELECT
+			area.name_area,
+			pf.pk_qcplatform,
+			pf.NAME 
+		FROM 
+			bd_qc_platform pf 
+			INNER JOIN bd_ou_org_area area ON pf.pk_orgarea = area.pk_orgarea 
+		WHERE 
+			pf.pk_org = #{pkOrg} 
+			AND pf.flag_active = '1' 
+			<if test="pkPc != null  and  pkPc != ''">
+				AND NOT EXISTS 
+					( SELECT 1 FROM bd_res_pc_dept pd WHERE pd.del_flag!='1' and pf.pk_qcplatform = pd.pk_qcplatform AND pd.pk_pc = #{pkPc})					
+			</if>
+	</select>
+	
+	<select id="qryAlUsePcDept" resultType="DynaBean" parameterType="java.lang.String">		
+		select distinct
+			  pd.pk_pcdept,
+		      pd.pk_pc,
+		      area.name_area,
+		      pf.pk_qcplatform, 
+		      pf.name 
+		from bd_qc_platform pf 
+		      inner join bd_res_pc_dept pd on pf.pk_qcplatform=pd.pk_qcplatform 
+		      inner join bd_ou_org_area area on pf.pk_orgarea=area.pk_orgarea 
+		where pd.pk_pc = #{pkPc}
+	</select>
+	
+	<select id="qryMaxCode" resultType="java.lang.String" parameterType="java.lang.String">		
+		select
+			max(code) 
+		from
+			bd_res_pc 
+		where 
+			del_flag = '0' 
+			and pk_org = #{pkOrg}
+	</select>
+	
+	<select id="qryClinicSetDept" resultType="DynaBean" parameterType="java.lang.String">		
+		SELECT
+			area.name_area,
+			dept.name_dept,
+			dept.pk_dept,
+			count(du.pk_dept) cnt_du,
+			dept.py_code 
+		FROM
+			bd_ou_dept dept 
+			INNER join bd_ou_org_area area ON dept.pk_orgarea = area.pk_orgarea 
+			left outer join bd_dept_unit du ON dept.pk_dept = du.pk_dept 
+			AND du.eu_unittype = '0' 
+		WHERE 
+			dept.pk_org = #{pkOrg} 
+			AND dept.flag_active = '1' 
+			AND dept.del_flag = '0' 
+			AND ( dept.flag_op = '1' OR dept.flag_er = '1' ) 
+		GROUP BY
+			area.name_area,
+			dept.name_dept,
+		  	dept.pk_dept,
+		  	dept.py_code 
+	</select>
+	
+	<select id="qryClinicSetDeptUnit" resultType="DynaBean" parameterType="java.lang.String">		
+		SELECT 
+			du.* 
+		FROM
+			bd_dept_unit du 
+		WHERE 		
+			du.eu_unittype = '0' 
+			AND du.del_flag = '0' 
+			AND du.pk_dept = #{pkDept} 
+	</select>
+</mapper>

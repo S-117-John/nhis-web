@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.platform.send.impl.syx.dao.SyxPlatFormSendOpMapper">
+	<select id="qryPvAll" parameterType="java.lang.String" resultType="DynaBean">
+		select 
+		pi.pk_pi,
+		pv.code_Pv, 
+		pv.eu_pvtype, 
+		to_char(pv.date_begin,'yyyyMMdd') date_begin, 
+		pi.code_pi, 
+		pi.id_No, 
+		pi.code_op,
+		pi.name_Pi,
+		emp.code_Emp, 
+		emp.name_emp , 
+		pvemp.code_emp code_Emp_pv , 
+		pvemp.name_emp name_Emp_pv , 
+		dept.code_Dept, 
+		dept.name_Dept, 
+		pv.bed_No, 
+		org.code_Org,
+		op.op_Times,
+		hp.name hpName,
+		doc.code_std ,
+		doc.name_std 
+		from PV_ENCOUNTER pv 
+		LEFT JOIN pi_master pi on pv.pk_pi = pi.pk_pi 
+		LEFT JOIN bd_ou_org org on pv.pk_org = org.pk_org 
+		LEFT JOIN bd_ou_dept dept on pv.pk_dept = dept.pk_dept 
+		LEFT JOIN pv_diag diag on diag.pk_pv = pv.pk_pv  
+		LEFT JOIN pv_op op on op.pk_pv = pv.pk_pv  
+		LEFT JOIN bd_hp hp on hp.pk_hp = pv.pk_insu
+		left join sch_emp sch on sch.pk_sch = op.pk_sch
+		LEFT JOIN bd_ou_employee emp on emp.pk_emp = sch.pk_emp
+		LEFT JOIN bd_ou_employee pvemp on pvemp.pk_emp = op.pk_emp_pv
+		LEFT JOIN bd_defdoc doc on doc.code = hp.dt_mdpaytype and doc.code_defdoclist = '040009'
+		where pv.pk_pv = #{pkPv}  
+	</select>
+	<select id="qryPkPv" parameterType="java.lang.String" resultType="java.lang.String">
+		select pk_pv from pv_encounter where ( eu_status = '0' or eu_status = '1') and pk_pi = #{pkPi}
+	</select>
+	
+	<select id="qrySchSchAll" parameterType="java.util.List" resultType="DynaBean">
+	   select  distinct ssch.pk_sch,
+               ssch.creator,
+               semp.cnt_total,
+			   semp.cnt_used,	
+              semp.pk_emp,
+              ssrv.eu_srvtype,
+              employee.idno, 
+              employee.name_emp,
+			  employee.code_emp,
+              employee.dt_emptype,
+			  dept.name_dept,
+			 dept.code_dept,
+			 job.jobname,			 
+			 to_char(sticket.begin_time,'yyyyMMddHH') begin_time, 
+			 to_char(sticket.end_time,'yyyyMMddHH') end_time  
+			from sch_sch ssch 				
+			left join sch_emp semp on semp.pk_sch=ssch.pk_sch
+			left join sch_ticket sticket on sticket.pk_sch = ssch.pk_sch
+			left join sch_srv ssrv on ssrv.pk_schsrv=ssch .pk_schsrv
+			left join bd_ou_employee employee on employee.pk_emp=semp.pk_emp
+			left join bd_ou_empjob job on job.pk_emp = employee.pk_emp
+			left join bd_ou_dept dept on dept.pk_dept = ssch.pk_dept		
+	        where ssch.pk_sch in  				
+            <foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+                  #{item}
+            </foreach>	         
+       
+	</select>
+	
+	<select id="qryDeptAll" parameterType="java.lang.String" resultType="DynaBean">
+	    select code_dept, name_dept from bd_ou_dept where pk_dept = #{pkDept,jdbcType=VARCHAR}
+	</select>	
+	
+    <select id="qryDefDocAll" parameterType="java.lang.String" resultType="DynaBean">
+        select name_std, code_std from bd_defdoc where code =#{jobName} 
+    </select>
+		
+	<select id="qryQueueList" parameterType="java.util.Map" resultType="com.zebone.nhis.ma.pub.platform.syx.vo.OpCall">
+        SELECT
+			que.sortno queueNum,
+			pv.code_pv patientId,
+			pv.name_pi patientName,
+			pvq.date_arr callingTime,
+			CASE
+				pvq.eu_status 
+				WHEN '0' THEN
+				'0' 
+				WHEN '1' THEN
+				'1' 
+				WHEN '8' THEN
+				'2' 
+				WHEN '2' THEN
+				'3' 
+				WHEN '9' THEN
+				'4' 
+			END callingFlag,
+			CASE
+				WHEN ds.code_dateslot = '0101' THEN '2' ELSE '4' 
+			END clinicTime,
+			emp.code_emp doctorCode,
+			emp.name_emp doctorName,
+			title.name title,
+			du.code roomCode,
+			du.name roomName,
+			du.code roomNo,
+			dept.code_dept deptCode,
+			dept.name_dept deptName 
+		FROM
+			pv_que pvq 
+			INNER join bd_qc_que que ON pvq.pk_qcque = que.pk_qcque 
+			INNER join pv_encounter pv ON pvq.pk_pv = pv.pk_pv 
+			INNER join bd_code_dateslot ds ON pvq.pk_dateslot = ds.pk_dateslot 
+			INNER join sch_sch sch ON pvq.pk_sch = sch.pk_sch 
+			INNER join bd_ou_dept dept ON sch.pk_dept = dept.pk_dept 
+			left outer join bd_dept_unit du ON sch.pk_deptunit = du.pk_deptunit AND du.eu_unittype = '0' 
+			left outer join bd_ou_employee emp ON pvq.pk_emp_phy = emp.pk_emp 
+			left outer join bd_ou_empjob job ON emp.pk_emp = job.pk_emp 
+			left outer join bd_defdoc title ON job.jobname = title.code AND title.code_defdoclist = '010301' 
+		WHERE pvq.pk_pv = #{pkPv,jdbcType=VARCHAR} 
+    </select>
+</mapper>

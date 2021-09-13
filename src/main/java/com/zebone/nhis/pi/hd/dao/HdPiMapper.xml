@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pi.hd.dao.HdPiMapper">
+	<select id="queryHdPiByCodePi" parameterType="java.util.Map" resultType="DynaBean">
+		select pi.pk_pi,  
+			pi.code_pi,  
+			pi.name_pi,   
+			pi.dt_sex,    
+			pi.birth_date,
+			pi.id_no,    
+			pi.mobile,   
+			pi.name_rel, 
+			pi.tel_rel,  
+			pi.addr_rel, 
+			pi.dt_blood_abo, 
+			pi.dt_blood_rh, 
+			hd.code_hd,  
+			hd.cnt_week, 
+			hd.dt_hdtype, 
+			hd.date_first,
+			hd.eu_status, 
+			hd.date_death,
+			hd.PK_PIHD 
+		from pi_master pi
+			left outer join pi_hd hd on pi.pk_pi=hd.pk_pi
+			left outer join pi_card card on card.pk_pi=pi.pk_pi and card.del_flag = '0' and card.eu_status = '0'
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test='pkPi!=null and pkPi!=""'>
+				and pi.pk_pi=#{pkPi,jdbcType=VARCHAR}
+			</if>
+			<if test=" codePi != null and  codePi != '' ">
+  				and pi.code_pi=#{codePi,jdbcType=CHAR}
+  			</if>
+  			<if test=" codeHd != null and  codeHd != '' ">
+  				and hd.code_hd=#{codeHd,jdbcType=CHAR}
+  			</if>
+  			<if test=" pkPi != null and  pkPi != '' ">
+  				and pi.pk_pi=#{pkPi,jdbcType=CHAR}
+  			</if>
+  			<if test=" cardNo != null and  cardNo != '' ">
+  				and card.card_no=#{cardNo,jdbcType=CHAR}
+  			</if>
+  			<if test=" idNo != null and  idNo != '' ">
+  				and pi.id_no=#{idNo,jdbcType=CHAR}
+  			</if>
+  			<if test=" namePi != null and  namePi != '' ">
+  				and pi.name_pi=#{namePi,jdbcType=CHAR}
+  			</if>
+		</trim> 
+	</select>
+	<select id="queryHdPi" parameterType="java.util.Map" resultType="DynaBean">
+		select pi.pk_pi,     
+			pi.code_hd,  
+			pm.code_op,  
+			pv.pk_pv,      
+			pv.name_pi,     
+			pv.dt_sex,       
+			pv.age_pv,      
+			pv.pk_insu,     
+			hd.pk_pvhd,     
+			hd.dt_hdtype,   
+			bed.name_bed,   
+			hd.pk_dateslot, 
+			hd.date_begin,   
+			hd.eu_status_hd,
+			pv.eu_pvtype,
+		  	bed.pk_hdbed,
+		  	hd.pk_dept,
+		  	hd.pk_dept_ns,
+	    	hd.pk_emp_hd,
+		  	hd.pk_emp_ns,
+		  	hp.NAME as insu_name,
+		  	dept.NAME_DEPT as dept_ns_name,
+		  	bed.code_bed,
+		  	hd.create_time   
+		from pv_encounter pv
+		inner join pi_hd pi on pv.pk_pi=pi.pk_pi
+		inner join pi_master pm on pm.pk_pi=pv.pk_pi 
+		inner join pv_hd hd on pv.pk_pv=hd.pk_pv
+		inner join bd_res_hdbed bed on hd.pk_hdbed=bed.pk_hdbed
+		inner join bd_hp hp on hp.PK_HP=pv.PK_INSU
+		inner join BD_OU_DEPT dept on dept.PK_DEPT=hd.PK_DEPT_NS
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+		   	pv.PK_ORG=#{pkOrg,jdbcType=CHAR}   
+  		<if test=" pkDeptNs != null and  pkDeptNs != '' ">
+  			and bed.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR} 
+  		</if>
+  		<if test=" euStatusHd != null and  euStatusHd != '' ">
+  			and hd.eu_status_hd = #{euStatusHd,jdbcType=VARCHAR} 
+  		</if>
+  		<if test=" startDate != null ">
+  			and hd.date_begin &gt;= to_date(#{startDate,jdbcType=VARCHAR},'yyyymmddhh24miss')
+  		</if>
+  		<if test=" endDate != null ">
+  			and hd.date_begin &lt;= to_date(#{endDate,jdbcType=VARCHAR},'yyyymmddhh24miss')
+  		</if>
+  		<if test=" namePi != null and  namePi != '' ">
+  			and pv.name_pi like '%${namePi}%'
+  		</if>
+  		<if test=" codeHd != null and  codeHd != '' ">
+  			and pi.code_hd = #{codeHd,jdbcType=VARCHAR}
+  		</if> 
+  		<if test=" codeOp != null and  codeOp != '' ">
+  			and pm.code_op = #{codeOp,jdbcType=VARCHAR}
+  		</if>  		
+		</trim>
+	</select>
+</mapper>

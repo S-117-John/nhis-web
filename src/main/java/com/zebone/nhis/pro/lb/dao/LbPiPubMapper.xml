@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.lb.dao.LbPiPubMapper">
+
+    <select id="queryPiFromOther" parameterType="java.util.Map" resultType="DynaBean">
+        select pi.pk_pi,
+       pi.code_op,
+       pi.code_ip,
+      case when pi.name_pi is not null then pi.name_pi else wpi.NAME  end as name_pi,
+       case when pi.dt_sex is not null then pi.DT_SEX else wpi.DT_SEX end as  dt_sex,
+       case when pi.birth_date is not null then pi.birth_date else wpi.BIRTH_DATE end as  birth_date,
+       case when pi.mobile is  not null then pi.mobile else wpi.PHONE  end as mobile ,
+       hp.pk_hp,
+       pi.dt_idtype,
+       (case  when pi.dt_idtype = '01'and pi.ID_NO is not null then pi.id_no else wpi.ID_NO end) id_no,
+       pi.mcno,
+       pi.insur_no,
+       pi.code_ip,
+       pi.flag_realname,
+       pi.pk_picate,
+       pi.spca_no,
+       pi.sen_no,
+       pi.dt_specunit,
+       pi.addr_cur_dt,
+       pi.dt_source,
+       pi.citizen_no,
+       pi.hic_no,
+       pi.note,
+       pi.addr_cur,
+       pi.name_rel,
+       pi.idno_rel,
+       pi.tel_rel,
+       pi.address,
+       pi.pk_emp,
+       ca.card_no
+from LB_INS_SUZHOUNH_WEB_PI wpi
+         left join PI_MASTER pi on wpi.ID_NO = pi.ID_NO and pi.DT_IDTYPE = '01'
+         left outer join bd_ou_employee emp on pi.pk_emp = emp.pk_emp
+         left outer join pi_insurance hp on pi.pk_pi = hp.pk_pi and hp.del_flag = '0' and hp.flag_def = '1'
+         left join pi_card ca
+                   on pi.pk_pi = ca.pk_pi and ca.DT_CARDTYPE = '01' and ca.EU_STATUS = '0' and ca.FLAG_ACTIVE = '1' and
+                      sysdate >= ca.DATE_BEGIN
+                       and ca.DATE_END >= sysdate
+        where  VIS_CARD_NO=#{visCardNo,jdbcType=VARCHAR}
+    </select>
+    <select id="querySumIpMessage" resultType="DynaBean">
+
+        select un.unInComoe,se.setleAmount ,new.newAdmNum ,lea.leaveNum ,inP.inAum
+        from (
+        select nvl(sum(AMOUNT_PI), 0) unInComoe, 1 as code
+        from BL_IP_DT bl
+        inner join bd_ou_dept bd on bl.pk_dept_app = bd.PK_DEPT
+        where substr(to_char(bl.DATE_HAP, 'yyyy-MM-DD HH24:MI:SS'), 1, 10) like '${date}%'
+        and bd.CODE_DEPT in
+        <foreach collection="listS" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>) un
+        inner join
+        ( select nvl(sum(bl.AMOUNT_PI), 0) setleAmount, 1 as code
+        from BL_IP_DT bl
+        inner join bd_ou_dept bd on bl.pk_dept_app = bd.PK_DEPT
+        inner join bl_settle bls on bl.PK_SETTLE=bls.PK_SETTLE
+        where bl.FLAG_SETTLE = '1'
+        and substr(to_char(bls.DATE_ST, 'yyyy-MM-DD HH24:MI:SS'), 1, 10) like '${date}%'
+        and bd.CODE_DEPT in
+        <foreach collection="listS" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>) se on un.code = se.code
+        inner join
+        (select nvl(count(1), 0) newAdmNum, 1 as code
+        from PV_ENCOUNTER pv
+        inner join BD_OU_DEPT bd on pv.PK_DEPT = bd.PK_DEPT
+        where EU_PVTYPE = '3'
+        and EU_STATUS != '9'
+        and substr(to_char(DATE_BEGIN, 'yyyy-MM-DD HH24:MI:SS'), 1, 10) like '${date}%'
+        and bd.CODE_DEPT in
+        <foreach collection="listS" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>) new on un.code = new.code
+        inner join
+        (select nvl(count(1), 0) leaveNum, 1 as code
+        from PV_ENCOUNTER pv
+        inner join BD_OU_DEPT bd on pv.PK_DEPT = bd.PK_DEPT
+        where EU_PVTYPE = '3'
+        and EU_STATUS != '9'
+        and FLAG_IN = '0'
+        and substr(to_char(DATE_END, 'yyyy-MM-DD HH24:MI:SS'), 1, 10) like '${date}%'
+        and bd.CODE_DEPT in
+        <foreach collection="listS" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>) lea on un.code = lea.code
+        inner join (
+        select nvl(count(1), 0) inAum, 1 as code
+        from PV_ENCOUNTER pv
+        inner join BD_OU_DEPT bd on pv.PK_DEPT = bd.PK_DEPT
+        where EU_PVTYPE = '3'
+        and EU_STATUS != '9'
+        and FLAG_IN = '1'
+        and bd.CODE_DEPT in
+        <foreach collection="listS" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>) inP on un.code = inP.code
+    </select>
+    <select id="querySumOpMessage" resultType="DynaBean">
+
+        select op.opSetleAmount , opS.opSumNum
+        from (
+        select nvl(sum(dt.AMOUNT), 0) opSetleAmount, 1 as code
+        from bl_op_dt dt
+        inner join BL_SETTLE bls on bls.PK_SETTLE = dt.PK_SETTLE
+        inner join BD_OU_DEPT bd on dt.PK_DEPT_APP = bd.PK_DEPT
+        where dt.FLAG_SETTLE = '1'
+        and dt.PK_SETTLE is not null
+        and substr(to_char(bls.DATE_ST, 'yyyy-MM-DD HH24:MI:SS'), 1, 10) like '${date}%'
+        and bd.CODE_DEPT in
+        <foreach collection="listS" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        ) op
+        inner join (
+        select nvl(count(1), 0) opSumNum, 1 as code
+        from PV_ENCOUNTER pv
+        inner join BD_OU_DEPT bd on pv.PK_DEPT = bd.PK_DEPT
+        where EU_PVTYPE &lt;'3' and substr(to_char(DATE_BEGIN, 'yyyy-MM-DD HH24:MI:SS'), 1, 10) like   '${date}%'
+        and bd.CODE_DEPT in
+        <foreach collection="listS" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        ) opS on op.code = ops.code
+    </select>
+</mapper>

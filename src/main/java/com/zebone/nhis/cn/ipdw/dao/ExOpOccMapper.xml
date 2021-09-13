@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.ExOpOccMapper">
+
+    <select id="queryExOpOccList" parameterType="java.util.Map" resultType="com.zebone.nhis.cn.ipdw.vo.ExOpOccVo">
+          select
+          pv.bed_no ,
+          pi.dt_sex ,
+          GETPVAGE(pi.BIRTH_DATE,pv.DATE_BEGIN) as age_pv ,
+          ord.pk_dept,
+          case when
+            ord.eu_status_ord ='9'
+          then '1'
+          else '0'
+          end eu_status_ord,
+          ns.name_dept dept_ns_name ,
+          ord.code_apply ,
+          ord.ordsn,
+          diag.diagname as name_op ,
+          op.pk_ordop ,
+          pv.name_pi ,
+          pi.code_ip ,
+          ord.name_emp_ord,
+          op.date_apply,
+          occ.*
+          from EX_OP_OCC occ
+          left join PV_ENCOUNTER pv on pv.pk_pv = occ.PK_PV and pv.del_flag = '0'
+          inner join PI_MASTER pi on pi.PK_PI = pv.PK_PI and pi.del_flag = '0'
+          left join CN_ORDER ord on ord.PK_CNORD = occ.PK_CNORD and ord.del_flag = '0'
+          left join CN_OP_APPLY op on op.PK_CNORD = ord.PK_CNORD and op.del_flag = '0'
+          inner join bd_ou_dept ns on ord.pk_dept_ns = ns.pk_dept
+          left join BD_TERM_DIAG diag on occ.pk_op = diag.PK_DIAG
+          where occ.del_flag = '0'
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and occ.date_begin &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and occ.date_begin &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+        </if>
+        <if test="pkDept != null and pkDept !=''">
+            and ord.pk_dept = #{pkDept,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDeptNs != null and pkDeptNs !=''">
+            and pv.pk_dept_ns = #{pkDeptNs,jdbcType=VARCHAR}
+        </if>
+        <if test="namePi != null and namePi !=''">
+            and pv.name_pi like '%${namePi}%'
+        </if>
+        <if test="codeIp != null and codeIp !=''">
+            and pi.code_ip=#{codeIp,jdbcType=VARCHAR}
+        </if>
+        <if test="codeApply != null and codeApply !=''">
+            and ord.CODE_APPLY=#{codeApply,jdbcType=VARCHAR}
+        </if>
+        <if test='orderType != null and orderType != "" and orderType == "1" ' >
+            and ord.eu_status_ord != '9'
+        </if>
+        <if test='orderType != null and orderType != "" and orderType == "2" '>
+            and ord.eu_status_ord = '9'
+        </if>
+    </select>
+
+
+    <select id="queryCnOpApplyList" parameterType="java.util.Map" resultType="com.zebone.nhis.cn.ipdw.vo.CnOpApplyVo">
+        select
+        pv.bed_no ,
+        pi.dt_sex ,
+        GETPVAGE(pi.BIRTH_DATE,pv.DATE_BEGIN) as age_pv ,
+        dept.name_dept dept_ns_name,
+        ord.code_apply ,
+        ord.ordsn,
+        pv.name_pi ,
+        pv.pk_dept ,
+        pv.pk_pv ,
+        pi.code_ip ,
+        ord.name_emp_ord,
+        op.*
+        from CN_OP_APPLY op
+        left join CN_ORDER ord on ord.PK_CNORD = op.PK_CNORD and ord.del_flag = '0'
+        left join PV_ENCOUNTER pv on pv.pk_pv = ord.PK_PV and pv.del_flag = '0'
+        inner join PI_MASTER pi on pi.PK_PI = pv.PK_PI and pi.del_flag = '0'
+        inner join bd_ou_dept dept on ord.pk_dept_ns = dept.pk_dept
+        where op.del_flag = '0'
+        and op.pk_cnord not in ( select occ.pk_cnord from EX_OP_OCC occ where occ.del_flag = '0')
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and op.date_apply &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and op.date_apply &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+        </if>
+        <if test="pkDept != null and pkDept !=''">
+            and pv.pk_dept = #{pkDept,jdbcType=VARCHAR}
+        </if>
+        <if test="codeIp != null and codeIp !=''">
+            and pi.code_ip=#{codeIp,jdbcType=VARCHAR}
+        </if>
+        <if test="codeApply != null and codeApply !=''">
+            and ord.CODE_APPLY=#{codeApply,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+
+    <select id="queSubOpListByPk" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOpSubjoin"  parameterType="java.util.Map" >
+        select sub.*,BTd.DIAGNAME as op_name,BTD.DIAGCODE as op_code
+        from CN_OP_APPLY op
+        inner join
+        cn_op_subjoin sub on op.pk_ordop = sub.pk_ordop
+        inner join  BD_TERM_DIAG BTD on sub.PK_DIAG_SUB = BTD.PK_DIAG
+        where op.del_flag = '0'
+        and sub.del_flag = '0'
+         <if test="pkOrdop != null and pkOrdop != ''">
+             and op.pk_ordop = #{pkOrdop,jdbcType=VARCHAR}
+         </if>
+         <if test="pkCnord != null and pkCnord != ''">
+             and op.pk_cnord = #{pkCnord,jdbcType=VARCHAR}
+         </if>
+   </select>
+
+
+    <select id="queryBlIpDtSptList"  parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.BlIpDtSptVo">
+        select
+          dt.PK_CGIP,
+          dt.pk_pv,
+          dt.PK_ITEM,
+          dt.NAME_CG,
+          dt.PK_UNIT,
+          dt.SPEC,
+          dt.QUAN,
+          dt.PRICE,
+          dt.AMOUNT,
+          unit.NAME as name_unit,
+          dt.BARCODE,
+          dt.DATE_CG,
+	      dt.PK_DEPT_EX pk_dept,
+	      dept.name_dept,
+          spd.flag_disappear,
+          spd.note,
+          spd.pk_opspd
+        from BL_IP_DT dt
+          inner join BD_ITEMCATE itemcate on itemcate.PK_ITEMCATE=dt.PK_ITEMCATE
+          inner join BD_OU_DEPT dept on dept.pk_dept = dt.PK_DEPT_EX
+          left join zsba_op_spd spd on dt.PK_CGIP = spd.pk_cgip  and spd.pk_opocc = #{pkOpocc,jdbcType=VARCHAR}
+          left join EX_OP_OCC occ on spd.pk_cnord = occ.PK_CNORD AND dt.PK_CNORD_RL = OCC.PK_CNORD
+          left join bd_unit unit on unit.pk_unit = dt.pk_unit
+        where
+          dt.PK_PV = #{pkPv,jdbcType=VARCHAR}
+          and dt.PK_DEPT_EX = #{pkDept,jdbcType=VARCHAR}
+          and itemcate.CODE ='0045'
+          and dt.quan > 0
+	      and dt.pk_cgip not in (select pk_cgip_back from bl_ip_dt where pk_pv = #{pkPv,jdbcType=VARCHAR} and PK_DEPT_EX = #{pkDept,jdbcType=VARCHAR} and pk_cgip_back is not null)
+    </select>
+
+</mapper>

@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.CnDiagMapper">
+    <select id="qryPvDiag" resultType="DynaBean" parameterType="java.lang.String">
+	   	select
+	   		pdg.*,
+       		dgt.name diagtype,
+       		bcd.dt_cndiagtype,
+       		bcd.CODE_CD as code_diag,
+       		nvl(icd.dt_system,bcd.dt_cndiagtype) dt_system,icd.dt_diagcate,icd.diagname icd_name
+  		from pv_diag pdg
+       	inner join bd_defdoc dgt on pdg.dt_diagtype=dgt.code and dgt.code_defdoclist='060005'
+       	LEFT join bd_cndiag bcd on bcd.pk_cndiag = pdg.pk_diag
+       	left outer join bd_term_diag icd on bcd.pk_diag=icd.pk_diag
+ 		where pdg.pk_pv=#{pkPv}
+ 		order by Sort_No asc
+	</select>
+	<select id="qryPvDiagBA" resultType="DynaBean" parameterType="java.lang.String">
+		select
+			pdg.pk_pvdiag,pdg.pk_org,pdg.pk_pv,pdg.sort_no,pdg.dt_diagtype,pdg.pk_diag,
+			pdg.desc_diag,pdg.flag_maj,pdg.flag_susp,pdg.flag_contagion,pdg.date_diag,pdg.pk_emp_diag,pdg.name_emp_diag,
+ 			pdg.flag_finally,pdg.flag_cure,pdg.eu_dis_diag,pdg.creator,pdg.create_time,pdg.modifier,pdg.del_flag,pdg.ts,pdg.dt_treatway,
+			pdg.name_diag,pdg.code_icd,pdg.eu_admcon,pdg.pk_father,pdg.eu_sptype,pdg.pk_dcdt,pdg.code_dcdt,pdg.pk_ccdt,pdg.code_ccdt,
+ 			pdg.desc_bodypart,pdg.desc_drgprop,pdg.flag_maj_chn,
+		  	dgt.name diagtype,
+			bcd.dt_cndiagtype,
+		  	def.name as treatway_name,
+			way.val,
+			way.amount,
+		  	bcd.CODE_CD as code_diag,
+		  	nvl(icd.dt_system,bcd.dt_cndiagtype) dt_system,icd.dt_diagcate
+		from pv_diag pdg
+		inner join bd_defdoc dgt on pdg.dt_diagtype=dgt.code and dgt.code_defdoclist='060005'
+		LEFT join bd_cndiag bcd on bcd.pk_cndiag = pdg.pk_diag
+		left outer join bd_term_diag icd on bcd.pk_diag=icd.pk_diag
+		left outer join bd_term_diag_treatway way on way.code_diag = left(icd.diagcode, len(icd.diagcode) - 2) and way.dt_treatway = pdg.dt_treatway
+		 and way.DEL_FLAG='0'
+		left outer join BD_DEFDOC def on way.dt_treatway=def.CODE and def.CODE_DEFDOCLIST='060007' and def.FLAG_DEF='0'
+		where pdg.pk_pv=#{pkPv}
+		order by Sort_No asc
+	</select>
+    <select id="qryDoctorCommDiag" resultType="com.zebone.nhis.cn.ipdw.vo.BdTermDiagDeptVo" parameterType="java.util.Map">
+	   SELECT comm.*,bcd.dt_cndiagtype FROM bd_term_diag_dept comm
+	   LEFT join bd_cndiag bcd on bcd.pk_cndiag = comm.pk_diag and bcd.del_flag = '0'
+		WHERE
+		<!--
+		(
+			(
+				comm.eu_type = '0'
+				AND comm.pk_dept =#{pkDept,jdbcType=VARCHAR} 
+			)
+		OR (
+				comm.eu_type = '1'
+				AND comm.pk_emp =#{pkEmp,jdbcType=VARCHAR} 
+		   ))
+		   -->
+		comm.eu_type = '1'
+		AND comm.pk_emp =#{pkEmp,jdbcType=VARCHAR}
+		<if test="pkDiag != null and pkDiag !='' ">
+			AND comm.pk_diag = #{pkDiag,jdbcType=VARCHAR}
+		</if>
+	</select>
+	
+	<select id="qryCnDiagComt" resultType="DynaBean" parameterType="java.util.Map">
+	 select comt.*,doc.name 
+	  from bd_cndiag_comt comt
+	       left outer join bd_defdoclist doc on comt.code_dt=doc.code and DOC.del_flag='0'
+	 where comt.pk_cndiag=#{pkCndiag,jdbcType=VARCHAR} 
+	</select>
+	
+	<select id="qryCnDiagComtDt" resultType="DynaBean" parameterType="java.util.Map">
+		 select dt.*,
+		   comt.pk_cndiagcomt,  
+	       comt.flag_mand,      
+	       comt.flag_hidden,  
+	       comt.flag_rb,       
+	       case when comt.eu_dttype='0' then dict.name else dt.val_comt end val,
+	       diag.diagname diag,  
+	       add1.diagname add1,  
+	       add2.diagname add2   
+	  from bd_cndiag_comt comt
+	       left outer join bd_cndiag_comt_dt dt on comt.pk_cndiagcomt=dt.pk_cndiagcomt
+	       left outer join bd_defdoc dict on comt.code_dt=dict.code_defdoclist  and dict.del_flag='0'
+	       left outer join bd_term_diag diag on dt.pk_diag=diag.pk_diag
+	       left outer join bd_term_diag add1 on dt.pk_diag_add=add1.pk_diag
+	       left outer join bd_term_diag add2 on dt.pk_diag_add2=add2.pk_diag
+	 where comt.pk_cndiag=#{pkCndiag,jdbcType=VARCHAR} 
+	</select>
+	
+	<delete id="deldiagdtByList" parameterType="java.util.Map">
+		delete from pv_diag_dt where pk_Pvdiag=#{pkPvdiag} and Pk_Pvdiagdt not in
+		<foreach item="item" index="index" collection="pks" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+	</delete>
+	<select id="qryVal" parameterType="java.util.Map" resultType="com.zebone.nhis.cn.ipdw.vo.BdTermDiagTreatwayVo">
+		select tw.* ,    <!-- 预测费用100% -->
+	       tw.amount*0.5 amt50, <!-- 预测费用50% -->
+	       tw.amount*2 amt200   <!-- 预测费用200% -->
+	  	from bd_term_diag_treatway tw 
+	 	where UPPER(tw.code_diag) like '${codeDiag}%'
+	</select>
+	
+	<select id="qryPvdiagDt" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.cn.ipdw.PvDiagDt">
+		select * from pv_diag_dt where pk_pvdiag=#{pkPvdiag}
+	</select>
+	
+	<select id="qryEuPvtype" parameterType="java.lang.String" resultType="java.lang.String">
+		select eu_pvtype from pv_encounter where pk_pv = #{pkPv}
+	</select>
+	
+	<select id="qryTermDiagDept" parameterType="java.lang.String" resultType="com.zebone.nhis.cn.ipdw.vo.BdTermDiagDeptVo">
+		select * from bd_term_diag_dept where pk_org = #{pkOrg}  and del_flag='0'
+	</select>
+	
+	<select id="qryPvDiagDtNew" parameterType="java.util.List" resultType="com.zebone.nhis.common.module.cn.ipdw.PvDiagDt">
+		select * from pv_diag_dt where pk_pvdiag in 
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+	</select>
+	
+	<select id="qryBdCndiag" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.base.bd.mk.BdCndiag">
+		select * from bd_cndiag where pk_Cndiag=#{pkCndiag}
+	</select>
+	
+	<select id="qryTermDiagDepts" resultType="com.zebone.nhis.cn.ipdw.vo.BdTermDiagDeptVo">
+		select * from bd_term_diag_dept where  del_flag='0'		
+	</select>
+	
+	<select id="qryPkDiags" parameterType="java.lang.String" resultType="java.lang.String">
+		select pk_Pvdiag from pv_diag where pk_pv=#{pkPv}
+	</select>
+	
+	<delete id="delpvDiagDtByPkpvdiag" parameterType="java.util.List">
+		delete from PV_DIAG_DT where pk_pvdiag in 
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+	</delete>
+	
+	<delete id="delPvdiagByList" parameterType="java.util.Map">
+		delete from Pv_diag where pk_pv =#{pkPv} <!-- and pk_diag not in 
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach> -->
+	</delete>
+	
+	<select id="countPvdiag" parameterType="java.lang.String" resultType="java.lang.Integer">
+		SELECT COUNT(1) FROM PV_DIAG WHERE PK_PVDIAG=#{pkPvdiag}
+	</select>
+	
+	<select id="qryCnDiag" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.cn.ipdw.CnDiag">
+		SELECT * FROM CN_DIAG WHERE PK_PV = #{pkPv}
+		ORDER BY CREATE_TIME DESC
+	</select>
+	
+	<select id="countTermDiagDept" parameterType="java.lang.String" resultType="java.lang.Integer">
+		SELECT COUNT(1) FROM bd_term_diag_dept WHERE pk_diagdept=#{pkPvdiag}
+	</select>
+	
+	<select id="countTermDiag" parameterType="java.util.List" resultType="DynaBean">
+		SELECT
+			diag.diagcode,
+			diag.diagname,
+			dic.code as code_dt_infectioncate,
+		    dic.name as dt_infectioncate
+		FROM
+			bd_term_diag diag
+		left outer join bd_defdoc dic on dic.code_defdoclist='060019' and dic.code=diag.dt_infectioncate and dic.del_flag='0'
+		WHERE
+			diag.dt_diagcate = '01' 
+			and diag.diagcode in 
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+	</select>
+	<select id="qryPiInfo" parameterType="java.lang.String" resultType="DynaBean">
+		select pv.date_admit,pi.code_pi,pi.name_pi,pi.code_ip from PV_ENCOUNTER pv LEFT JOIN PI_MASTER pi on pi.pk_pi = pv.pk_pi where pk_pv = #{pkPv}
+	</select>
+	<select id="qryDeptMedicaltype" parameterType="java.lang.String" resultType="DynaBean">
+		select nvl(dept.dt_medicaltype,'99') as dt_medicaltype,father.code_dept from bd_ou_dept dept inner join bd_ou_dept father on dept.pk_father = father.pk_dept where dept.pk_dept = #{pkDept} 
+	</select>
+	<select id="qryBdCndiagByNameCd" parameterType="java.util.Map" resultType="DynaBean">
+		select sult.* from (select feta.* from (select lab.pk_labrule,lab.dt_labresult,lab.dt_fetalpos,lab.dt_labortype,lab.code_icd,lab.code_add,lab.code_add1 from bd_diag_labrule lab
+		 <where> 
+		 	<if test="labresult != null and labresult !='' ">
+	 		dt_labresult = #{labresult}
+	 		</if>
+	 	</where>) feta 
+	 	where
+	 			dt_fetalpos in 
+	 			<foreach item="item" index="index" collection="fetalPos" open="(" separator="," close=")">
+           			 #{item}
+       			 </foreach>
+	 	)sult
+	 	<where> 
+		 	<if test="abortype != null and abortype !='' ">
+	 		dt_labortype = #{abortype}
+	 		</if>
+	 	</where>
+	</select>
+	
+	 <select id="qryDoctorCommDiagDrg" resultType="DynaBean" parameterType="java.util.Map">
+			 select dcdt.pk_dcdt,  
+		       dcdt.code_dcdt,
+		       dcdt.name_dcdt,
+		       ccdt.pk_ccdt,  
+		       ccdt.code_ccdt, 
+		       icd.pk_diag,  
+		       icd.diagcode code_diag,  
+		       icd.diagname name_diag,   
+		       icd.dt_diagcate,
+		       exc.groupno,  
+		       exc.eu_exclutype,
+		       ccdt.eu_sex,
+		       ccdt.flag_newborn,
+		       ccdt.age_max,
+		       ccdt.age_min,
+		       count(1) cnt
+		  from bd_term_dcdt dcdt
+		       inner join bd_term_ccdt ccdt on dcdt.pk_ccdt=ccdt.pk_ccdt
+		       inner join bd_term_diag icd on ccdt.code_icd=icd.diagcode
+		       inner join pv_diag diag on dcdt.pk_dcdt=diag.pk_dcdt
+		       left outer join bd_term_ccdt_exclu exc on ccdt.pk_ccdt=exc.pk_ccdt
+		 where diag.pk_emp_diag=#{pkEmp,jdbcType=VARCHAR} 
+		group by dcdt.pk_dcdt,   
+		       dcdt.code_dcdt, 
+		       dcdt.name_dcdt, 
+		       ccdt.pk_ccdt, 
+		       ccdt.code_ccdt, 
+		       icd.pk_diag, 
+		       icd.diagcode,
+		       icd.diagname,
+		       icd.dt_diagcate, 
+		       exc.groupno, 
+		       exc.eu_exclutype,
+		       ccdt.eu_sex,
+		       ccdt.flag_newborn,
+		       ccdt.age_max,
+		       ccdt.age_min
+		order by cnt desc
+	</select>
+	<select id="qryPvDiagDrg" resultType="DynaBean" parameterType="java.lang.String">
+	  
+		  select 
+	       diag.*,
+	       diag.code_dcdt  code_diag,  
+	       exc.groupno,      
+	       exc.EU_EXCLUTYPE, 
+	       exc.GROUPNO_EXCLU 
+	  from pv_diag diag
+	       left outer join bd_term_ccdt_exclu exc on diag.pk_ccdt=exc.pk_ccdt
+	 where
+	 		diag.pk_pv=#{pkPv} and
+	       diag.del_flag='0'
+        order by diag.Sort_No asc 
+	</select>
+</mapper>

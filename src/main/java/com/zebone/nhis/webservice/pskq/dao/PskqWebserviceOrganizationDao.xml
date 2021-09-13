@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.pskq.dao.PskqWebserviceOrganizationDao">
+
+
+    <resultMap id="OrgInfoResultMap" type="com.zebone.nhis.webservice.pskq.model.Organization">
+        <result column="code_org" jdbcType="VARCHAR" property="orgCode" />
+        <result column="NAME_ORG" jdbcType="VARCHAR" property="orgName" />
+        <result column="GROUP_CODE" jdbcType="VARCHAR" property="groupCode" />
+        <result column="GROUP_NAME" jdbcType="VARCHAR" property="groupName" />
+        <result column="code_hosp" jdbcType="VARCHAR" property="organizationCode" />
+        <result column="hosTyCode" jdbcType="VARCHAR" property="organizationCategoryCode" />
+        <result column="hosTyName" jdbcType="VARCHAR" property="organizationCategoryName" />
+        <result column="hosLevCode" jdbcType="VARCHAR" property="hospitalLevelCode" />
+        <result column="hosLevName" jdbcType="VARCHAR" property="hospitalLevelName" />
+        <result column="leader" jdbcType="VARCHAR" property="legalPersonName" />
+        <result column="phone" jdbcType="VARCHAR" property="legalPersonPhoneNo" />
+        <result column="addr" jdbcType="VARCHAR" property="organizationAddress" />
+        <result column="py_code" jdbcType="VARCHAR" property="spellCode" />
+        <result column="flag_active" jdbcType="VARCHAR" property="validState" />
+
+    </resultMap>
+
+    <select id="findOrgInfoByOrgCode"  resultMap="OrgInfoResultMap">
+      select
+      org.code_org,org.NAME_ORG,
+      orgUp.code_org GROUP_CODE,orgUp.NAME_ORG GROUP_NAME,
+      org.code_hosp,
+      hosTy.code hosTyCode,hosTy.name hosTyName,
+      hosLev.CODE hosLevCode,hosLev.NAME hosLevName,
+      org.leader,org.phone,org.addr,org.py_code
+     ,org.flag_active
+
+
+
+from BD_OU_ORG org
+left join  BD_OU_ORG orgUp on orgUp.PK_ORG = org.PK_FATHER
+left join bd_defdoc hosTy on hosTy.code = org.dt_hosptype and  hosTy.CODE_DEFDOCLIST =  '010100'
+left join bd_defdoc hosLev on hosLev.code = org.dt_grade and  hosLev.CODE_DEFDOCLIST =  '010101'
+ WHERE  org.code_org=#{id} and org.del_flag = '0'
+
+    </select>
+
+
+
+
+</mapper>

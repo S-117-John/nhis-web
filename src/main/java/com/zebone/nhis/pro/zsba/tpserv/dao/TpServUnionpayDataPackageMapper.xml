@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.tpserv.dao.TpServUnionpayDataPackageMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.pro.zsba.tpserv.vo.TpServUnionpayDataPackage">
+        <id column="PK_DATA_BILL_P" jdbcType="CHAR" property="pkDataBillP"/>
+        <result column="BILL_DATE" jdbcType="TIMESTAMP" property="billDate"/>
+        <result column="DOWNLOAD_TIME" jdbcType="TIMESTAMP" property="downloadTime"/>
+        <result column="BILL_FILE_NAME" jdbcType="VARCHAR" property="billFileName"/>
+        <result column="BILL_FILE_SIZE" jdbcType="INTEGER" property="billFileSize"/>
+        <result column="BILL_DATE_BEGIN" jdbcType="TIMESTAMP" property="billDateBegin"/>
+        <result column="BILL_DATE_END" jdbcType="TIMESTAMP" property="billDateEnd"/>
+        <result column="BILL_RECORD" jdbcType="INTEGER" property="billRecord"/>
+        <result column="BILL_COUNT" jdbcType="INTEGER" property="billCount"/>
+        <result column="BILL_NOTBUZ" jdbcType="INTEGER" property="billNotbuz"/>
+        <result column="BILL_NOTCASH" jdbcType="INTEGER" property="billNotcash"/>
+        <result column="BILL_UPDATEBUZ" jdbcType="INTEGER" property="billUpdatebuz"/>
+        <result column="BILL_COUPON_TOTAL" jdbcType="INTEGER" property="billCouponTotal"/>
+        <result column="BILL_COUPON_REFUND" jdbcType="INTEGER" property="billCouponRefund"/>
+        <result column="BUZ_COUNT" jdbcType="INTEGER" property="buzCount"/>
+        <result column="BUZ_NOTPROC" jdbcType="INTEGER" property="buzNotproc"/>
+        <result column="BUZ_NOTBILL" jdbcType="INTEGER" property="buzNotbill"/>
+        <result column="BUZ_CASH_TOTAL" jdbcType="INTEGER" property="buzCashTotal"/>
+        <result column="BUZ_COUPON_TOTAL" jdbcType="INTEGER" property="buzCouponTotal"/>
+        <result column="BUZ_COUPON_REFUND" jdbcType="INTEGER" property="buzCouponRefund"/>
+        <result column="BILL_STATUS" jdbcType="INTEGER" property="billStatus"/>
+        <result column="BILL_TIME" jdbcType="TIMESTAMP" property="billTime"/>
+        <result column="BILL_DESC" jdbcType="VARCHAR" property="billDesc"/>
+        <result column="MERCHANTID" jdbcType="VARCHAR" property="merchantid"/>
+    </resultMap>
+    <select id="getTpServUnionpayDataPackageById" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+             tp_serv_unionpay_data_package
+        WHERE            
+            PK_DATA_BILL_P = #{pkDataBillP,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllTpServUnionpayDataPackage" resultMap="BaseResultMap">
+          SELECT * FROM tp_serv_unionpay_data_package 
+    </select>
+    
+    <delete id="deleteTpServUnionpayDataPackage">
+        DELETE
+        FROM
+             tp_serv_unionpay_data_package
+        WHERE            
+            PK_DATA_BILL_P = #{pkDataBillP,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveTpServUnionpayDataPackage" parameterType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServUnionpayDataPackage" >
+        INSERT INTO tp_serv_unionpay_data_package
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkDataBillP != null" >
+                PK_DATA_BILL_P,
+            </if>
+            <if test="billDate != null" >
+                BILL_DATE,
+            </if>
+            <if test="downloadTime != null" >
+                DOWNLOAD_TIME,
+            </if>
+            <if test="billFileName != null" >
+                BILL_FILE_NAME,
+            </if>
+            <if test="billFileSize != null" >
+                BILL_FILE_SIZE,
+            </if>
+            <if test="billDateBegin != null" >
+                BILL_DATE_BEGIN,
+            </if>
+            <if test="billDateEnd != null" >
+                BILL_DATE_END,
+            </if>
+            <if test="billRecord != null" >
+                BILL_RECORD,
+            </if>
+            <if test="billCount != null" >
+                BILL_COUNT,
+            </if>
+            <if test="billNotbuz != null" >
+                BILL_NOTBUZ,
+            </if>
+            <if test="billNotcash != null" >
+                BILL_NOTCASH,
+            </if>
+            <if test="billUpdatebuz != null" >
+                BILL_UPDATEBUZ,
+            </if>
+            <if test="billCouponTotal != null" >
+                BILL_COUPON_TOTAL,
+            </if>
+            <if test="billCouponRefund != null" >
+                BILL_COUPON_REFUND,
+            </if>
+            <if test="buzCount != null" >
+                BUZ_COUNT,
+            </if>
+            <if test="buzNotproc != null" >
+                BUZ_NOTPROC,
+            </if>
+            <if test="buzNotbill != null" >
+                BUZ_NOTBILL,
+            </if>
+            <if test="buzCashTotal != null" >
+                BUZ_CASH_TOTAL,
+            </if>
+            <if test="buzCouponTotal != null" >
+                BUZ_COUPON_TOTAL,
+            </if>
+            <if test="buzCouponRefund != null" >
+                BUZ_COUPON_REFUND,
+            </if>
+            <if test="billStatus != null" >
+                BILL_STATUS,
+            </if>
+            <if test="billTime != null" >
+                BILL_TIME,
+            </if>
+            <if test="billDesc != null" >
+                BILL_DESC,
+            </if>
+            <if test="merchantid != null" >
+                MERCHANTID,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkDataBillP != null" >
+                #{pkDataBillP,jdbcType=CHAR},
+            </if> 
+            <if test="billDate != null" >
+                #{billDate,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="downloadTime != null" >
+                #{downloadTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="billFileName != null" >
+                #{billFileName,jdbcType=VARCHAR},
+            </if> 
+            <if test="billFileSize != null" >
+                #{billFileSize,jdbcType=INTEGER},
+            </if> 
+            <if test="billDateBegin != null" >
+                #{billDateBegin,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="billDateEnd != null" >
+                #{billDateEnd,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="billRecord != null" >
+                #{billRecord,jdbcType=INTEGER},
+            </if> 
+            <if test="billCount != null" >
+                #{billCount,jdbcType=INTEGER},
+            </if> 
+            <if test="billNotbuz != null" >
+                #{billNotbuz,jdbcType=INTEGER},
+            </if> 
+            <if test="billNotcash != null" >
+                #{billNotcash,jdbcType=INTEGER},
+            </if> 
+            <if test="billUpdatebuz != null" >
+                #{billUpdatebuz,jdbcType=INTEGER},
+            </if> 
+            <if test="billCouponTotal != null" >
+                #{billCouponTotal,jdbcType=INTEGER},
+            </if> 
+            <if test="billCouponRefund != null" >
+                #{billCouponRefund,jdbcType=INTEGER},
+            </if> 
+            <if test="buzCount != null" >
+                #{buzCount,jdbcType=INTEGER},
+            </if> 
+            <if test="buzNotproc != null" >
+                #{buzNotproc,jdbcType=INTEGER},
+            </if> 
+            <if test="buzNotbill != null" >
+                #{buzNotbill,jdbcType=INTEGER},
+            </if> 
+            <if test="buzCashTotal != null" >
+                #{buzCashTotal,jdbcType=INTEGER},
+            </if> 
+            <if test="buzCouponTotal != null" >
+                #{buzCouponTotal,jdbcType=INTEGER},
+            </if> 
+            <if test="buzCouponRefund != null" >
+                #{buzCouponRefund,jdbcType=INTEGER},
+            </if> 
+            <if test="billStatus != null" >
+                #{billStatus,jdbcType=INTEGER},
+            </if> 
+            <if test="billTime != null" >
+                #{billTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="billDesc != null" >
+                #{billDesc,jdbcType=VARCHAR},
+            </if> 
+            <if test="merchantid != null" >
+                #{merchantid,jdbcType=VARCHAR},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateTpServUnionpayDataPackage" parameterType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServUnionpayDataPackage" >
+        UPDATE tp_serv_unionpay_data_package
+        <set>
+            <if test="pkDataBillP != null" >
+                PK_DATA_BILL_P = #{pkDataBillP,jdbcType=CHAR},
+            </if>
+            <if test="billDate != null" >
+                BILL_DATE = #{billDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="downloadTime != null" >
+                DOWNLOAD_TIME = #{downloadTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="billFileName != null" >
+                BILL_FILE_NAME = #{billFileName,jdbcType=VARCHAR},
+            </if>
+            <if test="billFileSize != null" >
+                BILL_FILE_SIZE = #{billFileSize,jdbcType=INTEGER},
+            </if>
+            <if test="billDateBegin != null" >
+                BILL_DATE_BEGIN = #{billDateBegin,jdbcType=TIMESTAMP},
+            </if>
+            <if test="billDateEnd != null" >
+                BILL_DATE_END = #{billDateEnd,jdbcType=TIMESTAMP},
+            </if>
+            <if test="billRecord != null" >
+                BILL_RECORD = #{billRecord,jdbcType=INTEGER},
+            </if>
+            <if test="billCount != null" >
+                BILL_COUNT = #{billCount,jdbcType=INTEGER},
+            </if>
+            <if test="billNotbuz != null" >
+                BILL_NOTBUZ = #{billNotbuz,jdbcType=INTEGER},
+            </if>
+            <if test="billNotcash != null" >
+                BILL_NOTCASH = #{billNotcash,jdbcType=INTEGER},
+            </if>
+            <if test="billUpdatebuz != null" >
+                BILL_UPDATEBUZ = #{billUpdatebuz,jdbcType=INTEGER},
+            </if>
+            <if test="billCouponTotal != null" >
+                BILL_COUPON_TOTAL = #{billCouponTotal,jdbcType=INTEGER},
+            </if>
+            <if test="billCouponRefund != null" >
+                BILL_COUPON_REFUND = #{billCouponRefund,jdbcType=INTEGER},
+            </if>
+            <if test="buzCount != null" >
+                BUZ_COUNT = #{buzCount,jdbcType=INTEGER},
+            </if>
+            <if test="buzNotproc != null" >
+                BUZ_NOTPROC = #{buzNotproc,jdbcType=INTEGER},
+            </if>
+            <if test="buzNotbill != null" >
+                BUZ_NOTBILL = #{buzNotbill,jdbcType=INTEGER},
+            </if>
+            <if test="buzCashTotal != null" >
+                BUZ_CASH_TOTAL = #{buzCashTotal,jdbcType=INTEGER},
+            </if>
+            <if test="buzCouponTotal != null" >
+                BUZ_COUPON_TOTAL = #{buzCouponTotal,jdbcType=INTEGER},
+            </if>
+            <if test="buzCouponRefund != null" >
+                BUZ_COUPON_REFUND = #{buzCouponRefund,jdbcType=INTEGER},
+            </if>
+            <if test="billStatus != null" >
+                BILL_STATUS = #{billStatus,jdbcType=INTEGER},
+            </if>
+            <if test="billTime != null" >
+                BILL_TIME = #{billTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="billDesc != null" >
+                BILL_DESC = #{billDesc,jdbcType=VARCHAR},
+            </if>
+            <if test="merchantid != null" >
+                MERCHANTID = #{merchantid,jdbcType=VARCHAR},
+            </if>
+        </set>
+        WHERE 
+            PK_DATA_BILL_P = #{pkDataBillP,jdbcType=CHAR}
+    </update>
+</mapper>

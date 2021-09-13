@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.mz.bl.dao.ZsbaSelfPayTrInsuMapper">
+
+	<select id="qryOpRegStInfo" resultType="DynaBean">
+		
+		select
+		  pv.pk_pv,
+		  pi.code_op,
+		  pv.code_pv,
+		  pv.name_pi,
+		  Pv.dt_sex,
+		  case when sthp.name is null then pvhp.name else pvhp.name end insu_name,
+          case when sthp.DT_EXTHP is null then pvhp.DT_EXTHP else pvhp.DT_EXTHP end  DT_EXTHP,
+		  pv.date_begin,
+		  pv.name_emp_phy,
+		  dept.name_dept,
+		  pv.pk_dept,
+		  pv.eu_status,
+		  st.*,
+		    case pv.eu_status when '0' then '登记' when '1' then '就诊' when '2' then '结束' else '结算' end as name_status,
+			  pvop.pk_sch,
+		    doc.name as sex_name,
+		    srv.name as srv_name,
+		    sch.pk_schsrv
+		from PV_ENCOUNTER pv
+		  left join bl_settle st on pv.pk_pv = st.pk_pv And st.flag_canc = '0' and st.dt_sttype = '00'
+		  inner join pv_op pvop on pvop.pk_pv = pv.pk_pv
+		  left join bd_hp sthp on st.PK_INSURANCE=sthp.pk_hp
+		  inner join bd_hp pvhp on pv.pk_insu=pvhp.pk_hp
+		  inner join bd_ou_dept dept on pv.pk_dept=dept.pk_dept
+		  inner join pi_master pi on pv.pk_pi=pi.pk_pi
+	      inner join bd_defdoc doc on doc.code = pv.DT_SEX and doc.CODE_DEFDOCLIST = '000000' and doc.del_flag = '0'
+	      left join sch_sch sch on sch.pk_sch = pvop.pk_sch
+	      left join sch_srv srv on srv.pk_schsrv = sch.pk_schsrv
+		where pv.flag_cancel=0 
+			  And pv.date_begin &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+		      And pv.date_begin &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+			  <if test='pkPv!=null and pkPv!=""'>
+			  	and pv.pk_pv = #{pkPv,jdbcType=CHAR}
+			  </if>
+			  <if test='codePv!=null and codePv!=""'>
+			  	and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+			  </if>
+		      <if test='pkDept!=null and pkDept!=""'>
+			  	And pv.pk_dept = #{pkDept,jdbcType=CHAR}
+			  </if>
+			 
+		 union all
+		 select
+		  pv.pk_pv,
+		  pi.code_op,
+		  pv.code_pv,
+		  pv.name_pi,
+		  Pv.dt_sex,
+		  case when sthp.name is null then pvhp.name else pvhp.name end insu_name,
+          case when sthp.DT_EXTHP is null then pvhp.DT_EXTHP else pvhp.DT_EXTHP end  DT_EXTHP,
+		  pv.date_begin,
+		  pv.name_emp_phy,
+		  dept.name_dept,
+		  pv.pk_dept,
+		  pv.eu_status,
+		  st.*,
+		    case pv.eu_status when '0' then '登记' when '1' then '就诊' when '2' then '结束' else '结算' end as name_status,
+			  pv_er.pk_sch,
+		    doc.name as sex_name,
+		    srv.name as srv_name,
+		    sch.pk_schsrv
+		from PV_ENCOUNTER pv
+		  left join bl_settle st on pv.pk_pv = st.pk_pv And st.flag_canc = '0' and st.dt_sttype = '00'
+		  inner join pv_er pv_er on pv_er.pk_pv = pv.pk_pv
+		  left join bd_hp sthp on st.PK_INSURANCE=sthp.pk_hp
+		  inner join bd_hp pvhp on pv.pk_insu=pvhp.pk_hp
+		  inner join bd_ou_dept dept on pv.pk_dept=dept.pk_dept
+		  inner join pi_master pi on pv.pk_pi=pi.pk_pi
+	      inner join bd_defdoc doc on doc.code = pv.DT_SEX and doc.CODE_DEFDOCLIST = '000000' and doc.del_flag = '0'
+	      left join sch_sch sch on sch.pk_sch = pv_er.pk_sch
+	      left join sch_srv srv on srv.pk_schsrv = sch.pk_schsrv
+		where pv.flag_cancel=0 
+			  And pv.date_begin &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+		      And pv.date_begin &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+			  <if test='pkPv!=null and pkPv!=""'>
+			  	and pv.pk_pv = #{pkPv,jdbcType=CHAR}
+			  </if>
+			  <if test='codePv!=null and codePv!=""'>
+			  	and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+			  </if>
+		      <if test='pkDept!=null and pkDept!=""'>
+			  	And pv.pk_dept = #{pkDept,jdbcType=CHAR}
+			  </if>
+	</select>
+
+	<select id="qryDtListByPkSettle" resultType="com.zebone.nhis.pro.zsba.compay.pub.vo.ZsbaBlOpDt">
+		select * from bl_op_dt where 
+		<if test='pkList!=null and pkList.size()>0'>
+             PK_SETTLE in 
+             <foreach collection="pkList" item="pkList" index="no" open="("
+                separator="," close=")">
+                #{pkList}
+            </foreach> 
+         </if>
+	</select>
+	
+	<select id="findDtListByPkSettle" resultType="com.zebone.nhis.pro.zsba.compay.pub.vo.ZsbaBlOpDt">
+		select * from bl_op_dt where PK_SETTLE = #{pkSettle,jdbcType=CHAR}
+	</select>
+	
+	<select id="qryPresOccByPkSettle" resultType="java.lang.String">
+		select distinct occdt.pk_presocc from ex_pres_occ_dt occdt
+		  inner join cn_order cnord on cnord.pk_cnord = occdt.pk_cnord
+		  inner join bl_op_dt dt on dt.pk_cnord = cnord.pk_cnord
+		  inner join bl_settle st on st.pk_settle = dt.pk_settle
+		where st.pk_settle = #{pkSettle,jdbcType=CHAR}
+	</select>
+	
+	<select id="qryAssistOccByPkSettle" resultType="java.lang.String">
+		select distinct occdt.PK_ASSOCC from ex_assist_occ_dt occdt
+		  inner join cn_order cnord on cnord.pk_cnord = occdt.pk_cnord
+		  inner join bl_op_dt dt on dt.pk_cnord = cnord.pk_cnord
+		  inner join bl_settle st on st.pk_settle = dt.pk_settle
+		where st.pk_settle = #{pkSettle,jdbcType=CHAR}
+	</select>
+	
+	<select id="qryPresOccPkSettle" resultType="java.lang.String">
+		select distinct occ.pk_settle from ex_pres_occ occ
+		  inner join bl_op_dt dt on dt.pk_pres = occ.pk_pres
+		  inner join bl_settle st on st.pk_settle = dt.pk_settle
+		where st.PK_SETTLE = #{pkSettle,jdbcType=CHAR}
+	</select>
+	
+	<select id="qryAssOccPkSettle" resultType="java.lang.String">
+		select distinct occ.pk_settle from EX_ASSIST_OCC occ
+		  inner join ex_assist_occ_dt occdt on occdt.pk_assocc = occ.pk_assocc
+		  inner join bl_op_dt dt on dt.PK_CNORD = occdt.PK_CNORD
+		  inner join bl_settle st on st.pk_settle = dt.pk_settle
+		where st.PK_SETTLE = #{pkSettle,jdbcType=CHAR}
+	</select>
+	
+	<select id="qryStInfoByPkSettle" resultType="com.zebone.nhis.common.module.bl.BlSettle">
+		select * from bl_settle where dt_sttype!='21' 
+		<if test='pkList!=null and pkList.size()>0'>
+             and PK_SETTLE in 
+             <foreach collection="pkList" item="pkList" index="no" open="("
+                separator="," close=")">
+                #{pkList}
+            </foreach> 
+         </if>
+	</select>
+	
+	<!-- 查询结算下的处方 -->
+	<select id = "querySettlePressRecord"  resultType="DynaBean">
+		select  occ.pk_pres as pk,
+	      	 	dept.name_dept,     
+				occ.date_pres as dateOpen,      
+				occ.name_emp_pres, 
+				exdp.name_dept as nameDeptExec,
+				1 isPres,
+				case
+          when  exdp.name_dept ='中药房' then
+        case WHEN sum(dt.quan_cg - dt.quan_ret - dt.quan_de + dt.quan_back) > 0
+             and occ.eu_status !=2
+             and occ.eu_status !=3
+
+          then '可退' else '不可退' end ELSE case WHEN sum(dt.quan_cg - dt.quan_ret - dt.quan_de + dt.quan_back) > 0
+
+
+          then '可退' else '不可退'END END state,
+				cg.pk_settle,
+				cg.name_cg name_ord
+	  	from  ex_pres_occ occ
+		inner join ex_pres_occ_dt dt on occ.pk_presocc=dt.pk_presocc
+		inner join bl_op_dt cg on dt.pk_cnord=cg.pk_cnord and cg.flag_pd='1'
+		left join bl_invoice_dt idt on idt.code_bill=cg.code_bill
+		inner join bd_ou_dept dept on occ.pk_dept_pres=dept.pk_dept
+		inner join bd_ou_dept exdp on occ.pk_dept_ex=exdp.pk_dept
+		where cg.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+		group by occ.pk_pres,
+			   dept.name_dept,
+		       occ.date_pres,
+		       occ.name_emp_pres,
+		       exdp.name_dept,
+		       cg.pk_settle,
+		       occ.FLAG_PREPRINT,
+               occ.FLAG_CONF,
+               cg.name_cg,
+               cg.name_cg,
+               occ.eu_status,
+               cg.pk_cnord
+        order by cg.pk_cnord asc
+	</select>
+	
+	<!-- 查询结算下的检查检验 -->
+	<select id = "querySettleAssistRecord"  resultType="DynaBean">
+		select  distinct cg.pk_cnord as pk,
+				case when cg.pk_cnord  is null then cg.pk_cgop else null end pk_cgop,
+	   		  	dept.name_dept,    
+				case when ord.pk_cnord is not null then ord.date_enter else cg.date_cg end as dateOpen,
+				cg.name_emp_app,  
+				exdp.name_dept as nameDeptExec,
+				cg.pk_settle,
+				0 isPres,
+				case when 
+						((select sum(occ.quan_occ) from ex_assist_occ occ
+						  where occ.pk_cnord=cg.pk_cnord and occ.eu_status &lt;&gt;1
+						  and nvl(occ.flag_refund,'0')='0')&gt;0 and st.pk_settle_canc is null)
+					then '可退' 
+					when cg.pk_cnord is null then '可退' 
+					when ord.code_ordtype='04' and cg.eu_additem='1' then '可退'
+					else '不可退' end state,
+				case when ord.code_ordtype='04' and cg.eu_additem='1' then '1'
+				else '0' end FlagEtce,
+				case when ord.pk_cnord is not null then ord.name_ord else cg.name_cg end name_ord
+	 	from bl_op_dt cg
+		inner join bd_ou_dept dept on cg.pk_dept_app=dept.pk_dept
+		inner join bd_ou_dept exdp on cg.pk_dept_ex=exdp.pk_dept
+		left join bl_invoice_dt idt on idt.code_bill=cg.code_bill
+		inner join bl_settle st on cg.pk_settle = st.pk_settle
+		left join cn_order ord on ord.pk_cnord = cg.pk_cnord
+		where cg.pk_settle=#{pkSettle,jdbcType=VARCHAR} 
+		and cg.pk_pres is null
+		order by cg.pk_cnord asc
+	</select>
+	
+	<select id = "qryEtceterasList"  resultType="DynaBean">
+		select distinct
+		       cg.pk_cnord as pk,
+		       dept.name_dept,     
+		       ord.date_enter dateOpen,
+		       cg.name_emp_app,    
+		       exdp.name_dept nameDeptExec,
+			   cg.pk_settle,
+			   0 isPres,
+		       case when inf.eu_status is null then '可退'
+            		when inf.eu_status &lt; '9' then '可退'
+            		else '不可退' end state,
+		       '1' as FlagEtce,
+				cg.name_cg name_ord
+		  from bl_op_dt cg
+		       inner join cn_order ord on cg.pk_cnord=ord.pk_cnord
+		       inner join bd_ou_dept dept on cg.pk_dept_app=dept.pk_dept
+		       inner join bd_ou_dept exdp on cg.pk_dept_ex=exdp.pk_dept
+		       left outer join ex_infusion_occ inf on ord.ordsn_parent=inf.ordsn_parent
+		 where cg.pk_settle=#{pkSettle,jdbcType=CHAR} and
+		       cg.pk_pres=ord.pk_pres and
+		       cg.flag_pd='0'
+		 order by cg.pk_cnord asc
+	</select>
+
+	<select id="qryPresOccCnt" resultType="java.lang.Integer">
+		select count(1) from ex_pres_occ where pk_settle = #{pkSettle,jdbcType=CHAR}
+	</select>
+
+	<select id="qryAssOccCnt" resultType="java.lang.Integer">
+		select count(1) from EX_ASSIST_OCC where pk_settle = #{pkSettle,jdbcType=CHAR}
+	</select>
+
+</mapper>

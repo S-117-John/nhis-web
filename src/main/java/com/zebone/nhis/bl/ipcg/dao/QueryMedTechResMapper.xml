@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.bl.ipcg.dao.QueryMedTechResMapper">
+	<select id="queryMedOrd" parameterType="com.zebone.nhis.bl.ipcg.vo.ApptOrdVo" resultType="DynaBean">
+		select appt.pk_schappt, 
+				mt.eu_pvtype,    
+				pv.code_pv,      
+				pv.name_pi,      
+				pi.mobile,       
+				appt.pk_schres,  
+				res.NAME as res_name,
+				ord.pk_cnord,    
+				ord.name_ord,    
+				appt.date_appt,  
+				ord.pk_dept,   
+				applydept.name_dept,  
+				ord.pk_dept_ns,  
+				applyns.NAME_DEPT as name_dept_ns,
+				appt.ticket_no,  
+				appt.eu_status,  
+				ord.code_apply,
+				ord.DATE_START AS date_apply,<!-- 申请日期 -->  
+				appt.name_emp_reg, 
+				appt.date_reg,     
+				appt.name_emp_cancel, 
+				appt.date_cancel,
+				case when cnt is null then 0 else cg.cnt end cnt,
+				mt.pk_assocc      
+				from sch_appt appt
+				inner join sch_appt_ord mt on appt.pk_schappt=mt.pk_schappt
+				inner join cn_order ord on mt.pk_cnord=ord.pk_cnord
+				inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+				inner join pi_master pi on pv.pk_pi=pi.pk_pi
+				INNER JOIN SCH_RESOURCE res ON res.PK_SCHRES=appt.PK_SCHRES
+				INNER JOIN BD_OU_DEPT applydept ON applydept.PK_DEPT=ord.PK_DEPT
+				INNER JOIN BD_OU_DEPT applyns ON applyns.PK_DEPT=ord.PK_DEPT_NS
+				LEFT JOIN ex_order_occ occ ON ord.pk_cnord = occ.pk_cnord<!-- 连接ex_order_occ和计费表 查询该预约单对应的执行单是否计费 -->
+        		LEFT OUTER JOIN  (SELECT sum(dt.amount) cnt,dt.pk_ordexdt FROM bl_ip_dt dt WHERE dt.pk_dept_ex = #{pkDeptEx,jdbcType=CHAR} GROUP BY dt.pk_ordexdt)cg ON occ.pk_exocc = cg.pk_ordexdt
+				where appt.eu_schclass='1' and
+				appt.pk_dept_ex=#{pkDeptEx,jdbcType=CHAR} 
+				<if test="codePv != null and codePv != ''">
+					and pv.code_pv=#{codePv,jdbcType=CHAR} 
+				</if>
+				<if test="euPvtype != null and euPvtype != '' and euPvtype != 0">
+					and mt.EU_PVTYPE=#{euPvtype} 
+				</if>
+				<if test="namePi != null and namePi != ''">
+					and pv.name_pi LIKE '%${namePi}%' 
+				</if>          
+				<if test="mobile != null and mobile != ''">
+					and pi.mobile=#{mobile,jdbcType=CHAR} 
+				</if>
+				<if test="dateBegin != null  and  dateBegin != ''">
+		    		and appt.date_appt &gt;= to_date(#{strDateBegin,jdbcType=VARCHAR}, 'yyyymmddHH24miss')
+	      		</if>            
+      			<if test="dateEnd != null  and  dateEnd != ''">
+		    		and appt.date_appt &lt;= to_date(#{strDateEnd,jdbcType=VARCHAR}, 'yyyymmddHH24miss')
+	      		</if>
+				<if test="pkSchsrv != null  and  pkSchsrv != ''">
+			      and appt.pk_schsrv = #{pkSchsrv,jdbcType=CHAR} 
+	      		</if>
+	      		<if test="pkSchres != null  and  pkSchres != ''">
+			      and appt.pk_schres = #{pkSchres,jdbcType=CHAR} 
+	      		</if>
+	      		<if test="pkDept != null  and  pkDept != ''">
+			      and ord.pk_dept = #{pkDept,jdbcType=CHAR} 
+	      		</if>
+	      		<if test="euStatus != null  and  euStatus != ''">
+			      and appt.eu_status = #{euStatus,jdbcType=CHAR} 
+	      		</if>     
+	</select>
+	
+	
+</mapper>

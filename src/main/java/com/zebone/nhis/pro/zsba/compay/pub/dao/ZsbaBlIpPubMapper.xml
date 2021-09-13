@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.compay.pub.dao.ZsbaBlIpPubMapper">
+	       <select id="QryBlDepositBySt" resultType="com.zebone.nhis.pro.zsba.compay.pub.vo.ZsbaBlDeposit">
+		      select * from bl_deposit where (eu_dptype  &lt; 2 or eu_dptype = 3) and 
+			<if test="pkSettle != null  and  pkSettle != ''">
+			     	pk_settle  = #{pkSettle,jdbcType=VARCHAR}   
+	      </if>
+	       </select>
+	       
+	        <select id="QryBlSettleByPk" resultType="com.zebone.nhis.pro.zsba.compay.pub.vo.ZsbaBlSettle">
+		      select * from bl_settle where 1= 0 or  
+			<if test="pkSettle != null  and  pkSettle != ''">
+			     	pk_settle  = #{pkSettle,jdbcType=VARCHAR}   
+	      </if>
+    </select>
+    
+    
+    <select id="qryCgIps" resultType="com.zebone.nhis.common.module.bl.BlIpDt" >
+ 	 	select * from bl_ip_dt  where pk_pv = #{pkPv,jdbcType=VARCHAR}
+		<if test="dateBegin != null  and  dateBegin != ''">
+			and date_hap &gt;=  to_date(substr(#{dateBegin,jdbcType=VARCHAR} ,1,8)||'000000', 'yyyymmddhh24miss')   
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+			and date_hap &lt;=  to_date(substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'yyyymmddhh24miss')
+		</if>  
+		<if test='euSttype != null  and  euSttype != "23"'>
+			and flag_settle=0 
+		</if>	
+		<if test="pkDept != null  and  pkDept != ''">
+			and pk_dept_app=#{pkDept}
+		</if>	
+		<if test='pkCgips!=null'>
+			and pk_cgip in (#{pkCgips})
+		</if>
+		<!-- <if test='pkCgips!=null'>
+			and pk_cgip in 
+			<foreach collection="pkCgips" item="pkCgips" index="no" open="("
+	            separator="," close=")">
+	            #{pkCgips}
+	        </foreach>
+		</if> -->
+	</select>
+	<select id="qryAmountAddByPv" resultType="java.lang.Double">
+		select sum(bl.amount_add) amountAdd
+		  from bl_ip_dt bl 
+		 where bl.pk_pv=#{pkPv,jdbcType=CHAR} 
+		 		and bl.flag_settle = '0'
+		 	<if test='dateBegin!=null and dateEnd!=null'>
+		 		and bl.date_hap &gt;= #{dateBegin,javaType=java.util.Date} and bl.date_hap &lt;= #{dateEnd,javaType=java.util.Date} 
+		 	</if>
+		 	<if test="pkDept!=null and pkDept!=''">
+		 		and bl.pk_dept_app = #{pkDept} 
+		 	</if>
+	        <if test="pkCgips != null and  pkCgips != ''">
+	    	   and (bl.pk_cgip in 
+				  <trim suffixOverrides=" OR bl.pk_cgip in()">    <!-- 表示删除最后一个条件 -->
+			          <foreach collection="pkCgips" item="pkCgips" index="index" open="(" close=")">
+			            <if test="index != 0">
+			              <choose>
+			                 <when test="index % 1000 == 999">) OR bl.pk_cgip in (</when>
+			                     <otherwise>,</otherwise>
+			              </choose>
+			            </if>
+			            #{pkCgips}
+			          </foreach>
+			       </trim>
+				)
+	        </if>
+	</select>
+	
+	<select id="QryBlIpDtBySt" resultType="com.zebone.nhis.common.module.bl.BlIpDt">
+		      select * from (select * from bl_ip_dt union all select * from bl_ip_dt_b) a where 1= 0 or  
+			<if test="pkSettle != null  and  pkSettle != ''">
+			     	a.pk_settle  = #{pkSettle,jdbcType=VARCHAR}   
+	      </if>
+	     </select>  
+</mapper>

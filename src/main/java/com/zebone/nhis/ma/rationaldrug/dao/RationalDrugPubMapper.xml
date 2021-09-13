@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.rationaldrug.dao.RationalDrugPubMapper">
+	<select id="queryPiMaster" parameterType="java.util.Map"  resultType="com.zebone.nhis.common.module.pi.PiMaster">
+	   select  *  from pi_master where pk_pi = #{pkPi,jdbcType=VARCHAR}
+	</select>
+	<select id="queryPiAddress" parameterType="java.util.Map"  resultType="com.zebone.nhis.common.module.pi.PiAddress">
+	   select * from pi_address where  pk_pi = #{pkPi,jdbcType=VARCHAR} and del_flag='0' 
+	</select>
+	<select id="queryPiAllergic" parameterType="java.util.Map"  resultType="com.zebone.nhis.common.module.pi.PiAllergic">
+	  select *  from pi_allergic where pk_pi = #{pkPi,jdbcType=VARCHAR} and del_flag='0' 
+	</select>
+	<select id="queryPvIpInfo" parameterType="java.util.Map"  resultType="DynaBean">
+	  select pv.*,
+		  ip.date_commit_doc,
+		  ip.date_notice,
+		  ip.date_prest,
+		  ip.dt_intype,
+		  ip.dt_level_dise,
+		  ip.dt_level_ns,
+		  ip.dt_level_nutr,
+		  ip.dt_outcomes,
+		  ip.dt_outtype,
+		  ip.dt_sttype_ins,
+		  ip.eu_status_doc,
+		  ip.flag_frozen,
+		  ip.flag_ga,
+		  ip.flag_ga_ns,
+		  ip.flag_infant,
+		  ip.flag_opt,
+		  ip.ip_times,
+		  ip.quan_infant,
+		  ip.name_emp_prest,
+		  ip.pk_dept_admit,
+		  ip.pk_dept_dis,
+		  ip.pk_dept_ns_admit,
+		  ip.pk_emp_prest,
+		  hp.dt_exthp
+		from pv_encounter pv
+		inner join pv_ip ip on ip.pk_pv = pv.pk_pv
+		inner join bd_hp hp on hp.pk_hp = pv.pk_insu
+		where ip.del_flag='0' and pv.pk_pv = #{pkPv,jdbcType=VARCHAR}
+	</select>
+	<select id="queryPvDiags" parameterType="java.util.Map"  resultType="com.zebone.nhis.common.module.pv.PvDiag">
+	  select * from pv_diag where pk_pv=#{pkPv,jdbcType=VARCHAR} and del_flag='0'
+	</select>
+	<select id="queryIpPreAmt" parameterType="java.util.Map"  resultType="java.math.BigDecimal">
+	  select sum(dep.amount) 
+	  from bl_deposit dep
+	  where  dep.pk_pv=#{pkPv,jdbcType=VARCHAR}  and dep.eu_dptype='9' and dep.del_flag='0'
+	</select>
+	<select id="queryPresInfo" parameterType="java.util.Map"  resultType="com.zebone.nhis.common.module.cn.ipdw.CnPrescription">
+	  select *
+      from  cn_prescription  
+      where pk_pres=#{pkPres,jdbcType=VARCHAR}  and del_flag ='0'
+	</select>
+	<select id="queryOrderInfo" parameterType="java.util.Map"  resultType="DynaBean">
+	   select  ord.*,
+	   supply.name as name_supply,
+	   freq.name as name_freq,
+	   defdoc.name as name_dosage,
+       pd.appr_no,
+	   pd.reg_no,
+	   pd.vol,
+	   pd.pk_unit_vol,
+	   pd.weight,
+	   pd.pk_unit_wt,
+	   emp.code_emp,
+	   dept.code_dept,
+	   fac.name as name_factory 
+	   from  cn_order ord
+	   left join bd_ou_employee emp on emp.pk_emp = ord.pk_emp_ord
+	   left join bd_ou_dept dept on dept.pk_dept = ord.pk_dept
+	   left join bd_supply supply on supply.code = ord.code_supply
+	   left join bd_term_freq freq on freq.code = ord.code_freq
+	   left join bd_pd pd on pd.pk_pd = ord.pk_ord and ord.flag_durg='1'
+	   left join bd_factory fac on  fac.pk_factory = pd.pk_factory
+	   left join bd_defdoc defdoc on defdoc.code = pd.dt_dosage and defdoc.code_defdoclist ='030400'
+	  where  ord.del_flag ='0' and ord.FLAG_DURG='1'
+	  <if test="pkCnords != null and pkCnords.size()>0">
+		  	and ord.pk_cnord in 
+		  	 <foreach item="pkOrd" index="index" collection="pkCnords" open="(" separator="," close=")">
+            	#{pkOrd,jdbcType=VARCHAR}
+              </foreach>
+	  </if>
+	   <if test="ordSns!= null and ordSns.size()>0">
+		  	and ord.ORDSN in
+		  	 <foreach item="ordSn" index="index" collection="ordSns" open="(" separator="," close=")">
+            	#{ordSn,jdbcType=VARCHAR}
+              </foreach>
+	  </if>
+
+
+	   <if test="pkPres != null and pkPres != ''">
+		  	and ord.pk_pres = #{pkPres,jdbcType=VARCHAR}  
+		  	
+	  </if>
+	</select>
+	<select id="queryHerbOrdInfo" parameterType="java.util.Map"  resultType="DynaBean">
+	   select herb.pk_cnord,herb.pk_pd,herb.pk_unit,herb.quan,
+	   pd.name,pd.code,pd.spec,unit.name as name_unit,pd.appr_no,
+	   pd.reg_no,
+	   pd.vol,
+	   pd.pk_unit_vol,
+	   pd.weight,
+	   pd.pk_unit_wt,
+	   fac.name as name_factory,
+	   defdoc.name as name_dosage  
+	   from cn_ord_herb herb
+	   inner join bd_pd  pd on pd.pk_pd = herb.pk_pd
+	   inner join cn_order ord  on  ord.pk_cnord = herb.pk_cnord 
+	   inner join bd_unit unit on unit.pk_unit = herb.pk_unit
+	   left join bd_factory fac on  fac.pk_factory = pd.pk_factory
+	   left join bd_defdoc defdoc on defdoc.code = pd.dt_dosage and defdoc.code_defdoclist ='030400'
+	   where ord.pk_pres = #{pkPres,jdbcType=VARCHAR} and herb.del_flag='0' 
+	</select>
+	<select id="queryPvOpInfo" parameterType="java.util.Map"  resultType="DynaBean">
+		 select pv.*,
+		   CASE
+           WHEN op.pk_dept_pv IS NULL THEN er.PK_DEPT_PV
+           ELSE op.pk_dept_pv
+           END
+           AS pk_dept_pv,
+       CASE
+           WHEN op.pk_emp_pv IS NULL THEN er.PK_EMP_PV
+           ELSE op.pk_emp_pv
+           END
+           AS pk_emp_pv,
+       CASE
+           WHEN op.name_emp_pv IS NULL THEN er.NAME_EMP_PV
+           ELSE op.name_emp_pv
+           END
+           AS PK_EMP_PV,
+		  op_times,
+		  hp.dt_exthp
+		from pv_encounter pv
+		 left  join pv_op op on op.pk_pv = pv.pk_pv
+		 left join pv_er  er on er.pk_pv=pv.pk_pv
+		 left join bd_hp hp on hp.pk_hp = pv.pk_insu
+		where   pv.pk_pv = #{pkPv,jdbcType=VARCHAR}
+
+
+
+	</select>
+</mapper>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.nd.temp.dao.NdTemplateCateMapper">
+	<select id="queryTemplateCate" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.common.module.nd.temp.NdTemplateCate">
+		select * from  nd_template_cate where pk_org = #{pkOrg,jdbcType=CHAR} 
+			<if test="pkFather != null  and  pkFather != ''"><!-- 上级分类主键 -->
+				and pk_father = #{pkFather,jdbcType=CHAR}
+			</if>
+			<if test="pkTemplatecate != null  and  pkTemplatecate != ''"><!-- 分类主键 -->
+				and pk_templatecate = #{pkTemplatecate,jdbcType=CHAR}
+			</if>
+	</select>	
+</mapper>

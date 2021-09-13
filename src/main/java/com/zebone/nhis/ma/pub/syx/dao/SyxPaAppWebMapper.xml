@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.syx.dao.SyxPaAppWebMapper">
+
+	<select id="getPiOutInfo" parameterType="com.zebone.nhis.ma.pub.syx.vo.SettleUpReq" resultType="com.zebone.nhis.ma.pub.syx.vo.SettleUpReq">
+		select pi.CODE_PI,
+			   pv.NAME_PI,
+		       pv.PK_PV,
+			   pi.CODE_IP,
+			   pi.DT_SEX,
+			   pi.BIRTH_DATE,
+			   to_char(pv.DATE_BEGIN,'yyyy-mm-dd hh24:mi:ss') as DATE_BEGIN,
+			   to_char(pv.DATE_END,'yyyy-mm-dd hh24:mi:ss') as DATE_END,
+			   case
+				   when to_date(to_char(nvl(pv.DATE_END, sysdate), 'yyyymmdd'), 'yyyymmdd') -
+						to_date(to_char(nvl(pv.DATE_BEGIN, sysdate), 'yyyymmdd'), 'yyyymmdd') > 0 then
+						   to_date(to_char(nvl(pv.DATE_END, sysdate), 'yyyymmdd'), 'yyyymmdd') -
+						   to_date(to_char(nvl(pv.DATE_BEGIN, sysdate), 'yyyymmdd'), 'yyyymmdd')
+				   else 1 end                                 inDays,
+			   pv.PK_INSU,
+			   dept.CODE_DEPT,
+			   dept.NAME_DEPT,
+			   hp.NAME                        name_insu,
+			   pp.DT_OUTCOMES,
+			   cg.total_amount,
+			   pi.ID_NO                    as userCardId
+		from PV_ENCOUNTER pv
+				 inner join PI_MASTER pi on pi.PK_PI = pv.PK_PI
+				 inner join BD_OU_DEPT dept on dept.PK_DEPT = pv.PK_DEPT
+				 inner join BD_HP hp on hp.PK_HP = PK_INSU
+				 inner join PV_IP pp on pp.PK_PV = pv.PK_PV
+				 inner join (select sum(AMOUNT) total_amount, PK_PV from BL_IP_DT group by PK_PV) cg on cg.PK_PV = pv.PK_PV
+		where pv.PK_PV = #{pkPv}
+	</select>
+	<select id="getPiCancelIn" parameterType="com.zebone.nhis.common.module.pv.PvEncounter" resultType="com.zebone.nhis.ma.pub.syx.vo.SettleUpReq">
+		select pv.CODE_PV,
+			   pi.CODE_IP,
+			   pv.PK_PV,
+			   pv.PK_PI,
+			   pi.CODE_PI,
+			   pi.NAME_PI,
+			   pi.ID_NO as userCardId,
+			   pi.DT_SEX,
+			   to_char(pv.DATE_BEGIN,'yyyy-mm-dd hh24:mi;ss') as DATE_BEGIN,
+			   pv.NOTE  as reason
+		from PV_ENCOUNTER pv
+				 inner join PI_MASTER pi on pi.PK_PI = pv.PK_PI
+		where pv.PK_PV=#{pkPv}
+	</select>
+	<select id="getInHospExamine" resultType="com.zebone.nhis.ma.pub.syx.vo.SettleUpReq" parameterType="java.lang.String">
+		select pv.CODE_PV,
+			   pi.CODE_IP,
+			   pp.IP_TIMES,
+			   pv.PK_PV,
+			   pv.PK_PI,
+			   pi.CODE_PI,
+			   pv.NAME_PI,
+			   pi.DT_SEX,
+			   to_char(pv.DATE_BEGIN,'yyyy-mm-dd hh24:mi;ss') as DATE_BEGIN,
+			   dept.CODE_DEPT,
+			   dept.NAME_DEPT,
+			   emp.CODE_EMP as code_Emp_Tre,
+			   emp.NAME_EMP as name_Emp_Tre
+		from PV_ENCOUNTER pv
+				 inner join PI_MASTER pi on pi.PK_PI = pv.PK_PI
+				 inner join PV_IP pp on pp.PK_PV = pv.PK_PV
+				 inner join BD_OU_DEPT dept on pv.PK_DEPT = dept.PK_DEPT
+				 left join BD_OU_EMPLOYEE emp on pi.PK_EMP = pv.PK_EMP_TRE
+		where pv.PK_PV = #{pkPv}
+	</select>
+
+</mapper>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.task.drg.dao.DrgMapper">
+	<sql id="Base_Column_List" >
+	   pv.pk_pv, 
+       pi.code_ip,
+       ip.ip_times,
+       pi.name_pi,
+       pi.dt_sex,
+       pi.birth_date,
+       pv.date_end,
+       pv.pk_dept,
+	   bod.name_dept,
+       pv.name_emp_phy,
+       ip.eu_status_drg
+	</sql>
+	  
+	<select id="queryPvEncounterList"  parameterType="java.util.Map" resultType="DynaBean">
+        select 
+        	<include refid="Base_Column_List" />
+        from pv_encounter pv
+        inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+        inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		left join BD_OU_DEPT bod on bod.pk_dept=pv.pk_dept
+        where    
+        	 (ip.eu_status_doc>='0' OR ip.eu_status_doc IS NULL) 
+        <if test="codeIp !=null and codeIp != ''">
+            and pi.code_ip=#{codeIp,jdbcType=VARCHAR}
+        </if>
+        <if test="euStatusDrg !=null and euStatusDrg != ''">
+            and ip.eu_status_drg=#{euStatusDrg,jdbcType=VARCHAR}
+        </if>
+        <if test="namePi !=null and namePi != ''">
+            and pi.name_pi like '%' ||  #{namePi,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test="pkEmpPhy !=null and pkEmpPhy != ''">
+            and pv.pk_emp_phy=#{pkEmpPhy,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDept !=null and pkDept != ''">
+            and pv.pk_dept=#{pkDept,jdbcType=VARCHAR}
+        </if>
+        <if test="beginDateEnd !=null and beginDateEnd != ''">
+        	and pv.date_end<![CDATA[>=]]> to_date(#{beginDateEnd,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        </if>
+        <if test="endDateEnd !=null and endDateEnd != ''">
+        	and pv.date_end<![CDATA[<=]]> to_date(#{endDateEnd,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        </if>
+        
+        <if test="beginDateDrg !=null and beginDateDrg != ''">
+        	and ip.date_drg<![CDATA[>=]]> to_date(#{beginDateDrg,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        </if>
+        <if test="endDateDrg !=null and endDateDrg != ''">
+        	and ip.date_drg<![CDATA[<=]]> to_date(#{endDateDrg,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        </if>
+    </select>
+</mapper>

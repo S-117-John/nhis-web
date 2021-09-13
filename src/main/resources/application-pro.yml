@@ -1,0 +1,17 @@
+spring:
+  freemarker:
+    cache: true
+#    redis集群配置模式如下｛哨兵模式使用sentinel配置即可｝
+  redis:
+    password: ${redis.pass}
+    connect-timeout: 10000
+    lettuce:
+      pool:
+        min-idle: 1
+        max-idle: ${redis.maxIdle}
+        max-active: ${redis.maxActive}
+        max-wait: ${redis.maxWait}
+
+    cluster:
+      nodes: 127.0.0.1:7001,127.0.0.1:7002,127.0.0.1:7003,127.0.0.1:7004,127.0.0.1:7005,127.0.0.1:7006
+      max-redirects: 3

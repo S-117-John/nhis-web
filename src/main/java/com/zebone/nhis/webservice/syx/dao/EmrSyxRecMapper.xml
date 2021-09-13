@@ -1,0 +1,1082 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.EmrSyxRecMapper">
+	<select id="queryPatEncList" resultType="com.zebone.nhis.webservice.syx.vo.EmrEncInfoVo" >
+	 select pi.pk_pi,
+	 		pi.name_pi name,
+	 		pi.code_ip,
+	 		pi.code_pi,
+	 		pi.code_op,
+	 		(case when pi.dt_sex='02' then '0' when pi.dt_sex='03' then '1'  else '' end ) name_sex,
+	 		pi.dt_sex,
+	 		pv.age_pv age_txt,
+	 		to_char(pi.birth_date,'yyyy-mm-dd hh24:mi:ss') birth_date,
+	 		pi.addr_origin,
+	 		pi.tel_no,
+	 		pi.dt_idtype,
+	 		pi.id_no,
+	 		pi.hic_no,
+	 		pi.insur_no,
+	 		pi.mpi,
+	 		pi.dt_marry,
+	 		(case when pi.dt_marry ='1' then '0' when pi.dt_marry in ('2','3','4') then '1'  else '' end) marry_name,
+       		pi.dt_occu,
+       		zd_occu.name occu_name,
+       		pi.dt_nation,
+       		zd_nation.name nation_name,
+       		pi.addr_birth,
+	 		pv.pk_pv,
+	 		pv.code_pv,
+	 		pv.bed_no,
+	 		to_char(pv.date_begin,'yyyy-mm-dd hh24:mi:ss') date_begin,
+	 		to_char(pv.date_end,'yyyy-mm-dd hh24:mi:ss') date_end,
+	 		ip.ip_times,
+	 		ip.dt_level_dise,
+	 		dtdise.name level_dise_name,
+	 		(case when ip.dt_level_dise in ('01','02','03') then '1' else '0' end ) flag_level_dise,
+	 		dept.name_dept,
+	 		deptns.name_dept as name_dept_ns,
+	 		hp.name as hp_name,
+            dept.code_dept dept_code,
+            dept.old_id dept_id,
+            nvl(pi.address,pi.addr_cur||nvl(pi.addr_cur_dt,''))  address,
+            pi.name_rel,
+            pi.tel_rel,
+            pi.addr_rel,
+            pi.dt_ralation,
+       		zd_rel.name  ralation_name,
+       		ip.dt_outtype,
+       		zd_ot.name  outtype_name,
+       		(case when trunc(nvl(pv.date_end,sysdate)-pv.date_begin)=0 then 1 else trunc(nvl(pv.date_end,sysdate)-pv.date_begin) end ) in_hos_days,
+       		(select to_char(t.doc_txt) from emr_txt_data t where t.pk_pv = pv.pk_pv and t.type_code='090001' and t.para_code='0002040' ) relator,
+       		(select to_char(t.doc_txt) from emr_txt_data t where t.pk_pv = pv.pk_pv and t.type_code='090001' and t.para_code='01' ) complaint,
+       		(select to_char(t.doc_txt) from emr_txt_data t where t.pk_pv = pv.pk_pv and t.type_code='090001' and t.para_code='03' ) hpi,
+       		(select max(d.file_name) from emr_med_doc d,emr_med_rec r  where d.pk_doc=r.pk_doc and r.pk_pv=pv.pk_pv and r.type_code='090001' and r.del_flag='0') file_name,
+       		(select max(d.file_path) from emr_med_doc d,emr_med_rec r  where d.pk_doc=r.pk_doc and r.pk_pv=pv.pk_pv and r.type_code='090001' and r.del_flag='0') file_path,
+       		(select max(d.file_type) from emr_med_doc d,emr_med_rec r  where d.pk_doc=r.pk_doc and r.pk_pv=pv.pk_pv and r.type_code='090001' and r.del_flag='0') file_type
+		from pi_master pi inner join
+		     pv_encounter pv on pi.pk_pi = pv.pk_pi inner join
+		     pv_ip ip on ip.pk_pv = pv.pk_pv inner join
+		     bd_ou_dept dept on pv.pk_dept = dept.pk_dept inner join 
+		     bd_ou_dept deptns	on deptns.pk_dept = pv.pk_dept_ns inner join
+		     bd_hp hp on hp.pk_hp = pv.pk_insu left join 
+		     bd_defdoc dtdise on dtdise.code_defdoclist = '000202' and dtdise.code = ip.dt_level_dise left outer join
+		     bd_defdoc zd_occu on pi.dt_occu=zd_occu.code and zd_occu.code_defdoclist='000010'  left outer join 
+		     bd_defdoc zd_rel  on pi.dt_ralation = zd_rel.code and zd_rel.code_defdoclist = '000013' left outer join 
+		     bd_defdoc zd_ot  on ip.dt_outtype = zd_ot.code and zd_ot.code_defdoclist = '000105' left outer join 
+		     bd_defdoc zd_nation  on pi.dt_nation=zd_nation.code and zd_nation.code_defdoclist='000003'
+		WHERE nvl(pv.flag_cancel,'0') = '0' 
+		<if test="codePi != null">
+			and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+		</if>
+		<if test="codeIp != null">
+			and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+		</if>
+		<if test="ipTimes != null">
+			and ip.ip_times = #{ipTimes,jdbcType=VARCHAR}
+		</if>
+		order by pv.code_pv
+	</select>
+	<select id="queryPvDiagList" resultType="com.zebone.nhis.webservice.syx.vo.EmrPvDiagList" >
+	 select pv.pk_pv,
+	 		diag.dt_diagtype,
+	 		diag.code_icd,
+	 		diag.name_diag,
+	 		diag.desc_diag,
+	 		diag.name_emp_diag,
+	 		to_char(diag.date_diag,'yyyy-mm-dd hh24:mi:ss') date_diag 
+		from pi_master pi inner join
+		     pv_encounter pv on pi.pk_pi = pv.pk_pi inner join
+		     pv_ip ip on ip.pk_pv = pv.pk_pv inner join
+		     pv_diag diag on pv.pk_pv=diag.pk_pv left outer join
+		     bd_defdoc dt_diag on dt_diag.code_defdoclist = '060005' and dt_diag.code = diag.dt_diagtype
+	   where nvl(diag.del_flag,'0')='0'
+ 		<if test="codePi != null">
+			and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+		</if>
+		<if test="codeIp != null">
+			and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+		</if>
+		<if test="ipTimes != null">
+			and ip.ip_times = #{ipTimes,jdbcType=VARCHAR}
+		</if>
+		order by pv.code_pv,diag.dt_diagtype,diag.sort_no 
+	</select>
+	<select id="queryPatInfoList" resultType="com.zebone.nhis.webservice.syx.vo.EmrPatInfoResult" >
+	 select
+		pi.pk_pi,
+		pi.name_pi name,
+		pi.code_ip,
+		pi.code_pi,
+		pi.code_op,
+		pi.id_no,
+		pv.code_pv,
+		(case when pi.dt_sex='02' then '0' when pi.dt_sex='03' then '1' else '' end) name_sex,
+		pi.dt_sex,
+		pi.dt_nation,
+		pv.age_pv,
+		to_char(pi.birth_date,'yyyy-mm-dd hh24:mi:ss') birth_date,
+		pi.dt_marry,
+		(case when pi.dt_marry in ('02','03') then '9'  else '' end) marry_name,
+		pi.mobile,
+		pi.addr_cur,
+		pi.tel_no,
+		pi.dt_occu,
+		zd_occu.name occu_name,
+		pi.name_rel,
+		pi.addr_rel,
+		pi.tel_rel,
+		pi.dt_ralation,
+		(case when pi.dt_ralation='109' then '11' when pi.dt_ralation='107' then '16' else '' end) ralation_name,
+		ip.ip_times,
+		pv.bed_no,
+		pv.bed_no bed_no_id,
+		to_char(pv.date_begin,'yyyy-mm-dd hh24:mi:ss') date_begin,
+		to_char(pv.date_end,'yyyy-mm-dd hh24:mi:ss') date_end,
+		ip.pk_dept_admit,
+		dept_admit.name_dept name_dept_admit,
+		pv.pk_dept,
+		dept.name_dept,
+		pv.pk_dept pk_dept_zl,
+		dept.name_dept name_dept_zl,
+		ip.dt_intype,
+  		zd_it.name intype_name,
+		ip.dt_outcomes dt_outtype,
+		zd_ot.name outtype_name,
+		ip.dt_level_dise,
+		dtdise.name level_dise_name
+		from pi_master pi
+		inner join pv_encounter pv on pi.pk_pi = pv.pk_pi
+		inner join pv_ip ip on ip.pk_pv = pv.pk_pv
+		inner join bd_ou_dept dept on ip.pk_dept_admit = dept.pk_dept
+		inner join bd_ou_dept dept_admit on ip.pk_dept_admit = dept_admit.pk_dept
+		left outer join bd_defdoc zd_occu on pi.dt_occu=zd_occu.code and zd_occu.code_defdoclist='000010'
+		left outer join bd_defdoc zd_rel on pi.dt_ralation = zd_rel.code and zd_rel.code_defdoclist = '000013'
+		left outer join bd_defdoc zd_ot on ip.dt_outtype = zd_ot.code and zd_ot.code_defdoclist = '000110'
+		left outer join bd_defdoc zd_it on ip.dt_intype = zd_it.code and zd_it.code_defdoclist = '000104'
+		left outer join bd_defdoc dtdise on dtdise.code = ip.dt_level_dise and dtdise.code_defdoclist = '000202'
+		where nvl(pv.flag_cancel,'0') = '0'
+		<if test="codePi != null">
+			and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+		</if>
+		<if test="codeIp != null">
+			and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+		</if>
+		<if test="ipTimes != null">
+			and ip.ip_times = #{ipTimes,jdbcType=VARCHAR}
+		</if>
+		<if test="name != null">
+			and pi.name_pi = #{name,jdbcType=VARCHAR}
+		</if>
+		order by pv.code_pv
+	</select>
+	
+		<insert id="saveEmrMedRec" parameterType="com.zebone.nhis.common.module.emr.rec.rec.EmrMedRec">
+		INSERT INTO EMR_MED_REC
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="pkRec != null">
+				PK_REC,
+			</if>
+			<if test="pkPatrec != null">
+				PK_PATREC,
+			</if>
+			<if test="name != null">
+				NAME,
+			</if>
+			<if test="seqNo != null">
+				SEQ_NO,
+			</if>
+			<if test="recDate != null">
+				REC_DATE,
+			</if>
+			<if test="describe != null">
+				DESCRIBE,
+			</if>
+			<if test="pkPi != null">
+				PK_PI,
+			</if>
+			<if test="times != null">
+				TIMES,
+			</if>
+			<if test="pkPv != null">
+				PK_PV,
+			</if>
+			<if test="pkDept != null">
+				PK_DEPT,
+			</if>
+			<if test="pkWard != null">
+				PK_WARD,
+			</if>
+			<if test="typeCode != null">
+				TYPE_CODE,
+			</if>
+			<if test="pkTmp != null">
+				PK_TMP,
+			</if>
+			<if test="pkDoc != null">
+				PK_DOC,
+			</if>
+			<if test="flagAudit != null">
+				FLAG_AUDIT,
+			</if>
+			<if test="euAuditLevel != null">
+				EU_AUDIT_LEVEL,
+			</if>
+			<if test="auditLevelSet != null">
+				AUDIT_LEVEL_SET,
+			</if>
+			<if test="euDocStatus != null">
+				EU_DOC_STATUS,
+			</if>
+			<if test="euAuditStatus != null">
+				EU_AUDIT_STATUS,
+			</if>
+			<if test="flagAuditFinish != null">
+				FLAG_AUDIT_FINISH,
+			</if>
+			<if test="submitDate != null">
+				SUBMIT_DATE,
+			</if>			
+			<if test="pkEmpIntern != null">
+				PK_EMP_INTERN,
+			</if>
+			<if test="internSignDate != null">
+				INTERN_SIGN_DATE,
+			</if>
+			<if test="pkEmpReferAct != null">
+				PK_EMP_REFER_ACT,
+			</if>
+			<if test="pkEmpRefer != null">
+				PK_EMP_REFER,
+			</if>
+			<if test="referAuditDate != null">
+				REFER_AUDIT_DATE,
+			</if>
+			<if test="referSignDate != null">
+				REFER_SIGN_DATE,
+			</if>
+			<if test="pkEmpConsultAct != null">
+				PK_EMP_CONSULT_ACT,
+			</if>
+			<if test="pkEmpConsult != null">
+				PK_EMP_CONSULT,
+			</if>
+			<if test="consultAuditDate != null">
+				CONSULT_AUDIT_DATE,
+			</if>
+			<if test="consultSignDate != null">
+				CONSULT_SIGN_DATE,
+			</if>
+			<if test="pkEmpDirectorAct != null">
+				PK_EMP_DIRECTOR_ACT,
+			</if>
+			<if test="pkEmpDirector != null">
+				PK_EMP_DIRECTOR,
+			</if>
+			<if test="directorAuditDate != null">
+				DIRECTOR_AUDIT_DATE,
+			</if>
+			<if test="directorSignDate != null">
+				DIRECTOR_SIGN_DATE,
+			</if>
+			<if test="flagPrint != null">
+				FLAG_PRINT,
+			</if>
+			<if test="delFlag != null">
+				DEL_FLAG,
+			</if>
+			<if test="remark != null">
+				REMARK,
+			</if>
+			<if test="creator != null">
+				CREATOR,
+			</if>
+			<if test="createTime != null">
+				CREATE_TIME,
+			</if>
+			<if test="ts != null">
+				TS,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="pkRec != null">
+				#{pkRec,jdbcType=CHAR},
+			</if>
+			<if test="pkPatrec != null">
+				#{pkPatrec,jdbcType=VARCHAR},
+			</if>
+			<if test="name != null">
+				#{name,jdbcType=VARCHAR},
+			</if>
+			<if test="seqNo != null">
+				#{seqNo,jdbcType=DECIMAL},
+			</if>
+			<if test="recDate != null">
+				#{recDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="describe != null">
+				#{describe,jdbcType=VARCHAR},
+			</if>
+			<if test="pkPi != null">
+				#{pkPi,jdbcType=VARCHAR},
+			</if>
+			<if test="times != null">
+				#{times,jdbcType=DECIMAL},
+			</if>
+			<if test="pkPv != null">
+				#{pkPv,jdbcType=VARCHAR},
+			</if>
+			<if test="pkDept != null">
+				#{pkDept,jdbcType=VARCHAR},
+			</if>
+			<if test="pkWard != null">
+				#{pkWard,jdbcType=VARCHAR},
+			</if>
+			<if test="typeCode != null">
+				#{typeCode,jdbcType=VARCHAR},
+			</if>
+			<if test="pkTmp != null">
+				#{pkTmp,jdbcType=VARCHAR},
+			</if>
+			<if test="pkDoc != null">
+				#{pkDoc,jdbcType=VARCHAR},
+			</if>
+			<if test="flagAudit != null">
+				#{flagAudit,jdbcType=CHAR},
+			</if>
+			<if test="euAuditLevel != null">
+				#{euAuditLevel,jdbcType=DECIMAL},
+			</if>
+			<if test="auditLevelSet != null">
+				#{auditLevelSet,jdbcType=VARCHAR},
+			</if>
+			<if test="euDocStatus != null">
+				#{euDocStatus,jdbcType=CHAR},
+			</if>
+			<if test="euAuditStatus != null">
+				#{euAuditStatus,jdbcType=CHAR},
+			</if>
+			<if test="flagAuditFinish != null">
+				#{flagAuditFinish,jdbcType=CHAR},
+			</if>
+			<if test="submitDate != null">
+				#{submitDate,jdbcType=DATE},
+			</if>
+			<if test="pkEmpIntern != null">
+				#{pkEmpIntern,jdbcType=VARCHAR},
+			</if>
+			<if test="internSignDate != null">
+				#{internSignDate,jdbcType=DATE},
+			</if>
+			<if test="pkEmpReferAct != null">
+				#{pkEmpReferAct,jdbcType=VARCHAR},
+			</if>
+			<if test="pkEmpRefer != null">
+				#{pkEmpRefer,jdbcType=VARCHAR},
+			</if>
+			<if test="referSignDate != null">
+				#{referSignDate,jdbcType=DATE},
+			</if>
+			<if test="pkEmpConsultAct != null">
+				#{pkEmpConsultAct,jdbcType=VARCHAR},
+			</if>
+			<if test="pkEmpConsult != null">
+				#{pkEmpConsult,jdbcType=VARCHAR},
+			</if>
+			<if test="consultAuditDate != null">
+				#{consultAuditDate,jdbcType=DATE},
+			</if>
+			<if test="consultSignDate != null">
+				#{consultSignDate,jdbcType=DATE},
+			</if>
+			<if test="pkEmpDirectorAct != null">
+				#{pkEmpDirectorAct,jdbcType=VARCHAR},
+			</if>
+			<if test="pkEmpDirector != null">
+				#{pkEmpDirector,jdbcType=VARCHAR},
+			</if>
+			<if test="directorAuditDate != null">
+				#{directorAuditDate,jdbcType=DATE},
+			</if>
+			<if test="directorSignDate != null">
+				#{directorSignDate,jdbcType=DATE},
+			</if>
+			<if test="flagPrint != null">
+				#{flagPrint,jdbcType=CHAR},
+			</if>
+			<if test="delFlag != null">
+				#{delFlag,jdbcType=CHAR},
+			</if>
+			<if test="remark != null">
+				#{remark,jdbcType=VARCHAR},
+			</if>
+			<if test="creator != null">
+				#{creator,jdbcType=VARCHAR},
+			</if>
+			<if test="createTime != null">
+				#{createTime,jdbcType=DATE},
+			</if>
+			<if test="ts != null">
+				#{ts,jdbcType=DATE},
+			</if>
+		</trim>
+	</insert>
+
+	<update id="updateEmrMedRec" parameterType="com.zebone.nhis.common.module.emr.rec.rec.EmrMedRec">
+		UPDATE EMR_MED_REC
+		<set>
+			<if test="pkRec != null">
+				PK_REC = #{pkRec,jdbcType=CHAR},
+			</if>
+			<if test="pkPatrec != null">
+				PK_PATREC = #{pkPatrec,jdbcType=VARCHAR},
+			</if>
+			<if test="name != null">
+				NAME = #{name,jdbcType=VARCHAR},
+			</if>
+			<if test="seqNo != null">
+				SEQ_NO = #{seqNo,jdbcType=DECIMAL},
+			</if>
+			<if test="recDate != null">
+				REC_DATE = #{recDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="describe != null">
+				DESCRIBE = #{describe,jdbcType=VARCHAR},
+			</if>
+			<if test="pkPi != null">
+				PK_PI = #{pkPi,jdbcType=VARCHAR},
+			</if>
+			<if test="times != null">
+				TIMES = #{times,jdbcType=DECIMAL},
+			</if>
+			<if test="pkPv != null">
+				PK_PV = #{pkPv,jdbcType=VARCHAR},
+			</if>
+			<if test="pkDept != null">
+				PK_DEPT = #{pkDept,jdbcType=VARCHAR},
+			</if>
+			<if test="pkWard != null">
+				PK_WARD = #{pkWard,jdbcType=VARCHAR},
+			</if>
+			<if test="typeCode != null">
+				TYPE_CODE = #{typeCode,jdbcType=VARCHAR},
+			</if>
+			<if test="pkTmp != null">
+				PK_TMP = #{pkTmp,jdbcType=VARCHAR},
+			</if>
+			<if test="pkDoc != null">
+				PK_DOC = #{pkDoc,jdbcType=VARCHAR},
+			</if>
+			<if test="flagAudit != null">
+				FLAG_AUDIT = #{flagAudit,jdbcType=CHAR},
+			</if>
+			<if test="euAuditLevel != null">
+				EU_AUDIT_LEVEL = #{euAuditLevel,jdbcType=DECIMAL},
+			</if>
+			<if test="auditLevelSet != null">
+				AUDIT_LEVEL_SET = #{auditLevelSet,jdbcType=VARCHAR},
+			</if>
+			<if test="euDocStatus != null">
+				EU_DOC_STATUS = #{euDocStatus,jdbcType=CHAR},
+			</if>
+			<if test="euAuditStatus != null">
+				EU_AUDIT_STATUS = #{euAuditStatus,jdbcType=CHAR},
+			</if>
+			<if test="flagAuditFinish != null">
+				FLAG_AUDIT_FINISH = #{flagAuditFinish,jdbcType=CHAR},
+			</if>
+			<if test="submitDate != null">
+				SUBMIT_DATE = #{submitDate,jdbcType=TIMESTAMP},
+			</if>			
+			PK_EMP_INTERN = #{pkEmpIntern,jdbcType=VARCHAR},
+			INTERN_SIGN_DATE = #{internSignDate,jdbcType=TIMESTAMP},
+			PK_EMP_REFER_ACT = #{pkEmpReferAct,jdbcType=VARCHAR},
+			<!-- <if test="pkEmpRefer != null" > -->
+			PK_EMP_REFER = #{pkEmpRefer,jdbcType=VARCHAR},
+			REFER_AUDIT_DATE = #{referAuditDate,jdbcType=TIMESTAMP},
+			<!-- </if> -->
+			<!-- <if test="referSignDate != null" > -->
+			REFER_SIGN_DATE = #{referSignDate,jdbcType=TIMESTAMP},
+			<!-- </if> -->
+			<if test="pkEmpConsultAct != null">
+				PK_EMP_CONSULT_ACT = #{pkEmpConsultAct,jdbcType=VARCHAR},
+			</if>
+			<!-- <if test="pkEmpConsult != null" > -->
+			PK_EMP_CONSULT = #{pkEmpConsult,jdbcType=VARCHAR},
+			<!-- </if> -->
+			<!-- <if test="consultAuditDate != null" > -->
+			CONSULT_AUDIT_DATE = #{consultAuditDate,jdbcType=TIMESTAMP},
+			<!-- </if> -->
+			<!-- <if test="consultSignDate != null" > -->
+			CONSULT_SIGN_DATE = #{consultSignDate,jdbcType=TIMESTAMP},
+			<!-- </if> -->
+			<if test="pkEmpDirectorAct != null">
+				PK_EMP_DIRECTOR_ACT = #{pkEmpDirectorAct,jdbcType=VARCHAR},
+			</if>
+			<!-- <if test="pkEmpDirector != null" > -->
+			PK_EMP_DIRECTOR = #{pkEmpDirector,jdbcType=VARCHAR},
+			<!-- </if> -->
+			<!-- <if test="directorAuditDate != null" > -->
+			DIRECTOR_AUDIT_DATE = #{directorAuditDate,jdbcType=TIMESTAMP},
+			<!-- </if> -->
+			<!-- <if test="directorSignDate != null" > -->
+			DIRECTOR_SIGN_DATE = #{directorSignDate,jdbcType=TIMESTAMP},
+			<if test="flagPrint != null">
+				FLAG_PRINT = #{flagPrint,jdbcType=CHAR},
+			</if>
+			<if test="delFlag != null">
+				DEL_FLAG = #{delFlag,jdbcType=CHAR},
+			</if>
+			<if test="remark != null">
+				REMARK = #{remark,jdbcType=VARCHAR},
+			</if>
+			<if test="creator != null">
+				CREATOR = #{creator,jdbcType=VARCHAR},
+			</if>
+			<if test="createTime != null">
+				CREATE_TIME = #{createTime,jdbcType=DATE},
+			</if>
+			<if test="ts != null">
+				TS = #{ts,jdbcType=DATE},
+			</if>
+		</set>
+		WHERE
+		PK_REC = #{pkRec,jdbcType=CHAR}
+	</update>
+	<delete id="deleteEmrMedRec">
+		DELETE
+		FROM
+		EMR_MED_REC
+		WHERE
+		PK_REC = #{pkRec,jdbcType=CHAR}
+	</delete>
+	<insert id="saveEmrMedDoc" parameterType="com.zebone.nhis.common.module.emr.rec.rec.EmrMedDoc">
+		INSERT INTO EMR_MED_DOC
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="pkDoc != null">
+				PK_DOC,
+			</if>
+			<if test="pkOrg != null">
+				PK_ORG,
+			</if>
+			<if test="docData != null">
+				DOC_DATA,
+			</if>
+			<if test="docXml != null">
+				DOC_XML,
+			</if>
+			<if test="docDataBak != null">
+				DOC_DATA_BAK,
+			</if>
+			<if test="docXmlBak != null">
+				DOC_XML_BAK,
+			</if>
+			<if test="delFlag != null">
+				DEL_FLAG,
+			</if>
+			<if test="creator != null">
+				CREATOR,
+			</if>
+			<if test="createTime != null">
+				CREATE_TIME,
+			</if>
+			<if test="ts != null">
+				TS,
+			</if>
+			<if test="fileName != null">
+				FILE_NAME,
+			</if>
+			<if test="filePath != null">
+				FILE_PATH,
+			</if>
+			<if test="fileType != null">
+				FILE_TYPE,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="pkDoc != null">
+				#{pkDoc,jdbcType=CHAR},
+			</if>
+			<if test="pkOrg != null">
+				#{pkOrg,jdbcType=VARCHAR},
+			</if>
+			<if test="docData != null">
+				#{docData,jdbcType=BLOB},
+			</if>
+			<if test="docXml != null">
+				#{docXml,jdbcType=CLOB},
+			</if>
+			<if test="docDataBak != null">
+				#{docDataBak,jdbcType=BLOB},
+			</if>
+			<if test="docXmlBak != null">
+				#{docXmlBak,jdbcType=CLOB},
+			</if>
+			<if test="delFlag != null">
+				#{delFlag,jdbcType=CHAR},
+			</if>
+			<if test="creator != null">
+				#{creator,jdbcType=VARCHAR},
+			</if>
+			<if test="createTime != null">
+				#{createTime,jdbcType=DATE},
+			</if>
+			<if test="ts != null">
+				#{ts,jdbcType=DATE},
+			</if>
+			<if test="fileName != null">
+				#{fileName,jdbcType=VARCHAR},
+			</if>
+			<if test="filePath != null">
+				#{filePath,jdbcType=VARCHAR},
+			</if>
+			<if test="fileType != null">
+				#{fileType,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+	<update id="updateEmrMedDoc" parameterType="com.zebone.nhis.common.module.emr.rec.rec.EmrMedDoc">
+		UPDATE EMR_MED_DOC
+		<set>
+			<if test="pkDoc != null">
+				PK_DOC = #{pkDoc,jdbcType=CHAR},
+			</if>
+			<if test="pkOrg != null">
+				PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+			</if>
+			<if test="docData != null">
+				DOC_DATA = #{docData,jdbcType=BLOB},
+			</if>
+			<if test="docXml != null">
+				DOC_XML = #{docXml,jdbcType=CLOB},
+			</if>
+			<if test="docDataBak != null">
+				DOC_DATA_BAK = #{docDataBak,jdbcType=BLOB},
+			</if>
+			<if test="docXmlBak != null">
+				DOC_XML_BAK = #{docXmlBak,jdbcType=CLOB},
+			</if>
+			<if test="delFlag != null">
+				DEL_FLAG = #{delFlag,jdbcType=CHAR},
+			</if>
+			<if test="creator != null">
+				CREATOR = #{creator,jdbcType=VARCHAR},
+			</if>
+			<if test="createTime != null">
+				CREATE_TIME = #{createTime,jdbcType=DATE},
+			</if>
+			<if test="ts != null">
+				TS = #{ts,jdbcType=DATE},
+			</if>
+			<if test="fileName != null">
+				FILE_NAME = #{fileName,jdbcType=VARCHAR},
+			</if>
+			<if test="filePath != null">
+				FILE_PATH = #{filePath,jdbcType=VARCHAR},
+			</if>
+			<if test="fileType != null">
+				FILE_TYPE = #{fileType,jdbcType=VARCHAR},
+			</if>
+		</set>
+		WHERE
+		PK_DOC = #{pkDoc,jdbcType=CHAR}
+	</update>
+	<delete id="deleteEmrMedDoc">
+		DELETE
+		FROM
+		EMR_MED_DOC
+		WHERE
+		PK_DOC = #{pkDoc,jdbcType=CHAR}
+	</delete>
+	<select id="queryPatEmrEncList" resultType="com.zebone.nhis.webservice.syx.vo.EmrEncInfoVo" >
+	 select pi.pk_pi,
+	 		pi.name_pi name,
+	 		pi.code_ip,
+	 		pi.code_pi,
+	 		pi.code_op,
+	 		(case when pi.dt_sex='02' then '0' when pi.dt_sex='03' then '1'  else '' end ) name_sex,
+	 		pi.dt_sex,
+	 		pv.age_pv age_txt,
+	 		to_char(pi.birth_date,'yyyy-mm-dd hh24:mi:ss') birth_date,
+	 		pi.addr_origin,
+	 		pi.tel_no,
+	 		pi.dt_idtype,
+	 		pi.id_no,
+	 		pi.hic_no,
+	 		pi.insur_no,
+	 		pi.mpi,
+	 		pi.dt_marry,
+	 		(case when pi.dt_marry ='1' then '0' when pi.dt_marry in ('2','3','4') then '1'  else '' end) marry_name,
+       		pi.dt_occu,
+       		pi.dt_nation,
+       		pi.addr_birth,
+	 		pv.pk_pv,
+	 		pv.code_pv,
+	 		pv.bed_no,
+	 		to_char(pv.date_begin,'yyyy-mm-dd hh24:mi:ss') date_begin,
+	 		to_char(pv.date_end,'yyyy-mm-dd hh24:mi:ss') date_end,
+	 		ip.ip_times,
+	 		ip.dt_level_dise,
+	 		(case when ip.dt_level_dise in ('01','02','03') then '1' else '0' end ) flag_level_dise,
+            nvl(pi.address,pi.addr_cur||nvl(pi.addr_cur_dt,''))  address,
+            pi.name_rel,
+            pi.tel_rel,
+            pi.addr_rel,
+            pi.dt_ralation,
+       		ip.dt_outtype,
+       		rec.pk_patrec,
+       		dept.name_dept,
+       		pv.pk_dept,
+       		pv.pk_dept_ns,
+       		rec.pk_emp_refer,
+       		emp.code_emp refer_code,
+       		emp.name_emp refer_name 
+		from pi_master pi inner join
+		     pv_encounter pv on pi.pk_pi = pv.pk_pi inner join
+		     pv_ip ip on ip.pk_pv = pv.pk_pv inner join
+		     emr_pat_rec rec on rec.pk_pv=pv.pk_pv and rec.del_flag='0'  inner join 
+		     bd_ou_dept dept on pv.pk_dept = dept.pk_dept inner join
+		     bd_ou_employee emp on rec.pk_emp_refer=emp.pk_emp
+		WHERE nvl(pv.flag_cancel,'0') = '0' 
+		<if test="codePi != null">
+			and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+		</if>
+		<if test="codeIp != null">
+			and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+		</if>
+		<if test="ipTimes != null">
+			and ip.ip_times = #{ipTimes,jdbcType=VARCHAR}
+		</if>
+		order by pv.code_pv
+	</select>
+	
+	<select id="queryHmFirstCourse" resultType="com.zebone.nhis.webservice.syx.vo.emr.EmrHmFirstCourseRslt" >
+	 select pi.pk_pi,
+	 		pv.pk_pv,
+	 		rec.pk_rec,
+	 		pi.name_pi name,
+	 		pi.code_ip,
+	 		pi.code_pi,
+	 		zd_sex.name name_sex,
+	 		pi.dt_sex,
+	 		pv.age_pv age_txt,
+	 		to_char(pi.birth_date,'yyyy-mm-dd hh24:mi:ss') birth_date,
+	 		pi.addr_origin,
+       		pi.addr_birth place_birth,
+       		pi.dt_marry,
+       		zd_marry.name marry_name,
+	 		pv.pk_pv,
+	 		pv.code_pv,
+	 		to_char(pv.date_begin,'yyyy-mm-dd hh24:mi:ss') date_begin,
+	 		to_char(pv.date_end,'yyyy-mm-dd hh24:mi:ss') date_end,
+	 		ip.ip_times,
+	 		dept.name_dept,
+	 		deptns.name_dept as name_dept_ns,
+            dept.code_dept,
+            (case when ip.ip_times = 1 then '初诊' when ip.ip_times = 2 then '复诊' end) type,
+            doc.doc_xml,
+            typ.flag_first,
+            emp.code_emp refer_code,
+            emp.name_emp refer_name,
+            rec.rec_date  
+		from pi_master pi inner join
+		     pv_encounter pv on pi.pk_pi = pv.pk_pi inner join
+		     pv_ip ip on ip.pk_pv = pv.pk_pv inner join
+		     emr_med_rec rec on pv.pk_pv=rec.pk_pv and rec.del_flag='0' inner join
+		     emr_med_doc doc on rec.pk_doc=doc.pk_doc inner join 
+		     emr_doc_type typ on rec.type_code=typ.code and typ.flag_course='1' left outer join 
+		     bd_ou_employee emp on rec.pk_emp_refer=emp.pk_emp inner join 
+		     bd_ou_dept dept on pv.pk_dept = dept.pk_dept inner join 
+		     bd_ou_dept deptns	on deptns.pk_dept = pv.pk_dept_ns left outer join
+		     bd_defdoc zd_sex  on pi.dt_sex=zd_sex.code and zd_sex.code_defdoclist='000000' left outer join 
+		     bd_defdoc zd_marry  on pi.dt_marry=zd_marry.code and zd_marry.code_defdoclist='000006'  
+		WHERE nvl(pv.flag_cancel,'0') = '0' and rec.type_code like '1000%' and nvl(typ.flag_first,'0')='1'
+		<if test="codePi != null">
+			and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+		</if>
+		<if test="codeIp != null">
+			and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+		</if>
+		<if test="ipTimes != null">
+			and ip.ip_times = #{ipTimes,jdbcType=VARCHAR}
+		</if>
+		<if test="beginDate != null">
+			and rec.rec_date &gt;= to_date(#{beginDate,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endDate != null">
+			and rec.rec_date &lt;= to_date(#{endDate,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		order by rec.pk_pv,rec.seq_no,rec.rec_date 
+	</select>
+	<select id="queryHmCourse" resultType="com.zebone.nhis.webservice.syx.vo.emr.EmrHmCourseRslt" >
+	 select pi.pk_pi,
+	 		pv.pk_pv,
+	 		rec.pk_rec,
+	 		pi.name_pi name,
+	 		pi.code_ip,
+	 		pi.code_pi,
+	 		zd_sex.name name_sex,
+	 		pi.dt_sex,
+	 		pv.age_pv age_txt,
+	 		to_char(pi.birth_date,'yyyy-mm-dd hh24:mi:ss') birth_date,
+	 		pi.addr_origin,
+       		pi.addr_birth place_birth,
+       		pi.dt_marry,
+       		zd_marry.name marry_name,
+	 		pv.pk_pv,
+	 		pv.code_pv,
+	 		to_char(pv.date_begin,'yyyy-mm-dd hh24:mi:ss') date_begin,
+	 		to_char(pv.date_end,'yyyy-mm-dd hh24:mi:ss') date_end,
+	 		ip.ip_times,
+	 		dept.name_dept,
+	 		deptns.name_dept as name_dept_ns,
+            dept.code_dept,
+            doc.doc_xml,
+            emp.code_emp refer_code,
+            emp.name_emp refer_name,
+            rec.rec_date    
+		from pi_master pi inner join
+		     pv_encounter pv on pi.pk_pi = pv.pk_pi inner join
+		     pv_ip ip on ip.pk_pv = pv.pk_pv inner join
+		     emr_med_rec rec on pv.pk_pv=rec.pk_pv and rec.del_flag='0' inner join
+		     emr_med_doc doc on rec.pk_doc=doc.pk_doc inner join 
+		     emr_doc_type typ on rec.type_code=typ.code and typ.flag_course='1' left outer join 
+		     bd_ou_employee emp on rec.pk_emp_refer=emp.pk_emp inner join 
+		     bd_ou_dept dept on pv.pk_dept = dept.pk_dept inner join 
+		     bd_ou_dept deptns	on deptns.pk_dept = pv.pk_dept_ns left outer join
+		     bd_defdoc zd_sex  on pi.dt_sex=zd_sex.code and zd_sex.code_defdoclist='000000' left outer join 
+		     bd_defdoc zd_marry  on pi.dt_marry=zd_marry.code and zd_marry.code_defdoclist='000006'  
+		WHERE nvl(pv.flag_cancel,'0') = '0'  and rec.type_code like '1000%'  and nvl(typ.flag_first,'0')='0'
+		<if test="codePi != null">
+			and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+		</if>
+		<if test="codeIp != null">
+			and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+		</if>
+		<if test="ipTimes != null">
+			and ip.ip_times = #{ipTimes,jdbcType=VARCHAR}
+		</if>
+		<if test="beginDate != null">
+			and rec.rec_date &gt;= to_date(#{beginDate,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endDate != null">
+			and rec.rec_date &lt;= to_date(#{endDate,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		order by rec.pk_pv,rec.seq_no,rec.rec_date 
+	</select>
+	<select id="queryAdmitRec" resultType="com.zebone.nhis.webservice.syx.vo.emr.EmrHmCourseRslt" >
+		 select rec.pk_rec,
+		 		rec.rec_date,
+		 		doc.doc_xml   
+			from mr_med_rec rec inner join
+			     emr_med_doc doc on rec.pk_doc=doc.pk_doc  
+		  where  rec.del_flag='0' and rec.type_code like '0900%'
+		<if test="pkPv != null">
+			and rec.pkPv = #{pkPv,jdbcType=VARCHAR}
+		</if>
+		order by rec.seq_no,rec.rec_date  
+	</select>
+	
+	<select id="queryAfHomePage" resultType="com.zebone.nhis.webservice.syx.vo.emr.EmrAfHomePage" >
+	 select pge.*,
+	 		pi.insur_no,
+	 		pv.code_pv,
+	 		pi.mobile 
+		from pi_master pi inner join
+		     pv_encounter pv on pi.pk_pi = pv.pk_pi inner join
+		     pv_ip ip on ip.pk_pv = pv.pk_pv inner join
+		     emr_home_page pge on pge.pk_pv=pv.pk_pv inner join
+		     bd_ou_dept dept on pv.pk_dept = dept.pk_dept
+		WHERE nvl(pv.flag_cancel,'0') = '0' and pge.del_flag='0'
+		  and dept.code_dept like '%00010101%' 
+		  and dept.flag_ip='1' 
+		  and dept.flag_active='1' 
+		  and dept.dt_depttype='01'
+		<if test="codeIp != null">
+			and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+		</if>
+		<if test="ipTimes != null">
+			and ip.ip_times = #{ipTimes,jdbcType=VARCHAR}
+		</if>
+		<if test="beginDate != null">
+			and pge.dis_time &gt;= to_date(#{beginDate,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endDate != null">
+			and pge.dis_time &lt;= to_date(#{endDate,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		order by pge.dis_time,pge.pat_no,pv.code_pv
+	</select>
+	<select id="queryHomePageDiagsByPks" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePageDiags">
+		Select
+		*
+		from emr_home_page_diags where del_flag='0' and pk_page in
+		<foreach item="item" index="index" collection="list" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		 order by pk_page,seq_no
+	</select>
+	<select id="queryHomePageOpsByPks" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePageOps">
+		Select
+		*
+		from emr_home_page_ops where del_flag='0' and  pk_page in
+		<foreach item="item" index="index" collection="list" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		 order by pk_page,seq_no 
+	</select>
+	<select id="queryHomePageChargesByPks" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePageCharges">
+		Select
+		*
+		from emr_home_page_charges where del_flag='0' and pk_page in
+		<foreach item="item" index="index" collection="list" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		 order by pk_page,seq_no  
+	</select>
+	<select id="queryAfAdmitRec" resultType="com.zebone.nhis.webservice.syx.vo.emr.EmrAfAdmitRec" >
+	   SELECT pv.pk_pi,
+	      pv.pk_pv,
+	      pv.pk_org,
+	      nvl(org.code_hosp,org.code_org) med_org_code,
+	      org.name_org med_org_name,
+	      pi.hic_no health_card_no,
+	      pi.code_ip pat_no,
+	      pi.code_ip,
+	      pi.name_pi name,
+	      zd_sex.ba_code dt_sex,
+	      ip.ip_times times,
+	      pi.birth_date,
+	      pv.age_pv age_txt,
+	      pi.place_birth birth_addr,
+	      pi.addr_origin origin_addr,
+	      zd_nation.name nation_name,
+	      pi.mobile,
+	      pi.dt_idtype id_type,
+	      (case pi.dt_idtype when '01' then pi.id_no else pi.id_no end) id_no,
+	      nvl(dt_occu.ba_code,pi.dt_occu) occup_code,
+	      dt_occu.name occup_name,
+	      zd_marry.ba_code marry_code,
+	      nvl(pi.addr_cur,pi.addr_cur_dt) curr_addr,
+	      pi.addr_cur_dt curr_addr_dt,
+	      pi.tel_no,
+	      pi.unit_work work_unit,
+	      pi.tel_work work_unit_phone,
+	      pi.name_rel contact_name,
+	      pi.addr_rel contact_addr,
+	      pi.tel_rel contact_phone,
+	      nvl(zd_ralation.ba_code,pi.dt_ralation) contact_relat_code,
+	      pi.name_rel contact_relat_name,
+	      (case pi.dt_idtype when '00' then '1' when '01' then '2' when '02' then '3' else '9' end) admit_path_code,
+	      pv.date_begin admit_time,
+	      pv.date_end dis_time,
+	      rec.rec_date,
+	      doc.doc_xml 
+	  FROM  pi_master pi inner join 
+          	pv_encounter pv on pi.pk_pi = pv.pk_pi inner join
+          	pv_ip ip on ip.pk_pv = pv.pk_pv inner join
+          	emr_med_rec rec on pv.pk_pv= rec.pk_pv and rec.del_flag='0' and rec.type_code like '0900%' inner join
+          	emr_med_doc doc on rec.pk_doc=doc.pk_doc left outer join 
+          	bd_ou_org org on pv.pk_org = org.pk_org left outer join 
+          	bd_ou_dept dept on pv.pk_dept = dept.pk_dept left outer join 
+          	bd_defdoc zd_nation on pi.dt_nation=zd_nation.code and zd_nation.code_defdoclist='000003' left outer join 
+          	bd_defdoc zd_sex on pi.dt_sex=zd_sex.code and zd_sex.code_defdoclist='000000' left outer join
+          	bd_defdoc zd_ralation on pi.dt_ralation=zd_ralation.code and zd_ralation.code_defdoclist='000013' left outer join
+          	bd_defdoc zd_marry on pi.dt_marry=zd_marry.code and zd_marry.code_defdoclist='000006' left outer join
+          	bd_defdoc dt_occu on pi.dt_occu=dt_occu.code and dt_occu.code_defdoclist='000010'
+		WHERE nvl(pv.flag_cancel,'0') = '0'
+	      and dept.code_dept like '%00010101%' 
+	      and dept.flag_ip='1' 
+		  and dept.flag_active='1' 
+		  and dept.dt_depttype='01'
+		<if test="codeIp != null">
+			and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+		</if>
+		<if test="ipTimes != null">
+			and ip.ip_times = #{ipTimes,jdbcType=VARCHAR}
+		</if>
+		<if test="beginDate != null">
+			and pv.date_end &gt;= to_date(#{beginDate,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endDate != null">
+			and pv.date_end &lt;= to_date(#{endDate,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		order by pv.code_pv,rec.rec_date
+	</select>
+	<select id="queryAfCourseRec" resultType="com.zebone.nhis.webservice.syx.vo.emr.EmrAfCourseRec" >
+	   SELECT pv.pk_pi,
+	      pv.pk_pv,
+	      pv.pk_org,
+	      nvl(org.code_hosp,org.code_org) med_org_code,
+	      org.name_org med_org_name,
+	      pi.hic_no health_card_no,
+	      pi.code_ip pat_no,
+	      pi.code_ip,
+	      pi.name_pi name,
+	      zd_sex.ba_code dt_sex,
+	      ip.ip_times times,
+	      pi.birth_date,
+	      pv.age_pv age_txt,
+	      pi.place_birth birth_addr,
+	      pi.addr_origin origin_addr,
+	      zd_nation.name nation_name,
+	      pi.mobile,
+	      pi.dt_idtype id_type,
+	      (case pi.dt_idtype when '01' then pi.id_no else pi.id_no end) id_no,
+	      nvl(dt_occu.ba_code,pi.dt_occu) occup_code,
+	      dt_occu.name occup_name,
+	      zd_marry.ba_code marry_code,
+	      nvl(pi.addr_cur,pi.addr_cur_dt) curr_addr,
+	      pi.addr_cur_dt curr_addr_dt,
+	      pi.tel_no,
+	      pi.unit_work work_unit,
+	      pi.tel_work work_unit_phone,
+	      pi.name_rel contact_name,
+	      pi.addr_rel contact_addr,
+	      pi.tel_rel contact_phone,
+	      nvl(zd_ralation.ba_code,pi.dt_ralation) contact_relat_code,
+	      pi.name_rel contact_relat_name,
+	      (case pi.dt_idtype when '00' then '1' when '01' then '2' when '02' then '3' else '9' end) admit_path_code,
+	      pv.date_begin admit_time,
+	      pv.date_end dis_time,
+	      rec.type_code,
+	      typ.flag_course,
+	      typ.flag_first,
+	      rec.pk_rec,
+	      rec.rec_date,
+	      doc.doc_xml 
+	  FROM  pi_master pi inner join 
+          	pv_encounter pv on pi.pk_pi = pv.pk_pi inner join
+          	pv_ip ip on ip.pk_pv = pv.pk_pv inner join
+          	emr_med_rec rec on pv.pk_pv= rec.pk_pv and rec.del_flag='0' and (rec.type_code like '1000%' or rec.type_code like '1200%' or rec.type_code='050102') inner join
+          	emr_med_doc doc on rec.pk_doc=doc.pk_doc inner join
+          	emr_doc_type typ on rec.type_code=typ.code and typ.del_flag='0' left outer join 
+          	bd_ou_org org on pv.pk_org = org.pk_org left outer join 
+          	bd_ou_dept dept on pv.pk_dept = dept.pk_dept left outer join 
+          	bd_defdoc zd_nation on pi.dt_nation=zd_nation.code and zd_nation.code_defdoclist='000003' left outer join 
+          	bd_defdoc zd_sex on pi.dt_sex=zd_sex.code and zd_sex.code_defdoclist='000000' left outer join
+          	bd_defdoc zd_ralation on pi.dt_ralation=zd_ralation.code and zd_ralation.code_defdoclist='000013' left outer join
+          	bd_defdoc zd_marry on pi.dt_marry=zd_marry.code and zd_marry.code_defdoclist='000006' left outer join
+          	bd_defdoc dt_occu on pi.dt_occu=dt_occu.code and dt_occu.code_defdoclist='000010'
+		WHERE nvl(pv.flag_cancel,'0') = '0'
+	      and dept.code_dept like '%00010101%' 
+	      and dept.flag_ip='1' 
+		  and dept.flag_active='1' 
+		  and dept.dt_depttype='01'
+		<if test="codeIp != null">
+			and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+		</if>
+		<if test="ipTimes != null">
+			and ip.ip_times = #{ipTimes,jdbcType=VARCHAR}
+		</if>
+		<if test="beginDate != null">
+			and pv.date_end &gt;= to_date(#{beginDate,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endDate != null">
+			and pv.date_end &lt;= to_date(#{endDate,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		order by pv.pk_pv,substr(rec.type_code,1,4),rec.rec_date,rec.pk_rec
+	</select>
+</mapper>

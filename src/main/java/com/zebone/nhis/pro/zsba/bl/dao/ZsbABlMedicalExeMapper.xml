@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.bl.dao.ZsbABlMedicalExeMapper">
+    <!-- 住院医技申请单查询 -->
+    <select id="qryIpMedAppInfo" parameterType="java.util.Map" resultType="DynaBean">
+        select ord.pk_cnord,
+            ord.ordsn,
+            ord.ordsn_parent,
+            ord.pk_pi,
+            ord.pk_pv,
+            ord.pk_dept_ns,
+            pi.code_ip,
+            pv.name_pi,
+            pv.dt_sex,
+            pv.eu_status pv_status,
+            pv.date_end,
+            ris.eu_status Ris_Status,
+            lis.eu_status Lis_Status,
+            ord.code_apply,
+            ord.flag_emer,
+            ord.name_ord,
+            ord.quan,
+            ord.quan*ord.price_cg as price_cg,
+            ord.date_start,
+            dept.name_dept as name_dept_app,
+            dept.pk_dept as pk_dept_app,
+            ord.name_emp_ord,
+            case when cnt is null then 0 else cg.cnt end cnt,
+            ord.note_ord,
+            ord.code_ordtype,
+            ord.pk_ord,
+            ris.PURPOSE,
+            lis.samp_no,
+            cg.item_num,
+            occ.PK_DEPT_OCC,
+            occ.PK_ORG_OCC,
+            occ.pk_exocc
+        from cn_order ord
+       inner join pv_encounter pv on ord.pk_pv = pv.pk_pv
+       inner join pi_master pi on pv.pk_pi = pi.pk_pi
+       inner join ex_order_occ occ on ord.pk_cnord = occ.pk_cnord and occ.flag_canc='0'
+        left join cn_ris_apply ris ON ris.PK_CNORD = ord.PK_CNORD
+        left join cn_lab_apply lis on ord.pk_cnord=lis.pk_cnord
+        left join cn_trans_apply trans on ord.pk_cnord = trans.pk_cnord
+        left join (select sum(dt.amount) cnt, dt.pk_cnord, dt.pk_dept_ex, count(1) as item_num
+                     from bl_ip_dt dt
+                    group by dt.pk_cnord,dt.pk_dept_ex) cg on ord.pk_cnord=cg.pk_cnord
+        left join bd_ou_dept dept on ord.pk_dept = dept.pk_dept
+       where ord.eu_pvtype = '3' and pv.flag_in = '1' and pv.eu_status &lt; '2'
+         and cg.cnt &gt; 0
+            <!-- AND pv.flag_in='1'--><!-- 存在出院未记费的情况，允许查询，前台提示相关信息-->
+         AND ( (ord.code_ordtype like '02%' AND ris.EU_STATUS >'0')
+            OR (ord.code_ordtype like '03%' AND lis.EU_STATUS >'0')
+            OR (ord.code_ordtype='12' AND trans.EU_STATUS >'0')
+            OR (ord.code_ordtype like '05%')
+            or (ord.code_ordtype like '99%')
+            or (ord.code_ordtype like '07%')
+            or (ord.code_ordtype = '04' and ord.pk_ord is not null )
+            )
+        <if test="pkDeptExec != null  and  pkDeptExec != ''">
+            and ord.pk_dept_exec = #{pkDeptExec,jdbcType=VARCHAR}
+        </if>
+        <if test="codeApply != null  and  codeApply != ''">
+            and ord.code_apply = #{codeApply,jdbcType=VARCHAR}
+        </if>
+        <if test="codeIp != null  and  codeIp != ''">
+            and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+        </if>
+        <if test="sampNo != null  and  sampNo != ''">
+            and lis.samp_no = #{sampNo,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDeptApp != null  and  pkDeptApp != ''">
+            and ord.pk_dept = #{pkDeptApp,jdbcType=VARCHAR}
+        </if>
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and ord.date_start &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        </if>
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and ord.date_start &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        </if>
+    </select>
+
+	<!-- 查询费用记录（已记费） -->
+    <select id="qryIpMedBlDtInfo" parameterType="java.util.Map" resultType="DynaBean">
+        select cg.pk_cgip,
+        case when cg.flag_pd='0' then item.code else pd.code end code,
+        cg.name_cg as yjName,
+        cg.spec,
+        cg.quan as quancg,
+        cg.amount,
+        cg.flag_settle,
+        cg.batch_no,
+        cg.date_expire,
+        cg.date_hap,
+        cg.flag_pd,
+        cg.name_emp_app,
+        cg.name_emp_cg,
+        cg.pack_size,
+        cg.pk_cnord,
+        cg.pk_dept_app,
+        cg.pk_dept_cg,
+        cg.pk_dept_ex,
+        cg.pk_emp_app,
+        cg.pk_emp_cg,
+        cg.pk_item,
+        cg.pk_org,
+        cg.pk_org_app,
+        cg.pk_org_ex,
+        cg.pk_pi,
+        cg.pk_pres,
+        cg.pk_pv,
+        cg.pk_unit_pd,
+        cg.price,
+        cg.price_cost,
+        cg.pk_cnord
+        from bl_ip_dt cg
+        left outer join bd_item item on cg.pk_item=item.pk_item and cg.flag_pd='0'
+        left outer join bd_pd pd on cg.pk_item=pd.pk_pd and cg.flag_pd='1'
+        where 1=1
+        and cg.flag_settle='0'
+        <if test="pkCnord != null  and  pkCnord != ''">
+             and cg.pk_cnord = #{pkCnord,jdbcType=VARCHAR}
+        </if>
+        <if test="pkExocc != null  and  pkExocc != ''">
+            and cg.pk_ordexdt = #{pkExocc,jdbcType=VARCHAR}
+        </if>
+        And cg.quan>0
+        and not exists (select 1 from bl_ip_dt bk where cg.pk_cgip=bk.pk_cgip_back)
+    </select>
+
+    <select id="qryIpNegativeAnountOrder" parameterType="java.util.Map" resultType="DynaBean">
+    select * from (
+          select 
+	         ord.PK_CNORD,
+             ord.NAME_ORD,
+	         ord.ordsn,
+	         sum(ipdt.AMOUNT) as AMOUNT
+          from CN_ORDER ord
+          LEFT JOIN bl_ip_dt ipdt on ipdt.PK_CNORD=ord.PK_CNORD
+          where ord.pk_pv = #{pkPv,jdbcType=VARCHAR}
+          GROUP BY ord.PK_CNORD,ord.NAME_ORD,ord.ordsn
+     ) t where AMOUNT &lt; 0
+    </select>
+</mapper>

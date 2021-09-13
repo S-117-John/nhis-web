@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.pskq.dao.HospitalizedCostDao">
+  <resultMap id="PiMasterResultMap" type="com.zebone.nhis.common.module.pi.PiMaster">
+    <result column="PK_PI" jdbcType="CHAR" property="pkPi" />
+    <result column="PK_ORG" jdbcType="CHAR" property="pkOrg" />
+  </resultMap>
+  <sql id="PI_MASTER_Column_List">
+   PK_PI, PK_ORG
+  </sql>
+  <select id="selectPiMaster" parameterType="java.lang.String" resultMap="PiMasterResultMap">
+    select
+    <include refid="PI_MASTER_Column_List" />
+    from PI_MASTER
+    where CODE_PI = #{codePi,jdbcType=VARCHAR} and ROWNUM <![CDATA[<=1]]>
+  </select>
+
+
+
+  <resultMap id="PvEncounterResultMap" type="com.zebone.nhis.common.module.pv.PvEncounter">
+    <result column="PK_PV" jdbcType="CHAR" property="pkPv" />
+  </resultMap>
+  <sql id="PV_ENCOUNTER_Column_List">
+   PK_PV
+  </sql>
+  <select id="selectPvEncounter" parameterType="java.lang.String" resultMap="PvEncounterResultMap">
+    select
+    <include refid="PV_ENCOUNTER_Column_List" />
+    from PV_ENCOUNTER
+    where PK_PI = #{pkPi,jdbcType=VARCHAR} and ROWNUM <![CDATA[<=1]]>
+  </select>
+
+
+
+
+  <resultMap id="BdItemResultMap" type="com.zebone.nhis.common.module.base.bd.srv.BdItem">
+    <id column="PK_ITEM" jdbcType="CHAR" property="pkItem" />
+  </resultMap>
+  <sql id="BD_ITEM_Column_List">
+    PK_ITEM
+  </sql>
+  <select id="selectBdItem" parameterType="java.lang.String" resultMap="BdItemResultMap">
+    select
+    <include refid="BD_ITEM_Column_List" />
+    from BD_ITEM
+    where CODE = #{code,jdbcType=VARCHAR} and ROWNUM <![CDATA[<=1]]>
+  </select>
+
+</mapper>

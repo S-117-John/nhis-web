@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.bl.pub.dao.OpDrugsExecuteMapper">
+
+    <!--根据患者查询医嘱信息-->
+    <select id="qryOrdInfoByPv" parameterType="java.util.Map" resultType="DynaBean">
+        select ord.pk_cnord,
+            ord.ordsn,
+            ord.PK_PV,
+            ord.PK_PI,
+            ord.ordsn_parent,
+            ord.groupno,
+            ord.name_ord,
+            ord.spec,
+            ord.dosage,
+            ord.pk_unit_dos,
+            bu.name unit_name_dos,
+            sup.name name_supply,
+            ord.code_supply_add,
+            freq.name name_freq,
+            freq.eu_cycle,
+            freq.cnt_cycle,
+            freq.cnt,
+            ord.days,
+            ord.eu_st,
+            pres.pres_no,
+            ord.note_ord,
+            supa.flag_st supa_st,
+            sup.flag_st sup_st,
+            cls.code cls_code
+        from ex_pres_occ pres
+            inner join ex_pres_occ_dt dt on pres.pk_presocc = dt.pk_presocc
+            inner join cn_order ord on dt.pk_cnord = ord.pk_cnord
+            inner join bd_supply sup on ord.code_supply = sup.code
+            inner join bd_supply_class cls on sup.pk_supplycate = cls.pk_supplycate
+            inner join bd_term_freq freq on freq.code=ord.code_freq
+            left outer join bd_supply supa on ord.code_supply_add=supa.code
+            left join BD_UNIT bu on bu.PK_UNIT=ord.PK_UNIT_DOS
+        where pres.pk_pv = #{pkPv,jdbcType=VARCHAR}
+        <if test="bdParams != null ">
+	        and cls.code in
+	        <foreach collection="bdParams" item="item" index="index" open="(" close=")" separator=",">
+	            #{item}
+	        </foreach>
+        </if>
+        and pres.flag_canc = '0'
+        and dt.quan_de - dt.quan_back > 0
+        order by ord.groupno,ord.ordsn asc
+    </select>
+
+    <!--根据医嘱查询附加项目-->
+    <select id="qryAdditItem" parameterType="java.lang.String" resultType="DynaBean">
+        select cg.pk_cgop,
+               cg.name_cg,
+               cg.spec,
+               cg.quan,
+               cg.amount
+        from bl_op_dt cg
+        where cg.FLAG_PD != '1' and  cg.pk_cnord = #{pkCnord,jdbcType=VARCHAR}
+        
+    </select>
+
+    <!--根据医嘱查询执行记录-->
+    <select id="qryExeRecord" parameterType="java.lang.String" resultType="DynaBean">
+        select occ.pk_cnord,
+        	   occ.pk_infuocc,
+        	   occ.flag_st,
+               occ.times_occ,
+               occ.date_begin,
+               occ.pk_dept_occ,
+               dept.name_dept,
+               occ.name_emp_begin name_emp_occ,
+               occ.eu_status
+        from ex_infusion_occ occ
+                 inner join bd_ou_dept dept on occ.pk_dept_occ = dept.pk_dept
+        where occ.pk_cnord =
+            #{pkCnord,jdbcType=VARCHAR}
+        order by occ.EU_STATUS,occ.CREATE_TIME desc
+        
+    </select>
+    
+     <!--根据医嘱查询执行记录-->
+    <select id="qryExeRecords" parameterType="java.util.List" resultType="DynaBean">
+        select occ.pk_cnord,
+        	   occ.pk_infuocc,
+        	   occ.flag_st,
+               occ.times_occ,
+               occ.date_begin,
+               occ.pk_dept_occ,
+               dept.name_dept,
+               occ.name_emp_begin,
+               occ.eu_status,
+       		   occ.flag_print 
+        from ex_infusion_occ occ
+                 inner join bd_ou_dept dept on occ.pk_dept_occ = dept.pk_dept
+        where occ.pk_cnord in
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item.pkCnord,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+    
+    <select id="qryPerformRecord" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.code_pv,
+            pi.name_pi,
+            ord.groupno,
+            ord.name_ord,
+            ord.spec,
+            occ.eu_type,
+            ord.eu_st,
+            occ.times_occ,
+            occ.eu_status,
+            occ.date_begin,
+            occ.name_emp_begin,
+            occ.date_canc,
+            occ.name_emp_canc
+        from ex_infusion_occ occ
+            inner join pv_encounter pv on occ.pk_pv = pv.pk_pv
+            inner join pi_master pi on pv.pk_pi = pi.pk_pi
+            inner join cn_order ord on occ.ordsn_parent = ord.ordsn_parent
+        <where>
+            <if test="begin != null and begin != '' ">
+                occ.date_begin &gt;= to_date(#{begin},'yyyymmddHH24Miss')
+            </if>
+            <if test="end != null and end != '' ">
+                and occ.date_begin &lt;= to_date(#{end} ,'yyyymmddHH24Miss')
+            </if>
+            <if test="codePv != null and codePv !=''">
+                and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+            </if>
+            <if test="codeOp != null and codeOp !=''">
+                and pi.code_op = #{codeOp,jdbcType=VARCHAR}
+            </if>
+            <if test="namePi != null and namePi !=''">
+                and  pi.name_pi like '%${namePi}%'
+            </if>
+            <if test="nameOrd != null and nameOrd !=''">
+                and  ord.name_ord like '%${nameOrd}%'
+            </if>
+            and occ.pk_dept_occ=#{pkDept,jdbcType=VARCHAR}
+        </where>
+    </select>
+    
+    <update id="updateInfusionOcc" parameterType="java.util.Map">
+    	update ex_infusion_occ set eu_status = '9' ,date_canc = #{dateCanc,jdbcType=DATE} ,pk_emp_canc =#{pkEmp,jdbcType=VARCHAR},name_emp_canc = #{nameEmp,jdbcType=VARCHAR}
+    	where pk_infuocc = #{pkInfuocc,jdbcType=VARCHAR}
+    </update>
+    
+    <update id="updateOrd" parameterType="java.lang.String">
+    	update cn_order set eu_st = '1' where pk_cnord = #{pkCnord,jdbcType=VARCHAR}
+    </update>
+    
+    <select id="qryPrintInfo" parameterType="java.util.List" resultType="DynaBean">
+        select pv.pk_pv,
+            pv.bed_no,
+            pv.name_pi,
+            pv.weight,
+            pi.code_ip,
+            org.name_org,
+            dept.name_dept,
+            defdoc.name as sex,
+            ord.ordsn,
+            ord.ordsn_parent,
+            parent.pk_cnord,
+            case when ord.ordsn_parent=ord.ordsn then '' else '▲' end || (case when ord.flag_self='1' then '(自备)' else ''
+            end) || ord.name_ord name_ord,
+            ord.spec,
+            LISTAGG(ord.note_ord,',')WITHIN GROUP(ORDER BY ord.ORDSN)
+            over (partition by ord.ORDSN_PARENT ) note_ord,
+            ord.flag_self,
+            ord.flag_first,
+            ord.dosage,
+            ord.drip_speed,
+            ord.note_ord ord_desc,
+            case ord.eu_always when '0' then '长期' when '1' then '临时' else '' end eu_always,
+            '' as sign,
+            newborn.name name_infant,
+            unit.name name_unit_dos,
+            sup.name_print name_supply,
+            freq.name name_freq,
+            freq.eu_always as eu_always_freq,
+            ord.pk_dept_exec,ord.pk_unit_dos,
+            cls.code cls_code
+        from cn_order ord
+            left join bd_pd pd on pd.pk_pd= ord.pk_ord
+            left join bd_unit unit on unit.pk_unit = ord.pk_unit_dos
+            left join bd_supply sup on sup.code = ord.code_supply
+            left join bd_supply_class cls on sup.pk_supplycate = cls.pk_supplycate
+            inner join bd_term_freq freq on freq.code = ord.code_freq
+            inner join pv_encounter pv on pv.pk_pv = ord.pk_pv
+            inner join pi_master pi on pi.pk_pi = pv.pk_pi
+            inner join bd_ou_org org on org.pk_org = ord.pk_org
+            inner join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+            inner join cn_order parent on parent.ordsn = ord.ordsn_parent
+            left join bd_defdoc defdoc on defdoc.code = pv.dt_sex and defdoc.code_defdoclist = '000000'
+            left join pv_infant newborn on pv.pk_pv = newborn.pk_pv and ord.infant_no = newborn.sort_no
+        where <!--(sup.dt_excardtype='4' or sup.dt_excardtype='3' or sup.dt_excardtype='04') and--> ord.pk_cnord in
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item.pkCnord}
+        </foreach>
+    </select>
+
+    <!--查询原液皮试-->
+    <select id="qryLiquidSt" parameterType="java.util.List" resultType="DynaBean">
+        select ord.pk_cnord,
+            ord.groupno,
+            ord.name_ord,
+            ord.ORDSN,
+            ord.ORDSN_PARENT,
+            ord.spec,
+            ord.dosage,
+            bu.NAME unit_name_dos,
+            bs.name name_supply,
+            tf.NAME name_freq,
+            ord.eu_st
+        from cn_order ord
+            inner join bd_supply sup on ord.code_supply = sup.code
+            inner join BD_UNIT bu on bu.PK_UNIT=ord.PK_UNIT_DOS
+            inner join BD_SUPPLY bs on bs.CODE=ord.CODE_SUPPLY
+            inner join BD_TERM_FREQ tf on tf.CODE=ord.CODE_FREQ
+        where
+              ord.pk_cnord in
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <!--查询皮试剂皮试-->
+    <select id="qryDoseSt" parameterType="java.lang.String" resultType="DynaBean">
+        select ord.pk_cnord,
+               ord.groupno,
+               ord.name_ord,
+               ord.spec,
+               ord.dosage,
+               ord.ORDSN,
+               ord.ORDSN_PARENT,
+               bu.NAME unit_name_dos,
+               bs.name name_supply,
+               tf.NAME name_freq,
+               ord.EU_ST
+        from cn_order ord
+                 inner join bd_supply sup on ord.code_supply = sup.code
+                 inner join BD_UNIT bu on bu.PK_UNIT=ord.PK_UNIT_DOS
+                 inner join BD_SUPPLY bs on bs.CODE=ord.CODE_SUPPLY
+                 inner join BD_TERM_FREQ tf on tf.CODE=ord.CODE_FREQ
+        where ord.pk_pv = #{pkPv,jdbcType=VARCHAR}
+          and ord.eu_st = '1'
+          <!--and sup.flag_st = '0'-->
+    </select>
+
+</mapper>

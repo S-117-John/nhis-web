@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.opdw.dao.CnOpEmrTempMapper">
+	<select id="queryListNow" parameterType="java.util.Map" resultType="com.zebone.nhis.cn.opdw.vo.bdOpEmrVo">
+		SELECT temp.*,diag.diagname as diag_name,cate.name as cate_Name FROM BD_OPEMR_TEMP temp
+ 			LEFT JOIN BD_TERM_DIAG diag ON diag.PK_DIAG = temp.PK_DIAG
+ 			inner  join  BD_OPEMR_TEMPCATE cate on cate.pk_tempcate= temp.pk_tempcate
+		    WHERE cate.DEL_FLAG = '0'
+ 			AND cate.NAME LIKE '%'||#{name,jdbcType=VARCHAR}||'%'
+ 			<if test="euRange !=null">
+ 			<choose>
+ 			<when test="euRange == '2'">
+ 			AND cate.pk_emp = #{pkEmp,jdbcType=VARCHAR} AND cate.eu_range = #{euRange,jdbcType=VARCHAR}    			   			
+ 			</when>
+ 			<when test="euRange == '1'">
+ 			AND cate.pk_org = #{pkOrg,jdbcType=VARCHAR} AND cate.pk_dept = #{pkDept,jdbcType=VARCHAR} AND cate.eu_range = #{euRange,jdbcType=VARCHAR}  
+ 			</when>
+ 			<when test="euRange == '0'">
+ 			AND cate.pk_org = #{pkOrg,jdbcType=VARCHAR} AND cate.eu_range = #{euRange,jdbcType=VARCHAR} 
+ 			</when>
+ 			<otherwise>
+ 			</otherwise>
+ 			</choose>
+ 			</if>
+ 			AND temp.FLAG_ACTIVE = '1' <!-- AND diag.PK_DIAG = temp.PK_DIAG  --> 
+	</select>
+</mapper>

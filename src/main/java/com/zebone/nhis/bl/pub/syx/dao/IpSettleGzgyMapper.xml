@@ -1,0 +1,1997 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.bl.pub.syx.dao.IpSettleGzgyMapper">
+    <select id="qryHpRatioUnit" resultType="java.lang.String">
+        select att.val_attr
+        from bd_hp hp
+                     inner join bd_dictattr att on hp.pk_hp = att.pk_dict
+                     inner join
+                     bd_dictattr_temp tmp on att.pk_dictattrtemp = tmp.pk_dictattrtemp
+                             and
+                                             tmp.dt_dicttype = '03' and
+                                             tmp.code_attr = '0303'
+        where hp.del_flag = '0'
+          and hp.pk_hp = #{pkHp,jdbcType=CHAR}
+    </select>
+
+    <select id="qryDrugCostByPv" parameterType="java.util.Map"
+            resultType="DynaBean">
+        select sum(CASE WHEN dt.RATIO_SELF!=1 then dt.amount-dt.amount_add
+        else 0 end) amount_drug,
+        sum(dt.amount-dt.amount_add) amount,
+        sum(dt.amount_add) amount_add,
+        dt.flag_settle,
+        pv.drugquota,
+        case when
+        pvinfo.eu_pvmode is not null and pvinfo.eu_pvmode = '11' then
+        hp.rate_op else hp.rate_ip end ratio_pi,
+        ist.amount_ins_drug
+        from
+        bl_ip_dt dt
+        inner join PV_ENCOUNTER pvinfo on pvinfo.pk_pv = dt.pk_pv
+        left join ins_gzgy_pv pv on dt.pk_pv=pv.pk_pv
+        inner join bd_hp hp on
+        pv.pk_hp=hp.pk_hp
+        left outer join bl_settle st on
+        dt.pk_settle=st.pk_settle
+        left outer join ins_gzgy_st ist on
+        st.pk_settle=ist.pk_settle
+        where dt.pk_pv=#{pkPv,jdbcType=CHAR} and
+        dt.flag_pd='1' and
+        not exists (select 1 from bl_settle bak
+        where
+        st.pk_settle=bak.pk_settle_canc)
+        <if test="pkList != null and  pkList != ''">
+            and (dt.pk_cgip in
+            <trim suffixOverrides=" OR dt.pk_cgip in()">
+                <!-- 表示删除最后一个条件 -->
+                <foreach collection="pkList" item="pkList" index="index"
+                         open="(" close=")">
+                    <if test="index != 0">
+                        <choose>
+                            <when test="index % 1000 == 999">
+                                ) OR dt.pk_cgip in (
+                            </when>
+                            <otherwise>
+                                ,
+                            </otherwise>
+                        </choose>
+                    </if>
+                    #{pkList}
+                </foreach>
+            </trim>
+            )
+        </if>
+        <if test="begin != null  and  begin != ''">
+            and dt.date_hap &gt;= #{begin,javaType=java.util.Date}
+        </if>
+        <if test="end != null  and  end != ''">
+            and dt.date_hap &lt;= #{end,javaType=java.util.Date}
+        </if>
+        <if test="pkSettle != null and pkSettle!=''">
+            and dt.pk_settle = #{pkSettle,jdbcType=CHAR}
+        </if>
+        group by dt.flag_settle,
+        pv.drugquota,
+        case when pvinfo.eu_pvmode is not
+        null and pvinfo.eu_pvmode = '11' then
+        hp.rate_op else hp.rate_ip end,
+        ist.amount_ins_drug
+    </select>
+
+    <select id="qryItemCostByPv" parameterType="java.util.Map"
+            resultType="DynaBean">
+        select sum(case when dt.amount=dt.amount_hppi then 0
+        else
+        dt.amount-dt.amount_hppi end) amount_hp,
+        sum(dt.amount) amount
+        from
+        bl_ip_dt dt
+        where dt.pk_pv=#{pkPv,jdbcType=CHAR} and
+        dt.flag_pd='0' and
+        dt.flag_settle='0'
+        <if test="pkList != null and  pkList != ''">
+            and (dt.pk_cgip in
+            <trim suffixOverrides=" OR dt.pk_cgip in()">
+                <!-- 表示删除最后一个条件 -->
+                <foreach collection="pkList" item="pkList" index="index"
+                         open="(" close=")">
+                    <if test="index != 0">
+                        <choose>
+                            <when test="index % 1000 == 999">
+                                ) OR dt.pk_cgip in (
+                            </when>
+                            <otherwise>
+                                ,
+                            </otherwise>
+                        </choose>
+                    </if>
+                    #{pkList}
+                </foreach>
+            </trim>
+            )
+        </if>
+        <if test="begin != null  and  begin != ''">
+            and dt.date_hap &gt;= #{begin,javaType=java.util.Date}
+        </if>
+        <if test="end != null  and  end != ''">
+            and dt.date_hap &lt;= #{end,javaType=java.util.Date}
+        </if>
+    </select>
+
+    <select id="qryStInfoByPv" parameterType="java.util.Map"
+            resultType="DynaBean">
+        select sum(case when dt.amount=dt.amount_pi then 0
+        else
+        dt.amount-dt.amount_pi end) amount_hp,
+        sum(dt.amount) amount
+        from
+        bl_ip_dt dt
+        where dt.pk_pv=#{pkPv,jdbcType=CHAR} and
+        dt.flag_settle='0'
+        <if test="pkList != null and  pkList != ''">
+            and (dt.pk_cgip in
+            <trim suffixOverrides=" OR dt.pk_cgip in()">
+                <!-- 表示删除最后一个条件 -->
+                <foreach collection="pkList" item="pkList" index="index"
+                         open="(" close=")">
+                    <if test="index != 0">
+                        <choose>
+                            <when test="index % 1000 == 999">
+                                ) OR dt.pk_cgip in (
+                            </when>
+                            <otherwise>
+                                ,
+                            </otherwise>
+                        </choose>
+                    </if>
+                    #{pkList}
+                </foreach>
+            </trim>
+            )
+        </if>
+        <if test="begin != null  and  begin != ''">
+            and dt.date_hap &gt;= #{begin,javaType=java.util.Date}
+        </if>
+        <if test="end != null  and  end != ''">
+            and dt.date_hap &lt;= #{end,javaType=java.util.Date}
+        </if>
+    </select>
+
+    <update id="updateBlInfo" parameterType="java.util.Map">
+        update bl_ip_dt set flag_settle = 1, pk_settle =
+        #{pkSettle,jdbcType=CHAR}
+        where
+        flag_settle &lt;&gt; 1
+        and pk_pv =
+        #{pkPv,jdbcType=CHAR}
+        <if test='end!=null'>
+            and date_hap &lt;= #{end,javaType=java.util.Date}
+        </if>
+        <if test="pkList != null and  pkList != ''">
+            and (pk_cgip in
+            <trim suffixOverrides=" OR pk_cgip in()">
+                <!-- 表示删除最后一个条件 -->
+                <foreach collection="pkList" item="pkList" index="index"
+                         open="(" close=")">
+                    <if test="index != 0">
+                        <choose>
+                            <when test="index % 1000 == 999">
+                                ) OR pk_cgip in (
+                            </when>
+                            <otherwise>
+                                ,
+                            </otherwise>
+                        </choose>
+                    </if>
+                    #{pkList}
+                </foreach>
+            </trim>
+            )
+        </if>
+    </update>
+
+    <select id="qryPvInsuAttrVal" resultType="DynaBean">
+        select hp.pk_hp,
+               hp.eu_hptype,
+               attr.val_attr
+        from bd_hp hp
+                     inner join bd_dictattr attr on
+                hp.pk_hp = attr.pk_dict
+                     inner join bd_dictattr_temp tmp on
+                attr.pk_dictattrtemp = tmp.pk_dictattrtemp
+                        and tmp.dt_dicttype = '03'
+                     inner join pv_encounter pv on hp.pk_hp = pv.pk_insu
+        where pv.pk_pv = #{pkPv,jdbcType=CHAR}
+          and tmp.code_attr = '0301'
+    </select>
+
+    <select id="qryPvEuHptype" resultType="DynaBean">
+        SELECT hp.pk_hp,
+               hp.eu_hptype
+        FROM bd_hp hp
+                     INNER JOIN pv_encounter pv ON hp.pk_hp =
+                                                   pv.pk_insu
+        WHERE pv.pk_pv =
+              #{pkPv,jdbcType=CHAR}
+    </select>
+
+    <select id="queryBlCgIpDetailsT" parameterType="java.util.Map" resultType="DynaBean">
+        select * from (
+        select st.code_st,
+        pv.pk_pv,
+        pv.date_begin,
+        pv.date_end,
+        pi.code_ip,
+        pv.pk_dept,
+        pv.bed_no,
+        pi.name_pi,
+        pi.dt_sex,
+        pv.pk_insu,
+        hp.name AS
+        insu_name,
+        pvdept.name_dept AS deptNs,
+        unit.name unitname,
+        case when
+        cg.flag_pd='1' then pd.code else item.code end code_cg,
+        cg.name_cg,
+        cg.spec,
+        cg.price-cg.price_org price,
+        sum(cg.quan) quan,
+        cg.pk_unit,
+        sum(cg.AMOUNT_ADD) amount,
+        CASE insitem.eu_level
+        WHEN '0' THEN '甲类'
+        WHEN
+        '1' THEN '乙类'
+        ELSE '自费' END AS item_hptype,
+        CASE cg.flag_pd
+        WHEN '1' THEN
+        pd.code
+        ELSE item.code END AS code_item,
+        iitem.name catename,
+        iitem.sort_no,
+        CASE WHEN cg.flag_pd = '1'
+        THEN pd.code
+        ELSE item.code_std END code_std,
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and hpdicttype.equals("1")'>
+            case lord.flag_fit when '0' then '自费' when '1' then '医保'
+            else
+            CASE WHEN insitem.NOTE IS NULL
+            THEN '自费'
+            WHEN insitem.NOTE = '自费'
+            THEN '自费'
+            ELSE '医保' END
+            end AS insu_bz,
+        </if>
+        deptex.name_dept as dept_ex
+        from
+        bl_ip_dt cg
+        inner join bd_invcate_item iitem on cg.code_bill=iitem.code
+        inner join bd_invcate icate on iitem.pk_invcate=icate.pk_invcate and
+        icate.eu_type='1'
+        left outer join bl_settle st on
+        cg.pk_settle=st.pk_settle
+        inner join pv_encounter pv on
+        cg.pk_pv=pv.pk_pv
+        inner join pi_master pi on pv.pk_pi=pi.pk_pi
+        LEFT JOIN
+        bd_hp hp ON hp.pk_hp = pv.pk_insu
+        LEFT JOIN bd_ou_dept pvdept ON
+        pvdept.pk_dept = pv.pk_dept
+        LEFT JOIN bd_unit unit ON unit.pk_unit =
+        cg.pk_unit
+        left outer join bd_item item on cg.pk_item=item.pk_item
+        left
+        outer join bd_pd pd on cg.pk_pd=pd.pk_pd
+        left join bd_ou_dept deptex on cg.pk_dept_ex = deptex.pk_dept and deptex.del_flag = '0'
+        <if test='attrVal!=null and attrVal!="" and attrVal.equals("1")'>
+            left outer join (
+            select ci.pk_item pk_item,
+            ci.dt_hptype
+            eu_level
+            from bd_hp_divconfig dc
+            inner join bd_hp_cgdiv_item ci on
+            dc.pk_hpcgdiv=ci.pk_hpcgdiv and
+            dc.eu_pvtype='3' and ci.DEL_FLAG = '0'
+            where dc.pk_hp=#{pkHp,jdbcType=CHAR} and dc.DEL_FLAG = '0'
+            ) insitem
+            on insitem.pk_item=cg.pk_item
+        </if>
+        <if test='attrVal==null or attrVal=="" or attrVal.equals("0")'>
+            left join (
+            SELECT *
+            FROM (SELECT row_number() OVER ( PARTITION BY pk_item ORDER BY pk_item DESC ) cnt,
+            itemhp.*
+            FROM bd_item_hp itemhp
+            WHERE itemhp.del_flag = '0') res
+            where cnt = '1'
+            ) insitem on insitem.pk_item=cg.pk_item
+            and
+            (insitem.dt_hpdicttype=#{hpdicttype,jdbcType=CHAR}) and
+            insitem.DEL_FLAG = '0'
+        </if>
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and hpdicttype.equals("1")'>
+            left join (
+            select * from (
+            select ord.pk_pv,ord.pk_ord,ybord.flag_fit,row_number() OVER ( PARTITION BY ord.pk_pv||ord.pk_ord ORDER BY
+            ybord.eu_hp asc ) cnt from ins_szyb_order ybord
+            inner join CN_ORDER ord on ord.pk_cnord = ybord.pk_cnord
+            where ybord.flag_valid = '1' and ord.del_flag = '0' and ybord.del_flag='0' and ybord.pk_cnord is not null
+            order by ybord.eu_hp asc
+            ) hord where hord.cnt = 1
+            ) lord on lord.PK_ORD = cg.pk_item and lord.pk_pv = cg.pk_pv
+        </if>
+        where 1=1
+        <if test='isFlag!=null and isFlag==1'>
+            <if test="pkSettle != null  and  pkSettle != ''">
+                and cg.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+            </if>
+        </if>
+        <if test='isFlag!=null and isFlag==0'>
+            and cg.FLAG_SETTLE = '0'
+            <if test="pkPv != null  and  pkPv != ''">
+                and cg.pk_pv=#{pkPv,jdbcType=CHAR}
+            </if>
+        </if>
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and cg.date_hap &lt;= to_date(#{dateEnd},
+            'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and cg.date_hap &gt;= to_date(#{dateBegin},
+            'YYYYMMDDHH24MISS')
+        </if>
+        group by st.code_st,
+        pv.pk_pv,
+        pv.date_begin,
+        pv.date_end,
+        pi.code_ip,
+        pv.pk_dept,
+        pv.bed_no,
+        pi.name_pi,
+        pi.dt_sex,
+        pv.pk_insu,
+        hp.name,
+        pvdept.name_dept,
+        unit.name,
+        case when cg.flag_pd='1' then pd.code else
+        item.code end,
+        cg.name_cg,
+        cg.spec,
+        cg.price-cg.price_org,
+        cg.pk_unit,
+        CASE insitem.eu_level
+        WHEN '0' THEN '甲类'
+        WHEN '1' THEN '乙类'
+        ELSE '自费'
+        END,
+        CASE cg.flag_pd
+        WHEN '1' THEN pd.code
+        ELSE item.code END,
+        iitem.sort_no,
+        iitem.name,
+        CASE WHEN cg.flag_pd = '1'
+        THEN pd.code
+        ELSE item.code_std END,
+        insitem.NOTE,
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and hpdicttype.equals("1")'>
+            case lord.flag_fit when '0' then '自费' when '1' then '医保'
+            else
+            CASE WHEN insitem.NOTE IS NULL
+            THEN '自费'
+            WHEN insitem.NOTE = '自费'
+            THEN '自费'
+            ELSE '医保' END
+            end,
+        </if>
+        deptex.name_dept
+        having sum(quan)!=0 and sum(cg.AMOUNT_ADD)!=0
+
+        UNION ALL
+
+        select st.code_st,
+        pv.pk_pv,
+        pv.date_begin,
+        pv.date_end,
+        pi.code_ip,
+        pv.pk_dept,
+        pv.bed_no,
+        pi.name_pi,
+        pi.dt_sex,
+        pv.pk_insu,
+        hp.name AS
+        insu_name,
+        pvdept.name_dept AS deptNs,
+        unit.name unitname,
+        case when
+        cg.flag_pd='1' then pd.code else item.code end code_cg,
+        cg.name_cg,
+        cg.spec,
+        cg.price-cg.price_org price,
+        sum(cg.quan) quan,
+        cg.pk_unit,
+        sum(cg.AMOUNT_ADD) amount,
+        CASE insitem.eu_level
+        WHEN '0' THEN '甲类'
+        WHEN
+        '1' THEN '乙类'
+        ELSE '自费' END AS item_hptype,
+        CASE cg.flag_pd
+        WHEN '1' THEN
+        pd.code
+        ELSE item.code END AS code_item,
+        iitem.name catename,
+        iitem.sort_no,
+        CASE WHEN cg.flag_pd = '1'
+        THEN pd.code
+        ELSE item.code_std END code_std,
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and hpdicttype.equals("1")'>
+            case lord.flag_fit when '0' then '自费' when '1' then '医保'
+            else
+            CASE WHEN insitem.NOTE IS NULL
+            THEN '自费'
+            WHEN insitem.NOTE = '自费'
+            THEN '自费'
+            ELSE '医保' END
+            end AS insu_bz,
+        </if>
+        deptex.name_dept as dept_ex
+        from
+        bl_ip_dt_b cg
+        inner join bd_invcate_item iitem on cg.code_bill=iitem.code
+        inner join bd_invcate icate on iitem.pk_invcate=icate.pk_invcate and
+        icate.eu_type='1'
+        left outer join bl_settle st on
+        cg.pk_settle=st.pk_settle
+        inner join pv_encounter pv on
+        cg.pk_pv=pv.pk_pv
+        inner join pi_master pi on pv.pk_pi=pi.pk_pi
+        LEFT JOIN
+        bd_hp hp ON hp.pk_hp = pv.pk_insu
+        LEFT JOIN bd_ou_dept pvdept ON
+        pvdept.pk_dept = pv.pk_dept
+        LEFT JOIN bd_unit unit ON unit.pk_unit =
+        cg.pk_unit
+        left outer join bd_item item on cg.pk_item=item.pk_item
+        left
+        outer join bd_pd pd on cg.pk_pd=pd.pk_pd
+        left join bd_ou_dept deptex on cg.pk_dept_ex = deptex.pk_dept and deptex.del_flag = '0'
+        <if test='attrVal!=null and attrVal!="" and attrVal.equals("1")'>
+            left outer join (
+            select ci.pk_item pk_item,
+            ci.dt_hptype
+            eu_level
+            from bd_hp_divconfig dc
+            inner join bd_hp_cgdiv_item ci on
+            dc.pk_hpcgdiv=ci.pk_hpcgdiv and
+            dc.eu_pvtype='3' and ci.DEL_FLAG = '0'
+            where dc.pk_hp=#{pkHp,jdbcType=CHAR} and dc.DEL_FLAG = '0'
+            ) insitem
+            on insitem.pk_item=cg.pk_item
+        </if>
+        <if test='attrVal==null or attrVal=="" or attrVal.equals("0")'>
+            left join (
+            SELECT *
+            FROM (SELECT row_number() OVER ( PARTITION BY pk_item ORDER BY pk_item DESC ) cnt,
+            itemhp.*
+            FROM bd_item_hp itemhp
+            WHERE itemhp.del_flag = '0') res
+            where cnt = '1'
+            ) insitem on insitem.pk_item=cg.pk_item
+            and
+            (insitem.dt_hpdicttype=#{hpdicttype,jdbcType=CHAR}) and
+            insitem.DEL_FLAG = '0'
+        </if>
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and hpdicttype.equals("1")'>
+            left join (
+            select * from (
+            select ord.pk_pv,ord.pk_ord,ybord.flag_fit,row_number() OVER ( PARTITION BY ord.pk_pv||ord.pk_ord ORDER BY
+            ord.pk_pv||ord.pk_ord DESC ) cnt from ins_szyb_order ybord
+            inner join CN_ORDER ord on ord.pk_cnord = ybord.pk_cnord
+            where ybord.flag_valid = '1' and ord.del_flag = '0' and ybord.del_flag='0' and ybord.pk_cnord is not null
+            ) hord where hord.cnt = 1
+            ) lord on lord.PK_ORD = cg.pk_item and lord.pk_pv = cg.pk_pv
+        </if>
+        where 1=1
+        <if test='isFlag!=null and isFlag==1'>
+            <if test="pkSettle != null  and  pkSettle != ''">
+                and cg.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+            </if>
+        </if>
+        <if test='isFlag!=null and isFlag==0'>
+            and cg.FLAG_SETTLE = '0'
+            <if test="pkPv != null  and  pkPv != ''">
+                and cg.pk_pv=#{pkPv,jdbcType=CHAR}
+            </if>
+        </if>
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and cg.date_hap &lt;= to_date(#{dateEnd},
+            'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and cg.date_hap &gt;= to_date(#{dateBegin},
+            'YYYYMMDDHH24MISS')
+        </if>
+        group by st.code_st,
+        pv.pk_pv,
+        pv.date_begin,
+        pv.date_end,
+        pi.code_ip,
+        pv.pk_dept,
+        pv.bed_no,
+        pi.name_pi,
+        pi.dt_sex,
+        pv.pk_insu,
+        hp.name,
+        pvdept.name_dept,
+        unit.name,
+        case when cg.flag_pd='1' then pd.code else
+        item.code end,
+        cg.name_cg,
+        cg.spec,
+        cg.price-cg.price_org,
+        cg.pk_unit,
+        CASE insitem.eu_level
+        WHEN '0' THEN '甲类'
+        WHEN '1' THEN '乙类'
+        ELSE '自费'
+        END,
+        CASE cg.flag_pd
+        WHEN '1' THEN pd.code
+        ELSE item.code END,
+        iitem.sort_no,
+        iitem.name,
+        CASE WHEN cg.flag_pd = '1'
+        THEN pd.code
+        ELSE item.code_std END,
+        insitem.NOTE,
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and hpdicttype.equals("1")'>
+            case lord.flag_fit when '0' then '自费' when '1' then '医保'
+            else
+            CASE WHEN insitem.NOTE IS NULL
+            THEN '自费'
+            WHEN insitem.NOTE = '自费'
+            THEN '自费'
+            ELSE '医保' END
+            end AS insu_bz,
+        </if>
+        deptex.name_dept
+        having sum(quan)!=0 and sum(cg.AMOUNT_ADD)!=0
+        ) iitems
+        order by iitems.sort_no,iitems.catename asc
+    </select>
+
+    <select id="queryBlCgIpDetails" parameterType="java.util.Map" resultType="DynaBean">
+        select * from (
+        select st.code_st,
+        <if test='zFBLFlag != null and zFBLFlag.equals("1")'>
+            ins.jbzfbl,
+        </if>
+        pv.pk_pv,
+        pv.date_begin,
+        pv.date_end,
+        pi.code_ip,
+        pv.pk_dept,
+        pv.bed_no,
+        pi.name_pi,
+        pi.dt_sex,
+        pv.pk_insu,
+        hp.name AS
+        insu_name,
+        pvdept.name_dept AS deptNs,
+        unit.name unitname,
+        case when
+        cg.flag_pd='1' then pd.code else item.code end code_cg,
+        cg.name_cg,
+        cg.spec,
+        cg.price price,
+        sum(cg.quan) quan,
+        cg.pk_unit,
+        sum(cg.amount)
+        amount,
+        CASE insitem.eu_level
+        WHEN '0' THEN '甲类'
+        WHEN '1' THEN '乙类'
+        ELSE
+        '自费' END AS item_hptype,
+        CASE cg.flag_pd
+        WHEN '1' THEN pd.code
+        ELSE
+        item.code END AS code_item,
+        iitem.name catename,
+        iitem.sort_no,
+
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and hpdicttype.equals("1")'>
+            CASE WHEN hp.pk_parent='cb3925e57baa426ab86162644caf33a3'  THEN qgybitem.ins_item_code ELSE   CASE WHEN cg.flag_pd = '1'  THEN pd.code ELSE item.code_std END   END           code_std,
+        </if>
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and !hpdicttype.equals("1")'>
+            CASE WHEN cg.flag_pd = '1' THEN pd.code ELSE item.code_std END code_std,
+        </if>
+
+
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and hpdicttype.equals("1")'>
+            CASE lord.flag_fit WHEN '0' THEN '自费' WHEN '1' THEN ''
+            ELSE
+            CASE WHEN szitemmap.aka036='1' and hp.DT_EXTHP = '03' then ''
+            when szitemmap.aka036='1' and hp.DT_EXTHP != '03'then '自费'
+            else
+            case when szitemmap.bkm032 IS NULL THEN '' WHEN szitemmap.bkm032 = '99' THEN '自费' ELSE '' END
+            end
+            END AS insu_bz,
+        </if>
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and !hpdicttype.equals("1")'>
+            CASE WHEN insitem.NOTE IS NULL
+            THEN '自费'
+            WHEN insitem.NOTE = '自费'
+            THEN '自费'
+            ELSE '' END AS insu_bz,
+        </if>
+        deptex.name_dept as dept_ex
+        from bl_ip_dt cg
+        <if test='zFBLFlag != null and zFBLFlag.equals("1")'>
+            LEFT JOIN ins_item_map map ON map.pk_item = cg.pk_item and map.del_flag = '0'
+            LEFT JOIN ins_item ins ON ins.pk_insitem = map.pk_insitem and ins.del_flag = '0'
+        </if>
+        INNER JOIN bd_invcate_item iitem on cg.code_bill=iitem.code
+        INNER JOIN bd_invcate icate on iitem.pk_invcate=icate.pk_invcate and icate.eu_type='1'
+        LEFT OUTER JOIN bl_settle st on cg.pk_settle=st.pk_settle
+        INNER JOIN pv_encounter pv on cg.pk_pv=pv.pk_pv
+        INNER JOIN pi_master pi on pv.pk_pi=pi.pk_pi
+        LEFT JOIN bd_hp hp ON hp.pk_hp = pv.pk_insu
+        LEFT JOIN bd_ou_dept pvdept ON pvdept.pk_dept = pv.pk_dept
+        LEFT JOIN bd_unit unit ON unit.pk_unit = cg.pk_unit
+        LEFT OUTER JOIN bd_item item on cg.pk_item=item.pk_item
+        LEFT OUTER JOIN bd_pd pd on cg.pk_pd=pd.pk_pd
+        left join bd_ou_dept deptex on cg.pk_dept_ex = deptex.pk_dept and deptex.del_flag = '0'
+        <if test='attrVal!=null and attrVal!="" and attrVal.equals("1")'>
+            left outer join (
+            select ci.pk_item pk_item,
+            ci.dt_hptype
+            eu_level
+            from bd_hp_divconfig dc
+            inner join bd_hp_cgdiv_item ci on
+            dc.pk_hpcgdiv=ci.pk_hpcgdiv and
+            dc.eu_pvtype='3' and ci.DEL_FLAG = '0'
+            where dc.pk_hp=#{pkHp,jdbcType=CHAR} and dc.DEL_FLAG = '0'
+            ) insitem
+            on insitem.pk_item=cg.pk_item
+        </if>
+        <if test='attrVal==null or attrVal=="" or attrVal.equals("0")'>
+            left join (
+            SELECT *
+            FROM (SELECT row_number() OVER ( PARTITION BY pk_item ORDER BY pk_item DESC ) cnt,
+            itemhp.*
+            FROM bd_item_hp itemhp
+            WHERE itemhp.del_flag = '0') res
+            where cnt = '1'
+            ) insitem on insitem.pk_item=cg.pk_item
+            and
+            (insitem.dt_hpdicttype=#{hpdicttype,jdbcType=CHAR}) and
+            insitem.DEL_FLAG = '0'
+        </if>
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and hpdicttype.equals("1")'>
+            left join (
+            select * from (
+            select ord.pk_pv,ord.pk_ord,ord.PK_CNORD,ybord.flag_fit,row_number() OVER ( PARTITION BY
+            ord.pk_pv||ord.pk_ord|| ord.PK_CNORD ORDER BY ybord.eu_hp asc ) cnt from ins_szyb_order ybord
+            inner join CN_ORDER ord on ord.pk_cnord = ybord.pk_cnord
+            where ord.pk_pv = #{pkPv,jdbcType=CHAR} and ybord.pk_pv = #{pkPv,jdbcType=CHAR} and ybord.flag_valid = '1' and ord.del_flag = '0' and ybord.del_flag='0' and ybord.pk_cnord is not null
+            order by ybord.eu_hp asc
+            ) hord where hord.cnt = 1
+            ) lord on lord.PK_CNORD = cg.pk_cnord and lord.PK_ORD = cg.pk_item and lord.pk_pv = cg.pk_pv
+            left join (
+            select * from (
+            select
+            row_number()
+            OVER (PARTITION BY code_hosp ORDER BY date_end desc) cnt
+            ,mapd.*
+            from INS_SZYB_ITEMMAP mapd
+            where EU_HPDICTTYPE = '01' and del_flag='0'
+            ) where cnt = '1'
+            ) szitemmap on szitemmap.pk_item = cg.pk_item
+            left join ins_qgyb_itemmap qgybitemmap on qgybitemmap.pk_item=cg.pk_item and qgybitemmap.del_flag='0'
+            left join ins_qgyb_item qgybitem on qgybitemmap.pk_insitem=qgybitem.pk_insitem and qgybitem.del_flag='0'
+        </if>
+        where 1=1
+        <if test='isFlag!=null and isFlag==1'>
+            <if test="pkSettle != null  and  pkSettle != ''">
+                and cg.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+            </if>
+        </if>
+        <if test='isFlag!=null and isFlag==0'>
+            and cg.FLAG_SETTLE = '0'
+            <if test="pkPv != null  and  pkPv != ''">
+                and cg.pk_pv=#{pkPv,jdbcType=CHAR}
+            </if>
+        </if>
+
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and cg.date_hap &lt;= to_date(#{dateEnd},
+            'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and cg.date_hap &gt;= to_date(#{dateBegin},
+            'YYYYMMDDHH24MISS')
+        </if>
+        group by st.code_st,
+        <if test='zFBLFlag != null and zFBLFlag.equals("1")'>
+            ins.jbzfbl,
+        </if>
+        pv.pk_pv,
+        pv.date_begin,
+        pv.date_end,
+        pi.code_ip,
+        pv.pk_dept,
+        pv.bed_no,
+        pi.name_pi,
+        pi.dt_sex,
+        pv.pk_insu,
+        hp.name,
+        pvdept.name_dept,
+        unit.name,
+        case when cg.flag_pd='1' then pd.code else
+        item.code end,
+        cg.name_cg,
+        cg.spec,
+        cg.price,
+        cg.pk_unit,
+        CASE
+        insitem.eu_level
+        WHEN '0' THEN '甲类'
+        WHEN '1' THEN '乙类'
+        ELSE '自费' END,
+        CASE cg.flag_pd
+        WHEN '1' THEN pd.code
+        ELSE item.code END,
+        iitem.sort_no,
+        iitem.name,
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and hpdicttype.equals("1")'>
+            CASE WHEN hp.pk_parent='cb3925e57baa426ab86162644caf33a3'  THEN qgybitem.ins_item_code ELSE   CASE WHEN cg.flag_pd = '1'  THEN pd.code ELSE item.code_std END   END,
+        </if>
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and !hpdicttype.equals("1")'>
+            CASE WHEN cg.flag_pd = '1' THEN pd.code ELSE item.code_std END,
+        </if>
+        insitem.NOTE,
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and hpdicttype.equals("1")'>
+            CASE lord.flag_fit WHEN '0' THEN '自费' WHEN '1' THEN ''
+            ELSE
+            CASE WHEN szitemmap.aka036='1' and hp.DT_EXTHP = '03' then ''
+            when szitemmap.aka036='1' and hp.DT_EXTHP != '03'then '自费'
+            else
+            case when szitemmap.bkm032 IS NULL THEN '' WHEN szitemmap.bkm032 = '99' THEN '自费' ELSE '' END
+            end
+            END,
+        </if>
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and !hpdicttype.equals("1")'>
+            CASE WHEN insitem.NOTE IS NULL
+            THEN '自费'
+            WHEN insitem.NOTE = '自费'
+            THEN '自费'
+            ELSE '' END,
+        </if>
+        deptex.name_dept
+        having sum(quan)!=0
+
+        UNION ALL
+
+        select st.code_st,
+        <if test='zFBLFlag != null and zFBLFlag.equals("1")'>
+            ins.jbzfbl,
+        </if>
+        pv.pk_pv,
+        pv.date_begin,
+        pv.date_end,
+        pi.code_ip,
+        pv.pk_dept,
+        pv.bed_no,
+        pi.name_pi,
+        pi.dt_sex,
+        pv.pk_insu,
+        hp.name AS
+        insu_name,
+        pvdept.name_dept AS deptNs,
+        unit.name unitname,
+        case when
+        cg.flag_pd='1' then pd.code else item.code end code_cg,
+        cg.name_cg,
+        cg.spec,
+        cg.price price,
+        sum(cg.quan) quan,
+        cg.pk_unit,
+        sum(cg.amount)
+        amount,
+        CASE insitem.eu_level
+        WHEN '0' THEN '甲类'
+        WHEN '1' THEN '乙类'
+        ELSE
+        '自费' END AS item_hptype,
+        CASE cg.flag_pd
+        WHEN '1' THEN pd.code
+        ELSE
+        item.code END AS code_item,
+        iitem.name catename,
+        iitem.sort_no,
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and hpdicttype.equals("1")'>
+            CASE WHEN hp.pk_parent='cb3925e57baa426ab86162644caf33a3'  THEN qgybitem.ins_item_code ELSE   CASE WHEN cg.flag_pd = '1'  THEN pd.code ELSE item.code_std END   END code_std,
+        </if>
+
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and !hpdicttype.equals("1")'>
+            CASE WHEN cg.flag_pd = '1' THEN pd.code  ELSE item.code_std END code_std,
+        </if>
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and hpdicttype.equals("1")'>
+            CASE lord.flag_fit WHEN '0' THEN '自费' WHEN '1' THEN ''
+            ELSE
+            CASE WHEN szitemmap.aka036='1' and hp.DT_EXTHP = '03' then ''
+            when szitemmap.aka036='1' and hp.DT_EXTHP != '03'then '自费'
+            else
+            case when szitemmap.bkm032 IS NULL THEN '' WHEN szitemmap.bkm032 = '99' THEN '自费' ELSE '' END
+            end
+            END AS insu_bz,
+        </if>
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and !hpdicttype.equals("1")'>
+            CASE WHEN insitem.NOTE IS NULL
+            THEN '自费'
+            WHEN insitem.NOTE = '自费'
+            THEN '自费'
+            ELSE '' END,
+        </if>
+        deptex.name_dept as dept_ex
+        from bl_ip_dt_b cg
+        <if test='zFBLFlag != null and zFBLFlag.equals("1")'>
+            LEFT JOIN ins_item_map map ON map.pk_item = cg.pk_item
+            LEFT JOIN ins_item ins ON ins.pk_insitem = map.pk_insitem
+        </if>
+        INNER JOIN bd_invcate_item iitem on cg.code_bill=iitem.code
+        INNER JOIN bd_invcate icate on iitem.pk_invcate=icate.pk_invcate and icate.eu_type='1'
+        LEFT OUTER JOIN bl_settle st on cg.pk_settle=st.pk_settle
+        INNER JOIN pv_encounter pv on cg.pk_pv=pv.pk_pv
+        INNER JOIN pi_master pi on pv.pk_pi=pi.pk_pi
+        LEFT JOIN bd_hp hp ON hp.pk_hp = pv.pk_insu
+        LEFT JOIN bd_ou_dept pvdept ON pvdept.pk_dept = pv.pk_dept
+        LEFT JOIN bd_unit unit ON unit.pk_unit = cg.pk_unit
+        LEFT OUTER JOIN bd_item item on cg.pk_item=item.pk_item
+        LEFT OUTER JOIN bd_pd pd on cg.pk_pd=pd.pk_pd
+        left join bd_ou_dept deptex on cg.pk_dept_ex = deptex.pk_dept and deptex.del_flag = '0'
+        <if test='attrVal!=null and attrVal!="" and attrVal.equals("1")'>
+            left outer join (
+            select ci.pk_item pk_item,
+            ci.dt_hptype
+            eu_level
+            from bd_hp_divconfig dc
+            inner join bd_hp_cgdiv_item ci on
+            dc.pk_hpcgdiv=ci.pk_hpcgdiv and
+            dc.eu_pvtype='3' and ci.DEL_FLAG = '0'
+            where dc.pk_hp=#{pkHp,jdbcType=CHAR} and dc.DEL_FLAG = '0'
+            ) insitem
+            on insitem.pk_item=cg.pk_item
+        </if>
+        <if test='attrVal==null or attrVal=="" or attrVal.equals("0")'>
+            left join (
+            SELECT *
+            FROM (SELECT row_number() OVER ( PARTITION BY pk_item ORDER BY pk_item DESC ) cnt,
+            itemhp.*
+            FROM bd_item_hp itemhp
+            WHERE itemhp.del_flag = '0') res
+            where cnt = '1'
+            ) insitem on insitem.pk_item=cg.pk_item
+            and
+            (insitem.dt_hpdicttype=#{hpdicttype,jdbcType=CHAR}) and
+            insitem.DEL_FLAG = '0'
+        </if>
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and hpdicttype.equals("1")'>
+            left join (
+            select * from (
+            select ord.pk_pv,ord.pk_ord,ord.PK_CNORD,ybord.flag_fit,row_number() OVER ( PARTITION BY
+            ord.pk_pv||ord.pk_ord|| ord.PK_CNORD ORDER BY ord.pk_pv||ord.pk_ord DESC ) cnt from ins_szyb_order ybord
+            inner join CN_ORDER ord on ord.pk_cnord = ybord.pk_cnord
+            where ord.pk_pv = #{pkPv,jdbcType=CHAR} and ybord.pk_pv = #{pkPv,jdbcType=CHAR} and ybord.flag_valid = '1' and ord.del_flag = '0' and ybord.del_flag='0' and ybord.pk_cnord is not null
+            ) hord where hord.cnt = 1
+            ) lord on lord.PK_CNORD = cg.pk_cnord and lord.PK_ORD = cg.pk_item and lord.pk_pv = cg.pk_pv
+            left join (
+            select * from (
+            select
+            row_number()
+            OVER (PARTITION BY code_hosp ORDER BY date_end desc) cnt
+            ,mapd.*
+            from INS_SZYB_ITEMMAP mapd
+            where EU_HPDICTTYPE = '01' and del_flag='0'
+            ) where cnt = '1'
+            ) szitemmap on szitemmap.pk_item = cg.pk_item
+            left join ins_qgyb_itemmap qgybitemmap on qgybitemmap.pk_item=cg.pk_item and qgybitemmap.del_flag='0'
+            left join ins_qgyb_item qgybitem on qgybitemmap.pk_insitem=qgybitem.pk_insitem and qgybitem.del_flag='0'
+        </if>
+        where 1=1
+        <if test='isFlag!=null and isFlag==1'>
+            <if test="pkSettle != null  and  pkSettle != ''">
+                and cg.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+            </if>
+        </if>
+        <if test='isFlag!=null and isFlag==0'>
+            and cg.FLAG_SETTLE = '0'
+            <if test="pkPv != null  and  pkPv != ''">
+                and cg.pk_pv=#{pkPv,jdbcType=CHAR}
+            </if>
+        </if>
+
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and cg.date_hap &lt;= to_date(#{dateEnd},
+            'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and cg.date_hap &gt;= to_date(#{dateBegin},
+            'YYYYMMDDHH24MISS')
+        </if>
+        group by st.code_st,
+        <if test='zFBLFlag != null and zFBLFlag.equals("1")'>
+            ins.jbzfbl,
+        </if>
+        pv.pk_pv,
+        pv.date_begin,
+        pv.date_end,
+        pi.code_ip,
+        pv.pk_dept,
+        pv.bed_no,
+        pi.name_pi,
+        pi.dt_sex,
+        pv.pk_insu,
+        hp.name,
+        pvdept.name_dept,
+        unit.name,
+        case when cg.flag_pd='1' then pd.code else
+        item.code end,
+        cg.name_cg,
+        cg.spec,
+        cg.price,
+        cg.pk_unit,
+        CASE
+        insitem.eu_level
+        WHEN '0' THEN '甲类'
+        WHEN '1' THEN '乙类'
+        ELSE '自费' END,
+        CASE cg.flag_pd
+        WHEN '1' THEN pd.code
+        ELSE item.code END,
+        iitem.sort_no,
+        iitem.name,
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and hpdicttype.equals("1")'>
+            CASE WHEN hp.pk_parent='cb3925e57baa426ab86162644caf33a3'  THEN qgybitem.ins_item_code ELSE   CASE WHEN cg.flag_pd = '1'  THEN pd.code ELSE item.code_std END   END,
+        </if>
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and !hpdicttype.equals("1")'>
+            CASE WHEN cg.flag_pd = '1' THEN pd.code ELSE item.code_std END,
+        </if>
+        insitem.NOTE,
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and hpdicttype.equals("1")'>
+            CASE lord.flag_fit WHEN '0' THEN '自费' WHEN '1' THEN ''
+            ELSE
+            CASE WHEN szitemmap.aka036='1' and hp.DT_EXTHP = '03' then ''
+            when szitemmap.aka036='1' and hp.DT_EXTHP != '03'then '自费'
+            else
+            case when szitemmap.bkm032 IS NULL THEN '' WHEN szitemmap.bkm032 = '99' THEN '自费' ELSE '' END
+            end
+            END,
+        </if>
+        <if test='flagShenzhen!=null and flagShenzhen!="" and flagShenzhen.equals("1") and !hpdicttype.equals("1")'>
+            CASE WHEN insitem.NOTE IS NULL
+            THEN '自费'
+            WHEN insitem.NOTE = '自费'
+            THEN '自费'
+            ELSE '' END,
+        </if>
+        deptex.name_dept
+        having sum(quan)!=0
+        ) iitems
+        order by iitems.sort_no,iitems.catename asc
+    </select>
+
+    <select id="getYjFee" parameterType="java.util.Map" resultType="java.math.BigDecimal">
+        select sum(amount) amt
+        from bl_deposit
+        where eu_dptype = '9'
+          and pk_pv = #{pkPv,jdbcType=CHAR}
+          and flag_settle = '0'
+    </select>
+
+    <select id="getDbFee" parameterType="java.util.Map" resultType="java.math.BigDecimal">
+        select sum(amt_credit) as amt
+        from pv_ip_acc
+        where flag_canc = '0'
+          and pk_pv = #{pkPv,jdbcType=CHAR}
+    </select>
+
+    <select id="getTotalFee" parameterType="java.util.Map"
+            resultType="java.math.BigDecimal">
+        select sum(cg.amount) as amt
+        from bl_ip_dt cg
+        where cg.pk_pv
+                = #{pkPv,jdbcType=CHAR}
+          and cg.flag_settle = '0'
+    </select>
+
+    <select id="getTotalFeeT" parameterType="java.util.Map"
+            resultType="java.math.BigDecimal">
+        select sum(cg.amount_add) as amt
+        from bl_ip_dt cg
+        where cg.pk_pv = #{pkPv,jdbcType=CHAR}
+          and cg.flag_settle = '0'
+    </select>
+
+    <select id="getTotalFeeFT" parameterType="java.util.Map"
+            resultType="java.math.BigDecimal">
+        select sum(cg.amount - cg.amount_add) as amt
+        from bl_ip_dt cg
+        where cg.pk_pv = #{pkPv,jdbcType=CHAR}
+          and cg.flag_settle = '0'
+    </select>
+
+    <select id="getZtNPdFee" parameterType="java.util.Map"
+            resultType="java.math.BigDecimal">
+        select sum(exlist.quan_occ * item.price * orditem.quan) as
+                       amt
+        from cn_order ord
+                     inner join ex_order_occ exlist on
+                ord.pk_cnord = exlist.pk_cnord
+                     inner join bd_ord_item orditem on
+                ord.pk_ord = orditem.pk_ord and
+                orditem.del_flag = '0'
+                     inner join bd_item item on orditem.pk_item = item.pk_item
+        where exlist.eu_status = '0'
+          and ord.pk_pv = #{pkPv,jdbcType=CHAR}
+    </select>
+
+    <select id="getZtPdFee" parameterType="java.util.Map"
+            resultType="java.math.BigDecimal">
+        select sum(dt.amount) as amt
+        from ex_pd_apply_detail dt
+                     inner join ex_pd_apply ap on ap.pk_pdap = dt.pk_pdap
+        where dt.flag_finish
+                = '0'
+          and dt.flag_stop = '0'
+          and ap.eu_status != '9'
+          and dt.pk_pv =
+              #{pkPv,jdbcType=CHAR}
+    </select>
+
+    <select id="getGdFee" parameterType="java.util.Map" resultType="java.math.BigDecimal">
+        select sum(item.price) as price
+        from pv_daycg dc
+                     inner join
+                     pv_daycg_detail dt on dc.pk_daycg = dt.pk_daycg
+                     inner join bd_item item
+                on dt.pk_item = item.pk_item
+        where dc.pk_pv = #{pkPv,jdbcType=CHAR}
+          and dt.flag_active = '1'
+    </select>
+
+    <select id="queryBlCgIpDetailsFT" parameterType="java.util.Map" resultType="DynaBean">
+        select * from (
+        select st.code_st,
+        pv.pk_pv,
+        pv.date_begin,
+        pv.date_end,
+        pi.code_ip,
+        pv.pk_dept,
+        pv.bed_no,
+        pi.name_pi,
+        pi.dt_sex,
+        pv.pk_insu,
+        hp.name AS
+        insu_name,
+        pvdept.name_dept AS deptNs,
+        unit.name unitname,
+        case when
+        cg.flag_pd='1' then pd.code else item.code end code_cg,
+        cg.name_cg,
+        cg.spec,
+        cg.price_org price,
+        sum(cg.quan) quan,
+        cg.pk_unit,
+        sum(cg.amount-cg.amount_add) amount,
+        CASE insitem.eu_level
+        WHEN '0' THEN
+        '甲类'
+        WHEN '1' THEN '乙类'
+        ELSE '自费' END AS item_hptype,
+        CASE cg.flag_pd
+        WHEN '1' THEN pd.code
+        ELSE item.code END AS code_item,
+        iitem.name catename,
+        iitem.sort_no,
+        CASE WHEN cg.flag_pd = '1'
+        THEN pd.code
+        ELSE item.code_std END code_std,
+        case when insitem.NOTE is null then '自费'
+        when insitem.NOTE = '自费' then '自费'
+        else '医保' end as insu_bz,
+        deptex.name_dept as dept_ex
+        from bl_ip_dt cg
+        inner join bd_invcate_item iitem on
+        cg.code_bill=iitem.code
+        inner join bd_invcate icate on
+        iitem.pk_invcate=icate.pk_invcate and
+        icate.eu_type='1'
+        left outer join
+        bl_settle st on cg.pk_settle=st.pk_settle
+        inner join pv_encounter pv on
+        cg.pk_pv=pv.pk_pv
+        inner join pi_master pi on pv.pk_pi=pi.pk_pi
+        LEFT JOIN
+        bd_hp hp ON hp.pk_hp = pv.pk_insu
+        LEFT JOIN bd_ou_dept pvdept ON
+        pvdept.pk_dept = pv.pk_dept
+        LEFT JOIN bd_unit unit ON unit.pk_unit =
+        cg.pk_unit
+        left outer join bd_item item on cg.pk_item=item.pk_item
+        left
+        outer join bd_pd pd on cg.pk_pd=pd.pk_pd
+        left join bd_ou_dept deptex on cg.pk_dept_ex = deptex.pk_dept and deptex.del_flag = '0'
+        <if test='attrVal!=null and attrVal!="" and attrVal.equals("1")'>
+            left outer join (
+            select ci.pk_item pk_item,
+            ci.dt_hptype
+            eu_level
+            from bd_hp_divconfig dc
+            inner join bd_hp_cgdiv_item ci on
+            dc.pk_hpcgdiv=ci.pk_hpcgdiv and
+            dc.eu_pvtype='3' and ci.DEL_FLAG = '0'
+            where dc.pk_hp=#{pkHp,jdbcType=CHAR} and dc.DEL_FLAG = '0'
+            ) insitem
+            on insitem.pk_item=cg.pk_item
+        </if>
+        <if test='attrVal==null or attrVal=="" or attrVal.equals("0")'>
+            left join (
+            SELECT *
+            FROM (SELECT row_number() OVER ( PARTITION BY pk_item ORDER BY pk_item DESC ) cnt,
+            itemhp.*
+            FROM bd_item_hp itemhp
+            WHERE itemhp.del_flag = '0') res
+            where cnt = '1'
+            ) insitem on insitem.pk_item=cg.pk_item
+            and
+            (insitem.dt_hpdicttype=#{hpdicttype,jdbcType=CHAR}) and
+            insitem.DEL_FLAG = '0'
+        </if>
+        where 1=1
+        <if test='isFlag!=null and isFlag==1'>
+            <if test="pkSettle != null  and  pkSettle != ''">
+                and cg.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+            </if>
+        </if>
+        <if test='isFlag!=null and isFlag==0'>
+            and cg.FLAG_SETTLE = '0'
+            <if test="pkPv != null  and  pkPv != ''">
+                and cg.pk_pv=#{pkPv,jdbcType=CHAR}
+            </if>
+        </if>
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and cg.date_hap &lt;= to_date(#{dateEnd},
+            'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and cg.date_hap &gt;= to_date(#{dateBegin},
+            'YYYYMMDDHH24MISS')
+        </if>
+        group by st.code_st,
+        pv.pk_pv,
+        pv.date_begin,
+        pv.date_end,
+        pi.code_ip,
+        pv.pk_dept,
+        pv.bed_no,
+        pi.name_pi,
+        pi.dt_sex,
+        pv.pk_insu,
+        hp.name,
+        pvdept.name_dept,
+        unit.name,
+        case when cg.flag_pd='1' then pd.code else
+        item.code end,
+        cg.name_cg,
+        cg.spec,
+        cg.price_org,
+        cg.pk_unit,
+        CASE
+        insitem.eu_level
+        WHEN '0' THEN '甲类'
+        WHEN '1' THEN '乙类'
+        ELSE '自费' END,
+        CASE cg.flag_pd
+        WHEN '1' THEN pd.code
+        ELSE item.code END,
+        iitem.sort_no,
+        iitem.name,
+        CASE WHEN cg.flag_pd = '1'
+        THEN pd.code
+        ELSE item.code_std END,
+        insitem.NOTE,
+        case when insitem.NOTE is null then '自费'
+        when insitem.NOTE = '自费' then '自费'
+        else '医保' end,
+        deptex.name_dept
+        having sum(quan)!=0
+
+        UNION ALL
+
+        select st.code_st,
+        pv.pk_pv,
+        pv.date_begin,
+        pv.date_end,
+        pi.code_ip,
+        pv.pk_dept,
+        pv.bed_no,
+        pi.name_pi,
+        pi.dt_sex,
+        pv.pk_insu,
+        hp.name AS
+        insu_name,
+        pvdept.name_dept AS deptNs,
+        unit.name unitname,
+        case when
+        cg.flag_pd='1' then pd.code else item.code end code_cg,
+        cg.name_cg,
+        cg.spec,
+        cg.price_org price,
+        sum(cg.quan) quan,
+        cg.pk_unit,
+        sum(cg.amount-cg.amount_add) amount,
+        CASE insitem.eu_level
+        WHEN '0' THEN
+        '甲类'
+        WHEN '1' THEN '乙类'
+        ELSE '自费' END AS item_hptype,
+        CASE cg.flag_pd
+        WHEN '1' THEN pd.code
+        ELSE item.code END AS code_item,
+        iitem.name catename,
+        iitem.sort_no,
+        CASE WHEN cg.flag_pd = '1'
+        THEN pd.code
+        ELSE item.code_std END code_std,
+        case when insitem.NOTE is null then '自费'
+        when insitem.NOTE = '自费' then '自费'
+        else '医保' end as insu_bz,
+        deptex.name_dept as dept_ex
+        from bl_ip_dt cg
+        inner join bd_invcate_item iitem on
+        cg.code_bill=iitem.code
+        inner join bd_invcate icate on
+        iitem.pk_invcate=icate.pk_invcate and
+        icate.eu_type='1'
+        left outer join
+        bl_settle st on cg.pk_settle=st.pk_settle
+        inner join pv_encounter pv on
+        cg.pk_pv=pv.pk_pv
+        inner join pi_master pi on pv.pk_pi=pi.pk_pi
+        LEFT JOIN
+        bd_hp hp ON hp.pk_hp = pv.pk_insu
+        LEFT JOIN bd_ou_dept pvdept ON
+        pvdept.pk_dept = pv.pk_dept
+        LEFT JOIN bd_unit unit ON unit.pk_unit =
+        cg.pk_unit
+        left outer join bd_item item on cg.pk_item=item.pk_item
+        left
+        outer join bd_pd pd on cg.pk_pd=pd.pk_pd
+        left join bd_ou_dept deptex on cg.pk_dept_ex = deptex.pk_dept and deptex.del_flag = '0'
+        <if test='attrVal!=null and attrVal!="" and attrVal.equals("1")'>
+            left outer join (
+            select ci.pk_item pk_item,
+            ci.dt_hptype
+            eu_level
+            from bd_hp_divconfig dc
+            inner join bd_hp_cgdiv_item ci on
+            dc.pk_hpcgdiv=ci.pk_hpcgdiv and
+            dc.eu_pvtype='3' and ci.DEL_FLAG = '0'
+            where dc.pk_hp=#{pkHp,jdbcType=CHAR} and dc.DEL_FLAG = '0'
+            ) insitem
+            on insitem.pk_item=cg.pk_item
+        </if>
+        <if test='attrVal==null or attrVal=="" or attrVal.equals("0")'>
+            left join (
+            SELECT *
+            FROM (SELECT row_number() OVER ( PARTITION BY pk_item ORDER BY pk_item DESC ) cnt,
+            itemhp.*
+            FROM bd_item_hp itemhp
+            WHERE itemhp.del_flag = '0') res
+            where cnt = '1'
+            ) insitem on insitem.pk_item=cg.pk_item
+            and
+            (insitem.dt_hpdicttype=#{hpdicttype,jdbcType=CHAR}) and
+            insitem.DEL_FLAG = '0'
+        </if>
+        where 1=1
+        <if test='isFlag!=null and isFlag==1'>
+            <if test="pkSettle != null  and  pkSettle != ''">
+                and cg.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+            </if>
+        </if>
+        <if test='isFlag!=null and isFlag==0'>
+            and cg.FLAG_SETTLE = '0'
+            <if test="pkPv != null  and  pkPv != ''">
+                and cg.pk_pv=#{pkPv,jdbcType=CHAR}
+            </if>
+        </if>
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and cg.date_hap &lt;= to_date(#{dateEnd},
+            'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and cg.date_hap &gt;= to_date(#{dateBegin},
+            'YYYYMMDDHH24MISS')
+        </if>
+        group by st.code_st,
+        pv.pk_pv,
+        pv.date_begin,
+        pv.date_end,
+        pi.code_ip,
+        pv.pk_dept,
+        pv.bed_no,
+        pi.name_pi,
+        pi.dt_sex,
+        pv.pk_insu,
+        hp.name,
+        pvdept.name_dept,
+        unit.name,
+        case when cg.flag_pd='1' then pd.code else
+        item.code end,
+        cg.name_cg,
+        cg.spec,
+        cg.price_org,
+        cg.pk_unit,
+        CASE
+        insitem.eu_level
+        WHEN '0' THEN '甲类'
+        WHEN '1' THEN '乙类'
+        ELSE '自费' END,
+        CASE cg.flag_pd
+        WHEN '1' THEN pd.code
+        ELSE item.code END,
+        iitem.sort_no,
+        iitem.name,
+        CASE WHEN cg.flag_pd = '1'
+        THEN pd.code
+        ELSE item.code_std END,
+        insitem.NOTE,
+        case when insitem.NOTE is null then '自费'
+        when insitem.NOTE = '自费' then '自费'
+        else '医保' end,
+        deptex.name_dept
+        having sum(quan)!=0
+        ) iitems
+        order by iitems.sort_no,iitems.catename asc
+    </select>
+
+    <select id="qryPkCgBack" resultType="java.lang.String">
+        select pk_cgip
+        from bl_ip_dt bk
+        where 1=1
+        <if test="pkList != null and pkList.size()>0">
+            and (bk.pk_cgip_back in
+            <trim suffixOverrides=" OR bk.pk_cgip_back in()">
+                <!-- 表示删除最后一个条件 -->
+                <foreach collection="pkList" item="pkList" index="index"
+                         open="(" close=")">
+                    <if test="index != 0">
+                        <choose>
+                            <when test="index % 1000 == 999">
+                                ) OR bk.pk_cgip_back in (
+                            </when>
+                            <otherwise>
+                                ,
+                            </otherwise>
+                        </choose>
+                    </if>
+                    #{pkList}
+                </foreach>
+            </trim>
+            )
+        </if>
+    </select>
+
+    <select id="qryPvNotSpecInvItem" resultType="com.zebone.nhis.common.module.bl.InvItemVo">
+        select invitem.pk_invcateitem,invitem.code, invitem.name,
+        sum(bl.amount-bl.amount_add) amount
+        from bd_invcate_item invitem
+        inner
+        join bd_invcate cate on invitem.pk_invcate=cate.pk_invcate and
+        cate.del_flag = '0'
+        inner join bd_invcate_itemcate iicate on
+        invitem.pk_invcateitem=iicate.pk_invcateitem and iicate.del_flag = '0'
+        inner join bl_ip_dt bl on iicate.pk_itemcate=bl.pk_itemcate and
+        bl.del_flag = '0'
+        where cate.eu_type = '1' and invitem.del_flag = '0'
+        and bl.flag_settle='0'
+        and bl.pk_pv=#{pkPv,jdbcType=CHAR}
+        and
+        bl.date_hap &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},
+        'yyyymmddhh24miss')
+        and bl.date_hap &lt;=
+        to_date(#{dateEnd,jdbcType=VARCHAR},
+        'yyyymmddhh24miss')
+        <if test="pkList != null and pkList.size()>0">
+            and (bl.pk_cgip in
+            <trim suffixOverrides=" OR bl.pk_cgip in()">
+                <!-- 表示删除最后一个条件 -->
+                <foreach collection="pkList" item="pkList" index="index"
+                         open="(" close=")">
+                    <if test="index != 0">
+                        <choose>
+                            <when test="index % 1000 == 999">
+                                ) OR bl.pk_cgip in (
+                            </when>
+                            <otherwise>
+                                ,
+                            </otherwise>
+                        </choose>
+                    </if>
+                    #{pkList}
+                </foreach>
+            </trim>
+            )
+        </if>
+        group by invitem.pk_invcateitem,
+        invitem.code,
+        invitem.name
+    </select>
+
+    <select id="qryPvSpecInvItem" resultType="com.zebone.nhis.common.module.bl.InvItemVo">
+        select invitem.pk_invcateitem,invitem.code, invitem.name,
+        sum(bl.amount_add) amount
+        from bd_invcate_item invitem
+        inner join
+        bd_invcate cate on invitem.pk_invcate=cate.pk_invcate and
+        cate.del_flag = '0'
+        inner join bd_invcate_itemcate iicate on
+        invitem.pk_invcateitem=iicate.pk_invcateitem and iicate.del_flag = '0'
+        inner join bl_ip_dt bl on iicate.pk_itemcate=bl.pk_itemcate and
+        bl.del_flag = '0'
+        where cate.eu_type = '1' and invitem.del_flag = '0'
+        and bl.flag_settle='0'
+        and bl.pk_pv=#{pkPv,jdbcType=CHAR}
+        and
+        bl.date_hap &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},
+        'yyyymmddhh24miss')
+        and bl.date_hap &lt;=
+        to_date(#{dateEnd,jdbcType=VARCHAR},
+        'yyyymmddhh24miss')
+        <if test="pkList != null and pkList.size()>0">
+            and (bl.pk_cgip in
+            <trim suffixOverrides=" OR bl.pk_cgip in()">
+                <!-- 表示删除最后一个条件 -->
+                <foreach collection="pkList" item="pkList" index="index"
+                         open="(" close=")">
+                    <if test="index != 0">
+                        <choose>
+                            <when test="index % 1000 == 999">
+                                ) OR bl.pk_cgip in (
+                            </when>
+                            <otherwise>
+                                ,
+                            </otherwise>
+                        </choose>
+                    </if>
+                    #{pkList}
+                </foreach>
+            </trim>
+            )
+        </if>
+        group by invitem.pk_invcateitem,
+        invitem.code,
+        invitem.name
+    </select>
+
+    <select id="qryPvAmtAndPiFT" resultType="com.zebone.nhis.common.module.bl.BlAmtVo">
+        select sum(bl.amount - bl.amount_add) amt_sum,
+        sum(bl.amount_pi -
+        bl.amount_add) amt_pi
+        from bl_ip_dt bl
+        where bl.flag_settle='0'
+        and
+        bl.pk_pv=#{pkPv,jdbcType=CHAR}
+        and bl.date_hap &gt;=
+        to_date(#{dateBegin,jdbcType=VARCHAR},
+        'yyyymmddhh24miss')
+        and
+        bl.date_hap &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+        'yyyymmddhh24miss')
+        <if test="pkList != null and pkList.size()>0">
+            and (bl.pk_cgip in
+            <trim suffixOverrides=" OR bl.pk_cgip in()">
+                <!-- 表示删除最后一个条件 -->
+                <foreach collection="pkList" item="pkList" index="index"
+                         open="(" close=")">
+                    <if test="index != 0">
+                        <choose>
+                            <when test="index % 1000 == 999">
+                                ) OR bl.pk_cgip in (
+                            </when>
+                            <otherwise>
+                                ,
+                            </otherwise>
+                        </choose>
+                    </if>
+                    #{pkList}
+                </foreach>
+            </trim>
+            )
+        </if>
+    </select>
+
+    <select id="qryPvAmtAndPiT" resultType="com.zebone.nhis.common.module.bl.BlAmtVo">
+        select sum(bl.amount_add) amt_sum,
+        sum(bl.amount_add) amt_pi
+        from
+        bl_ip_dt bl
+        where bl.flag_settle='0'
+        and bl.pk_pv=#{pkPv,jdbcType=CHAR}
+        and bl.date_hap &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},
+        'yyyymmddhh24miss')
+        and bl.date_hap &lt;=
+        to_date(#{dateEnd,jdbcType=VARCHAR},
+        'yyyymmddhh24miss')
+        <if test="pkList != null and pkList.size()>0">
+            and (bl.pk_cgip in
+            <trim suffixOverrides=" OR bl.pk_cgip in()">
+                <!-- 表示删除最后一个条件 -->
+                <foreach collection="pkList" item="pkList" index="index"
+                         open="(" close=")">
+                    <if test="index != 0">
+                        <choose>
+                            <when test="index % 1000 == 999">
+                                ) OR bl.pk_cgip in (
+                            </when>
+                            <otherwise>
+                                ,
+                            </otherwise>
+                        </choose>
+                    </if>
+                    #{pkList}
+                </foreach>
+            </trim>
+            )
+        </if>
+    </select>
+
+    <select id="QryInvItemInfo" resultType="com.zebone.nhis.common.module.bl.InvItemVo">
+        select invitem.pk_invcateitem,invitem.code, invitem.name,
+        sum(bl.amount) amount
+        from bd_invcate_item invitem
+        inner join bd_invcate
+        cate on invitem.pk_invcate=cate.pk_invcate and
+        cate.del_flag = '0'
+        inner join bd_invcate_itemcate iicate on
+        invitem.pk_invcateitem=iicate.pk_invcateitem and iicate.del_flag = '0'
+        inner join bl_ip_dt bl on iicate.pk_itemcate=bl.pk_itemcate and
+        bl.del_flag = '0'
+        where cate.eu_type = '1' and invitem.del_flag = '0'
+        and bl.flag_settle='0'
+        <if test="pkPv != null  and  pkPv != ''">
+            and bl.pk_pv = #{pkPv,jdbcType=VARCHAR}
+        </if>
+        <if test="pkOrg != null  and  pkOrg != ''">
+            and cate.pk_org = #{pkOrg,jdbcType=VARCHAR}
+        </if>
+        <if test="dateBegin!= null  and  dateBegin!= ''">
+            and bl.date_hap &gt;=
+            to_date(#{dateBegin,jdbcType=VARCHAR},
+            'yyyymmddhh24miss')
+        </if>
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and bl.date_hap &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+            'yyyymmddhh24miss')
+        </if>
+        <if test="pkList != null and pkList.size()>0">
+            and (bl.pk_cgip in
+            <trim suffixOverrides=" OR bl.pk_cgip in()">
+                <!-- 表示删除最后一个条件 -->
+                <foreach collection="pkList" item="pkList" index="index"
+                         open="(" close=")">
+                    <if test="index != 0">
+                        <choose>
+                            <when test="index % 1000 == 999">
+                                ) OR bl.pk_cgip in (
+                            </when>
+                            <otherwise>
+                                ,
+                            </otherwise>
+                        </choose>
+                    </if>
+                    #{pkList}
+                </foreach>
+            </trim>
+            )
+        </if>
+
+        group by invitem.pk_invcateitem,
+        invitem.code,
+        invitem.name
+    </select>
+
+    <select id="QryAmtAndPi" resultType='com.zebone.nhis.common.module.bl.BlAmtVo'>
+        select sum(amount) amt_sum,sum(amount_pi) amt_pi from bl_ip_dt where
+        flag_settle='0' and pk_pv = #{pkPv,jdbcType=VARCHAR}
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and date_hap &gt;=
+            to_date(substr(#{dateBegin,jdbcType=VARCHAR} ,1,8)||'000000',
+            'yyyymmddhh24miss')
+        </if>
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and date_hap &lt;= to_date(
+            substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959',
+            'yyyymmddhh24miss')
+        </if>
+        <if test="pkList != null and pkList.size()>0">
+            and (pk_cgip in
+            <trim suffixOverrides=" OR pk_cgip in()">
+                <!-- 表示删除最后一个条件 -->
+                <foreach collection="pkList" item="pkList" index="index"
+                         open="(" close=")">
+                    <if test="index != 0">
+                        <choose>
+                            <when test="index % 1000 == 999">
+                                ) OR pk_cgip in (
+                            </when>
+                            <otherwise>
+                                ,
+                            </otherwise>
+                        </choose>
+                    </if>
+                    #{pkList}
+                </foreach>
+            </trim>
+            )
+        </if>
+    </select>
+
+    <select id="qryPvByzgFlag" resultType="DynaBean">
+        select hp.pk_hp,
+               hp.eu_hptype,
+               attr.val_attr
+        from bd_hp hp
+                     inner join bd_dictattr attr on
+                hp.pk_hp = attr.pk_dict
+                     inner join bd_dictattr_temp tmp on
+                attr.pk_dictattrtemp = tmp.pk_dictattrtemp
+                        and tmp.dt_dicttype = '03'
+                     inner join pv_encounter pv on hp.pk_hp = pv.pk_insu
+        where pv.pk_pv = #{pkPv,jdbcType=CHAR}
+          and tmp.code_attr = '0311'
+    </select>
+
+    <select id="qryStDrugAmt" resultType="DynaBean">
+        select sum(gyst.AMOUNT_INS_DRUG) stAmtDrug from INS_GZGY_ST gyst
+        left
+        join bl_settle st on gyst.PK_SETTLE = st.PK_SETTLE
+        where
+        st.PK_PV=#{pkPv,jdbcType=CHAR}
+        <if test="pkStCanl!=null and pkStCanl!=''">
+            and st.PK_SETTLE != #{pkStCanl,jdbcType=CHAR}
+        </if>
+        and not exists (select 1 from bl_settle bak
+        where
+        st.pk_settle=bak.pk_settle_canc)
+    </select>
+
+    <select id="qryInvInfo" resultType="DynaBean">
+        select inv.pk_invoice,
+        inv.date_inv,
+        inv.amount_inv,
+        inv.code_inv,
+        inv.flag_cancel,
+        inv.flag_cc,
+        case inv.flag_cancel when '1' then '作废'
+        else '' end as name_cancel,
+        case inv.flag_cc when '1' then '已结账' else
+        '' end as name_cc
+        from bl_invoice inv
+        where 1=1
+        <if test="pkEmp!=null and pkEmp!=''">
+            and inv.pk_emp_inv= #{pkEmp,jdbcType=CHAR}
+        </if>
+        <if test="oldBegin!=null and oldBegin!=''">
+            and inv.code_inv &gt;= #{oldBegin,jdbcType=VARCHAR}
+        </if>
+        <if test="oldEnd!=null and oldEnd!=''">
+            and inv.code_inv &lt;= #{oldEnd,jdbcType=VARCHAR}
+        </if>
+        <if test='pkList!=null and pkList.size()>0'>
+            and inv.pk_invoice in
+            <foreach collection="pkList" item="pkList" index="no" open="("
+                     separator="," close=")">
+                #{pkList}
+            </foreach>
+        </if>
+        order by code_inv asc
+    </select>
+
+    <select id="qryInvIsUse" resultType="java.lang.String">
+        select code_inv
+        from bl_invoice
+        where 1=1
+        <if test="newBegin!=null and newBegin!=''">
+            and code_inv &gt;=#{newBegin,jdbcType=VARCHAR}
+        </if>
+        <if test="newEnd!=null and newEnd!=''">
+            and code_inv &lt;=#{newEnd,jdbcType=VARCHAR}
+        </if>
+        <if test='pkList!=null and pkList.size()>0'>
+            and code_inv in
+            <foreach collection="pkList" item="pkList" index="no" open="("
+                     separator="," close=")">
+                #{pkList}
+            </foreach>
+        </if>
+        group by code_inv
+    </select>
+
+    <select id="qryDateStByPv" resultType="java.util.Date">
+        select date_end
+        from BL_SETTLE st
+        where st.pk_pv = #{pkPv,jdbcType=CHAR}
+          and not exists(
+                select 1 from BL_SETTLE canl where canl.PK_SETTLE_CANC = st.PK_SETTLE
+                )
+          and st.FLAG_CANC = '0'
+        order by date_end desc
+    </select>
+
+    <select id="qryHpInfoByPv" resultType="DynaBean">
+        select hp.pk_hp,
+               hp.eu_hptype,
+               fa.code fa_code,
+               attr.val_attr
+        from bd_hp hp
+                     inner join
+                     bd_dictattr attr on hp.pk_hp = attr.pk_dict
+                     inner join bd_dictattr_temp tmp on attr.pk_dictattrtemp = tmp.pk_dictattrtemp
+                and
+                                                        tmp.dt_dicttype = '03'
+                     inner join pv_encounter pv on hp.pk_hp =
+                                                   pv.pk_insu
+                     inner join bd_hp fa on hp.pk_parent = fa.pk_hp
+        where pv.pk_pv = #{pkPv,jdbcType=CHAR}
+          and tmp.code_attr = '0301'
+    </select>
+
+    <select id="qryGyItemStList" resultType="com.zebone.nhis.bl.pub.vo.GyStItemVo">
+        select cg.flag_pd,
+        cg.ratio_self,
+        case when item.dt_itemtype like '07%'
+        then cg.price
+        when item.dt_itemtype='11' then cg.price
+        when
+        item.dt_itemtype like '01%' then cg.price
+        else 1
+        end price,
+        sum(cg.quan)
+        quan,
+        sum(cg.amount) amt,
+        sum(cg.amount_hppi) amt_hppi,
+        sum(cg.amount_pi) amt_pi,
+        case when item.dt_itemtype like '07%' then
+        item.dt_itemtype
+        when item.dt_itemtype='11' then item.dt_itemtype
+        when
+        item.dt_itemtype like '01%' then item.dt_itemtype
+        else '999'
+        end
+        dt_itemtype,
+        sp.amount_max,
+        sp.eu_calcmode,
+        sp.ratio,
+        case when
+        pv.eu_pvmode is not null and pv.eu_pvmode = '11' then hp.rate_op
+        else
+        hp.rate_ip end rate_ip,
+        hp.bedquota,
+        hp.dtquota_ip
+        from bl_ip_dt cg
+        inner
+        join pv_encounter pv on cg.pk_pv=pv.pk_pv
+        inner join bd_hp hp on
+        pv.pk_insu=hp.pk_hp
+        left outer join bd_item item on
+        cg.pk_item=item.pk_item and cg.flag_pd='0'
+        left outer join
+        ins_gzgy_div_spitem sp on cg.pk_item=sp.pk_item
+        where
+        cg.pk_pv=#{pkPv,jdbcType=CHAR}
+        and cg.flag_pd='0'
+        and cg.flag_settle='0'
+        <if test="pkList != null and  pkList != ''">
+            and (cg.pk_cgip in
+            <trim suffixOverrides=" OR cg.pk_cgip in()">
+                <!-- 表示删除最后一个条件 -->
+                <foreach collection="pkList" item="pkList" index="index"
+                         open="(" close=")">
+                    <if test="index != 0">
+                        <choose>
+                            <when test="index % 1000 == 999">
+                                ) OR cg.pk_cgip in (
+                            </when>
+                            <otherwise>
+                                ,
+                            </otherwise>
+                        </choose>
+                    </if>
+                    #{pkList}
+                </foreach>
+            </trim>
+            )
+        </if>
+        <if test="begin != null  and  begin != ''">
+            and cg.date_hap &gt;= #{begin,javaType=java.util.Date}
+        </if>
+        <if test="end != null  and  end != ''">
+            and cg.date_hap &lt;= #{end,javaType=java.util.Date}
+        </if>
+        group by cg.flag_pd,
+        cg.ratio_self,
+        case when item.dt_itemtype like
+        '07%' then cg.price
+        when item.dt_itemtype='11' then cg.price
+        when
+        item.dt_itemtype like '01%' then cg.price
+        else 1 end,
+        case when
+        item.dt_itemtype like '07%' then item.dt_itemtype
+        when
+        item.dt_itemtype='11' then item.dt_itemtype
+        when item.dt_itemtype like
+        '01%' then item.dt_itemtype
+        else '999' end,
+        sp.amount_max,
+        case when
+        pv.eu_pvmode is not null and pv.eu_pvmode = '11' then hp.rate_op
+        else
+        hp.rate_ip end,
+        hp.bedquota,
+        hp.dtquota_ip,
+        sp.eu_calcmode,
+        sp.ratio
+    </select>
+
+    <select id="qryMaterialsInfo" resultType="com.zebone.nhis.bl.pub.vo.GyHpDivInfo">
+        select hv.price_min,
+               hv.price_max,
+               hv.ratio_init,
+               hv.eu_calcmode,
+               hv.ratio
+        from ins_gzgy_div_hvitem hv
+                     inner join ins_gzgy_hp_div div on
+                hv.pk_hvitemdiv = div.pk_div and
+                div.eu_divtype = '2'
+        where div.pk_hp = #{pkHp,jdbcType=CHAR}
+    </select>
+
+    <select id="qryItemCgInfo" resultType="DynaBean">
+        select sum(amt) amt,sum(amt_pi) amt_pi,sum(amount_add) amount_add from
+        (
+        select sum(amt) amt,
+        sum(amtPi) amt_pi,
+        sum(amount_add) amount_add
+        from (
+        select sum(amount) amt,
+        sum(CASE WHEN RATIO_SELF!=1 then amount_add else 0 end) amount_add,
+        ratio_self,
+        sum(amount- CASE WHEN RATIO_SELF != 1 THEN amount_add ELSE 0 END)*ratio_self
+        amtPi
+        from bl_ip_dt
+        where pk_pv = #{pkPv,jdbcType=CHAR} and FLAG_SETTLE='0' and flag_pd='0'
+        and pk_dept_app in (
+        select ag.pk_dept from bd_res_pc_argu ag where ag.code_argu='EX0047' and
+        ag.arguval='1'
+        )
+        <if test="pkList != null and  pkList != ''">
+            and (pk_cgip in
+            <trim suffixOverrides=" OR pk_cgip in()">
+                <!-- 表示删除最后一个条件 -->
+                <foreach collection="pkList" item="pkList" index="index"
+                         open="(" close=")">
+                    <if test="index != 0">
+                        <choose>
+                            <when test="index % 1000 == 999">
+                                ) OR pk_cgip in (
+                            </when>
+                            <otherwise>
+                                ,
+                            </otherwise>
+                        </choose>
+                    </if>
+                    #{pkList}
+                </foreach>
+            </trim>
+            )
+        </if>
+        <if test="begin != null  and  begin != ''">
+            and date_hap &gt;= #{begin,javaType=java.util.Date}
+        </if>
+        <if test="end != null  and  end != ''">
+            and date_hap &lt;= #{end,javaType=java.util.Date}
+        </if>
+        <if test="pkSettle != null and pkSettle!=''">
+            and pk_settle = #{pkSettle,jdbcType=CHAR}
+        </if>
+        group by ratio_self
+        )
+        union
+        SELECT sum(amt) amt, sum(amtPi) amt_pi, sum(amount_add) amount_add
+        FROM (
+        SELECT sum(amount) amt, sum(0) amount_add, ratio_self, sum(amount) * ratio_self amtPi
+        FROM bl_ip_dt
+        where pk_pv = #{pkPv,jdbcType=CHAR} and FLAG_SETTLE='0' and flag_pd='0'
+        and pk_dept_app not in (
+        select ag.pk_dept from bd_res_pc_argu ag where ag.code_argu='EX0047' and
+        ag.arguval='1'
+        )
+        <if test="pkCgips != null and  pkCgips != ''">
+            and (pk_cgip in
+            <trim suffixOverrides=" OR pk_cgip in()">
+                <!-- 表示删除最后一个条件 -->
+                <foreach collection="pkCgips" item="pkCgips" index="index"
+                         open="(" close=")">
+                    <if test="index != 0">
+                        <choose>
+                            <when test="index % 1000 == 999">
+                                ) OR pk_cgip in (
+                            </when>
+                            <otherwise>
+                                ,
+                            </otherwise>
+                        </choose>
+                    </if>
+                    #{pkCgips}
+                </foreach>
+            </trim>
+            )
+        </if>
+        <if test="begin != null  and  begin != ''">
+            and date_hap &gt;= #{begin,javaType=java.util.Date}
+        </if>
+        <if test="end != null  and  end != ''">
+            and date_hap &lt;= #{end,javaType=java.util.Date}
+        </if>
+        <if test="pkSettle != null and pkSettle!=''">
+            and pk_settle = #{pkSettle,jdbcType=CHAR}
+        </if>
+        GROUP BY ratio_self
+        )
+        )
+    </select>
+
+    <select id="QryInvItemInfoByPkSettle" resultType="com.zebone.nhis.common.module.bl.InvItemVo">
+        select invitem.pk_invcateitem,
+               invitem.code,
+               invitem.name,
+               sum(bl.amount)
+                       amount
+        from bd_invcate_item invitem
+                     inner join bd_invcate cate on
+                invitem.pk_invcate = cate.pk_invcate and
+                cate.del_flag = '0'
+                     inner join
+                     bd_invcate_itemcate iicate on
+                             invitem.pk_invcateitem = iicate.pk_invcateitem and iicate.del_flag = '0'
+                     inner join bl_ip_dt bl on iicate.pk_itemcate = bl.pk_itemcate and
+                                               bl.del_flag = '0'
+        where cate.eu_type = '1'
+          and invitem.del_flag = '0'
+          and bl.pk_settle = #{pkSettle,jdbcType=CHAR}
+        group by invitem.pk_invcateitem,
+                 invitem.code,
+                 invitem.name
+    </select>
+
+    <select id="queryHerbalAttr" resultType="DynaBean">
+        select ins.PK_ITEM,ins.AKA036,ins.BKM032 from INS_SZYB_ITEMMAP ins
+        inner join bd_pd bd on ins.PK_ITEM=bd.PK_PD
+        where bd.DT_DOSAGE in ('9922','9924') and ins.EU_HPDICTTYPE='01' and ins.DEL_FLAG=0
+        and sysdate &gt; ins.DATE_BEGIN and sysdate &lt; ins.DATE_END
+        <if test="pkPds !=null and pkPds.size()>0 ">
+            and ins.pk_item in
+            <foreach collection="pkPds" separator="," close=")" open="(" item="item" index="index">
+                 #{item}
+            </foreach>
+
+        </if>
+    </select>
+</mapper>

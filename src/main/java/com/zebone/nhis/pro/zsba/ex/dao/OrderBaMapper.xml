@@ -1,0 +1,460 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.ex.dao.OrderBaMapper">
+	<select id="queryOrderCheckList" parameterType="java.util.Map" resultType="com.zebone.nhis.pro.zsba.ex.vo.OrderCheckVO">
+	 select pv.pk_dept_ns as pk_dept_ns_cur, 
+           pv.bed_no, 
+           pv.name_pi, 
+           pv.flag_spec,
+           pi.code_ip,
+           pi.birth_date,
+	 	   newborn.name as newborn_name,
+           dept.name_dept  as name_dept_exec, 
+           unitdos.name as name_unit_dosage,
+           unit.name as name_unit, 
+           us.name as name_usage,
+           us.pk_supplycate,
+           unitcg.name as name_unit_cg,
+           freq.name as name_freq, 
+           freq.cnt,
+           def.name AS lab_name,
+           freq.eu_cycle,
+           ord.pk_org,
+           ord.pk_dept,
+           ord.pk_cnord,
+           ord.pk_ord, 
+           ord.pk_pres,
+           ord.pk_pi,
+           ord.pk_pv, 
+           ord.ordsn, 
+           ord.groupno,
+           ord.ordsn_parent, 
+           ord.name_ord, 
+           ord.code_ord,
+           ord.eu_always,
+           ord.eu_status_ord,
+           ord.drip_speed, 
+           ord.date_start,
+           ord.code_supply,
+           ord.code_freq,
+           ord.code_ordtype,
+           ord.dosage,
+           ord.pk_unit_dos,
+           ord.quan,
+           ord.pk_unit,
+           ord.quan_cg,
+           ord.pk_unit_cg,
+           ord.price_cg,
+           ord.days,
+           ord.ords,
+           ord.spec,
+           ord.infant_no,
+           ord.last_num,
+           ord.first_num,
+           ord.flag_fit,
+           ord.desc_fit,
+           ord.flag_bl,
+           ord.flag_emer,
+           ord.flag_first,
+           ord.flag_stop,
+           ord.flag_erase,
+           ord.flag_stop_chk,
+           ord.flag_erase_chk,
+           ord.flag_durg,
+           ord.flag_doctor,   
+           ord.flag_self,
+           ord.flag_base,
+           ord.flag_medout,
+           ord.flag_note,
+           ord.flag_pivas,
+           ord.eu_st,
+           ord.pk_emp_ord,
+           ord.name_emp_ord, 
+           ord.date_chk,
+           ord.pk_emp_chk,
+           ord.pk_dept_exec,
+           ord.pk_org_exec,
+           ord.pack_size,
+           ord.date_plan_ex,
+           ord.date_stop, 
+           ord.pk_emp_stop,
+           ord.name_emp_stop, 
+           ord.note_ord,
+           ord.ts,
+           hp.name name_hp,
+           type.name name_ordtype,
+           pres.eu_boil,
+           CASE tt.VAL_ATT WHEN '1' THEN '是' WHEN '0' THEN '' ELSE tt.VAL_ATT END VAL_ATT,
+           <!-- 添加用法容器费列，目前只支持oracle数据库 -->
+           <if test='dbType == "oracle"'>
+             (select wmsys.wm_concat(item.name)
+ 		       from CN_LAB_APPLY apply
+              inner join bd_item_defdoc defitem on defitem.CODE_DEFDOC = apply.DT_TUBETYPE
+ 	           inner join bd_item item on item.pk_item = defitem.pk_item
+           where defitem.eu_pvtype = '3' and defitem.code_defdoclist = '030203' and defitem.del_flag = '0'
+              and apply.PK_CNORD=ord.pk_cnord 
+              group by apply.DT_TUBETYPE ) as nameTubeItem, 
+           </if>
+           <if test='dbType == "sqlserver"'>
+          (select name =(stuff((select ','+ item.name  from CN_LAB_APPLY  apply1
+              inner join bd_item_defdoc defitem on defitem.CODE_DEFDOC = apply1.DT_TUBETYPE
+ 	           inner join bd_item item on item.pk_item = defitem.pk_item
+           where defitem.eu_pvtype = '3' and defitem.code_defdoclist = '030203' and defitem.del_flag = '0'
+              and apply1.PK_CNORD=ord.pk_cnord  and apply1.DT_TUBETYPE = applyt.DT_TUBETYPE for xml path('')),1,1,''))
+             from  CN_LAB_APPLY applyt
+              inner join bd_item_defdoc defitemt on defitemt.CODE_DEFDOC = applyt.DT_TUBETYPE
+ 	           inner join bd_item itemt on itemt.pk_item = defitemt.pk_item
+             where defitemt.eu_pvtype = '3' and defitemt.code_defdoclist = '030203' and defitemt.del_flag = '0'
+              and applyt.PK_CNORD=ord.pk_cnord 
+              group by applyt.DT_TUBETYPE) as nameTubeItem, 
+           </if>
+           ord.desc_ord,
+           pd.dt_injtype  
+      from cn_order ord
+      left join bd_supply us on ord.code_supply = us.code
+      inner join bd_ou_dept dept on dept.pk_dept = ord.pk_dept_exec and dept.del_flag = '0'
+      inner join pv_encounter pv on ord.pk_pv = pv.pk_pv and pv.eu_pvtype = '3' and pv.flag_in = '1' and pv.del_flag = '0'
+      inner join pi_master pi on pi.pk_pi = pv.pk_pi and pi.del_flag = '0'
+      left join bd_unit unit on unit.pk_unit = ord.pk_unit 
+      left join bd_unit unitdos on unitdos.pk_unit = ord.pk_unit_dos 
+      left join bd_unit unitcg on unitcg.pk_unit = ord.pk_unit_cg  
+      inner join bd_term_freq freq on freq.code = ord.code_freq
+      left join pv_infant newborn on pv.pk_pv=newborn.pk_pv and ord.infant_no=newborn.sort_no 
+      left join bd_ordtype type on type.code = ord.code_ordtype and type.del_flag = '0'
+      left join bd_hp hp on hp.pk_hp = pv.pk_insu and hp.del_flag = '0'
+      left join cn_prescription pres on pres.pk_pres = ord.pk_pres and pres.del_flag = '0'
+      left join bd_pd pd on ord.pk_ord = pd.pk_pd and pd.del_flag='0'
+      LEFT JOIN (select att.* FROM BD_PD_ATT att INNER JOIN BD_PD_ATT_DEFINE de ON de.PK_PDATTDEF = att.PK_PDATTDEF  AND de.DEL_FLAG = '0'
+                 where de.CODE_ATT = 'BA11' AND att.del_flag = '0' and att.VAL_ATT is not null) tt ON tt.PK_PD = ord.PK_ORD AND tt.PK_ORG = ord.PK_ORG
+      left join CN_LAB_APPLY lab on lab.pk_cnord = ord.pk_cnord and lab.del_flag = '0'
+      left join BD_DEFDOC def on def.code = lab.dt_samptype and def.del_flag = '0' and def.code_defdoclist = '030200'
+   where  ord.pk_pv in
+           <foreach collection="pkPvs" item="pkPv" index="index" open="(" close=")" separator=",">
+       	   #{pkPv}
+           </foreach> 
+        <if test="euAlways != null  and  euAlways != ''">
+	         and ord.eu_always = #{euAlways,jdbcType=VARCHAR}
+        </if>
+        <if test="flagEmer != null  and  flagEmer != ''"><!-- 加急标志 -->
+	         and ord.flag_emer = #{flagEmer,jdbcType=CHAR}
+        </if>
+        <if test="ordtype != null  and  ordtype != ''">
+	         and ord.code_ordtype like #{ordtype,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+	          and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}  
+        </if>
+        <if test="pkDept != null  and  pkDept != ''">
+	          and ord.pk_dept = #{pkDept,jdbcType=CHAR}  
+        </if> 
+        <if test='flagN != "stop"'><!-- 新停医嘱不添加护理医嘱过滤 -->
+	         and  (ord.flag_doctor='1' or (ord.flag_doctor='0' and ord.ordsn_parent != ord.ordsn )) 
+        </if>
+           <if test="flagN == null  or  flagN == ''"><!-- 未设置新开新停标志时，查询全部 -->
+            and  ( ord.eu_status_ord ='1'  
+              or (ord.eu_status_ord > '1' and  ord.flag_stop_chk = '0' and ord.flag_stop = '1' and ord.date_stop is not null and ord.date_stop &lt;= to_date(#{dateStopEnd},'YYYYMMDDHH24MISS') and ord.eu_always = '0' )  
+              or (ord.flag_erase_chk = '0' and ord.flag_erase = '1' and ord.eu_status_ord = '9') ) 
+           </if>
+        <if test='flagN == "new" '><!-- 新开 -->
+	            and ord.eu_status_ord ='1' and ord.flag_erase = '0'
+        </if>
+        <if test='flagN == "stop"'><!-- 新停 -->
+	           and ((ord.eu_status_ord = '3' or ord.eu_status_ord = '2') and ord.flag_stop_chk = '0' and ord.flag_stop = '1' and ord.date_stop is not null and ord.date_stop &lt;= to_date(#{dateStopEnd},'YYYYMMDDHH24MISS') and ord.eu_always = '0' ) 
+        </if>
+        <if test='flagN == "cancel"'><!-- 作废 -->
+	          and ord.flag_erase_chk = '0' and ord.flag_erase = '1' and ord.eu_status_ord = '9' 
+        </if>
+        <if test='flagN == "other"'><!-- 新停以外的所有待核对医嘱 -->
+	            and  ( ord.eu_status_ord ='1'  or (ord.flag_erase_chk = '0' and ord.flag_erase = '1' and ord.eu_status_ord = '9') ) 
+        </if>
+        <if test=' ordOrder=="0" '><!-- 排序方式 EX0069 0降序，1升序  默认降序-->
+        	order by pv.bed_no, ord.date_start desc, nvl(ord.groupno,0) desc, ord.ordsn_parent,ord.ordsn
+          	</if>
+          	<if test=' ordOrder=="1" '><!-- 排序方式 EX0069 0降序，1升序  默认降序-->
+        	order by pv.bed_no, ord.date_start asc, nvl(ord.groupno,0) desc, ord.ordsn_parent,ord.ordsn
+          	</if>
+	</select>
+	<!--  查询已核对医嘱列表 -->
+    <select id="queryOrderEcList" parameterType="java.util.Map" resultType="com.zebone.nhis.pro.zsba.ex.vo.OrderCheckVO">
+		 select 
+		    pv.pk_dept_ns as pk_dept_ns_cur, 
+            pv.bed_no, 
+            pv.name_pi, 
+            unitdos.name as name_unit_dosage,
+            unit.name as name_unit, 
+            us.name as name_usage,
+            us.pk_supplycate,
+            unitcg.name as name_unit_cg,
+            freq.name as name_freq, 
+            freq.cnt,
+            def.name AS lab_name,
+            newborn.name as newborn_name,
+            dept.name_dept  as name_dept_exec, 
+            type.name name_ordtype,
+            ord.eu_st,
+            ord.spec,
+            ord.pk_org,
+            ord.pk_dept,
+            ord.pk_cnord,
+            ord.pk_ord, 
+            ord.pk_pres,
+            ord.pk_pi,
+            ord.pk_pv, 
+            ord.ordsn,
+            ord.days,
+            ord.ords,
+            ord.ordsn_parent, 
+            ord.name_ord, 
+            ord.code_ord,
+            ord.eu_always,
+            ord.eu_status_ord,
+            ord.drip_speed, 
+            ord.date_start,
+            ord.code_supply,
+            ord.code_freq,
+            ord.code_ordtype,
+            ord.dosage,
+            ord.groupno,
+            ord.pk_unit_dos,
+            ord.quan,
+            ord.pk_unit,
+            ord.quan_cg,
+            ord.price_cg,
+            ord.pk_unit_cg,
+            ord.infant_no,
+            ord.last_num,
+            ord.first_num,
+            ord.flag_fit,
+            ord.desc_fit,
+            ord.flag_bl,
+            ord.flag_emer,
+            ord.flag_first,
+            ord.flag_stop,
+            ord.flag_erase,
+            ord.flag_stop_chk,
+            ord.flag_erase_chk,
+            ord.flag_durg,
+            ord.flag_doctor,   
+            ord.flag_self,
+            ord.flag_note,
+            ord.flag_medout,
+            ord.flag_pivas,
+            ord.flag_base,
+            ord.pk_emp_ord,
+            ord.name_emp_ord, 
+            ord.date_chk,
+            ord.pk_emp_chk,
+            ord.pk_dept_exec,
+            ord.date_plan_ex,
+            ord.date_stop, 
+            ord.pk_emp_stop,
+            ord.name_emp_stop, 
+            ord.ts,
+            CASE tt.VAL_ATT WHEN '1' THEN '是' WHEN '0' THEN '' ELSE tt.VAL_ATT END VAL_ATT,
+             <!-- 添加容器费列 -->
+            <if test='dbType == "oracle"'>
+              (select wmsys.wm_concat(item.name) 
+  		       from CN_LAB_APPLY apply
+               inner join bd_item_defdoc defitem on defitem.CODE_DEFDOC = apply.DT_TUBETYPE
+  	           inner join bd_item item on item.pk_item = defitem.pk_item
+	           where defitem.eu_pvtype = '3' and defitem.code_defdoclist = '030203' and defitem.del_flag = '0'
+               and apply.PK_CNORD=ord.pk_cnord 
+               group by apply.DT_TUBETYPE ) as nameTubeItem, 
+            </if>
+            <if test='dbType == "sqlserver"'>
+           (select name =(stuff((select ','+ item.name  from CN_LAB_APPLY  apply1
+               inner join bd_item_defdoc defitem on defitem.CODE_DEFDOC = apply1.DT_TUBETYPE
+  	           inner join bd_item item on item.pk_item = defitem.pk_item
+	           where defitem.eu_pvtype = '3' and defitem.code_defdoclist = '030203' and defitem.del_flag = '0'
+               and apply1.PK_CNORD=ord.pk_cnord  and apply1.DT_TUBETYPE = applyt.DT_TUBETYPE for xml path('')),1,1,''))
+              from  CN_LAB_APPLY applyt
+               inner join bd_item_defdoc defitemt on defitemt.CODE_DEFDOC = applyt.DT_TUBETYPE
+  	           inner join bd_item itemt on itemt.pk_item = defitemt.pk_item
+	             where defitemt.eu_pvtype = '3' and defitemt.code_defdoclist = '030203' and defitemt.del_flag = '0'
+               and applyt.PK_CNORD=ord.pk_cnord 
+               group by applyt.DT_TUBETYPE) as nameTubeItem, 
+            </if>
+            ord.note_ord,
+            hp.name name_hp,
+            pres.eu_boil
+       from cn_order ord 
+       left join bd_supply us on ord.code_supply = us.code 
+       inner join bd_ou_dept dept on dept.pk_dept=ord.pk_dept_exec
+       inner join pv_encounter pv on ord.pk_pv = pv.pk_pv
+       left join bd_unit unit on unit.pk_unit = ord.pk_unit 
+       left join bd_unit unitdos on unitdos.pk_unit = ord.pk_unit_dos 
+       left join bd_unit unitcg on unitcg.pk_unit = ord.pk_unit_cg  
+       inner join bd_term_freq freq on freq.code = ord.code_freq
+       left join pv_infant newborn on pv.pk_pv=newborn.pk_pv and ord.infant_no=newborn.sort_no 
+       left join bd_ordtype type on type.code = ord.code_ordtype and type.del_flag = '0'
+       left join bd_hp hp on hp.pk_hp = pv.pk_insu and hp.del_flag = '0'
+       left join cn_prescription pres on pres.pk_pres = ord.pk_pres and pres.del_flag = '0'
+       LEFT JOIN (select att.* FROM BD_PD_ATT att INNER JOIN BD_PD_ATT_DEFINE de ON de.PK_PDATTDEF = att.PK_PDATTDEF  AND de.DEL_FLAG = '0'
+                   where de.CODE_ATT = 'BA11' AND att.del_flag = '0' and att.VAL_ATT is not null) tt ON tt.PK_PD = ord.PK_ORD AND tt.PK_ORG = ord.PK_ORG
+       left join CN_LAB_APPLY lab on lab.pk_cnord = ord.pk_cnord and lab.del_flag = '0'
+       left join BD_DEFDOC def on def.code = lab.dt_samptype and def.del_flag = '0' and def.code_defdoclist = '030200'
+      where (ord.flag_doctor='1' or (ord.flag_doctor='0' and ord.ordsn_parent != ord.ordsn ))   
+            <if test="euAlways != null  and  euAlways != ''">
+		       and ord.eu_always = #{euAlways,jdbcType=VARCHAR}
+	        </if>
+	        <if test="ordtype != null  and  ordtype != ''">
+		         and ord.code_ordtype like #{ordtype,jdbcType=VARCHAR} || '%'
+	        </if>
+	        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		          and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}  
+	        </if>
+	        <if test="pkDept != null  and  pkDept != ''">
+		          and ord.pk_dept = #{pkDept,jdbcType=CHAR}  
+	        </if>   
+	        <if test='flagN == "stop"'><!-- 新停已核对 -->
+		            and ord.flag_stop_chk = '1' 
+	        </if>
+	        <if test='flagN == "cancel"'><!-- 作废已核对 -->
+		            and ord.flag_erase_chk = '1' 
+	        </if>
+
+            <if test="dateBegin != null  and  dateBegin != ''"><!-- 审核日期 -->
+                and to_char(ord.date_chk,'YYYYMMDD') >= #{dateBegin,jdbcType=VARCHAR}
+            </if>
+            <if test="dateEnd != null  and  dateEnd != ''"><!-- 审核日期 -->
+                and to_char(ord.date_chk,'YYYYMMDD') &lt;= #{dateEnd,jdbcType=VARCHAR}
+            </if>
+            <if test="dateBeginStop != null  and  dateBeginStop != ''"><!-- 停止审核日期 -->
+                and to_char(ord.date_stop_chk,'YYYYMMDD') >= #{dateBeginStop,jdbcType=VARCHAR}
+            </if>
+            <if test="dateEndStop != null  and  dateEndStop != ''"><!-- 停止审核日期 -->
+                and to_char(ord.date_stop_chk,'YYYYMMDD') &lt;= #{dateEndStop,jdbcType=VARCHAR}
+            </if>
+            <if test="dateBeginCancel != null  and  dateBeginCancel != ''"><!-- 作废审核日期 -->
+                and to_char(ord.date_erase_chk,'YYYYMMDD') >= #{dateBeginCancel,jdbcType=VARCHAR}
+            </if>
+            <if test="dateEndCancel != null  and  dateEndCancel != ''"><!-- 作废审核日期 -->
+                and to_char(ord.date_erase_chk,'YYYYMMDD') &lt;= #{dateEndCancel,jdbcType=VARCHAR}
+            </if>
+
+	        <if test="flagEmer != null  and  flagEmer != ''"><!-- 加急标志 -->
+		            and ord.flag_emer = #{flagEmer,jdbcType=CHAR}
+	        </if>
+	       and ord.eu_status_ord ${statusOrd}  and ord.pk_pv in 
+           <foreach collection="pkPvs" item="pkPv" index="index" open="(" close=")" separator=",">
+        	   #{pkPv}
+           </foreach>
+	       <if test=' ordOrder=="0" '><!-- 排序方式 EX0069 0降序，1升序  默认降序-->
+	       		order by pv.bed_no, ord.date_start desc ,nvl(ord.groupno,0) desc, ord.ordsn_parent,ord.ordsn 
+           </if>
+           <if test=' ordOrder=="1" '><!-- 排序方式 EX0069 0降序，1升序  默认降序-->
+	       		order by pv.bed_no, ord.date_start asc ,nvl(ord.groupno,0) desc, ord.ordsn_parent,ord.ordsn 
+           </if>
+    </select>
+
+     <select id="getOrder" resultType="com.zebone.nhis.pro.zsba.ex.vo.OrderCheckVO">
+        select pv.pk_dept_ns                                                     as pk_dept_ns_cur,
+               pv.bed_no,
+               pv.name_pi,
+               pv.flag_spec,
+               pi.code_ip,
+               pi.birth_date,
+               newborn.name                                                      as newborn_name,
+               dept.name_dept                                                    as name_dept_exec,
+               unitdos.name                                                      as name_unit_dosage,
+               unit.name                                                         as name_unit,
+               us.name                                                           as name_usage,
+               us.pk_supplycate,
+               unitcg.name                                                       as name_unit_cg,
+               freq.name                                                         as name_freq,
+               freq.cnt,
+               def.name                                                          AS lab_name,
+               freq.eu_cycle,
+               ord.pk_org,
+               ord.pk_dept,
+               ord.pk_cnord,
+               ord.pk_ord,
+               ord.pk_pres,
+               ord.pk_pi,
+               ord.pk_pv,
+               ord.ordsn,
+               ord.groupno,
+               ord.ordsn_parent,
+               ord.name_ord,
+               ord.code_ord,
+               ord.eu_always,
+               ord.eu_status_ord,
+               ord.drip_speed,
+               ord.date_start,
+               ord.code_supply,
+               ord.code_freq,
+               ord.code_ordtype,
+               ord.dosage,
+                pd.pack_size,
+		       pd.PK_UNIT_MIN as pk_unit,
+               ord.pk_unit_dos,
+               ord.quan,
+               ord.pk_unit,
+               ord.quan_cg,
+               ord.pk_unit_cg,
+               case when ord.flag_durg = '1' then pd.price else ord.price_cg end as price_cg,
+               ord.days,
+               ord.ords,
+               ord.spec,
+               ord.infant_no,
+               ord.last_num,
+               ord.first_num,
+               ord.flag_fit,
+               ord.desc_fit,
+               ord.flag_bl,
+               ord.flag_emer,
+               ord.flag_first,
+               ord.flag_stop,
+               ord.flag_erase,
+               ord.flag_stop_chk,
+               ord.flag_erase_chk,
+               ord.flag_durg,
+               ord.flag_doctor,
+               ord.flag_self,
+               ord.flag_base,
+               ord.flag_medout,
+               ord.flag_note,
+               ord.flag_pivas,
+               ord.eu_st,
+               ord.pk_emp_ord,
+               ord.name_emp_ord,
+               ord.date_chk,
+               ord.pk_emp_chk,
+               ord.pk_dept_exec,
+               ord.pk_org_exec,
+               ord.pack_size,
+               ord.date_plan_ex,
+               ord.date_stop,
+               ord.pk_emp_stop,
+               ord.name_emp_stop,
+               ord.note_ord,
+               ord.ts,
+               hp.name                                                              name_hp,
+               type.name                                                            name_ordtype,
+               pres.eu_boil,
+               ord.desc_ord,
+               pd.dt_injtype
+        from cn_order ord
+                     left join bd_supply us on ord.code_supply = us.code
+                     inner join bd_ou_dept dept on dept.pk_dept = ord.pk_dept_exec and dept.del_flag = '0'
+                     inner join pv_encounter pv
+                on ord.pk_pv = pv.pk_pv and pv.eu_pvtype = '3' and pv.flag_in = '1' and pv.del_flag = '0'
+                     inner join pi_master pi on pi.pk_pi = pv.pk_pi and pi.del_flag = '0'
+                     left join bd_unit unit on unit.pk_unit = ord.pk_unit
+                     left join bd_unit unitdos on unitdos.pk_unit = ord.pk_unit_dos
+                     left join bd_unit unitcg on unitcg.pk_unit = ord.pk_unit_cg
+                     inner join bd_term_freq freq on freq.code = ord.code_freq
+                     left join pv_infant newborn on pv.pk_pv = newborn.pk_pv and ord.infant_no = newborn.sort_no
+                     left join bd_ordtype type on type.code = ord.code_ordtype and type.del_flag = '0'
+                     left join bd_hp hp on hp.pk_hp = pv.pk_insu and hp.del_flag = '0'
+                     left join cn_prescription pres on pres.pk_pres = ord.pk_pres and pres.del_flag = '0'
+                     left join bd_pd pd on ord.pk_ord = pd.pk_pd and pd.del_flag = '0'
+                     left join CN_LAB_APPLY lab on lab.pk_cnord = ord.pk_cnord and lab.del_flag = '0'
+                     left join BD_DEFDOC def
+                on def.code = lab.dt_samptype and def.del_flag = '0' and def.code_defdoclist = '030200'
+                where ord.ORDSN in
+        <foreach collection="pklist" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+</mapper>

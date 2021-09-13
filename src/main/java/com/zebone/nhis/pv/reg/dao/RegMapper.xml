@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pv.reg.dao.RegMapper">
+
+	<!-- 获取医保计划列表 -->
+	<select id="getBdPhList" parameterType="com.zebone.nhis.common.module.base.bd.price.BdHp" resultType="com.zebone.nhis.common.module.base.bd.price.BdHp">
+		Select * from bd_hp
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and flag_active = '1'
+		    <if test="pkOrg != null and pkOrg != ''">
+		  		and pk_org = #{pkOrg,jdbcType=VARCHAR}
+		  	</if>
+  		</trim>
+	</select>
+	
+	<!-- 获取收费项目列表 -->
+	<select id="getBdItemList" parameterType="com.zebone.nhis.common.module.base.bd.srv.BdItemPv" resultType="com.zebone.nhis.common.module.base.bd.srv.BdItem">
+		Select t.* 
+		from bd_item_pv tv inner join bd_item t on tv.pk_item=t.pk_item	
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and tv.del_flag = '0' 
+		    <if test="euPvtype != null and euPvtype != ''">
+		  		and tv.eu_pvtype = #{euPvtype,jdbcType=VARCHAR}
+		  	</if>
+  		</trim>
+	</select>
+	
+	<!-- 根据患者主键获取患者预约记录 -->
+    <select id="getSchApptListByPkPi" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.sch.appt.SchAppt">
+		select ap.*,res.name as resourceName,da.name_dateslot as dateslotName
+		from sch_appt ap 
+		inner join sch_resource res on res.pk_schres = ap.pk_schres and res.del_flag = '0'
+		inner join bd_code_dateslot da on da.pk_dateslot = ap.pk_dateslot
+		where ap.pk_org = #{pkOrg,jdbcType=VARCHAR} and
+		ap.del_flag = '0' and ap.eu_status = '0' and to_char(ap.date_appt,'yyyyMMdd') = #{sysTime,jdbcType=VARCHAR} and ap.pk_pi = #{pkPi,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 根据患者主键获取患者历史就诊记录(最近五次) -->
+    <select id="getPvOpVoHistoryList" parameterType="java.lang.String" resultType="com.zebone.nhis.pv.reg.vo.PvOpVo">
+		select top 5 t.* from 
+		(select en.*,op.pk_pvop,op.op_times,op.pk_schsrv,op.pk_res,op.pk_dateslot,op.pk_dept_pv,op.pk_emp_pv,op.name_emp_pv,op.ticketno,op.pk_sch,op.flag_first,op.pk_appo,res.name as resourcename
+		from pv_op op
+		inner join pv_encounter en on en.pk_pv = op.pk_pv and en.del_flag = '0' and en.pk_pi = #{pkPi,jdbcType=VARCHAR}
+		inner join sch_resource res on res.pk_schres = op.pk_res and res.del_flag = '0'		
+		where op.pk_org = #{pkOrg,jdbcType=VARCHAR} and op.del_flag = '0' and to_char(en.date_reg,'yyyyMMdd') <![CDATA[<]]> to_char(getdate(),'yyyyMMdd') ) t
+		order by t.date_reg desc
+	</select>
+	
+	<!-- 根据患者主键获取患者历史就诊记录(最近五次)oracle写法 -->
+    <select id="getPvOpVoHistoryListOracle" parameterType="java.lang.String" resultType="com.zebone.nhis.pv.reg.vo.PvOpVo">
+		select t.* from 
+		(select en.*,op.pk_pvop,op.op_times,op.pk_schsrv,op.pk_res,op.pk_dateslot,op.pk_dept_pv,op.pk_emp_pv,op.name_emp_pv,op.ticketno,op.pk_sch,op.flag_first,op.pk_appo,res.name as resourcename
+		from pv_op op
+		inner join pv_encounter en on en.pk_pv = op.pk_pv and en.del_flag = '0' and en.pk_pi = #{pkPi,jdbcType=VARCHAR}
+		inner join sch_resource res on res.pk_schres = op.pk_res and res.del_flag = '0'		
+		where op.pk_org = #{pkOrg,jdbcType=VARCHAR} and op.del_flag = '0' and to_char(en.date_reg,'yyyyMMdd') <![CDATA[<]]> to_char(SYSDATE,'yyyyMMdd') ) t
+		where rownum <![CDATA[<]]> 5
+		order by t.date_reg desc
+	</select>
+	
+	<!-- 根据患者主键获取患者当前挂号记录   -->
+    <select id="getPvOpVoTodayList" parameterType="java.lang.String" resultType="com.zebone.nhis.pv.reg.vo.PvOpVo">
+		select en.*,op.pk_pvop,op.op_times,op.pk_schsrv,op.pk_res,op.pk_dateslot,op.pk_dept_pv,op.pk_emp_pv,op.name_emp_pv,op.ticketno,op.pk_sch,op.flag_first,op.pk_appo,res.name as resourcename,da.name_dateslot as dateslotName,settle.pk_settle as pkSettle
+		from pv_op op
+		inner join pv_encounter en on en.pk_pv = op.pk_pv and en.del_flag = '0' and en.pk_pi = #{pkPi,jdbcType=VARCHAR}
+		inner join sch_resource res on res.pk_schres = op.pk_res and res.del_flag = '0'		
+		left join bd_code_dateslot da on da.pk_dateslot = op.pk_dateslot
+		left join bl_settle settle on settle.pk_pv = en.pk_pv and settle.dt_sttype = '00'
+		where op.pk_org = #{pkOrg,jdbcType=VARCHAR} and op.del_flag = '0' and to_char(en.date_reg,'yyyyMMdd') <![CDATA[>=]]> to_char(getdate(),'yyyyMMdd') order by en.date_reg
+	</select>
+	
+	<!-- 根据患者主键获取患者当前挂号记录  Oracle -->
+    <select id="getPvOpVoTodayListOracle" parameterType="java.lang.String" resultType="com.zebone.nhis.pv.reg.vo.PvOpVo">
+		select en.*,op.pk_pvop,op.op_times,op.pk_schsrv,op.pk_res,op.pk_dateslot,op.pk_dept_pv,op.pk_emp_pv,op.name_emp_pv,op.ticketno,op.pk_sch,op.flag_first,op.pk_appo,res.name as resourcename,da.name_dateslot as dateslotName,settle.pk_settle as pkSettle
+		from pv_op op
+		inner join pv_encounter en on en.pk_pv = op.pk_pv and en.del_flag = '0' and en.pk_pi = #{pkPi,jdbcType=VARCHAR}
+		inner join sch_resource res on res.pk_schres = op.pk_res and res.del_flag = '0'		
+		left join bd_code_dateslot da on da.pk_dateslot = op.pk_dateslot
+		left join bl_settle settle on settle.pk_pv = en.pk_pv and settle.dt_sttype = '00'
+		where op.pk_org = #{pkOrg,jdbcType=VARCHAR} and op.del_flag = '0' and to_char(en.date_reg,'yyyyMMdd') <![CDATA[>=]]> to_char(SYSDATE,'yyyyMMdd') order by en.date_reg
+	</select>
+	
+	<!-- 根据就诊主键获取相关信息  -->
+    <select id="getPvOpAndSettleVoByPkPv" parameterType="java.lang.String" resultType="com.zebone.nhis.pv.pub.vo.PvOpAndSettleVo">
+		select m.tel_no,
+		       m.mobile,
+		       m.id_no,
+		       m.birth_date,
+		       m.insur_no,
+		       m.dt_nation,
+		       d1.name        as dtNationName,
+		       m.dt_idtype,
+		       d2.name        as dtIdtypeName,
+		       en.age_pv,
+		       en.address,
+		       en.date_cancel,
+		       en.pk_emp_cancel,
+		       en.name_emp_cancel,
+		       en.DATE_BEGIN,
+		       srv.name       as schsrvName,
+		       dept.name_dept as deptPvName,
+		      (case when op.op_times is null then 1 else op.op_times end) op_times,
+		       (case when op.pk_dept_pv is null then er.pk_dept_pv else op.pk_dept_pv end) pk_dept_pv,
+		       (case when op.pk_schsrv is null then er.pk_schsrv else op.pk_schsrv end) pk_schsrv,
+		       (case when op.pk_emp_pv is null then er.pk_emp_pv else op.pk_emp_pv end) pk_emp_pv,
+		       (case when op.name_emp_pv is null then er.name_emp_pv else op.name_emp_pv end) name_emp_pv,
+		       (case when op.ticketno is null then er.ticketno else op.ticketno end) ticketno
+		from pv_encounter en
+		       left join pv_op op on op.pk_pv = en.pk_pv and op.del_flag = '0'
+		       left join pv_er er on en.pk_pv = er.pk_pv and er.del_flag = '0'
+		       inner join pi_master m on m.pk_pi = en.pk_pi and m.del_flag = '0'
+		       left join bd_defdoc d1 on d1.code_defdocList = '000003' and d1.code = m.dt_nation and d1.del_flag = '0'
+		       left join bd_defdoc d2 on d2.code_defdocList = '000007' and d2.code = m.dt_idtype and d2.del_flag = '0'
+		       left join sch_srv srv on srv.pk_schsrv =  (case   when op.pk_schsrv = null then er.pk_schsrv else op.pk_schsrv  end )  and srv.del_flag = '0'
+		       left join bd_ou_dept dept on dept.pk_dept = (case  when op.pk_dept_pv = null then er.pk_dept_pv else op.pk_dept_pv end) and dept.del_flag = '0'
+		where en.pk_pv = #{pkPv,jdbcType=VARCHAR} and en.del_flag = '0'
+
+	</select>
+	
+	<!-- 根据就诊主键查询收费项目分组列表(包含合计) -->
+    <select id="getBlOpDtGroupListByPkPv" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.bl.opcg.BlOpDt">
+		select d.pk_itemcate, it.name as temcateName,nvl(sum(d.amount),0) as amount,nvl(sum(d.amount_pi),0) as amountPi
+		from bl_op_dt d
+		inner join bl_settle s on s.pk_settle = d.pk_settle and s.del_flag = '0' and s.dt_sttype = '00'
+		left join bd_itemcate it on it.pk_itemcate = d.pk_itemcate and it.del_flag = '0'
+		where d.pk_pv = #{pkPv,jdbcType=VARCHAR} and d.del_flag = '0' and d.pk_cgop_back is null
+		group by d.pk_itemcate,it.name
+	</select>
+	
+	<!-- 根据就诊主键查询交款记录分组列表  -->
+    <select id="getBlDepositGroupListByPkPv" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.bl.BlDeposit">
+		select b.dt_paymode, d.name as paymodeName, nvl(sum(b.amount),0) as amount 
+		from bl_deposit b 
+		inner join bl_settle s on s.pk_settle = b.pk_settle and s.del_flag = '0' and s.dt_sttype = '00'
+		left join bd_defdoc d on d.code_defdocList = '110100' and d.code = b.dt_paymode and d.del_flag = '0'
+		where b.pk_pv = #{pkPv,jdbcType=VARCHAR} and b.pk_depo_back is null
+		group by b.dt_paymode,d.name
+	</select>
+	
+	<!-- 获取收费结算-发票记录列表    -->
+    <select id="getBlInvoiceDtList" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.bl.BlInvoiceDt">
+		select dt.* 
+		from bl_invoice_dt dt
+		inner join bl_invoice inv on inv.pk_invoice = dt.pk_invoice and inv.del_flag = '0' and inv.flag_cancel = '0'
+		inner join bl_st_inv stinv on stinv.pk_invoice = inv.pk_invoice and stinv.del_flag = '0'
+		inner join bl_settle st on st.pk_settle = stinv.pk_settle and st.del_flag = '0' and st.dt_sttype = '00'
+			and st.pk_pv = #{pkPv,jdbcType=VARCHAR}
+		order by dt.code_bill 		
+	</select>
+	 
+</mapper>

@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.opdw.dao.OpTemplatesMapper" >
+
+  <select id="getTemplates" parameterType="java.util.Map" resultType="DynaBean">
+		select tmp.*  
+		 from bd_ord_set tmp  
+		 where ((tmp.eu_right=0 and tmp.pk_org=#{pkOrg,jdbcType=VARCHAR}) or --当前机构
+		        (tmp.eu_right=1 and tmp.pk_dept=#{pkDept,jdbcType=VARCHAR}) or  --当前科室
+		        (tmp.eu_right=2 and tmp.pk_emp=#{pkEmp,jdbcType=VARCHAR}))  and
+     		    exists (select 1 
+                		  from bd_ord_set_dt dt 
+                     		inner join bd_pd pd on dt.pk_ord=pd.pk_pd
+                     		inner join pd_stock sto on pd.pk_pd=sto.pk_pd
+               			  where tmp.pk_ordset=dt.pk_ordset and 
+                     				pd.eu_drugtype &lt; 2 and
+                     				pd.flag_stop=0 and
+                     				sto.flag_stop=0
+                     )  
+  </select>
+
+	<select id="getAllDetails" parameterType="java.util.Map" resultType="DynaBean">
+    select dt.* from  bd_ord_set_dt dt
+   where  dt.pk_ordset=#{pkOrdset,jdbcType=VARCHAR}
+	</select>
+
+	<select id="getHerbTemplates" parameterType="java.util.Map" resultType="DynaBean">
+		 select tmp.* from bd_ord_set tmp
+		 where ((tmp.eu_right=0 and tmp.pk_org=#{pkOrg,jdbcType=VARCHAR}) or
+		        (tmp.eu_right=1 and tmp.pk_dept=#{pkDept,jdbcType=VARCHAR}) or
+		        (tmp.eu_right=2 and tmp.pk_emp=#{pkEmp,jdbcType=VARCHAR})) and
+		       exists (select 1 from bd_ord_set_dt dt
+		                     inner join bd_pd pd on dt.pk_ord=pd.pk_pd
+		                     inner join pd_stock sto on pd.pk_pd=sto.pk_pd
+		               where tmp.pk_ordset=dt.pk_ordset and
+		                     pd.eu_drugtype=2 and
+		                     pd.flag_stop=0 and
+		                     sto.flag_stop=0)
+	</select>
+<select id="getHerbTemplatesDetail" parameterType="java.util.Map" resultType="DynaBean">
+
+	select dt.*,
+	dt.pk_ord,pd.name,
+	dt.dosage,
+	 dt.pk_unit_dos,
+	 dt.days,
+	 dt.supply_note ,
+	 unit.name unit,
+	 stk.quan_min / con.pack_size stock_quan
+	 from bd_ord_set_dt dt
+		       inner join bd_pd pd on dt.pk_ord=pd.pk_pd
+left join bd_unit unit on unit.pk_unit = dt.pk_unit_dos
+  inner join bd_pd_store pds
+    on pds.pk_pd=pd.pk_pd
+   and pds.flag_stop = '0'
+   AND pds.PK_PDCONVERT IS NOT NULL
+   and nvl(pds.del_flag,'0') = '0'
+   and pds.pk_dept = #{pkDeptExec,jdbcType=VARCHAR}
+   inner join BD_PD_CONVERT con
+    on con.PK_PDCONVERT=pds.PK_PDCONVERT
+  inner join (select sum(quan_min - quan_prep) quan_min, pk_pd, price
+                     from pd_stock
+                    where del_flag = '0' and pk_dept = #{pkDeptExec,jdbcType=VARCHAR}
+                    group by pk_pd, price, pk_org, pk_dept) stk
+    on pds.pk_pd = stk.pk_pd
+		 where dt.pk_ordset=#{pkOrdset,jdbcType=VARCHAR} and
+		       pd.eu_drugtype=2 and
+		       pd.flag_stop=0 and
+		       exists (select 1 from pd_stock sto
+		                where pd.pk_pd=sto.pk_pd and
+		                      sto.flag_stop=0 and
+		                      sto.pk_dept=#{pkDeptExec,jdbcType=VARCHAR} and sto.quan_min-sto.quan_prep>0)
+
+</select>
+
+ <select id="getTemplatesDetail" parameterType="java.util.Map" resultType="DynaBean">
+		select
+		        distinct
+		        dt.*,
+				unit_dos.name unit_dos,   --单位名称
+
+	           pd.eu_Drugtype,
+
+	           pd.eu_sex,
+	           pd.age_min,
+	           pd.age_max,
+	           pd.flag_st,
+	           pd.Dt_Pois,
+	           pd.Dt_Anti,
+				  pd.pk_itemcate,
+	           nvl(attr.Val_Attr,'1') as val_attr,
+
+
+				pd.code code_ord,
+		        pd.pk_unit_min,
+		        pd.pk_unit_wt,
+		        pd.pk_unit_vol,
+		        pd.vol,
+		        pd.price price_cg,
+		        pd.pk_ordtype,
+				pd.spec,
+       			pd.flag_stop,
+       			bo.code code_ordtype,
+       			--unit.pk_unit pk_unit_cg,
+       			sto.pack_size,
+       			sto.quan as quan_pack,
+       			sto.quan stock_quan,
+                sto.pk_unit as pk_unit_cg
+
+		 from bd_ord_set_dt dt
+		 	  inner join bd_pd pd on dt.pk_ord=pd.pk_pd
+		 	  left outer join bd_unit unit_dos on dt.pk_unit_dos=unit_dos.pk_unit
+		 	  left outer join bd_ordtype bo on bo.pk_ordtype = pd.pk_ordtype
+		 	   left join bd_dictattr attr on pd.pk_pd = attr.pk_dict
+	           left join bd_dictattr_temp attrtmp
+	           on attrtmp.pk_dictattrtemp = attr.pk_dictattrtemp
+	             and  attrtmp.code_attr = '0505'
+		 	  left outer join (select sum(stk.quan_min-stk.quan_prep)/pdc.pack_size quan,stk.pk_pd,pdc.pack_size,pdsp.pk_unit
+                          from pd_stock stk
+                          inner join  bd_pd_store pds ON stk.pk_pd = pds.pk_pd and pds.pk_dept=#{pkDeptExec,jdbcType=VARCHAR} 
+                          inner join  bd_pd_store_pack pdsp on pdsp.pk_pdstore=pds.pk_pdstore and pdsp.flag_def='1'
+                          inner join  bd_pd_convert pdc on pds.pk_pd = pdc.pk_pd and pdsp.pk_pdconvert = pdc.pk_pdconvert
+                         where
+                               stk.flag_stop_op='0' and  stk.pk_dept = #{pkDeptExec,jdbcType=VARCHAR}
+                        group by stk.pk_pd,pdc.pack_size,pdsp.pk_unit) sto on pd.pk_pd=sto.pk_pd
+		 where dt.pk_ordset=#{pkOrdset,jdbcType=VARCHAR}
+  </select>  
+  
+    <select id="getTemplatesCure" parameterType="java.util.Map" resultType="DynaBean">
+		select tmp.*  
+		 from bd_ord_set tmp  
+		 where ((tmp.eu_right=0 and tmp.pk_org=#{pkOrg,jdbcType=VARCHAR}) or --当前机构
+		        (tmp.eu_right=1 and tmp.pk_dept=#{pkDept,jdbcType=VARCHAR}) or  --当前科室
+		        (tmp.eu_right=2 and tmp.pk_emp=#{pkEmp,jdbcType=VARCHAR})) and
+		        exists (select 1 
+                from bd_ord_set_dt dt 
+                     inner join bd_ord ord on dt.pk_ord=ord.pk_ord
+                     inner join bd_ord_org orgord on ord.pk_ord=orgord.pk_ord
+               where tmp.pk_ordset=dt.pk_ordset and 
+                     ord.flag_active=1 and
+                     orgord.pk_org=#{pkOrg,jdbcType=VARCHAR} --当前机构
+                     )
+  </select>  
+  
+    <select id="getTemplatesCureDetail" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+		       distinct
+		       dt.*,  
+		       p.price price_cg,  
+		       nvl(p.price, 0) * dt.quan amount,  
+		       ord.code_ordtype,
+		       ord.age_min,
+		       ord.age_max,
+		       ord.eu_sex,
+
+		       ord.code code_ord  
+		  from bd_ord_set_dt dt 
+		       inner join bd_ord ord on dt.pk_ord=ord.pk_ord 
+		       left outer join (select busi.pk_ord,
+                              sum((case when busi.quan IS null then 0 else busi.QUAN end) * 
+                                  (case when item.price is null then 0 else item.price end)) as price 
+                         from bd_ord_item busi, bd_item item 
+                        where busi.pk_item = item.pk_item 
+                        and busi.del_flag='0' and item.del_flag='0' 
+                        group by busi.pk_ord) p on ord.pk_ord = p.pk_ord  
+		 where dt.pk_ordset=#{pkOrdset,jdbcType=VARCHAR}
+		 			
+  </select>    
+  
+ <select id="getFavoritesOld" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+				distinct 
+				tmp.*, 
+				unit_dos.name unit_dos,   --单位名称
+				pd.code code_ord, 
+				pd.spcode,
+				pd.name name_ord, 
+		        pd.pk_unit_min, 
+		        pd.pk_unit_wt,  
+		        pd.pk_unit_vol, 
+		        pd.vol, 
+		        pd.price price_cg,  
+		        pd.pk_ordtype,   
+		        pd.spcode,  
+		        pd.pack_size,  
+				pdc.spec,
+				pd.Age_Max,
+				pd.Age_Min,
+				pd.Eu_Sex,
+				pd.Flag_st,
+       			bo.code code_ordtype,  
+       			unit.pk_unit pk_unit_cg, 
+       			pd.flag_stop,  
+       			sto.quan stock_quan,
+       			pd.dt_pois,
+       			pd.dt_anti  
+		 from pi_ord_temp tmp  
+		 		inner join bd_pd pd on tmp.pk_ord=pd.pk_pd
+		 		left outer join bd_unit unit_dos on tmp.pk_unit_dos=unit_dos.pk_unit   
+		 	    left outer join bd_ordtype bo on bo.pk_ordtype = pd.pk_ordtype  
+		 	    left outer join bd_pd_store pds on pd.pk_pd=pds.pk_pd  
+		 	    left outer join bd_pd_convert pdc on pds.pk_pd=pdc.pk_pd and pds.pk_pdconvert=pdc.pk_pdconvert  
+		 	    left outer join bd_unit unit on pdc.pk_unit=unit.pk_unit  and unit.pk_org = tmp.pk_org
+		 	    left outer join (select sum(quan_min-quan_prep) quan,pk_pd
+                                      from pd_stock sto 
+                                      where 
+                               				sto.flag_stop=0
+                        			  group by pk_pd) sto on pds.pk_pd=sto.pk_pd  
+		 where  tmp.pk_pi=#{pkPi,jdbcType=VARCHAR}
+  </select>  
+   <select id="getFavorites" parameterType="java.util.Map" resultType="DynaBean">
+		
+		select 
+				distinct 
+				tmp.*, 
+				unit_dos.name unit_dos,    
+				pd.code code_ord, 
+				pd.spcode,
+				pd.name name_ord, 
+		        pd.pk_unit_min, 
+		        pd.pk_unit_wt,  
+		        pd.pk_unit_vol, 
+		        pd.vol, 
+		        pd.price price_cg,  
+		        pd.pk_ordtype,   
+		        pd.spcode,  
+		        pdc.pack_size,  
+				pdc.spec,
+	            pd.Age_Max,
+	             pd.Age_Min,
+	             pd.Eu_Sex,
+	             pd.Flag_st,
+       			bo.code code_ordtype,  
+       			unit.pk_unit pk_unit_cg, 
+       			pd.flag_stop,  
+       			sto.quan stock_quan,
+       		    sto.quan/pdc.PACK_SIZE AS quan_pack,
+       			pd.dt_pois,
+       			pd.dt_anti  
+		 from pi_ord_temp tmp  
+		     	inner join bd_unit unit_dos on tmp.pk_unit_dos=unit_dos.pk_unit AND unit_dos.DEL_FLAG='0'   
+		 		inner join bd_pd pd on tmp.pk_ord=pd.pk_pd AND pd.DEL_FLAG='0'
+		 	    inner join bd_ordtype bo on bo.pk_ordtype = pd.pk_ordtype  AND bo.DEL_FLAG='0' 
+		 	    inner join bd_pd_store pds on pd.pk_pd=pds.pk_pd AND pds.DEL_FLAG='0'
+		 	    <if test='pkDeptExec!=null and pkDeptExec!=""'>
+		 	    	AND pds.PK_DEPT=#{pkDeptExec,jdbcType=VARCHAR}  
+		 	    </if>
+		 	    INNER JOIN BD_PD_STORE_PACK bdsp ON bdsp.PK_PDSTORE = pds.PK_PDSTORE AND bdsp.FLAG_DEF='1' AND bdsp.DEL_FLAG='0' 
+		 	    inner join bd_pd_convert pdc on  pdc.pk_pdconvert=bdsp.pk_pdconvert AND pdc.DEL_FLAG='0'  
+		 	    inner join bd_unit unit on unit.pk_unit=pdc.pk_unit AND unit.DEL_FLAG='0'  
+		 	    left outer join (select sum(sto.quan_min-sto.quan_prep) quan,sto.pk_pd,sto.pk_dept
+                                      from pd_stock sto 
+                                      where sto.flag_stop='0' AND sto.DEL_FLAG='0' 
+                        			  group by pk_pd,pk_dept) sto on pds.pk_pd=sto.pk_pd AND sto.PK_DEPT = pds.pk_dept 
+		 where  tmp.pk_pi= #{pkPi,jdbcType=VARCHAR}  AND  tmp.del_flag='0'  ORDER BY tmp.SORT_NO
+  </select>  
+  
+ <select id="getOpOrderCopy" parameterType="java.util.Map" resultType="DynaBean">
+		select pres.pk_pres,  
+		       pv.date_begin,  
+		       case pv.eu_pvtype when '1' then '门诊' when '2' then '急诊' when '3' then '住院' when '4' then '体检' when '5' then '家庭病床'  else '其他' end eu_pvtype ,  
+		       dept.name_dept,  
+		       pres.name_emp_ord,  
+		       prestype.name prestype,
+		       pres.dt_prestype,  
+		       pres.pres_no  
+		  from cn_prescription pres 
+		       inner join bd_ou_dept dept on pres.pk_dept=dept.pk_dept 
+		       inner join bd_defdoc prestype on pres.dt_prestype=prestype.code and prestype.code_defdoclist='060101' 
+		       inner join pv_encounter pv on pres.pk_pv=pv.pk_pv 
+		 where pres.pk_pi=#{pkPi,jdbcType=VARCHAR}  and 
+		       nvl(pv.date_begin, #{systemTime,jdbcType=DATE}) &gt;= to_date(#{beginDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS') and 
+		       nvl(pv.date_begin, #{systemTime,jdbcType=DATE}) &lt;= to_date(#{endDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS') 
+	     <if test='IsHerb=="1"'>
+		       and pres.dt_prestype='02'
+	     </if>
+	      <if test='IsHerb==null or IsHerb=="" or IsHerb=="0"'>
+			  and pres.dt_prestype!='02'
+		  </if>
+		 order by pv.date_begin, pres.pres_no
+</select>   
+
+ <select id="getOpOrderCopyDetail" parameterType="java.util.Map" resultType="DynaBean">
+		select “空” from dual
+  </select>  
+  
+  <select id="ischeckoutSoleCodeOrName" resultType="int" parameterType="java.util.Map">
+  		select COUNT(*)  
+		 from bd_ord_set tmp  
+		 where ((tmp.eu_right=0 and tmp.pk_org = #{pkOrg,jdbcType=VARCHAR}) or --当前机构
+		        (tmp.eu_right=1 and tmp.pk_dept= #{pkDept,jdbcType=VARCHAR}) or  --当前科室
+		        (tmp.eu_right=2 and tmp.pk_emp= #{pkEmp,jdbcType=VARCHAR})) and
+		        exists (select 1 
+                from bd_ord_set_dt dt 
+                     inner join bd_ord ord on dt.pk_ord=ord.pk_ord
+                     inner join bd_ord_org orgord on ord.pk_ord=orgord.pk_ord
+               where tmp.pk_ordset=dt.pk_ordset and 
+                     ord.flag_active=1 and
+                     orgord.pk_org= #{pkOrg,jdbcType=VARCHAR} --当前机构
+                      AND tmp.CODE = #{code,jdbcType=VARCHAR}  
+                     OR tmp.NAME = #{name,jdbcType=VARCHAR}
+                     ) 
+  </select> 
+  
+  <select id="getBdOrdDepts" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.base.bd.srv.BdOrdDept">
+  		SELECT * FROM BD_ORD_DEPT WHERE 
+  			PK_ORD = #{pkOrd,jdbcType=VARCHAR} AND DEL_FLAG = '0' AND FLAG_DEF = '1' 
+  </select>
+  
+  <select id="getRisDescAtt" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.base.bd.srv.BdOrdRis">
+  		SELECT * FROM BD_ORD_RIS WHERE 
+  			PK_ORD = #{pkOrd,jdbcType=VARCHAR} AND DEL_FLAG = '0'
+  </select>
+  <select id="getLabNote" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.base.bd.srv.BdOrdLab">
+  		SELECT * FROM BD_ORD_LAB WHERE 
+  			PK_ORD = #{pkOrd,jdbcType=VARCHAR} AND DEL_FLAG = '0'
+  </select>
+
+	<select id="getOrdSetShare" parameterType="java.util.Map" resultType="DynaBean">
+		select share.PK_ORDSET,share.PK_ORG,share.PK_DEPT_SHARE,share.PK_ORDSETSHARE,share.DEL_FLAG,dept.NAME_DEPT,dept.CODE_DEPT,dept.PY_CODE
+		from BD_ORD_SET_SHARE share inner join BD_OU_DEPT dept on share.PK_DEPT_SHARE = dept.PK_DEPT where PK_ORDSET=#{pkOrdset,jdbcType=VARCHAR} and share.DEL_FLAG='0'
+	</select>
+
+
+	<select id="getOrdSetUnShare" parameterType="java.util.Map" resultType="DynaBean">
+		select dept.PK_DEPT PK_DEPT_SHARE,dept.NAME_DEPT,dept.CODE_DEPT,dept.PY_CODE from BD_OU_DEPT dept where dept.FLAG_OP='1' and dept.FLAG_ACTIVE ='1' and dept.DT_DEPTTYPE='01'
+																  and not exists(select 1 from BD_ORD_SET_SHARE share where share.PK_DEPT_SHARE = dept.PK_DEPT and share.PK_ORDSET=#{pkOrdset,jdbcType=VARCHAR} and share.DEL_FLAG='0')
+	</select>
+  </mapper>

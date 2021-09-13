@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.task.bl.dao.BlCcTaskMapper">
+	
+	<select id="queryEmployees" resultType="com.zebone.nhis.common.module.base.ou.BdOuEmployee">
+		select emp.*
+  			from bd_ou_employee emp
+      	 inner join bd_dictattr att on emp.pk_emp=att.pk_dict
+       <where>
+       	<if test="codeAttr">
+       	 and att.code_attr=#{codeAttr,jdbcType=VARCHAR}
+       	</if>
+       	and att.val_attr = '1'
+		   and emp.flag_active='1'
+		   and emp.del_flag='0'
+		   and emp.pk_org in
+		   <foreach collection="pkOrgs" index="index" item="item" open="(" separator="," close=")">
+			   #{item}
+		   </foreach>
+
+
+	   </where>
+	</select>
+	<select id="queryOthStaMonthUnstRec" resultType="com.zebone.nhis.task.bl.vo.OthStaMonthUnstRec">
+		SELECT ROW_NUMBER()                                                                OVER (ORDER BY pi.CODE_IP ASC) AS seqNo,
+			   pi.CODE_IP                                                                  codeIp,
+			   pi.PK_PI                                                                    pkPi,
+			   en.NAME_PI                                                                  namePi,
+			   to_char(sysdate, 'yyyy-mm') month,
+			   hp.PK_HP                                                                    pkHp,
+			   hp.NAME                                                                     nameHp,
+			   dept.PK_DEPT                                                                pkDept,
+			   dept.NAME_DEPT                                                              nameDept,
+			   sum(case when ip.code_bill in ('11', '13', '96') then ip.amount else 0 end) amount1,
+			   sum(case when ip.code_bill = '14' then ip.amount else 0 end)                amount2,
+			   sum(case when ip.code_bill in ('12') then ip.amount else 0 end)             amount3,
+			   sum(case when ip.code_bill in ('15') then ip.amount else 0 end)             amount4,
+			   sum(case when ip.code_bill in ('16') then ip.amount else 0 end)             amount5,
+			   sum(case when ip.code_bill = '17' then ip.amount else 0 end)                amount6,
+			   sum(case when ip.code_bill = '18' then ip.amount else 0 end)                amount7,
+			   sum(case when ip.code_bill in ('19', '95') then ip.amount else 0 end)       amount8,
+			   sum(case when ip.code_bill in ('91') then ip.amount else 0 end)             amount9,
+			   sum(case when ip.code_bill = '93' then ip.amount else 0 end)                amount10,
+			   sum(case when ip.code_bill in ('92') then ip.amount else 0 end)             amount11,
+			   sum(case when ip.code_bill in ('94', '97') then ip.amount else 0 end)       amount12,
+			   nvl(sum(ip.AMOUNT), 0)                                                      amountSum,
+			   nvl(M.AMOUNT, 0)                                                            amountPrep,
+			   nvl(M.AMOUNT, 0) - nvl(sum(ip.AMOUNT), 0)                                   amountRemain
+		FROM BL_IP_DT ip
+				 INNER JOIN PV_ENCOUNTER en ON ip.PK_PV = en.PK_PV
+				 INNER JOIN PI_MASTER pi ON en.PK_PI = pi.PK_PI
+				 LEFT JOIN BD_HP hp ON en.PK_INSU = hp.PK_HP
+				 INNER JOIN BD_OU_DEPT dept ON en.PK_DEPT = dept.PK_DEPT
+				 LEFT JOIN (SELECT A.PK_PV, SUM(A.AMOUNT) AMOUNT
+							FROM BL_DEPOSIT A
+							WHERE A.EU_DPTYPE = '9'
+							GROUP BY A.PK_PV
+		) M ON en.PK_PV = M.PK_PV
+		WHERE en.EU_PVTYPE = 3
+		  AND en.EU_STATUS = 2
+		  AND en.DATE_END &lt;= sysdate
+		GROUP BY pi.CODE_IP,
+				 en.NAME_PI,
+				 hp.NAME,
+				 dept.NAME_DEPT,
+				 M.AMOUNT,
+				 pi.PK_PI,
+				 hp.PK_HP,
+				 dept.PK_DEPT
+	</select>
+</mapper>

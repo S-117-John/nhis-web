@@ -1,0 +1,497 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.bl.pub.dao.CgQryMaintainMapper">
+	<select id="queryBlCgIpDetails" parameterType="java.util.Map" resultType="DynaBean">
+			select
+			    pv.name_pi,
+			    pv.eu_pvtype,
+			    cg.date_cg,
+				cg.name_cg,
+				cg.quan,
+				cg.amount,
+				cg.price_org,
+				<if test="showPriceOrg == '1'.toString()  and  birthDateState == '1'.toString()">
+					cg.price_org price,
+				</if>
+				<if test="birthDateState == '0'.toString() ">
+					cg.price price,
+				</if>
+				pi.birth_date,
+				case cg.flag_pd	when '1' then 	pdunit.name 	else	unit.name 	end as nameunit,
+				cg.pk_pv,
+				cg.pk_cnord,
+			    cg.pk_dept_cg,
+			    cg.pk_emp_cg,
+			    cg.spec,
+			    pi.code_ip,
+			    dept.name_dept,
+			    emp.name_emp,
+			    cg.pk_cgip_back,
+			    cg.pk_cgip,
+			    cg.name_emp_ex,
+			    cg.pk_dept_ex
+			from bl_ip_dt cg
+		    left join pv_encounter pv on pv.pk_pv = cg.pk_pv
+		    left join pi_master pi on pi.pk_pi = pv.pk_pi
+				left join bd_unit pdunit on pdunit.pk_unit = cg.pk_unit_pd
+				left join bd_unit unit on unit.pk_unit = cg.pk_unit
+		    left join bd_ou_dept dept on dept.pk_dept = cg.pk_dept_cg
+		    left join bd_ou_employee emp on emp.pk_emp = cg.pk_emp_cg
+		     where  1=1
+		  <if test="euPvtype != null  and  euPvtype != ''">
+		 	and pv.eu_pvtype = #{euPvtype,jdbcType=CHAR}
+		   </if>
+		   <if test="codepi != null  and  codepi != ''">
+		 	and pi.code_pi like '%${codepi}%'
+		   </if>
+		   <if test="codeIp != null  and  codeIp != ''">
+		 	and pi.code_ip like '%${codeIp}%'
+		   </if>
+		   <if test="namepi != null  and  namepi != ''">
+		 	and pv.name_pi like '%${namepi}%' 
+		  </if>
+		  <if test="pkDeptCg != null  and  pkDeptCg != ''">
+		 	and cg.pk_dept_cg  = #{pkDeptCg,jdbcType=CHAR} 
+		  </if>
+		  <if test="pkEmpCg != null  and  pkEmpCg != ''">
+		 	and cg.pk_emp_cg = #{pkEmpCg,jdbcType=CHAR} 
+		  </if>
+		  <if test="dateBegin != null  and  dateBegin != ''">
+		 	 and cg.date_cg &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+		  </if>
+		  <if test="dateEnd != null  and  dateEnd != ''">
+		 	  and cg.date_cg &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		  </if>      
+		  <if test="pkOrg != null and pkOrg != ''">
+		  	  and cg.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		  </if>
+		  <if test="codeIp!=null and codeIp != ''">
+		      and pi.code_ip=#{codeIp,jdbcType=VARCHAR} 
+		  </if>
+		  <if test="pkCnOrd!=null and pkCnOrd != ''">
+			and cg.pk_cnord_rl=#{pkCnOrd,jdbcType=VARCHAR}
+		  </if>
+	<!--  	yangxue 注释
+	   union all
+		select
+		    pv.name_pi,
+		    pv.eu_pvtype,
+		    cgb.date_cg,
+				cgb.name_cg,
+				cgb.quan,
+				cgb.amount,
+				cgb.price,
+				case cgb.flag_pd	when '1' then 	pdunit.name 	else	unit.name 	end as nameunit,
+				cgb.pk_pv,
+		    cgb.pk_dept_cg,
+		    cgb.pk_emp_cg,
+		    cgb.spec,
+		    pi.code_ip,
+		    dept.name_dept,
+		    emp.name_emp
+		    ,cgb.pk_cgip_back
+		    ,cgb.pk_cgip
+				from bl_ip_dt_b cgb
+		    left join pv_encounter pv on pv.pk_pv = cgb.pk_pv
+		    left join pi_master pi on pi.pk_pi = pv.pk_pi
+				left join bd_unit pdunit on pdunit.pk_unit = cgb.pk_unit_pd
+				left join bd_unit unit on unit.pk_unit = cgb.pk_unit
+		    left join bd_ou_dept dept on dept.pk_dept = cgb.pk_dept_cg
+		    left join bd_ou_employee emp on emp.pk_emp = cgb.pk_emp_cg
+		  where  1=1 
+		  <if test="euPvtype != null  and  euPvtype != ''">
+		 	and pv.eu_pvtype = #{euPvtype,jdbcType=CHAR}
+		   </if>
+		   <if test="codepi != null  and  codepi != ''">
+		 	and pi.code_pi like '%${codepi}%'
+		   </if>
+		   <if test="namepi != null  and  namepi != ''">
+		 	and pv.name_pi like '%${namepi}%' 
+		  </if>
+		  <if test="pkDeptCg != null  and  pkDeptCg != ''">
+		 	and cgb.pk_dept_cg  = #{pkDeptCg,jdbcType=CHAR} 
+		  </if>
+		  <if test="pkEmpCg != null  and  pkEmpCg != ''">
+		 	and cgb.pk_emp_cg = #{pkEmpCg,jdbcType=CHAR} 
+		  </if>
+		  <if test="dateBegin != null  and  dateBegin != ''">
+		 	 and cgb.date_cg &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+		  </if>
+		  <if test="dateEnd != null  and  dateEnd != ''">
+		 	  and cgb.date_cg &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+		  </if>      
+		  <if test="pkOrg != null and pkOrg != ''">
+		  	  and cgb.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		  </if> 
+		  --> 
+		<!--  order by cg.code_cg,cg.sortno 	 -->
+		order by cg.date_cg
+	</select>
+	
+	<select id="queryBlCgIpDetailsIncludeHVB" parameterType="java.util.Map" resultType="DynaBean">
+			select
+			    pv.name_pi,
+			    pv.eu_pvtype,
+			    cg.date_cg,
+				cg.name_cg,
+				cg.quan,
+				cg.amount,
+				<if test="showPriceOrg == '1'.toString()  and  birthDateState == '1'.toString()">
+					cg.price_org price,
+				</if>
+				<if test="birthDateState == '0'.toString() ">
+					cg.price price,
+				</if>
+				pi.birth_date,
+				case cg.flag_pd	when '1' then 	pdunit.name 	else	unit.name 	end as nameunit,
+				cg.pk_pv,
+				cg.pk_cnord,
+			    cg.pk_dept_cg,
+			    cg.pk_emp_cg,
+			    cg.spec,
+			    pi.code_ip,
+			    dept.name_dept,
+			    emp.name_emp,
+			    cg.pk_cgip_back,
+			    cg.pk_cgip,
+			    cg.name_emp_ex,
+			    cg.pk_dept_ex,
+			    shv.barcode 
+			from bl_ip_dt cg
+		    left join pv_encounter pv on pv.pk_pv = cg.pk_pv
+		    left join pi_master pi on pi.pk_pi = pv.pk_pi
+				left join bd_unit pdunit on pdunit.pk_unit = cg.pk_unit_pd
+				left join bd_unit unit on unit.pk_unit = cg.pk_unit
+		    left join bd_ou_dept dept on dept.pk_dept = cg.pk_dept_cg
+		    left join bd_ou_employee emp on emp.pk_emp = cg.pk_emp_cg
+		    left  join sd_high_value shv on shv.pk_cg = cg.pk_cgip
+		     where  1=1 
+		  <if test="euPvtype != null  and  euPvtype != ''">
+		 	and pv.eu_pvtype = #{euPvtype,jdbcType=CHAR}
+		   </if>
+		   <if test="codepi != null  and  codepi != ''">
+		 	and pi.code_pi like '%${codepi}%'
+		   </if>
+		   <if test="codeIp != null  and  codeIp != ''">
+		 	and pi.code_ip like '%${codeIp}%'
+		   </if>
+		   <if test="namepi != null  and  namepi != ''">
+		 	and pv.name_pi like '%${namepi}%' 
+		  </if>
+		  <if test="pkDeptCg != null  and  pkDeptCg != ''">
+		 	and cg.pk_dept_cg  = #{pkDeptCg,jdbcType=CHAR} 
+		  </if>
+		  <if test="pkEmpCg != null  and  pkEmpCg != ''">
+		 	and cg.pk_emp_cg = #{pkEmpCg,jdbcType=CHAR} 
+		  </if>
+		  <if test="dateBegin != null  and  dateBegin != ''">
+		 	 and cg.date_cg &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+		  </if>
+		  <if test="dateEnd != null  and  dateEnd != ''">
+		 	  and cg.date_cg &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		  </if>      
+		  <if test="pkOrg != null and pkOrg != ''">
+		  	  and cg.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		  </if>
+		  <if test="codeIp!=null and codeIp != ''">
+		      and pi.code_ip=#{codeIp,jdbcType=VARCHAR} 
+		  </if>
+		  <if test="pkCnOrd!=null and pkCnOrd != ''">
+			and cg.pk_cnord_rl=#{pkCnOrd,jdbcType=VARCHAR}
+		  </if>
+	<!--  	yangxue 注释
+	   union all
+		select
+		    pv.name_pi,
+		    pv.eu_pvtype,
+		    cgb.date_cg,
+				cgb.name_cg,
+				cgb.quan,
+				cgb.amount,
+				cgb.price,
+				case cgb.flag_pd	when '1' then 	pdunit.name 	else	unit.name 	end as nameunit,
+				cgb.pk_pv,
+		    cgb.pk_dept_cg,
+		    cgb.pk_emp_cg,
+		    cgb.spec,
+		    pi.code_ip,
+		    dept.name_dept,
+		    emp.name_emp
+		    ,cgb.pk_cgip_back
+		    ,cgb.pk_cgip
+				from bl_ip_dt_b cgb
+		    left join pv_encounter pv on pv.pk_pv = cgb.pk_pv
+		    left join pi_master pi on pi.pk_pi = pv.pk_pi
+				left join bd_unit pdunit on pdunit.pk_unit = cgb.pk_unit_pd
+				left join bd_unit unit on unit.pk_unit = cgb.pk_unit
+		    left join bd_ou_dept dept on dept.pk_dept = cgb.pk_dept_cg
+		    left join bd_ou_employee emp on emp.pk_emp = cgb.pk_emp_cg
+		  where  1=1 
+		  <if test="euPvtype != null  and  euPvtype != ''">
+		 	and pv.eu_pvtype = #{euPvtype,jdbcType=CHAR}
+		   </if>
+		   <if test="codepi != null  and  codepi != ''">
+		 	and pi.code_pi like '%${codepi}%'
+		   </if>
+		   <if test="namepi != null  and  namepi != ''">
+		 	and pv.name_pi like '%${namepi}%' 
+		  </if>
+		  <if test="pkDeptCg != null  and  pkDeptCg != ''">
+		 	and cgb.pk_dept_cg  = #{pkDeptCg,jdbcType=CHAR} 
+		  </if>
+		  <if test="pkEmpCg != null  and  pkEmpCg != ''">
+		 	and cgb.pk_emp_cg = #{pkEmpCg,jdbcType=CHAR} 
+		  </if>
+		  <if test="dateBegin != null  and  dateBegin != ''">
+		 	 and cgb.date_cg &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+		  </if>
+		  <if test="dateEnd != null  and  dateEnd != ''">
+		 	  and cgb.date_cg &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+		  </if>      
+		  <if test="pkOrg != null and pkOrg != ''">
+		  	  and cgb.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		  </if> 
+		  --> 
+		<!--  order by cg.code_cg,cg.sortno 	 -->
+		order by cg.date_cg
+	</select>
+	
+	<select id="queryItemCateList" parameterType="java.lang.String" resultType="com.zebone.nhis.bl.pub.vo.BlDiagDivVo">
+	  select pv.name_pi,diagdiv.pk_hp,diag.pk_diag,itemcate.pk_itemcate,itemcate.rate,diagdiv.amount,cate.name as name_itemcate 
+  	  from pv_encounter  pv
+      inner join pv_diag diag on diag.pk_pv = pv.pk_pv
+      inner join bd_hp_diagdiv diagdiv on diagdiv.pk_diag = diag.pk_diag and diagdiv.pk_hp = pv.pk_insu and diagdiv.eu_pvtype ='3'
+      inner join bd_hp_diagdiv_itemcate itemcate on itemcate.pk_totaldiv = diagdiv.pk_totaldiv
+      inner join bd_itemcate cate on itemcate.pk_itemcate = cate.pk_itemcate 
+      where pv.pk_pv = #{pkPv,jdbcType=CHAR} 
+	</select>
+	<select id="getTotalFee"  parameterType="java.lang.String" resultType="java.math.BigDecimal">
+				select sum(cg.amount) as amt
+  				from bl_ip_dt cg 
+ 				where cg.pk_pv  = #{pkPv,jdbcType=CHAR} and cg.flag_settle = '0'
+	</select>
+	<select id="getPvTotalFeeByCate"  parameterType="java.lang.String" resultType="DynaBean">
+				select cg.pk_itemcate,
+		sum(cg.amount) as amount 
+		from bl_ip_dt cg
+		where  cg.pk_pv  = #{pkPv,jdbcType=CHAR} and cg.flag_settle = '0'
+		group by cg.pk_itemcate
+	</select>
+	<select id="qryBdHpByPiCate"  parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.base.bd.price.BdHp">
+			select hp.* from bd_hp hp 
+			inner join pi_cate pi on hp.pk_hp = pi.pk_hp 
+			where pi.pk_picate = #{pkPicate,jdbcType=CHAR} and (pi.del_flag = '0' or pi.del_flag is null) 
+            <if test="euPvType=='1'.toString()">
+              and hp.flag_op='1'
+            </if>
+             <if test="euPvType=='2'.toString()">
+              and hp.flag_er='1'
+            </if>
+             <if test="euPvType=='3'.toString()">
+              and hp.flag_ip='1'
+            </if>
+             <if test="euPvType=='4'.toString()">
+              and hp.flag_pe='1'
+            </if>
+             <if test="euPvType=='5'.toString()">
+              and hp.flag_hm='1'
+            </if> 
+	</select>
+	
+	<select id="qryBdHpInfoList"  parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.base.bd.price.BdHp">
+			select * from bd_hp where pk_hp in 
+			 <foreach collection="pkHps" index="index" item="item" open="(" separator="," close=")">
+               #{item}
+            </foreach>
+            <if test="euPvtype=='1'.toString()">
+              and flag_op='1'
+            </if>
+             <if test="euPvtype=='2'.toString()">
+              and flag_er='1'
+            </if>
+             <if test="euPvtype=='3'.toString()">
+              and flag_ip='1'
+            </if>
+             <if test="euPvtype=='4'.toString()">
+              and flag_pe='1'
+            </if>
+             <if test="euPvtype=='5'.toString()">
+              and flag_hm='1'
+            </if> 
+	</select>
+	<select id="queryItemAndChildPrice" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.ItemPriceVo">
+	select price.price as price_org,price.price as price_cs,price.price, item.flag_pd,item.pk_item,item.code,item.name as name_cg,item.pk_unit,item.spec,item.flag_set,
+	item.flag_active,item.eu_pricemode,item.pk_itemcate,item.del_flag ,
+	item.pk_item_old ,item.name_item_old,item.eu_pricemode_old,item.flag_set_old,item.quan  
+	from
+	(
+	select  item1.pk_item as pk_item_old,item1.name as name_item_old,item1.eu_pricemode as eu_pricemode_old,item1.flag_set as flag_set_old,1 as quan, item1.*
+	from  bd_item  item1
+	where item1.del_flag='0' and item1.pk_item in  (${itemList})
+	union all
+	select item2.pk_item as pk_item_old ,item2.name as name_item_old,item2.eu_pricemode as eu_pricemode_old,item2.flag_set as flag_set_old, itemset.quan,item3.*
+	from bd_item item2
+	inner join bd_item_set itemset  on item2.pk_item=itemset.pk_item and itemset.del_flag='0'and item2.pk_item in (${itemList})
+	and item2.flag_set=1
+	inner join bd_item item3 on item3.pk_item = itemset.pk_item_child and item3.del_flag='0'
+	) item
+	inner join bd_item_price price on price.pk_item = item.pk_item and price.pk_org = #{pkOrg,jdbcType=CHAR}
+	inner join bd_pricetype_cfg cfg on price.eu_pricetype = cfg.eu_pricetype and cfg.pk_hp = #{pkHp,jdbcType=CHAR} and cfg.pk_org = #{pkOrg,jdbcType=CHAR}
+	where  price.flag_stop = '0' and price.del_flag = '0' and cfg.del_flag = '0' 
+	and price.date_begin &lt;= to_date(#{dateHap},'YYYYMMDDHH24MISS') and price.date_end &gt; to_date(#{dateHap},'YYYYMMDDHH24MISS')
+	</select>
+	<!-- 根据医嘱项目获取收费项目对应医保下的对应价格 -->
+	<select id="queryItemAndChildPriceByOrd" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.ItemPriceVo">
+	select price.PRICE,price.PRICE as price_org,price.PRICE as price_cs,item.flag_pd, item.pk_item,item.code,item.name as name_cg,item.pk_unit,item.spec,item.flag_set,
+	item.flag_active,item.eu_pricemode,item.pk_itemcate,item.del_flag,
+	item.pk_ord_old, item.pk_item_old,item.name_item_old,item.eu_pricemode_old,item.flag_set_old,item.quan    
+	from
+	(
+	select ord1.pk_ord as pk_ord_old, item1.pk_item as pk_item_old,item1.name as name_item_old,item1.eu_pricemode as eu_pricemode_old,item1.flag_set as flag_set_old,orditem1.QUAN as quan, item1.*
+	from bd_ord_item orditem1 
+	inner join  bd_ord ord1 on orditem1.pk_ord=ord1.pk_ord 
+    inner join  bd_item item1 on orditem1.pk_item=item1.pk_item and item1.del_flag='0'
+	where orditem1.del_flag='0' and ord1.pk_ord in  (${ordList}) 
+	union all
+	select
+	  orditem3.pk_ord as pk_ord_old ,orditem3.pk_item as pk_item_old ,orditem3.name as name_item_old,orditem3.eu_pricemode as eu_pricemode_old,orditem3.flag_set as flag_set_old, itemset3.quan*orditem3.quan as quan,item3.*
+	   from
+	  (select ord2.pk_ord, item2.pk_item ,item2.NAME,item2.EU_PRICEMODE,item2.FLAG_SET,orditem2.QUAN
+	   from bd_ord_item orditem2
+	    inner join bd_ord ord2 on orditem2.pk_ord=ord2.pk_ord and ord2.del_flag='0'
+	    inner join bd_item item2 on orditem2.pk_item=item2.pk_item and item2.del_flag='0'
+	      where orditem2.del_flag='0' and item2.flag_set=1 and ord2.pk_ord in  (${ordList}) 
+	   ) orditem3
+	   inner join bd_item_set itemset3 on itemset3.pk_item = orditem3.pk_item and itemset3.del_flag='0'
+	   inner join bd_item item3 on itemset3.pk_item_child=item3.pk_item and item3.del_flag='0'
+	where orditem3.pk_ord in (${ordList}) 
+	) item
+	inner join bd_item_price price  on price.pk_item = item.pk_item and price.pk_org = #{pkOrg,jdbcType=CHAR} 
+	inner join bd_pricetype_cfg cfg on price.eu_pricetype = cfg.eu_pricetype and cfg.pk_hp = #{pkHp,jdbcType=CHAR} and cfg.pk_org = #{pkOrg,jdbcType=CHAR}
+	where  price.flag_stop = '0' and price.del_flag = '0' and cfg.del_flag = '0' 
+	and price.date_begin &lt;= to_date(#{dateHap},'YYYYMMDDHH24MISS') and price.date_end &gt; to_date(#{dateHap},'YYYYMMDDHH24MISS')
+	</select>
+	
+	<select id="queryItemsByPk"  parameterType="java.util.List" resultType="com.zebone.nhis.common.module.base.bd.srv.BdItem">
+			select name from bd_item where pk_item in 
+			 <foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+               #{item}
+            </foreach>
+	</select>
+	<select id="queryItemByOrd"  parameterType="java.util.Map" resultType="DynaBean">
+			select ord1.pk_ord, item1.PK_ITEM,item1.name 
+			from bd_ord_item orditem1, bd_ord ord1, bd_item item1
+			where orditem1.pk_ord=ord1.pk_ord and orditem1.pk_item=item1.pk_item and orditem1.del_flag='0'
+			and ord1.pk_ord in (${pkOrds}) 
+			union all
+			select
+			  orditem3.pk_ord,item3.PK_ITEM,item3.name
+			   from
+			  (select ord2.pk_ord, item2.pk_item ,item2.NAME 
+			   from bd_ord_item orditem2
+			    inner join bd_ord ord2 on orditem2.pk_ord=ord2.pk_ord
+			    inner join bd_item item2 on orditem2.pk_item=item2.pk_item
+			      where orditem2.del_flag='0' and item2.flag_set=1 and ord2.pk_ord in  (${pkOrds})  
+			   ) orditem3
+			   left join bd_item_set itemset3 on itemset3.pk_item = orditem3.pk_item
+			   left join bd_item item3 on itemset3.pk_item_child=item3.pk_item
+			where orditem3.pk_ord in (${pkOrds}) 
+	</select>
+	<select id="queryHpItemDivList" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.base.bd.price.BdHpItemdiv">
+	   select * from  BD_HP_ITEMDIV 
+	   where pk_hp = #{pkHp,jdbcType=CHAR}  
+	   and date_begin &lt;= to_date(#{dateHap},'YYYYMMDDHH24MISS') 
+	   and date_end &gt; to_date(#{dateHap},'YYYYMMDDHH24MISS') and del_flag= '0' 
+	</select>
+	<select id="queryInvItemByItemCate" parameterType="java.util.Map" resultType="DynaBean">
+	   select distinct invitem.code,cate.pk_itemcate 
+       from bd_invcate_item invitem
+       inner join bd_invcate_itemcate cate on invitem.pk_invcateitem = cate.pk_invcateitem
+       inner join bd_invcate inv on invitem.pk_invcate = inv.pk_invcate
+       where  inv.eu_type = #{euType,jdbcType=VARCHAR} and invitem.del_flag ='0' 
+       and invitem.pk_org = #{pkOrg,jdbcType=CHAR} and cate.del_flag ='0' and inv.del_flag ='0'  
+       and cate.pk_itemcate in 
+       <foreach collection="pkItemcates" index="index" item="pkitemcate" open="(" separator="," close=")">
+               #{pkitemcate}
+       </foreach>  
+             
+	</select>
+	<select id="queryAuditItemByItemCate" parameterType="java.util.Map" resultType="DynaBean">
+	  select distinct bdaudit.code ,auditcateitem.pk_itemcate from bd_audit bdaudit 
+	  inner join bd_audit_itemcate auditcateitem on bdaudit.pk_audit = auditcateitem.pk_audit 
+	  where  bdaudit.del_flag ='0' and auditcateitem.del_flag ='0' and bdaudit.pk_org=#{pkOrg,jdbcType=CHAR}   
+	  and auditcateitem.pk_itemcate in   
+       <foreach collection="pkItemcates" index="index" item="pkitemcate" open="(" separator="," close=")"> 
+               #{pkitemcate} 
+       </foreach>  
+	</select>
+	<select id="qryBdHpInfoListByPv"  parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.base.bd.price.BdHp">
+			select bd_hp.* from pv_insurance pvins 
+			inner join bd_hp hp on pvins.pk_hp = hp.pk_hp 
+			where pvins.pk_pv  =  #{pkPv,jdbcType=CHAR}
+            <if test="euPvType=='1'.toString()">
+              and hp.flag_op='1'
+            </if>
+             <if test="euPvType=='2'.toString()">
+              and hp.flag_er='1'
+            </if>
+             <if test="euPvType=='3'.toString()">
+              and hp.flag_ip='1'
+            </if>
+             <if test="euPvType=='4'.toString()">
+              and hp.flag_pe='1'
+            </if>
+             <if test="euPvType=='5'.toString()">
+              and hp.flag_hm='1'
+            </if> 
+	</select>
+	
+	<select id="qryHpValAttr" parameterType="java.lang.String" resultType="java.lang.String">
+		select attr.val_attr
+		  from bd_hp hp
+		       inner join bd_dictattr attr on hp.pk_hp=attr.pk_dict
+		       inner join bd_dictattr_temp tmp on attr.pk_dictattrtemp=tmp.pk_dictattrtemp and tmp.dt_dicttype='03'
+           	   inner join pv_encounter pv on pv.pk_insu = hp.pk_hp
+		 where pv.pk_pv = #{pkPv,jdbcType=CHAR} and
+		       tmp.code_attr='0301'
+	</select>
+	<select  id="qryBillCodeByPkItems" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.BillItemVo">
+	select distinct bdaudit.code AS codeBill,'1' AS flagPd,'acc' AS billType,item.pk_pd AS pkItem
+    from  bd_audit bdaudit
+    inner join bd_pd item on bdaudit.pk_audit = item.pk_audit
+    where
+	item.pk_pd in (${pdList}) and bdaudit.del_flag = '0' and item.del_flag = '0'
+    union all
+	select distinct bdaudit.code AS codeBill,'0' AS flagPd,'acc' AS billType,item.pk_item
+	from bd_audit bdaudit
+	inner join bd_item item on bdaudit.pk_audit = item.pk_audit
+	where
+    item.pk_item in (${itemList})
+	and bdaudit.del_flag = '0'
+	and item.del_flag = '0'
+	union all
+	select distinct bdaudit.code as codeBill  ,'1' as flagPd,'acc' as billType,item.PK_PD as pkItem from bd_audit bdaudit
+	 inner join bd_audit_itemcate auditcateitem on bdaudit.pk_audit = auditcateitem.pk_audit
+	 inner join bd_itemcate itemcate on itemcate.pk_itemcate = auditcateitem.pk_itemcate
+	 inner join bd_pd item on itemcate.pk_itemcate=item.pk_itemcate
+	 where item.pk_pd in (${pdList})  and bdaudit.del_flag ='0'  and auditcateitem.del_flag ='0' and itemcate.del_flag ='0' and item.del_flag='0'
+	union all
+	select distinct bdaudit.code as codeBill,'0' as flagPd ,'acc' as billType,item.PK_ITEM  from bd_audit bdaudit
+	 inner join bd_audit_itemcate auditcateitem on bdaudit.pk_audit = auditcateitem.pk_audit
+	 inner join bd_itemcate itemcate on itemcate.pk_itemcate = auditcateitem.pk_itemcate
+	 inner join bd_item item on itemcate.pk_itemcate=item.pk_itemcate
+	 where item.pk_item in (${itemList})   and bdaudit.del_flag ='0'  and auditcateitem.del_flag ='0' and itemcate.del_flag ='0' and item.del_flag='0'
+	union all
+	select distinct invitem.code as codeBill,'1' as flagPd,'bill'  as billType,item.PK_PD as pkItem from bd_invcate_item invitem
+	 inner join bd_invcate_itemcate cate on invitem.pk_invcateitem=cate.pk_invcateitem
+	 inner join bd_invcate inv on invitem.pk_invcate=inv.pk_invcate
+	 inner join bd_pd item on cate.pk_itemcate=item.pk_itemcate
+	 where item.pk_pd in (${pdList})  and inv.eu_type = #{euType,jdbcType=VARCHAR} and invitem.del_flag ='0' and invitem.pk_org=#{pkOrg,jdbcType=CHAR} and cate.del_flag ='0' and inv.del_flag='0' and item.del_flag='0'
+	union all 
+	select distinct invitem.code as codeBill,'0' as flagPd,'bill' as billType,item.PK_ITEM  from bd_invcate_item invitem
+	 inner join bd_invcate_itemcate cate on invitem.pk_invcateitem=cate.pk_invcateitem
+	 inner join bd_invcate inv on invitem.pk_invcate=inv.pk_invcate
+	 inner join bd_item item on cate.pk_itemcate=item.pk_itemcate
+	 where item.pk_item in (${itemList}) and inv.eu_type = #{euType,jdbcType=VARCHAR} and invitem.del_flag ='0' and invitem.pk_org=#{pkOrg,jdbcType=CHAR} and cate.del_flag ='0' and inv.del_flag='0' and item.del_flag='0'
+	</select>
+</mapper>

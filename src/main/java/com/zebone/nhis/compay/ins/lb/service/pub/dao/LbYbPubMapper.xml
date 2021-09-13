@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.compay.ins.lb.service.pub.dao.LbYbPubMapper">
+	<update id="updateFlagInsuByPk" parameterType="java.util.List">
+		update bl_ip_dt set flag_insu='1' where pk_cgip in
+		<foreach collection="list" item="pkCgips" open="(" separator="," close=")">
+			#{pkCgips,jdbcType=VARCHAR}
+		</foreach>
+	</update>
+	
+	<update id="updateOpFlagInsuByPk" parameterType="java.util.List">
+		update bl_op_dt set flag_insu='1' where pk_cgop in
+		<foreach collection="list" item="pkCgops" open="(" separator="," close=")">
+			#{pkCgops,jdbcType=VARCHAR}
+		</foreach>
+	</update>
+	
+	<update id="updatePkSettlByYBPk" parameterType="java.util.Map">
+		update ${tableName} set pk_settle=#{pkSettle,jdbcType=VARCHAR} 
+		where ${primaryKeyName}=#{primaryKeyValue,jdbcType=VARCHAR}
+	</update>
+	<select id="qryYbPdDicNoWithInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select DISTINCT
+               bp.pk_pd pk_item,bp.name,bp.code,bp.short_name,bp.spcode,bf.name factory_name,bp.spec,
+               bp.dt_dosage,bp.price,bp.pk_unit_pack,bp.dt_abrd,bp.flag_stop,bp.eu_drugtype,isim.create_time,bp.appr_no
+          from bd_pd bp
+    inner join bd_factory bf on bf.pk_factory=bp.pk_factory
+    inner join bd_pd_store bps on bp.pk_pd=bps.pk_pd
+    left join ins_szyb_item_map isim on bp.pk_pd=isim.pk_item and isim.del_flag='0' and isim.pk_hp=#{pkHp,jdbcType=VARCHAR}
+         where 1=1 
+           and not exists (select 1 from ins_szyb_item_map map where bp.pk_pd = map.pk_item and map.DEL_FLAG = '0'
+           and map.pk_hp=#{pkHp,jdbcType=VARCHAR}) 
+           <if test="euActive != null and euActive != ''">
+               and bp.flag_stop=#{euActive,jdbcType=VARCHAR}
+           </if>
+           <if test="text != null and text != '' ">
+			    and (bp.code like '%${text}%' or bp.name like '%${text}%' or bp.spcode like '%${text}%' or bp.appr_no like '%${text}%' or bf.name like '%${text}%')
+			</if>
+	</select>
+	
+	<select id="qryYbItemDicNoWithInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select DISTINCT
+			bi.pk_item,bi.code,bi.name,bi.name_prt,bi.pk_unit,bi.spec,
+			bi.price,bi.spcode,isim.create_time ,bf.PK_FACTORY,bf.Name as factory_name
+		from bd_item bi
+		    LEFT JOIN BD_FACTORY bf on bf.PK_FACTORY = bi.PK_FACTORY
+			left join ins_szyb_item_map isim on isim.pk_item=bi.pk_item  and isim.pk_hp=#{pkHp,jdbcType=VARCHAR}
+		where 1=1
+			and not exists (select 1 from ins_szyb_item_map map where bi.pk_item = map.pk_item and map.DEL_FLAG = '0'
+			and map.pk_hp=#{pkHp,jdbcType=VARCHAR})
+			<if test="euActive != null and euActive != '' ">
+			  and bi.flag_active=#{euActive,jdbcType=VARCHAR}
+			</if>
+			<if test="text != null and text != '' ">
+			    and (bi.code like '%${text}%' or bi.name like '%${text}%' or bi.spcode like '%${text}%')
+			</if>
+	</select>
+	
+	<select id="qrySzybItemMapInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.compay.ins.lb.vo.szyb.InsSzybItemMap">
+		select * 
+		from ins_szyb_item_map 
+		where del_flag='0' and pk_hp=#{pkHp,jdbcType=VARCHAR} 
+			and pk_item in
+			<foreach collection="pkItems" item="pkItem" open="(" separator="," close=")">
+				#{pkItem,jdbcType=VARCHAR}
+			</foreach>
+	</select>
+	
+	<select id="qrySzybFymx" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			code_bill,sum(zlje+zfje) amount_pi 
+		from ins_szyb_fymx 
+		where pk_pv=#{pkPv,jdbcType=VARCHAR} 
+			and del_flag='0'
+			and code_bill in
+			<foreach collection="codeBills" item="codeBill" open="(" separator="," close=")">
+				#{codeBill,jdbcType=VARCHAR}
+			</foreach>
+		group by code_bill
+	</select>
+	
+	<select id="qrySzlxFymx" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			code_bill,sum(zfeify+zfufy) amount_pi 
+		from ins_szlx_fymx 
+		where pk_pv=#{pkPv,jdbcType=CHAR} 
+			and del_flag='0'
+			and code_bill in
+			<foreach collection="codeBills" item="codeBill" open="(" separator="," close=")">
+				#{codeBill,jdbcType=VARCHAR}
+			</foreach>
+		group by code_bill
+	</select>
+	<select id="qryCodeBillByPkItem" parameterType="java.util.Map" resultType="java.lang.String">
+		select     bii.code code_bill 
+		from       bd_invcate_item bii
+  	    inner join bd_invcate_itemcate bic on bii.pk_invcateitem =bic.pk_invcateitem
+  		inner join bd_item item on item.pk_itemcate =bic.pk_itemcate
+		where      item.pk_item=#{pkItem,jdbcType=VARCHAR}
+		           and bii.pk_invcate=#{pkInvcate,jdbcType=VARCHAR}
+		union          
+		select     bii.code code_bill  
+		from       bd_invcate_item bii
+		inner join bd_invcate_itemcate bic on bii.pk_invcateitem =bic.pk_invcateitem
+		inner join bd_pd on bd_pd.pk_itemcate=bic.pk_itemcate
+		where      bd_pd.pk_pd=#{pkItem,jdbcType=VARCHAR}
+		           and bii.pk_invcate=#{pkInvcate,jdbcType=VARCHAR}  
+	</select>
+	
+	<select id="qryOpFymx" parameterType="java.util.Map" resultType="DynaBean">
+		select
+  			(case when bid.flag_pd =0 then bi.code else bp.code  end) code_item,bid.name_cg,bid.spec,bid.pk_cgop,bid.pk_item,
+  			bid.date_hap,bid.price,bid.quan,bid.amount,bid.flag_insu, unit.name unitname, dostype.name DosetypeName,bid.PK_DEPT_APP
+				,co.quan order_quan,co.code_freq,co.days,co.code_supply,pres.pres_no,bid.pk_emp_app  pk_emp_ord,bid.name_emp_app name_emp_ord,bid.flag_pd
+		from bl_op_dt bid
+			left join bd_item bi on bi.pk_item=bid.pk_item
+			left join bd_pd bp on bp.pk_pd =bid.pk_pd
+			left join bd_unit unit ON unit.pk_unit = bid.pk_unit
+			left join cn_order co on bid.pk_cnord = co.pk_cnord
+			left join cn_prescription pres on pres.pk_pres = co.pk_pres
+			 left JOIN (SELECT *
+		              FROM bd_defdoc
+		              WHERE code_defdoclist = '030400') dostype ON dostype.code = bp.dt_dosage
+		where bid.del_flag = '0' and bid.pk_settle is null and bid.flag_settle = '0' and bid.pk_pv=#{pkPv,jdbcType=VARCHAR}
+		<if test="flagType!=null">
+			<choose>
+				<when test="flagType==1">
+					and bid.flag_insu='1'
+				</when>
+				<when test="flagType==2">
+					and nvl(bid.flag_insu,'0')='0'
+				</when>
+			</choose>
+		</if>
+	</select>
+	
+	<select id="qryIpFymx" parameterType="java.util.Map" resultType="DynaBean">
+		select
+  			(case when bid.flag_pd =0 then bi.code else bp.code  end) code_item,bid.name_cg,bid.spec,bid.pk_cgip,bid.pk_item,
+  			bid.date_hap,bid.price,bid.quan,bid.amount,bid.flag_insu, unit.name unitname,dostype.name DosetypeName,bid.PK_DEPT_APP
+			,co.quan order_quan,co.code_freq,co.days,co.code_supply,pres.pres_no,bid.pk_emp_app  pk_emp_ord,bid.name_emp_app name_emp_ord,bid.flag_pd
+		from bl_ip_dt bid
+			left join bd_item bi on bi.pk_item=bid.pk_item
+			left join bd_pd bp on bp.pk_pd =bid.pk_pd
+			left join bd_unit unit ON unit.pk_unit = bid.pk_unit
+			left join cn_order co on bid.pk_cnord = co.pk_cnord
+			left join cn_prescription pres on pres.pk_pres = co.pk_pres
+			left JOIN (SELECT *
+		              FROM bd_defdoc
+		              WHERE code_defdoclist = '030400') dostype ON dostype.code = bp.dt_dosage
+		where bid.del_flag = '0' and bid.pk_settle is null and bid.flag_settle = '0' and bid.pk_pv=#{pkPv,jdbcType=VARCHAR}
+		<if test="flagType!=null">
+			<choose>
+				<when test="flagType==1">
+					and bid.flag_insu='1'
+				</when>
+				<when test="flagType==2">
+					and nvl(bid.flag_insu,'0')='0'
+				</when>
+			</choose>
+		</if>
+	</select>
+	
+	<select id="qryYbJsByTableId" parameterType="java.util.Map" resultType="DynaBean">
+		select * from ${tableName} where id=#{id,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="qryBdHpFactorByPkDeptAndBdHp" parameterType="java.util.Map" resultType="DynaBean">		
+		select pk_hpfactor,pk_hp,pk_picate,eu_pvtype,pk_dept,factor_prep,amt_cred,factor_cred  from BD_HP_FACTOR  
+			where DEL_FLAG = '0' 
+			and  pk_hp = #{pkHp,jdbcType=VARCHAR}
+			and  pk_dept = #{pkDept,jdbcType=VARCHAR}
+	</select>
+	
+</mapper>

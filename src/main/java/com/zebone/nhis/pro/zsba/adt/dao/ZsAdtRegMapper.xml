@@ -1,0 +1,744 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.adt.dao.ZsAdtRegMapper">	
+	
+	<!-- 根据患者姓名从【旧his】系统中获取历史就诊记录 -->
+	<select id="getHisPvList" parameterType="java.util.Map" resultType="com.zebone.nhis.pro.zsba.adt.vo.ZsbaHisAdtPv">
+		SELECT
+			t1.patient_id,		<!--患者编码-->
+			t1.name,			<!--患者名称-->
+			t2.name AS sex,		<!--性别-->
+			t1.birth_date,		<!--出生年月-->
+			t3.social_no,		<!--身份证号-->
+			t3.home_street,		<!--家庭住址-->
+			t3.home_tel,		<!--家庭电话-->
+			t3.relation_name,	<!--联系人-->
+			t3.relation_tel,	<!--联系人电话-->
+			t1.inpatient_no,	<!--住院号-->
+			t1.admiss_times,	<!--最大入院次数-->
+			t1.admiss_date,		<!--上次入院日期-->
+			t4.dept_name,		<!--上次就诊科室-->
+			t4.ward_name,		<!--上次就诊病区-->
+			t1.admiss_diag_str	<!--就诊诊断-->
+		FROM
+			zy_inactpatient t1
+			INNER JOIN zd_sex_code t2 ON t1.sex = t2.code
+			<if test="sex != null  and  sex != ''">
+				AND t2.name = #{sex,jdbcType=VARCHAR}
+			</if>
+			INNER JOIN a_patient_mi t3 ON t1.patient_id = t3.patient_id
+			LEFT JOIN zy_adtward t4 ON t1.admiss_dept = t4.dept_sn 
+			AND t1.admiss_ward = t4.ward_sn
+			INNER JOIN ( SELECT patient_id, MAX ( admiss_times ) AS admiss_times 
+						   FROM zy_inactpatient 
+						  WHERE (name LIKE '%'+ #{namePi,jdbcType=VARCHAR} + '%' 
+						    AND inpatient_no not like '%B%')
+						<if test="codeIp != null  and  codeIp != ''">
+							or inpatient_no = #{codeIp,jdbcType=VARCHAR}
+						</if>
+						  GROUP BY patient_id ) t5 ON t1.patient_id = t5.patient_id AND t1.admiss_times = t5.admiss_times
+			<if test="birthDate != null  and  birthDate != ''">
+					WHERE CONVERT ( VARCHAR (100), t1.birth_date, 23 ) = #{birthDate,jdbcType=VARCHAR} 
+			</if>	
+			order by t1.admiss_date desc  
+	</select>
+	   
+	<!-- 根据患者姓名从【Nhis】系统中获取历史就诊记录 -->
+	<select id="getNhisPvList" parameterType="java.util.Map" resultType="com.zebone.nhis.pro.zsba.adt.vo.ZsbaHisAdtPv">
+		SELECT pi.code_pi as patient_id			<!--患者编码 -->
+			  ,pi.name_pi as name				<!--患者名称 -->
+			  ,docsex.name sex 					<!--性别 -->
+			  ,pi.birth_date 					<!--出生年月 -->
+			  ,pi.id_no as social_no 			<!--身份证号 -->
+			  ,( pi.ADDR_CUR + pi.ADDR_CUR_DT ) as home_street <!--家庭住址 -->
+			  ,pi.tel_rel as home_tel			<!--家庭电话 -->
+			  ,pi.name_rel as relation_name 	<!--联系人 -->
+			  ,pi.tel_rel as relation_tel		<!--联系人电话 -->
+			  ,pi.code_ip as inpatient_no		<!--住院号 -->
+			  ,t.ip_times as admiss_times		<!--上次入院次数 -->
+			  ,pvt.date_begin as admiss_date	<!--上次入院日期 -->
+			  ,dept.name_dept as dept_name		<!--上次就诊科室 -->
+			  ,deptns.name_dept as ward_name 	<!--上次就诊病区 -->
+			  ,diag.desc_diag as admiss_diag_str<!--上次就诊诊断 -->
+			  ,pvt.pk_pi						<!--患者主键 -->
+		FROM pv_ip ipt
+			INNER JOIN PV_ENCOUNTER pvt ON pvt.PK_PV = ipt.PK_PV 
+			AND pvt.del_flag = '0' 
+			AND pvt.flag_cancel = '0'
+			INNER JOIN ( SELECT MAX ( ip.ip_times ) ip_times, pv.pk_pi FROM pv_ip ip
+										INNER JOIN pv_encounter pv ON pv.pk_pv = ip.pk_pv AND pv.del_flag = '0' AND pv.flag_cancel = '0' 
+			              WHERE ip.del_flag = '0' 
+			                AND pv.name_pi LIKE '%'+ #{namePi,jdbcType=VARCHAR} +'%' 
+			              GROUP BY pv.pk_pi ) t ON t.pk_pi = pvt.pk_pi AND ipt.ip_times = t.ip_times
+			INNER JOIN pi_master pi ON pi.PK_PI = pvt.pk_pi
+			LEFT JOIN bd_defdoc docsex ON docsex.code = pi.dt_sex AND docsex.code_defdoclist = '000000' 
+			<if test="sex != null  and  sex != ''">
+				 AND docsex.name = #{sex,jdbcType=VARCHAR}
+		    </if>
+			LEFT JOIN bd_ou_dept dept ON dept.pk_dept = ipt.PK_DEPT_ADMIT
+			LEFT JOIN bd_ou_dept deptns ON deptns.pk_dept = ipt.PK_DEPT_NS_ADMIT
+			LEFT JOIN pv_diag diag ON diag.pk_pv = pvt.pk_pv AND diag.DEL_FLAG = '0' AND diag.FLAG_MAJ = '1'
+		   WHERE IPT.DEL_FLAG = '0'
+		   <if test="birthDate != null  and  birthDate != ''">
+			 AND pi.birth_date = to_date(#{birthDate,jdbcType=VARCHAR}+ '000000','YYYYMMddHH24MISS') 
+		   </if>
+		order by pvt.date_begin desc
+	</select>
+
+	<!-- 根据患者姓名从【病案系统】中获取历史就诊记录 -->
+	<select id="getBaglPvList" parameterType="java.util.Map" resultType="com.zebone.nhis.pro.zsba.adt.vo.ZsbaHisAdtPv">
+		SELECT '' as patient_id,			<!-- 患者编码 -->
+			inf.FNAME as name,				<!-- 患者名称 -->
+			inf.FSEX AS sex,				<!-- 性别 -->
+			inf.FBIRTHDAY AS birth_date,	<!-- 出生年月 -->
+			inf.FIDCARD as social_no,		<!-- 身份证号 -->
+			inf.FHKADDR as home_street,		<!-- 家庭住址 -->
+			inf.FLXTELE as home_tel,		<!-- 家庭电话 -->
+			inf.FLXNAME as relation_name,	<!-- 联系人 -->
+			inf.FPRN as inpatient_no,		<!-- 住院号 -->
+			fyc.admiss_times,				<!-- 最大入院次数 -->
+			inf.FRYDATE AS admiss_date,		<!-- 上次入院日期 -->
+			inf.FRYDEPT as dept_name,		<!-- 上次就诊科室 -->
+			'' as ward_name,				<!-- 上次就诊病区 -->
+			inf.FMZZD as admiss_diag_str	<!-- 就诊诊断  -->
+			from nhis_bagl_info inf 
+			inner join (select MAX(t.FTIMES) admiss_times , t.FPRN ,t.FNAME 
+			              from nhis_bagl_info t 
+			             where FNAME = #{namePi,jdbcType=VARCHAR}  
+			             <if test="codeIp != null  and  codeIp != ''">
+							or FPRN = #{codeIp,jdbcType=VARCHAR}
+						</if>
+			              GROUP BY t.FPRN ,t.FNAME)fyc on fyc.FPRN = inf.FPRN and fyc.admiss_times = inf.FTIMES 
+			where 1=1 
+			<if test="sex != null  and  sex != ''">
+			  and inf.FSEX = #{sex,jdbcType=VARCHAR}
+			</if>
+			<if test="birthDate != null  and  birthDate != ''">
+			  and CONVERT ( VARCHAR (100),inf.FBIRTHDAY, 23 ) = #{birthDate,jdbcType=VARCHAR}
+			</if>
+			order by inf.FRYDATE desc
+	</select>
+	
+	<!-- 从his中查询门诊待缴费清单 -->
+	<select id="getOpFeeListFromHis" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT a.patient_id code_pi
+        	  ,a.times op_times
+        	  ,e.name name_pi
+        	  ,e.outpatient_no code_op
+        	  ,f.code code_item
+        	  ,f.name name_item
+			  ,a.doctor_code code_emp
+			  ,b.ba_name name_emp
+			  ,a.apply_unit code_dept
+			  ,c.name name_dept
+			  ,a.ledger_sn
+			  ,a.charge_amount quan
+			  ,a.charge_price price
+			  ,a.caoyao_fu 
+			  ,a.charge_amount*a.charge_price*a.caoyao_fu amount
+			  ,a.happen_date date_hap
+	          ,d.response_type
+         FROM mz_detail_charge a,a_employee_mi b,zd_unit_code c,mz_visit_table d,mz_patient_mi e,zd_charge_item f
+        WHERE a.doctor_code=b.code
+          AND a.apply_unit=c.code
+          AND a.patient_id=d.patient_id
+          AND a.times=d.times
+          AND a.patient_id = e.patient_id
+          AND a.charge_code = f.code
+          AND a.charge_status='1'
+          AND a.patient_id= #{patientId,jdbcType=VARCHAR}
+          AND a.times = #{times,jdbcType=VARCHAR}
+        ORDER BY a.patient_id,e.name,a.happen_date desc,f.code 
+     </select>
+     
+	<!-- 从nhis中查询门诊待缴费清单 -->
+	<select id="getOpFeeListFromNhis" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT pi.code_pi
+		   	 , op.op_times
+		   	 , pv.name_pi
+		   	 , pi.code_op
+		   	 , case when dt.flag_pd = '1' then pd.code else it.code end code_item
+		   	 , dt.name_cg name_item
+		   	 , dt.name_emp_app name_emp
+		   	 , dp.name_dept
+		   	 , dp.code_dept
+		   	 , dt.quan 
+		   	 , dt.price 
+		   	 , dt.amount
+		   	 , dt.date_hap
+		  from bl_op_dt dt 
+		 inner join pv_encounter pv on pv.pk_pv = dt.pk_pv and pv.eu_pvtype = '1' and pv.flag_cancel = '0' and pv.del_flag = '0'
+		 inner join pv_op op on op.pk_pv = pv.pk_pv and op.del_flag = '0'
+		 inner join pi_master pi on pi.pk_pi = dt.pk_pi and pi.del_flag = '0'
+		  left join bd_item it on it.pk_item = dt.pk_item and it.del_flag = '0'
+		  left join bd_pd pd on pd.pk_pd = dt.pk_item and pd.del_flag = '0'
+		  left join bd_ou_dept dp on dp.pk_dept = dt.pk_dept_app and dp.del_flag = '0'
+		 where dt.pk_pv= #{pkPvOp,jdbcType=VARCHAR} 
+		   and dt.flag_acc='0' 
+		   and dt.flag_settle='0' 
+         ORDER BY pi.code_pi, op.op_times, dt.date_hap desc 
+     </select>
+     
+	<!-- 查询【旧his】系统中的科室列表 -->
+	<select id="getHisDeptList" parameterType="java.util.Map" resultType="DynaBean">
+		select unit_sn 		as his_ward_sn 
+			 , code 		as his_ward_code
+			 , name 		as his_ward_name
+			 , class_code 	as his_ward_type
+			 , mz_flag 		as his_ward_mz_flag 
+			 , mz_sequence_no
+			 , extend_code
+         from zd_unit_code 
+        where deleted_flag = '0' 
+			<if test="classCode != null  and  classCode != ''">
+			  and class_code = #{classCode,jdbcType=VARCHAR}
+			</if>
+			<if test="mzFlag != null  and  mzFlag != ''">
+			  and mz_flag = #{mzFlag,jdbcType=VARCHAR}
+			</if>
+        order by unit_sn
+	</select>
+	
+	<!-- 查询【Nhis】系统中的已对照科室列表 -->
+	<select id="getNhisDeptMapList" parameterType="java.util.Map" resultType="DynaBean">
+		select map.PK_NHIS_DEPT_MAP 
+       		 , map.HIS_WARD_SN
+			 , map.HIS_WARD_CODE 
+       		 , map.HIS_WARD_NAME 
+       		 , map.HIS_WARD_TYPE 
+       		 , map.HIS_WARD_MZ_FLAG 
+       		 , map.NHIS_CODE_DEPT 
+       		 , map.NHIS_CODE_NS 
+       		 , map.TS
+       		 , map.CREATOR
+       		 , map.CREATE_TIME
+       		 , map.MODIFIER
+       		 , map.MODITY_TIME
+       		 , map.NHIS_CODE_DEPT as pk_dept
+       		 , dept.CODE_DEPT as nhis_dept_code
+       		 , dept.NAME_DEPT as nhis_dept_name
+       		 , dept.DT_DEPTTYPE
+       		 , type.name as name_depttype
+       		 , map.NHIS_CODE_NS as pk_dept_ns
+       		 , deptNs.CODE_DEPT as nhis_ward_code
+       		 , deptNs.NAME_DEPT as nhis_ward_name
+          from NHIS_DEPT_MAP map
+  		  left join bd_ou_dept dept on dept.pk_dept = NHIS_CODE_DEPT
+  		  left join bd_ou_dept deptNs on deptNs.pk_dept = NHIS_CODE_NS
+  		  left join bd_defdoc type on type.CODE = dept.DT_DEPTTYPE and type.CODE_DEFDOCLIST = '010200' and type.DEL_FLAG = '0'
+         where 1=1 
+         	<if test="classCode != null  and  classCode != ''">
+			  and map.HIS_WARD_TYPE = #{classCode,jdbcType=VARCHAR}
+			</if>
+			<if test="mzFlag != null  and  mzFlag != ''">
+			  and map.HIS_WARD_MZ_FLAG = #{mzFlag,jdbcType=VARCHAR}
+			</if>
+ 		 order by map.HIS_WARD_SN
+     </select>
+       
+	<!-- 查询【旧his】系统中微信相关记录 -->
+	<select id="getPatientWxList" parameterType="java.util.Map" resultType="com.zebone.nhis.pro.zsba.adt.vo.TPatientWxMapper">
+		select * from t_patient_wx_mapper
+        where 1=1
+			<if test="patientId != null  and  patientId != ''">
+			  and patient_id = #{patientId,jdbcType=VARCHAR}
+			</if>
+			<if test="ipPatientId != null  and  ipPatientId != ''">
+			  and ip_patient_id = #{ipPatientId,jdbcType=VARCHAR}
+			</if>
+        order by id
+	</select>
+	     
+	<!-- 查询【Nhis】系统中微信相关记录 -->
+	<select id="getNPatientWxList" parameterType="java.util.Map" resultType="com.zebone.nhis.pro.zsba.adt.vo.NHISPatientWxMapper">
+		select * from t_patient_wx_mapper
+        where 1=1
+			<if test="patientId != null  and  patientId != ''">
+			  and patient_id = #{patientId,jdbcType=VARCHAR}
+			</if>
+			<if test="ipPatientId != null  and  ipPatientId != ''">
+			  and ip_patient_id = #{ipPatientId,jdbcType=VARCHAR}
+			</if>
+			<if test="pkPi != null  and  pkPi != ''">
+			  and pk_pi = #{pkPi,jdbcType=VARCHAR}
+			</if>
+        order by id
+	</select>
+	
+	<select id="queryPatiListByWg" parameterType="java.util.Map" resultType="DynaBean">
+		 select pv.name_pi,
+       			bed.name as name_bed,
+       			bed.code as code_bed,
+       			bed.code_fa,
+       			pv.date_begin date_in,
+       			pv.date_end,
+       			dp.name_dept,
+       			dps.name_dept name_dept_ns,
+       			pv.pk_dept,
+       			pv.pk_dept_ns,
+       			pv.bed_no,
+       			pv.pk_pv,
+      			pv.code_pv,
+      			pv.eu_status,
+      			pv.pk_pi,
+      			pv.age_pv,
+      			pi.code_ip,
+      			sex.name sex,
+      			ip.ip_times,
+      			ip.flag_infant,
+      			ip.quan_infant    
+  		   from pv_encounter pv 
+       	  inner join pv_ip ip on ip.pk_pv = pv.pk_pv
+       	  inner join pi_master pi on pi.pk_pi = pv.pk_pi 
+       	  inner join bd_ou_dept dp on dp.pk_dept = pv.pk_dept
+       	  inner join bd_ou_dept dps on dps.pk_dept = pv.pk_dept_ns
+       	   left join bd_res_bed bed on pv.bed_no=bed.code and bed.pk_org = #{pkOrg,jdbcType=CHAR} 
+       	         and bed.pk_ward = pv.pk_dept_ns and bed.pk_pi = pv.pk_pi and bed.del_flag = '0' 
+       	   left join bd_defdoc sex on sex.code = pv.dt_sex and sex.code_defdoclist = '000000'
+ 		  where pv.flag_cancel = '0'
+ 			and pv.eu_pvtype = '3'
+ 			and pv.eu_status &gt; '0'
+ 	    <!--and dp.name_dept not like '%测试%'-->
+ 		<if test="pkDeptNs != null  and  pkDeptNs != ''">
+		    and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR} 
+	    </if>
+ 	    <if test="pkDept != null  and  pkDept != ''">
+		    and pv.pk_dept = #{pkDept,jdbcType=CHAR}
+	    </if>
+	    <if test="euStatus != null  and  euStatus != ''">
+			and pv.eu_status = #{euStatus,jdbcType=CHAR}
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+            and ((pv.flag_in = '0' and pv.date_end &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS'))
+               or(pv.flag_in = '1' and pv.date_begin &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')))
+        </if>
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and ((pv.flag_in = '0' and pv.date_end &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS'))
+               or(pv.flag_in = '1' and pv.date_begin &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')))
+        </if>
+    </select>	 
+    
+    <select id="queryBlCgIpDetailsByOrd" parameterType="java.util.Map"
+            resultType="DynaBean">
+        select a.* from  (
+			select cg.pk_cgip,
+		           cg.flag_pd,
+		           cg.pk_cgip_back,
+				   cg.date_cg,
+				   cg.date_hap,
+				   cg.name_emp_cg,
+				   cg.name_cg,
+				   cg.spec,
+				   cg.quan,
+				   cg.amount,
+				   cg.amount_pi,
+				   cg.price,
+	         	   dept.name_dept name_dept_cg,
+				   exde.name_dept name_dept_ex,
+				   case cg.flag_pd when '1' then pdUnit.name else unit.name end as nameUnit,
+                   case when (ord.FLAG_DURG = '1' and cg.flag_pd = '1') or (ord.flag_durg = '0' and ordit.pk_item is not null) then '0' else '1' end flag_add
+              from bl_ip_dt cg
+              left join cn_order ord on ord.PK_CNORD = cg.PK_CNORD
+			  left join bd_unit pdUnit on pdUnit.pk_unit = cg.pk_unit_pd
+			  left join bd_unit unit on unit.pk_unit = cg.pk_unit
+			  left join bd_ou_dept dept on dept.pk_dept = cg.pk_dept_cg
+			  left join bd_ou_dept exde on exde.PK_DEPT=cg.pk_dept_ex
+			  left join (select oit.pk_item,ord.pk_cnord from bd_ord_item oit 
+			              inner join cn_order ord on ord.pk_ord = oit.pk_ord and ord.FLAG_DURG = '0') ordit
+			         on ordit.pk_item = cg.pk_item and ordit.pk_cnord = cg.pk_cnord
+			  where cg.pk_cnord = #{pkOrd,jdbcType=CHAR} 
+			  <if test="flagPd != null  and  flagPd != ''">
+	            and cg.flag_pd = #{flagPd,jdbcType=CHAR}
+	          </if>
+		union all 
+			select cg.pk_cgip,
+		           cg.flag_pd,
+		           cg.pk_cgip_back,
+				   cg.date_cg,
+				   cg.date_hap,
+				   cg.name_emp_cg,
+				   cg.name_cg,
+				   cg.spec,
+				   cg.quan,
+				   cg.amount,
+				   cg.amount_pi,
+				   cg.price,
+	         	   dept.name_dept name_dept_cg,
+				   exde.name_dept name_dept_ex,
+				   case cg.flag_pd when '1' then pdUnit.name else unit.name end as nameUnit,
+                   case when (ord.FLAG_DURG = '1' and cg.flag_pd = '1') or (ord.flag_durg = '0' and ordit.pk_item is not null) then '0' else '1' end flag_add
+              from bl_ip_dt_b cg
+              left join cn_order ord on ord.PK_CNORD = cg.PK_CNORD
+			  left join bd_unit pdUnit on pdUnit.pk_unit = cg.pk_unit_pd
+			  left join bd_unit unit on unit.pk_unit = cg.pk_unit
+			  left join bd_ou_dept dept on dept.pk_dept = cg.pk_dept_cg
+			  left join bd_ou_dept exde on exde.PK_DEPT=cg.pk_dept_ex
+			  left join (select oit.pk_item,ord.pk_cnord from bd_ord_item oit 
+			              inner join cn_order ord on ord.pk_ord = oit.pk_ord and ord.FLAG_DURG = '0') ordit
+			         on ordit.pk_item = cg.pk_item and ordit.pk_cnord = cg.pk_cnord
+			  where cg.pk_cnord = #{pkOrd,jdbcType=CHAR} 
+			  <if test="flagPd != null  and  flagPd != ''">
+	            and cg.flag_pd = #{flagPd,jdbcType=CHAR}
+	          </if>
+		) a 
+	</select>
+      
+    <select id="querySampFeeByOrd" parameterType="java.util.Map"
+            resultType="DynaBean">
+        select a.* from  (
+			select cg.pk_cgip,
+		           cg.flag_pd,
+		           cg.pk_cgip_back,
+				   cg.date_cg,
+				   cg.date_hap,
+				   cg.name_emp_cg,
+				   cg.name_cg,
+				   cg.spec,
+				   cg.quan,
+				   cg.amount,
+				   cg.amount_pi,
+				   cg.price,
+	         	   dept.name_dept name_dept_cg,
+				   exde.name_dept name_dept_ex,
+				   case cg.flag_pd when '1' then pdUnit.name else unit.name end as nameUnit,
+                   '1' flag_add
+			  from bl_ip_dt cg
+			 inner join cn_lab_apply lab on (lab.samp_no = cg.barcode or cg.barcode like '%'|| lab.samp_no ||'%') and lab.samp_no is not null
+			  left join bd_unit pdUnit on pdUnit.pk_unit = cg.pk_unit_pd
+			  left join bd_unit unit on unit.pk_unit = cg.pk_unit
+			  left join bd_ou_dept dept on dept.pk_dept = cg.pk_dept_cg
+			  left join bd_ou_dept exde on exde.PK_DEPT=cg.pk_dept_ex
+			 where lab.pk_cnord = #{pkOrd,jdbcType=CHAR}
+			   and cg.barcode is not null
+			  <if test="flagPd != null  and  flagPd != ''">
+	            and cg.flag_pd = #{flagPd,jdbcType=CHAR}
+	          </if>
+		union all 
+			select cg.pk_cgip,
+		           cg.flag_pd,
+		           cg.pk_cgip_back,
+				   cg.date_cg,
+				   cg.date_hap,
+				   cg.name_emp_cg,
+				   cg.name_cg,
+				   cg.spec,
+				   cg.quan,
+				   cg.amount,
+				   cg.amount_pi,
+				   cg.price,
+	         	   dept.name_dept name_dept_cg,
+				   exde.name_dept name_dept_ex,
+				   case cg.flag_pd when '1' then pdUnit.name else unit.name end as nameUnit,
+                   '1' flag_add
+			  from bl_ip_dt_b cg
+			 inner join cn_lab_apply lab on (lab.samp_no = cg.barcode or cg.barcode like '%'|| lab.samp_no ||'%') and lab.samp_no is not null
+			  left join bd_unit pdUnit on pdUnit.pk_unit = cg.pk_unit_pd
+			  left join bd_unit unit on unit.pk_unit = cg.pk_unit
+			  left join bd_ou_dept dept on dept.pk_dept = cg.pk_dept_cg
+			  left join bd_ou_dept exde on exde.PK_DEPT=cg.pk_dept_ex
+			 where lab.pk_cnord = #{pkOrd,jdbcType=CHAR}
+			   and cg.barcode is not null
+			  <if test="flagPd != null  and  flagPd != ''">
+	            and cg.flag_pd = #{flagPd,jdbcType=CHAR}
+	          </if>
+		) a 
+	</select>
+	
+	<!-- 查询患者费用明细 -->
+    <select id="queryPatiDetails" parameterType="java.util.Map" resultType="DynaBean">
+        Select cg.pk_item,
+        	itemcate.name as catename,
+        	cg.name_cg, 
+        	cg.spec,
+        	cg.price,
+        	ui.name name_unit,
+        	sum(cg.quan) quan,
+        	sum(cg.amount) amount,
+        	sum(cg.amount_pi) amount_pi,
+        	cg.pk_dept_app,
+        	cg.pk_dept_ns_app,
+        	cg.pk_dept_ex
+ 		From bl_ip_dt cg
+ 		left join bd_itemcate itemcate on itemcate.pk_itemcate = cg.pk_itemcate
+ 		left join bd_item item on item.pk_item = cg.pk_item
+        left join bd_pd pd on pd.pk_pd = cg.pk_pd
+        left join bd_unit ui on ui.pk_unit = cg.pk_unit
+ 		Where cg.pk_pv = #{pkPv,jdbcType=CHAR}
+       		<if test="pkDept != null  and  pkDept != ''">
+            	and cg.pk_dept_app = #{pkDept,jdbcType=CHAR}
+        	</if>
+       		<if test="cate != null  and  cate != ''">
+            	and itemcate.code like '${cate}%'
+        	</if>
+        	<if test="nameCg != null  and  nameCg != ''">
+            	and ((cg.flag_pd = '0' and (cg.name_cg like '%${nameCg}%' or item.spcode like '%${nameCg}%' or item.d_code
+            	like '%${nameCg}%') )
+            	or(cg.flag_pd = '1' and (cg.name_cg like '%${nameCg}%' or pd.spcode like '%${nameCg}%')))
+        	</if>
+        	<if test="pkDeptEx != null  and  pkDeptEx != ''">
+            	and cg.pk_dept_ex = #{pkDeptEx,jdbcType=CHAR}
+        	</if>
+        	 <if test="dateEnd != null  and  dateEnd != ''">
+            	and cg.date_cg &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        	</if>
+        	<if test="dateBegin != null  and  dateBegin != ''">
+            	and cg.date_cg &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        	</if>
+ 		Group By cg.pk_item,cg.flag_pd, cg.name_cg, cg.spec,cg.price, ui.name,
+        	cg.pk_dept_app, cg.pk_dept_ns_app, cg.pk_dept_ex,
+        	itemcate.name
+    </select>
+    
+    <!-- 查询患者费用明细 -->
+    <select id="queryCgDetaileds" parameterType="java.util.Map" resultType="DynaBean">
+        select case when occ.date_plan is null then ap.date_occ else occ.date_plan end date_plan,
+	      cg.name_cg,
+	      cg.date_hap,	
+	      cg.spec,
+	      cg.price,
+	      cg.quan,
+	      cg.amount,
+	      cg.amount_pi,
+	      cg.pk_emp_app,
+	      cg.pk_emp_cg,
+	      cg.name_emp_cg,
+	      cg.name_emp_app,
+	      cg.pk_dept_app,
+	      cg.pk_dept_ns_app,
+	      cg.pk_dept_ex,
+	      cg.date_cg,
+	      ord.ordsn,ord.name_ord,
+	      ui.name name_unit,
+	      case when ord.pk_ord is null then ''
+          when cg.flag_pd='0' and ord.code_supply is not null then ''
+          else ord.pk_ord end pk_ord,
+      	  cg.pk_item  
+	 	from bl_ip_dt cg
+      	left join cn_order ord on cg.pk_cnord=ord.pk_cnord and ord.flag_doctor='1'
+      	left join bd_itemcate itemcate on itemcate.pk_itemcate = cg.pk_itemcate
+      	left join ex_order_occ occ on cg.pk_ordexdt=occ.pk_exocc
+      	left join ex_pd_de de on cg.pk_ordexdt=de.pk_pdde
+      	left join ex_pd_apply_detail ap on de.pk_pdapdt=ap.pk_pdapdt
+      	left join bd_item item on item.pk_item = cg.pk_item
+        left join bd_pd pd on pd.pk_pd = cg.pk_pd
+        left join bd_unit ui on ui.pk_unit = cg.pk_unit
+        left join BL_SETTLE st on st.PK_SETTLE = cg.PK_SETTLE
+  		left join BL_SETTLE stb on stb.PK_SETTLE_CANC = st.PK_SETTLE
+		where cg.pk_pv = #{pkPv,jdbcType=CHAR}
+		    AND ( st.FLAG_CANC = '0' or (stb.PK_SETTLE is NULL and st.PK_SETTLE_CANC is NULL ) )
+  		<if test="dateEnd != null  and  dateEnd != ''">
+            and cg.date_cg &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and cg.date_cg &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="pkDeptEx != null  and  pkDeptEx != ''">
+            and cg.pk_dept_ex = #{pkDeptEx,jdbcType=CHAR}
+        </if>
+        <if test="pkDept != null  and  pkDept != ''">
+            and cg.pk_dept_app = #{pkDept,jdbcType=CHAR}
+        </if>
+       	<if test="cate != null  and  cate != ''">
+            and itemcate.code like '${cate}%'
+        </if>
+        <if test="nameCg != null  and  nameCg != ''">
+           	and ((cg.flag_pd = '0' and (cg.name_cg like '%${nameCg}%' or item.spcode like '%${nameCg}%' or item.d_code
+           	like '%${nameCg}%') )
+           	or(cg.flag_pd = '1' and (cg.name_cg like '%${nameCg}%' or pd.spcode like '%${nameCg}%')))
+        </if>
+    </select>
+      
+    <!-- 查询住院 - 在院患者 待同步医技申请单状态的就诊记录 -->
+    <select id="queryNeedSysStatusPatis" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.PK_PV , ip.IP_TIMES , pi.CODE_IP, pv.NAME_PI ,ri.cnt cnt_ris ,la.cnt cnt_lab
+		  from PV_ENCOUNTER pv
+		 inner join PV_IP ip on ip.PK_PV = pv.PK_PV
+		 inner join PI_MASTER pi on pi.PK_PI = pv.PK_PI
+		 inner join BD_OU_DEPT dp on dp.PK_DEPT = pv.PK_DEPT
+		  left join (select ord.PK_PV,count(*) cnt from CN_ORDER ord
+                      inner join CN_RIS_APPLY ris on ris.PK_CNORD = ord.PK_CNORD
+                      inner join EX_ORDER_OCC occ on occ.PK_CNORD = ord.PK_CNORD
+                      inner join BD_DICTATTR att on att.PK_DICT = ord.PK_ORD and att.CODE_ATTR = 'BA001' and att.VAL_ATTR = '3'
+                      inner join BD_ORD bo on bo.PK_ORD = ord.PK_ORD
+                       left join EX_RIS_OCC rcc on rcc.PK_CNORD = ord.PK_CNORD
+                       left join BD_DICTATTR atta on atta.PK_DICT = ord.PK_ORD and atta.CODE_ATTR = '0202'
+                      where rcc.PK_CNORD is null
+                        and bo.EU_ARCHTYPE = '2'
+                        and isnull(atta.VAL_ATTR,'') &lt;&gt; '1'
+                        and ord.EU_STATUS_ORD &lt; '9'
+                        and occ.EU_STATUS &lt; '9' group by ord.PK_PV) ri on ri.PK_PV = pv.PK_PV
+		  left join (select ord2.PK_PV,count(*) cnt from CN_ORDER ord2
+                      inner join CN_LAB_APPLY lab on lab.PK_CNORD = ord2.PK_CNORD
+                      inner join EX_ORDER_OCC occ2 on occ2.PK_CNORD = ord2.PK_CNORD
+                      inner join BD_DICTATTR att2 on att2.PK_DICT = ord2.PK_ORD and att2.CODE_ATTR = 'BA001' and att2.VAL_ATTR = '3'
+                      inner join BD_ORD bo2 on bo2.PK_ORD = ord2.PK_ORD
+                       left join EX_LAB_OCC lcc on lcc.PK_CNORD = ord2.PK_CNORD
+                       left join BD_DICTATTR atta2 on atta2.PK_DICT = ord2.PK_ORD and atta2.CODE_ATTR = '0202'
+                      where lcc.PK_CNORD is null
+                        and bo2.EU_ARCHTYPE = '2'
+                        and isnull(atta2.VAL_ATTR,'') &lt;&gt; '1'
+                        and ord2.EU_STATUS_ORD &lt; '9'
+                        and occ2.EU_STATUS &lt; '9'group by ord2.PK_PV) la on la.PK_PV = pv.PK_PV
+		 where pv.FLAG_IN = '1'
+           and pv.FLAG_CANCEL = '0'
+           and dp.NAME_DEPT  &lt;&gt; '测试病区'
+           and ( ri.cnt > 0 or la.cnt > 0 )
+    </select>
+
+	<!-- 查询 旧系统 - 门诊患者索引信息 -->
+	<select id="getPiListFromHis" parameterType="java.util.Map" resultType="DynaBean">
+		 select case pi.sex when '1' then '男' when '2' then '女' else '其他' end sex
+		      , rel.name ralation
+		      , pi.lv_data create_time
+			  , pi.patient_id code_op
+			  , replace(isnull(pi.name,''),' ','') name_pi
+			  , case pi.sex when '1' then '02' when '2' then '03' else '04' end dt_sex
+			  , pi.birthday birth_date
+			  , replace(isnull(pi.social_no,''),' ','') id_no
+			  , case isnull(pi.self_card_type,'')
+		            when '01' then '01'   <!--身份证 -->
+		            when '02' then '10'   <!--护照 -->
+		            when '04' then '03'   <!--港澳居民身份证 -->
+		            when '06' then '03'   <!--港澳居民身份证 -->
+		            else '01' end dt_idtype
+			  , replace(isnull(pi.p_bar_code,''),' ','')  p_car_code
+			  , pi.home_tel mobile
+			  , pi.inpatient_no code_ip
+			  , pi.IcCardId ic_card_id
+			  , pi.HealthCardId health_card_id
+			  , pi.EleHealthCarId ele_hearth_card
+			  , pi.addition_no1 insur_no
+			  , pi.new_yb_card third_social_no
+			  , '' fy_pno
+			  , pi.home_district addrcode_cur
+			  , null addr_cur
+			  , pi.home_street addr_cur_dt
+			  , null addrcode_birth
+			  , pi.birth_place addr_birth
+			  , rel.code_nhis dt_ralation
+			  , pi.relation_tel tel_rel
+			  , pi.relation_name name_rel
+			  , '01' dt_idtype_rel
+			  , pi.relation_card_no idno_rel
+			  , case pi.marry_code
+			          when '1' then '20'	<!--1 已婚 20-->
+			          when '2' then '10'	<!--2 未婚 10 -->
+			          when '3' then '30'	<!--3 丧偶 30-->
+			          when '4' then '40'	<!--4 离婚 40-->
+			          when '5' then '90'	<!--5 其他 90	未说明的婚姻状况 -->
+	        		else '90' end dt_marry		
+			  , co.code_nhis dt_country
+			  , na.code_nhis dt_nation
+			  , pi.occupation_type dt_occu
+			  , null unit_work
+			  , pi.wx_open_id
+			  , 'O' flag
+			  , pi.max_times cnt_op
+		 from view_mz_patient_mi pi
+	     left join zd_nation_code na on na.code = pi.nation_code
+	     left join zd_country_code co on co.code = pi.country_code
+	     left join zd_relative_code rel on rel.code = pi.relation_code
+	    where isnull(pi.flag_to_his,'0') = '0'
+	      	<if test="codePi != null  and  codePi != ''"><!-- 患者编码 -->
+	            and pi.patient_id = #{codePi,jdbcType=CHAR}
+	    	</if>
+			<if test="codeIp != null  and  codeIp != ''"><!-- 住院号 -->
+	            and pi.inpatient_no = #{codeIp,jdbcType=CHAR}
+	    	</if>
+	    	<if test="codeOp != null  and  codeOp != ''"><!-- 门诊号 -->
+	            and pi.patient_id = #{codeOp,jdbcType=CHAR}
+	    	</if>
+	    	<if test="insurNo != null  and  insurNo != ''"><!-- 医保卡号 -->
+	            and pi.addition_no1 = #{insurNo,jdbcType=CHAR}
+	    	</if>
+	    	<if test="idNo != null  and  idNo != ''"><!-- 证件号 -->
+	            and pi.social_no = #{idNo,jdbcType=CHAR} 
+	    	</if>
+	    	<if test="pCarCode != null  and  pCarCode != ''"><!-- 诊疗卡 -->
+	            and pi.p_bar_code = #{pCarCode,jdbcType=CHAR} 
+	    	</if>
+	    	<if test="thirdSocialNo != null  and  thirdSocialNo != ''"><!-- 三代医保卡 -->
+	            and pi.new_yb_card = #{thirdSocialNo,jdbcType=CHAR} 
+	    	</if>
+	    	<if test="fyPno != null  and  fyPno != ''"><!-- 妇幼保健号 -->
+	            and 1 = 0
+	    	</if>
+	    	<if test="icCardId != null  and  icCardId != ''"><!-- 健康卡 -->
+	            and pi.IcCardId = #{icCardId,jdbcType=CHAR}
+	    	</if>
+	    	<if test="healthCardId != null  and  healthCardId != ''"><!-- 虚拟卡号 -->
+	            and pi.HealthCardId = #{healthCardId,jdbcType=CHAR}
+	    	</if>
+	    	<if test="namePi != null  and  namePi != ''"><!-- 患者姓名 -->
+	            and pi.name = #{namePi,jdbcType=CHAR}
+	    	</if>
+	    	<if test="idnoRel != null  and  idnoRel != ''"><!-- 联系人证件号 -->
+	            and pi.relation_card_no = #{idnoRel,jdbcType=CHAR}
+	    	</if>
+	    	<if test="dtSex != null  and  dtSex != ''"><!-- 患者性别 -->
+            	and (case pi.sex when '1' then '02' when '2' then '03' else '04' end) = #{dtSex,jdbcType=CHAR}
+    		</if>
+    		<if test="birthDate != null  and  birthDate != ''"><!-- 患者年龄 -->
+            	and pi.birthday = #{birthDate,jdbcType=CHAR}
+    		</if>
+    		order by pi.lv_data desc
+	</select>
+	
+	<!-- 查询新系统 - 患者索引信息 -->
+	<select id="getPiListFromNhis" parameterType="java.util.Map" resultType="DynaBean">
+	 select se.name sex
+	    	, ra.name ralation
+			, wxo.wx_open_id
+			, 'N' flag
+	    	, pi.*
+		  from pi_master pi
+		  left join bd_defdoc se on se.code = pi.dt_sex and se.code_defdoclist = '000000'
+		  left join bd_defdoc ra on ra.code = pi.dt_ralation and ra.code_defdoclist = '000013'
+			left join (select wx.pk_pi , min(wx.wx_open_id) wx_open_id from t_patient_wx_mapper wx group by wx.pk_pi ) wxo on wxo.pk_pi = pi.pk_pi
+		  where isnull(pi.code_ip,'') not like '%B%'
+		    and pi.del_flag = '0'
+		<if test="codePi != null  and  codePi != ''"><!-- 患者编码 -->
+            and pi.code_pi = #{codePi,jdbcType=CHAR}
+    	</if>
+		<if test="codeIp != null  and  codeIp != ''"><!-- 住院号 -->
+            and pi.code_ip = #{codeIp,jdbcType=CHAR}
+    	</if>
+    	<if test="codeOp != null  and  codeOp != ''"><!-- 门诊号 -->
+            and pi.code_op = #{codeOp,jdbcType=CHAR}
+    	</if>
+    	<if test="insurNo != null  and  insurNo != ''"><!-- 医保卡号 -->
+            and pi.insur_no = #{insurNo,jdbcType=CHAR}
+    	</if>
+    	<if test="idNo != null  and  idNo != ''"><!-- 证件号 -->
+            and pi.id_no = #{idNo,jdbcType=CHAR} 
+    	</if>
+    	<if test="pCarCode != null  and  pCarCode != ''"><!-- 诊疗卡 -->
+            and pi.p_car_code = #{pCarCode,jdbcType=CHAR} 
+    	</if>
+    	<if test="thirdSocialNo != null  and  thirdSocialNo != ''"><!-- 三代医保卡 -->
+            and pi.third_social_no = #{thirdSocialNo,jdbcType=CHAR} 
+    	</if>
+    	<if test="fyPno != null  and  fyPno != ''"><!-- 妇幼保健号 -->
+            and pi.fy_pno = #{fyPno,jdbcType=CHAR} 
+    	</if>
+    	<if test="icCardId != null  and  icCardId != ''"><!-- 健康卡 -->
+            and pi.ic_card_id = #{icCardId,jdbcType=CHAR}
+    	</if>
+    	<if test="healthCardId != null  and  healthCardId != ''"><!-- 虚拟卡号 -->
+            and pi.health_card_id = #{healthCardId,jdbcType=CHAR}
+    	</if>
+    	<if test="namePi != null  and  namePi != ''"><!-- 患者姓名 -->
+            and pi.name_pi = #{namePi,jdbcType=CHAR}
+    	</if>
+    	<if test="idnoRel != null  and  idnoRel != ''"><!-- 联系人证件号 -->
+            and pi.idno_rel = #{idnoRel,jdbcType=CHAR}
+    	</if>
+    	<if test="dtSex != null  and  dtSex != ''"><!-- 患者性别 -->
+            and pi.dt_sex = #{dtSex,jdbcType=CHAR}
+    	</if>
+    	<if test="birthDate != null  and  birthDate != ''"><!-- 患者年龄 -->
+            and pi.birth_date = #{birthDate,jdbcType=CHAR}
+    	</if>
+    	order by pi.ts desc
+	</select>
+</mapper>

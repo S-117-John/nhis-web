@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.syx.dao.MedicareEmrMapper">
+	<select id="getHomePageList" parameterType="java.util.Map" resultType="com.zebone.nhis.ma.pub.syx.vo.HomePageVo">
+		select distinct
+			p.*,
+			pi.DT_IDTYPE,
+			pi.ID_NO,
+			hp.name hpName,
+			'10' DiagVersion,
+			pv.CODE_PV,
+			pv.bed_no,
+			pv.AGE_PV age,
+			zd_sex.BA_CODE DtSex,
+			zd_sex.NAME SexName,
+			to_char(pi.BIRTH_DATE,'yyyymmdd'),
+			dept_admit.CODE_DEPT AdmitCodeDept,
+			dept.CODE_DEPT DisCodeDept,
+			dept.NAME_DEPT DisDeptName,
+			'' PkEmpClinic,
+			'' PkEmpChief,
+			'' PkEmpDirector,
+			'' PkEmpConsult,
+			'' PkEmpRefer,
+			'' PkEmpLearn,
+			'' PkEmpIntern,
+			''	PkEmpCoder,
+			'' PkEmpQcDoc,
+			'' PkEmpQcNurse,
+			'' PkEmpNurse,
+			'0.00' Zyf,
+			nvl(p.FLAG_AUTOPSY,2) FLAG_AUTOPSY,
+			(case when nvl(p.FLAG_AUTOPSY,0)='1' then '是'
+				   when nvl(p.FLAG_AUTOPSY,0)='2' then '否'
+			end) AutopsyName,
+			nvl(p."BLOOD_CODE_ABO",6) BLOOD_CODE_ABO,
+       		CASE	WHEN p.blood_code_abo = '1' THEN 'A型'
+							WHEN p.blood_code_abo = '2' THEN 'B型'
+							WHEN p.blood_code_abo = '3' THEN 'O型'
+							WHEN p.blood_code_abo = '4' THEN 'AB型'
+							WHEN p.blood_code_abo = '5' THEN '不详'
+							ELSE '未查'
+						END BLOOD_NAME_ABO,
+			nvl(p."BLOOD_CODE_RH",4) BLOOD_CODE_RH,
+			(case when p.LEAVE_HOS_CODE='9' then '6'
+			else p.LEAVE_HOS_CODE end) LEAVE_HOS_CODE,
+			nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='99'),0.00) Zfje,--自付金额
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='0'),0.00) Sum, --总费用（元）
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='1'),0.00) Ybfwf, --一般医疗服务费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='2'),0.00) Ybzlczf, --一般治疗操作费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='3'),0.00) Hlf, --护理费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='4'),0.00) FuQtf, --综合医疗服务类其他费用
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='5'),0.00) Blzdf, --病理诊断费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='6'),0.00) Syzdf, --实验室诊断费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='7'),0.00) Yxzdf, --影像学诊断费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='8'),0.00) Lczdf, --临床诊断项目费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='9'),0.00) Fsszlf, --非手术治疗项目费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='0901'),0.00) Lcwlf,--临床物理治疗费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='10'),0.00) Ssf, --手术治疗费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='1001'),0.00) Mzf, --麻醉费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='1002'),0.00) Ssqzf, --手术费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='11'),0.00) Kff, --康复费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='12'),0.00) Zyzll, --中医治疗费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='13'),0.00) Xyf, --西药费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='1301'),0.00) Kjywf, --抗菌药物费用
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='14'),0.00) Zchyf, --中成药费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='15'),0.00) Zcaoyf, --中草药费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='16'),0.00) Xf, --血费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='17'),0.00) Bdbf, --白蛋白类制品费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='18'),0.00) Qdbf, --球蛋白类制品费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='19'),0.00) Yxyzf, --凝血因子类制品费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='20'),0.00) Xbyzf,--细胞因子类制品费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='21'),0.00) Ycxyyf,--检查用一次性医用材料费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='22'),0.00) Zlclf,--治疗用一次性医用材料费
+	        nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='23'),0.00) Ssclf,--手术用一次性医用材料费
+       		nvl((select max(c.ITEM_AMOUNT) from emr_home_page_charges c where c.PK_PAGE=p.PK_PAGE and c.DEL_FLAG='0' and c.ITEM_CODE='24'),0.00) Qtf --其他费
+  	   from emr_home_page p inner join
+       pv_encounter pv on p.pk_pv=pv.pk_pv inner join
+	   BD_HP hp on hp.PK_HP=pv.PK_INSU inner join
+	   BL_SETTLE bl on bl.PK_PV=pv.PK_PV inner join
+       pi_master pi on pv.pk_pi = pi.pk_pi left outer join
+       pv_ip ip on pv.pk_pv=ip.pk_pv left outer join
+       bd_defdoc zd_sex on pi.dt_sex=zd_sex.code and zd_sex.code_defdoclist='000000' left outer join
+       bd_defdoc zd_country on (p.country_code=zd_country.code or p.country_code=zd_country.ba_code) and zd_country.code_defdoclist='000009' left outer join
+       bd_defdoc dtdise on dtdise.code_defdoclist = '000202' and dtdise.code = ip.dt_level_dise left outer join
+       bd_defdoc zd_occu on pi.dt_occu=zd_occu.code and zd_occu.code_defdoclist='000010'  left outer join
+       bd_defdoc zd_marry on pi.dt_marry=zd_marry.code and zd_marry.code_defdoclist='000006' and zd_marry.del_flag='0' left outer join
+       bd_defdoc zd_relat on pi.dt_ralation=zd_relat.code and zd_relat.code_defdoclist='000013' and zd_relat.del_flag='0' left outer join
+       bd_ou_dept dept_admit on ip.pk_dept_admit = dept_admit.pk_dept left outer join
+       bd_defdoc zd_dept_admit on dept_admit.dt_stdepttype=zd_dept_admit.code and zd_dept_admit.code_defdoclist='010202' and zd_dept_admit.del_flag='0' left outer join
+       bd_ou_dept dept on pv.pk_dept = dept.pk_dept left outer join
+       bd_defdoc zd_dept on dept.dt_stdepttype=zd_dept.code and zd_dept.code_defdoclist='010202' and zd_dept.del_flag='0' left outer join
+       emr_pat_rec rec on rec.pk_pv=pv.pk_pv
+ 	where p.del_flag = '0' and pv.flag_in='0' and pv.FLAG_SETTLE='1' and bl.FLAG_CANC='0' and (hp.NAME like '省直医保%' or hp.NAME like '市直医保%')
+ 		  <if test="dateBegin != null  and  dateBegin != ''">
+		    and pv.date_end &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyy-mm-dd') 
+	      </if>
+	      <if test="dateEnd != null  and  dateEnd != ''">
+		    and pv.date_end &lt; to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyy-mm-dd')  
+	      </if>
+	      <if test="codeIp != null  and  codeIp != ''">
+			     and pi.code_ip = #{codeIp,jdbcType=CHAR} 
+	      </if>
+	      <if test="namePi != null  and  namePi != ''">
+			     and pv.name_pi like '%${namePi}%' 
+	      </if>
+		  <if test="pkDept != null  and  pkDept != ''">
+			     and pv.pk_dept = #{pkDept,jdbcType=CHAR} 
+	      </if>
+	      <if test="pkOrgarea != null  and  pkOrgarea != ''">
+			     and dept.pk_orgarea = #{pkOrgarea,jdbcType=CHAR} 
+	      </if>
+	</select>
+	
+	<select id="getHomePageDiagList" resultType="com.zebone.nhis.ma.pub.syx.vo.HomePageDiagVo">
+		select * from emr_home_page_diags where pk_page=#{pkPage,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getHomePageOpList" resultType="com.zebone.nhis.ma.pub.syx.vo.HomePageOpVo">
+		<!-- select * from emr_home_page_ops where pk_page=#{pkPage,jdbcType=VARCHAR} -->
+		select
+		  op.FPX SeqNo,
+		  op.FOPCODE OpCode,
+		  op.FOP OpName,
+		  op.FOPDATE OpDate,
+		  op.FQIEKOUBH IncisionTypeCode,
+		  op.FQIEKOU IncisionTypeName,
+		  op.FYUHEBH HealGradeCode,
+		  op.FYUHE HealGradeName,
+		  op.FDOCBH PkEmpOp,
+		  op.FDOCNAME OpDocName,
+		  op.FMAZUIBH AnesTypeCode,
+		  op.FMAZUI AnesTypeName,
+		  op.FOPDOCT1BH PkEmpOpi,
+		  op.FOPDOCT1 OpiName,
+		  op.FOPDOCT2BH PkEmpOpii,
+		  op.FOPDOCT2 OpiiName,
+		  op.FMZDOCTBH PkEmpAnes,
+		  op.FMZDOCT AnesDocName,
+		  op.FSSJBBH GradeCode
+		from tOperation op
+		inner join tpatientvisit pat on op.FPRN=pat.FPRN and op.FTIMES=pat.FTIMES
+		where pat.FZYID=#{pkPage,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getHomePageBrList" resultType="com.zebone.nhis.ma.pub.syx.vo.HomePageBrVo">
+		select * from emr_home_page_br where pk_page=#{pkPage,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getHomePageOrList" resultType="com.zebone.nhis.ma.pub.syx.vo.HomePageOrVo">
+		select * from emr_home_page_or where pk_page=#{pkPage,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getHomePageOrDtList" resultType="com.zebone.nhis.ma.pub.syx.vo.HomePageOrDtVo">
+		select * from emr_home_page_or_dt where pk_pageor=#{pkPageOr,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getHomePageLhList" resultType="com.zebone.nhis.ma.pub.syx.vo.HomeLhVo">
+		select * from VIEW_HIS_SNYD_CYXJ_HOMEPAGE where PK_PV=#{pkPv,jdbcType=VARCHAR}
+	</select>
+	
+	
+</mapper>

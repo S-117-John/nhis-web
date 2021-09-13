@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.PlatFormStopplanRegisterInfoMapper">
+    <select id="getstopplanRegisterInfo" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.StopplanRegisterInfoReq"
+            resultType="com.zebone.nhis.webservice.syx.vo.platForm.StopplanRegisterInfoRes">
+        
+        SELECT 
+			appt.CODE orderIDHIS,
+			appt.date_appt registerDate,
+			ds.name_dateslot timeName,
+			dept.name_dept deptName,
+			apv.name_emp_phy doctorName,
+			pi.name_pi patientName,
+			appt.ticket_no seqNO,
+			appt.dt_apptype orderType,
+			pi.tel_no phone,
+			pi.mobile cellPhone 
+		FROM
+			sch_appt appt 
+			INNER JOIN sch_appt_pv apv ON appt.pk_schappt = apv.pk_schappt 
+			INNER JOIN pi_master pi ON appt.pk_pi = pi.pk_pi 
+			INNER JOIN sch_sch sch ON appt.pk_sch = sch.pk_sch 
+			INNER JOIN bd_code_dateslot ds ON appt.pk_dateslot = ds.pk_dateslot 
+			INNER JOIN bd_ou_dept dept ON appt.pk_dept_ex = dept.pk_dept  
+		WHERE 
+			sch.flag_stop = '1' 
+			and appt.flag_cancel = '0' 
+			and sch.date_work &gt;= to_date(#{startDate,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+			and sch.date_work &lt;= to_date(#{endDate,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+			<if test="type != null and type != ''">
+				and appt.dt_apptype = #{type,jdbcType=VARCHAR}   
+			</if>
+					
+    </select>
+</mapper>

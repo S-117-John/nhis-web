@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.ExternalInterfaceMapper">
+	<select id="countPiByPk" parameterType="java.lang.String" resultType="java.lang.Integer">
+		select count(1) from pi_master where pk_pi = #{pkPi}
+	</select>
+	<select id="qryPvEncounter" parameterType="com.zebone.nhis.webservice.syx.vo.ExtSubject" resultType="com.zebone.nhis.webservice.syx.vo.ViewNisEncounter">
+		select
+		pv.code_pv encounter_id ,<!--  就诊记录ID  唯一确定患者的当次就诊 -->
+		pi.code_pi patient_id  ,<!--患者主索引Id 需要和当前HIS的患者ID一致 -->
+		pv.date_begin admission_date  ,<!--入院时间 -->
+		pi.code_ip seq_no_text ,<!--住院号 -->
+		ip.ip_times admiss_times  ,<!--住院次数 -->
+		bed.old_id sickbed_id  ,<!--床位id  唯一标识床位 -->
+		pv.name_pi display_name ,<!-- 病人姓名 -->
+		pi.birth_date date_of_birth ,<!--出生日期 -->
+		pi.addr_origin native_place  ,<!--籍贯 -->
+		sex.name gender_flag ,<!-- pv.dt_sex性别代码（文本或编码） 未知、男、女?  -->
+		marry.name marital_flag ,<!--pi.dt_marry 婚姻状况（文本或编码） 未知、未婚、已婚、离婚、丧偶、  -->
+		<!--初婚、再婚、复婚、其他、离异 -->
+		hp.name patient_type_id ,<!--患者类型id （文本或编码） -->
+		ip.dt_intype admit_way_flag  ,<!--入院途径（文本或编码） 如门诊、急诊、转院等 -->
+		dpa.old_id admission_org_id  ,<!--入院科室id -->
+		admi.name admission_state_flag  ,<!--ip.dt_level_dise入院时情况（文本或编码）  其他，危，急，一般 -->
+		att.old_id attending_doctor  ,<!--主治医生id -->
+		res.old_id residency_doctor  ,<!--住院医生id -->
+		outcomes.name discharge_treatment_flag  ,<!--离院处置（文本或编码） 出院、治愈、好转、未愈、死亡、其它 -->
+		pv.date_end discharge_date  ,<!--出院时间 -->
+		case when pv.eu_status>1 then outemp.old_id else null end discharged_by ,<!--办理出院的员工id -->
+		in_dept.old_id owning_org_id ,<!--住院科室 -->
+		outcomes.name illness_state_flag  ,<!--病情标志（文本或编码） 其它、危、急、一般 -->
+		(select listagg(ord.name_ord,'')within group(order by ord.name_ord) from cn_order ord
+		where ord.code_ordtype='13' and ord.pk_pv=pv.pk_pv ) dietetic_state_flag ,<!--饮食状况标志（文本或编码） 普通、半流、流质、低糖、低盐、低脂、禁食 -->
+		levns.name nursing_degree_flag ,<!--护理级别（文本或编码） 普通、一级、二级、三级、特级护理 -->
+		pv.name_rel contact_name  ,<!--联系人姓名 -->
+		dral.name contact_relation  ,<!--患者与联系人的关系（文本或编码）  父母、兄、弟、姐、妹、配偶、 -->
+		<!--子、女、其他、 -->
+		<!--孙子、孙女或外孙子、外孙女… -->
+		pv.addr_rel contact_address ,<!--联系人地址 -->
+		pv.tel_rel contact_tel ,<!--联系人电话 -->
+		nvl((select distinct 1 from  pi_allergic al where al.pk_pi=pi.pk_pi),'0') allergy_flag  ,<!-- 患者的过敏记录（文本或编码）  0-过敏未记录 -->
+		<!--1-有已知的过敏
+		2-没有已知的过敏
+		3-过敏未知 -->
+		nvl(inf.sort_no,'0') baby_ordinal  ,<!--婴儿出生序号  0-非婴儿 -->
+		<!--1-母亲本次住院的第一个婴儿
+		2-第二个婴儿
+		3-第三个婴儿
+		… -->
+		'0' security_level_flag ,<!--安全级别标志 ?? -->
+		case pv.eu_status
+		   when '2' then '3'
+		   when '3' then '5'
+		   else pv.eu_status end status_flag ,<!--状态（文本或编码） 0:入院 (nhis0 登记，1 就诊，2 结束，3 结算，9 退诊) -->
+		<!--1:在院
+		2:转科
+		3:批准出院
+		4:出院返回
+		5:确认出院 -->
+		nat.name folk  ,<!--民族（文本或编码） gb/t 3304-1991标准。汉族、乌孜别克族 等 -->
+		cou.name nationality ,<!--国籍（文本或编码） gb/t 2659-2000标准。中国、南乔治亚岛和南桑德韦奇岛等 -->
+		pv.addr_regi native_address  ,<!--户籍住址 -->
+		pv.addr_cur living_address  ,<!--居住地址 -->
+		pi.tel_no telephone ,<!--家庭电话 -->
+		'' guardian_name ,<!--监护人姓名 -->
+		null is_deceased ,<!--是否死亡 -->
+		null deceased_date ,<!--死亡日期 -->
+		edu.name academic  ,<!--学历（文本或编码） -->
+		'' religious ,<!--宗教信仰（文本或编码） -->
+		occu.name profession  ,<!--职业（文本或编码） -->
+		pv.del_flag is_deleted  ,<!--是否已删除 -->
+		(select distinct pvs.code_pv from pv_encounter pvs where pvs.pk_pv=inf.pk_pv ) mother_encounter_key ,<!--母亲的外部就诊记录键 -->
+		indiag.desc_diag in_diagnosis  <!--入院登记时的入院诊断 -->
+		from pv_encounter pv
+		inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+		inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		left join pv_infant inf on inf.pk_pi_infant = pi.pk_pi
+		inner join bd_ou_dept dpa on dpa.pk_dept=ip.pk_dept_admit
+		left join (
+		select emp1.old_id,emp1.name_emp,stf1.pk_pv
+		from pv_staff stf1
+		inner join bd_ou_employee emp1 on stf1.pk_emp=emp1.pk_emp
+		where stf1.dt_role='0000'
+		) att  on att.pk_pv=pv.pk_pv <!--主任医生 -->
+		left join (
+		select emp2.old_id,emp2.name_emp,stf2.pk_pv
+		from pv_staff stf2
+		inner join bd_ou_employee emp2 on stf2.pk_emp=emp2.pk_emp
+		where stf2.dt_role='0002'
+		) res  on res.pk_pv=pv.pk_pv <!--住院医生 -->
+		inner join (select * from bd_defdoc where code_defdoclist='000202') admi on admi.code=ip.dt_level_dise<!--病情等级 -->
+		inner join (select * from bd_defdoc where code_defdoclist='000000') sex on sex.code=pi.dt_sex<!--性别 -->
+		left join (select * from bd_defdoc where code_defdoclist='000006') marry  on marry .code=pi.dt_marry<!--婚姻状况 -->
+		inner join (select * from bd_defdoc where code_defdoclist='000110') outcomes  on outcomes.code=ip.dt_outcomes<!--病情转归 -->
+		left join (select * from bd_defdoc where code_defdoclist='000205') levns  on levns.code=ip.dt_level_ns<!--护理等级 -->
+		inner join (select * from bd_defdoc where code_defdoclist='000013') dral  on dral.code=pv.dt_ralation<!--联系人关系 -->
+		inner join (select * from bd_defdoc where code_defdoclist='000003')  nat on nat.code=pi.dt_nation<!--民族 -->
+		inner join (select * from bd_defdoc where code_defdoclist='000009')  cou on cou.code=pi.dt_country<!--国籍 -->
+		left join (select * from bd_defdoc where code_defdoclist='010302')  edu on edu.code=pi.dt_edu<!--学历 -->
+		inner join (select * from bd_defdoc where code_defdoclist='000010')  occu on occu.code=pi.dt_occu<!--职业 -->
+		inner join  pv_diag indiag on indiag.pk_pv=pv.pk_pv and indiag.dt_diagtype='0100'
+		inner join bd_ou_employee  outemp on outemp.pk_emp=pv.pk_emp_ns<!--出院员工 -->
+		inner join bd_ou_dept in_dept on in_dept.pk_dept=pv.pk_dept
+		inner join bd_hp hp on pv.pk_insu=hp.pk_hp
+		inner join bd_res_bed bed on bed.code=pv.bed_no and bed.pk_ward=pv.pk_dept_ns
+		where pv.code_pv = #{encounterId}  and pi.name_pi = #{displayName} 
+				
+	</select>
+	
+	
+	<select id="qryPvEncounterEvent" parameterType="com.zebone.nhis.webservice.syx.vo.ExtSubject" resultType="com.zebone.nhis.webservice.syx.vo.ViewNisEncountersEvent">
+	select * from VIEW_NIS_ENCOUNTER_EVENT where 1 = 1  
+		<if test="enCounterId != null and enCounterId !=''">
+			and ENCOUNTER_ID = #{enCounterId}  
+		</if>
+		<if test="owningOrgId != null and owningOrgId != ''">
+			and OWNING_ORG_ID = #{owningOrgId}  
+		</if>
+		<if test="effectiveDate.effectiveStartDate != null and effectiveDate.effectiveStartDate !='' ">
+			and EFFECTIVE_START_DATE = to_date(#{effectiveDate.effectiveStartDate}, 'yyyyMMddHH24miss') 
+		</if>
+		<if test="effectiveDate.effectiveEndDate != null and effectiveDate.effectiveEndDate !='' ">
+			and EFFECTIVE_END_DATE = to_date(#{effectiveDate.effectiveEndDate}, 'yyyyMMddHH24miss')
+		</if>
+
+	</select>
+	
+</mapper>

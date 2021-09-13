@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.sd.emr.dao.SughEmrDataUploadMapper">
+	<select id="queryEmrDataUpList" parameterType="com.zebone.nhis.pro.sd.emr.vo.EmrDataQueryVo" resultType="DynaBean">
+		select pv.pk_pv,
+	       pv.code_pv,
+	       pi.code_ip,
+	       ip.ip_times,
+	       pi.name_pi,
+	       sex.NAME sex,
+	       dept.NAME_DEPT ,
+	       deptns.NAME_DEPT name_dept_ns,
+	       pv.name_emp_phy,
+	       pv.date_begin,
+	       pv.date_end,
+	       case 
+	       when ip.eu_fpupload ='1'  then '1'<!-- 已上传 -->
+	       when ip.eu_fpupload ='0' and ip.eu_status_doc = '0' then '0' <!-- 未上传 -->
+	       else '-1'  end eu_fpupload,<!-- 未提交 -->
+	       ip.date_fpupload,
+	       ip.name_emp_fpupload
+	  from pv_encounter pv
+	       inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+	       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+	       left join BD_DEFDOC sex on sex.CODE_DEFDOCLIST='000000' and sex.CODE=pi.DT_SEX
+	       left join BD_OU_DEPT dept on dept.PK_DEPT=pv.PK_DEPT
+	       left join BD_OU_DEPT deptns on deptns.PK_DEPT=pv.PK_DEPT_NS
+	 where pv.pk_org=#{pkOrg,jdbcType=VARCHAR} 
+	 	   and pv.eu_status &gt;=2
+	 	   <if test='codeIp!=null and codeIp!=""'>
+	 	   		and pi.code_ip like '%'|| #{codeIp,jdbcType=VARCHAR} ||'%' 
+	 	   </if>
+	 	   <if test='namePi!=null and namePi!=""'>
+	 	   		and pi.name_pi like '%'|| #{namePi,jdbcType=VARCHAR} ||'%' 
+	 	   </if>
+	 	   <if test='dateEndStart!=null and dateEndStart!=""'>
+	 	   		and pv.date_end &gt;=to_date(#{dateEndStart,jdbcType=VARCHAR},'yyyyMMddhh24miss') 
+	 	   </if>
+	 	   <if test='dateEnd !=null and dateEnd !=""'>
+	 	   		and pv.date_end &lt;=to_date(#{dateEnd,jdbcType=VARCHAR},'yyyyMMddhh24miss') 
+	 	   </if>
+	 	   <if test='pkDept !=null and pkDept !=""'>
+	 	  		and pv.pk_dept=#{pkDept,jdbcType=VARCHAR} 
+	 	   </if>
+	 	   <if test='pkDeptNs !=null and pkDeptNs !=""'>
+	 	  		and pv.pk_dept_ns=#{pkDeptNs,jdbcType=VARCHAR} 
+	 	   </if>
+	 	   <if test='euFpload!=null and euFpload=="0"'>
+	 	   		and ip.eu_fpupload='0'
+	 	   		and ip.eu_status_doc='0'
+	 	   </if>
+	 	   <if test='euFpload!=null and euFpload=="1"'>
+	 	   		and ip.eu_fpupload='1'
+	 	   </if>
+	 	   <if test='euFpload!=null and  euFpload=="-1"'>
+	 	   		and (ip.eu_status_doc='-1' or ip.eu_status_doc is null)
+	 	   		and ip.eu_fpupload='0'
+	 	   </if>
+	 	   <if test='dateUpStart !=null and dateUpStart!=""'>
+	 	   		and ip.date_fpupload &gt;=to_date(#{dateUpStart,jdbcType=VARCHAR},'yyyyMMddhh24miss')  
+	 	   </if>
+	 	   <if test='dateUpEnd !=null and dateUpEnd !=""'>
+	 	   		and ip.date_fpupload &lt;=to_date(#{dateUpEnd,jdbcType=VARCHAR},'yyyyMMddhh24miss') 
+	 	   </if>
+	 	   order by dept.NAME_DEPT
+	</select>
+	
+	<update id="updateProc" statementType="CALLABLE" parameterType="java.util.Map">
+   		{call proc_ba_save_data(#{codeIp,mode=IN,jdbcType=VARCHAR},#{codePv,mode=IN,jdbcType=VARCHAR},#{ipTimes,mode=IN,jdbcType=VARCHAR},#{namePi,mode=IN,jdbcType=VARCHAR})}
+	</update>
+</mapper>

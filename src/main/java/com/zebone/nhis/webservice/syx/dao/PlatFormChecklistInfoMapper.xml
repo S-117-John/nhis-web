@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.PlatFormChecklistInfoMapper">
+    <select id="getchecklistInfo" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.ChecklistInfoReq"
+            resultType="com.zebone.nhis.webservice.syx.vo.platForm.ChecklistInfoRes">
+        
+        SELECT 
+			pay.serial_no orderId,
+			pay.trade_no payNum,
+			pay.amount payAmout,
+			pay.date_pay payTime,
+			pay.desc_pay payDesc,
+			pi.id_no userIdCard,
+			pi.code_op userJKK,
+			pi.citizen_no userSMK,
+			pi.insur_no userYBK,
+			pi.idno_rel userParentIdCard,
+			pi.name_pi userName,
+			CASE		
+				WHEN pi.dt_sex = '02' THEN
+				'M' ELSE 'F' 
+			END userGender,
+			pi.mobile userMobile,
+			dept.code_dept deptId,
+			emp.code_emp doctorId,
+			pv.date_begin regDate,
+			ds.code_dateslot timeID,
+			'1' AS type 
+		FROM 
+			bl_ext_pay pay
+		INNER join bl_settle st ON pay.pk_settle = st.pk_settle 
+		INNER join pv_encounter pv ON st.pk_pv = pv.pk_pv 
+		INNER join pv_op op ON pv.pk_pv = op.pk_pv 
+		INNER join pi_master pi ON pv.pk_pi = pi.pk_pi 
+		INNER join bd_code_dateslot ds ON op.pk_dateslot = ds.pk_dateslot 
+		INNER join bd_ou_dept dept ON op.pk_dept_pv = dept.pk_dept 
+		left outer join bd_ou_employee emp ON op.pk_emp_pv = emp.pk_emp 
+		WHERE 
+		 	st.eu_pvtype &lt; '3' 
+		 	AND op.dt_apptype = #{orderType,jdbcType=VARCHAR}
+		 	AND st.dt_sttype in ('00','20')  
+		 	AND st.date_st &gt;= to_date(#{startDate,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss')
+		 	AND st.date_st &lt;= to_date(#{endDate,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss')
+    </select>
+</mapper>

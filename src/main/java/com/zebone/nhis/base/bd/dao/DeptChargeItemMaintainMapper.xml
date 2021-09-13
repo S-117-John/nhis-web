@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.DeptChargeItemMaintainMapper">
+
+	<select id="qryDeptChargeItemMaintain" parameterType="java.util.Map" resultType="com.zebone.nhis.base.bd.vo.MaintainVo">
+		select DISTINCT item.pk_pd pkItem,
+		       '0' as dt_itemtype,
+		       '药品' itemtype,
+		       item.code,
+		       item.name,
+		       item.spec,
+		       unit.name unit,
+		       CASE 
+				WHEN item.price > 0 
+				THEN item.price/item.pack_size
+				ELSE 0
+			   END price,
+		       item.spcode,
+		       dt.quan,
+		       t.pk_cgset,
+		       t.pk_dept,
+		       t.ts,
+				dt.unit_dos,
+				dt.dosage,
+				dt.name_supply,
+				dt.name_freq
+		from bd_pd item
+		       inner join bd_unit unit on item.pk_unit_min=unit.pk_unit
+		       inner join bl_cgset_dt dt on dt.pk_item = item.pk_pd
+		       inner join bl_cgset t on t.pk_cgset = dt.pk_cgset
+		 where item.flag_stop='0' and 
+		       item.del_flag='0' and 
+		       item.eu_drugtype='0' and 
+		       item.flag_gmp='1' and 
+		       t.eu_type = '1' and 
+  			   t.flag_stop = '0' and 
+		       dt.pk_org = #{pkOrg} and  
+		       t.pk_org = #{pkOrg} and 
+		       t.pk_dept = #{pkDept}    
+		union all
+		select DISTINCT item.pk_item pkItem,
+		       item.dt_itemtype,
+		       tp.name itemtype,
+		       item.code,
+		       item.name,
+		       item.spec,
+		       unit.name unit,
+		       pre.price,
+		       item.spcode,
+		       dt.quan,
+		       t.pk_cgset,
+		       t.pk_dept,
+		       t.ts ,
+				dt.unit_dos,
+				dt.dosage,
+				dt.name_supply,
+				dt.name_freq
+		from bd_item item
+		       inner join bd_item_price pre on item.pk_item=pre.pk_item
+		       inner join bd_unit unit on item.pk_unit=unit.pk_unit
+		       inner join bd_defdoc tp on item.dt_itemtype=tp.code and tp.code_defdoclist='030005'
+		       inner join bl_cgset_dt dt on dt.pk_item = item.pk_item
+		       inner join bl_cgset t on t.pk_cgset = dt.pk_cgset
+		 where pre.pk_org = #{pkOrg} and 
+		       pre.flag_stop='0' and 
+		       item.flag_active='1' and 
+		       item.del_flag='0' and 
+		       t.eu_type = '1' and 
+  			   t.flag_stop = '0' and 
+		       dt.pk_org = #{pkOrg} and 
+		       t.pk_org = #{pkOrg} and 
+		       t.pk_dept = #{pkDept}
+	</select>
+	
+	<select id="qryImportDeptChargeItemMaintain" parameterType="java.util.Map" resultType="DynaBean">
+		select item.pk_item pkItem,
+			   '0' as euItemtype,
+			   item.dt_itemtype,
+		       tp.name itemtype,
+		       item.code,
+		       item.name,
+		       item.spec,
+		       unit.name unit,
+			   unit.name unitDos,
+		       pre.price,
+		       item.spcode,
+		       '1' as quan
+		 from bd_item item
+		       inner join bd_item_price pre on item.pk_item=pre.pk_item
+		       inner join bd_unit unit on item.pk_unit=unit.pk_unit
+		       inner join bd_defdoc tp on item.dt_itemtype=tp.code and tp.code_defdoclist='030005'
+		 where pre.pk_org = #{pkOrg} and
+		       pre.flag_stop='0' and
+		       item.flag_active='1' and
+		       item.del_flag='0' and
+		       not exists (select 1 from bl_cgset cs
+		                   inner join bl_cgset_dt dt on cs.pk_cgset=dt.pk_cgset
+		                   where item.pk_item=dt.pk_item and
+		                         dt.eu_itemtype='0' and
+		                         cs.pk_dept = #{pkDept})
+        union all
+		select item.pk_pd pkItem,
+		       '1' as euItemtype,
+		       '0' as dt_itemtype,
+		       '药品' itemtype,
+		       item.code,
+		       item.name,
+		       item.spec,
+		       unit.name unit,
+			   unitb.name unitDos,
+				CASE
+				WHEN item.price > 0 
+				THEN item.price/item.pack_size
+				ELSE 0
+			   END price,
+		       item.spcode,
+		       '1' as quan
+		  from bd_pd item
+		       inner join bd_unit unit on item.pk_unit_min=unit.pk_unit
+			   inner join bd_unit unitb on item.pk_unit_vol=unitb.pk_unit
+		 where item.flag_stop='0' and
+		       item.del_flag='0' and
+		       item.eu_drugtype='0' and
+		       item.flag_gmp='1' and
+		       not exists (select 1 from bl_cgset cs
+		                   inner join bl_cgset_dt dt on cs.pk_cgset=dt.pk_cgset
+		                   where item.pk_pd=dt.pk_item and
+		                         dt.eu_itemtype='1' and
+		                         cs.pk_dept = #{pkDept})
+	</select>
+</mapper>

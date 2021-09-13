@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.pub.dao.PatiListMapper">
+    <select id="queryPatiListByDept" parameterType="java.util.Map" resultType="DynaBean">
+		 select pv.name_pi,
+		 		pv.age_pv,
+       			bed.name as name_bed,
+       			bed.code as code_bed,
+       			bed.code_fa,
+       			pv.date_begin date_in,
+       			pv.pk_pv,
+      			pv.code_pv,
+      			pv.pk_pi,
+      			pi.code_ip,
+      			sex.name sex,
+      			ip.flag_infant,
+      			ip.quan_infant,
+                case when (pv.eu_pvmode='1' and pv.flag_cancel != '1' and pv.del_flag='0' ) then '1'
+                     else  '0' 
+                     end as  cp_Eu_Status    
+  		   from pv_encounter pv 
+       	  inner join bd_res_bed bed on pv.bed_no=bed.code and bed.pk_org = #{pkOrg,jdbcType=CHAR} 
+       	         and bed.pk_ward = #{pkDeptNs,jdbcType=CHAR} and bed.pk_pi = pv.pk_pi and bed.del_flag = '0' 
+       	  inner join pv_ip ip on ip.pk_pv = pv.pk_pv
+       	  inner join pi_master pi on pi.pk_pi = pv.pk_pi 
+       	   left join bd_defdoc sex on sex.code = pv.dt_sex and sex.code_defdoclist = '000000'
+ 		  where pv.flag_in = '1'
+ 			and pv.eu_pvtype = '3' 
+ 			and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR} 
+ 			and pv.eu_status = '1' 
+ 		  order by code_bed ,pv.date_admit
+    </select>	   
+    
+     <select id="queryTransPiListByDeptNs" parameterType="java.util.Map" resultType="DynaBean">
+		 select pv.name_pi,
+       			'' name_bed,
+       			pv.bed_no as code_bed,
+       			'' code_fa,
+       			pv.pk_pv,
+      			pv.code_pv,
+      			pv.pk_pi,
+      			pv.date_begin date_in,
+      			pi.code_ip,
+      			sex.name sex,
+      			ip.flag_infant,
+      			ip.quan_infant    
+  		  from  pv_encounter pv 
+       	  inner join pv_ip ip on ip.pk_pv = pv.pk_pv
+       	  inner join pi_master pi on pi.pk_pi = pv.pk_pi 
+       	   left join bd_defdoc sex on sex.code = pv.dt_sex and sex.code_defdoclist = '000000'
+ 		  where pv.flag_in = '1' and pv.eu_pvtype = '3' and pv.eu_status = '1'
+ 		    and pv.pk_dept_ns != #{pkDeptNs,jdbcType=CHAR}
+ 			and exists (select 1 from pv_adt adt where pv.pk_pv=adt.pk_pv and adt.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR} and adt.date_end is not null )  and pv.flag_in='1' and pv.eu_pvtype='3'  
+ 		  order by pv.date_admit
+    </select>	   
+</mapper>

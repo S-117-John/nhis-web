@@ -1,0 +1,440 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.emr.rec.rec.dao.EmrRsltQryMapper">
+	<resultMap id="ResultMapLisResult"
+		type="com.zebone.nhis.common.module.emr.rec.rec.EmrLisResult">
+		<result column="PK_ORG" jdbcType="CHAR" property="pkOrg" />
+		<result column="PK_PV" jdbcType="CHAR" property="pkPv" />
+		<result column="PK_CNORD" jdbcType="CHAR" property="pkCnord" />
+		<result column="REQ_DATE" jdbcType="DATE" property="reqDate" />
+		<result column="TEST_DATE" jdbcType="DATE" property="testDate" />
+		<result column="TEST_NAME" jdbcType="VARCHAR" property="testName" />
+		<result column="REQ_NO" jdbcType="VARCHAR" property="reqNo" />
+		<result column="ITEM_CODE" jdbcType="VARCHAR" property="itemCode" />
+		<result column="ITEM_NAME" jdbcType="VARCHAR" property="itemName" />
+		<result column="RESULT" jdbcType="VARCHAR" property="result" />
+		<result column="UNIT" jdbcType="VARCHAR" property="unit" />
+		<result column="UPPER_LIMIT" jdbcType="VARCHAR" property="upperLimit" />
+		<result column="LOWER_LIMIT" jdbcType="VARCHAR" property="lowerLimit" />
+		<result column="RANGE" jdbcType="VARCHAR" property="range" />
+		<result column="MARK" jdbcType="VARCHAR" property="mark" />
+		<result column="SMP_NO" jdbcType="VARCHAR" property="smpNo" />
+	</resultMap>
+	<select id="queryPatLisReqSyx" resultMap="ResultMapLisResult">
+		select TOP (100) PERCENT rq.RequestExecutiveDateTime req_date,
+		       rq.ResultDateTime test_date, 
+		       STUFF(
+		        (SELECT ',' + rqi.ItemSetDesc
+		         FROM tExamineItemSetListForIP rqi
+		         WHERE rqi.ExamineRequestID=rq.ExamineRequestID
+		         FOR xml path('')
+		        ),1,1,'') test_name, 
+		       rq.LisLableNo smp_no,
+		       rq.ExamineRequestID req_no
+		  FROM  tExamineRequestForIP rq
+		where (rq.IPSeqNoText=#{codeIp,jdbcType=VARCHAR})  and rq.CancleFlag='0'
+		<if test="beginDateStr != null">
+		  	and rq.RequestExecutiveDateTime &gt;= #{beginDateStr,jdbcType=VARCHAR}
+		</if>
+		<if test="endDateStr != null">
+		  	and rq.RequestExecutiveDateTime &lt;= #{endDateStr,jdbcType=VARCHAR}
+		</if>
+		union all
+		select TOP (100) PERCENT rq.RequestExecutiveDateTime req_date,
+		       rq.ResultDateTime test_date, 
+		       STUFF(
+		        (SELECT ',' + rqi.ItemSetDesc
+		         FROM tExamineItemSetListForIP rqi
+		         WHERE rqi.ExamineRequestID=rq.ExamineRequestID
+		         FOR xml path('')
+		        ),1,1,'') test_name, 
+		       rq.LisLableNo smp_no,
+		       rq.ExamineRequestID req_no
+		  FROM  tExamineRequestForIP_bak rq
+		where (rq.IPSeqNoText=#{codeIp,jdbcType=VARCHAR})  and rq.CancleFlag='0'
+		<if test="beginDateStr != null">
+		  	and rq.RequestExecutiveDateTime &gt;= #{beginDateStr,jdbcType=VARCHAR}
+		</if>
+		<if test="endDateStr != null">
+		  	and rq.RequestExecutiveDateTime &lt;= #{endDateStr,jdbcType=VARCHAR}
+		</if>
+	</select>
+	<select id="queryPatLisResultSyx" parameterType="java.lang.String" resultMap="ResultMapLisResult">
+		select rpt.TEST_NO smp_no,
+		       rpt.report_item_code item_code,
+		       rpt.report_item_name item_name,
+		       rpt.Result result,  
+		       rpt.Units unit,
+		       substring(rpt.Reference_Range,charindex('-',rpt.Reference_Range)+1,len(rpt.Reference_Range)) upper_limit,     
+		       substring(rpt.Reference_Range,0,charindex('-',rpt.Reference_Range)) lower_limit,   
+		       rpt.Reference_Range range,
+		       rpt.Status mark
+		  FROM V_EMR_Get_Lis_Report rpt
+		where rpt.TEST_NO = ${smpNos}
+	</select>
+	<select id="queryPatLisResultSyxBak2" resultMap="ResultMapLisResult">
+		select rpt.TEST_NO smp_no,
+		       rpt.report_item_code item_code,
+		       rpt.report_item_name item_name,
+		       rpt.Result result,  
+		       rpt.Units unit,
+		       substring(rpt.Reference_Range,charindex('-',rpt.Reference_Range)+1,len(rpt.Reference_Range)) upper_limit,     
+		       substring(rpt.Reference_Range,0,charindex('-',rpt.Reference_Range)) lower_limit,   
+		       rpt.Reference_Range range,
+		       rpt.Status mark
+		  FROM V_EMR_Get_Lis_Report rpt
+		where rpt.TEST_NO in 
+		<foreach item="item" index="index" collection="list" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+	</select>
+	<select id="queryPatLisResultSyxBak" resultMap="ResultMapLisResult">
+		select TOP (100) PERCENT rq.RequestExecutiveDateTime req_date,
+		       rq.ResultDateTime test_date, 
+		       STUFF(
+		        (SELECT ',' + rqi.ItemSetDesc
+		         FROM tExamineItemSetListForIP rqi
+		         WHERE rqi.ExamineRequestID=rq.ExamineRequestID
+		         FOR xml path('')
+		        ),1,1,'') test_name, 
+		       rq.LisLableNo smp_no,
+		       rq.ExamineRequestID req_no,
+		       rpt.report_item_code item_code,
+		       rpt.report_item_name item_name,
+		       rpt.Result result,  
+		       rpt.Units unit,
+		       substring(rpt.Reference_Range,charindex('-',rpt.Reference_Range)+1,len(rpt.Reference_Range)) upper_limit,     
+		       substring(rpt.Reference_Range,0,charindex('-',rpt.Reference_Range)) lower_limit,   
+		       rpt.Reference_Range range,
+		       rpt.Status mark
+		  FROM  tExamineRequestForIP rq
+		  inner join V_EMR_Get_Lis_Report rpt
+		    on rq.LisLableNo = rpt.TEST_NO
+		where rq.PatientID=#{codePi,jdbcType=VARCHAR}
+		<if test="beginDateStr != null">
+		  	and rq.RequestExecutiveDateTime &gt;= #{beginDateStr,jdbcType=VARCHAR}
+			and rq.ResultDateTime &gt;= #{beginDateStr,jdbcType=VARCHAR}
+		</if>
+	</select>
+	<resultMap id="ResultMapRisResult"
+		type="com.zebone.nhis.common.module.emr.rec.rec.EmrRisResult">
+		<result column="PK_ORG" jdbcType="CHAR" property="pkOrg" />
+		<result column="PK_PV" jdbcType="CHAR" property="pkPv" />
+		<result column="PK_CNORD" jdbcType="CHAR" property="pkCnord" />
+		<result column="CHECK_DATE" jdbcType="TIMESTAMP" property="checkDate" />
+		<result column="CHECK_NAME" jdbcType="VARCHAR" property="checkName" />
+		<result column="REQ_NO" jdbcType="VARCHAR" property="reqNo" />
+		<result column="CHECK_RESULT" jdbcType="VARCHAR" property="checkResult" />
+		<result column="CHECK_DIAGS" jdbcType="VARCHAR" property="checkDiags" />
+		<result column="CLINIC_HOSPITALNO" jdbcType="VARCHAR" property="clinicHospitalno" />
+		<result column="HOSPITAL_CARDID" jdbcType="VARCHAR" property="hospitalCardid" />
+	</resultMap>
+	<select id="queryPatRisResultSyx" resultMap="ResultMapRisResult">
+		select TOP (100) PERCENT rpt.PatientID,
+		       (case when rpt.ResultDateTime &lt;= '1900-01-01' then rpt.ReportDate else rpt.ResultDateTime end ) check_date, 
+		       (case when (rpt.ReportType is null or rpt.ReportType = '') then rpt.ReportSubTitle else rpt.ReportType end ) check_name,
+		       rpt.FunctionRequestID req_no,
+		       (case when rpt.SeeDescEx is null then rpt.ExamDescEx when rpt.SeeDescEx = '' then rpt.ExamDescEx else rpt.SeeDescEx end) check_result,
+		       rpt.resultDescEx check_diags,
+		       <!-- TOP (100) PERCENT 
+		       substring(rpt.resultDescEx,6,charindex('影像诊断：',rpt.resultDescEx)) check_result, 
+		       substring(rpt.resultDescEx,charindex('影像诊断：',rpt.resultDescEx)+5,len(rpt.resultDescEx)) check_diags,
+		        ExamDescEx-->
+		       rpt.ExamDescEx check_result2,
+		       rpt.resultDescEx check_diags2,
+		       rpt.reportURL report_url, 
+			   rpt.imageURL image_url      
+		from VMFunctionReport rpt
+		where (rpt.IPSeqNoText=#{codeIp,jdbcType=VARCHAR})
+		<if test="beginDateStr != null">
+		  	and (rpt.ResultDateTime &gt;= #{beginDateStr,jdbcType=VARCHAR} or rpt.ReportDate &gt;= #{beginDateStr,jdbcType=VARCHAR})
+		</if>
+		<if test="endDateStr != null">
+		  	and (rpt.ResultDateTime &lt;= #{endDateStr,jdbcType=VARCHAR} or rpt.ReportDate &lt;= #{endDateStr,jdbcType=VARCHAR})
+		</if>
+	</select>
+	<select id="queryPatRisSupperResultSyx" resultMap="ResultMapRisResult">
+		select TOP (100) PERCENT rpt.PatientID,
+		       (case when rpt.ResultDateTime &lt;= '1900-01-01' then rpt.ReportDate else rpt.ResultDateTime end ) check_date, 
+		       (case when (rpt.ReportType is null or rpt.ReportType = '') then rpt.ReportSubTitle else rpt.ReportType end ) check_name,
+		       rpt.FunctionID req_no,
+		       (case when rpt.SeeDescEx is null then rpt.ExamDescEx when rpt.SeeDescEx = '' then rpt.ExamDescEx else rpt.SeeDescEx end) check_result,
+		       rpt.resultDescEx check_diags,
+		       <!-- TOP (100) PERCENT 
+		       substring(rpt.resultDescEx,6,charindex('影像诊断：',rpt.resultDescEx)) check_result, 
+		       substring(rpt.resultDescEx,charindex('影像诊断：',rpt.resultDescEx)+5,len(rpt.resultDescEx)) check_diags,
+		        ExamDescEx-->
+		       rpt.ExamDescEx check_result2,
+		       rpt.resultDescEx check_diags2,
+		       rpt.reportURL report_url, 
+			   rpt.imageURL image_url      
+		from VMFunctionReport rpt
+		where (rpt.IPSeqNoText=#{codeIp,jdbcType=VARCHAR})
+		<if test="beginDateStr != null">
+		  	and (rpt.ResultDateTime &gt;= #{beginDateStr,jdbcType=VARCHAR} or rpt.ReportDate &gt;= #{beginDateStr,jdbcType=VARCHAR})
+		</if>
+		<if test="endDateStr != null">
+		  	and (rpt.ResultDateTime &lt;= #{endDateStr,jdbcType=VARCHAR} or rpt.ReportDate &lt;= #{endDateStr,jdbcType=VARCHAR})
+		</if>
+	</select>
+	<select id="queryPatRisResultSyxHyx" resultMap="ResultMapRisResult">
+		select TOP (100) PERCENT rpt.PatientID,
+		       (case when rpt.ResultDateTime is null then rpt.ReportDate else rpt.ResultDateTime end) check_date,
+       		   (case when rpt.ReportSubTitle is null or rpt.ReportSubTitle = '' then rpt.ReportType else rpt.ReportSubTitle end ) check_name,
+		       rpt.FunctionRequestID req_no,
+		       (case when rpt.SeeDescEx is null then rpt.ExamDescEx when rpt.SeeDescEx = '' then rpt.ExamDescEx else rpt.SeeDescEx end) check_result,
+		       rpt.resultDescEx check_diags,
+		       rpt.reportURL report_url, 
+			   rpt.imageURL image_url    
+		from View_Zs rpt
+		where (rpt.IPSeqNoText=#{codeIp,jdbcType=VARCHAR}) 
+		<if test="beginDateStr != null">
+			and rpt.ReportDate &gt;= #{beginDateStr,jdbcType=VARCHAR}
+		</if>
+		<if test="endDateStr != null">
+			and rpt.ReportDate &lt;= #{endDateStr,jdbcType=VARCHAR}
+		</if>
+	</select>
+	<select id="queryPatRisResultSyxPa" resultMap="ResultMapRisResult">
+		select distinct TOP (100) PERCENT rpt.PATIENT_ID,
+		       rpt.检查日期 check_date, 
+		       '病理'+ rpt.检查类别名称  check_name, 
+		       rpt.检查号 req_no,
+		       rpt.肉眼所见 check_result,
+		       rpt.Diagnosis  check_diags,
+		       'http://192.168.70.252/pathwebrpt/index.asp?blh='+rpt.检查号   as report_url, 
+			   '' as image_url   
+		from v_getreport_TX rpt
+		where (rpt.住院号=#{codeIp,jdbcType=VARCHAR}) 
+		<if test="beginDateStr != null">
+			and rpt.报告日期 &gt;= #{beginDateStr,jdbcType=VARCHAR}
+		</if>
+		<if test="endDateStr != null">
+			and rpt.报告日期 &lt;= #{endDateStr,jdbcType=VARCHAR}
+		</if>
+	</select>
+	<select id="queryVitalSignsSyx" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.emr.rec.rec.vo.EmrVitalSigns">
+		Set ARITHABORT ON 
+		select t.日期  vs_date,
+		t.时间  vs_time,
+		t.[体温(℃)] tempe,
+		t.[脉搏(次/分)] pulse,
+		t.[呼吸(次/分)] breath,
+		t.[收缩压(mmHg)] systolic,
+		t.[舒张压(mmHg)] diastolic,
+		t.[血糖(mmol/L)] blood,
+		'' eu_dateslot
+		from vnissigns t
+		where t.住院流水号 = ${codePv}
+		order by t.日期,t.时间
+	</select>
+	
+	<select id="queryPatLisReqBoai" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrLisResult">
+		<!-- select '' as smp_no,
+	       '' as req_no,
+	       sh_date as test_date,
+	       pat_id test_code,
+	       jy_name test_name,
+	       rtrim(item_code),
+	       rtrim(item_name),
+	       result,
+	       unit,
+	       refer1_min lower_limit,
+	       refer1_max upper_limit,
+		   (refer1_min + '-' + refer1_max) range,
+		   null as mark
+  		from view_jy_resulto_emr 
+ 		where inpatient_no = #{codeIp,jdbcType=VARCHAR}
+ 		<if test="beginDateStr != null">
+		  	and sh_date &gt;= #{beginDateStr,jdbcType=VARCHAR}
+		</if>
+		<if test="endDateStr != null">
+		  	and sh_date &lt;= #{endDateStr,jdbcType=VARCHAR}
+		</if>
+		<if test="testCode != null">
+		  	and testCode = #{testCode,jdbcType=VARCHAR}
+		</if> -->
+		select 
+			sh_date as test_date,
+			pat_id test_code,
+	        jy_name test_name,
+	        pat_mz_zy
+	       from view_jy_resulto_emr 
+ 		where ((inpatient_no = #{codeIp,jdbcType=VARCHAR} and name= #{name,jdbcType=VARCHAR}) or inpatient_no = #{codeOp,jdbcType=VARCHAR})
+ 		<if test="dateBeginBa != null">
+		  	and sh_date &gt;= #{dateBeginBa,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEndBa != null">
+		  	and sh_date &lt; #{dateEndBa,jdbcType=VARCHAR}
+		</if>
+		group by pat_id,sh_date,jy_name,pat_mz_zy
+	</select>
+	<select id="queryPatLisReqBoaiBaby" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrLisResult">
+		select 
+			sh_date as test_date,
+			pat_id test_code,
+	        jy_name test_name,
+	        pat_mz_zy
+	       from view_jy_resulto_emr 
+ 		where (inpatient_no = #{codeIp,jdbcType=VARCHAR} or inpatient_no = #{codeOp,jdbcType=VARCHAR})
+ 		<if test="dateBeginBa != null">
+		  	and sh_date &gt;= #{dateBeginBa,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEndBa != null">
+		  	and sh_date &lt; #{dateEndBa,jdbcType=VARCHAR}
+		</if>
+		group by pat_id,sh_date,jy_name,pat_mz_zy
+	</select>
+	<select id="queryPatLisReqByObjBoai" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrLisResult">
+		select '' as smp_no,
+	       '' as req_no,
+	       sh_date as test_date,
+	       pat_id test_code,
+	       jy_name test_name,
+	       rtrim(item_code) item_code,
+	       rtrim(item_name) item_name,
+	       result,
+	       unit,
+	       refer1_min lower_limit,
+	       refer1_max upper_limit,
+		   (refer1_min + '-' + refer1_max) range,
+		   (case when ltrim(rtrim(ts)) is not null then ltrim(rtrim(ts)) else null end) mark
+  		from view_jy_resulto_emr 
+ 		where (inpatient_no = #{codeIp,jdbcType=VARCHAR} or inpatient_no = #{codeOp,jdbcType=VARCHAR})
+		<if test="testCode != null">
+		  	and pat_id = #{testCode,jdbcType=VARCHAR}
+		</if>
+		order by itm_order
+	</select>
+	<select id="queryPatRisResultBoai" resultMap="ResultMapRisResult">
+		select body_of_case check_name, 
+	       report_date  check_date,
+	       report_desc_txt check_result,
+	       report_diag_txt check_diags,
+	       his_uid req_no,
+	       record_no,
+	       clinic_hospitalno,
+	       hospital_cardid
+	  	from v_cs_pacs_info
+		 where (hospital_cardid = #{codeOp,jdbcType=VARCHAR})<!-- //clinic_hospitalno = #{codeIp,jdbcType=VARCHAR} or --> 
+		<if test="dateBeginBa != null">
+		  	and report_date &gt;= to_date(#{dateBeginBa,jdbcType=VARCHAR},'yyyy-mm-dd')
+		</if>
+		<if test="dateEndBa != null">
+		  	and report_date &lt; to_date(#{dateEndBa,jdbcType=VARCHAR},'yyyy-mm-dd')
+		</if>
+		union all 
+		select body_of_case check_name, 
+	       report_date  check_date,
+	       report_desc_txt check_result,
+	       report_diag_txt check_diags,
+	       his_uid req_no,
+	       record_no,
+	       clinic_hospitalno,
+	       hospital_cardid
+	  	from v_cs_pacs_info
+		 where (clinic_hospitalno = #{codeIp,jdbcType=VARCHAR})
+		<if test="dateBeginBa != null">
+		  	and report_date &gt;= to_date(#{dateBeginBa,jdbcType=VARCHAR},'yyyy-mm-dd')
+		</if>
+		<if test="dateEndBa != null">
+		  	and report_date &lt; to_date(#{dateEndBa,jdbcType=VARCHAR},'yyyy-mm-dd')
+		</if>
+	</select>
+	<select id="queryPatRisnlResultBoai" resultMap="ResultMapRisResult">
+		select body_of_case check_name, 
+	       report_date  check_date,
+	       report_desc_txt check_result,
+	       report_diag_txt check_diags,
+	       his_uid req_no,
+	       record_no,
+	       clinic_hospitalno,
+	       hospital_cardid
+	  	from v_cs_pacs_info
+		 where (clinic_hospitalno = #{codeIp,jdbcType=VARCHAR} or hospital_cardid = #{codeOp,jdbcType=VARCHAR})
+		<if test="dateBeginBa != null">
+		  	and report_date &gt;= #{dateBeginBa,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEndBa != null">
+		  	and report_date &lt; #{dateEndBa,jdbcType=VARCHAR}
+		</if>
+	</select>
+	<select id="queryPatRisResultBoaiHomePage" resultMap="ResultMapRisResult">
+		select body_of_case check_name, 
+	       report_date  check_date,
+	       report_desc_txt check_result,
+	       report_diag_txt check_diags,
+	       serial req_no,
+	       record_no,
+	       clinic_hospitalno,
+	       hospital_cardid
+	  	from v_cs_pacs_info
+		 where (clinic_hospitalno = #{codeIp,jdbcType=VARCHAR} or hospital_cardid = #{codeOp,jdbcType=VARCHAR}) and dept_type='3' and ROWNUM=1
+		<if test="dateBeginBa != null">
+		  	and report_date &gt;= to_date(#{dateBeginBa,jdbcType=VARCHAR},'yyyy-mm-dd')
+		</if>
+		<if test="dateEndBa != null">
+		  	and report_date &lt; to_date(#{dateEndBa,jdbcType=VARCHAR},'yyyy-mm-dd')
+		</if>
+		order by REPORT_DATE desc
+	</select>
+	<select id="queryPatOrdResultThird" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrOrdList">
+		select 
+			RTRIM(CODE_PI) CODE_PI,
+			RTRIM(TIMES) TIMES,
+			RTRIM(CODE) code,
+			RTRIM(NAME) name,
+			RTRIM(SPEC)SPEC,
+			RTRIM(SUPPLY_CODE) supplyCode,
+			RTRIM(SUPPLY_NAME) supplyName,
+			RTRIM(FREQ_CODE)freqCode,
+			RTRIM(FREQ_NAME)freqName,
+			<!-- RTRIM(ORDSN)ORDSN,RTRIM(ORDSN_PARENT)ORDSN_PARENT, -->
+			RTRIM(ORDER_FLAG)ORDER_FLAG,
+			RTRIM(ORDER_STATUS)ORDER_STATUS,
+			RTRIM(REMARK)REMARK,
+			BEGIN_DATE,
+			RTRIM(PK_EMP_ORD)PK_EMP_ORD,
+			RTRIM(CODE_EMP_ORD)CODE_EMP_ORD,
+			RTRIM(NAME_EMP_ORD)NAME_EMP_ORD,
+			RTRIM(CODE_PV)CODE_PV
+		 from VIEW_EMR_HIS_ORD_LIST where CODE_PI=#{codePi,jdbcType=VARCHAR} and TIMES=#{times,jdbcType=VARCHAR}
+		 order by BEGIN_DATE
+	</select>
+	<select id="queryPatOpsResultThird" resultType="DynaBean">
+        SELECT
+		    PATIENT_ID PatientId,
+		    VISIT_ID VisitId,
+		    OPERATION_DESC OperationDesc,
+		    OPERATING_DATE OperationDate,
+		    START_DATE_TIME StartDateTime,
+			END_DATE_TIME EndDateTime,
+			ANESTHESIA_METHOD AnesthesiaMethod, 
+			SURGEON Surgeon,
+			FIRST_ASSISTANT FirstAssistant,
+			SECOND_ASSISTANT SecondAssistant,
+			THIRD_ASSISTANT ThirdAssistant,
+			ANESTHESIA_DOCTOR AnesDoctor,
+			ANESTHESIA_DOCTOR_NAME AnesDoctorName,
+			FIRST_OPERATION_NURSE FirstOpNurse,
+			SECOND_OPERATION_NURSE SecondOpNurse,
+			SZSY Szsy,
+			SZSX Szsx,
+			YLHTSW Ylhtsw, 
+			SSGC Ssgc, 
+			BLBBKJ Blbbkj,
+			SHZJJPJ Shzjjpj,
+			QITA Qita
+		FROM  medsurgery.v_operation_nhis
+		where PATIENT_ID = #{codePi,jdbcType=VARCHAR}
+            and visit_id =#{ipTimes,jdbcType=VARCHAR}
+    </select>
+    <select id="queryBloodList" statementType="CALLABLE"
+		parameterType="java.util.Map" resultType="DynaBean">
+		{call
+		EMR_PROC_GET_BLOOD_INGO(#{codeIp,mode=IN,jdbcType=VARCHAR},#{ipTimes,mode=IN,jdbcType=VARCHAR})}
+	</select>
+</mapper>
+

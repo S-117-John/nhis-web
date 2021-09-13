@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.pub.dao.NsPubMapper">
+    <select id="queryPatiInfoByPV" parameterType="java.util.Map" resultType="DynaBean">
+		select pi.code_ip,pv.bed_no,pv.code_pv,pi.code_pi, pv.name_pi, 
+		       pv.dt_sex, pv.date_begin, pv.date_end,pv.age_pv,d1.NAME_DEPT,d2.NAME_DEPT NAME_DEPT_NS  
+  		from pv_encounter pv
+ 		inner join pi_master pi on pi.pk_pi = pv.pk_pi 
+		left join BD_OU_DEPT d1 on d1.PK_DEPT=pv.pk_dept
+		left join BD_OU_DEPT d2 on d2.PK_DEPT=pv.pk_dept_ns
+		where pv.pk_pv = #{pkPv,jdbcType=CHAR}
+    </select>
+    <select id="queryPatiAdtByPV" parameterType="java.util.Map" resultType="DynaBean">
+		select * from pv_adt where pk_pv = #{pkPv,jdbcType=CHAR}
+    </select>
+    <select id="queryPatiBedByPV" parameterType="java.util.Map" resultType="DynaBean">
+		select * from pv_bed where pk_pv = #{pkPv,jdbcType=CHAR}
+    </select>	   
+    <select id="queryPatiOpByPV" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			a.* 
+		from cn_op_apply a,CN_ORDER o,PV_ENCOUNTER pv 
+		where a.PK_CNORD =  o.PK_CNORD and o.PK_PV = pv.PK_PV 	
+		and o.EU_STATUS_ORD = '3' and pv.pk_pv = #{pkPv,jdbcType=CHAR}
+    </select>
+    <select id="queryPatiOrdsByPv" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOrder">
+		select 
+			 ord.* 
+		from cn_order ord 
+		where ord.eu_status_ord in ('2','3','4')
+		  and ord.pk_pv = #{pkPv,jdbcType=CHAR} 
+		  and nvl(ord.del_flag,'0') = '0' 
+		  and ord.code_ord in 
+	    <foreach item="item" index="index" collection="list" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		  
+    </select>		
+</mapper>

@@ -1,0 +1,408 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.webservice.lbzy.dao.SelfServiceMapper">
+
+
+	<select id="getRegisterDeptList" resultType="DynaBean">
+
+		select distinct sch.PK_DEPT,dept.CODE_DEPT,dept.NAME_DEPT
+		from sch_sch sch
+		left join BD_OU_DEPT dept on sch.PK_DEPT = dept.PK_DEPT
+		WHERE
+			sch.del_flag = '0'
+			and sch.pk_org = #{pkOrg,jdbcType=VARCHAR}
+			and sch.date_work &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyy-mm-dd')
+			and sch.date_work &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-mm-dd')
+	</select>
+
+
+	<select id="getDoctorList" resultType="com.zebone.nhis.webservice.lbzy.model.DoctorItem">
+        select sch.pk_sch schedule_Code,slot.NAME_DATESLOT||'('||(slot.TIME_BEGIN || '-' || slot.TIME_END)||')' schedule_Time,emp.CODE_EMP doctor_ID,emp.NAME_EMP doctor_Name,(case srv.EU_SRVTYPE when '0' then '普通' when '1' then '专家' when '2' then '特诊' else '其他' end) fee_Type,
+               sum(bi.price*boi.QUAN) total_Cost,ejb.JOBNAME doctor_Level
+        from sch_sch sch
+                 inner join SCH_RESOURCE res on res.PK_SCHRES = sch.PK_SCHRES
+                 inner join SCH_SRV srv on sch.PK_SCHSRV=srv.PK_SCHSRV
+                 inner join BD_OU_EMPLOYEE emp on emp.PK_EMP = res.PK_EMP
+                 inner join bd_ou_dept dept on sch.PK_DEPT=dept.PK_DEPT
+                 inner join sch_srv_ord sso on  sso.pk_schsrv = srv.pk_schsrv
+                 inner join bd_ord_item boi on boi.pk_ord = sso.pk_ord
+                 inner join BD_ITEM bi on bi.pk_item = boi.pk_item
+                 inner join BD_CODE_DATESLOT slot on sch.PK_DATESLOT = slot.PK_DATESLOT
+                 left join BD_OU_EMPJOB ejb on emp.PK_EMP=ejb.PK_EMP and ejb.IS_MAIN='1'
+        WHERE res.EU_RESTYPE='1'
+		and dept.CODE_DEPT = #{codeDept,jdbcType=VARCHAR}
+		and sch.date_work = to_date(#{date,jdbcType=VARCHAR}, 'yyyy-mm-dd')
+		and sch.flag_stop='0' and sch.eu_status='8'
+
+        <if test="timeStr!=null and timeStr !=''">
+            and slot.time_end>= #{timeStr,jdbcType=VARCHAR}
+        </if>
+        <if test="euSrvtype!=null and euSrvtype !=''">
+            and srv.EU_SRVTYPE = #{euSrvtype,jdbcType=VARCHAR}
+        </if>
+        <if test="pkSch!=null and pkSch=!''">
+            and sch.pk_sch = #{pkSch,jdbcType=VARCHAR}
+        </if>
+        group by sch.pk_sch,emp.CODE_EMP,emp.NAME_EMP,srv.EU_SRVTYPE,slot.NAME_DATESLOT,slot.TIME_BEGIN,slot.TIME_END,ejb.JOBNAME
+        order by 2
+	</select>
+
+	<select id="queryPreRegRecord" resultType="com.zebone.nhis.webservice.lbzy.model.PreRegRecordItem">
+        select appt.PK_SCHSRV,appt.PK_SCHRES,dept.name_dept department_Name,appt.PK_SCH schedule_ID,appt.date_appt book_Date, slot.NAME_DATESLOT noon,emp.NAME_EMP doctor_Name
+             ,decode(eu_srvtype,'0','普通','1','专家','2','特诊','3','优惠','9','急诊') reglevel_Name
+             ,0 reg_Cost,0 diag_Cost,0 other_Cost,concat(concat(to_char(appt.BEGIN_TIME,'HH24:mi'),'~'), to_char(appt.END_TIME,'HH24:mi')) clinic_Time
+             ,appt.code reg_Flow
+        from SCH_APPT appt inner join SCH_APPT_PV apv ON appt.PK_SCHAPPT=apv.PK_SCHAPPT
+                           inner join pi_master pi on appt.pk_pi=pi.pk_pi
+                           left join BD_OU_DEPT dept on appt.PK_DEPT_EX=dept.PK_DEPT
+                           left join BD_OU_EMPLOYEE emp on apv.PK_EMP_PHY=emp.PK_EMP
+                           left join BD_CODE_DATESLOT slot on appt.PK_DATESLOT=slot.PK_DATESLOT
+                           left join SCH_SRV srv on appt.PK_SCHSRV=srv.PK_SCHSRV
+        where pi.CODE_PI=#{codePi,jdbcType=VARCHAR} and appt.eu_status!='9'
+          and appt.BEGIN_TIME >= to_date(#{startDate},'yyyy-MM-dd')
+          and appt.END_TIME &lt;= to_date(#{endDate}||' 23:59:59','yyyy-MM-dd HH24:mi:ss')
+	</select>
+
+    <select id="qryPayPresDetail" parameterType="java.util.Map" resultType="com.zebone.nhis.webservice.lbzy.model.QueryToPayDetailItem">
+        select * from (
+            select pv.CODE_PV reg_Flow,
+            nvl(pres.PRES_NO,concat(pv.CODE_PV,concat(cnd.ORDSN_PARENT,concat('L',cnd.CODE_ORDTYPE)))) recipe_SEQ,
+            dt.SORTNO num,
+            (case when nvl(dt.name_cg,'·')='·' then nvl(pd.NAME,item.NAME) else dt.NAME_CG end) item_name,
+            (case when nvl(dt.SPEC,'·')='·' then nvl(pd.SPEC,item.SPEC) else dt.SPEC end) spec,
+            unit.name unit_name,
+            dt.PRICE,
+            dt.quan quantity,
+            dt.AMOUNT_PI cost,
+            nvl(pd.CODE,item.CODE) code,
+            dt.FLAG_PV,dt.PK_ITEM,itemap.code center_code,itemap.name center_name,itemap.fylb fee_type,
+            dt.PK_CGOP
+            from bl_op_dt dt
+            inner join PV_ENCOUNTER pv on dt.PK_PV=pv.PK_PV
+            inner join PI_MASTER pi on dt.PK_PI=pi.PK_PI
+            left join CN_PRESCRIPTION pres on pv.PK_PV=pres.PK_PV and dt.PK_PRES= pres.PK_PRES
+            left join CN_ORDER cnd on dt.PK_CNORD=cnd.PK_CNORD
+            left join bd_unit unit on dt.pk_unit = unit.pk_unit
+            left join bd_pd pd on dt.pk_pd = pd.pk_pd and dt.FLAG_PD='1'
+            left join bd_item item on dt.pk_item = item.pk_item and dt.FLAG_PD='0'
+            left join INS_SZYB_ITEM_MAP itemap on itemap.pk_hp=pv.PK_INSU and itemap.del_flag='0' and (pd.PK_PD=itemap.PK_ITEM or item.PK_ITEM=itemap.PK_ITEM)
+        where dt.flag_settle = '0'
+            and dt.flag_acc = '0'
+            and pi.CODE_PI = #{PatientID,jdbcType=VARCHAR}
+            <if test="RegFlow!=null and RegFlow!=''">
+                and pv.CODE_PV=#{RegFlow,jdbcType=VARCHAR}
+            </if>
+        ) tmp
+        where recipe_SEQ = #{RecipeSEQ,jdbcType=VARCHAR}
+        order by 1,2
+    </select>
+
+    <select id="findBlDeposit" parameterType="java.util.Map" resultType="com.zebone.nhis.webservice.lbzy.model.QueryPayRecordItem">
+        select st.CODE_ST invoice_NO,poi.AMOUNT total_Cost,paymode.NAME pay_Type_Name,to_char(poi.DATE_PAY,'yyyy-MM-dd HH24:mi:ss') pay_Date
+             ,hp.NAME pact_Name,pv.CODE_PV register_NO,dept.NAME_DEPT department_Name,emp.NAME_EMP doctor_Name
+        from BL_DEPOSIT poi
+                 inner join PV_ENCOUNTER pv on poi.PK_PV=pv.PK_PV
+                 inner join BL_SETTLE st on pv.PK_PV = st.PK_PV and poi.PK_SETTLE = st.PK_SETTLE and st.FLAG_CANC='0'
+                 inner join PI_MASTER pi on st.PK_PI=pi.PK_PI
+                 left join BD_OU_DEPT dept on pv.PK_DEPT=dept.PK_DEPT
+                 left join BD_OU_EMPLOYEE emp on pv.PK_EMP_PHY=emp.PK_EMP
+                 left join BD_HP hp on pv.PK_INSU = hp.PK_HP
+                 left join bd_defdoc paymode on poi.dt_paymode=paymode.code and paymode.code_defdoclist='110100'
+        where pi.CODE_PI=#{codePi,jdbcType=VARCHAR} and poi.EU_DIRECT='1' and poi.DATE_PAY>=to_date(#{startTime,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi:ss')
+          and poi.DATE_PAY &lt;=to_date(#{endTime,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi:ss')
+          and pv.eu_pvtype in('1','2','4')
+        <if test="codeEmp!=null and codeEmp!=''">
+            and exists(select 1 from bd_ou_employee ep where ep.pk_emp = st.pk_emp_st and ep.code_emp=#{codeEmp,jdbcType=VARCHAR})
+        </if>
+        order by poi.date_pay desc
+    </select>
+    <select id="findDrug" resultType="com.zebone.nhis.webservice.lbzy.model.QueryDrugItem">
+        select pd.CODE,pd.NAME,pd.SPCODE name_Initials,fac.NAME factory,doc.NAME drug_Type,ut.NAME unit,pd.SPEC specification,pd.PRICE
+        from BD_PD pd
+                 left join BD_FACTORY fac on pd.PK_FACTORY=fac.PK_FACTORY
+                 left join bd_defdoc doc on pd.dt_dosage=doc.code and doc.code_defdoclist='030400'
+                 left join bd_unit ut on pd.PK_UNIT_PACK=ut.PK_UNIT
+        where pd.SPCODE like concat(concat('%',UPPER(#{PYCode,jdbcType=VARCHAR})),'%') and pd.FLAG_STOP='0' and pd.DEL_FLAG='0'
+        order by pd.code
+    </select>
+    <select id="findItem" resultType="com.zebone.nhis.webservice.lbzy.model.QueryDrugItem">
+        select item.CODE,item.NAME,item.SPCODE name_Initials,fac.NAME factory,'~' drug_Type,ut.NAME unit,item.SPEC specification,item.PRICE
+        from BD_ITEM item
+                 left join BD_FACTORY fac on item.PK_FACTORY=fac.PK_FACTORY
+                 left join bd_unit ut on item.PK_UNIT=ut.PK_UNIT
+        where item.SPCODE like concat(concat('%',UPPER(#{PYCode,jdbcType=VARCHAR})),'%') and item.FLAG_ACTIVE='1' and item.DEL_FLAG='0'
+        order by item.code
+    </select>
+
+    <select id="findPiAccDetail" resultType="com.zebone.nhis.common.module.pi.acc.PiAccDetail">
+        select * from PI_ACC_DETAIL pd inner join PI_MASTER pi on pd.PK_PI=pi.PK_PI
+        where pi.CODE_PI=#{codePi,jdbcType=VARCHAR}
+          and pd.DATE_HAP &gt; #{startTime} and pd.DATE_HAP &lt; #{endTime}
+    </select>
+
+    <select id="findRegRecord" resultType="com.zebone.nhis.webservice.lbzy.model.QueryRegRecordItem">
+        select pv.CODE_PV reg_flow,demp.CODE_EMP doctor_ID,demp.NAME_EMP doctor_Name,to_char(pv.DATE_BEGIN,'yyyy-MM-dd HH24:mi:ss') see_time,op.TICKETNO see_NO
+             ,to_char(pv.DATE_REG,'yyyy-MM-dd HH24:mi:ss') reg_time,pi.NAME_PI patient_Name,pi.CODE_PI patient_ID,nvl(dept.NAME_PLACE,'*') department_address
+             ,sum(dt.AMOUNT) total_Cost,dept.NAME_DEPT department_Name
+             ,decode(srv.eu_srvtype,'0','普通','1','专家','2','特诊','3','优惠','9','急诊') reg_Type
+             ,DECODE(pi.DT_SEX, '02', '1', '03', '2', '9') patient_Sex_ID
+             ,GETPVAGE(pi.BIRTH_DATE,null) patient_Age
+             ,(select paymode.NAME from BL_DEPOSIT poi left join bd_defdoc paymode on poi.dt_paymode=paymode.code and paymode.code_defdoclist='110100' where poi.PK_SETTLE=st.PK_SETTLE and ROWNUM=1) pay_Type_Name
+        from PV_ENCOUNTER pv
+                 inner join PV_OP op on pv.PK_PV=op.PK_PV
+                 inner join PI_MASTER pi on pv.PK_PI=pi.PK_PI
+                 inner join bl_op_dt dt on pv.PK_PV=dt.PK_PV
+                 left join BL_SETTLE st on pv.PK_PV=st.PK_PV and dt.PK_SETTLE=st.PK_SETTLE and st.FLAG_CANC='0'
+                 left join BD_OU_DEPT dept on pv.PK_DEPT=dept.PK_DEPT
+                 left join BD_OU_EMPLOYEE demp on op.PK_EMP_PV=demp.PK_EMP
+                 left join SCH_SRV srv on op.PK_SCHSRV=srv.PK_SCHSRV
+        where pv.EU_PVTYPE in('1','2','4')
+            and pi.CODE_PI = #{codePi} and pv.EU_STATUS != '9'
+            and dt.FLAG_SETTLE='1' and dt.FLAG_PV='1'
+        and pv.DATE_REG &gt; #{startTime} and pv.DATE_REG &lt; #{endTime}
+        group by pv.CODE_PV,demp.CODE_EMP,demp.NAME_EMP,pv.DATE_BEGIN,op.TICKETNO,pv.DATE_REG,pi.NAME_PI,pi.CODE_PI,dept.NAME_PLACE
+                           ,srv.eu_srvtype,pi.DT_SEX,pi.BIRTH_DATE,dept.NAME_DEPT,st.PK_SETTLE
+    </select>
+
+    <sql id="dtDetailSql">
+        select pv.CODE_PV reg_Flow,pi.CODE_PI patient_ID,pi.NAME_PI patient_Name,dept.CODE_DEPT department_ID,dept.NAME_DEPT department_Name
+             ,emp.CODE_EMP doctor_ID,emp.NAME_EMP doctor_Name,'*' recipe_NO,to_char(pv.DATE_BEGIN,'yyyy-MM-dd HH24:mi:ss') see_Time
+             ,dt.AMOUNT_PI total_Cost
+             ,dept.CODE_DEPT dept_ID,dept.NAME_DEPT dept_Name,pv.CODE_PV see_ID,pi.ID_NO id_card_NO
+             ,nvl(pi.TEL_NO,pi.MOBILE) tel,to_char(dt.DATE_CG,'yyyy-MM-dd') pres_date,dt.AMOUNT_PI fee
+             ,(select diag.NAME_DIAG from pv_diag diag where diag.PK_PV=pv.PK_PV and diag.FLAG_MAJ='1') diagnosis
+             ,DECODE(pi.DT_SEX, '02', '1', '03', '2', '9') patient_Sex_ID
+             ,nvl(pres.PRES_NO,concat(pv.CODE_PV,concat(cnd.ORDSN_PARENT,concat('L',cnd.CODE_ORDTYPE)))) recipe_SEQ
+             ,cate.NAME recipe_Describe
+        from pv_encounter pv
+                 inner join pi_master pi on pv.pk_pi=pi.pk_pi
+                 inner join BL_OP_DT dt on dt.PK_PV=pv.PK_PV
+                 left join CN_PRESCRIPTION pres on pv.PK_PV=pres.PK_PV and dt.PK_PRES= pres.PK_PRES
+                 left join CN_ORDER cnd on dt.PK_CNORD=cnd.PK_CNORD
+                 left join bd_ou_dept dept on pv.PK_DEPT=dept.PK_DEPT
+                 left join BD_OU_EMPLOYEE emp on pv.pk_emp_phy = emp.PK_EMP
+                 left join BD_ITEMCATE cate on cate.PK_ITEMCATE=dt.PK_ITEMCATE
+        where pi.code_pi=#{codePi,jdbcType=VARCHAR}
+          and pv.EU_STATUS !='9' and dt.FLAG_SETTLE='0' and dt.DEL_FLAG='0' and pv.eu_pvtype in('1','2','4')
+    </sql>
+
+    <select id="qryPayPresRegInfo" resultType="com.zebone.nhis.webservice.lbzy.model.QueryToPayItem">
+        <include refid="dtDetailSql"/>
+    </select>
+
+    <select id="qryPayPresInfo" resultType="com.zebone.nhis.webservice.lbzy.model.paydt.QueryToPayPres">
+        <include refid="dtDetailSql"/>
+    </select>
+
+    <select id="qryPayBlOpDt" resultType="com.zebone.nhis.webservice.lbzy.model.ipin.BlOpDtFeeVo">
+        select dt.*,pres.PRES_NO,concat(pv.CODE_PV,concat(cnd.ORDSN_PARENT,concat('L',cnd.CODE_ORDTYPE))) com_No
+        from BL_OP_DT dt
+        inner join PV_ENCOUNTER pv on dt.PK_PV = pv.PK_PV
+        inner join PI_MASTER pi on pv.PK_PI=pi.PK_PI
+        left join CN_PRESCRIPTION pres on pv.PK_PV=pres.PK_PV and dt.PK_PRES= pres.PK_PRES
+        left join CN_ORDER cnd on dt.PK_CNORD=cnd.PK_CNORD
+        where pi.CODE_PI=#{codePi,jdbcType=VARCHAR}
+        and pv.code_pv in
+        <foreach collection="codePvs" item="codePv" open="(" separator="," close=")">
+            #{codePv,jdbcType=VARCHAR}
+        </foreach>
+        and dt.FLAG_SETTLE='0' and dt.flag_acc = '0'
+        and pv.DEL_FLAG = '0'
+        and pv.FLAG_CANCEL = '0'
+        and pv.EU_PVTYPE in ('1', '2', '4')
+    </select>
+
+    <select id="qryPayRecordDetail" resultType="com.zebone.nhis.webservice.lbzy.model.paydt.QueryPayRecordDetail">
+        select nvl(item.NAME, pd.NAME) item_name,dt.QUAN quantity,dt.PK_UNIT
+             ,ut.NAME unit,dt.PRICE,dt.AMOUNT
+        from BL_OP_DT dt
+                 inner join BL_SETTLE st on dt.PK_SETTLE=st.PK_SETTLE
+                 inner join PV_ENCOUNTER pv on st.PK_PV = pv.PK_PV
+                 left join BD_ITEM item on dt.PK_ITEM=item.PK_ITEM and nvl(dt.FLAG_PD,'0')='0'
+                 left join BD_PD pd on dt.PK_PD=pd.PK_PD and nvl(dt.FLAG_PD,'0')='1'
+                 left join BD_UNIT ut on nvl(dt.PK_UNIT,dt.PK_UNIT_PD)=ut.PK_UNIT
+        where pv.CODE_PV=#{codePv,jdbcType=VARCHAR}
+          and pv.EU_PVTYPE in('1','2','4')
+        <if test="codeSt!=null and codeSt!=''">
+            and st.code_st=#{codeSt,jdbcType=VARCHAR}
+        </if>
+        <if test="codeEmp!=null and codeEmp!=''">
+            and exists(select 1 from bd_ou_employee emp where emp.pk_emp = st.pk_emp_st and emp.code_emp=#{codeEmp,jdbcType=VARCHAR})
+        </if>
+    </select>
+
+    <select id="queryInHospital" resultType="com.zebone.nhis.webservice.lbzy.model.ipin.QueryInHospital">
+        select pv.pk_pv,
+               pm.CODE_IP in_patient_NO,
+               pm.CODE_IP in_Patient_ID,
+               pm.NAME_PI patient_Name,
+               DECODE(pm.DT_SEX, '02', '1', '03', '2', '9') patient_Sex_ID,
+               to_char(pm.BIRTH_DATE,'yyyy-MM-dd') birthday,
+               GETPVAGE(pm.BIRTH_DATE,null) patient_age,
+               to_char(nt.DATE_BEGIN,'yyyy/MM/dd HH24:mi:ss') in_Date,
+               pv.bed_no bed_NO,
+               dept.code_dept department_Code,
+               dept.name_dept department_Name,
+               pm.ID_NO id_card_no,
+               hp.code as pact_code,
+               hp.name as pact_Name
+        from
+            pv_encounter pv
+                inner join pi_master pm on pv.pk_pi=pm.pk_pi
+                left join pv_ip ip on ip.pk_pv=pv.pk_pv
+                left join PV_ADT nt on pv.PK_PV=nt.PK_PV and nt.flag_admit='1'
+                left join bd_ou_dept dept on pv.pk_dept = dept.pk_dept
+                left join bd_hp hp on pv.pk_insu=hp.pk_hp
+                LEFT JOIN pi_card card ON pm.pk_pi = card.pk_pi and card.eu_status='0'
+        <where>
+            <choose>
+                <when test="codeIp==null and idNo ==null">
+                    and 1 !=1
+                </when>
+                <when test="codeIp !=null">
+                    and pm.CODE_IP=#{codeIp,jdbcType=VARCHAR}
+                </when>
+                <when test="idNo !=null">
+                    and pm.id_no=#{idNo,jdbcType=VARCHAR}
+                </when>
+            </choose>
+            and pv.flag_in='1' and pv.EU_PVTYPE='3'
+        </where>
+    </select>
+    
+    <select id="qryAptTime" resultType="com.zebone.nhis.webservice.lbzy.model.reg.ApptTimeItem">
+        select concat(concat(to_char(tk.BEGIN_TIME,'HH24:mi:ss'),'~'),to_char(tk.END_TIME,'HH24:mi:ss')) time_Range,
+               count(1) as remain_Num
+        from SCH_SCH sch
+                 inner join SCH_RESOURCE res on sch.PK_SCHRES=res.PK_SCHRES
+                 inner join sch_ticket tk on sch.PK_SCH=tk.PK_SCH
+                 left join bd_ou_dept dept on sch.PK_DEPT=dept.PK_DEPT
+        where sch.EU_STATUS='8'
+          and sch.EU_SCHCLASS='0'
+          and sch.del_flag = '0'
+          and sch.flag_stop = '0'
+          and tk.FLAG_USED='0'
+          and tk.FLAG_STOP='0'
+          and tk.FLAG_APPT='1'
+          and sch.date_work = to_date(#{Date,jdbcType=VARCHAR}, 'yyyy-mm-dd')
+          <if test="DepartmentID!=null and DepartmentID!=''">
+              and dept.code_dept=#{DepartmentID,jdbcType=VARCHAR}
+          </if>
+        group by to_char(tk.BEGIN_TIME,'HH24:mi:ss'),to_char(tk.END_TIME,'HH24:mi:ss')
+    </select>
+
+    <select id="qryApptInfo" resultType="com.zebone.nhis.webservice.lbzy.model.reg.RegApptVo">
+        select appt.CODE tran_Serial_NO,appt.CODE reg_Flow,emp.CODE_EMP doctor_ID,emp.NAME_EMP doctor_Name
+             ,appt.BEGIN_TIME see_Time,appt.TICKET_NO see_NO,pi.NAME_PI patient_Name,pi.CODE_PI patient_ID
+             ,nvl(dept.NAME_PLACE,'*') department_Address
+        from SCH_APPT appt
+                 inner join PI_MASTER pi on appt.PK_PI = pi.PK_PI
+                 inner join SCH_RESOURCE res on appt.PK_SCHRES=res.PK_SCHRES
+                 left join BD_OU_EMPLOYEE emp on res.PK_EMP=emp.PK_EMP
+                 left join BD_OU_DEPT dept on appt.PK_DEPT_EX=dept.PK_DEPT
+        where appt.PK_SCHAPPT=#{pkAppt,jdbcType=VARCHAR} and appt.PK_PI=#{pkPi,jdbcType=VARCHAR}
+    </select>
+
+    <select id="qryConfirmReg" resultType="com.zebone.nhis.pv.reg.vo.PiMasterRegVo">
+        select appt.PK_SCHAPPT,appt.TICKET_NO,appt.PK_SCHRES,appt.DATE_APPT,pi.NAME_PI
+             ,appt.PK_DEPT_EX pk_dept,decode(srv.EU_SRVTYPE,'9','2','1') eu_pvtype,appt.pk_pi
+             ,pi.DT_SEX,pi.BIRTH_DATE,pi.ADDRESS,pi.DT_MARRY,pi.NAME_REL,pi.IDNO_REL,pi.TEL_REL,appt.PK_SCHSRV pk_srv
+             ,appt.PK_SCHSRV,appt.PK_DATESLOT,appt.PK_SCH,appt.DT_APPTYPE,srv.EU_SRVTYPE
+             ,pi.PK_ORG,pi.PK_PICATE,appt.PK_SCHAPPT pk_appt, '-2' inv_status
+        from SCH_APPT appt
+                 inner join SCH_APPT_PV apv on appt.PK_SCHAPPT=apv.PK_SCHAPPT
+                 inner join pi_master pi on appt.PK_PI=pi.PK_PI
+                 left join SCH_SRV srv on appt.PK_SCHSRV=srv.PK_SCHSRV
+        where pi.CODE_PI=#{PatientID,jdbcType=VARCHAR}
+            and appt.CODE=#{RegFlow,jdbcType=VARCHAR}
+            and appt.pk_sch=#{ScheduleCode,jdbcType=VARCHAR}
+            and appt.eu_status='0'
+    </select>
+
+    <select id="qryCofirmRegFee" resultType="com.zebone.nhis.bl.pub.vo.ItemPriceVo">
+        SELECT item.PK_ITEM,item.SPEC,item.PK_UNIT,item.FLAG_PD,item.PRICE,item.NAME name_cg,item.PK_ITEMCATE
+             ,#{pkPres} pk_pres,QUAN,PRICE price_org,RATIO_SELF
+        FROM bd_item item
+                 LEFT JOIN bd_ord_item orit ON  orit.pk_item = item.pk_item and orit.del_flag = '0'
+                 LEFT JOIN sch_srv_ord srv ON orit.pk_ord = srv.pk_ord and srv.del_flag = '0'
+        WHERE  srv.pk_schsrv = #{pkSchsrv,jdbcType=VARCHAR}
+    </select>
+
+    <select id="qryRegSch" resultType="com.zebone.nhis.pv.reg.vo.PiMasterRegVo">
+        select decode(srv.EU_SRVTYPE,'9','2','1') eu_pvtype,sch.pk_sch
+             ,sch.PK_SCHRES,sch.PK_SCHSRV,sch.PK_DATESLOT,sch.PK_DEPT,sch.PK_SCHSRV pk_srv
+             ,sch.PK_ORG,sch.PK_SCHRES pk_pres
+        from SCH_SCH sch
+                 left join SCH_SRV srv on sch.PK_SCHSRV=srv.PK_SCHSRV
+        where sch.FLAG_STOP='0' and sch.EU_STATUS='8'
+          and sch.PK_SCH=#{ScheduleCode,jdbcType=VARCHAR}
+          and to_char(sch.DATE_WORK,'yyyy-MM-dd')=#{now,jdbcType=VARCHAR}
+    </select>
+
+    <select id="qryRegInfo" resultType="com.zebone.nhis.webservice.lbzy.model.reg.RegApptVo">
+        select pv.CODE_PV tran_Serial_NO,pv.CODE_PV reg_Flow,emp.CODE_EMP doctor_ID,emp.NAME_EMP doctor_Name
+             ,pv.DATE_BEGIN see_Time,nvl(op.TICKETNO,er.TICKETNO) see_NO,pi.NAME_PI patient_Name,pi.CODE_PI patient_ID
+             ,nvl(dept.NAME_PLACE,'*') department_Address
+        from PV_ENCOUNTER pv
+             left join PV_OP op on pv.PK_PV=op.PK_PV and pv.EU_PVTYPE in('1','4')
+             left join PV_OP er on pv.PK_PV=er.PK_PV and pv.EU_PVTYPE = '2'
+             left join SCH_SCH sch on sch.PK_SCH in(op.PK_SCH,er.PK_SCH)
+             inner join PI_MASTER pi on pv.PK_PI = pi.PK_PI
+             inner join SCH_RESOURCE res on sch.PK_SCHRES=res.PK_SCHRES
+             left join BD_OU_EMPLOYEE emp on res.PK_EMP=emp.PK_EMP
+             left join BD_OU_DEPT dept on pv.PK_DEPT=dept.PK_DEPT
+        where pv.EU_STATUS!='9' and pv.PK_PV=#{pkPv,jdbcType=VARCHAR}
+    </select>
+
+    <select id="qryPrePay" resultType="com.zebone.nhis.webservice.lbzy.model.ipin.QueryInPay">
+        select pi.CODE_IP in_Patient_ID,
+        depo.REPT_NO tran_Serial_NO,
+        depo.amount pre_Pay_Cost,
+        paymode.name pay_Way,
+        decode(depo.FLAG_SETTLE,'0','未结算','1','已结算') is_Balance,
+        depo.name_emp_pay operator_NO,
+        to_char(depo.date_pay,'yyyy-MM-dd HH24:mi:ss') oper_Date
+        from bl_deposit depo
+        inner join pv_encounter pv on depo.pk_pv=pv.pk_pv
+        inner join pi_master pi on pv.pk_pi=pi.pk_pi
+        inner join bd_defdoc paymode on depo.dt_paymode=paymode.code and paymode.code_defdoclist='110100'
+        where pi.CODE_IP=#{InPatientID,jdbcType=VARCHAR} and depo.eu_pvtype = '3'
+        and depo.date_pay >= to_date(substr(#{StartDate,jdbcType=VARCHAR}, 1, 8)||'000000', 'YYYYMMDDHH24MISS')
+        and depo.date_pay &lt;= to_date(substr(#{EndDate,jdbcType=VARCHAR}, 1, 8)||'235959', 'YYYYMMDDHH24MISS')
+    </select>
+
+    <select id="queryFeeInDay" resultType="com.zebone.nhis.webservice.lbzy.model.ipin.QueryInHospitalDay">
+        select sum(dt.AMOUNT) total_Cost,to_char(dt.DATE_HAP,'yyyy-MM-dd') fee_Date
+        from BL_IP_DT dt
+            inner join pi_master pi on dt.PK_PI=pi.PK_PI
+            inner join PV_ENCOUNTER pv on dt.PK_PV=pv.PK_PV and pi.PK_PI=pv.PK_PI
+        where pi.CODE_IP =#{InPatientID,jdbcType=VARCHAR} and pv.eu_pvtype='3' and pv.FLAG_IN='1'
+            and dt.DATE_HAP >= to_date(#{BeginDate,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi:ss')
+            and dt.DATE_HAP &lt;= to_date(#{EndDate,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi:ss')
+        group by to_char(dt.DATE_HAP,'yyyy-MM-dd')
+    </select>
+    
+    <select id="queryInHospitalDetail" resultType="com.zebone.nhis.webservice.lbzy.model.ipin.QueryInHospitalDetail">
+        select dt.AMOUNT total_cost,
+               (
+                   SELECT DECODE(EU_LEVEL, '0', '甲类', '1', '乙类', '2', '全自费', '未知')
+                   FROM bd_item_hp itemhp
+                   WHERE itemhp.del_flag = '0' and itemhp.PK_ITEM in(dt.PK_ITEM,dt.PK_PD) and ROWNUM=1
+               )
+                   AS item_type,
+               dt.NAME_CG item_name,
+               dt.SPEC,
+               ut.NAME unit,dt.QUAN quantity,dt.PRICE,hp.NAME pact_Name,hp.CODE pact_Code,
+               to_char(dt.DATE_HAP,'yyyy-MM-dd HH24:mi:ss') fee_Date,
+               cate.NAME fee_Type
+        from BL_IP_DT dt
+                 inner join pi_master pi on dt.PK_PI=pi.PK_PI
+                 inner join PV_ENCOUNTER pv on dt.PK_PV=pv.PK_PV and pi.PK_PI=pv.PK_PI
+                 left join bd_unit ut on dt.PK_UNIT=ut.PK_UNIT
+                 left join BD_HP hp on pv.PK_INSU = hp.PK_HP
+                 left join BD_ITEMCATE cate on cate.PK_ITEMCATE=dt.PK_ITEMCATE
+        where pi.CODE_IP =#{InPatientID,jdbcType=VARCHAR} and pv.eu_pvtype='3' and pv.FLAG_IN='1'
+          and dt.DATE_HAP >= to_date(#{BeginDate,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi:ss')
+          and dt.DATE_HAP &lt;= to_date(#{EndDate,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi:ss')
+    </select>
+</mapper>

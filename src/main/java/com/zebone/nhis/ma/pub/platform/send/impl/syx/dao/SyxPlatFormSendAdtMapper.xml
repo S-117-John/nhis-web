@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.platform.send.impl.syx.dao.SyxPlatFormSendAdtMapper">
+	<select id="qryPiInfo" parameterType="java.lang.String" resultType="DynaBean">
+		SELECT
+			pi.*,
+			ca.inner_no,
+			ca.card_no,
+			ca.flag_active
+		FROM
+			pi_master pi
+			left join pi_card ca on pi.pk_pi = ca.pk_pi and ca.eu_status = '0' and ca.dt_cardtype ='01'
+		WHERE
+			pi.pk_pi = #{pkPi}
+			ORDER BY ca.create_time desc	
+	</select>
+	
+	<select id="qryOrg" parameterType="java.lang.String" resultType="DynaBean">
+		select * from bd_ou_org where pk_Org = #{pkOrg}
+	</select>
+	<select id="qryPvEn" parameterType="java.lang.String" resultType="DynaBean">
+		select  * from PV_ENCOUNTER where pk_pv = #{pkPv}
+	</select>
+	<select id="qryEmployee" parameterType="java.lang.String" resultType="DynaBean">
+		select * from bd_ou_employee where pk_emp = #{pkEmpPhy}
+	</select>
+	<select id="qryDept" parameterType="java.lang.String" resultType="DynaBean">
+		select * from bd_ou_dept where pk_dept = #{pkDept}
+	</select>
+	<select id="qryIp" parameterType="java.lang.String" resultType="DynaBean">
+		select * from pv_ip where pk_pv = #{pkPv}
+	</select>
+	<select id="qryDiag" parameterType="java.lang.String" resultType="DynaBean">
+		select * from pv_diag where pk_pv = #{pkPv}
+	</select>
+	<select id="qryPvAll" parameterType="java.lang.String" resultType="DynaBean">
+		select
+		pi.pk_pi,
+		pi.code_ip,
+		pv.code_Pv,
+		pv.eu_pvtype,
+		pv.date_admit,
+		pi.code_pi,
+		pi.id_No,
+		pi.name_Pi,
+		emp.code_Emp,
+		pv.name_Emp_Tre ,
+		dept.code_Dept,
+		dept.name_Dept,
+		pv.bed_No,
+		org.code_Org,
+		ip.ip_times,
+		pv.date_Begin,
+		hpdoc.name_std hpname,
+		hpdoc.code_std hpcode,
+		hp.eu_hptype,
+		bed.houseno,
+		deptns.code_dept code_dept_ns,
+		deptns.name_dept name_dept_ns,
+        bed.name bed_name
+		from PV_ENCOUNTER pv
+		inner join pi_master pi on pv.pk_pi = pi.pk_pi
+		inner join bd_ou_org org on pv.pk_org = org.pk_org
+		inner join  pv_diag diag on diag.pk_pv = pv.pk_pv  and diag.flag_maj='1'
+		inner join pv_ip ip on ip.pk_pv = pv.pk_pv
+		inner join bd_ou_dept dept on pv.pk_dept = dept.pk_dept
+		left join bd_ou_dept deptns on deptns.pk_dept=pv.pk_dept_ns
+		LEFT JOIN bd_ou_employee emp on emp.pk_emp = pv.pk_emp_tre
+		LEFT JOIN bd_hp hp on hp.pk_hp = pv.pk_insu
+		LEFT JOIN bd_res_bed bed on bed.code = pv.bed_no and bed.pk_ward=pv.pk_dept_ns
+		LEFT JOIN bd_defdoc hpdoc on hpdoc.code = hp.dt_mdpaytype and hpdoc.code_defdoclist = '040009'
+		where pv.pk_pv = #{pkPv}  
+	</select>
+	
+	<select id="qryPvAdtInfo" parameterType="java.util.Map" resultType="DynaBean">
+	select
+			distinct
+			pi.name_pi,
+			pi.code_ip,
+			pi.pk_pi,
+			pip.ip_times,
+			pv.code_pv,
+			pi.code_pi,
+			adt.date_begin,
+			dept.code_dept,
+			dept.name_dept,
+			deptns.code_dept    code_dept_ns,
+			deptns.name_dept    name_dept_ns,
+			brb.houseno put_houseno,
+			brb.name put_bed_name,
+			brb.code put_bed_code,
+			pv.bed_no,
+			adtout.date_end,
+			deptout.code_dept   out_code_dept,
+			deptout.name_dept   out_name_dept,
+			deptnsout.code_dept out_ns_code_dept,
+			deptnsout.name_dept out_ns_name_dept,
+			brbout.houseno out_houseno,
+			brbout.name out_bed_name,
+			brbout.code out_bed_code,
+			bedout.bedno out_bedno,
+			adt.pk_adt 
+		from pv_encounter pv
+			inner join pi_master pi on pi.pk_pi = pv.pk_pi
+			inner join pv_ip pip on pip.pk_pv = pv.pk_pv
+			inner join pv_adt adt on adt.pk_pv = pv.pk_pv and adt.date_end is null and adt.pk_adt_source is not null
+			inner join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+			inner join bd_ou_dept deptns on deptns.pk_dept = pv.pk_dept_ns
+			inner join bd_res_bed brb on brb.code = pv.bed_no and brb.pk_ward = pv.pk_dept_ns
+			inner join pv_adt adtout on adtout.pk_adt = adt.pk_adt_source
+			left join bd_ou_dept deptout on deptout.pk_dept = adtout.pk_dept
+			left join bd_ou_dept deptnsout on deptnsout.pk_dept = adtout.pk_dept_ns
+			left join (select
+									 pb.pk_pv,
+									 pb.bedno
+								 from pv_bed pb
+								 where pb.date_end = (select max(date_end)
+																			from pv_bed pbb
+																			where pbb.pk_pv = pb.pk_pv)) bedout
+				on bedout.pk_pv = pv.pk_pv
+			left join bd_res_bed brbout on brbout.code = bedout.bedno and brbout.pk_ward = adtout.pk_dept_ns
+		where pv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="qryPkPv" parameterType="java.lang.String" resultType="java.lang.String">
+		select pk_pv from pv_encounter where ( eu_status = '0' or eu_status = '1') and pk_pi = #{pkPi}
+	</select>
+	
+	<select id="qryIcd" parameterType="java.util.List" resultType="DynaBean">
+		select 
+		diag.diagcode, 
+		diag.diagname, 
+		doc.code,
+		doc.name
+		from bd_term_diag diag 
+		inner join bd_defdoc doc on doc.code = diag.dt_system and code_defdoclist = '060000' 
+		where diagcode in 
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+	</select>
+	<select id="getMainHpInfo" parameterType="java.lang.String" resultType="DynaBean">
+		SELECT
+			hpdoc.code_std,
+			hpdoc.name_std
+		FROM
+			pi_insurance ins
+			left join bd_hp hp on ins.pk_hp = hp.pk_hp
+			LEFT JOIN bd_defdoc hpdoc on hpdoc.code = hp.dt_mdpaytype and hpdoc.code_defdoclist = '040009'
+		WHERE
+			ins.del_flag = '0'
+		AND ins.pk_pi = #{pkPi}
+				ORDER BY
+		ins.sort_no
+	</select>
+	
+	<select id="qryPvOutAll" parameterType="java.lang.String" resultType="DynaBean">
+	    select distinct	    
+			  pi.code_ip,
+			  pvi.ip_times,
+			  pv.code_pv,
+			  pv.eu_pvtype,
+			  to_char(pv.date_end,'yyyymmddhhmiss') date_end,
+			  to_char(pv.date_begin,'yyyymmddhhmiss') date_begin,
+			  pi.pk_pi,
+			  pi.id_no,
+			  pi.name_pi,
+			  dept.code_dept,
+			  dept.name_dept,
+			  ward.CODE_DEPT code_dept_ns,
+			  ward.NAME_DEPT name_dept_ns,
+			  diag.pk_diag,
+			  diag.code_icd,
+			  diag.name_diag,
+			  diag.pk_emp_diag
+				from pv_encounter pv
+				     inner join pv_ip pvi on pvi.PK_PV=pv.PK_PV
+				     inner join pi_master pi on pi.pk_pi=pv.PK_PI
+				     inner join PV_DIAG diag on diag.PK_PV=pv.PK_PV
+				     inner join bd_ou_dept dept on dept.PK_DEPT=pv.PK_DEPT
+				     inner join BD_OU_DEPT ward on ward.PK_DEPT=pv.PK_DEPT_NS
+				where pv.PK_PV = #{pkPv}			        
+	</select>
+	
+	<select id="qryCodeEmpByEmployee" parameterType="java.lang.String" resultType="java.lang.String">
+	        select code_emp from bd_ou_employee where pk_emp = #{pkEmpDiag}
+	</select>
+		
+	
+</mapper>

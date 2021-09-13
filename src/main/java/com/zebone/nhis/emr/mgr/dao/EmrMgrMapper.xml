@@ -1,0 +1,1037 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.emr.mgr.dao.EmrMgrMapper">
+    <resultMap id="ResultMapBorrowRec" type="com.zebone.nhis.common.module.emr.mgr.EmrBorrowRec">
+        <id column="PK_BORROW" jdbcType="CHAR" property="pkBorrow"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="PK_PI" jdbcType="VARCHAR" property="pkPi"/>
+        <result column="PK_PV" jdbcType="VARCHAR" property="pkPv"/>
+        <result column="TIMES" jdbcType="DECIMAL" property="times"/>
+        <result column="PK_EMP_APPLY" jdbcType="VARCHAR" property="pkEmpApply"/>
+        <result column="APPLY_DATE" jdbcType="DATE" property="applyDate"/>
+        <result column="TIME_LIMIT" jdbcType="DECIMAL" property="timeLimit"/>
+        <result column="BEGIN_DATE" jdbcType="DATE" property="beginDate"/>
+        <result column="END_DATE" jdbcType="DATE" property="endDate"/>
+        <result column="APPLY_TXT" jdbcType="VARCHAR" property="applyTxt"/>
+        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+        <result column="PK_EMP_APPROVE" jdbcType="VARCHAR" property="pkEmpApprove"/>
+        <result column="APPROVE_DATE" jdbcType="DATE" property="approveDate"/>
+        <result column="RETURN_DATE" jdbcType="DATE" property="returnDate"/>
+        <result column="PK_EMP_RECEIVE" jdbcType="VARCHAR" property="pkEmpReceive"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="AGE_TXT" jdbcType="VARCHAR" property="ageTxt"/>
+        <result column="SEX_NAME" jdbcType="VARCHAR" property="sexName"/>
+    </resultMap>
+    <select id="getEmrBorrowRecById" resultMap="ResultMapBorrowRec">
+        SELECT
+            *
+        FROM
+             EMR_BORROW_REC
+        WHERE            
+            PK_BORROW = #{pkBorrow,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllEmrBorrowRec" resultMap="ResultMapBorrowRec">
+          SELECT * FROM EMR_BORROW_REC 
+    </select>
+    
+    <delete id="deleteEmrBorrowRec">
+        DELETE
+        FROM
+             EMR_BORROW_REC
+        WHERE            
+            PK_BORROW = #{pkBorrow,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrBorrowRec" parameterType="com.zebone.nhis.common.module.emr.mgr.EmrBorrowRec" >
+        INSERT INTO EMR_BORROW_REC
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkBorrow != null" >
+                PK_BORROW,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="pkPv != null" >
+                PK_PV,
+            </if>
+            <if test="pkPi != null" >
+                PK_PI,
+            </if>
+            <if test="times != null" >
+                TIMES,
+            </if>
+            <if test="pkEmpApply != null" >
+                PK_EMP_APPLY,
+            </if>
+            <if test="applyDate != null" >
+                APPLY_DATE,
+            </if>
+            <if test="timeLimit != null" >
+                TIME_LIMIT,
+            </if>
+            <if test="beginDate != null" >
+                BEGIN_DATE,
+            </if>
+            <if test="endDate != null" >
+                END_DATE,
+            </if>
+            <if test="applyTxt != null" >
+                APPLY_TXT,
+            </if>
+            <if test="euStatus != null" >
+                EU_STATUS,
+            </if>
+            <if test="pkEmpApprove != null" >
+                PK_EMP_APPROVE,
+            </if>
+            <if test="approveDate != null" >
+                APPROVE_DATE,
+            </if>
+            <if test="returnDate != null" >
+                RETURN_DATE,
+            </if>
+            <if test="pkEmpReceive != null" >
+                PK_EMP_RECEIVE,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkBorrow != null" >
+                #{pkBorrow,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkPv != null" >
+                #{pkPv,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkPi != null" >
+                #{pkPi,jdbcType=VARCHAR},
+            </if> 
+            <if test="times != null" >
+                #{times,jdbcType=DECIMAL},
+            </if> 
+            <if test="pkEmpApply != null" >
+                #{pkEmpApply,jdbcType=VARCHAR},
+            </if> 
+            <if test="applyDate != null" >
+                #{applyDate,jdbcType=DATE},
+            </if> 
+            <if test="timeLimit != null" >
+                #{timeLimit,jdbcType=DECIMAL},
+            </if> 
+            <if test="beginDate != null" >
+                #{beginDate,jdbcType=DATE},
+            </if> 
+            <if test="endDate != null" >
+                #{endDate,jdbcType=DATE},
+            </if> 
+            <if test="applyTxt != null" >
+                #{applyTxt,jdbcType=VARCHAR},
+            </if> 
+            <if test="euStatus != null" >
+                #{euStatus,jdbcType=CHAR},
+            </if> 
+            <if test="pkEmpApprove != null" >
+                #{pkEmpApprove,jdbcType=VARCHAR},
+            </if> 
+            <if test="approveDate != null" >
+                #{approveDate,jdbcType=DATE},
+            </if> 
+            <if test="returnDate != null" >
+                #{returnDate,jdbcType=DATE},
+            </if> 
+            <if test="pkEmpReceive != null" >
+                #{pkEmpReceive,jdbcType=VARCHAR},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrBorrowRec" parameterType="com.zebone.nhis.common.module.emr.mgr.EmrBorrowRec" >
+        UPDATE EMR_BORROW_REC
+        <set>
+            <if test="pkBorrow != null" >
+                PK_BORROW = #{pkBorrow,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="pkPv != null" >
+                PK_PV = #{pkPv,jdbcType=VARCHAR},
+            </if>
+            <if test="pkPi != null" >
+                PK_PI = #{pkPi,jdbcType=VARCHAR},
+            </if>
+            <if test="times != null" >
+                TIMES = #{times,jdbcType=DECIMAL},
+            </if>
+            <if test="pkEmpApply != null" >
+                PK_EMP_APPLY = #{pkEmpApply,jdbcType=VARCHAR},
+            </if>
+            <if test="applyDate != null" >
+                APPLY_DATE = #{applyDate,jdbcType=DATE},
+            </if>
+            <if test="timeLimit != null" >
+                TIME_LIMIT = #{timeLimit,jdbcType=DECIMAL},
+            </if>
+            <if test="beginDate != null" >
+                BEGIN_DATE = #{beginDate,jdbcType=DATE},
+            </if>
+            <if test="endDate != null" >
+                END_DATE = #{endDate,jdbcType=DATE},
+            </if>
+            <if test="applyTxt != null" >
+                APPLY_TXT = #{applyTxt,jdbcType=VARCHAR},
+            </if>
+            <if test="euStatus != null" >
+                EU_STATUS = #{euStatus,jdbcType=CHAR},
+            </if>
+            <if test="pkEmpApprove != null" >
+                PK_EMP_APPROVE = #{pkEmpApprove,jdbcType=VARCHAR},
+            </if>
+            <if test="approveDate != null" >
+                APPROVE_DATE = #{approveDate,jdbcType=DATE},
+            </if>
+            <if test="returnDate != null" >
+                RETURN_DATE = #{returnDate,jdbcType=DATE},
+            </if>
+            <if test="pkEmpReceive != null" >
+                PK_EMP_RECEIVE = #{pkEmpReceive,jdbcType=VARCHAR},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_BORROW = #{pkBorrow,jdbcType=CHAR}
+    </update>
+    
+        <resultMap id="ResultMapBorrowDoc" type="com.zebone.nhis.common.module.emr.mgr.EmrBorrowDoc">
+        <id column="PK_BORROW_DOC" jdbcType="CHAR" property="pkBorrowDoc"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="PK_BORROW" jdbcType="VARCHAR" property="pkBorrow"/>
+        <result column="PK_REC" jdbcType="VARCHAR" property="pkRec"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+        <result column="TYPE_NAME" jdbcType="VARCHAR" property="typeName"/>
+    </resultMap>
+    <select id="getEmrBorrowDocById" resultMap="ResultMapBorrowDoc">
+        SELECT
+            *
+        FROM
+             EMR_BORROW_DOC
+        WHERE            
+            PK_BORROW_DOC = #{pkBorrowDoc,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllEmrBorrowDoc" resultMap="ResultMapBorrowDoc">
+          SELECT * FROM EMR_BORROW_DOC 
+    </select>
+    
+    <delete id="deleteEmrBorrowDoc">
+        DELETE
+        FROM
+             EMR_BORROW_DOC
+        WHERE            
+            PK_BORROW_DOC = #{pkBorrowDoc,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrBorrowDoc" parameterType="com.zebone.nhis.common.module.emr.mgr.EmrBorrowDoc" >
+        INSERT INTO EMR_BORROW_DOC
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkBorrowDoc != null" >
+                PK_BORROW_DOC,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="pkBorrow != null" >
+                PK_BORROW,
+            </if>
+            <if test="pkRec != null" >
+                PK_REC,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkBorrowDoc != null" >
+                #{pkBorrowDoc,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkBorrow != null" >
+                #{pkBorrow,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkRec != null" >
+                #{pkRec,jdbcType=VARCHAR},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrBorrowDoc" parameterType="com.zebone.nhis.common.module.emr.mgr.EmrBorrowDoc" >
+        UPDATE EMR_BORROW_DOC
+        <set>
+            <if test="pkBorrowDoc != null" >
+                PK_BORROW_DOC = #{pkBorrowDoc,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="pkBorrow != null" >
+                PK_BORROW = #{pkBorrow,jdbcType=VARCHAR},
+            </if>
+            <if test="pkRec != null" >
+                PK_REC = #{pkRec,jdbcType=VARCHAR},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_BORROW_DOC = #{pkBorrowDoc,jdbcType=CHAR}
+    </update>
+    
+    <select id="queryBorrowRecList" resultMap="ResultMapBorrowRec">
+        SELECT
+            rec.*,pat.name,pat.age_txt,pat.sex_name,pat.pat_no,
+            emp.name emp_apply_name,empapv.name emp_approve_name,emprec.name emp_receive_name
+        FROM
+              EMR_BORROW_REC rec 
+		inner join view_emr_pat_list pat
+		    on rec.pk_pv = pat.pk_pv
+		left outer join view_emr_emp_list emp
+		    on rec.pk_emp_apply=emp.pk_emp
+		left outer join view_emr_emp_list empapv
+		    on rec.pk_emp_approve=empapv.pk_emp
+		left outer join view_emr_emp_list emprec
+		    on rec.pk_emp_receive=emprec.pk_emp
+        where nvl(rec.del_flag,'0')!='1'
+   	    <if test="pkPv != null" >
+            and rec.pk_pv = #{pkPv,jdbcType=VARCHAR}
+        </if>
+   	    <if test="pkBorrow != null" >
+            and rec.pk_borrow = #{pkBorrow,jdbcType=VARCHAR}
+        </if>
+   	    <if test="pkOrg != null" >
+            and rec.pk_org like #{pkOrg,jdbcType=VARCHAR}
+        </if>
+   	    <if test="pkEmpApply != null" >
+            and rec.pk_emp_apply = #{pkEmpApply,jdbcType=VARCHAR}
+        </if>
+   	    <if test="pkEmpApprove != null" >
+            and rec.pk_emp_approve = #{pkEmpApprove,jdbcType=VARCHAR}
+        </if>
+   	    <if test="euStatus != null" >
+            and rec.eu_status = #{euStatus,jdbcType=CHAR}
+        </if>
+   	    <if test="euStatusStr != null" >
+            ${euStatusStr}
+        </if>
+   		<if test="endDate != null" >
+            and rec.end_date  &lt; to_date(#{endDate,jdbcType=VARCHAR},'yyyymmddhh24miss')
+        </if>
+		<if test="beginDateApp != null" >
+            and rec.apply_date &gt;= to_date(#{beginDateApp,jdbcType=VARCHAR},'yyyymmddhh24miss')
+        </if>           
+   		<if test="endDateApp != null" >
+            and rec.apply_date  &lt; to_date(#{endDateApp,jdbcType=VARCHAR},'yyyymmddhh24miss')
+        </if>          		
+   	    <if test="name != null" >
+            and pat.name like #{name,jdbcType=VARCHAR}
+        </if>
+ 		<if test="patNo != null" >
+            and pat.pat_no like #{patNo,jdbcType=VARCHAR}
+        </if>                   
+   		<if test="endDateG != null" >
+            and rec.end_date  &gt;= to_date(#{endDateG,jdbcType=VARCHAR},'yyyymmddhh24miss')
+        </if>
+   		<if test="orderBy != null" >
+            ${orderBy}
+        </if>           
+    </select>
+    <select id="queryBorrowDocList" resultMap="ResultMapBorrowDoc">
+        SELECT
+            doc.*,rec.name,rec.type_code,typ.name as type_name
+        FROM
+             EMR_BORROW_DOC doc,emr_med_rec rec,emr_doc_type typ
+        WHERE doc.pk_borrow = #{pkBorrow,jdbcType=VARCHAR} 
+          and rec.pk_rec=doc.pk_rec 
+          and rec.type_code=typ.code
+          and nvl(doc.del_flag,'0')!='1' 
+   		<if test="orderBy != null" >
+            ${orderBy}
+        </if>           
+    </select>
+    <select id="querySignForInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.emr.rec.dict.vo.EmrPatListPrarm">
+        select pat.*,
+        	patrec.finish_date,
+        	patrec.qc_date,
+        	patrec.submit_date,
+        	patrec.emp_qc_date,
+        	patrec.dept_qc_date,
+        	patrec.eu_emp_qc_grade,
+        	patrec.emp_qc_score,
+        	patrec.eu_dept_qc_grade,
+        	patrec.dept_qc_score,
+        	patrec.flag_receive,
+        	patrec.receive_date
+        from VIEW_EMR_PAT_LIST pat
+		left outer join EMR_PAT_REC patrec on pat.PK_PV=patrec.PK_PV
+		where pat.flag_in='0' and  patrec.del_flag='0' and pat.eu_status='4'
+		<if test="status != null" >
+            and nvl(patrec.FLAG_RECEIVE,0)=#{status,jdbcType=VARCHAR}
+        </if> 
+		<if test="disDateBegin != null" >
+            and pat.date_end &gt;= to_date(#{disDateBegin,jdbcType=VARCHAR},'yyyymmddhh24miss')
+        </if> 
+        <if test="disDateEnd != null" >
+            and pat.date_end &lt;= to_date(#{disDateEnd,jdbcType=VARCHAR},'yyyymmddhh24miss')
+        </if>
+        <if test="pkDept != null" >
+            and pat.pk_dept =#{pkDept,jdbcType=VARCHAR}
+        </if>
+        <if test="patName != null and patName != ''" >
+            and pat.name_pi like concat(concat('%',#{patName,jdbcType=VARCHAR}),'%')
+        </if>
+        <if test="codeIp != null and codeIp != ''" >
+            and pat.code_ip like concat(#{codeIp,jdbcType=VARCHAR},'%')
+        </if>    
+        <if test="patNo != null and patNo != ''" >
+            and (pat.code_ip = #{patNo,jdbcType=VARCHAR} or pat.code_pv = #{patNo,jdbcType=VARCHAR})
+        </if>  
+    </select>
+    <select id="queryApplyInfo" parameterType="java.util.Map" resultType="DynaBean">
+        select
+  			pat.*,
+  			openedit.pk_edit_rec,
+  			openedit.pk_emp_apply,
+  			openedit.pk_dept_apply,
+  			openedit.apply_date,
+  			openedit.apply_txt,
+  			openedit.begin_date openBeginDate,
+  			openedit.end_date openEndDate,
+  			openedit.eu_status openEuStatus,
+  			openedit.approve_date,
+  			openedit.pk_dept_approve
+		from VIEW_EMR_PAT_LIST pat left outer join emr_open_edit_rec openedit on pat.PK_PV=openedit.PK_PV
+		where openedit.DEL_FLAG='0'
+		<if test="status!= null and status!= ''" >
+            and openedit.eu_status = #{status,jdbcType=VARCHAR}
+        </if>  
+		<if test="dateBegin != null" >
+            and openedit.apply_date &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyy-mm-dd')
+        </if> 
+        <if test="dateEnd != null" >
+            and openedit.apply_date &lt; to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-mm-dd')
+        </if>
+        <if test="pkDept != null and pkDept != ''" >
+            and pat.pk_dept= #{pkDept,jdbcType=VARCHAR}
+        </if> 
+        <if test="patName != null and patName != ''" >
+            and pat.name_pi like concat(concat('%',#{patName,jdbcType=VARCHAR}),'%')
+        </if>
+        <if test="codeIp != null and codeIp != ''" >
+            and pat.code_ip like concat(#{codeIp,jdbcType=VARCHAR},'%')
+        </if>
+         
+    </select>
+    <select id="queryOpenRecList" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrMedRec">
+        select rec.PK_REC,
+			rec.PK_PATREC,
+			rec.NAME,
+			rec.SEQ_NO,
+			rec.REC_DATE,
+			rec.DESCRIBE,
+			rec.PK_PI,
+			rec.TIMES,
+			rec.PK_PV,
+			rec.PK_DEPT,
+			rec.PK_WARD,
+			rec.TYPE_CODE,
+			rec.PK_TMP,
+			rec.PK_DOC,
+			rec.FLAG_AUDIT,
+			rec.EU_AUDIT_LEVEL,
+			rec.AUDIT_LEVEL_SET,
+			rec.EU_DOC_STATUS,
+			rec.EU_AUDIT_STATUS,
+			rec.FLAG_AUDIT_FINISH,
+			rec.SUBMIT_DATE,
+			rec.PK_EMP_INTERN,
+			rec.INTERN_SIGN_DATE,
+			rec.PK_EMP_REFER_ACT,
+			rec.PK_EMP_REFER,
+			rec.REFER_AUDIT_DATE,
+			rec.REFER_SIGN_DATE,
+			rec.PK_EMP_CONSULT_ACT,
+			rec.PK_EMP_CONSULT,
+			rec.CONSULT_AUDIT_DATE,
+			rec.CONSULT_SIGN_DATE,
+			rec.PK_EMP_DIRECTOR_ACT,
+			rec.PK_EMP_DIRECTOR,
+			rec.DIRECTOR_AUDIT_DATE,
+			rec.DIRECTOR_SIGN_DATE,
+			rec.FLAG_PRINT,
+			rec.DEL_FLAG,
+			rec.REMARK,
+			rec.CREATOR,
+			rec.CREATE_TIME,
+			rec.TS,
+			typ.name type_name,
+			typ.flag_course,
+			typ.flag_home_page,
+			emp.name create_name,
+			emp_refer.name refer_name
+		from emr_med_rec rec left outer join 
+			 emr_doc_type typ on rec.type_code=typ.code left outer join
+			 view_emr_emp_list emp on rec.creator=emp.pk_emp left outer join
+			 view_emr_emp_list emp_refer on rec.pk_emp_refer=emp_refer.pk_emp 
+		WHERE rec.pk_rec = #{pkRec,jdbcType=CHAR} 
+		  and rec.del_flag!='1'
+    </select>
+    <select id="queryIcdByPrame" parameterType="java.util.Map" resultType="com.zebone.nhis.emr.rec.dict.vo.EmrPatListPrarm">
+        select pat.*,
+        	patrec.flag_receive,
+        	nvl(patrec.flag_code,0) flagCode,
+        	patrec.code_date,
+        	empcode.name emp_code_name,
+        	bl.amount_st,
+        	bl.amount_insu
+        from VIEW_EMR_PAT_LIST pat
+		left outer join EMR_PAT_REC patrec on pat.PK_PV=patrec.PK_PV
+		left outer join view_emr_emp_list empcode on empcode.pk_emp=patrec.pk_emp_code
+		left outer join bl_settle bl on pat.pk_pv=bl.pk_pv and bl.flag_canc='0' and bl.DT_STTYPE='10' 
+		where pat.flag_in='0' and  patrec.del_flag='0' 
+		<if test="flagCode != null" >
+            and nvl(patrec.flag_code,0)=#{flagCode,jdbcType=VARCHAR}
+        </if> 
+		<if test="disBeginDate != null" >
+            and pat.date_end &gt;= to_date(#{disBeginDate,jdbcType=VARCHAR},'yyyy-mm-dd')
+        </if> 
+        <if test="disEndDate != null" >
+            and pat.date_end &lt; to_date(#{disEndDate,jdbcType=VARCHAR},'yyyy-mm-dd')
+        </if>
+        <if test="pkDept != null and pkDept !=''" >
+            and pat.pk_dept =#{pkDept,jdbcType=VARCHAR}
+        </if>
+        <if test="namePi != null and namePi != ''" >
+            and pat.name_pi like concat(concat('%',#{namePi,jdbcType=VARCHAR}),'%')
+        </if>
+        <if test="codeIp != null and codeIp != ''" >
+            and pat.code_ip like concat(#{codeIp,jdbcType=VARCHAR},'%')
+        </if>
+        <if test="flagFit != null and flagFit != ''" >
+            and exists(
+      			select PK_PV from EMR_HOME_PAGE page where pat.PK_PV=page.PK_PV and page.DEL_FLAG='0' and page.diag_fit_ops='1'
+          	)
+        </if>
+        <if test="upload != null and upload != ''" >
+            and (patrec.flag_code='1' and patrec.code_date is null) 
+        </if>
+        <if test="uploaded != null and uploaded != ''" >
+            and (patrec.flag_code='1' and patrec.code_date is not null) 
+        </if>
+        <if test="flagNotCnfrm != null and flagNotCnfrm != ''" >
+            and exists(
+      			select PK_PV from EMR_HOME_PAGE page where pat.PK_PV=page.PK_PV and page.DEL_FLAG='0' and page.CODED_NOT_CNFRM='1'
+          	)
+        </if>
+        <if test="flagLeave != null and flagLeave != ''" >
+            and exists(
+      			select PK_PV from EMR_HOME_PAGE page where pat.PK_PV=page.PK_PV and page.DEL_FLAG='0' and page.leave_hos_code=#{flagLeave,jdbcType=VARCHAR}
+          	)
+        </if>
+        <if test="laborOp != null and laborOp != ''" >
+            and exists(
+      			select PK_PV from EMR_HOME_PAGE page where pat.PK_PV=page.PK_PV and page.DEL_FLAG='0' and page.labor_op_upload='1'
+          	)
+        </if>
+        order by pat.EU_STATUS desc
+    </select>
+    
+    <select id="queryPageDiagsByPk" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePageDiagsIcd">
+        select 
+        	diag.*,
+        	diag.diag_code diagcodeicd,
+        	<!-- diag.diag_name diagnameicd, -->
+        	term.diagname diagnameicd,
+        	diag.remark remarkIcd
+		from emr_home_page_diags  diag
+		left join emr_home_page page on page.pk_page=diag.pk_page and diag.del_flag='0'
+		left join bd_term_diag term on diag.diag_code=term.diagcode
+		where page.pk_pv=#{pkPv,jdbcType=VARCHAR}  and page.del_flag='0'
+    </select>
+    
+    <select id="queryPageOpsByPk" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePageOpsIcd">
+       select 
+       		ops.*,
+        	ops.op_code opcodeicd,
+        	ops.op_name opnameicd
+		from emr_home_page_ops  ops
+		left join emr_home_page page on page.pk_page=ops.pk_page and ops.del_flag='0'
+		where page.pk_pv=#{pkPv,jdbcType=VARCHAR} and page.del_flag='0'
+    </select>
+	
+	<select id="queryOpenTypeCode" parameterType="java.util.Map" resultType="string">
+        select doc.type_code from EMR_OPEN_EDIT_REC rec
+  		left outer join EMR_OPEN_EDIT_DOC doc on doc.PK_EDIT_REC=rec.PK_EDIT_REC
+		where rec.PK_PV=#{pkPv,jdbcType=VARCHAR} and rec.DEL_FLAG='0' and rec.EU_STATUS='1' and doc.EU_EDIT_TYPE='1'
+    </select>
+    <select id="queryOpenEditDoc" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.emr.mgr.EmrOpenEditDoc">
+        select doc.* from EMR_OPEN_EDIT_REC rec
+  		left outer join EMR_OPEN_EDIT_DOC doc on doc.PK_EDIT_REC=rec.PK_EDIT_REC
+		where rec.PK_PV=#{pkPv,jdbcType=VARCHAR} and rec.DEL_FLAG='0' and rec.EU_STATUS='1' and doc.EU_EDIT_TYPE='2'
+    </select>
+    <select id="queryHomePage" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePage">
+        select 
+        nvl(page.diag_fit_code_oi,1) diag_fit_code_oi,
+        nvl(page.diag_fit_code_cp,0) diag_fit_code_cp,
+        nvl(page.part_disease,0) part_disease,
+        nvl(page.flag_drug_allergy_icd,page.flag_drug_allergy) flag_drug_allergy_icd,
+        nvl(page.allergic_drug_icd,page.allergic_drug) allergic_drug_icd,
+        nvl(page.patho_no_icd,page.patho_no) patho_no_icd,
+        nvl(page.diag_code_clinic_icd,page.diag_code_clinic) diag_code_clinic_icd,
+        nvl(page.diag_name_clinic_icd,page.diag_name_clinic) diag_name_clinic_icd,
+        nvl(page.diag_code_extc_ip_icd,page.diag_code_extc_ip) diag_code_extc_ip_icd,
+        nvl(page.diag_name_extc_ip_icd,page.diag_name_extc_ip) diag_name_extc_ip_icd,
+        nvl(page.diag_code_patho_icd,page.diag_code_patho) diag_code_patho_icd,
+        nvl(page.diag_name_patho_icd,page.diag_name_patho) diag_name_patho_icd,
+        curr_addr_code,
+        curr_addr_dt,
+        diag_fit_ops,
+        coded_not_cnfrm,
+        nvl((CASE
+			WHEN substr(page.country_name,0,3) <![CDATA[<>]]> '中国'
+			THEN '6'<!-- 外国 --> 
+
+			WHEN substr(page.country_name,0,3) = '中国'
+			AND (substr(page.curr_addr_prov,0,3) = '香港'
+			OR substr(page.curr_addr_prov,0,3) = '台湾'
+			OR substr(page.curr_addr_prov,0,3) = '澳门')
+			THEN '5'<!-- 港、澳、台 --> 
+
+			WHEN substr(page.country_name,0,3) = '中国'
+			AND substr(page.curr_addr_prov,0,3) <![CDATA[<>]]> '广东'
+			THEN '4' <!-- 外省（直辖市）-->  
+
+			WHEN substr(page.country_name,0,3) = '中国'
+			AND substr(page.curr_addr_prov,0,3) = '广东'
+			AND substr(page.curr_addr_city,0,3) <![CDATA[<>]]> '广州'
+			THEN '3' <!-- 本省其他市 --> 
+
+			WHEN substr(page.country_name,0,3) = '中国'
+			AND substr(page.curr_addr_prov,0,3) = '广东'
+			AND substr(page.curr_addr_city,0,3) = '广州'
+			AND substr(page.curr_addr_county,0,3) != '越秀'
+			AND substr(page.curr_addr_county,0,3) <![CDATA[<>]]> '海珠'
+			THEN '2'<!-- 本市其他区 --> 
+
+			WHEN substr(page.country_name,0,3) = '中国'
+			AND substr(page.curr_addr_prov,0,3) = '广东'
+			AND substr(page.curr_addr_city,0,3) = '广州'
+			AND (substr(page.curr_addr_county,0,3) = '越秀'
+			OR substr(page.curr_addr_county,0,3) = '海珠')
+			THEN '1'<!-- 医院所在区（县） -->  
+			END),'1') pat_source
+		from emr_home_page page where page.pk_pv=#{pkPv,jdbcType=VARCHAR} and del_flag='0'
+    </select>
+    <select id="queryPatExtList" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrPatList">
+		select pat.*
+  		  from view_emr_pat_list pat
+		WHERE pat.eu_status_pv != '9'
+		<if test="pkPv != null">
+			and pat.pk_pv = #{pkPv,jdbcType=VARCHAR}
+		</if>
+		<if test="pkDept != null" >
+            and pat.pk_dept =#{pkDept,jdbcType=VARCHAR}
+        </if>
+		<if test="beginDateB != null">
+			and pat.date_begin &gt;= to_date(#{beginDateB,jdbcType=VARCHAR},'yyyymmddhh24miss')
+		</if>
+		<if test="endDateB != null">
+			and pat.date_begin &lt;	to_date(#{endDateB,jdbcType=VARCHAR},'yyyymmddhh24miss')
+		</if>
+		<if test="beginDateE != null">
+			and pat.date_end &gt;= to_date(#{beginDateE,jdbcType=VARCHAR},'yyyymmddhh24miss')
+		</if>
+		<if test="endDateE != null">
+			and pat.date_end &lt; to_date(#{endDateE,jdbcType=VARCHAR},'yyyymmddhh24miss')
+		</if>
+		<if test="name != null" >
+            and pat.name like '%' || #{name,jdbcType=VARCHAR} || '%'
+        </if>
+ 		<if test="patNo != null" >
+            and pat.pat_no like '%' || #{patNo,jdbcType=VARCHAR} || '%'
+        </if>     				
+		<if test="flagIn != null">
+			and pat.flag_in = #{flagIn,jdbcType=CHAR}
+		</if>
+		<if test="codePi != null">
+			and pat.code_pi = #{codePi,jdbcType=CHAR}
+		</if>
+		<if test="pkPi != null">
+			and pat.pk_pi = #{pkPi,jdbcType=CHAR}
+		</if>
+		<if test="flagAuto != null">
+			 and (((exists (select pk_dept
+                  from emr_grade_dept
+                 where pat.pk_dept = pk_dept
+                   and cate_code = '01'
+                   and pat.date_begin &lt; sysdate - #{inNum,jdbcType=INTEGER}))
+                    or 
+                 (exists
+		        (select pk_dept
+		           from emr_grade_dept
+		          where pat.pk_dept = pk_dept
+		            and cate_code = '02'
+		            and exists (select pk_ord
+		                   from cn_order ord, cn_op_apply app
+		                  where ord.pk_pv = pat.pk_pv
+		                    and ord.pk_cnord = app.pk_cnord
+		                    and ord.eu_status_ord not in ('0', '9')
+		                    and app.date_plan &lt; sysdate - #{optNum,jdbcType=INTEGER}
+		                    and app.eu_status in ('3', '5')))))
+              	and pat.flag_in ='1')
+		</if>
+		<if test="pkEmp != null and pkEmp!=''">
+			and (exists(select * from EMR_PAT_REC rec where rec.PK_PATREC=pat.PK_PATREC and (rec.pk_emp_refer in
+				<foreach item="item" index="index" collection="pkEmp" open="(" separator="," close=")">
+				 #{item}
+				</foreach>
+				or rec.pk_emp_consult in 
+				<foreach item="item" index="index" collection="pkEmp" open="(" separator="," close=")">
+				 #{item}
+				</foreach>
+				or pk_emp_director in 
+				<foreach item="item" index="index" collection="pkEmp" open="(" separator="," close=")">
+				 #{item}
+				</foreach>
+			)))
+		</if>
+		<if test="contran != null and contran!=''">
+			and not exists(select * from PV_ADT adt where pat.PK_PV=adt.PK_PV and pk_adt_source is not null )
+		</if>
+		<if test="orderBy != null">
+			${orderBy}
+		</if>
+	</select>    
+	
+	<select id="queryDoctor" resultType="com.zebone.nhis.common.module.emr.rec.dict.EmrDoctor">  
+		select  emp.pk_emp,
+	        emp.code,
+	        emp.name,
+	        emp.py_code,
+	        emp.d_code,
+	        emp.pk_org,
+	        emp.del_flag,
+	        emp.dt_empsrvtype        
+ 		from view_emr_emp_list emp
+ 		where nvl(emp.dt_empsrvtype,'09') != '09' and emp.del_flag='0'
+        <if test="code != null and code != '' " >
+            and emp.code like '%'||#{code,jdbcType=VARCHAR}||'%' 
+        </if> 
+      	order by emp.code
+	</select>
+	<select id="printQryCnOrderBoai" parameterType="java.util.Map" resultType="DynaBean">
+			SELECT
+               cn.pk_cnord,
+			   cn.code_ord,
+			   cn.name_ord name_ord,
+			   cn.ordsn,
+			   cn.ordsn_parent,
+	           case cn.code_ordtype when '0103' then cn.ords else cn.dosage end as dosage,
+	  			<choose>
+					<when test="dbType != 'sqlserver'">
+						<choose>
+							<when test="isSearchLabApply == '1'.toString()">
+								case cn.code_ordtype when '03' then lab.pk_emp_col else occ.pk_emp_occ end PK_EMP_EX,
+								occ.date_occ as date_plan_ex,
+								rtrim(ltrim(occ.name_emp_occ))  as name_emp_ex,
+							</when>
+							<otherwise>
+								occ.pk_emp_occ as PK_EMP_EX,
+								occ.date_occ as date_plan_ex,
+								rtrim(ltrim(occ.name_emp_occ))  as name_emp_ex,
+							</otherwise>
+						</choose>
+					</when>
+					<otherwise>
+						<choose>
+							<when test="isSearchLabApply == '1'.toString()">
+								case cn.code_ordtype when '03' then lab.pk_emp_col else cn.PK_EMP_EX end PK_EMP_EX,
+								cn.date_plan_ex,
+								rtrim(ltrim(cn.name_emp_ex))  as name_emp_ex,
+							</when>
+							<otherwise>
+								cn.PK_EMP_EX,
+								cn.date_plan_ex,
+								rtrim(ltrim(cn.name_emp_ex))  as name_emp_ex,
+							</otherwise>
+						</choose>
+					</otherwise>
+				</choose>
+			   cn.pk_unit_dos pk_unit_dos,
+		       cn.eu_always,
+		       cn.eu_st,
+		       cn.last_num,
+		       cn.pk_pv,
+		       cn.pk_pi,
+		       cn.pk_dept_ns,
+		       deptns.dt_depttype,
+		       dept.name_dept,
+               pv.BED_NO,
+               deptns.NAME_DEPT name_ns_dept,
+		       cn.pk_org,
+		       cn.flag_emer,
+		       cn.date_start,
+		       cn.note_ord as name_note,
+		       cn.quan,
+		       cn.pk_unit,
+		       cn.code_supply,
+		       sup.flag_pivas,
+		       cn.code_freq,
+		       freq.cnt,
+		       cn.drip_speed,
+		       cn.flag_first,
+		       cn.pk_emp_ord,
+	  		   cn.PK_EMP_CHK,
+	  		   cn.PK_EMP_STOP_CHK,
+		       rtrim(ltrim(cn.name_emp_ord))  as name_emp_ord,
+		       cn.pk_dept_exec,
+		       cn.pk_dept,
+		       cn.pk_org_exec,
+		       cn.date_chk,
+		       cn.date_stop,
+		       cn.spec,
+		       cn.flag_doctor,
+		       cn.flag_medout,
+	           cn.flag_self,
+	           cn.flag_thera,
+	           cn.flag_prev,
+	           cn.flag_fit,
+	           cn.desc_fit,
+	           cn.note_ord,
+	           cn.note_supply,
+	           cn.eu_status_ord,
+	           cn.code_ordtype,
+	           cn.pk_ord,
+	           cn.date_enter,
+	           cn.flag_stop_chk,
+	           cn.flag_erase,
+	           cn.flag_durg,
+	           cn.flag_bl,
+	           cn.flag_stop,
+	           cn.flag_sign,
+	           cn.pk_emp_stop,
+	           rtrim(ltrim(cn.name_emp_stop))  as name_emp_stop,
+	           cn.date_stop,
+	           cn.pk_pres,
+	           cn.infant_no,
+		       cn.ts,
+		       pd.pk_unit_min,
+               pd.pk_unit_vol,
+               pd.pk_unit_wt,
+               pd.vol,
+               pd.flag_st,
+               rtrim(ltrim(cn.name_emp_chk))  as name_emp_chk,
+               rtrim(ltrim(cn.name_emp_stop_chk))  as name_emp_stop_chk,
+               cn.flag_cp,
+               pd.weight,
+               pd.dt_pois,
+               cn.eu_exctype,
+               rtrim(ltrim(cn.name_emp_input))  as name_emp_input,
+               cn.pk_emp_input,
+               cn.desc_ord,
+               cn.eu_intern,
+               ord.pk_unit as srv_pk_unit,
+               ord.eu_exclude as flag_ctl_srv,
+               cn.flag_base,
+               cn.first_num,
+               cn.price_cg,
+               cn.ratio_hp,
+               cn.pk_ord_exc,
+               cn.flag_note,
+               cn.code_apply,
+               sup.NAME AS name_supply,
+               sup.NAME_print AS name_supply_print,
+               freq.NAME AS name_freq,
+               freq.NAME_print AS name_freq_print,
+               cn.flag_print,
+               cn.days,
+               cn.quan_cg,
+               cn.pk_unit_cg,
+               unit.name as name_unit_cg,
+               cn.ords,
+               cn.groupno,
+	  		   '1' flag_ca,
+	  		   st.RESULT,
+	  		   st.batch_no batch_no_st,
+	  		   bd.name as samptype_name
+	  from cn_order cn
+		  left join bd_pd pd on cn.pk_ord = pd.pk_pd and pd.del_flag='0'
+          left join bd_ord ord on ord.pk_ord = cn.pk_ord and ord.del_flag='0'
+		  left join bd_supply sup on cn.code_supply = sup.code and sup.del_flag='0'
+		  left join bd_term_freq freq on freq.code = cn.code_freq and freq.del_flag='0'
+		  left join bd_unit unit on unit.pk_unit = cn.pk_unit_cg and unit.del_flag='0'
+		  left join bd_ou_dept dept on dept.pk_dept = cn.pk_dept and dept.del_flag='0'
+		  left join bd_ou_dept deptns on deptns.pk_dept = cn.pk_dept_ns and deptns.del_flag='0'
+	      left join ex_st_occ st on st.PK_CNORD=cn.PK_CNORD and st.DEL_FLAG='0'
+	  	  left join cn_lab_apply lab on lab.pk_cnord=cn.pk_cnord and lab.del_flag='0'
+	      left join BD_DEFDOC bd on bd.code=lab.dt_samptype and bd.CODE_DEFDOCLIST='030200'
+	      left join PV_ENCOUNTER pv on pv.pk_pv=cn.pk_pv and pv.del_flag='0'
+	      <if test="dbType != 'sqlserver'">
+	  	  left join (
+	         select pk_cnord,date_occ,pk_emp_occ,name_emp_occ
+	         from (
+	  			select pk_cnord,date_occ,pk_emp_occ,name_emp_occ,row_number()over(partition by pk_cnord order by date_occ) row_no
+	  			from EX_ORDER_OCC
+	  			where pk_pv=#{pkPv,jdbcType=VARCHAR} and eu_status='1' and del_flag='0'
+	  			) t
+	  		where t.row_no='1'
+	  	  ) occ on cn.pk_cnord=occ.pk_cnord
+		  </if>
+		  where cn.pk_pv = #{pkPv,jdbcType=VARCHAR}
+		  and cn.del_flag='0'  and cn.flag_doctor='1'
+		  <if test="pkDept!=null">
+		      and cn.pk_dept=#{pkDept,jdbcType=VARCHAR}
+		  </if>
+		  <if test="pkDeptNs!=null">
+		      and cn.pk_dept_ns=#{pkDeptNs,jdbcType=VARCHAR}
+		  </if>
+		  <if test="isOperation == 0">
+		  	  and not exists (
+                  select 1 from cn_op_apply opt
+                  where cn.pk_cnord_rl=opt.pk_cnord)
+		  </if>
+		  order by cn.ordsn_parent,cn.ordsn
+   </select>
+   <select id="queryEmrAmendRecList" resultType="com.zebone.nhis.common.module.emr.qc.EmrAmendRec">  
+		select
+			amend.* ,
+			pi.CODE_IP,
+			pi.NAME_PI,
+	    	ip.IP_TIMES,
+	    	emp.NAME_EMP emp_name,
+			'所有反馈' type_name
+		from EMR_AMEND_REC amend
+		inner join PV_ENCOUNTER pv on amend.PK_PV=pv.PK_PV
+		inner join PI_MASTER pi on pv.PK_PI=pi.PK_PI
+		inner join PV_IP ip on pv.PK_PV=ip.PK_PV
+		left join BD_OU_EMPLOYEE emp on amend.PK_EMP=emp.PK_EMP
+		where NOTE_BACK is not null and amend.DEL_FLAG='0' and amend.EU_STATUS!='2'
+		<if test="pkEmpCreate!=null">
+		     and amend.PK_EMP_CREATE=#{pkEmpCreate,jdbcType=VARCHAR}
+		 </if>
+		union all
+		select
+			amend.* ,
+			pi.CODE_IP,
+			pi.NAME_PI,
+	    	ip.IP_TIMES,
+	    	emp.NAME_EMP emp_name,
+			'当前反馈' type_name
+		from EMR_AMEND_REC amend
+		inner join PV_ENCOUNTER pv on amend.PK_PV=pv.PK_PV
+		inner join PI_MASTER pi on pv.PK_PI=pi.PK_PI
+		inner join PV_IP ip on pv.PK_PV=ip.PK_PV
+		left join BD_OU_EMPLOYEE emp on amend.PK_EMP=emp.PK_EMP
+		where amend.DEL_FLAG='0' and amend.EU_STATUS!='2'
+		<if test="pkPv != null">
+			and amend.pk_pv = #{pkPv,jdbcType=VARCHAR}
+		</if>
+	</select>
+</mapper>

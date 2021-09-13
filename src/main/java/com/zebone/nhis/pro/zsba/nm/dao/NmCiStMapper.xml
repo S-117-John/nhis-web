@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.nm.dao.NmCiStMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.pro.zsba.nm.vo.NmCiSt">
+        <id column="pk_ci_st" jdbcType="CHAR" property="pkCiSt"/>
+        <result column="pk_org" jdbcType="CHAR" property="pkOrg"/>
+        <result column="pk_dept" jdbcType="CHAR" property="pkDept"/>
+        
+        <result column="input_dept" jdbcType="CHAR" property="inputDept"/>
+        <result column="pk_pv" jdbcType="CHAR" property="pkPv"/>
+        <result column="name_pi" jdbcType="VARCHAR" property="namePi"/>
+        <result column="pv_type" jdbcType="VARCHAR" property="pvType"/>
+        <result column="code_pv" jdbcType="VARCHAR" property="codePv"/>
+        <result column="times" jdbcType="INTEGER" property="times"/>
+       
+        <result column="amount" jdbcType="DECIMAL" property="amount"/>
+         <result column="refund_amount" jdbcType="DECIMAL" property="refundAmount"/>
+        <result column="is_push" jdbcType="CHAR" property="isPush"/>
+        <result column="is_pay" jdbcType="CHAR" property="isPay"/>
+        <result column="pay_method" jdbcType="CHAR" property="payMethod"/>
+        <result column="pk_pay" jdbcType="CHAR" property="pkPay"/>
+        <result column="pk_refund" jdbcType="CHAR" property="pkRefund"/>
+        <result column="sett_code" jdbcType="VARCHAR" property="settCode"/>
+        <result column="sett_name" jdbcType="VARCHAR" property="settName"/>
+        
+        <result column="charge_code" jdbcType="VARCHAR" property="chargeCode"/>
+        <result column="charge_name" jdbcType="VARCHAR" property="chargeName"/>
+        <result column="charge_time" jdbcType="TIMESTAMP" property="chargeTime"/>
+        
+        <result column="refunder_code" jdbcType="VARCHAR" property="refunderCode"/>
+        <result column="refunder_name" jdbcType="VARCHAR" property="refunderName"/>
+        <result column="refund_time" jdbcType="TIMESTAMP" property="refundTime"/>
+        
+        <result column="creator" jdbcType="CHAR" property="creator"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="modifier" jdbcType="CHAR" property="modifier"/>
+        <result column="modity_time" jdbcType="TIMESTAMP" property="modityTime"/>
+        <result column="del_flag" jdbcType="CHAR" property="delFlag"/>
+        <result column="ts" jdbcType="TIMESTAMP" property="ts"/>
+    </resultMap>
+        
+    <select id="getById" resultMap="BaseResultMap">
+        SELECT * FROM nm_ci_st WHERE pk_ci_st = #{pkCiSt ,jdbcType=CHAR}
+    </select>
+
+    <insert id="saveCiSt" parameterType="com.zebone.nhis.pro.zsba.nm.vo.NmCiSt" >
+        INSERT INTO nm_ci_st
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkCiSt != null" > pk_ci_st, </if>
+            <if test="pkOrg != null" >  pk_org, </if>
+            <if test="pkDept != null" >  pk_dept, </if>
+            <if test="inputDept != null" >  input_dept, </if>
+            <if test="pkPv != null" >  pk_pv, </if>
+            <if test="namePi != null" >  name_pi, </if>
+            <if test="pvType != null" >  pv_type, </if>
+            <if test="codePv != null" >  code_pv, </if>
+            <if test="times != null" >  times, </if>
+            
+            <if test="amount != null" >  amount, </if>
+            <if test="refundAmount != null" >  refund_amount, </if>
+            <if test="isPush != null" >  is_push, </if>
+            <if test="isPay != null" >  is_pay, </if>
+            <if test="payMethod != null" >  pay_method, </if>
+            <if test="pkPay != null" >  pk_pay, </if>
+            <if test="pkRefund != null" >  pk_refund, </if>
+            <if test="settCode != null" >  sett_code, </if>
+            <if test="settName != null" >  sett_name, </if>
+            <if test="chargeCode != null" >  charge_code, </if>
+            <if test="chargeName != null" >  charge_name, </if>
+            <if test="chargeTime != null" >  charge_time, </if>
+            <if test="refunderCode != null" >  refunder_code, </if>
+            <if test="refunderName != null" >  refunder_name, </if>
+            <if test="refundTime != null" >  refund_time, </if>
+            
+            <if test="creator != null" > creator, </if>
+            <if test="createTime != null" > create_time, </if>
+            <if test="modifier != null" > modifier, </if>
+            <if test="modityTime != null" > modity_time, </if> 
+            <if test="delFlag != null" > del_flag, </if>
+            <if test="ts != null" > ts, </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkCiSt != null" > #{pkCiSt ,jdbcType=CHAR}, </if>
+            <if test="pkOrg != null" >  #{pkOrg ,jdbcType=CHAR}, </if>
+            <if test="pkDept != null" >  #{pkDept ,jdbcType=CHAR}, </if>
+            <if test="inputDept != null" >  #{inputDept ,jdbcType=CHAR}, </if>
+            <if test="pkPv != null" >  #{pkPv ,jdbcType=CHAR}, </if>
+            <if test="namePi != null" >  #{namePi ,jdbcType=VARCHAR}, </if>
+            <if test="pvType != null" >  #{pvType ,jdbcType=VARCHAR}, </if>
+            <if test="codePv != null" >  #{codePv ,jdbcType=VARCHAR}, </if>
+            <if test="times != null" >  #{times ,jdbcType=INTEGER}, </if>
+            
+            <if test="amount != null" >  #{amount ,jdbcType=DECIMAL}, </if>
+            <if test="refundAmount != null" >  #{refundAmount ,jdbcType=DECIMAL}, </if>
+            <if test="isPush != null" >  #{isPush ,jdbcType=CHAR}, </if>
+            <if test="isPay != null" >  #{isPay ,jdbcType=CHAR}, </if>
+            <if test="payMethod != null" >  #{payMethod ,jdbcType=CHAR}, </if>
+            <if test="pkPay != null" >  #{pkPay ,jdbcType=VARCHAR}, </if>
+            <if test="pkRefund != null" >  #{pkRefund ,jdbcType=VARCHAR}, </if>
+            <if test="settCode != null" >  #{settCode ,jdbcType=VARCHAR}, </if>
+            <if test="settName != null" >  #{settName ,jdbcType=VARCHAR}, </if>
+            <if test="chargeCode != null" >  #{chargeCode ,jdbcType=VARCHAR}, </if>
+            <if test="chargeName != null" >  #{chargeName ,jdbcType=VARCHAR}, </if>
+            <if test="chargeTime != null" >  #{chargeTime ,jdbcType=TIMESTAMP}, </if>
+            <if test="refunderCode != null" >  #{refunderCode ,jdbcType=VARCHAR},</if>
+            <if test="refunderName != null" >  #{refunderName ,jdbcType=VARCHAR},</if>
+            <if test="refundTime != null" >  #{refundTime ,jdbcType=TIMESTAMP},</if>
+            
+            <if test="creator != null" > #{creator ,jdbcType=CHAR}, </if> 
+            <if test="createTime != null" > #{createTime ,jdbcType=TIMESTAMP}, </if> 
+            <if test="modifier != null" > #{modifier ,jdbcType=CHAR}, </if> 
+            <if test="modityTime != null" > #{modityTime ,jdbcType=TIMESTAMP}, </if> 
+            <if test="delFlag != null" > #{delFlag ,jdbcType=CHAR}, </if> 
+            <if test="ts != null" > #{ts ,jdbcType=TIMESTAMP}, </if> 
+        </trim>
+    </insert>
+																					
+    <update id="updateCiSt" parameterType="com.zebone.nhis.pro.zsba.nm.vo.NmCiSt" >
+        UPDATE nm_ci_st
+        <set>
+            <if test="pkOrg != null" > pk_org = #{pkOrg ,jdbcType=CHAR}, </if>
+            <if test="pkDept != null" >  pk_dept = #{pkDept ,jdbcType=CHAR}, </if>
+            <if test="inputDept != null" >  input_dept = #{inputDept ,jdbcType=CHAR}, </if>
+            <if test="pkPv != null" >  pk_pv = #{pkPv ,jdbcType=CHAR}, </if>
+            <if test="namePi != null" >  name_pi = #{namePi ,jdbcType=VARCHAR}, </if>
+            <if test="pvType != null" >  pv_type = #{pvType ,jdbcType=VARCHAR}, </if>
+            <if test="codePv != null" > code_pv = #{codePv ,jdbcType=VARCHAR}, </if>
+            <if test="times != null" >  times = #{times ,jdbcType=INTEGER}, </if>
+          
+            <if test="amount != null" >  amount = #{amount ,jdbcType=DECIMAL}, </if>
+            <if test="refundAmount != null" >  refund_amount = #{refundAmount ,jdbcType=DECIMAL}, </if>
+            <if test="isPush != null" >  is_push = #{isPush ,jdbcType=CHAR}, </if>
+            <if test="isPay != null" >  is_pay = #{isPay ,jdbcType=CHAR}, </if>
+            <if test="payMethod != null" >  pay_method = #{payMethod ,jdbcType=CHAR}, </if>
+            <if test="pkPay != null" >  pk_pay = #{pkPay ,jdbcType=VARCHAR}, </if>
+            <if test="pkRefund != null" >  pk_refund = #{pkRefund ,jdbcType=VARCHAR}, </if>
+            <if test="settCode != null" >  sett_code = #{settCode ,jdbcType=VARCHAR}, </if>
+            <if test="settName != null" >  sett_name = #{settName ,jdbcType=VARCHAR}, </if>
+            <if test="chargeCode != null" >  charge_code = #{chargeCode ,jdbcType=VARCHAR}, </if>
+            <if test="chargeName != null" >  charge_name = #{chargeName ,jdbcType=VARCHAR}, </if>
+            <if test="chargeTime != null" >  charge_time = #{chargeTime ,jdbcType=TIMESTAMP}, </if>
+            <if test="refunderCode != null" >  refunder_code = #{refunderCode ,jdbcType=VARCHAR}, </if>
+            <if test="refunderName != null" >  refunder_name = #{refunderName ,jdbcType=VARCHAR},</if>
+            <if test="refundTime != null" >  refund_time = #{refundTime ,jdbcType=TIMESTAMP},</if>
+            
+            <if test="creator != null" > creator = #{creator ,jdbcType=CHAR}, </if>
+            <if test="createTime != null" > create_time = #{createTime ,jdbcType=TIMESTAMP}, </if>
+            <if test="modifier != null" > modifier = #{modifier ,jdbcType=CHAR}, </if>
+            <if test="modityTime != null" > modity_time = #{modityTime ,jdbcType=TIMESTAMP}, </if>
+            <if test="delFlag != null" > del_flag = #{delFlag ,jdbcType=CHAR}, </if>
+            <if test="ts != null" > ts = #{ts ,jdbcType=TIMESTAMP}, </if>
+        </set>
+        WHERE 
+            pk_ci_st = #{pkCiSt ,jdbcType=CHAR}
+    </update>
+    
+    <delete id="deleteCiStd">
+        DELETE FROM nm_ci_st WHERE pk_ci_st = #{pkCiSt ,jdbcType=CHAR}
+    </delete>
+    
+</mapper>

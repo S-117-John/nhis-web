@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.sch.appt.dao.DepartmentInformationMapper">
+<select id="getDepartmentInformation_sql"  resultType="com.zebone.nhis.sch.appt.vo.DepartmentInformation" parameterType="String">
+SELECT
+	MAX (SCH.DATE_WORK)  AS lastDateTime,
+	DATEDIFF(day, getdate() ,MAX(SCH.DATE_WORK)) AS apptDays,
+	sch.PK_DEPT,
+	DEPT.NAME_DEPT
+FROM
+	sch_sch sch
+LEFT OUTER JOIN BD_OU_DEPT dept ON SCH.PK_DEPT = DEPT.PK_DEPT
+WHERE
+SCH.EU_SCHCLASS = '0'
+AND SCH.DATE_WORK > getdate()
+AND sch.pk_org = #{pkOrg,jdbcType=VARCHAR}
+GROUP BY
+	SCH.PK_DEPT,
+	DEPT.NAME_DEPT
+</select>
+<select id="getDepartmentInformation_oracle"  resultType="com.zebone.nhis.sch.appt.vo.DepartmentInformation" parameterType="String">
+SELECT
+    MAX (SCH.DATE_WORK)  AS lastDateTime,
+    ROUND(TO_NUMBER(MAX(SCH.DATE_WORK) - sysdate)) AS apptDays,
+    sch.PK_DEPT,
+    DEPT.NAME_DEPT
+FROM
+    sch_sch sch
+LEFT OUTER JOIN BD_OU_DEPT dept ON SCH.PK_DEPT = DEPT.PK_DEPT
+WHERE
+SCH.EU_SCHCLASS = '0'
+AND SCH.DATE_WORK > sysdate
+AND sch.pk_org = #{pkOrg,jdbcType=VARCHAR}
+GROUP BY
+    SCH.PK_DEPT,
+    DEPT.NAME_DEPT
+</select>
+</mapper>

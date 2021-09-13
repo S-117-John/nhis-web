@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.sch.pub.dao.SchExtPubMapper">
+	<select id="queryDeptList"  parameterType="java.util.Map" resultType="DynaBean">
+		select pk_dept,code_dept,name_dept,sortno,dept_desc 
+		from bd_ou_dept 
+		where flag_active='1' and dt_depttype='01' and flag_op='1' and del_flag='0' and  pk_org = #{pkOrg,jdbcType=CHAR} 
+	</select>
+	<select id="queryDoctorList"  parameterType="java.util.Map" resultType="DynaBean">
+		select dept.pk_dept,emp.code_emp,emp.pk_emp,emp.name_emp,docsex.name as name_sex,docsrvtype.name as docTitle ,emp.dt_sex,emp.spec 
+		from bd_ou_employee  emp 
+		inner join bd_ou_empjob empjob on empjob.pk_emp = emp.pk_emp 
+		inner join bd_ou_dept dept on dept.pk_dept = empjob.pk_dept 
+		inner join bd_defdoc docsex on docsex.code = emp.dt_sex and docsex.code_defdoclist = '000000' 
+		left join bd_defdoc docsrvtype on docsrvtype.code = emp.dt_empsrvtype and  docsrvtype.code_defdoclist = '010305'  
+		where dept.code_dept = #{codeDept,jdbcType=CHAR}  and emp.flag_active='1' and emp.del_flag='0' and emp.dt_emptype='01' 
+	</select>
+	
+	<select id="getSchInfo" resultType="com.zebone.nhis.sch.pub.vo.SchForExtVo" parameterType="java.util.Map">
+		select t1.*,t2.name schresName,t3.name schsrvName,slot.name_dateslot,ticket.cnt_unused,ordprice.price,
+		boe.code_emp
+		from sch_sch t1
+		left join sch_resource t2 on t1.pk_schres = t2.pk_schres
+		left join bd_ou_employee boe on t2.pk_emp = boe.pk_emp
+		left join sch_srv t3 on t1.pk_schsrv = t3.pk_schsrv 
+		left join sch_srv_ord t4 on t4.pk_schsrv = t3.pk_schsrv 
+		left join bd_code_dateslot slot on slot.pk_dateslot = t1.pk_dateslot
+		left join (select count(pk_schticket) as cnt_unused ,pk_sch from sch_ticket where  flag_used='0' and flag_appt='1' group by PK_SCH) ticket on ticket.PK_SCH = t1.PK_SCH 
+		left join (select orditem.QUAN*item.PRICE as price ,org.PK_ORD  from BD_ORD_ITEM  orditem
+                  inner join bd_item  item on orditem.PK_ITEM = item.PK_ITEM
+                  inner join BD_ORD_ORG org on org.PK_ORD = orditem.PK_ORD and org.pk_org=#{pkOrg,jdbcType=VARCHAR} 
+                  ) ordprice on ordprice.pk_ord = t4.pk_ord  
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and t1.del_flag = '0'
+			and t1.pk_org = #{pkOrg,jdbcType=VARCHAR}
+			<if test="pkSchsrv != null and pkSchsrv != ''">
+		  		and t1.pk_schsrv = #{pkSchsrv,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="euSchclass != null and euSchclass != ''">
+		  		and t1.eu_schclass = #{euSchclass,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="pkSchres != null and pkSchres != ''">
+		  		and t1.pk_schres = #{pkSchres,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="pkDept != null and pkDept != ''">
+		  		and t1.pk_dept = #{pkDept,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="dateWork != null and dateWork != ''">
+				and t1.date_work - to_date(#{dateWork,jdbcType=VARCHAR},'yyyy-mm-dd') &gt;= 0
+				and t1.date_work - to_date(#{dateWork,jdbcType=VARCHAR},'yyyy-mm-dd') &lt; 7
+		  	</if> 
+		  	<if test="dateBegin != null">
+		  		and t1.date_work &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyy-mm-dd')
+		  	</if>
+		  	<if test="dateEnd != null">
+		  		and t1.date_work &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-mm-dd')
+		  	</if>
+		  	<if test="disease != null and disease != ''">
+		  	    and t2.spec like '%'||#{disease,jdbcType=VARCHAR}||'%'
+		  	</if>
+		  	<if test="codeDept != null and codeDept != ''">
+		  	    and t2.code = #{codeDept,jdbcType=VARCHAR} and t2.eu_restype='0' 
+		  	</if>
+		  	<if test="codeDoc != null and codeDoc != ''">
+		  	    and t2.code = #{codeDoc,jdbcType=VARCHAR} and t2.eu_restype='1' 
+		  	</if>
+	  	</trim>
+	  	order by t1.pk_schres,t1.pk_schsrv
+	</select>
+	
+	<select id="getSchInfoForSelf" resultType="DynaBean" parameterType="java.util.Map">
+	   select t1.pk_sch,t2.name schresName,t3.name schsrvName,t1.pk_dateslot,slot.name_dateslot,t1.cnt_appt cnt_unused,to_char(t1.date_work,'yyyy-MM-dd') as date_work,boe.code_emp,ordprice.price as price,t1.pk_dept
+	   			,slot.TIME_BEGIN,slot.TIME_end
+				from sch_sch t1
+		left join sch_resource t2 on t1.pk_schres = t2.pk_schres
+		left join bd_ou_employee boe on t2.pk_emp = boe.pk_emp
+		inner  join bd_ou_dept bod on t1.pk_dept = bod.pk_dept
+		left join bd_ou_org boo on t2.pk_org = boo.pk_org
+		left join sch_srv t3 on t1.pk_schsrv = t3.pk_schsrv
+		left join sch_srv_ord t4 on t4.pk_schsrv = t3.pk_schsrv 
+		left join bd_code_dateslot slot on slot.pk_dateslot = t1.pk_dateslot
+		left join (select orditem.QUAN*item.PRICE as price ,org.PK_ORD  from BD_ORD_ITEM  orditem
+                  inner join bd_item  item on orditem.PK_ITEM = item.PK_ITEM
+                  inner join BD_ORD_ORG org on org.PK_ORD = orditem.PK_ORD and org.pk_org=#{pkOrg,jdbcType=VARCHAR} 
+                  ) ordprice on ordprice.pk_ord = t4.pk_ord  
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+		(exists( select 1 from bd_ou_dept d where d.flag_er = '1' and d.del_flag ='0' and d.pk_dept = t2.pk_dept ) or t2.eu_restype='1')
+			and t1.del_flag = '0' and t1.flag_stop = '0'
+		  	<if test="euSchclass != null and euSchclass != ''">
+		  		and t1.eu_schclass = #{euSchclass,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="dateWork != null and dateWork != ''">
+				and t1.date_work - to_date(#{dateWork,jdbcType=VARCHAR},'yyyy-mm-dd') &gt;= 0
+				and t1.date_work - to_date(#{dateWork,jdbcType=VARCHAR},'yyyy-mm-dd') &lt; 7
+		  	</if> 
+		  	<if test="dateBegin != null">
+		  		and t1.date_work &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyy-mm-dd')
+		  	</if>
+		  	<if test="dateEnd != null">
+		  		and t1.date_work &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-mm-dd')
+		  	</if>
+		  	<if test="pkOrg != null and pkOrg != ''">
+		  		and t1.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="codeOrg != null and codeOrg != ''">
+		  		and boo.code_org = #{codeOrg,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="pkDept != null and pkDept != ''">
+		  		and t1.pk_dept = #{pkDept,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="codeDept != null and codeDept != ''">
+		  	    and bod.code_dept = #{codeDept,jdbcType=VARCHAR} and t2.eu_restype='0' 
+		  	</if>
+		  	<if test="pkOrgarea != null and pkOrgarea != ''">
+		  	    and bod.pk_orgarea = #{pkOrgarea,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="pkEmp != null and pkEmp != ''">
+				and t2.pk_emp = #{pkEmp,jdbcType=VARCHAR}
+			</if>
+			<if test="codeEmp != null and codeEmp != ''">
+			    and boe.code_emp = #{codeEmp,jdbcType=VARCHAR}
+			</if>
+	  	</trim>
+	  	group by t3.code,t1.pk_sch,t2.name ,t3.name ,t1.pk_dateslot,slot.name_dateslot,slot.TIME_BEGIN,slot.TIME_end,t1.cnt_appt,t1.date_work,boe.code_emp,ordprice.price,t1.pk_dept
+	  	order by t3.code
+	 </select>
+	
+	 <select id="getPiAppointment" resultType="DynaBean" parameterType="java.util.Map">
+		select appt.pk_schappt,
+			appt.date_appt,
+			schres.name shcres,
+			schres.pk_emp,
+			appt.begin_time,
+			appt.end_time,
+			bod.name_dept,
+			bod.pk_dept,
+			appt.code,
+			appt.eu_status
+		from sch_appt appt
+		    inner join sch_resource schres on appt.pk_schres=schres.pk_schres
+		    inner join bd_ou_dept bod on schres.pk_dept_belong = bod.pk_dept
+		where appt.eu_schclass = '0' and appt.date_reg > sysdate -30
+	    <if test="pkPi != null">
+	    	and appt.pk_pi = #{pkPi, jdbcType=VARCHAR}
+	    </if>
+	    <if test="pkOrg != null and pkOrg != ''">
+	  		and appt.pk_org = #{pkOrg,jdbcType=VARCHAR}
+	  	</if> 
+		order by appt.date_appt desc
+    </select>
+	
+</mapper>

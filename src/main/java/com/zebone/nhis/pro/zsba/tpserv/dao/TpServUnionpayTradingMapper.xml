@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.tpserv.dao.TpServUnionpayTradingMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.pro.zsba.tpserv.vo.TpServUnionpayTrading">
+        <id column="PK_UNIONPAY_TRADING" jdbcType="CHAR" property="pkUnionpayTrading"/>
+        <result column="FK_PATIENT" jdbcType="CHAR" property="fkPatient"/>
+        <result column="AMOUNT" jdbcType="VARCHAR" property="amount"/>
+        <result column="OPERATETYPE" jdbcType="VARCHAR" property="operatetype"/>
+        <result column="TRANSTYPE" jdbcType="VARCHAR" property="transtype"/>
+        <result column="CARDTYPE" jdbcType="VARCHAR" property="cardtype"/>
+        <result column="RESPONSECODE" jdbcType="VARCHAR" property="responsecode"/>
+        <result column="RESPONSEMSG" jdbcType="VARCHAR" property="responsemsg"/>
+        <result column="CASHREGNO" jdbcType="VARCHAR" property="cashregno"/>
+        <result column="CASHERNO" jdbcType="VARCHAR" property="casherno"/>
+        <result column="SELLTENUM" jdbcType="VARCHAR" property="selltenum"/>
+        <result column="MERCHANTID" jdbcType="VARCHAR" property="merchantid"/>
+        <result column="MERCHANTNAME" jdbcType="VARCHAR" property="merchantname"/>
+        <result column="TERMINALID" jdbcType="VARCHAR" property="terminalid"/>
+        <result column="CARDNO" jdbcType="VARCHAR" property="cardno"/>
+        <result column="EXP_DATE" jdbcType="VARCHAR" property="expDate"/>
+        <result column="BANKNO" jdbcType="VARCHAR" property="bankno"/>
+        <result column="TRANSDATE" jdbcType="VARCHAR" property="transdate"/>
+        <result column="TRANSTIME" jdbcType="VARCHAR" property="transtime"/>
+        <result column="AUTH_CODE" jdbcType="VARCHAR" property="authCode"/>
+        <result column="SYSREFNO" jdbcType="VARCHAR" property="sysrefno"/>
+        <result column="CASHTRACENO" jdbcType="VARCHAR" property="cashtraceno"/>
+        <result column="ORIGINTRACENO" jdbcType="VARCHAR" property="origintraceno"/>
+        <result column="SYSTRACDNO" jdbcType="VARCHAR" property="systracdno"/>
+        <result column="ORIGINSYSTRACENO" jdbcType="VARCHAR" property="originsystraceno"/>
+        <result column="RESERVED" jdbcType="VARCHAR" property="reserved"/>
+        <result column="WORKID" jdbcType="CHAR" property="workid"/>
+        <result column="HTIME" jdbcType="TIMESTAMP" property="htime"/>
+        <result column="BILL_STATUS" jdbcType="CHAR" property="billStatus"/>
+        <result column="BILL_TIME" jdbcType="TIMESTAMP" property="billTime"/>
+        <result column="BILL_DESC" jdbcType="VARCHAR" property="billDesc"/>
+        <result column="PK_DATA_BILL" jdbcType="CHAR" property="pkDataBill"/>
+    </resultMap>
+    <select id="getTpServUnionpayTradingById" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+             tp_serv_unionpay_trading
+        WHERE            
+            PK_UNIONPAY_TRADING = #{pkUnionpayTrading,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllTpServUnionpayTrading" resultMap="BaseResultMap">
+          SELECT * FROM tp_serv_unionpay_trading 
+    </select>
+    
+    <delete id="deleteTpServUnionpayTrading">
+        DELETE
+        FROM
+             tp_serv_unionpay_trading
+        WHERE            
+            PK_UNIONPAY_TRADING = #{pkUnionpayTrading,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveTpServUnionpayTrading" parameterType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServUnionpayTrading" >
+        INSERT INTO tp_serv_unionpay_trading
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkUnionpayTrading != null" >
+                PK_UNIONPAY_TRADING,
+            </if>
+            <if test="fkPatient != null" >
+                FK_PATIENT,
+            </if>
+            <if test="amount != null" >
+                AMOUNT,
+            </if>
+            <if test="operatetype != null" >
+                OPERATETYPE,
+            </if>
+            <if test="transtype != null" >
+                TRANSTYPE,
+            </if>
+            <if test="cardtype != null" >
+                CARDTYPE,
+            </if>
+            <if test="responsecode != null" >
+                RESPONSECODE,
+            </if>
+            <if test="responsemsg != null" >
+                RESPONSEMSG,
+            </if>
+            <if test="cashregno != null" >
+                CASHREGNO,
+            </if>
+            <if test="casherno != null" >
+                CASHERNO,
+            </if>
+            <if test="selltenum != null" >
+                SELLTENUM,
+            </if>
+            <if test="merchantid != null" >
+                MERCHANTID,
+            </if>
+            <if test="merchantname != null" >
+                MERCHANTNAME,
+            </if>
+            <if test="terminalid != null" >
+                TERMINALID,
+            </if>
+            <if test="cardno != null" >
+                CARDNO,
+            </if>
+            <if test="expDate != null" >
+                EXP_DATE,
+            </if>
+            <if test="bankno != null" >
+                BANKNO,
+            </if>
+            <if test="transdate != null" >
+                TRANSDATE,
+            </if>
+            <if test="transtime != null" >
+                TRANSTIME,
+            </if>
+            <if test="authCode != null" >
+                AUTH_CODE,
+            </if>
+            <if test="sysrefno != null" >
+                SYSREFNO,
+            </if>
+            <if test="cashtraceno != null" >
+                CASHTRACENO,
+            </if>
+            <if test="origintraceno != null" >
+                ORIGINTRACENO,
+            </if>
+            <if test="systracdno != null" >
+                SYSTRACDNO,
+            </if>
+            <if test="originsystraceno != null" >
+                ORIGINSYSTRACENO,
+            </if>
+            <if test="reserved != null" >
+                RESERVED,
+            </if>
+            <if test="workid != null" >
+                WORKID,
+            </if>
+            <if test="htime != null" >
+                HTIME,
+            </if>
+            <if test="billStatus != null" >
+                BILL_STATUS,
+            </if>
+            <if test="billTime != null" >
+                BILL_TIME,
+            </if>
+            <if test="billDesc != null" >
+                BILL_DESC,
+            </if>
+            <if test="pkDataBill != null" >
+                PK_DATA_BILL,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkUnionpayTrading != null" >
+                #{pkUnionpayTrading,jdbcType=CHAR},
+            </if> 
+            <if test="fkPatient != null" >
+                #{fkPatient,jdbcType=CHAR},
+            </if> 
+            <if test="amount != null" >
+                #{amount,jdbcType=VARCHAR},
+            </if> 
+            <if test="operatetype != null" >
+                #{operatetype,jdbcType=VARCHAR},
+            </if> 
+            <if test="transtype != null" >
+                #{transtype,jdbcType=VARCHAR},
+            </if> 
+            <if test="cardtype != null" >
+                #{cardtype,jdbcType=VARCHAR},
+            </if> 
+            <if test="responsecode != null" >
+                #{responsecode,jdbcType=VARCHAR},
+            </if> 
+            <if test="responsemsg != null" >
+                #{responsemsg,jdbcType=VARCHAR},
+            </if> 
+            <if test="cashregno != null" >
+                #{cashregno,jdbcType=VARCHAR},
+            </if> 
+            <if test="casherno != null" >
+                #{casherno,jdbcType=VARCHAR},
+            </if> 
+            <if test="selltenum != null" >
+                #{selltenum,jdbcType=VARCHAR},
+            </if> 
+            <if test="merchantid != null" >
+                #{merchantid,jdbcType=VARCHAR},
+            </if> 
+            <if test="merchantname != null" >
+                #{merchantname,jdbcType=VARCHAR},
+            </if> 
+            <if test="terminalid != null" >
+                #{terminalid,jdbcType=VARCHAR},
+            </if> 
+            <if test="cardno != null" >
+                #{cardno,jdbcType=VARCHAR},
+            </if> 
+            <if test="expDate != null" >
+                #{expDate,jdbcType=VARCHAR},
+            </if> 
+            <if test="bankno != null" >
+                #{bankno,jdbcType=VARCHAR},
+            </if> 
+            <if test="transdate != null" >
+                #{transdate,jdbcType=VARCHAR},
+            </if> 
+            <if test="transtime != null" >
+                #{transtime,jdbcType=VARCHAR},
+            </if> 
+            <if test="authCode != null" >
+                #{authCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="sysrefno != null" >
+                #{sysrefno,jdbcType=VARCHAR},
+            </if> 
+            <if test="cashtraceno != null" >
+                #{cashtraceno,jdbcType=VARCHAR},
+            </if> 
+            <if test="origintraceno != null" >
+                #{origintraceno,jdbcType=VARCHAR},
+            </if> 
+            <if test="systracdno != null" >
+                #{systracdno,jdbcType=VARCHAR},
+            </if> 
+            <if test="originsystraceno != null" >
+                #{originsystraceno,jdbcType=VARCHAR},
+            </if> 
+            <if test="reserved != null" >
+                #{reserved,jdbcType=VARCHAR},
+            </if> 
+            <if test="workid != null" >
+                #{workid,jdbcType=CHAR},
+            </if> 
+            <if test="htime != null" >
+                #{htime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="billStatus != null" >
+                #{billStatus,jdbcType=CHAR},
+            </if> 
+            <if test="billTime != null" >
+                #{billTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="billDesc != null" >
+                #{billDesc,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkDataBill != null" >
+                #{pkDataBill,jdbcType=CHAR},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateTpServUnionpayTrading" parameterType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServUnionpayTrading" >
+        UPDATE tp_serv_unionpay_trading
+        <set>
+            <if test="pkUnionpayTrading != null" >
+                PK_UNIONPAY_TRADING = #{pkUnionpayTrading,jdbcType=CHAR},
+            </if>
+            <if test="fkPatient != null" >
+                FK_PATIENT = #{fkPatient,jdbcType=CHAR},
+            </if>
+            <if test="amount != null" >
+                AMOUNT = #{amount,jdbcType=VARCHAR},
+            </if>
+            <if test="operatetype != null" >
+                OPERATETYPE = #{operatetype,jdbcType=VARCHAR},
+            </if>
+            <if test="transtype != null" >
+                TRANSTYPE = #{transtype,jdbcType=VARCHAR},
+            </if>
+            <if test="cardtype != null" >
+                CARDTYPE = #{cardtype,jdbcType=VARCHAR},
+            </if>
+            <if test="responsecode != null" >
+                RESPONSECODE = #{responsecode,jdbcType=VARCHAR},
+            </if>
+            <if test="responsemsg != null" >
+                RESPONSEMSG = #{responsemsg,jdbcType=VARCHAR},
+            </if>
+            <if test="cashregno != null" >
+                CASHREGNO = #{cashregno,jdbcType=VARCHAR},
+            </if>
+            <if test="casherno != null" >
+                CASHERNO = #{casherno,jdbcType=VARCHAR},
+            </if>
+            <if test="selltenum != null" >
+                SELLTENUM = #{selltenum,jdbcType=VARCHAR},
+            </if>
+            <if test="merchantid != null" >
+                MERCHANTID = #{merchantid,jdbcType=VARCHAR},
+            </if>
+            <if test="merchantname != null" >
+                MERCHANTNAME = #{merchantname,jdbcType=VARCHAR},
+            </if>
+            <if test="terminalid != null" >
+                TERMINALID = #{terminalid,jdbcType=VARCHAR},
+            </if>
+            <if test="cardno != null" >
+                CARDNO = #{cardno,jdbcType=VARCHAR},
+            </if>
+            <if test="expDate != null" >
+                EXP_DATE = #{expDate,jdbcType=VARCHAR},
+            </if>
+            <if test="bankno != null" >
+                BANKNO = #{bankno,jdbcType=VARCHAR},
+            </if>
+            <if test="transdate != null" >
+                TRANSDATE = #{transdate,jdbcType=VARCHAR},
+            </if>
+            <if test="transtime != null" >
+                TRANSTIME = #{transtime,jdbcType=VARCHAR},
+            </if>
+            <if test="authCode != null" >
+                AUTH_CODE = #{authCode,jdbcType=VARCHAR},
+            </if>
+            <if test="sysrefno != null" >
+                SYSREFNO = #{sysrefno,jdbcType=VARCHAR},
+            </if>
+            <if test="cashtraceno != null" >
+                CASHTRACENO = #{cashtraceno,jdbcType=VARCHAR},
+            </if>
+            <if test="origintraceno != null" >
+                ORIGINTRACENO = #{origintraceno,jdbcType=VARCHAR},
+            </if>
+            <if test="systracdno != null" >
+                SYSTRACDNO = #{systracdno,jdbcType=VARCHAR},
+            </if>
+            <if test="originsystraceno != null" >
+                ORIGINSYSTRACENO = #{originsystraceno,jdbcType=VARCHAR},
+            </if>
+            <if test="reserved != null" >
+                RESERVED = #{reserved,jdbcType=VARCHAR},
+            </if>
+            <if test="workid != null" >
+                WORKID = #{workid,jdbcType=CHAR},
+            </if>
+            <if test="htime != null" >
+                HTIME = #{htime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="billStatus != null" >
+                BILL_STATUS = #{billStatus,jdbcType=CHAR},
+            </if>
+            <if test="billTime != null" >
+                BILL_TIME = #{billTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="billDesc != null" >
+                BILL_DESC = #{billDesc,jdbcType=VARCHAR},
+            </if>
+            <if test="pkDataBill != null" >
+                PK_DATA_BILL = #{pkDataBill,jdbcType=CHAR},
+            </if>
+        </set>
+        WHERE 
+            PK_UNIONPAY_TRADING = #{pkUnionpayTrading,jdbcType=CHAR}
+    </update>
+    
+	<select id="getServUnionpayTradingList" parameterType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServUnionpayTrading" resultType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServUnionpayTrading">
+		select *
+		from tp_serv_unionpay_trading 
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+		    and merchantid = #{merchantid,jdbcType=VARCHAR} 
+		    and transdate = #{transdate,jdbcType=VARCHAR} 
+		    and sysrefno = #{sysrefno,jdbcType=VARCHAR}
+  		</trim>
+	</select>
+	
+<!-- 	<select id="getSUTMerchantidList"  parameterType="java.util.String" resultType="DynaBean">
+		select merchantid
+		from tp_serv_unionpay_trading 
+		where transdate = #{transdate,jdbcType=VARCHAR} 
+		group group by merchantid
+	</select> -->
+</mapper>

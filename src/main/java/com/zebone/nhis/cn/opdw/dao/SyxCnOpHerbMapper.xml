@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.opdw.dao.SyxCnOpHerbMapper" >
+
+    <resultMap type="com.zebone.nhis.cn.opdw.vo.SyxCnOpPresVo" id="presMap">
+    
+        <id column="pk_pres" property="pkPres"/>
+        <result column="pres_no" property="presNo"/>
+        <result column="pk_dept_exec" property="pkDeptExec"/>
+        <result column="pk_dept" property="pkDept"/>
+        <result column="name_dept" property="nameDept"/>
+        <result column="date_pres" property="datePres"/>
+        <result column="name_emp_ord" property="nameEmpOrd"/>
+        <result column="pk_cnord" property="pkCnord"/>
+        <result column="ords" property="ords"/>
+        <result column="eu_boil" property="euBoil"/>
+        <result column="dt_boiltype" property="dtBoiltype"/>
+        <result column="usage_count" property="usageCount"/>
+        <result column="note_ord" property="noteOrd"/>
+        <result column="code_supply" property="codeSupply"/>
+        <result column="pk_pv" property="pkPv"/>
+        <result column="pk_pi" property="pkPi"/>
+        
+	    <collection property="herbOrders" ofType="com.zebone.nhis.cn.opdw.vo.SyxOpHerbVo" >
+	            <id column="pk_ordherb" property="pkOrdherb"/>
+	            <result column="name" property="name"/>
+	            <result column="pk_pd" property="pkPd"/>
+	            <result column="quan" property="quan"/>
+	            <result column="pk_unit" property="pkUnit"/>
+	            <result column="flag_acc" property="flagAcc"/>
+	            <result column="flag_settle" property="flagSettle"/>
+	            <result column="sort_no" property="sortNo"/>
+	            <result column="unit" property="unit"/>
+	            <result column="dt_herbusage" property="dtHerbusage"/>
+	            <result column="note_use" property="noteUse"/>
+	            <result column="eu_herbtype" property="euHerbtype"/>
+	    </collection>
+    </resultMap>
+    <select id = "qryHerbOrders"  parameterType="java.util.Map" resultMap="presMap">
+         select distinct
+		       pres.pk_pres,     --主键
+		       pres.pres_no,     --处方号码
+		       pres.date_pres,   --处方日期
+		       pres.pk_dept,     --开立科室
+		       dept.name_dept,   --科室名称
+		       pres.name_emp_ord,--开立医生
+		       ord.ords,          --付数
+		       ord.pk_dept_exec,
+		       ord.pk_pv,
+		       ord.pk_pi,    
+		       ord.code_supply,
+		       ord.note_ord,          --备注	
+		       ord.pk_cnord,
+		       pres.eu_boil,          --煎药标识
+		       pres.dt_boiltype,     --煎法
+		       pres.usage_count,     --每剂用药次数
+		       herb.sort_no,  --顺序号
+		       herb.pk_pd,    --药品主键
+		       pd.name,       --药品名称
+		       herb.pk_ordherb,
+		       herb.eu_herbtype,
+		       herb.quan,     --用量
+		       herb.pk_unit,  --单位
+		       unit.name unit,--单位名称
+		       herb.dt_herbusage,--中药服法
+		       herb.note_use, --服法说明
+		       cg.flag_acc,   --账户支付标志
+		       cg.flag_settle, --结算标志
+				herb.FLAG_FIT,
+				herb.DESC_FIT,
+				pres.pk_diag,
+				pres.pk_symp,
+				pres.code_diag,
+				pres.code_symp,
+				pres.name_symp,
+				pres.name_diag
+				<if test="pkHp != null and pkHp != ''">
+					,ph.hp_rate
+				</if>
+		  from cn_prescription pres
+		       inner join cn_order ord on pres.pk_pres=ord.pk_pres
+		       inner join cn_ord_herb herb on ord.pk_cnord=herb.pk_cnord
+		       inner join bd_pd pd on herb.pk_pd=pd.pk_pd 
+		       inner join bd_unit unit on herb.pk_unit=unit.pk_unit
+		       inner join bd_ou_dept dept on pres.pk_dept=dept.pk_dept
+		       left join bl_op_dt cg on pres.pk_pres=cg.pk_pres
+				<if test="pkHp != null and pkHp != ''">
+				left join ( select ihp.pk_item,(1 - NVL(ihp.ratio_self, 0)) * 100 || '%' as hp_rate
+					from bd_item_hp ihp where ihp.del_flag='0'
+					and ihp.pk_hp =#{pkHp,jdbcType=VARCHAR}
+				) ph on ph.pk_item=pd.pk_pd
+				</if>
+		 where pres.pk_pv=#{pkPv,jdbcType=VARCHAR}
+		       and pres.dt_prestype='02'  
+    </select>
+	<select id = "qryHerbOrdersSqlServer"  parameterType="java.util.Map" resultMap="presMap">
+		select distinct
+		pres.pk_pres,     --主键
+		pres.pres_no,     --处方号码
+		pres.date_pres,   --处方日期
+		pres.pk_dept,     --开立科室
+		dept.name_dept,   --科室名称
+		pres.name_emp_ord,--开立医生
+		ord.ords,          --付数
+		ord.pk_dept_exec,
+		ord.pk_pv,
+		ord.pk_pi,
+		ord.code_supply,
+		ord.note_ord,          --备注
+		ord.pk_cnord,
+		pres.eu_boil,          --煎药标识
+		pres.dt_boiltype,     --煎法
+		pres.usage_count,     --每剂用药次数
+		herb.sort_no,  --顺序号
+		herb.pk_pd,    --药品主键
+		pd.name,       --药品名称
+		herb.pk_ordherb,
+		herb.eu_herbtype,
+		herb.quan,     --用量
+		herb.pk_unit,  --单位
+		unit.name unit,--单位名称
+		herb.dt_herbusage,--中药服法
+		herb.note_use, --服法说明
+		cg.flag_acc,   --账户支付标志
+		cg.flag_settle, --结算标志
+		herb.FLAG_FIT,
+		herb.DESC_FIT,
+		pres.pk_diag,
+		pres.pk_symp,
+		pres.code_diag,
+		pres.code_symp,
+		pres.name_symp,
+		pres.name_diag,
+		'' hp_rate
+		from cn_prescription pres
+		inner join cn_order ord on pres.pk_pres=ord.pk_pres
+		inner join cn_ord_herb herb on ord.pk_cnord=herb.pk_cnord
+		inner join bd_pd pd on herb.pk_pd=pd.pk_pd
+		inner join bd_unit unit on herb.pk_unit=unit.pk_unit
+		inner join bd_ou_dept dept on pres.pk_dept=dept.pk_dept
+		left join bl_op_dt cg on pres.pk_pres=cg.pk_pres
+		where pres.pk_pv=#{pkPv,jdbcType=VARCHAR}
+		and pres.dt_prestype='02'
+	</select>
+    <!-- Oracle版本 -->
+	<select id="getCopyPresOracle" parameterType="com.zebone.nhis.cn.opdw.vo.PiPresInfo" resultType="com.zebone.nhis.cn.opdw.vo.PiPresInfo">
+		  select pres.pk_pres,pv.date_begin,pv.eu_pvtype,pres.pk_dept,
+		       dept.name_dept,pres.name_emp_ord, prestype.name prestype,pres.pres_no,pres.dt_prestype,
+			pres.pk_diag,
+			pres.pk_symp,
+			pres.code_diag,
+			pres.code_symp,
+			pres.name_symp,
+			pres.name_diag
+		  from cn_prescription pres
+		       inner join bd_ou_dept dept on pres.pk_dept=dept.pk_dept
+		       inner join bd_defdoc prestype on pres.dt_prestype=prestype.code and prestype.code_defdoclist='060101'
+		       inner join pv_encounter pv on pres.pk_pv=pv.pk_pv
+		 where 1=1
+		    and pres.dt_prestype='02'
+			<if test="pkPi != null and pkPi != ''">
+				and pres.pk_pi= #{pkPi,jdbcType=VARCHAR}
+			</if>
+			<if test="dateBegin != null and dateBegin != ''">
+				and pv.date_begin &gt;#{dateBegin,jdbcType=DATE}
+			</if>
+			<if test="dateEnd != null and dateEnd != ''">
+				and pv.date_begin &lt;=#{dateEnd,jdbcType=DATE}+1
+			</if>
+	</select>
+	<!-- Sqlserver版本 -->
+	<select id="getCopyPres" parameterType="com.zebone.nhis.cn.opdw.vo.PiPresInfo" resultType="com.zebone.nhis.cn.opdw.vo.PiPresInfo">
+		  select pres.pk_pres,pv.date_begin,pv.eu_pvtype,pres.pk_dept,
+		       dept.name_dept,pres.name_emp_ord, prestype.name prestype,pres.pres_no,pres.dt_prestype,
+			pres.pk_diag,
+			pres.pk_symp,
+			pres.code_diag,
+			pres.code_symp,
+			pres.name_symp,
+			pres.name_diag
+		  from cn_prescription pres
+		       inner join bd_ou_dept dept on pres.pk_dept=dept.pk_dept
+		       inner join bd_defdoc prestype on pres.dt_prestype=prestype.code and prestype.code_defdoclist='060101'
+		       inner join pv_encounter pv on pres.pk_pv=pv.pk_pv
+		 where 1=1
+		     and  pres.dt_prestype='02'
+			<if test="pkPi != null and pkPi != ''">
+				and pres.pk_pi= #{pkPi,jdbcType=VARCHAR}
+			</if>
+			<if test="dateBegin != null and dateBegin != ''">
+				and pv.date_begin &gt;#{dateBegin,jdbcType=DATE}
+			</if>
+			<if test="dateEnd != null and dateEnd != ''">
+				and pv.date_begin &lt;=DATEADD(day,1,#{dateEnd,jdbcType=DATE})
+			</if>
+	</select>
+	
+	<select id="queryPiHistoryHerbPres" parameterType="java.util.Map" resultType="DynaBean">
+		  select
+			pres.*,
+			pv.date_begin,
+			pv.eu_pvtype,
+			dept.name_dept,
+			prestype.name prestype,
+			ord.ords,
+			ord.note_ord,
+			ord.code_supply
+		  from cn_prescription pres
+			inner join cn_order ord on pres.pk_pres=ord.pk_pres
+			inner join bd_ou_dept dept on pres.pk_dept=dept.pk_dept
+			inner join bd_defdoc prestype on pres.dt_prestype=prestype.code and prestype.code_defdoclist='060101'
+			inner join pv_encounter pv on pres.pk_pv=pv.pk_pv
+		 where 1=1
+		     and  pres.dt_prestype='02'
+			 and pres.pk_pi= #{pkPi,jdbcType=VARCHAR}
+			<if test="dateBegin != null and dateBegin != ''">
+				and pv.date_begin <![CDATA[>=]]> to_date(#{dateBegin,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+			</if>
+			<if test="dateEnd != null and dateEnd != ''">
+				and pv.date_begin <![CDATA[<=]]> to_date(#{dateEnd,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+			</if>
+	</select>
+	
+	<select id="getCopyPresDt" parameterType="java.lang.String" resultType="com.zebone.nhis.cn.opdw.vo.HerbPresDt">
+		select
+			 herb.*,
+			 pd.name,
+			 pd.flag_stop as flag_stop_pd,
+	         nvl(pds.flag_stop,'1') as flag_stop_store,
+	         stk.quan_min
+			<if test="pkHp != null and pkHp != ''">
+	         ,ph.hp_rate
+			</if>
+		  from cn_order ord
+		    inner join cn_ord_herb herb on ord.pk_cnord = herb.pk_cnord
+		    inner join bd_pd pd on herb.pk_pd = pd.pk_pd
+		    inner join bd_unit unit on herb.pk_unit = unit.pk_unit
+		    left join bd_pd_store pds on pds.pk_pd=pd.pk_pd and pds.pk_dept = #{pkDept,jdbcType=VARCHAR}
+		    left join (select sum(quan_min - quan_prep) quan_min, pk_pd 
+		                     from pd_stock
+		                    where del_flag = '0' and pk_dept = #{pkDept,jdbcType=VARCHAR}
+		                    group by pk_pd ) stk on pds.pk_pd = stk.pk_pd
+			<if test="pkHp != null and pkHp != ''">
+		    left join ( select ihp.pk_item,(CASE
+   				WHEN ihp.eu_level = '0' THEN ('甲' || '(' || (1 - NVL(ihp.ratio_self, 0)) * 100 || '%)')
+   				WHEN ihp.eu_level = '1' THEN ('乙' || '(' || (1 - NVL(ihp.ratio_self, 0)) * 100 || '%)')
+   				WHEN ihp.eu_level = '2' THEN ('自费' || '(' || (1 - NVL(ihp.ratio_self, 0)) * 100 || '%)')
+   				ELSE '' END ) as hp_rate from bd_item_hp ihp where ihp.del_flag='0'
+
+   					and ihp.pk_hp =#{pkHp,jdbcType=VARCHAR}
+
+   				) ph on ph.pk_item=pd.pk_pd
+			</if>
+		  where ord.pk_pres = #{pkPres,jdbcType=VARCHAR} 
+	</select>
+	<select id="getCopyPresDtSqlServer" parameterType="java.lang.String" resultType="com.zebone.nhis.cn.opdw.vo.HerbPresDt">
+		select
+		herb.*,
+		pd.name,
+		pd.flag_stop as flag_stop_pd,
+		nvl(pds.flag_stop,'1') as flag_stop_store,
+		stk.quan_min,'' hp_rate
+		from cn_order ord
+		inner join cn_ord_herb herb on ord.pk_cnord = herb.pk_cnord
+		inner join bd_pd pd on herb.pk_pd = pd.pk_pd
+		inner join bd_unit unit on herb.pk_unit = unit.pk_unit
+		left join bd_pd_store pds on pds.pk_pd=pd.pk_pd and pds.pk_dept = #{pkDept,jdbcType=VARCHAR}
+		left join (select sum(quan_min - quan_prep) quan_min, pk_pd
+		from pd_stock
+		where del_flag = '0' and pk_dept = #{pkDept,jdbcType=VARCHAR}
+		group by pk_pd ) stk on pds.pk_pd = stk.pk_pd
+		where ord.pk_pres = #{pkPres,jdbcType=VARCHAR}
+	</select>
+	<select id="queryOpHerbPresList" resultType="DynaBean" parameterType="java.util.Map" >
+	  	SELECT
+			ord.*, pres.pres_no,
+			pres.eu_boil,
+			pres.dt_properties,
+			pres.dt_boiltype,
+			pres.fried_num,
+			pres.usage_count,
+			pres.dosage_pack,
+			pres.pk_diag,
+			pres.pk_symp,
+			pres.code_diag,
+			pres.code_symp,
+			pres.name_symp,
+			pres.name_diag,
+		    case when cg.pk_cnord is null then '0'
+		    	when cg.settle=0 then '0'
+		     	when cg.amount>0 and cg.settle>0 then '1'
+		    else '3' end as flag_settle, <!-- 结算标志 -->
+		    cg.amount as amount_cg,pres.NAME_SYMP,
+		    pres.dt_prestype
+		FROM cn_order ord
+		INNER JOIN cn_prescription pres ON pres.pk_pres = ord.pk_pres and pres.del_flag = '0'
+		left join (
+			SELECT dt.PK_CNORD,sum(dt.amount) as amount,sum(case when dt.flag_settle='1' then 1 else 0 end) as settle
+			from BL_OP_DT dt
+			where dt.PK_PV=#{pkPv, jdbcType=VARCHAR} and dt.del_flag !='1' and dt.PK_CNORD is not null
+			GROUP by dt.PK_CNORD
+        ) cg  on ord.pk_cnord=cg.pk_cnord
+		                            
+		WHERE ord.pk_pv =#{pkPv,jdbcType=CHAR}
+		and pres.dt_prestype in('02','14')
+		ORDER BY
+			pres.pres_no DESC
+  	</select>
+  	
+</mapper>

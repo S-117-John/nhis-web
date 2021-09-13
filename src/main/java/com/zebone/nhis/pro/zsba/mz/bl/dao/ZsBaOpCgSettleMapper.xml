@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.mz.bl.dao.ZsBaOpCgSettleMapper">
+    <select id="getUnSettleRecordNum" parameterType="java.lang.String" resultType="Integer">
+        select sum(t.cnt) as cnt from (
+        select
+        count(cg.pk_pv) cnt
+        from bl_op_dt cg
+        inner join pv_encounter pv on cg.pk_pv=pv.pk_pv and pv.eu_status in('1','2','3')
+        where cg.flag_pv='1' and cg.flag_settle='0' and  cg.date_cg &lt; DATEADD(DAY,-2,GETDATE())
+        and pv.pk_pi = #{pkPi,jdbcType=CHAR}
+         union
+        select
+        count(cg.pk_pv) cnt
+        from bl_op_dt cg
+        inner join cn_order ord on cg.pk_cnord=ord.pk_cnord and ord.flag_occ='1'
+        where cg.flag_settle='0' and cg.date_cg &lt; DATEADD(DAY,-2,GETDATE())
+         and cg.pk_pi = #{pkPi,jdbcType=CHAR}
+        ) t
+    </select>
+    
+    <select id="qryPatiRefSettle" parameterType="java.lang.String" resultType="DynaBean">
+    	select st.pk_pv,
+	       	st.pk_settle,
+	       	st.code_st,
+	       	st.amount_st,
+	       	st.amount_pi,
+	       	pv.code_pv,
+	       	inv.code_inv,
+	       	canst.date_st,
+	       	st.name_emp_st 
+		from bl_settle st
+		inner Join bl_settle Canst On st.pk_settle=canst.pk_settle_canc
+		inner Join pv_encounter pv On st.pk_pv=pv.pk_pv
+		left Join bl_st_inv stinv On st.pk_settle=stinv.pk_settle
+		left Join bl_invoice inv On stinv.pk_invoice=inv.pk_invoice
+		where st.dt_sttype in ('00','01') 
+		and st.pk_pi=#{pkPi,jdbcType=VARCHAR}
+    </select>
+    
+     <select id="qryPatiRefSettleDt" parameterType="java.lang.String" resultType="DynaBean">
+     	select
+			dt.pk_cgop,
+		  	dt.pk_cnord,
+		  	dt.pk_pres,
+		  	dt.name_cg,
+		  	dt.spec,
+		  	dt.quan,
+			dt.quan as quan_cg,
+		  	dt.price,
+		  	dt.amount,
+		  	dt.eu_additem,
+		  	ord.ords,
+		  	ord.ordsn,
+		  	ord.ordsn_parent,
+		  	ord.dosage,
+		  	ord.days,
+		  	ord.name_emp_ord,
+		  	ord.name_emp_input,
+		  	pres.pres_no,
+		  	diag.name_diag   as diagname,
+		  	catepi.name as picate,
+		 	sup.name as supply,
+		  	freq.name as freq_name,
+		  	unit.name as unit,
+		  	unitdos.name as unit_dos,
+		  	dept.name_dept,
+		  	deptex.name_dept as name_dept_ex,
+		  	case when ord.date_enter is null then dt.date_cg else ord.date_enter end as date_enter,
+		  	case when ord.dt_hpprop is null then '普通门诊' else hpprop.name end as hpprop_name,
+			case when ord.dt_hpprop is null then '11' else ord.dt_hpprop end as  dt_hpprop  	
+		from bl_op_dt dt
+		inner join pv_encounter pv on pv.pk_pv = dt.pk_pv
+		left join cn_order ord on ord.PK_CNORD = dt.PK_CNORD
+		left join cn_prescription pres on pres.PK_PRES = dt.pk_pres
+		left join pv_diag diag on diag.pk_pv = dt.pk_pv and diag.flag_maj = '1' and diag.del_flag = '0'
+		left join pi_cate catepi on catepi.pk_picate = pv.pk_picate 
+		left join bd_unit unitdos on unitdos.pk_unit = ord.pk_unit_dos
+		left join bd_supply sup on sup.code = ord.code_supply
+		left join bd_term_freq freq on freq.code = ord.code_freq and freq.del_flag = '0'
+		left join bd_unit unit on dt.pk_unit = unit.pk_unit
+		left join bd_ou_dept deptex on deptex.pk_dept = dt.pk_dept_ex
+		left join bd_ou_dept dept on dept.pk_dept = ord.pk_dept
+		left join bd_defdoc hpprop on hpprop.code = ord.dt_hpprop and hpprop.CODE_DEFDOCLIST = '060107'  and hpprop.del_flag != '1'
+		where dt.pk_settle = #{pkSettle,jdbcType=VARCHAR}
+    </select>
+    
+    <select id="qryblOpDtList" parameterType="java.util.List" resultType="com.zebone.nhis.common.module.bl.opcg.BlOpDt">
+		select * from bl_op_dt where pk_cgop in
+		<foreach collection="list" open="(" separator="," close=")" item="pkCgop" index="index">
+			#{pkCgop,jdbcType=VARCHAR}
+		</foreach>
+	</select>
+	
+	<select id="getPaymentRecords"  parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			pi.code_op,
+       		pv.name_pi,
+	        st.code_st,
+	        defdoc.name as name_sex,
+	        emp.name_emp as name_emp_pay,
+	        invo.code_inv,
+	        invo.ebillbatchcode,
+	        invo.ebillno,
+			depo.pk_depo,
+	        depo.amount,
+	        depo.date_pay,
+	        depo.eu_remove,
+	        depo.pk_emp_remove,
+	        depo.date_remove,
+	        depo.note_remove
+		from bl_deposit depo
+		inner join pv_encounter pv on depo.pk_pv=pv.pk_pv
+		inner join bl_settle st on depo.pk_settle=st.pk_settle
+		inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		left join bl_st_inv inv on inv.pk_settle = st.pk_settle
+		left join bl_invoice invo on invo.pk_invoice = inv.pk_invoice
+		left join bd_ou_employee emp on emp.pk_emp=depo.pk_emp_pay
+		left join bd_defdoc defdoc on defdoc.code=pv.dt_sex and code_defdoclist ='000000' 
+		where depo.dt_paymode='10' and depo.pk_depo_back is null
+			and not exists(select 1 from bl_deposit dep where dep.pk_depo_back=depo.pk_depo)
+			<if test="codeOp != null  and  codeOp != ''">
+            	and pi.code_op = #{codeOp,jdbcType=VARCHAR}
+        	</if>
+        	<if test="codePv != null  and  codePv != ''">
+	            and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+	        </if>
+	        <if test="codePi != null  and  codePi != ''">
+	            and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+	        </if>
+        	<if test="idNo != null  and  idNo != ''">
+	            and pi.id_no = #{idNo,jdbcType=VARCHAR}
+	        </if>
+	        <if test="insurNo != null  and  insurNo != ''">
+	            and pi.insur_no = #{insurNo,jdbcType=VARCHAR}
+	        </if>
+	        <if test="hicNo != null  and  hicNo != ''">
+	            and pi.hic_no = #{hicNo,jdbcType=VARCHAR}
+	        </if>
+	        <if test="dateBegin != null  and  dateBegin != ''">
+	            and depo.date_pay &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+	        </if>
+	        <if test="dateEnd != null  and  dateEnd != ''">
+	            and depo.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+	        </if>
+	        <if test="euRemove != null  and  euRemove != '' and  euRemove !='9' ">
+	            and nvl(depo.eu_remove,0)=#{euRemove,jdbcType=VARCHAR}
+	        </if>
+	     order by depo.date_pay desc
+	</select>
+
+	<select id="qryPatientInfo"  parameterType="java.util.Map" resultType="java.util.Map">
+		select top 1 code_op,name_pi,dt_sex,CONVERT(VARCHAR(10), birth_date, 120) birth_date 
+		from PI_MASTER where DEL_FLAG='0' 
+		<if test="codeOp != null and codeOp != ''">
+			and CODE_OP = #{codeOp,jdbcType=VARCHAR} 
+		</if>
+		<if test="cardNo != null and cardNo != ''">
+			and P_CAR_CODE = #{cardNo,jdbcType=VARCHAR} 
+		</if>
+		<if test="thirdSocialNo != null and thirdSocialNo != ''">
+			and THIRD_SOCIAL_NO = #{thirdSocialNo,jdbcType=VARCHAR} 
+		</if>
+		<if test="insurNo != null and insurNo != ''">
+			and INSUR_NO = #{insurNo,jdbcType=VARCHAR} 
+		</if>
+		<if test="idNo != null and idNo != ''">
+			and ID_NO = #{idNo,jdbcType=VARCHAR} 
+		</if>
+		<if test="icCardId != null and icCardId != ''">
+			and IC_CARD_ID = #{icCardId,jdbcType=VARCHAR} 
+		</if>
+	</select>
+</mapper>

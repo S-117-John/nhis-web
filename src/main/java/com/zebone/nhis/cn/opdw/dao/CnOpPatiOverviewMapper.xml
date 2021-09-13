@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.opdw.dao.CnOpPatiOverviewMapper" >
+	<!-- 获取患者基本信息列表 -->
+	<select id="getPiMasterList" parameterType="com.zebone.nhis.common.module.pi.PiMaster" resultType="com.zebone.nhis.common.module.pi.PiMaster">
+		select pk_pi,pk_org,code_pi,code_op,code_ip,barcode,pk_picate,name_pi,dt_idtype,id_no,hic_no,insur_no,mpi,flag_ehr,
+		dt_sex,birth_date,place_birth,dt_marry,dt_occu,dt_edu,dt_country,dt_nation,tel_no,mobile,wechat_no,email,unit_work,
+		tel_work,address,name_rel,tel_rel,dt_blood_abo,dt_blood_rh,creator,create_time,modifier,del_flag,ts
+		from PI_MASTER 	pi
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and del_flag = '0'
+		    <if test="codePi != null and codePi != ''">
+		  		and (code_pi like '%'||#{codePi,jdbcType=VARCHAR} or code_pi like #{codePi,jdbcType=VARCHAR}||'%')
+		  	</if> 
+		  	<if test="namePi != null and namePi != ''">
+		  		and name_pi like '%'||#{namePi,jdbcType=VARCHAR}||'%'
+		  	</if>
+		  	<if test="codeOp != null and codeOp != ''">
+		  		and code_op = #{codeOp,jdbcType=VARCHAR}
+		  	</if>  
+		  	<if test="dtSex != null and dtSex != ''">
+		  		and dt_sex = #{dtSex,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="idNo != null and idNo != ''">
+		  		and (id_no like '%'||#{idNo,jdbcType=VARCHAR} or id_no like #{idNo,jdbcType=VARCHAR}||'%')
+		  	</if>
+		  	<if test="cardNo != null and cardNo != ''">
+		  		and exists (select 1 
+                 from pi_card card
+                where pi.pk_pi=card.pk_pi and
+                      card.card_no=#{cardNo,jdbcType=VARCHAR})
+		  	</if>
+		  	<if test="mobile != null and mobile != ''">
+		  		and (mobile like '%'||#{mobile,jdbcType=VARCHAR} or mobile like #{mobile,jdbcType=VARCHAR}||'%')
+		  	</if>
+  		</trim>
+	</select>
+	
+	<select id="getAddSch" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.sch.plan.SchSch">
+		select sch.pk_sch,sch.pk_schsrv,sch.pk_schres,sch.cnt_add,sch.cnt_over 
+	    	from sch_sch sch where 1=1
+	    <if test="pkSchres != null and pkSchres != ''">
+		  		and sch.pk_schres = #{pkSchres,jdbcType=VARCHAR}
+		 </if>	
+		 <if test="dateWork != null and dateWork != ''">
+		  		and sch.date_Work = #{dateWork,jdbcType=DATE}
+		 </if>	
+		 <if test="pkDatelot != null and pkDatelot != ''">
+		  		and sch.pk_dateslot = #{pkDatelot,jdbcType=VARCHAR}
+		 </if>
+	</select>
+	
+	<!--  -->
+	<select id="getAddSchByDateTime" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.sch.plan.SchSch">
+		select sch.pk_sch, sch.pk_schsrv, sch.pk_schres,sch.minute_per,
+			   sch.cnt_add, sch.cnt_over , sch.pk_dateslot, sch.date_work
+	      from sch_sch sch 
+	     inner join bd_code_dateslot dateslot on dateslot.pk_dateslot = sch.pk_dateslot
+	     where 1=1 
+	       and sch.flag_stop = '0'
+	    <if test="pkSchres != null and pkSchres != ''">
+		  		and sch.pk_schres = #{pkSchres,jdbcType=VARCHAR}
+		 </if>	
+		 <if test="dateWork != null and dateWork != ''">
+		  		and sch.date_Work = to_date(#{dateWork},'YYYYMMDDHH24MISS') 
+		 </if>	 
+		  <if test="timeWork != null and timeWork != ''">
+		        and lpad(dateslot.time_begin,8,'0') &lt;=  #{timeWork,jdbcType=VARCHAR}
+		        and lpad(dateslot.time_end,8,'0') &gt;= #{timeWork,jdbcType=VARCHAR}
+		 </if>	
+		 <if test="pkDateslot != null and pkDateslot != ''">
+		  		and sch.pk_dateslot = #{pkDateslot,jdbcType=VARCHAR}
+		 </if>
+	</select>
+	
+	<!-- 获取预约患者列表 -->
+	<select id="getApptPatientList" parameterType="java.util.Map" resultType="com.zebone.nhis.cn.opdw.vo.ApptPatient">
+		 select
+		       pi.pk_pi,pi.pk_org,pi.code_pi,pi.code_op, pi.code_ip,pi.barcode,
+		       pi.pk_picate,pi.name_pi, pi.dt_idtype,pi.id_no, pi.hic_no,pi.insur_no,
+		       pi.mpi, pi.flag_ehr, pi.dt_sex, pi.birth_date,pi.place_birth, pi.dt_marry,
+		       pi.dt_occu,pi.dt_edu, pi.dt_country,pi.dt_nation,pi.tel_no,pi.mobile,
+		       pi.wechat_no, pi.email,pi.unit_work, pi.tel_work,pi.address,pi.name_rel,
+		       pi.tel_rel,pi.dt_blood_abo, pi.dt_blood_rh,pi.creator,       
+		       appt.pk_schappt, appt.date_appt,ds.name_dateslot,ds.time_begin,ds.time_end,res.name schres,dept.name_dept,appt.ticket_no 
+		  from pi_master pi
+		       inner join sch_appt appt on pi.pk_pi=appt.pk_pi
+		       inner join sch_resource res on appt.pk_schres=res.pk_schres
+		       inner join bd_ou_dept dept on appt.pk_dept_ex=dept.pk_dept
+		       inner join bd_code_dateslot ds on appt.pk_dateslot=ds.pk_dateslot
+		 where appt.eu_schclass=0 and appt.flag_cancel=0 and appt.eu_status = '0'
+ 			   and appt.pk_schres= #{pkSchres,jdbcType=VARCHAR}
+       		   and appt.pk_dept_ex=#{pkDeptEx,jdbcType=VARCHAR}
+       		   and appt.date_appt=#{dateAppt,jdbcType=DATE}
+  			<if test="codePi != null and codePi != ''">
+		  		and (pi.code_pi like '%'||#{codePi,jdbcType=VARCHAR} or pi.code_pi like #{codePi,jdbcType=VARCHAR}||'%')
+		  	</if> 
+		  	<if test="namePi != null and namePi != ''">
+		  		and pi.name_pi like '%'||#{namePi,jdbcType=VARCHAR}||'%'
+		  	</if> 
+		  	<if test="dtSex != null and dtSex != ''">
+		  		and pi.dt_sex = #{dtSex,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="idNo != null and idNo != ''">
+		  		and (pi.id_no like '%'||#{idNo,jdbcType=VARCHAR} or pi.id_no like #{idNo,jdbcType=VARCHAR}||'%')
+		  	</if>
+		  	<if test="cardNo != null and cardNo != ''">
+		  		and exists (select 1 
+                 from pi_card card
+                where pi.pk_pi=card.pk_pi and
+                      card.card_no=#{cardNo,jdbcType=VARCHAR})
+		  	</if>
+		  	<if test="mobile != null and mobile != ''">
+		  		and (pi.mobile like '%'||#{mobile,jdbcType=VARCHAR} or pi.mobile like #{mobile,jdbcType=VARCHAR}||'%')
+		  	</if>
+	</select>
+	<select id = 'qryPatiOpInfo' parameterType="java.lang.String" resultType="com.zebone.nhis.cn.opdw.vo.OpPatiInfo">
+		  select pv.pk_pi,pv.pk_pv, pi.code_pi, pi.name_pi,
+		       sex.name sex, idtype.name idtype,pi.id_no, 
+		       pi.mobile,pv.code_pv,dept.name_dept,
+		       pv.pk_emp_phy,pv.name_emp_phy,diag_dt.diagname,diag.name_diag,
+		       diag.desc_diag,diag.pk_diag,pv.pk_insu as pk_hp,pv.pk_dept,no.BED_NO,no.CONTACT_DEPT,
+		       no.pk_in_notice ,no.pk_pv_ip pkPvIp,no.eu_status ,no.date_valid ,no.pk_pv_op ,
+		       no.pk_dept_ip ,no.pk_dept_ns_ip ,no.pk_diag_maj,no.desc_diag_maj,
+		       no.dt_level_dise ,no.date_admit ,no.amt_depo ,no.note note,no.flag_readm,no.dt_way_ip,no.flag_covid_check,
+		       no.date_covid,no.eu_result_covid,no.EU_STATUS,GETPVAGE(pi.BIRTH_DATE,pv.DATE_BEGIN) as age_format,
+		       no.flag_chg_dept,no.name_rel,case when no.tel_rel is null then pi.mobile else no.tel_rel end as tel_rel,no.flag_icu,no.flag_spec,no.flag_isolate,no.dt_pat_cls,no.flag_sygery
+		  from pi_master pi
+		       inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+		       left join pv_ip_notice no on pi.pk_pi=no.pk_pi and pv.pk_pv = no.PK_PV_OP
+		       left outer join pv_diag diag on pv.pk_pv=diag.pk_pv and diag.flag_maj=1 and diag.del_flag='0'
+		       left outer join bd_term_diag diag_dt on diag.pk_diag=diag_dt.pk_diag
+		       left join bd_ou_dept dept on pv.pk_dept=dept.pk_dept
+		       left join bd_defdoc sex on pi.dt_sex=sex.code and sex.code_defdoclist='000000' and sex.del_flag='0'
+		       left outer join bd_defdoc idtype on pi.dt_idtype=idtype.code and idtype.code_defdoclist='000007' and idtype.del_flag='0'
+		 where pv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="qryVisitingInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select pv.pk_pv,
+       	   pi.code_op,
+       	   pv.name_pi,
+       	   sex.name as dt_sex,
+       	   pv.age_pv,
+       	   pv.date_begin,
+	       pv.code_pv,
+	       pv.pk_dept,
+	       pv.name_emp_phy,
+	       diag.name_diag,
+	       bl.amount,
+	       bl.amount_pd,
+	       bl.amount_opt,
+       	   bl.amount_tre,
+	       case when bl.amount>0 then round(bl.amount_pd/bl.amount*100,4) end as amt_pd_ratio
+	 	   from pv_encounter pv
+	       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+	       inner join (select sum(cg.amount) amount,
+	                          sum(case when cg.flag_pd='1' then cg.amount else 0 end) amount_pd,
+	                          sum(case when item.dt_itemtype like '06%' then cg.amount else 0 end) amount_opt,
+                          	  sum(case when item.dt_itemtype like '02%' then cg.amount else 0 end) amount_tre,
+	                          cg.pk_pv from bl_op_dt cg 
+	                          inner join pv_encounter pven on pven.pk_pv=cg.pk_pv
+	                          left outer join bd_item item on cg.pk_item=item.pk_item and cg.flag_pd='0'
+	                    	where 1=1 
+	                    	<if test="dateBegin != null and dateBegin != ''">
+	                    		and pven.date_begin &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+	                    	</if>	 
+	                    	<if test="dateEnd != null and dateEnd != ''">
+	                    		and pven.date_begin &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+	                    	</if>
+	                  group by cg.pk_pv) bl on pv.pk_pv=bl.pk_pv
+	       left outer join pv_diag diag on pv.pk_pv=diag.pk_pv and diag.flag_maj='1' and diag.del_flag ='0'  
+	       left outer join bd_defdoc sex on pv.dt_sex = sex.code
+        	and sex.code_defdoclist = '000000' and sex.del_flag='0'
+	 	   where pv.flag_cancel='0' 
+	 	   and pv.eu_pvtype &lt; '3'
+	 	   and pv.pk_org=#{pkOrg,jdbcType=VARCHAR}
+		<if test="pkDept != null and pkDept != ''">
+	       	   and pv.pk_dept = #{pkDept,jdbcType=VARCHAR} 
+	 	   </if>
+	 	   <if test="dateBegin != null and dateBegin != ''">
+	       	   and pv.date_begin &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')  
+	 	   </if>
+	       <if test="dateEnd != null and dateEnd != ''">
+	       	   and pv.date_begin &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+	 	   </if>
+	       <if test="codeOp != null and codeOp != ''">
+	       	   and pi.code_op = #{codeOp,jdbcType=VARCHAR} 
+	 	   </if>
+	 	   <if test="codePv != null and codePv != ''">
+	       	   and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+	 	   </if>
+	       <if test="namePi != null and namePi != ''">
+	       	   and pi.name_pi like '%${namePi}%' 
+	 	   </if>
+	       <if test="pkEmpPhy != null and pkEmpPhy != ''">
+	       	   and pv.pk_emp_phy = #{pkEmpPhy,jdbcType=VARCHAR}
+	 	   </if> 
+	</select>
+	
+	<select id="qryVisitingCharges" parameterType="java.util.Map" resultType="DynaBean">
+		select iitem.name,  <!-- 费用分类 -->
+		       iitem.code,
+	       cg.name_cg,  <!-- 项目名称 -->
+	       cg.spec,     <!-- 规格 -->
+	       sum(cg.quan) quan, <!-- 数量 -->
+	       cg.pk_unit,  <!-- 单位 -->
+	       unit.name as name_unit,
+	       cg.price,    <!-- 单价 -->
+	       sum(cg.amount) amount,   <!-- 金额 -->
+	       sum(cg.amount_pi) amount_pi, <!-- 自付金额 -->
+	       cg.flag_settle, <!-- 结算标志 -->
+	       ord.code_supply,
+	       ord.code_freq,
+	       ord.days,
+	       max(settle.date_st) date_cg,
+           ord.note_ord,
+           cg.name_emp_app,
+		   ord.EU_INJURY
+	  	   from bl_op_dt cg
+	       inner join bd_invcate_item iitem on cg.code_bill=iitem.code and cg.pk_org=iitem.pk_org 
+	       inner join bd_invcate inv on iitem.pk_invcate=inv.pk_invcate and inv.eu_type='0' 
+	       left join bd_unit unit on unit.pk_unit = cg.pk_unit
+	       left outer join cn_order ord on cg.pk_cnord=ord.pk_cnord
+	       left join bl_settle settle on  settle.pk_settle = cg.pk_settle
+	 	   where cg.pk_pv = #{pkPv,jdbcType=VARCHAR}
+		   group by iitem.name,iitem.code,cg.name_cg,cg.spec,unit.name,cg.pk_unit,cg.price,cg.flag_settle,
+		   ord.code_supply,ord.code_freq,ord.days,ord.note_ord,cg.name_emp_app,ord.EU_INJURY
+		   having sum(cg.quan)>0
+           order by iitem.code
+	</select>
+	<select id="qryVisitingDiag" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			diag.code_icd,  <!-- icd编码 -->
+	        diag.name_diag, <!-- icd名称 -->
+	        diag.date_diag, <!-- 日期 -->
+	        diag.name_emp_diag, <!-- 开立医生 -->
+	        diag.flag_maj   <!-- 主诊断 -->
+  	 	from pv_diag diag 
+ 		where diag.pk_pv=#{pkPv,jdbcType=VARCHAR}
+	</select>
+
+	<!--住院诊断编码字典中山-->
+	<select id = "qryCnDaigByPk"  parameterType="java.util.Map" resultType="DynaBean" >
+		 select * from
+		(
+			select
+				b.pk_cndiag as PK_DIAG,
+				icd.diagcode as code,
+				b.name_cd as name,
+				als.spcode as py_code,
+				als.d_code
+			from bd_cndiag b
+			inner join bd_cndiag_comp comp on b.pk_cndiag=comp.pk_cndiag_comp
+			inner join bd_cndiag_as als on b.pk_cndiag=als.pk_cndiag
+			left outer join bd_term_diag icd on b.pk_diag=icd.pk_diag
+			where  1=1  and b.del_flag='0'
+			AND b.pk_cndiag = #{pkDiag,jdbcType=VARCHAR}
+			UNION  all
+			select
+				b.pk_cndiag as PK_DIAG,
+				icd.diagcode as code,
+				b.name_cd as name,
+				als.spcode as py_code,
+				als.d_code
+			from bd_cndiag b
+		       inner join bd_cndiag_as als on b.pk_cndiag=als.pk_cndiag
+		       left outer join bd_term_diag icd on b.pk_diag=icd.pk_diag
+			where  1=1 and b.del_flag='0'
+			AND b.pk_cndiag = #{pkDiag,jdbcType=VARCHAR}
+		) tmp
+		order by length(name)
+    </select>
+</mapper>

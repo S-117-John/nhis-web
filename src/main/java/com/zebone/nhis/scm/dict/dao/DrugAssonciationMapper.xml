@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.dict.dao.DrugAssonciationMapper">
+	<select id="queryByPkPd" resultType="DynaBean" parameterType="java.lang.String">
+		select rel.pk_pdrel,  
+					rel.pk_pd_rel, 
+					pd.code,       
+					pd.name,       
+					pd.spec,       
+					rel.sortno,
+					rel.note       
+					from bd_pd_rel rel
+					inner join bd_pd pd on rel.pk_pd_rel=pd.pk_pd
+					where rel.pk_pd=#{pkPd} and
+					rel.eu_reltype='0' and
+					rel.del_flag='0' order by cast(rel.sortno  as int) asc
+	</select>
+	
+	<delete id="delByPkPdrel" parameterType="java.lang.String">
+				delete from bd_pd_rel where pk_pdrel=#{pkPdrel}
+	</delete>
+</mapper>

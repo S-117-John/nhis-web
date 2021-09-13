@@ -1,0 +1,173 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>任务日志</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+   <link href="${ctx}/ui/css/main.css" rel="stylesheet" type="text/css" />
+   <link href="${ctx}/ui/css/custom_icons.css" rel="stylesheet" type="text/css" />
+    <script src="${ctx}/ui/boot.js" type="text/javascript"></script>
+    <style type="text/css">
+          html, body{
+	        margin:0;padding:0;border:0;width:100%;height:100%;overflow:hidden;
+	    }  
+    </style>        
+</head>
+<body>
+		<!--工具栏-->
+	    <div class="zbui-toolbar" style="padding:2px;">
+			       <a class="zbui-button" iconCls="icon-search" plain="true" id="btn_search">查询</a>
+			       <span class="separator"></span>
+			       <a class="zbui-button" iconCls="icon-look" plain="true" id="button_look">查看</a>
+	    </div>
+		<!--queryform-->
+	     <div id="queryform" style="border-right:1px solid #909aa6;border-left:1px solid #909aa6;height:30px;padding:5px;">
+	        <table >
+	            <tr>
+	                <td  width="60">日志编码：</td>
+	                <td  width="100">
+	                		<input id="jobname" class="zbui-textbox" name="jobname" emptyText="请输入日志编码" style="width:100px;"/>
+	                </td>
+	                <td  width="60">日志名称：</td>
+	                <td  width="100">
+	                		<input id="jobcname" class="zbui-textbox" name="jobcname" emptyText="请输入日志名称" style="width:100px;"/>
+	                </td>
+	                <td  width="60">状&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;态：</td>
+	                <td  width="100">
+	                		<input id="jobtype" name="jobtype" class="zbui-combobox" url="${ctx}/transdict/getAllJobTypes" value="9" 
+	                		valueField="jobtypename" textField="typedesc" style="width:120px;"/>
+	                </td>
+	            </tr>
+	        </table>
+	    </div>
+	    
+	    <!--datagrid撑满页面-->
+	    <div class="zbui-fit" >
+	        
+	        <div id="datagrid1" class="zbui-datagrid" style="width:100%;height:100%;" 
+	            url="${ctx}/quartzlog/loadQuartzLog" idField="id" 
+	            sizeList="[5,10,20,50]" pageSize="10">
+	            <div property="columns">
+	                <div type="indexcolumn"  width="20px"></div>
+	                <div type="checkcolumn"  width="20px" ></div>    
+	                <div field="jobname" headerAlign="center" width="10%">任务日志编码
+			        </div>    
+			        <div field="jobcname" headerAlign="center" width="20%">任务日志名称
+			        </div> 
+			        <div field="jobmessage" headerAlign="center" width="20%">任务日志
+			        </div> 
+			         <div field="jobtype" headerAlign="center" width="20%">状态
+			        </div> 
+			        <div field="createTime" headerAlign="center"   width="20%" renderer="onCreateTimeRenderer">创建时间
+			        </div>
+	            </div>
+	        </div> 
+	
+	    </div>
+
+    
+    
+    <script type="text/javascript">
+        zbui.parse();
+        
+        var grid = zbui.get("datagrid1");
+        
+        grid.load();
+        
+        grid.on("drawcell", function (e) {
+            var field = e.field;
+            var value = e.value;
+
+            //状态栏，根据不同值设置颜色
+            if (field == "jobtype" ) {
+				if(value =="0"){//任务执行成功
+					 e.cellHtml ="任务执行成功";
+					 e.rowStyle = "background:#90EE90;";
+					 e.cellStyle = "color:#8B008B;font-weight:bold;";
+				}else if(value =="1"){//任务执行业务失败
+					 e.cellHtml ="任务执行业务失败";
+					 e.rowStyle = "background:#FFC0CB;";
+					 e.cellStyle = "color:red;font-weight:bold;";
+				}else if(value =="2"){//任务执行业务失败
+					 e.cellHtml ="任务执行异常";
+					 e.cellStyle = "color:#006400;font-weight:bold;";
+					 e.rowStyle = "background:#FFC0CB;";
+				}
+            }
+        });
+        
+        function onCreateTimeRenderer(e) {
+            var value = e.value;
+           if (value){
+        	    var cdate = value.substring(0,4)+'-'+value.substring(4,6)+'-'+value.substring(6,8)+' '+value.substring(8,10)+':'+value.substring(10,12)+':'+value.substring(12,14);
+        	    return zbui.formatDate(zbui.parseDate(cdate), 'yyyy-MM-dd HH:mm:ss');
+            }else{
+            	return "";
+            }
+        }
+        
+        
+        
+        //===============================================
+        /*查询*/
+        zbui.get('btn_search').on('click',function(){
+        	  var form = new zbui.Form("#queryform");
+        	  var fdata = form.getData();
+        	  var json = zbui.encode(fdata);
+        	  console.info(json);
+              grid.load({queryform : json});
+        }); 
+        
+        /*查看*/
+        zbui.get('button_look').on('click',function(){
+        	var row = grid.getSelected();
+        	if(row){
+        		zbui.open({
+	                url: "${ctx}/view?page=system/lookquartzlog",
+	                title: "任务日志", width: 800, height:500,
+	                onload: function () {
+	                    var iframe = this.getIFrameEl();
+	                    var data = { action: "look", row: row };
+	                    iframe.contentWindow.SetData(data);
+	                    
+	                },
+	                ondestroy: function (action) {
+	                    grid.reload();
+	                    
+	                }
+	            });
+        	}else{
+        		alert("请选中一条记录");
+        		grid.reload();
+        	}
+        });
+        
+        /*修改
+       zbui.get('btn_edit').on('click',function(){
+	        var row = grid.getSelected();
+	        if (row) {
+	            zbui.open({
+	                url: "${ctx}/view?page=system/editquartzlog",
+	                title: "编辑任务", width: 500, height:240,
+	                onload: function () {
+	                    var iframe = this.getIFrameEl();
+	                    var data = { action: "edit", row: row };
+	                    iframe.contentWindow.SetData(data);
+	                    
+	                },
+	                ondestroy: function (action) {
+	                    grid.reload();
+	                    
+	                }
+	            });
+	            
+	        } else {
+	            alert("请选中一条记录");
+	        }
+        }); */
+        
+        
+    </script>
+</body>
+</html>

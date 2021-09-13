@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.st.dao.PdInStoreMapper">
+<select id="queryToInPdStList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdStVo">
+select st.*,
+       sttype.name sttype,
+       org.name_org,
+       dept.name_dept,
+       sto.name name_store  
+  from pd_st st
+       inner join bd_defdoc sttype on st.dt_sttype=sttype.code and sttype.code_defdoclist='080008'
+       inner join bd_ou_org org on st.pk_org=org.pk_org
+       left outer join bd_ou_dept dept on st.pk_dept_st=dept.pk_dept
+       left outer join bd_store sto on st.pk_store_st=sto.pk_store
+ where st.pk_store_lk = #{pkStore,jdbcType=CHAR} and
+       st.eu_status = '1' and
+       st.eu_direct = -1 and
+       not exists (select 1 from pd_st ins where st.pk_pdst=ins.pk_pdst_sr)
+       and exists (select 1 from pd_st_detail dt inner join bd_pd pd on pd.pk_pd=dt.pk_pd where dt.pk_pdst=st.pk_pdst and pd.dt_pdtype like '0%')
+       <if test="codeSt != null  and  codeSt != ''">
+          and st.code_st = #{codeSt,jdbcType=VARCHAR} 
+       </if>
+      <if test="pkOrg != null  and  pkOrg != ''">
+          and st.pk_org = #{pkOrg,jdbcType=CHAR} 
+       </if>
+       <if test="dateBegin != null  and  dateBegin != ''">
+          and st.date_st &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+       </if>
+       <if test="dateEnd != null  and  dateEnd != ''">
+          and st.date_st &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+       </if>
+       <if test="pkDeptSt != null  and  pkDeptSt != ''">
+          and st.pk_dept_st = #{pkDeptSt,jdbcType=CHAR} 
+       </if>
+       <if test="pkStoreSt != null  and  pkStoreSt != ''">
+          and st.pk_store_st = #{pkStoreSt,jdbcType=CHAR} 
+       </if>
+        order by st.date_st 
+</select>
+<select id="queryToInPdStDtList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdStDtVo">
+select dt.pk_pdstdt,
+	   dt.pk_org,
+	   dt.pk_pdst,
+	   dt.sort_no,
+	   dt.pk_pd,
+	   sto.pk_unit as pk_unit_pack,
+	   sto.pack_size,
+	   round(dt.quan_pack*dt.pack_size/sto.pack_size,2) as quan_pack,<!-- 转换为当前仓库单位的数量 -->
+	   dt.quan_min,
+	   dt.quan_outstore,
+	   dt.price_cost/pd.pack_size*sto.pack_size as price_cost,<!-- 转换为当前仓库单位的单价 -->
+	   dt.amount_cost,
+	   dt.price/pd.pack_size*sto.pack_size as price,
+	   dt.amount,
+	   dt.disc,
+	   dt.batch_no,
+	   dt.date_fac,
+	   dt.date_expire,
+	   dt.inv_no,
+	   dt.receipt_no,
+	   dt.flag_chk_rpt,
+	   dt.date_chk_rpt,
+	   dt.pk_emp_chk_rpt,
+	   dt.name_emp_chk_rpt,
+	   dt.pk_supplyer,
+	   dt.pk_pdpay,
+	   dt.amount_pay,
+	   dt.flag_pay,
+	   dt.pk_pdpudt,
+	   dt.flag_finish,
+	   dt.pk_pdstdt_rl,
+	   dt.flag_cg,
+	   dt.pk_pv,
+	   dt.pk_cg,
+	   dt.note,
+       pd.code pdcode,
+       pd.name pdname,
+       pd.spec,
+       pd.pack_size pack_size_pd,
+       fa.name factory,
+       unit.name unit   ,
+       round(plansto.quan_min/sto.pack_size,2) quan_pack_q ,
+       pd.appr_no ,
+       pd.eu_source
+  from pd_st_detail dt
+       inner join bd_pd_store sto on dt.pk_pd=sto.pk_pd and sto.pk_store=#{pkStore,jdbcType=VARCHAR}
+       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+       inner join bd_unit unit on sto.pk_unit=unit.pk_unit
+       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+       left outer join (select st.pk_pdst,
+                               pldt.pk_pd,
+                               pldt.quan_min
+                          from pd_plan_detail pldt
+                               inner join pd_st st on pldt.pk_pdplan=st.pk_pdplan
+                       ) plansto on dt.pk_pdst=plansto.pk_pdst and dt.pk_pd=plansto.pk_pd
+ where dt.pk_pdst=#{pkPdst,jdbcType=VARCHAR} and pd.dt_pdtype like '0%'
+</select>
+<select id="queryInPdStList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdStVo">
+select st.pk_pdst,
+       st.dt_sttype,
+       sttype.name sttype,
+       st.code_st,
+       st.date_st,
+       st.eu_direct,
+       st.pk_org_lk,
+       org.name_org,
+       st.pk_dept_lk,
+       dept.name_dept,
+       st.pk_store_lk,
+       sto.name name_store,
+       st.eu_status,
+       st.pk_emp_op,
+       st.name_emp_op,
+       st.note
+  from pd_st st
+       inner join bd_defdoc sttype on st.dt_sttype=sttype.code and sttype.code_defdoclist='080008'
+       left join bd_ou_org org on st.pk_org_lk=org.pk_org
+       left join bd_ou_dept dept on st.pk_dept_lk=dept.pk_dept
+       left join bd_store sto on st.pk_store_lk=sto.pk_store
+ where st.pk_store_st=#{pkStore,jdbcType=CHAR} 
+       and st.eu_direct=1 and st.flag_pu != '1' 
+       and exists (select 1 from pd_st_detail dt inner join bd_pd pd on pd.pk_pd=dt.pk_pd where dt.pk_pdst=st.pk_pdst and pd.dt_pdtype like '0%')
+        <if test="dtSttype != null  and  dtSttype != ''">
+          and st.dt_sttype = #{dtSttype,jdbcType=VARCHAR} 
+       </if>
+        <if test="codeSt != null  and  codeSt != ''">
+          and st.code_st = #{codeSt,jdbcType=VARCHAR} 
+       </if>
+      <if test="pkOrgLk != null  and  pkOrgLk != ''">
+          and st.pk_org_lk = #{pkOrgLk,jdbcType=CHAR} 
+       </if>
+       <if test="dateBegin != null  and  dateBegin != ''">
+          and st.date_st &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+       </if>
+       <if test="dateEnd != null  and  dateEnd != ''">
+          and st.date_st &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+       </if>
+       <if test="pkDeptLk != null  and  pkDeptLk != ''">
+          and st.pk_dept_lk = #{pkDeptLk,jdbcType=CHAR} 
+       </if>
+       <if test="pkStoreLk != null  and  pkStoreLk != ''">
+          and st.pk_store_lk = #{pkStoreLk,jdbcType=CHAR} 
+       </if> 
+     <if test="pkEmpOp != null  and  pkEmpOp != ''">
+          and st.pk_emp_op = #{pkEmpOp,jdbcType=CHAR} 
+       </if> 
+     <if test="euStatus != null  and  euStatus != ''">
+          and st.eu_status = #{euStatus,jdbcType=VARCHAR} 
+     </if> 
+       order by st.date_st 
+</select>
+</mapper>

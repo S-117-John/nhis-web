@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.tpserv.dao.TpServPaymentMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.pro.zsba.tpserv.vo.TpServPayment">
+        <id column="PK_PAYMENT" jdbcType="CHAR" property="pkPayment"/>
+        <result column="FK_DEPT" jdbcType="CHAR" property="fkDept"/>
+        <result column="FK_PATIENT" jdbcType="CHAR" property="fkPatient"/>
+        <result column="FK_RENT" jdbcType="CHAR" property="fkRent"/>
+        <result column="FK_UNIONPAY_TRADING" jdbcType="CHAR" property="fkUnionpayTrading"/>
+        <result column="AMOUNT" jdbcType="DECIMAL" property="amount"/>
+        <result column="IS_PLEDGE" jdbcType="CHAR" property="isPledge"/>
+        <result column="CREATOR" jdbcType="CHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="MODIFIER" jdbcType="CHAR" property="modifier"/>
+        <result column="MODITY_TIME" jdbcType="TIMESTAMP" property="modityTime"/>
+        <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+    </resultMap>
+    <select id="getTpServPaymentById" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+             tp_serv_payment
+        WHERE            
+            PK_PAYMENT = #{pkPayment,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllTpServPayment" resultMap="BaseResultMap">
+          SELECT * FROM tp_serv_payment 
+    </select>
+    
+    <delete id="deleteTpServPayment">
+        DELETE
+        FROM
+             tp_serv_payment
+        WHERE            
+            PK_PAYMENT = #{pkPayment,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveTpServPayment" parameterType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServPayment" >
+        INSERT INTO tp_serv_payment
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkPayment != null" >
+                PK_PAYMENT,
+            </if>
+            <if test="fkDept != null" >
+                FK_DEPT,
+            </if>
+            <if test="fkPatient != null" >
+                FK_PATIENT,
+            </if>
+            <if test="fkRent != null" >
+                FK_RENT,
+            </if>
+            <if test="fkUnionpayTrading != null" >
+                FK_UNIONPAY_TRADING,
+            </if>
+            <if test="amount != null" >
+                AMOUNT,
+            </if>
+            <if test="isPledge != null" >
+                IS_PLEDGE,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="modifier != null" >
+                MODIFIER,
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkPayment != null" >
+                #{pkPayment,jdbcType=CHAR},
+            </if> 
+            <if test="fkDept != null" >
+                #{fkDept,jdbcType=CHAR},
+            </if> 
+            <if test="fkPatient != null" >
+                #{fkPatient,jdbcType=CHAR},
+            </if> 
+            <if test="fkRent != null" >
+                #{fkRent,jdbcType=CHAR},
+            </if> 
+            <if test="fkUnionpayTrading != null" >
+                #{fkUnionpayTrading,jdbcType=CHAR},
+            </if> 
+            <if test="amount != null" >
+                #{amount,jdbcType=DECIMAL},
+            </if> 
+            <if test="isPledge != null" >
+                #{isPledge,jdbcType=CHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=CHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="modifier != null" >
+                #{modifier,jdbcType=CHAR},
+            </if> 
+            <if test="modityTime != null" >
+                #{modityTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=TIMESTAMP},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateTpServPayment" parameterType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServPayment" >
+        UPDATE tp_serv_payment
+        <set>
+            <if test="pkPayment != null" >
+                PK_PAYMENT = #{pkPayment,jdbcType=CHAR},
+            </if>
+            <if test="fkDept != null" >
+                FK_DEPT = #{fkDept,jdbcType=CHAR},
+            </if>
+            <if test="fkPatient != null" >
+                FK_PATIENT = #{fkPatient,jdbcType=CHAR},
+            </if>
+            <if test="fkRent != null" >
+                FK_RENT = #{fkRent,jdbcType=CHAR},
+            </if>
+            <if test="fkUnionpayTrading != null" >
+                FK_UNIONPAY_TRADING = #{fkUnionpayTrading,jdbcType=CHAR},
+            </if>
+            <if test="amount != null" >
+                AMOUNT = #{amount,jdbcType=DECIMAL},
+            </if>
+            <if test="isPledge != null" >
+                IS_PLEDGE = #{isPledge,jdbcType=CHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=CHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="modifier != null" >
+                MODIFIER = #{modifier,jdbcType=CHAR},
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME = #{modityTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        WHERE 
+            PK_PAYMENT = #{pkPayment,jdbcType=CHAR}
+    </update>
+</mapper>

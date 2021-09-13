@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.base.ou.dao.RoleMapper">
+	<select id="getRolesByForm"  parameterType="java.util.Map" resultType="DynaBean">
+		select r.* from bd_ou_role r 
+		<if test="pkUsrgrp !=null and pkUsrgrp != ''">
+			join bd_ou_usrgrp_role rg on r.pk_role = rg.pk_role
+		</if>
+		where 1=1
+		<if test="pkOrg !=null and pkOrg != ''">
+			and r.pk_org=#{pkOrg,jdbcType=CHAR}
+		</if>
+		<if test="codeRole !=null and codeRole != ''">
+			and r.code_role=#{codeRole,jdbcType=VARCHAR}
+		</if>
+		<if test="nameRole !=null and nameRole != ''">
+			<!--  and r.name_role like  '%'||#{nameRole,jdbcType=VARCHAR}||'%'-->
+		 and r.name_role like '%${nameRole}%'
+
+		</if>
+		<if test="pkRole !=null and pkRole != ''">
+			and r.pk_role=#{pkRole,jdbcType=CHAR}
+		</if>
+		<if test="pkUsrgrp !=null and pkUsrgrp != ''">
+			and rg.pk_usrgrp=#{pkUsrgrp,jdbcType=CHAR}
+		</if>
+	</select>
+</mapper>

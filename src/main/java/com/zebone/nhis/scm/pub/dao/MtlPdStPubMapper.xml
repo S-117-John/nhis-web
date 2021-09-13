@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.pub.dao.MtlPdStPubMapper">
+
+<select id="queryPkPdStoreByCon" parameterType="java.util.Map" useCache="false" flushCache="true" resultType="DynaBean">
+ 	 select stk.pk_pdstock,
+        	stk.quan_min,
+        	stk.quan_prep,
+        	stk.price  
+   	   from pd_stock stk 
+ 	  where stk.pk_pd = #{pkPd,jdbcType=CHAR}  
+        and stk.batch_no = #{batchNo,jdbcType=VARCHAR}
+       <choose>
+	        <when test="dateExpire != null  and  dateExpire != ''">
+	           and stk.date_expire =  to_date(#{dateExpire},'yyyy-MM-DD')  
+	        </when>
+	        <otherwise>
+	           and stk.date_expire  is null   
+	        </otherwise>
+        </choose>
+       <if test="flagStop != null  and  flagStop != ''">
+          and stk.flag_stop = #{flagStop,jdbcType=CHAR} 
+       </if>
+       <if test="price != null  and  price != ''">
+          and stk.price = #{price,jdbcType=DECIMAL}
+       </if>
+          and stk.price_cost = #{priceCost,jdbcType=DECIMAL}
+          and stk.pk_store = #{pkStore,jdbcType=CHAR}
+</select>
+
+<select id="queryPdStDetailList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdStDtVo">
+	 select dt.*,
+       		pd.code pdcode,
+       		pd.name pdname,
+       		pd.spec,
+       		pd.pack_size pack_size_pd,
+       		pd.flag_single,
+       		pd.flag_use,
+       		pd.valid_cnt validcnt,
+       		pd.eu_valid_unit euvalidunit,
+       		pd.spcode,
+       		fa.name factory,
+       		unit.name unit,
+       		un.name unit_pd  
+  	   from pd_st_detail dt
+      inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+      inner join bd_unit un on un.pk_unit = pd.pk_unit_pack 
+      inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+      inner join bd_unit unit on dt.PK_UNIT_PACK=unit.pk_unit
+      where dt.pk_pdst=#{pkPdst,jdbcType=CHAR}
+      order by sort_no
+</select>
+
+<select id="queryPdStByCon" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdStDtVo">
+	 select dt.pk_pdstdt,
+       		dt.pk_pd,
+       		st.date_chk,  
+       		dt.date_fac,   
+       		dt.date_expire,
+       		dt.batch_no,  
+       		(dt.quan_min-dt.quan_outstore)/dt.pack_size quan_use,
+       		dt.price_cost, 
+       		dt.price 
+  	   from pd_st_detail dt
+      inner join pd_st st on dt.pk_pdst=st.pk_pdst
+ 	  where st.pk_store_st = #{pkStore,jdbcType=CHAR} 
+ 	    and st.pk_pd = #{pkPd,jdbcType=CHAR}
+        and st.eu_direct = 1 
+        and dt.flag_finish = '0'
+       <if test=' euOuttype = "0" '  >
+          order by st.date_chk 
+       </if>
+       <if test=' euOuttype = "1" '  >
+          order by dt.date_fac 
+       </if>
+       <if test=' euOuttype = "2" '  >
+          order by st.date_chk  desc
+       </if>
+</select>
+
+</mapper>

@@ -1,0 +1,775 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.emr.scires.dao.EmrSciResMapper">
+    <resultMap id="ResultMapRptList" type="com.zebone.nhis.common.module.emr.scires.EmrRptList">
+        <id column="PK_RPT" jdbcType="CHAR" property="pkRpt"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="EU_RPT_TYPE" jdbcType="CHAR" property="euRptType"/>
+        <result column="EU_RPT_LEVEL" jdbcType="CHAR" property="euRptLevel"/>
+        <result column="RES_CODE" jdbcType="VARCHAR" property="resCode"/>
+        <result column="RPT_CONTENT" jdbcType="VARCHAR" property="rptContent"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="FLAG_SYS" jdbcType="CHAR" property="flagSys"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+        <result column="DEPT_NAME" jdbcType="VARCHAR" property="deptName"/>
+        <result column="CREATOR_NAME" jdbcType="VARCHAR" property="creatorName"/>
+    </resultMap>
+    <select id="getEmrRptListById" resultMap="ResultMapRptList">
+        SELECT
+            *
+        FROM
+             EMR_RPT_LIST
+        WHERE            
+            PK_RPT = #{pkRpt,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllEmrRptList" resultMap="ResultMapRptList">
+          SELECT * FROM EMR_RPT_LIST 
+    </select>
+    
+    <delete id="deleteEmrRptList">
+        DELETE
+        FROM
+             EMR_RPT_LIST
+        WHERE            
+            PK_RPT = #{pkRpt,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrRptList" parameterType="com.zebone.nhis.common.module.emr.scires.EmrRptList" >
+        INSERT INTO EMR_RPT_LIST
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkRpt != null" >
+                PK_RPT,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="euRptType != null" >
+                EU_RPT_TYPE,
+            </if>
+            <if test="euRptLevel != null" >
+                EU_RPT_LEVEL,
+            </if>
+            <if test="resCode != null" >
+                RES_CODE,
+            </if>
+            <if test="rptContent != null" >
+                RPT_CONTENT,
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE,
+            </if>
+            <if test="dCode != null" >
+                D_CODE,
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM,
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT,
+            </if>
+            <if test="flagSys != null" >
+                FLAG_SYS,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkRpt != null" >
+                #{pkRpt,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="euRptType != null" >
+                #{euRptType,jdbcType=VARCHAR},
+            </if> 
+            <if test="euRptLevel != null" >
+                #{euRptLevel,jdbcType=VARCHAR},
+            </if> 
+            <if test="resCode != null" >
+                #{resCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="rptContent != null" >
+                #{rptContent,jdbcType=VARCHAR},
+            </if> 
+            <if test="pyCode != null" >
+                #{pyCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="dCode != null" >
+                #{dCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="sortNum != null" >
+                #{sortNum,jdbcType=DECIMAL},
+            </if> 
+            <if test="pkDept != null" >
+                #{pkDept,jdbcType=VARCHAR},
+            </if> 
+            <if test="flagSys != null" >
+                #{flagSys,jdbcType=CHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrRptList" parameterType="com.zebone.nhis.common.module.emr.scires.EmrRptList" >
+        UPDATE EMR_RPT_LIST
+        <set>
+            <if test="pkRpt != null" >
+                PK_RPT = #{pkRpt,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="euRptType != null" >
+                EU_RPT_TYPE = #{euRptType,jdbcType=VARCHAR},
+            </if>
+            <if test="euRptLevel != null" >
+                EU_RPT_LEVEL = #{euRptLevel,jdbcType=VARCHAR},
+            </if>
+            <if test="resCode != null" >
+                RES_CODE = #{resCode,jdbcType=VARCHAR},
+            </if>
+            <if test="rptContent != null" >
+                RPT_CONTENT = #{rptContent,jdbcType=VARCHAR},
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE = #{pyCode,jdbcType=VARCHAR},
+            </if>
+            <if test="dCode != null" >
+                D_CODE = #{dCode,jdbcType=VARCHAR},
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM = #{sortNum,jdbcType=DECIMAL},
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT = #{pkDept,jdbcType=VARCHAR},
+            </if>
+            <if test="flagSys != null" >
+                FLAG_SYS = #{flagSys,jdbcType=CHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_RPT = #{pkRpt,jdbcType=CHAR}
+    </update>
+    <resultMap id="ResultMapRptCnd" type="com.zebone.nhis.common.module.emr.scires.EmrRptCnd">
+        <id column="PK_CND" jdbcType="CHAR" property="pkCnd"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="PK_RPT" jdbcType="VARCHAR" property="pkRpt"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="EU_RTTYPE" jdbcType="VARCHAR" property="euRttype"/>
+        <result column="EU_CNDTYPE" jdbcType="VARCHAR" property="euCndtype"/>
+        <result column="OBJ_CODE" jdbcType="VARCHAR" property="objCode"/>
+        <result column="OBJ_NAME" jdbcType="VARCHAR" property="objName"/>
+        <result column="LOGIC" jdbcType="VARCHAR" property="logic"/>
+        <result column="VALUE_CODE" jdbcType="VARCHAR" property="valueCode"/>
+        <result column="VALUE_NAME" jdbcType="VARCHAR" property="valueName"/>
+        <result column="EU_GRADE" jdbcType="DECIMAL" property="euGrade"/>
+        <result column="PK_CND_UP" jdbcType="VARCHAR" property="pkCndUp"/>
+        <result column="FULL_PATH" jdbcType="VARCHAR" property="fullPath"/>
+        <result column="EU_OBJ_TYPE" jdbcType="VARCHAR" property="euObjType"/>
+        <result column="EU_OBJ_CLASS" jdbcType="CHAR" property="euObjClass"/>
+        <result column="EU_DATA_TYPE" jdbcType="CHAR" property="euDataType"/>
+        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    <select id="getEmrRptCndById" resultMap="ResultMapRptCnd">
+        SELECT
+            *
+        FROM
+             EMR_RPT_CND
+        WHERE            
+            PK_CND = #{pkCnd,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllEmrRptCnd" resultMap="ResultMapRptCnd">
+          SELECT * FROM EMR_RPT_CND 
+    </select>
+    
+    <delete id="deleteEmrRptCnd">
+        DELETE
+        FROM
+             EMR_RPT_CND
+        WHERE            
+            PK_CND = #{pkCnd,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrRptCnd" parameterType="com.zebone.nhis.common.module.emr.scires.EmrRptCnd" >
+        INSERT INTO EMR_RPT_CND
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkCnd != null" >
+                PK_CND,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="pkRpt != null" >
+                PK_RPT,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE,
+            </if>
+            <if test="dCode != null" >
+                D_CODE,
+            </if>
+            <if test="euRttype != null" >
+                EU_RTTYPE,
+            </if>
+            <if test="euCndtype != null" >
+                EU_CNDTYPE,
+            </if>
+            <if test="objCode != null" >
+                OBJ_CODE,
+            </if>
+            <if test="objName != null" >
+                OBJ_NAME,
+            </if>
+            <if test="logic != null" >
+                LOGIC,
+            </if>
+            <if test="valueCode != null" >
+                VALUE_CODE,
+            </if>
+            <if test="valueName != null" >
+                VALUE_NAME,
+            </if>
+            <if test="euGrade != null" >
+                EU_GRADE,
+            </if>
+            <if test="pkCndUp != null" >
+                PK_CND_UP,
+            </if>
+            <if test="fullPath != null" >
+                FULL_PATH,
+            </if>
+            <if test="euObjType != null" >
+                EU_OBJ_TYPE,
+            </if>
+            <if test="euObjClass != null" >
+                EU_OBJ_CLASS,
+            </if>
+            <if test="euDataType != null" >
+                EU_DATA_TYPE,
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkCnd != null" >
+                #{pkCnd,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkRpt != null" >
+                #{pkRpt,jdbcType=VARCHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="pyCode != null" >
+                #{pyCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="dCode != null" >
+                #{dCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="euRttype != null" >
+                #{euRttype,jdbcType=VARCHAR},
+            </if> 
+            <if test="euCndtype != null" >
+                #{euCndtype,jdbcType=VARCHAR},
+            </if> 
+            <if test="objCode != null" >
+                #{objCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="objName != null" >
+                #{objName,jdbcType=VARCHAR},
+            </if> 
+            <if test="logic != null" >
+                #{logic,jdbcType=VARCHAR},
+            </if> 
+            <if test="valueCode != null" >
+                #{valueCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="valueName != null" >
+                #{valueName,jdbcType=VARCHAR},
+            </if> 
+            <if test="euGrade != null" >
+                #{euGrade,jdbcType=DECIMAL},
+            </if> 
+            <if test="pkCndUp != null" >
+                #{pkCndUp,jdbcType=VARCHAR},
+            </if> 
+            <if test="fullPath != null" >
+                #{fullPath,jdbcType=VARCHAR},
+            </if> 
+            <if test="euObjType != null" >
+                #{euObjType,jdbcType=VARCHAR},
+            </if> 
+            <if test="euObjClass != null" >
+                #{euObjClass,jdbcType=CHAR},
+            </if> 
+            <if test="euDataType != null" >
+                #{euDataType,jdbcType=CHAR},
+            </if> 
+            <if test="sortNum != null" >
+                #{sortNum,jdbcType=DECIMAL},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrRptCnd" parameterType="com.zebone.nhis.common.module.emr.scires.EmrRptCnd" >
+        UPDATE EMR_RPT_CND
+        <set>
+            <if test="pkCnd != null" >
+                PK_CND = #{pkCnd,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="pkRpt != null" >
+                PK_RPT = #{pkRpt,jdbcType=VARCHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE = #{pyCode,jdbcType=VARCHAR},
+            </if>
+            <if test="dCode != null" >
+                D_CODE = #{dCode,jdbcType=VARCHAR},
+            </if>
+            <if test="euRttype != null" >
+                EU_RTTYPE = #{euRttype,jdbcType=VARCHAR},
+            </if>
+            <if test="euCndtype != null" >
+                EU_CNDTYPE = #{euCndtype,jdbcType=VARCHAR},
+            </if>
+            <if test="objCode != null" >
+                OBJ_CODE = #{objCode,jdbcType=VARCHAR},
+            </if>
+            <if test="objName != null" >
+                OBJ_NAME = #{objName,jdbcType=VARCHAR},
+            </if>
+            <if test="logic != null" >
+                LOGIC = #{logic,jdbcType=VARCHAR},
+            </if>
+            <if test="valueCode != null" >
+                VALUE_CODE = #{valueCode,jdbcType=VARCHAR},
+            </if>
+            <if test="valueName != null" >
+                VALUE_NAME = #{valueName,jdbcType=VARCHAR},
+            </if>
+            <if test="euGrade != null" >
+                EU_GRADE = #{euGrade,jdbcType=DECIMAL},
+            </if>
+            <if test="pkCndUp != null" >
+                PK_CND_UP = #{pkCndUp,jdbcType=VARCHAR},
+            </if>
+            <if test="fullPath != null" >
+                FULL_PATH = #{fullPath,jdbcType=VARCHAR},
+            </if>
+            <if test="euObjType != null" >
+                EU_OBJ_TYPE = #{euObjType,jdbcType=VARCHAR},
+            </if>
+            <if test="euObjClass != null" >
+                EU_OBJ_CLASS = #{euObjClass,jdbcType=CHAR},
+            </if>
+            <if test="euDataType != null" >
+                EU_DATA_TYPE = #{euDataType,jdbcType=CHAR},
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM = #{sortNum,jdbcType=DECIMAL},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_CND = #{pkCnd,jdbcType=CHAR}
+    </update>
+    <resultMap id="ResultMapRptExp" type="com.zebone.nhis.common.module.emr.scires.EmrRptExp">
+        <result column="PK_EXP" jdbcType="CHAR" property="pkExp"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="PK_RPT" jdbcType="VARCHAR" property="pkRpt"/>
+        <result column="DOC_TYPE" jdbcType="VARCHAR" property="docType"/>
+        <result column="PARA_CODE" jdbcType="VARCHAR" property="paraCode"/>
+        <result column="NODE_TYPE" jdbcType="VARCHAR" property="nodeType"/>
+        <result column="NODE_NAME" jdbcType="VARCHAR" property="nodeName"/>
+        <result column="NODE_CODE" jdbcType="VARCHAR" property="nodeCode"/>
+        <result column="EXP_CODE" jdbcType="VARCHAR" property="expCode"/>
+        <result column="EXP_NUM" jdbcType="DECIMAL" property="expNum"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+        <result column="DOC_TYPE_NAME" jdbcType="VARCHAR" property="docTypeName"/>
+        <result column="PARA_NAME" jdbcType="VARCHAR" property="paraName"/>
+    </resultMap>
+    <select id="getEmrRptExpById" resultMap="ResultMapRptExp">
+        SELECT
+            *
+        FROM
+             EMR_RPT_EXP
+        WHERE            
+            PK_EXP = #{pkExp,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllEmrRptExp" resultMap="ResultMapRptExp">
+          SELECT * FROM EMR_RPT_EXP 
+    </select>
+    
+    <delete id="deleteEmrRptExp">
+        DELETE
+        FROM
+             EMR_RPT_EXP
+        WHERE            
+            PK_EXP = #{pkExp,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrRptExp" parameterType="com.zebone.nhis.common.module.emr.scires.EmrRptExp" >
+        INSERT INTO EMR_RPT_EXP
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkExp != null" >
+                PK_EXP,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="pkRpt != null" >
+                PK_RPT,
+            </if>
+            <if test="docType != null" >
+                DOC_TYPE,
+            </if>
+            <if test="paraCode != null" >
+                PARA_CODE,
+            </if>
+            <if test="nodeType != null" >
+                NODE_TYPE,
+            </if>
+            <if test="nodeName != null" >
+                NODE_NAME,
+            </if>
+            <if test="nodeCode != null" >
+                NODE_CODE,
+            </if>
+            <if test="expCode != null" >
+                EXP_CODE,
+            </if>
+            <if test="expNum != null" >
+                EXP_NUM,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkExp != null" >
+                #{pkExp,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkRpt != null" >
+                #{pkRpt,jdbcType=VARCHAR},
+            </if> 
+            <if test="docType != null" >
+                #{docType,jdbcType=VARCHAR},
+            </if> 
+            <if test="paraCode != null" >
+                #{paraCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="nodeType != null" >
+                #{nodeType,jdbcType=VARCHAR},
+            </if> 
+            <if test="nodeName != null" >
+                #{nodeName,jdbcType=VARCHAR},
+            </if> 
+            <if test="nodeCode != null" >
+                #{nodeCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="expCode != null" >
+                #{expCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="expNum != null" >
+                #{expNum,jdbcType=DECIMAL},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrRptExp" parameterType="com.zebone.nhis.common.module.emr.scires.EmrRptExp" >
+        UPDATE EMR_RPT_EXP
+        <set>
+            <if test="pkExp != null" >
+                PK_EXP = #{pkExp,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="pkRpt != null" >
+                PK_RPT = #{pkRpt,jdbcType=VARCHAR},
+            </if>
+            <if test="docType != null" >
+                DOC_TYPE = #{docType,jdbcType=VARCHAR},
+            </if>
+            <if test="paraCode != null" >
+                PARA_CODE = #{paraCode,jdbcType=VARCHAR},
+            </if>
+            <if test="nodeType != null" >
+                NODE_TYPE = #{nodeType,jdbcType=VARCHAR},
+            </if>
+            <if test="nodeName != null" >
+                NODE_NAME = #{nodeName,jdbcType=VARCHAR},
+            </if>
+            <if test="nodeCode != null" >
+                NODE_CODE = #{nodeCode,jdbcType=VARCHAR},
+            </if>
+            <if test="expCode != null" >
+                EXP_CODE = #{expCode,jdbcType=VARCHAR},
+            </if>
+            <if test="expNum != null" >
+                EXP_NUM = #{expNum,jdbcType=DECIMAL},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_EXP = #{pkExp,jdbcType=CHAR}
+    </update>
+    <select id="queryRptList" resultMap="ResultMapRptList">
+        SELECT
+            rpt.*,emp.name creator_name,dept.name dept_name 
+        FROM
+              emr_rpt_list rpt
+        left outer join view_emr_emp_list emp on rpt.creator=emp.pk_emp
+        left outer join view_emr_dept_list dept on rpt.pk_dept=dept.pk_dept
+        WHERE nvl(rpt.del_flag,'0') ='0' 
+    	<if test="pkRpt != null" >
+          and rpt.pk_rpt = #{pkRpt,jdbcType=VARCHAR}
+        </if>
+    	<if test="pkOrg != null" >
+          and rpt.pk_org like #{pkOrg,jdbcType=VARCHAR}
+        </if>
+    	<if test="name != null" >
+          and rpt.name like #{name,jdbcType=VARCHAR}
+        </if>
+    	<if test="euRptType != null" >
+          and rpt.eu_rpt_type = #{euRptType,jdbcType=VARCHAR}
+        </if>
+    	<if test="euRptLevel != null" >
+          and rpt.eu_rpt_level = #{euRptLevel,jdbcType=VARCHAR}
+        </if>
+    	<if test="creator != null" >
+          and rpt.creator = #{creator,jdbcType=VARCHAR}
+        </if>
+    	<if test="pkDept != null" >
+          and rpt.pk_dept = #{pkDept,jdbcType=VARCHAR}
+        </if>
+   		<if test="orderBy != null" >
+            ${orderBy}
+        </if>           
+    </select>    
+    <select id="queryRptCndList" resultMap="ResultMapRptCnd">
+        SELECT
+            *
+        FROM
+              emr_rpt_cnd
+        WHERE nvl(del_flag,'0') ='0' 
+    	<if test="pkRpt != null" >
+          and pk_rpt = #{pkRpt,jdbcType=VARCHAR}
+        </if>
+   		<if test="orderBy != null" >
+            ${orderBy}
+        </if>           
+    </select>    
+    <select id="queryRptExpList" resultMap="ResultMapRptExp">
+        SELECT
+            exp.*,
+            typ.name doc_type_name,
+            para.name para_name
+        FROM
+              emr_rpt_exp exp
+        left outer join emr_doc_type typ on exp.doc_type=typ.code
+        left outer join emr_paragraph para on exp.para_code=para.code
+        WHERE nvl(exp.del_flag,'0') ='0' 
+    	<if test="pkRpt != null" >
+          and exp.pk_rpt = #{pkRpt,jdbcType=VARCHAR}
+        </if>
+   		<if test="orderBy != null" >
+            ${orderBy}
+        </if>           
+    </select>    
+</mapper>

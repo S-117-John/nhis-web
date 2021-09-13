@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.opdw.dao.OpPatientListMapper" >
+
+  <select id="getPatientListNormalNoTriage" parameterType="java.util.Map" resultType="DynaBean">
+		select pv.pk_pi,
+	       pv.pk_pv,
+	       pv.code_pv,
+	       pi.name_pi,
+	       pi.mobile,
+	       sex.name sex,
+	       pv.age_pv,
+	       hp.name hp,
+	       op.ticketno,
+	       pi.code_pi,
+	       pi.tel_no,
+	       indiag.pk_diag,
+	       pv.name_emp_phy,
+	       pv.pk_emp_phy 
+	  from pv_encounter pv
+	       inner join pv_op op on pv.pk_pv=op.pk_pv
+	       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+	       inner join bd_hp hp on pv.pk_insu=hp.pk_hp
+	       inner join bd_defdoc sex on pi.dt_sex=sex.code and sex.code_defdoclist='000000' and sex.del_flag=0  
+	       left outer join pv_diag indiag  on pv.pk_pv = indiag.pk_pv  and indiag.flag_maj = '1'   and indiag.del_flag = '0'  
+	 where op.pk_res=#{res,jdbcType=VARCHAR} and
+	       op.pk_dept_pv=#{dept,jdbcType=VARCHAR} and
+	       op.date_end  &gt;=#{date,jdbcType=DATE} and	       
+	       pv.code_pv like #{clinicCode,jdbcType=VARCHAR} and  
+	       pi.code_pi like #{patientCode,jdbcType=VARCHAR} and  
+	       pi.name_pi like #{patientName,jdbcType=VARCHAR} and 
+	       op.ticketno like #{sortNo,jdbcType=VARCHAR} and 	 
+	        <if test="idCard != null  and  idCard != ''">				
+			pi.id_no =	#{idCard,jdbcType=VARCHAR} and 
+	        </if>    
+	       pv.eu_status=0 and         
+	       pv.flag_cancel=0  
+	       <if test="cardNo != null  and  cardNo != ''">				
+			and  exists (select * from pi_card where pk_pi = pi.pk_pi  and  card_no = #{cardNo,jdbcType=VARCHAR}  and eu_status='0'  and flag_active='1' and del_flag='0' )  
+	       </if> 
+	  order by op.ticketno 
+  </select>  
+  <select id="getPatientListNormalTriage" parameterType="java.util.Map" resultType="DynaBean">
+		select pv.pk_pi,
+		     pv.pk_pv,
+		     pv.code_pv,
+		     pi.name_pi,
+		     pi.mobile,
+		     sex.name sex,
+		     pv.age_pv,
+		     hp.name hp,
+		     que.sort_no ticketno,
+		     pi.code_pi,
+		     pi.tel_no,
+		     indiag.pk_diag, 
+		     pv.name_emp_phy,
+	        pv.pk_emp_phy 
+		from pv_encounter pv
+		     inner join pv_op op on pv.pk_pv=op.pk_pv
+		     inner join pv_que que on pv.pk_pv=que.pk_pv
+		     inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		     inner join bd_hp hp on pv.pk_insu=hp.pk_hp
+		     inner join bd_defdoc sex on pi.dt_sex=sex.code and sex.code_defdoclist='000000' and sex.del_flag=0  
+		     left outer join pv_diag indiag  on pv.pk_pv = indiag.pk_pv  and indiag.flag_maj = '1'   and indiag.del_flag = '0' 
+		where op.pk_res=#{res,jdbcType=VARCHAR} and
+	         op.pk_dept_pv=#{dept,jdbcType=VARCHAR} and
+	         op.date_end  &gt;=#{date,jdbcType=DATE} and	         
+	         pv.code_pv like #{clinicCode,jdbcType=VARCHAR} and  
+	         pi.code_pi like #{patientCode,jdbcType=VARCHAR} and  
+	         pi.name_pi like #{patientName,jdbcType=VARCHAR} and 
+	         que.sort_no like #{sortNo,jdbcType=VARCHAR} and  
+	         pi.id_no =	#{dept,jdbcType=VARCHAR}  and     
+		     pv.flag_cancel=0 and
+		     que.eu_status=0 and
+		     que.eu_quetype=0  
+	        <if test="cardNo != null  and  cardNo != ''">				
+			 and exists (select * from pi_card where pk_pi = pi.pk_pi  and  card_no = #{cardNo,jdbcType=VARCHAR}  and eu_status='0'  and flag_active='1' and del_flag='0' )      
+	        </if> 
+		order by ticketno
+  </select>   
+  <select id="getPatientListNormalUsed" parameterType="java.util.Map" resultType="DynaBean">
+		select pv.pk_pi,
+		     pv.pk_pv,
+		     pv.code_pv,
+		     pi.name_pi,
+		     pi.mobile,
+		     sex.name sex,
+		     pv.age_pv,
+		     hp.name hp,
+		     op.ticketno,
+		     pi.code_pi,
+		     pi.tel_no,
+		     indiag.pk_diag,
+		     pv.name_emp_phy,
+	         pv.pk_emp_phy  
+		from pv_encounter pv
+		     inner join pv_op op on pv.pk_pv=op.pk_pv
+		     inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		     inner join bd_hp hp on pv.pk_insu=hp.pk_hp
+		     inner join bd_defdoc sex on pi.dt_sex=sex.code and sex.code_defdoclist='000000' and sex.del_flag=0  
+		     left outer join pv_diag indiag  on pv.pk_pv = indiag.pk_pv  and indiag.flag_maj = '1'   and indiag.del_flag = '0' 
+		where op.pk_res=#{res,jdbcType=VARCHAR} and
+	         op.pk_dept_pv=#{dept,jdbcType=VARCHAR} and	        
+	         op.date_end  &gt;=#{date,jdbcType=DATE} and 	        
+	         pv.code_pv like #{clinicCode,jdbcType=VARCHAR} and  
+	         pi.code_pi like #{patientCode,jdbcType=VARCHAR} and  
+	         pi.name_pi like #{patientName,jdbcType=VARCHAR} and 
+	         op.ticketno like #{sortNo,jdbcType=VARCHAR} and 		         
+		     pv.eu_status &gt;=1 and
+		     pv.flag_cancel=0  
+		     <if test="cardNo != null  and  cardNo != ''">				
+			  and exists (select * from pi_card where pk_pi = pi.pk_pi  and  card_no = #{cardNo,jdbcType=VARCHAR}  and eu_status='0'  and flag_active='1' and del_flag='0' )    
+	        </if> 
+		order by ticketno
+  </select>   
+  <select id="getPatientListNormalDept" parameterType="java.util.Map" resultType="DynaBean">
+		select pv.pk_pi,
+		     pv.pk_pv,
+		     pv.code_pv,
+		     pi.name_pi,
+		     pi.mobile,
+		     sex.name sex,
+		     pv.age_pv,
+		     hp.name hp,
+		     op.ticketno,
+		     pi.code_pi,
+		     pi.tel_no,
+		     sc.code code_Sc,
+		     indiag.pk_diag, 
+		     pv.name_emp_phy,
+	         pv.pk_emp_phy,
+		     sc.EU_RESTYPE,emp.NAME_EMP empName,dept.NAME_DEPT deptName
+		from pv_encounter pv
+		     inner join pv_op op on pv.pk_pv=op.pk_pv
+		     inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		     inner join bd_hp hp on pv.pk_insu=hp.pk_hp
+		     inner join bd_defdoc sex on pi.dt_sex=sex.code and sex.code_defdoclist='000000' and sex.del_flag=0
+ 			 left  join sch_resource sc on sc.pk_schres=op.pk_res  
+ 			 left outer join pv_diag indiag  on pv.pk_pv = indiag.pk_pv  and indiag.flag_maj = '1'   and indiag.del_flag = '0' 
+			 left join BD_OU_EMPLOYEE emp on sc.PK_EMP = emp.PK_EMP
+    		 left join BD_OU_DEPT dept on sc.PK_DEPT = dept.PK_DEPT
+		where 
+	         op.pk_dept_pv=#{dept,jdbcType=VARCHAR} and
+	         op.date_end  &gt;=#{date,jdbcType=DATE} and	      
+	         pv.code_pv like #{clinicCode,jdbcType=VARCHAR} and  
+	         pi.code_pi like #{patientCode,jdbcType=VARCHAR} and  
+	         pi.name_pi like #{patientName,jdbcType=VARCHAR} and 
+	         op.ticketno like #{sortNo,jdbcType=VARCHAR} and 		      	         
+		     pv.eu_status=0 and
+		     pv.flag_cancel=0  
+		    <if test="cardNo != null  and  cardNo != ''">				
+			 and exists (select * from pi_card where pk_pi = pi.pk_pi  and  card_no = #{cardNo,jdbcType=VARCHAR}  and eu_status='0'  and flag_active='1' and del_flag='0' )      
+	        </if> 
+		order by ticketno
+  </select>     
+ <!-- oracle版本 -->
+  <select id="getPatientListHistoryOracle" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+		    pv.pk_pi,
+			pv.pk_pv,
+			pv.code_pv,
+			pi.name_pi,
+			sex.name sex,
+			pv.age_pv,
+			hp.name hp,
+			op.ticketno,
+			pi.code_pi,
+			pi.mobile,
+			pv.date_begin,
+			dept.name_dept, --科室
+			op.name_emp_pv, --医生
+			--cp.name_emp_ord,  --开立医生名称
+			pv.pk_emp_phy, --当前主管医生
+			pv.name_emp_phy, --当前主管医生姓名
+			diag.desc_diag, --诊断
+			diag.pk_diag, 
+			(select sum(dt.amount) from bl_op_dt dt where pv.pk_pv=dt.pk_pv and (dt.flag_acc = '1' or dt.flag_settle = '1')  ) amount--费用
+		from pv_encounter pv 
+		     inner join pv_op op on pv.pk_pv=op.pk_pv
+		     inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		     inner join bd_defdoc sex on pi.dt_sex=sex.code and sex.code_defdoclist='000000' and sex.del_flag=0
+		     inner join bd_ou_dept dept on pv.pk_dept=dept.pk_dept 
+		     inner join bd_hp hp on pv.pk_insu=hp.pk_hp
+		     --inner join cn_prescription cp on cp.pk_pv=pv.pk_pv
+		     left outer join pv_diag diag on pv.pk_pv=diag.pk_pv and diag.flag_maj=1
+		where 
+	         op.date_begin &gt;=to_date(#{beginDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS') and 
+	         op.date_begin  &lt;=to_date(#{endDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')+1 and
+		     pv.code_pv like #{clinicCode,jdbcType=VARCHAR}
+       		 and pi.name_pi like #{patientName,jdbcType=VARCHAR} 
+             and pv.pk_emp_phy like #{pkEmp,jdbcType=VARCHAR}
+             and pv.eu_status &lt;&gt; '0'  
+             <if test="cardNo != null  and  cardNo != ''">				
+			  and exists (select * from pi_card where pk_pi = pi.pk_pi  and  card_no = #{cardNo,jdbcType=VARCHAR}  and eu_status='0'  and flag_active='1' and del_flag='0' )      
+	        </if> 
+		order by op.ticketno
+  </select>     
+  <!-- SqlServer版本 -->
+  <select id="getPatientListHistory" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+		    pv.pk_pi,
+			pv.pk_pv,
+			pv.code_pv,
+			pi.name_pi,
+			sex.name sex,
+			pv.age_pv,
+			hp.name hp,
+			op.ticketno,
+			pi.code_pi,
+			pi.tel_no,
+			pv.date_begin,
+			dept.name_dept, --科室
+			op.name_emp_pv, --医生
+			pv.pk_emp_phy, --当前主管医生
+			pv.name_emp_phy, --当前主管医生姓名
+			diag.desc_diag, --诊断
+			diag.pk_diag,
+			(select sum(dt.amount) from bl_op_dt dt where pv.pk_pv=dt.pk_pv and (dt.flag_acc = '1' or dt.flag_settle = '1')  ) amount--费用
+		from pv_encounter pv 
+		     inner join pv_op op on pv.pk_pv=op.pk_pv
+		     inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		     inner join bd_defdoc sex on pi.dt_sex=sex.code and sex.code_defdoclist='000000' and sex.del_flag=0
+		     inner join bd_ou_dept dept on pv.pk_dept=dept.pk_dept 
+		     inner join bd_hp hp on pv.pk_insu=hp.pk_hp
+		     left outer join pv_diag diag on pv.pk_pv=diag.pk_pv and diag.flag_maj=1
+		where 
+	         op.date_begin &gt;=to_date(#{beginDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS') and 
+	         op.date_begin  &lt;=DATEADD(day,1,to_date(#{endDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')) and
+		     pv.code_pv like #{clinicCode,jdbcType=VARCHAR}
+       		 and pi.name_pi like #{patientName,jdbcType=VARCHAR} 
+             and pv.pk_emp_phy like #{pkEmp,jdbcType=VARCHAR}
+             and pv.eu_status &lt;&gt; '0'  
+             <if test="cardNo != null  and  cardNo != ''">				
+			  and exists (select * from pi_card where pk_pi = pi.pk_pi  and  card_no = #{cardNo,jdbcType=VARCHAR}  and eu_status='0'  and flag_active='1' and del_flag='0' )    
+	        </if> 
+		order by op.ticketno
+  </select>     
+  <select id="getPatientListSource" parameterType="java.util.Map" resultType="DynaBean">
+		select res.pk_schres,  --主键
+		       res.code,       --编码
+		       res.name,       --名称
+		       res.eu_restype  --类型 0科室1人员
+		 from sch_resource res
+		 where (res.eu_restype=1 and
+		        res.pk_emp like #{emp,jdbcType=VARCHAR} and
+		        res.pk_dept_belong like #{dept,jdbcType=VARCHAR}) or
+		       (res.eu_restype=0 and
+		        res.pk_dept like #{dept,jdbcType=VARCHAR})
+  </select>     
+  
+</mapper>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.compay.ins.shenzhen.dao.pub.InsSzDeptMapper">
+
+	<select id="getList" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.compay.ins.shenzhen.vo.szxnh.InsDeptMapDataVo">
+		SELECT a.*,b.CODE_DEPT,b.PY_CODE,b.NAME_DEPT FROM INS_DEPT_MAP a INNER JOIN BD_OU_DEPT b ON
+		a.PK_DEPT=b.PK_DEPT WHERE 1=1 AND a.DEL_FLAG='0' ORDER BY a.ts
+	</select>
+</mapper>

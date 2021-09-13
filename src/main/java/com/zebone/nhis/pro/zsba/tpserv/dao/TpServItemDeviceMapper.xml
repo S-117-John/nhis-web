@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.tpserv.dao.TpServItemDeviceMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.pro.zsba.tpserv.vo.TpServItemDevice">
+        <id column="PK_ITEM_DEVICE" jdbcType="CHAR" property="pkItemDevice"/>
+        <result column="FK_DEPT" jdbcType="CHAR" property="fkDept"/>
+        <result column="FK_ITEM_TYPE" jdbcType="CHAR" property="fkItemType"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="SPCODE" jdbcType="VARCHAR" property="spcode"/>
+        <result column="CASH_PLEDGE" jdbcType="DECIMAL" property="cashPledge"/>
+        <result column="NOTE" jdbcType="VARCHAR" property="note"/>
+        <result column="RENT_STATE" jdbcType="CHAR" property="rentState"/>
+        <result column="USE_FLAG" jdbcType="CHAR" property="useFlag"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="CREATOR" jdbcType="CHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="MODIFIER" jdbcType="CHAR" property="modifier"/>
+        <result column="MODITY_TIME" jdbcType="TIMESTAMP" property="modityTime"/>
+        <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+    </resultMap>
+    <select id="getTpServItemDeviceById" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+             tp_serv_item_device
+        WHERE            
+            PK_ITEM_DEVICE = #{pkItemDevice,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllTpServItemDevice" resultMap="BaseResultMap">
+          SELECT * FROM tp_serv_item_device 
+    </select>
+    
+    <delete id="deleteTpServItemDevice">
+        DELETE
+        FROM
+             tp_serv_item_device
+        WHERE            
+            PK_ITEM_DEVICE = #{pkItemDevice,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveTpServItemDevice" parameterType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServItemDevice" >
+        INSERT INTO tp_serv_item_device
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkItemDevice != null" >
+                PK_ITEM_DEVICE,
+            </if>
+            <if test="fkDept != null" >
+                FK_DEPT,
+            </if>
+            <if test="fkItemType != null" >
+                FK_ITEM_TYPE,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="spcode != null" >
+                SPCODE,
+            </if>
+            <if test="cashPledge != null" >
+                CASH_PLEDGE,
+            </if>
+            <if test="note != null" >
+                NOTE,
+            </if>
+            <if test="rentState != null" >
+                RENT_STATE,
+            </if>
+            <if test="useFlag != null" >
+                USE_FLAG,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="modifier != null" >
+                MODIFIER,
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkItemDevice != null" >
+                #{pkItemDevice,jdbcType=CHAR},
+            </if> 
+            <if test="fkDept != null" >
+                #{fkDept,jdbcType=CHAR},
+            </if> 
+            <if test="fkItemType != null" >
+                #{fkItemType,jdbcType=CHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="spcode != null" >
+                #{spcode,jdbcType=VARCHAR},
+            </if> 
+            <if test="cashPledge != null" >
+                #{cashPledge,jdbcType=DECIMAL},
+            </if> 
+            <if test="note != null" >
+                #{note,jdbcType=VARCHAR},
+            </if> 
+            <if test="rentState != null" >
+                #{rentState,jdbcType=CHAR},
+            </if> 
+            <if test="useFlag != null" >
+                #{useFlag,jdbcType=CHAR},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=CHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="modifier != null" >
+                #{modifier,jdbcType=CHAR},
+            </if> 
+            <if test="modityTime != null" >
+                #{modityTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=TIMESTAMP},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateTpServItemDevice" parameterType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServItemDevice" >
+        UPDATE tp_serv_item_device
+        <set>
+            <if test="pkItemDevice != null" >
+                PK_ITEM_DEVICE = #{pkItemDevice,jdbcType=CHAR},
+            </if>
+            <if test="fkDept != null" >
+                FK_DEPT = #{fkDept,jdbcType=CHAR},
+            </if>
+            <if test="fkItemType != null" >
+                FK_ITEM_TYPE = #{fkItemType,jdbcType=CHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="spcode != null" >
+                SPCODE = #{spcode,jdbcType=VARCHAR},
+            </if>
+            <if test="cashPledge != null" >
+                CASH_PLEDGE = #{cashPledge,jdbcType=DECIMAL},
+            </if>
+            <if test="note != null" >
+                NOTE = #{note,jdbcType=VARCHAR},
+            </if>
+            <if test="rentState != null" >
+                RENT_STATE = #{rentState,jdbcType=CHAR},
+            </if>
+            <if test="useFlag != null" >
+                USE_FLAG = #{useFlag,jdbcType=CHAR},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=CHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="modifier != null" >
+                MODIFIER = #{modifier,jdbcType=CHAR},
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME = #{modityTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        WHERE 
+            PK_ITEM_DEVICE = #{pkItemDevice,jdbcType=CHAR}
+    </update>
+    
+    	<!-- 获取第三方服务项目设备列表 -->
+	<select id="getServItemDeviceList" parameterType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServItemDevice" resultType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServItemDevice">
+		select t1.*
+		from tp_serv_item_device t1
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+		  	<if test="code != null and code != ''">
+		  		and t1.code = #{code,jdbcType=VARCHAR} 
+		  	</if> 
+		  	<if test="pkItemDevice != null and pkItemDevice != ''">
+		  		and t1.pk_item_device = #{pkItemDevice,jdbcType=VARCHAR} 
+		  	</if> 
+  		</trim>
+	</select>
+</mapper>

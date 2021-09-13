@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.QueryChargeMapper" >
+
+  <select id="getChargeSummary" resultType="DynaBean" parameterType="java.lang.String" >
+	select 
+		( select sum(amount)*1.0 from bl_deposit depo where eu_dptype='9' and depo.pk_pv = #{pkPv,jdbcType=CHAR}) as sum_deposit,
+		( select sum(amt_credit)*1.0 from pv_ip_acc where nvl(flag_canc,'0') &lt;&gt; '1' and pk_pv = #{pkPv,jdbcType=CHAR}) as sum_guarantee,
+		( select sum(blip.amount)*1.0 from bl_ip_dt blip  where blip.pk_pv = #{pkPv,jdbcType=CHAR})		 as sum_amount,   
+		( select sum(blip.amount_pi)*1.0 from bl_ip_dt blip  where blip.pk_pv = #{pkPv,jdbcType=CHAR})    as sum_amount_pi		   
+	from dual
+  </select>
+  <select id="getChargeSumDeposit" resultType="java.lang.Double" parameterType="java.lang.String" >
+     select (case when sum(amount) is null then 0 else sum(amount)*1.0 end )  as sum_deposit from bl_deposit depo where eu_dptype='9' and depo.pk_pv = #{pkPv,jdbcType=CHAR} 
+  </select>
+  <select id="getChargeSumGuarantee" resultType="java.lang.Double" parameterType="java.lang.String" >
+	  select (case when sum(amt_credit) is null then 0 else sum(amt_credit)*1.0 end ) as sum_guarantee from pv_ip_acc where nvl(flag_canc,'0') &lt;&gt; '1' and pk_pv = #{pkPv,jdbcType=CHAR}  		
+  </select>
+  <select id="getChargeSumAmount" resultType="java.lang.Double" parameterType="java.lang.String" >
+       select (case when sum(blip.amount) is null then 0 else sum(blip.amount)*1.0 end ) as sum_amount from bl_ip_dt blip  where blip.pk_pv = #{pkPv,jdbcType=CHAR}  
+  </select>
+  <select id="getChargeSumAmountPi" resultType="java.lang.Double" parameterType="java.lang.String" >
+      select (case when sum(blip.amount_pi) is null then 0 else sum(blip.amount_pi)*1.0 end ) as sum_amount_pi from bl_ip_dt blip  where blip.pk_pv = #{pkPv,jdbcType=CHAR}    
+  </select>
+
+  <select id="getChargeByCategory" resultType="DynaBean" parameterType="java.util.Map" >
+  	select a.* from  (
+	select * from (select cate.name cate_name,
+	       sum(blip.amount) amount,
+	       sum(blip.amount_pi) amount_pi,
+	       min(cate.code) cate_code
+		 from bd_itemcate cate 
+		 right outer join bl_ip_dt blip on cate.pk_itemcate=blip.pk_itemcate
+		 where blip.pk_pv = #{pkPv,jdbcType=CHAR}	 
+			<if test="pkDept != null " >
+		 	   and blip.pk_dept_app = #{pkDept,jdbcType=CHAR} 
+            </if>
+		 group by cate.name) aa
+	union all 
+		select * from (select cate.name cate_name,
+		       sum(blip.amount) amount,
+		       sum(blip.amount_pi) amount_pi,
+		       min(cate.code) cate_code
+		 from bd_itemcate cate 
+		 right outer join bl_ip_dt_b blip on cate.pk_itemcate=blip.pk_itemcate
+		 where blip.pk_pv = #{pkPv,jdbcType=CHAR}	 
+			<if test="pkDept != null " >
+		 	   and blip.pk_dept_app = #{pkDept,jdbcType=CHAR} 
+            </if>
+		 group by cate.name) aa
+	) a 
+	
+	<!-- select cate.name cate_name,
+	       sum(blip.amount) amount,
+	       sum(blip.amount_pi) amount_pi,
+	       min(cate.code) cate_code
+	 from bd_itemcate cate 
+	       right outer join bl_ip_dt blip on cate.pk_itemcate=blip.pk_itemcate
+	 where blip.pk_pv = #{pkPv,jdbcType=CHAR}	 
+			<if test="pkDept != null " >
+		 	   and blip.pk_dept_app = #{pkDept,jdbcType=CHAR} 
+            </if>
+	 group by cate.name -->
+  </select>
+
+  <select id="getChargeByItem" resultType="DynaBean" parameterType="java.util.Map">
+	select cate.name namecate, 
+	       blip.name_cg,
+	       blip.spec,
+	       blip.price,
+	       item.code code_cg,
+	       sum(blip.quan) quan,
+	       sum(blip.amount) amount,
+	       sum(blip.amount_pi) amount_pi
+	 from bd_itemcate cate 
+	       right outer join bl_ip_dt blip on cate.pk_itemcate=blip.pk_itemcate
+	       left join bd_item item on item.pk_item = blip.pk_item
+	 where blip.pk_pv = #{pkPv,jdbcType=CHAR} 
+		   <if test="dtStart != null " >
+		 	   and blip.date_cg &gt;=to_date(#{dtStart,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss') 
+           </if>
+		   <if test="dtEnd != null" >
+		 	   and blip.date_cg &lt;=to_date(#{dtEnd,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss')  
+           </if>
+		   <if test="nameCg != null" >
+		 	   and blip.name_cg like '%' || #{nameCg,jdbcType=CHAR} || '%' 
+           </if>
+		   <if test='cateCode != null and cateCode != "" ' >
+		 	   and cate.code like #{cateCode,jdbcType=CHAR}	 	 
+           </if>		 
+			<if test="pkDept != null " >
+		 	   and blip.pk_dept_app = #{pkDept,jdbcType=CHAR} 
+            </if>
+	 group by cate.name,
+	         blip.name_cg,
+	         blip.spec,
+	         blip.price,
+	         item.code
+  </select>
+  <select id="getChargeByItemAndDump" resultType="DynaBean" parameterType="java.util.Map">
+  		select a.* from  (
+				select * from (select cate.name namecate, 
+								 blip.name_cg,
+								 blip.spec,
+								 blip.price,
+								 item.code code_cg,
+								 sum(blip.quan) quan,
+								 sum(blip.amount) amount,
+								 sum(blip.amount_pi) amount_pi
+					 from bd_itemcate cate 
+								 right outer join bl_ip_dt blip on cate.pk_itemcate=blip.pk_itemcate
+								 left join bd_item item on item.pk_item = blip.pk_item 
+					  where blip.pk_pv = #{pkPv,jdbcType=CHAR} 
+						   <if test="dtStart != null " >
+						 	   and blip.date_cg &gt;=to_date(#{dtStart,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss') 
+				           </if>
+						   <if test="dtEnd != null" >
+						 	   and blip.date_cg &lt;=to_date(#{dtEnd,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss')  
+				           </if>
+						   <if test="nameCg != null" >
+						 	   and blip.name_cg like '%' || #{nameCg,jdbcType=CHAR} || '%' 
+				           </if>
+						   <if test='cateCode != null and cateCode != "" ' >
+						 	   and cate.code like #{cateCode,jdbcType=CHAR}	 	 
+				           </if>		 
+							<if test="pkDept != null " >
+						 	   and blip.pk_dept_app = #{pkDept,jdbcType=CHAR} 
+				            </if>
+					 group by cate.name,
+			         	blip.name_cg,
+			         	blip.spec,
+			         	blip.price,
+			         	item.code) aa
+		union all 
+				select * from (select cate.name namecate, 
+			       blip.name_cg,
+			       blip.spec,
+			       blip.price,
+			       item.code code_cg,
+			       sum(blip.quan) quan,
+			       sum(blip.amount) amount,
+			       sum(blip.amount_pi) amount_pi
+			 from bd_itemcate cate 
+			       right outer join bl_ip_dt_b blip on cate.pk_itemcate=blip.pk_itemcate
+			       left join bd_item item on item.pk_item = blip.pk_item
+			 where blip.pk_pv = #{pkPv,jdbcType=CHAR} 
+				   <if test="dtStart != null " >
+				 	   and blip.date_cg &gt;=to_date(#{dtStart,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss') 
+		           </if>
+				   <if test="dtEnd != null" >
+				 	   and blip.date_cg &lt;=to_date(#{dtEnd,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss')  
+		           </if>
+				   <if test="nameCg != null" >
+				 	   and blip.name_cg like '%' || #{nameCg,jdbcType=CHAR} || '%' 
+		           </if>
+				   <if test='cateCode != null and cateCode != "" ' >
+				 	   and cate.code like #{cateCode,jdbcType=CHAR}	 	 
+		           </if>		 
+					<if test="pkDept != null " >
+				 	   and blip.pk_dept_app = #{pkDept,jdbcType=CHAR} 
+		            </if>
+			 group by cate.name,
+					 blip.name_cg,
+					 blip.spec,
+					 blip.price,
+					 item.code) aa
+		
+		) a 
+  </select>
+  <select id="getChargeDetail" resultType="DynaBean" parameterType="java.util.Map">
+	select cate.name namecate, 
+	       blip.name_cg,
+	       blip.spec,
+	       blip.price,
+	       blip.quan quan,
+	       blip.amount amount,
+	       blip.amount_pi amount_pi,
+	       blip.date_hap date_cg,
+	       org.name_org org_ex,
+	       dept.name_dept dept_app,
+	       blip.name_emp_cg,
+	       blip.infant_no ,
+	       blip.pk_dept_ex,
+	       exdept.name_dept dept_ex
+	from bd_itemcate cate 
+	       right outer join bl_ip_dt blip on cate.pk_itemcate=blip.pk_itemcate
+	       inner join bd_ou_org org on blip.pk_org_ex = org.pk_org
+	       inner join bd_ou_dept dept on blip.pk_dept_app = dept.pk_dept
+	       inner join bd_ou_dept exdept on blip.PK_DEPT_EX = exdept.pk_dept
+	 where blip.pk_pv = #{pkPv,jdbcType=CHAR} 
+		   <if test="dtStart != null" >
+		 	   and blip.date_cg &gt;=to_date(#{dtStart,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss') 
+           </if>
+		   <if test="dtEnd != null" >
+		 	   and blip.date_cg &lt;=to_date(#{dtEnd,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss') 
+           </if>
+		   <if test="nameCg != null" >
+		 	   and blip.name_cg like '%' || #{nameCg,jdbcType=CHAR} || '%' 
+           </if>
+		   <if test='cateCode != null and cateCode != "" ' >
+		 	   and cate.code like #{cateCode,jdbcType=CHAR}	 	 
+           </if>
+			<if test="pkDept != null " >
+		 	   and blip.pk_dept_app = #{pkDept,jdbcType=CHAR} 
+            </if>
+			<if test="pkDeptExec != null " >
+		 	   and blip.pk_dept_ex = #{pkDeptExec,jdbcType=CHAR} 
+            </if>
+    order by blip.date_hap, cate.name
+  </select>
+  <select id="getChargeDetailAndDump" resultType="DynaBean" parameterType="java.util.Map">
+  		select a.* from  (
+				select cate.name namecate, 
+							 blip.name_cg,
+							 blip.spec,
+							 blip.price,
+							 blip.quan quan,
+							 blip.amount amount,
+							 blip.amount_pi amount_pi,
+							 blip.date_hap date_cg,
+							 org.name_org org_ex,
+							 dept.name_dept dept_app,
+							 blip.name_emp_cg,
+							 blip.infant_no ,
+							 blip.pk_dept_ex,
+							 exdept.name_dept dept_ex,
+							 cate.name,
+							 blip.date_hap
+				from bd_itemcate cate 
+							 right outer join bl_ip_dt blip on cate.pk_itemcate=blip.pk_itemcate
+							 inner join bd_ou_org org on blip.pk_org_ex = org.pk_org
+							 inner join bd_ou_dept dept on blip.pk_dept_app = dept.pk_dept
+							 inner join bd_ou_dept exdept on blip.PK_DEPT_EX = exdept.pk_dept
+			     where blip.pk_pv = #{pkPv,jdbcType=CHAR} 
+					   <if test="dtStart != null" >
+					 	   and blip.date_cg &gt;=to_date(#{dtStart,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss') 
+			           </if>
+					   <if test="dtEnd != null" >
+					 	   and blip.date_cg &lt;=to_date(#{dtEnd,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss') 
+			           </if>
+					   <if test="nameCg != null" >
+					 	   and blip.name_cg like '%' || #{nameCg,jdbcType=CHAR} || '%' 
+			           </if>
+					   <if test='cateCode != null and cateCode != "" ' >
+					 	   and cate.code like #{cateCode,jdbcType=CHAR}	 	 
+			           </if>
+						<if test="pkDept != null " >
+					 	   and blip.pk_dept_app = #{pkDept,jdbcType=CHAR} 
+			            </if>
+						<if test="pkDeptExec != null " >
+					 	   and blip.pk_dept_ex = #{pkDeptExec,jdbcType=CHAR} 
+			            </if>
+		union all 
+					select cate.name namecate, 
+							 blip.name_cg,
+							 blip.spec,
+							 blip.price,
+							 blip.quan quan,
+							 blip.amount amount,
+							 blip.amount_pi amount_pi,
+							 blip.date_hap date_cg,
+							 org.name_org org_ex,
+							 dept.name_dept dept_app,
+							 blip.name_emp_cg,
+							 blip.infant_no ,
+							 blip.pk_dept_ex,
+							 exdept.name_dept dept_ex,
+							 cate.name,
+							 blip.date_hap
+				from bd_itemcate cate 
+							 right outer join bl_ip_dt_b blip on cate.pk_itemcate=blip.pk_itemcate
+							 inner join bd_ou_org org on blip.pk_org_ex = org.pk_org
+							 inner join bd_ou_dept dept on blip.pk_dept_app = dept.pk_dept
+							 inner join bd_ou_dept exdept on blip.PK_DEPT_EX = exdept.pk_dept
+				where blip.pk_pv = #{pkPv,jdbcType=CHAR} 
+				   <if test="dtStart != null" >
+				 	   and blip.date_cg &gt;=to_date(#{dtStart,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss') 
+		           </if>
+				   <if test="dtEnd != null" >
+				 	   and blip.date_cg &lt;=to_date(#{dtEnd,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss') 
+		           </if>
+				   <if test="nameCg != null" >
+				 	   and blip.name_cg like '%' || #{nameCg,jdbcType=CHAR} || '%' 
+		           </if>
+				   <if test='cateCode != null and cateCode != "" ' >
+				 	   and cate.code like #{cateCode,jdbcType=CHAR}	 	 
+		           </if>
+					<if test="pkDept != null " >
+				 	   and blip.pk_dept_app = #{pkDept,jdbcType=CHAR} 
+		            </if>
+					<if test="pkDeptExec != null " >
+				 	   and blip.pk_dept_ex = #{pkDeptExec,jdbcType=CHAR} 
+		            </if>
+		) a order by date_hap,name
+  </select>
+  <select id="queryEncHistory" resultType="DynaBean" parameterType="java.util.Map">
+	<choose>
+		<when test="pvType == '1'.toString() ">
+			select pv.pk_pv,
+			pv.eu_pvtype,
+			pv.date_begin,
+			dept.name_dept,
+			ns.name_dept as name_dept_ns,
+			hp.name name_hp,
+			nvl( (select pdg.desc_diag from pv_diag pdg
+			where pdg.pk_pv = pv.pk_pv and pdg.flag_maj = '1' and pdg.del_flag='0'), '--') as diag_name ,
+			pv.date_end,
+			doc.name as outcome_name
+			from pv_encounter pv inner join bd_ou_dept dept on pv.pk_dept = dept.pk_dept and dept.del_flag='0'
+			left join bd_ou_dept ns on pv.pk_dept_ns = ns.pk_dept and ns.del_flag='0'
+			inner join bd_hp hp on pv.pk_insu = hp.pk_hp and hp.del_flag='0'
+			inner join pv_ip ip on ip.pk_pv=#{pkPv,jdbcType=CHAR}  and ip.del_flag='0'
+			left join bd_defdoc doc on doc.code = ip.dt_outcomes and doc.code_defdoclist='000110' and doc.del_flag='0'
+			where pv.flag_in = '0'
+			and (pv.pk_pi = #{pkPi,jdbcType=CHAR} )
+			<if test="dtStart != null" >
+				and pv.date_begin &gt;=to_date(#{dtStart,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss')
+			</if>
+			<if test="dtEnd != null" >
+				and  (pv.date_end &lt;=to_date(#{dtEnd,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss') or pv.date_end is null)
+			</if>
+			<if test='pvType != null and pvType != "" ' >
+				and pv.eu_pvtype = #{pvType ,jdbcType=CHAR}
+			</if>
+		</when>
+		<otherwise>
+			select pv.pk_pv,
+			pv.eu_pvtype,
+			pv.date_begin,
+			dept.name_dept,
+			ns.name_dept as name_dept_ns,
+			hp.name name_hp,
+			nvl( (select pdg.desc_diag from pv_diag pdg
+			where pdg.pk_pv = pv.pk_pv and pdg.flag_maj = '1' and pdg.del_flag='0'), '--') as diag_name ,
+			pv.date_end,
+			doc.name as outcome_name
+			from pv_encounter pv inner join bd_ou_dept dept on pv.pk_dept = dept.pk_dept and dept.del_flag='0'
+			inner join bd_ou_dept ns on pv.pk_dept_ns = ns.pk_dept and ns.del_flag='0'
+			inner join bd_hp hp on pv.pk_insu = hp.pk_hp and hp.del_flag='0'
+			inner join pv_ip ip on pv.pk_pv = ip.pk_pv  and ip.del_flag='0'
+			left join bd_defdoc doc on doc.code = ip.dt_outcomes and doc.code_defdoclist='000110' and doc.del_flag='0'
+			where pv.flag_in = '0'
+			and (pv.pk_pi = #{pkPi,jdbcType=CHAR} )
+			<if test="dtStart != null" >
+				and pv.date_begin &gt;=to_date(#{dtStart,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss')
+			</if>
+			<if test="dtEnd != null" >
+				and  pv.date_end &lt;=to_date(#{dtEnd,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss')
+			</if>
+			<if test='pvType != null and pvType != "" ' >
+				and pv.eu_pvtype = #{pvType ,jdbcType=CHAR}
+			</if>
+		</otherwise>
+	</choose>
+
+
+  </select>
+  
+</mapper>
+

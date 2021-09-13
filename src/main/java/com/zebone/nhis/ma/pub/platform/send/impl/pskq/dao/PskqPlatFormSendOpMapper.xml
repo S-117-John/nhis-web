@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.platform.send.impl.pskq.dao.PskqPlatFormSendOpMapper" >
+
+     <select  id="getRegisterEncounterOp" parameterType="java.util.Map" resultType="com.zebone.nhis.ma.pub.platform.pskq.model.Outpatient">
+
+    SELECT
+          pi.mpi EMPI_ID,
+          pi.code_pi PK_PATIENT,
+          pi.CODE_OP OUTPATIENT_NO,
+          pv.CODE_PV ENCOUNTER_ID,
+          bo.code_org ORG_CODE,
+          bo.name_org ORG_NAME,
+          pv.EU_PVTYPE ENCOUNTER_TYPE_CODE,
+          (CASE WHEN pv.EU_PVTYPE = 1 THEN '门诊'  WHEN pv.EU_PVTYPE = 3 THEN '住院'    ELSE '其他' END) as ENCOUNTER_TYPE_NAME,
+          pv.CODE_PV VISIT_ID,
+          (case WHEN pv.EU_PVTYPE = '1' then op.op_times else 1 end ) as VISIT_NO,
+          pi.name_pi PATIENT_NAME,
+          bd.CODE GENDER_CODE,
+          bd.NAME GENDER_NAME,
+          pi.BIRTH_DATE DATE_OF_BIRTH,
+          pv.age_pv AGE_YEAR,
+          '' AGE_MONTH,
+          '' AGE_DAY,
+          '' AGE_HOUR,
+          bdm.code MARITAL_STATUS_CODE,
+          bdm.NAME MARITAL_STATUS_NAME,
+          bdp.code PATIENT_RESOURCE_CODE,
+          bdp.NAME PATIENT_RESOURCE_NAME,
+          hp.CODE PATIENT_TYPE_CODE,
+          hp.NAME PATIENT_TYPE_NAME,
+          op.PK_SCH SCHEDULE_ID,
+          sch.date_work SCHEDULE_DATE,
+          op.CREATE_TIME REGISTER_DATE_TIME,
+          opCreEmp.CODE_EMP REGISTER_OPERA_ID,
+          opCreEmp.NAME_EMP REGISTER_OPERA_NAME,
+          bod.CODE_DEPT REGISTER_DEPT_ID,
+          bod.NAME_DEPT REGISTER_DEPT_NAME,
+          opPvEmp.CODE_EMP REGISTER_DOCTOR_ID,
+          opPvEmp.NAME_EMP REGISTER_DOCTOR_NAME,
+          dateslot.CODE_DATESLOT REGISTER_AMPM_CODE,
+          dateslot.CODE_DATESLOT REGISTER_AMPM_NAME,
+          '' REGISTER_CLINIC_TYPE_CODE,
+          '' REGISTER_CLINIC_TYPE_NAME,
+          '' REGISTER_REQ_TYPE_CODE,
+          '' REGISTER_REQ_TYPE_NAME,
+          op.ticketno REGISTER_SEQ_NO,
+          case when appt.code is not null then '1' else '0' end as RESERVE_FLAG,
+          appt.code RESERVE_ID,
+          nvl(pay.sysname,'2000') REGISTER_CHANNEL_CODE ,
+          '' REGISTER_CHANNEL_NAME ,
+          '' RETURN_FLAG,
+          '' RETURN_DATE_TIME,
+          '' RETURN_OPERA_ID,
+          '' RETURN_OPERA_NAME,
+          op.flag_first VISIT_TYPE_CODE,
+           (case when op.flag_first = 0 then '初诊' when  op.flag_first = 1 then '复诊' end )  as VISIT_TYPE_NAME,
+          bod.CODE_DEPT VISIT_DEPT_ID,
+          bod.NAME_DEPT VISIT_DEPT_NAME,
+          pv.DATE_BEGIN VISIT_START_DATE_TIME,
+          pv.DATE_END VISIT_END_DATE_TIME,
+          opPvEmp.CODE_EMP DOCTOR_ID,
+          opPvEmp.NAME_EMP DOCTOR_NAME,
+          '' THERAPY_CODE,
+          '' THERAPY_NAME,
+          '' IAG_DATE_TIME,
+          '' DIAG_CODE,
+          '' DIAG_NAME,
+          '' DIAG_DESC,
+          '' CLINIC_ROOM_CODE,
+          '' CLINIC_ROOM_NAME,
+          pv.EU_STATUS VISIT_STATUS_CODE,
+          (CASE WHEN pv.EU_STATUS = 0 THEN '登记' WHEN pv.EU_STATUS = 9 THEN '退诊' ELSE '就诊' END ) as VISIT_STATUS_NAME,
+          bdDep.code ACCOUNT_TYPE_CODE,
+          bdDep.NAME ACCOUNT_TYPE_NAME,
+		  bie.PK_INVOICE REGISTERED_INVOICE_ID,
+		  bie.URL_EBILL REGISTERED_INVOICE_PDF_URL
+  FROM
+      PV_ENCOUNTER pv
+        LEFT JOIN PI_MASTER pi ON pi.PK_PI = pv.PK_PI
+        left join SCH_APPT_PV apptpv on  apptpv.pk_pv = pv.PK_PV
+        left join SCH_APPT appt on  appt.PK_SCHAPPT = apptpv.PK_SCHAPPT
+        LEFT JOIN pv_op op ON op.PK_PV = pv.PK_PV
+        left join bd_hp hp on hp.PK_HP = pv.pk_insu and hp.DEL_FLAG = '0'
+        left join BL_SETTLE st on st.PK_PV = pv.PK_PV and st.DT_STTYPE ='00'
+        left join bl_deposit blDep on  blDep.PK_SETTLE = st.PK_SETTLE
+        left join bl_ext_pay pay on  blDep.pk_depo = pay.PK_depo
+        LEFT JOIN bd_ou_employee opCreEmp ON opCreEmp.PK_EMP = op.creator
+        LEFT JOIN bd_ou_employee opPvEmp ON opPvEmp.PK_EMP = op.pk_emp_pv
+        LEFT JOIN bd_code_dateslot dateslot ON dateslot.PK_DATESLOT = op.PK_DATESLOT
+        LEFT JOIN sch_sch sch ON sch.pk_sch = op.PK_SCH
+        LEFT JOIN BD_OU_ORG bo ON bo.pk_Org = pv.pk_org
+        LEFT JOIN BD_OU_DEPT bod ON bod.pk_dept = op.pk_dept_pv
+        LEFT JOIN BD_DEFDOC bdDep on  bdDep.code = blDep.dt_paymode  AND bdDep.CODE_DEFDOCLIST = '110100'
+        LEFT JOIN BD_DEFDOC bd ON bd.code = pi.dt_sex  AND bd.CODE_DEFDOCLIST = '000000'
+        LEFT JOIN BD_DEFDOC bdm ON bdm.code = pi.DT_MARRY AND bdm.CODE_DEFDOCLIST = '000006'
+        LEFT JOIN BD_DEFDOC bdp ON bdp.code = pv.DT_PVSOURCE AND bdp.CODE_DEFDOCLIST = '000126'
+        LEFT JOIN BD_DEFDOC bdappt ON bdappt.code = op.dt_apptype AND bdappt.CODE_DEFDOCLIST = '020100'
+        LEFT JOIN BD_DEFDOC empsrv ON empsrv.code = opPvEmp.dt_empsrvtype AND empsrv.CODE_DEFDOCLIST = '010305'
+		left join BL_SETTLE bse on bse.pk_pv=pv.pk_pv and bse.FLAG_CANC='0' and bse.DT_STTYPE='00'
+		left join BL_ST_INV bsiv on bsiv.PK_SETTLE=bse.PK_SETTLE
+		LEFT JOIN BL_INVOICE bie on bie.PK_INVOICE=bsiv.PK_INVOICE
+    WHERE
+        pv.PK_PV = #{pkPv,jdbcType=VARCHAR}
+</select>
+
+
+
+     <select  id="getRetreatEncounterOp" parameterType="java.util.Map" resultType="com.zebone.nhis.ma.pub.platform.pskq.model.Outpatient">
+
+    SELECT
+          pi.mpi EMPI_ID,
+          pi.code_pi PK_PATIENT,
+          pv.CODE_PV ENCOUNTER_ID,
+          pi.CODE_OP OUTPATIENT_NO,
+          bo.code_org ORG_CODE,
+          bo.name_org ORG_NAME,
+          pv.EU_PVTYPE ENCOUNTER_TYPE_CODE,
+          (CASE WHEN pv.EU_PVTYPE = 1 THEN '门诊'  WHEN pv.EU_PVTYPE = 3 THEN '住院'    ELSE '其他' END) as ENCOUNTER_TYPE_NAME,
+          pv.CODE_PV VISIT_ID,
+          (case WHEN pv.EU_PVTYPE = '1' then op.op_times else 1 end ) as VISIT_NO,
+          pi.name_pi PATIENT_NAME,
+          bd.CODE GENDER_CODE,
+          bd.NAME GENDER_NAME,
+          pi.BIRTH_DATE DATE_OF_BIRTH,
+          pv.age_pv AGE_YEAR,
+          '' AGE_MONTH,
+          '' AGE_DAY,
+          '' AGE_HOUR,
+          bdm.code MARITAL_STATUS_CODE,
+          bdm.NAME MARITAL_STATUS_NAME,
+          bdp.code PATIENT_RESOURCE_CODE,
+          bdp.NAME PATIENT_RESOURCE_NAME,
+          hp.CODE PATIENT_TYPE_CODE,
+          hp.NAME PATIENT_TYPE_NAME,
+          op.PK_SCH SCHEDULE_ID,
+          sch.date_work SCHEDULE_DATE,
+          op.CREATE_TIME REGISTER_DATE_TIME,
+          opCreEmp.CODE_EMP REGISTER_OPERA_ID,
+          opCreEmp.NAME_EMP REGISTER_OPERA_NAME,
+          bod.CODE_DEPT REGISTER_DEPT_ID,
+          bod.NAME_DEPT REGISTER_DEPT_NAME,
+          opPvEmp.CODE_EMP REGISTER_DOCTOR_ID,
+          opPvEmp.NAME_EMP REGISTER_DOCTOR_NAME,
+          dateslot.CODE_DATESLOT REGISTER_AMPM_CODE,
+          dateslot.CODE_DATESLOT REGISTER_AMPM_NAME,
+          '' REGISTER_CLINIC_TYPE_CODE,
+          '' REGISTER_CLINIC_TYPE_NAME,
+          '' REGISTER_REQ_TYPE_CODE,
+          '' REGISTER_REQ_TYPE_NAME,
+          op.ticketno REGISTER_SEQ_NO,
+          case when appt.code is not null then '1' else '0' end as RESERVE_FLAG,
+          appt.code RESERVE_ID,
+          nvl(pay.sysname,'2000') REGISTER_CHANNEL_CODE ,
+          '' REGISTER_CHANNEL_NAME ,
+          pv.flag_cancel RETURN_FLAG,
+          pv.date_cancel RETURN_DATE_TIME,
+          pv.pk_emp_cancel RETURN_OPERA_ID,
+          pv.name_emp_cancel RETURN_OPERA_NAME,
+          op.flag_first VISIT_TYPE_CODE,
+           (case when op.flag_first = 0 then '初诊' when  op.flag_first = 1 then '复诊' end )  as VISIT_TYPE_NAME,
+          bod.CODE_DEPT VISIT_DEPT_ID,
+          bod.NAME_DEPT VISIT_DEPT_NAME,
+          pv.DATE_BEGIN VISIT_START_DATE_TIME,
+          pv.DATE_END VISIT_END_DATE_TIME,
+          opPvEmp.CODE_EMP DOCTOR_ID,
+          opPvEmp.NAME_EMP DOCTOR_NAME,
+          '' THERAPY_CODE,
+          '' THERAPY_NAME,
+          '' IAG_DATE_TIME,
+          '' DIAG_CODE,
+          '' DIAG_NAME,
+          '' DIAG_DESC,
+          '' CLINIC_ROOM_CODE,
+          '' CLINIC_ROOM_NAME,
+          pv.EU_STATUS VISIT_STATUS_CODE,
+          (CASE WHEN pv.EU_STATUS = 0 THEN '登记' WHEN pv.EU_STATUS = 9 THEN '退诊' ELSE '就诊' END ) as VISIT_STATUS_NAME,
+          bdDep.code ACCOUNT_TYPE_CODE,
+          bdDep.NAME ACCOUNT_TYPE_NAME
+  FROM
+      PV_ENCOUNTER pv
+        LEFT JOIN PI_MASTER pi ON pi.PK_PI = pv.PK_PI
+        left join SCH_APPT_PV apptpv on  apptpv.pk_pv = pv.PK_PV
+        left join SCH_APPT appt on  appt.PK_SCHAPPT = apptpv.PK_SCHAPPT
+        LEFT JOIN pv_op op ON op.PK_PV = pv.PK_PV
+        left join bd_hp hp on hp.PK_HP = pv.pk_insu and hp.DEL_FLAG = '0'
+        left join BL_SETTLE st on st.PK_PV = pv.PK_PV and st.DT_STTYPE ='00'
+        left join bl_deposit blDep on  blDep.PK_SETTLE = st.PK_SETTLE
+        left join bl_ext_pay pay on  blDep.pk_depo = pay.PK_depo
+        LEFT JOIN bd_ou_employee opCreEmp ON opCreEmp.PK_EMP = op.creator
+        LEFT JOIN bd_ou_employee opPvEmp ON opPvEmp.PK_EMP = op.pk_emp_pv
+        LEFT JOIN bd_code_dateslot dateslot ON dateslot.PK_DATESLOT = op.PK_DATESLOT
+        LEFT JOIN sch_sch sch ON sch.pk_sch = op.PK_SCH
+        LEFT JOIN BD_OU_ORG bo ON bo.pk_Org = pv.pk_org
+        LEFT JOIN BD_OU_DEPT bod ON bod.pk_dept = op.pk_dept_pv
+        LEFT JOIN BD_DEFDOC bdDep on  bdDep.code = blDep.dt_paymode  AND bdDep.CODE_DEFDOCLIST = '110100'
+        LEFT JOIN BD_DEFDOC bd ON bd.code = pi.dt_sex  AND bd.CODE_DEFDOCLIST = '000000'
+        LEFT JOIN BD_DEFDOC bdm ON bdm.code = pi.DT_MARRY AND bdm.CODE_DEFDOCLIST = '000006'
+        LEFT JOIN BD_DEFDOC bdp ON bdp.code = pv.DT_PVSOURCE AND bdp.CODE_DEFDOCLIST = '000126'
+        LEFT JOIN BD_DEFDOC bdappt ON bdappt.code = op.dt_apptype AND bdappt.CODE_DEFDOCLIST = '020100'
+        LEFT JOIN BD_DEFDOC empsrv ON empsrv.code = opPvEmp.dt_empsrvtype AND empsrv.CODE_DEFDOCLIST = '010305'
+
+    WHERE
+        pv.PK_PV = #{pkPv,jdbcType=VARCHAR}
+</select>
+
+              <resultMap id="BaseResultMap" type="com.zebone.nhis.ma.pub.platform.pskq.model.PatientInfo">
+                      <id column="empi_id" jdbcType="VARCHAR" property="empiId" />
+                      <result column="abo_blood_type_code" jdbcType="VARCHAR" property="aboBloodTypeCode" />
+                      <result column="abo_blood_type_name" jdbcType="VARCHAR" property="aboBloodTypeName" />
+                      <result column="allergy_desc" jdbcType="VARCHAR" property="allergyDesc" />
+                      <result column="allergy_flag" jdbcType="BIT" property="allergyFlag" />
+                      <result column="birth_place" jdbcType="VARCHAR" property="birthPlace" />
+                      <result column="birth_place_city" jdbcType="VARCHAR" property="birthPlaceCity" />
+                      <result column="birth_place_county" jdbcType="VARCHAR" property="birthPlaceCounty" />
+                      <result column="birth_place_province" jdbcType="VARCHAR" property="birthPlaceProvince" />
+                      <result column="mcno" jdbcType="VARCHAR" property="computerNo" />
+                      <result column="addr_rel" jdbcType="VARCHAR" property="contactAddress" />
+                      <result column="contact_address_postal_code" jdbcType="VARCHAR" property="contactAddressPostalCode" />
+                      <result column="idno_rel" jdbcType="VARCHAR" property="contactIdNo" />
+                      <result column="name_rel" jdbcType="VARCHAR" property="contactName" />
+                      <result column="tel_rel" jdbcType="VARCHAR" property="contactPhoneNo" />
+                      <result column="contact_relationship_code" jdbcType="VARCHAR" property="contactRelationshipCode" />
+                      <result column="contact_relationship_name" jdbcType="VARCHAR" property="contactRelationshipName" />
+                      <result column="birth_date" jdbcType="TIMESTAMP" property="dateOfBirth" />
+                      <result column="hic_no" jdbcType="VARCHAR" property="eMedInsuranceNo" />
+                      <result column="education_code" jdbcType="VARCHAR" property="educationCode" />
+                      <result column="education_name" jdbcType="VARCHAR" property="educationName" />
+                      <result column="hic_no" jdbcType="VARCHAR" property="ehealthCardNo" />
+                      <result column="create_time" jdbcType="TIMESTAMP" property="enterDateTime" />
+                      <result column="enter_opera_id" jdbcType="VARCHAR" property="enterOperaId" />
+                      <result column="enter_opera_name" jdbcType="VARCHAR" property="enterOperaName" />
+                      <result column="ethnic_code" jdbcType="VARCHAR" property="ethnicCode" />
+                      <result column="ethnic_name" jdbcType="VARCHAR" property="ethnicName" />
+                      <result column="family_doctor_id" jdbcType="VARCHAR" property="familyDoctorId" />
+                      <result column="family_doctor_name" jdbcType="VARCHAR" property="familyDoctorName" />
+                      <result column="gender_code" jdbcType="VARCHAR" property="genderCode" />
+                      <result column="gender_name" jdbcType="VARCHAR" property="genderName" />
+                      <result column="hic_no" jdbcType="VARCHAR" property="healthCardNo" />
+                      <result column="tel_no" jdbcType="VARCHAR" property="homePhoneNo" />
+                      <result column="household_address" jdbcType="VARCHAR" property="householdAddress" />
+                      <result column="household_address_city" jdbcType="VARCHAR" property="householdAddressCity" />
+                      <result column="household_address_country" jdbcType="VARCHAR" property="householdAddressCountry" />
+                      <result column="household_address_county" jdbcType="VARCHAR" property="householdAddressCounty" />
+                      <result column="household_address_house_no" jdbcType="VARCHAR" property="householdAddressHouseNo" />
+                      <result column="postcode_regi" jdbcType="VARCHAR" property="householdAddressPostalCode" />
+                      <result column="household_address_province" jdbcType="VARCHAR" property="householdAddressProvince" />
+                      <result column="household_address_village" jdbcType="VARCHAR" property="householdAddressVillage" />
+                      <result column="id_no" jdbcType="VARCHAR" property="idNo" />
+                      <result column="id_type_code" jdbcType="VARCHAR" property="idTypeCode" />
+                      <result column="id_type_name" jdbcType="VARCHAR" property="idTypeName" />
+                      <result column="marital_status_code" jdbcType="VARCHAR" property="maritalStatusCode" />
+                      <result column="marital_status_name" jdbcType="VARCHAR" property="maritalStatusName" />
+                      <result column="insur_no" jdbcType="VARCHAR" property="medInsuranceNo" />
+                      <result column="modify_date_time" jdbcType="TIMESTAMP" property="modifyDateTime" />
+                      <result column="modify_opera_id" jdbcType="VARCHAR" property="modifyOperaId" />
+                      <result column="modify_opera_name" jdbcType="VARCHAR" property="modifyOperaName" />
+                      <result column="nationality_code" jdbcType="VARCHAR" property="nationalityCode" />
+                      <result column="nationality_name" jdbcType="VARCHAR" property="nationalityName" />
+                      <result column="native_place" jdbcType="VARCHAR" property="nativePlace" />
+                      <result column="native_place_city" jdbcType="VARCHAR" property="nativePlaceCity" />
+                      <result column="native_place_province" jdbcType="VARCHAR" property="nativePlaceProvince" />
+                      <result column="occupation_code" jdbcType="VARCHAR" property="occupationCode" />
+                      <result column="occupation_name" jdbcType="VARCHAR" property="occupationName" />
+                      <result column="org_code" jdbcType="VARCHAR" property="orgCode" />
+                      <result column="org_name" jdbcType="VARCHAR" property="orgName" />
+                      <result column="name_pi" jdbcType="VARCHAR" property="patientName" />
+                      <result column="tel_no" jdbcType="VARCHAR" property="phoneNo" />
+                      <result column="code_pi" jdbcType="VARCHAR" property="pkPatient" />
+                      <result column="patient_id" jdbcType="VARCHAR" property="patientId" />
+                      <result column="present_address" jdbcType="VARCHAR" property="presentAddress" />
+                      <result column="present_address_country" jdbcType="VARCHAR" property="presentAddressCountry" />
+                      <result column="present_address_county" jdbcType="VARCHAR" property="presentAddressCounty" />
+                      <result column="present_address_city" jdbcType="VARCHAR" property="presentAddressCity" />
+                      <result column="present_address_house_no" jdbcType="VARCHAR" property="presentAddressHouseNo" />
+                      <result column="postcode_cur" jdbcType="VARCHAR" property="presentAddressPostalCode" />
+                      <result column="present_address_province" jdbcType="VARCHAR" property="presentAddressProvince" />
+                      <result column="present_address_village" jdbcType="VARCHAR" property="presentAddressVillage" />
+                      <result column="rh_blood_type_code" jdbcType="VARCHAR" property="rhBloodTypeCode" />
+                      <result column="rh_blood_type_name" jdbcType="VARCHAR" property="rhBloodTypeName" />
+                      <result column="source_system_code" jdbcType="VARCHAR" property="sourceSystemCode" />
+                      <result column="work_address" jdbcType="VARCHAR" property="workAddress" />
+                      <result column="work_address_city" jdbcType="VARCHAR" property="workAddressCity" />
+                      <result column="work_address_county" jdbcType="VARCHAR" property="workAddressCounty" />
+                      <result column="postcode_work" jdbcType="VARCHAR" property="workAddressPostalCode" />
+                      <result column="work_address_province" jdbcType="VARCHAR" property="workAddressProvince" />
+                      <result column="tel_work" jdbcType="VARCHAR" property="workPhoneNo" />
+                      <result column="unit_work" jdbcType="VARCHAR" property="workUnitName" />
+                  </resultMap>
+
+                  <select id="getPiMasterById" parameterType = "java.util.Map" resultMap="BaseResultMap">
+                      SELECT
+                      pi.*,
+                      def.code gender_code,
+                      def.name gender_name,
+                      defdoc.code as id_type_code,
+                      defdoc.name as id_type_name,
+                      nationality.code nationality_code,
+                      nationality.name nationality_name,
+                      nation.code ethnic_code,
+                      nation.name ethnic_name,
+                      occupation.code occupation_code,
+                      occupation.name occupation_name,
+                      marriage.code marital_status_code,
+                      marriage.name marital_status_name,
+                      edu.code education_code,
+                      edu.name education_name,
+                      zd_addr_birth.prov birth_place_province,
+                      zd_addr_birth.city birth_place_city,
+                      zd_addr_birth.dist birth_place_county,
+                      pi.addr_birth birth_place,
+                      zd_addr_origin.prov native_place_province,
+                      zd_addr_origin.city native_place_city,
+                      pi.addr_origin native_place,
+                      zd_addr_regi.prov household_address_province,
+                      zd_addr_regi.city household_address_city,
+                      zd_addr_regi.dist household_address_county,
+                      pi.addr_regi household_address_country,
+                      pi.addr_regi household_address_village,
+                      pi.addr_regi householdAddressHouseNo,
+                      pi.addr_regi_dt household_address,
+                      zd_addr_cur.prov present_address_province,
+                      zd_addr_cur.city present_address_city,
+                      zd_addr_cur.dist present_address_county,
+                      pi.addr_regi present_address_country,
+                      pi.addr_regi present_address_village,
+                      pi.addr_regi present_address_house_no,
+                      pi.addr_cur_dt present_address,
+                      zd_rel.code contact_relationship_code,
+                      zd_rel.name contact_relationship_name,
+                      abo.code abo_blood_type_code,
+                      abo.name abo_blood_type_name,
+                      abo.code rh_blood_type_code,
+                      abo.name rh_blood_type_name,
+                      nvl((select distinct 1 from  pi_allergic al where al.pk_pi=pi.pk_pi and al.del_flag = '0'),'0') allergy_flag,
+                      (select wmsys.wm_concat(name_al) from  pi_allergic al where al.pk_pi=pi.pk_pi and al.del_flag = '0') allergy_desc,
+                      org.code_org org_code,
+                      org.name_org org_name,
+                      emp.code_emp enter_opera_id,
+                      emp.name_emp enter_opera_name,
+                      empmo.code_emp modify_opera_id,
+                      empmo.name_emp modify_opera_name,
+                      pi.pk_pi as patient_id
+                      FROM
+                      PI_MASTER pi
+                      left join bd_defdoc def on pi.dt_sex = def.CODE and def.code_defdoclist='000000'
+                      left join bd_defdoc defdoc on defdoc.code = pi.dt_idtype and defdoc.code_defdoclist='000007' and defdoc.DEL_FLAG='0'
+                      left join bd_defdoc nationality on pi.dt_country = nationality.code and nationality.code_defdoclist = '000009'
+                      left join bd_defdoc nation on pi.dt_nation = nation.code and nation.code_defdoclist = '000003'
+                      left join bd_defdoc occupation on pi.dt_occu = occupation.code and occupation.code_defdoclist = '000010'
+                      left join bd_defdoc marriage on pi.dt_marry = marriage.code and marriage.code_defdoclist = '000006'
+                      left join bd_defdoc edu  on  edu.code=pi.dt_edu and edu.code_defdoclist = '010302'
+                      left join bd_defdoc zd_rel on pi.dt_ralation = zd_rel.code and zd_rel.code_defdoclist = '000013'
+                      left join bd_defdoc abo on  abo.code_defdoclist='000004' and pi.DT_BLOOD_ABO=abo.code
+                      left join bd_defdoc zd_rh on pi.dt_blood_rh = zd_rh.code and zd_rh.code_defdoclist = '000005'
+                      left join bd_admin_division zd_addr_cur on pi.addrcode_cur = zd_addr_cur.code_div and zd_addr_cur.del_flag='0'
+                      left join bd_admin_division zd_addr_birth on pi.addrcode_birth = zd_addr_birth.code_div and zd_addr_birth.del_flag='0'
+                      left join bd_admin_division zd_addr_origin on pi.addrcode_origin = zd_addr_origin.code_div and zd_addr_origin.del_flag='0'
+                      left join bd_admin_division zd_addr_regi on pi.addrcode_regi = zd_addr_regi.code_div and zd_addr_regi.del_flag='0'
+                      left join pi_allergic allergic on pi.pk_pi = allergic.pk_pi  and allergic.del_flag = '0'
+                      left join bd_ou_org org on pi.pk_org = org.pk_org
+                      left join BD_OU_EMPLOYEE emp on emp.pk_emp = pi.creator
+                      left join BD_OU_EMPLOYEE empmo on empmo.pk_emp = pi.modifier
+                      WHERE 1=1
+                       <if test="pkPi != null  and  pkPi != ''">
+                        and pi.pk_pi = #{pkPi,jdbcType=CHAR}
+                      </if>
+                       <if test="codePi != null  and  codePi != ''">
+                         and pi.code_pi = #{codePi,jdbcType=CHAR}
+                      </if>
+
+                  </select>
+</mapper>

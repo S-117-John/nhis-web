@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.webservice.zhongshan.dao.ZsbaOutPatientOrderMapper">
+
+      <!-- 查询住院检验医嘱申请单信息 -->
+      <select id="queryIpLabOrderApply" parameterType="java.util.Map" resultType="DynaBean">
+            select
+               pi.code_pi,
+	           pi.code_ip,
+	           pi.code_op,
+	           pi.id_sn,
+	           pi.name_pi,
+	           idtype.name as idType,
+	           pi.id_no,
+	           pv_ip.ip_times as pv_times,
+	           bdsex.name as sex,
+	           pv.age_pv,
+	           pv.pk_dept,
+	           dept.name_dept,
+	           pv.pk_dept_ns,
+	           deptns.name_dept as name_dept_ns,
+	           cn.pk_cnord,
+	           cn.code_ordtype as code_ord_type,
+	           odetype.name as name_ord_type,
+	           cn.ordsn as snOrd,
+	           cn.name_ord,
+	           cn.spec,
+	           cn.dosage,
+	           cn.quan,
+	           cn.days,
+	           sum(ipdt.AMOUNT) as amount,
+	           cn.code_apply,
+	           cn.pk_emp_ord as pk_doctor,
+	           cn.name_emp_ord,
+	           to_char(cn.date_start, 'yyyy-MM-dd hh24:mi:ss') as date_start,
+	           cn.pk_dept_exec,
+	           cn.pk_ord,
+	           cn.code_ord,
+          	   deptexec.name_dept as name_dept_exe,
+	           cn.flag_bl as bl_status
+           from cn_order cn 
+           inner JOIN cn_lab_apply apply on apply.pk_cnord=cn.pk_cnord
+           inner JOIN PV_ENCOUNTER pv on cn.pk_pv=pv.pk_pv
+           inner JOIN pi_master pi on pi.pk_pi=pv.pk_pi
+           inner join BL_iP_DT ipdt on ipdt.pk_cnord=cn.pk_cnord
+           inner join pv_ip on pv_ip.pk_pv=pv.pk_pv
+           INNER JOIN BD_DEFDOC bdsex ON bdsex.CODE = pi.DT_SEX AND bdsex.CODE_DEFDOCLIST = '000000'
+           INNER JOIN BD_DEFDOC idtype ON idtype.CODE = pi.dt_idtype AND idtype.CODE_DEFDOCLIST = '000007'
+           INNER JOIN bd_ou_dept dept on dept.pk_dept=pv.pk_dept
+           INNER JOIN bd_ou_dept deptns on deptns.pk_dept=pv.pk_dept_ns
+           INNER JOIN bd_ou_dept deptexec on deptexec.pk_dept=cn.pk_dept_exec
+           INNER JOIN BD_ORDTYPE odetype on odetype.code = cn.code_ordtype
+           where pv.eu_pvtype = '3' <!-- 住院类型 -->
+               <!-- 医嘱类型为检验 -->
+               and SUBSTRING(cn.code_ordtype,1,2) = '03' 
+	           and pv.eu_status = '1' <!-- 在院状态 -->
+	           and cn.eu_status_ord = '3' <!-- 医嘱核对状态 -->
+	           and apply.samp_no is null
+	           <if test='codeIp!=null and codeIp!=""'>
+                   and pi.code_ip=#{codeIp,jdbcType=VARCHAR}
+               </if>
+               <if test='pkDeptNs!=null and pkDeptNs!=""'>
+                   and pv.pk_dept_ns=#{pkDeptNs,jdbcType=VARCHAR}
+               </if>
+               <if test='pkDept!=null and pkDept!=""'>
+                   and pv.pk_Dept=#{pkDept,jdbcType=VARCHAR}
+               </if>
+          GROUP BY  pi.code_pi,pi.code_ip,pi.code_op,pi.id_sn,pi.name_pi,idtype.name,pi.id_no,pv_ip.ip_times,bdsex.name,pv.age_pv,pv.pk_dept,dept.name_dept,
+	                pv.pk_dept_ns,deptns.name_dept,cn.pk_cnord,cn.code_ordtype,odetype.name,cn.ordsn,cn.name_ord,cn.spec,cn.dosage,cn.pk_ord,cn.code_ord,
+	                cn.quan,cn.days,cn.code_apply,cn.pk_emp_ord,cn.name_emp_ord,cn.date_start,cn.pk_dept_exec,deptexec.name_dept,cn.flag_bl
+      </select>
+      
+      
+      <!-- 查询门诊检验医嘱申请单信息 -->
+      <select id="queryOpLabOrderApply" parameterType="java.util.Map" resultType="DynaBean">
+            select
+               pi.code_pi,
+	           pi.code_ip,
+	           pi.code_op,
+	           pi.name_pi,
+	           idtype.name as idType,
+	           pi.id_no,
+	           pv_op.op_times as pv_times,
+	           bdsex.name as sex,
+	           pv.age_pv,
+	           pv.pk_dept,
+	           dept.name_dept,
+	           pv.pk_dept_ns,
+	           cn.pk_cnord,
+	           cn.code_ordtype as code_ord_type,
+	           odetype.name as name_ord_type,
+          	   cn.ordsn as snOrd,
+          	   cn.pk_ord,
+          	   cn.code_ord,
+          	   cn.name_ord,
+          	   cn.spec,
+          	   cn.dosage,
+          	   cn.quan,
+          	   cn.days,
+          	   sum(opdt.AMOUNT) as AMOUNT,
+	           cn.code_apply,
+          	   cn.pk_emp_ord as pk_doctor,
+	           cn.name_emp_ord,
+          	   to_char(cn.date_start, 'yyyy-MM-dd hh24:mi:ss') as date_start,
+          	   cn.pk_dept_exec,
+	           deptexec.name_dept as name_dept_exe,
+          	   opdt.flag_settle as bl_status
+           from PV_ENCOUNTER pv
+           inner JOIN pi_master pi on pi.pk_pi=pv.pk_pi
+           inner JOIN cn_order cn on cn.pk_pv=pv.pk_pv
+           inner JOIN cn_lab_apply apply on apply.pk_cnord=cn.pk_cnord
+           inner join bl_op_dt opdt on opdt.pk_cnord=cn.pk_cnord
+           LEFT join pv_op on pv_op.pk_pv=pv.pk_pv
+           INNER JOIN BD_DEFDOC bdsex ON bdsex.CODE = pi.DT_SEX AND bdsex.CODE_DEFDOCLIST = '000000'
+           INNER JOIN BD_DEFDOC idtype ON idtype.CODE = pi.dt_idtype AND idtype.CODE_DEFDOCLIST = '000007'
+           INNER JOIN bd_ou_dept dept on dept.pk_dept=pv.pk_dept
+           INNER JOIN bd_ou_dept deptexec on deptexec.pk_dept=cn.pk_dept_exec
+           INNER JOIN BD_ORDTYPE odetype on odetype.code = cn.code_ordtype
+           inner join ex_assist_occ occ on occ.PK_CNORD = cn.PK_CNORD
+           where SUBSTRING(cn.code_ordtype,1,2) = '03' 
+	             and pv.eu_pvtype != '3'
+	             and occ.EU_STATUS = '0'
+	             and opdt.flag_settle = '1'
+	             and apply.samp_no is null
+	             <if test='codeOp!=null and codeOp!=""'>
+                   and pi.code_op=#{codeOp,jdbcType=VARCHAR}
+                 </if>
+	        GROUP BY pi.code_pi,pi.code_ip,pi.code_op,pi.name_pi,idtype.name,pi.id_no,pv_op.op_times,bdsex.name,pv.age_pv,pv.pk_dept,dept.name_dept,
+	                 pv.pk_dept_ns,cn.pk_cnord,cn.code_ordtype,odetype.name,cn.ordsn,cn.name_ord,cn.spec,cn.dosage,cn.quan,cn.days,cn.pk_ord,cn.code_ord,
+	                 cn.code_apply,cn.pk_emp_ord,cn.name_emp_ord,cn.date_start,cn.pk_dept_exec,deptexec.name_dept,opdt.flag_settle
+      </select>
+      
+      
+      <select id="queryOrdsnOrderInfo" parameterType="java.util.Map" resultType="DynaBean">
+            select 
+               distinct
+               pvop.op_times,
+	           pvip.ip_times,
+	           cn.pk_pv,
+	           cn.pk_org,
+	           cn.eu_pvtype,
+	           cn.name_ord,
+	           cn.code_apply,
+	           cn.pk_cnord,
+	           pi.code_pi,
+	           pi.code_ip,
+	           pi.code_op,
+	           lab.eu_status
+           from CN_ORDER cn
+           LEFT JOIN PI_MASTER pi on pi.pk_pi=cn.pk_pi
+           LEFT JOIN pv_op pvop on pvop.pk_pv=cn.pk_pv
+           LEFT JOIN pv_ip pvip on pvip.pk_pv=cn.pk_pv
+           LEFT JOIN cn_lab_apply lab on cn.pk_cnord=lab.pk_cnord
+           where 1=1
+           <if test='codeBar!=null and codeBar!=""'>
+               and lab.samp_no = #{codeBar,jdbcType=VARCHAR}
+           </if>
+           <if test='ordsns!=null and ordsns!=""'>
+               and cn.ordsn in
+                <foreach item="ordsn" index="index" collection="ordsns" open="(" separator="," close=")">
+            	#{ordsn,jdbcType=VARCHAR}   
+               </foreach>
+           </if>  
+      </select>
+     
+      <!-- 门诊数据校验 -->
+    <select id="opDataCheck" parameterType="string" resultType="int">
+        select count(1)
+        from bl_op_dt
+        where pk_cnord in
+        <foreach collection="pkCnords" item="pkCnord" index="index"
+                 open="(" close=")" separator=",">
+            #{pkCnord,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+    <!-- 住院数据校验 -->
+    <select id="ipDataCheck" parameterType="string" resultType="int">
+        select count(1)
+        from bl_ip_dt
+        where pk_cgip is null 
+        and pk_cnord in
+        <foreach collection="pkCnords" item="pkCnord" index="index"
+                 open="(" close=")" separator=",">
+            #{pkCnord,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+    
+    <update id="updateCnLabApply" parameterType="java.util.Map">
+        update cn_lab_apply 
+        set
+        <if test='sampNo!=null'>
+            ,samp_no = #{sampNo,jdbcType=VARCHAR}
+        </if>
+        <if test='euStatus!=null and euStatus!=""'>
+            ,eu_status = #{euStatus,jdbcType=VARCHAR}
+        </if>
+        where pk_cnord in
+        <foreach collection="pkCnords" item="pkCnord" index="index"
+                 open="(" close=")" separator=",">
+            #{pkCnord,jdbcType=VARCHAR}
+        </foreach>
+    </update>
+    
+    <!-- 医技执行 -->
+    <update id="medExeOcc" parameterType="java.util.Map">
+        update ex_assist_occ
+        set flag_occ=1,
+            date_occ = to_date(#{dateOcc,jdbcType=VARCHAR}, 'yyyy-MM-dd hh24:mi:ss'),
+            pk_emp_occ=#{pkEmpOcc,jdbcType=VARCHAR},
+            name_emp_occ=#{nameEmpOcc,jdbcType=VARCHAR},
+            eu_status=1,
+            pk_org_occ=#{pkOrgOcc,jdbcType=VARCHAR},
+            pk_dept_occ=#{pkDeptOcc,jdbcType=VARCHAR}
+        where flag_occ = 0
+          and flag_canc = '0'
+          and flag_refund = '0'
+          and pk_cnord in
+        <foreach collection="pkCnords" item="pkCnord" index="index"
+                 open="(" close=")" separator=",">
+            #{pkCnord,jdbcType=VARCHAR}
+        </foreach>
+    </update>
+    
+    <update id="cancleExocc" parameterType="java.util.Map">
+        update ex_assist_occ
+        set
+        flag_occ='0',
+        date_occ=null,
+        pk_emp_occ=null ,
+        name_emp_occ=null,
+        pk_dept_job=null,
+        pk_emp_conf=null,
+        name_emp_conf=null,
+        pk_msp=null,
+        eu_status=#{euStatus,jdbcType=VARCHAR},
+        date_canc=to_date(#{dateCanc,jdbcType=VARCHAR}, 'yyyymmddhh24miss'),
+        pk_emp_canc=#{pkEmpCanc,jdbcType=VARCHAR},
+        name_emp_canc=#{nameEmpCanc,jdbcType=VARCHAR}
+        where flag_occ='1' and flag_canc='0' and
+        pk_cnord in
+        <foreach collection="pkCnords" item="pkCnord" index="index"
+                 open="(" close=")" separator=",">
+            #{pkCnord,jdbcType=VARCHAR}
+        </foreach>
+    </update>
+    
+    
+    <select id="queryBdOrdLabInfo" parameterType="java.util.Map" resultType="DynaBean">
+          select 
+              ord.pk_ord,
+	 	      ord.name,
+	          ord.code,
+	          ord.code_ordtype,
+              orLab.dt_samptype,
+	          orLab.dt_contype,
+	          orLab.dt_colltype
+	     from bd_ord ord
+         LEFT JOIN bd_ord_lab orLab on ord.pk_ord=orLab.pk_ord
+          where ord.flag_active = '1' 
+             and ord.del_flag !='1' 
+	         and SUBSTRING(ord.code_ordtype,1,2) = '03'
+	         and ord.pk_ord=#{pkOrd,jdbcType=VARCHAR}
+    </select>
+    
+    <select id="queryPkCnordCodeInfo"  resultType="DynaBean">
+       select pk_cnord,name_ord from cn_order where 
+          code_apply in 
+         <foreach collection="list" item="codeApply" index="index"
+                 open="(" close=")" separator=",">
+            #{codeApply,jdbcType=VARCHAR}
+        </foreach>
+   </select>
+</mapper>

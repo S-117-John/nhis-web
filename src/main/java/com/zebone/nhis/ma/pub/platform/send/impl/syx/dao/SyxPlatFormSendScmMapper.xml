@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.platform.send.impl.syx.dao.SyxPlatFormSendScmMapper">
+	<select id="qryPresDtInfo" parameterType="java.util.List" resultType="com.zebone.nhis.ma.pub.platform.syx.vo.scmhr.ConsisPrescDtlvw">
+		SELECT
+		  pres.pk_presocc,
+		  pres.pres_no    presc_no,
+		  rownum AS       item_no,
+		  ord.ordsn       advice_code,
+		  pd.code         drug_code,
+		  pd.spec         drug_spec,
+		  pd.name         drug_name,
+		  fac.code        firm_id,
+		  fac.name        firm_name,
+		  pd.spec         package_spec,
+		  unit.name       package_units,
+		  dt.quan_cg*dt.pack_size      quantity,
+		  min.name       unit,
+		  dt.amount_cg    costs,
+		  dt.amount_cg    payments,
+		  ord.dosage      dosage,
+		  unit_dos.name   dosage_units,
+		  sup.name        administration,
+		  freq.note       frequency,
+		  ord.note_supply additionusage,
+		  ord.note_ord    rcpt_remark
+		FROM ex_pres_occ_dt dt
+		  INNER JOIN ex_pres_occ pres ON dt.pk_presocc = pres.pk_presocc
+		  INNER JOIN bd_pd pd ON dt.pk_pd = pd.pk_pd
+		  INNER JOIN cn_order ord ON dt.pk_cnord = ord.pk_cnord
+		  LEFT JOIN bd_factory fac ON pd.pk_factory = fac.pk_factory
+		  LEFT JOIN bd_unit unit ON dt.pk_unit = unit.pk_unit
+		  LEFT JOIN bd_unit unit_dos ON ord.pk_unit_dos = unit_dos.pk_unit
+		  LEFT JOIN bd_unit min  ON min.pk_unit=pd.pk_unit_min
+		  LEFT JOIN bd_supply sup ON ord.code_supply = sup.code
+		  LEFT JOIN bd_term_freq freq ON ord.code_freq = freq.code
+  		where pres.pk_presocc in 
+		<foreach collection="list" index="index" close=")" item="pkPresocc" open="(" separator=",">
+			#{pkPresocc,jdbcType=VARCHAR}
+		</foreach>
+	</select>
+	
+	<select id="qryPresInfo" parameterType="java.util.List" resultType="com.zebone.nhis.ma.pub.platform.syx.vo.scmhr.ConsisPrescMstvw">
+		SELECT
+		  pres.pk_presocc,
+		  to_char(pres.date_pres, 'yyyymmddhh24miss') presc_date,
+		  pres.pres_no                                presc_no,
+		  pharm.code_dept                             dispensary,
+		  pi.code_op                                  patient_id,
+		  pi.name_pi                                  patient_name,
+		  '' AS                                       invoice_no,
+		  CASE WHEN pv.flag_spec = '1'
+		    THEN '01'
+		  ELSE '00' END                               patient_type,
+		  to_char(pi.birth_date, 'yyyy-MM-dd HH:mm:ss')  date_of_birth,
+		  CASE WHEN pi.dt_sex = '02'
+		    THEN '男'
+		  ELSE '女' END                                sex,
+		  '' AS                                       presc_identity,
+		  hp.name                                     charge_type,
+		  '' AS                                       presc_attr,
+		  '' AS                                       presc_info,
+		  indiag.desc_diag                              rcpt_info,
+		  pres.note                                   rcpt_remark,
+		  1  AS                                       repetition,
+		  (SELECT sum(dt.amount_cg - dt.amount_ret)
+		   FROM ex_pres_occ_dt dt
+		   WHERE dt.pk_presocc = pres.pk_presocc)     costs,
+		  (SELECT sum(dt.amount_cg - dt.amount_ret)
+		   FROM ex_pres_occ_dt dt
+		   WHERE dt.pk_presocc = pres.pk_presocc)     payments,
+		  dept.code_dept                              ordered_by,
+		  dept.name_dept                              ordered_by_name,
+		  pres.name_emp_pres                          prescribed_by,
+		  pres.name_emp_pres                          entered_by,
+		  0  AS                                       dispense_pri
+		FROM ex_pres_occ pres
+		  INNER JOIN pv_encounter pv ON pres.pk_pv = pv.pk_pv
+		  INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+		  INNER JOIN bd_hp hp ON pv.pk_insu = hp.pk_hp
+		  INNER JOIN bd_ou_dept dept ON pres.pk_dept_pres = dept.pk_dept
+		  INNER JOIN bd_ou_dept pharm ON pres.pk_dept_ex = pharm.pk_dept
+		  left join (select desc_diag ,pk_pv from (select row_number() over(partition by pk_pv order by flag_maj desc) cnt, diag.pk_pv,diag.desc_diag from pv_diag diag ) res where res.cnt = 1) indiag on indiag.PK_PV=pv.PK_PV
+		 where pres.pk_presocc in
+		 <foreach collection="list" index="index" open="(" separator="," item="pkPresocc" close=")">
+		 	#{pkPresocc,jdbcType=VARCHAR}
+		 </foreach>
+	</select>
+	
+	<select id="qryStartPresInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.ma.pub.platform.syx.vo.scmhr.ConsisPrescMstvw">
+		select 
+			to_char(pres.date_pres,'yyyy-MM-dd HH24:mm:ss') presc_date,
+	       	pres.pres_no presc_no,
+	       	'' as invoice_no,
+	       	dept.code_dept dispensary
+	  	from ex_pres_occ pres
+	       inner join bd_ou_dept dept on pres.pk_dept_ex=dept.pk_dept
+		where pres.pk_presocc in 
+		  <foreach collection="pkPresocces" index="index" open="(" close=")" separator="," item="pkPresocc">
+		  	#{pkPresocc,jdbcType=VARCHAR}
+		  </foreach>
+	</select>
+	
+	<select id="upPresInfoToHip" parameterType="java.util.List" resultType="com.zebone.nhis.ma.pub.platform.syx.vo.scmhr.DataPrescription">
+		SELECT
+		  pres.pk_presocc,
+		  pres.pres_no                            id,
+		  pv.code_pv                              register_id,
+		  pv.eu_pvtype                            code_pvtype,
+		  pi.code_pi                              code_pati,
+		  pi.name_pi                              name,
+		  pv.age_pv                               age,
+		  pi.tel_no                               tele,
+		  pi.email                                email,
+		  dept.name_dept                          department_name,
+		  pres.name_emp_pres                      doctor_name,
+		  pres.NAME_EMP_PRES                      prescription_name,
+		  to_char(pres.date_pres,'yyyymmddhh24miss') prescribe_time,
+		  pres.name_emp_pres                      creator_name,
+		  to_char(pres.create_time,'yyyymmddhh24miss') creation_time,
+		  ''       AS                             value_sn,
+		  ''       AS                             valuer_name,
+		  ''       AS                             valuation_time,
+		  ''       AS                             price,
+		  ''       AS                             quantity,
+		  ''       AS                             price_total,
+		  ''       AS                             date_de,
+		  ''       AS                             eu_herbtype,
+		  hp.name                                 payment_type,
+		  ''       AS                             payment_status,
+		  ''       AS                             device_id,
+		  ''       AS                             process_status,
+		  cnpre.note                              description,
+		  to_char(pi.birth_date,'yyyymmddhh24miss') date_of_birth,
+		  indiag.desc_diag                           rcpt_info,
+		  CASE WHEN pi.dt_sex = '02'
+		    THEN '男'
+		  ELSE '女' END                            sex,
+		  CASE WHEN pv.flag_spec = '1'
+		    THEN '01'
+		  ELSE '00' END                           patient_type,
+		  (SELECT sum(dt.amount_cg - dt.amount_ret)
+		   FROM ex_pres_occ_dt dt
+		   WHERE dt.pk_presocc = pres.pk_presocc) costs,
+		  (SELECT sum(dt.amount_cg - dt.amount_ret)
+		   FROM ex_pres_occ_dt dt
+		   WHERE dt.pk_presocc = pres.pk_presocc) payments,
+		  pharm.code_dept                         dispensary,
+		  pi.code_op                              pv_carno,
+		  ''       AS                             invoice_no,
+		  pi.id_no AS                             presc_identity,
+		  ''       AS                             presc_attr,
+		  0        AS                             dispense_pri,
+		  1        AS                             repetition,
+		  hp.code                                 code_charge_type,
+		  hp.NAME                                 name_charge_type
+		FROM ex_pres_occ pres
+		  INNER JOIN pv_encounter pv ON pres.pk_pv = pv.pk_pv
+		  INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+		  INNER JOIN CN_PRESCRIPTION cnpre ON cnpre.PK_PRES = pres.PK_PRES
+		  INNER JOIN bd_hp hp ON pv.pk_insu = hp.pk_hp
+		  INNER JOIN bd_ou_dept dept ON pres.pk_dept_pres = dept.pk_dept
+		  INNER JOIN bd_ou_dept pharm ON pres.pk_dept_ex = pharm.pk_dept
+		  left join (select desc_diag ,pk_pv from (select row_number() over(partition by pk_pv order by flag_maj desc) cnt, diag.pk_pv,diag.desc_diag from pv_diag diag ) res where res.cnt = 1) indiag on indiag.PK_PV=pv.PK_PV
+		 where pres.pk_presocc in 
+		<foreach collection="list" index="index" close=")" item="pkPresocc" open="(" separator=",">
+			#{pkPresocc,jdbcType=VARCHAR}
+		</foreach>
+	</select>
+	
+	<select id="upPresDtInfoToHip" parameterType="java.util.List" resultType="com.zebone.nhis.ma.pub.platform.syx.vo.scmhr.DataPrescriptionDetail">
+		SELECT
+		  pres.pk_presocc,
+		  pd.code         granule_id,
+		  pd.name         granule_name,
+		  ord.dosage      dose,
+		  ord.price_cg    price_cg,
+		  rownum AS       item_no,
+		  ord.ORDSN       advice_code,
+		  pd.spec         drug_spec,
+		  fac.code        firm_id,
+		  fac.name        firm_name,
+		  pd.spec         package_spec,
+		  unit.name       package_unit,
+		  dt.quan_cg      quantity,
+		  unit.name       unit,
+		  dt.amount_cg    costs,
+		  dt.amount_cg    payments,
+		  unit_dos.name   dosage_units,
+		  sup.name        administration,
+		  freq.name       frequency,
+		  ord.note_supply additionusage,
+		  ord.note_ord    rcpt_remark
+		FROM ex_pres_occ_dt dt
+		  INNER JOIN ex_pres_occ pres ON dt.pk_presocc = pres.pk_presocc
+		  INNER JOIN bd_pd pd ON dt.pk_pd = pd.pk_pd
+		  INNER JOIN bd_factory fac ON pd.pk_factory = fac.pk_factory
+		  INNER JOIN bd_unit unit ON dt.pk_unit = unit.pk_unit
+		  INNER JOIN cn_order ord ON dt.pk_cnord = ord.pk_cnord
+		  left JOIN bd_unit unit_dos ON ord.pk_unit_dos = unit_dos.pk_unit
+		  left JOIN bd_supplyer sup ON ord.code_supply = sup.code
+		  left JOIN bd_term_freq freq ON ord.code_freq = freq.code
+		where pres.pk_presocc in 
+		<foreach collection="list" index="index" close=")" item="pkPresocc" open="(" separator=",">
+			#{pkPresocc,jdbcType=VARCHAR}
+		</foreach>
+	</select>
+	
+	<select id="qryReturnPresInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.ma.pub.platform.syx.vo.scmhr.ConsisPrescMstvw">
+		 select pres.date_pres presc_date,
+		       pres.pres_no presc_no,
+		       '' as invoice_no,
+		       pres.pk_dept_ex dispensary
+		  from ex_pres_occ pres
+		 where pres.pk_pres in 
+		 <foreach collection="pkPress" item="pkPres" index="index" open="(" close=")" separator=",">
+		 	#{pkPres,jdbcType=VARCHAR}
+		 </foreach>
+	</select>
+	
+	<select id="qryPdDictInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.ma.pub.platform.syx.vo.scmhr.DcDictDrug">
+		SELECT
+		  pd.pk_pd        PK_DICT_DRUG,
+		  pd.code         CODE_DRUG,
+		  pd.name         NAME_DRUG,
+		  pd.code_std     CODE_COUNTRY,
+		  pd.code         CODE_CUSTOM,
+		  pd.name         NAME_GOODS,
+		  pd.spec         SPECIFICATIONS,
+		  pd.price        RETAIL_PRICE,
+		  0            AS ZERO_SPREAD,
+		  pack.name       PACKING_UNIT,
+		  pd.pack_size    PACKING_QTY,
+		  min.name        MIN_UNIT,
+		  pd.vol          FIRST_DOSE,
+		  vol.name        FIRST_DOSE_UNIT,
+		  pd.WEIGHT       SECOND_DOSE,
+		  weight.name     SECOND_DOSE_UNIT,
+		  pd.eu_drugtype  CODE_DRUGTYPE,
+		  CASE WHEN pd.EU_DRUGTYPE = '0'
+		    THEN '西药'
+		  WHEN pd.EU_DRUGTYPE = '1'
+		    THEN '成药'
+		  WHEN pd.EU_DRUGTYPE = '2'
+		    THEN '草药'
+		  END             NAME_DRUGTYPE,
+		  def.name        DOSAGE_FORM,
+		  CASE WHEN pd.eu_pdprice = '0'
+		    THEN '成本加成计算 '
+		  WHEN pd.EU_PDPRICE = '1'
+		    THEN '成本加成计算'
+		  END             PRICETYPE,
+		  ''           AS GRADE_DRUG,
+		  ''           AS TRADE_PRICE,
+		  ''           AS PURCHASING_PRICE,
+		  ''           AS MAX_RETAIL_PRICE,
+		  CASE WHEN pd.DT_MADE = '02'
+		    THEN '1'
+		  ELSE '0' END    FLAG_SELF,
+		  pd.flag_reag AS FLAG_ALLERGY,
+		  flag_gmp     AS FLAG_GMP,
+		  sup.name        USAGE_METHOD,
+		  pd.dosage_def   PRIMARY_DOSAGE,
+		  dosdef.name     PRIMARY_DOSAGE_UNIT,
+		  freq.name       FREQUENCY,
+		  pd.note         MATTERS_NEEDING_ATTENTION,
+		  def2.NAME    AS CCTJ,
+		  fac.NAME     AS SCCJ,
+		  pd.appr_no   AS PWXX,
+		  pd.barcode      TXM,
+		  pd.NAME         XM,
+		  pd.name_chem    BM,
+		  pd.spcode       pym,
+		  CASE WHEN pd.dt_abrd = '2'
+		    THEN '1'
+		  ELSE '0' END    SFJK,
+		  CASE WHEN pd.flag_stop = '1'
+		    THEN '0'
+		  ELSE '1' END    FLAG_EFF,
+		  to_char(pd.create_time,'yyyymmddhh24miss') create_time,
+		  to_char(pd.ts,'yyyymmddhh24miss')           EDIT_TIME,
+		  pd.spec         MINSPECS,
+		  pack.name       MAXUNIT,
+		  pd.vol          DOSAGE,
+		  1            AS CONVERTION1,
+		  pd.pack_size    CONVERTION2,
+		  0            AS STORAGETYPE,
+		  CASE WHEN pd.flag_stop = '1'
+		    THEN 'N'
+		  ELSE 'Y' END    ALLOWIND,
+		  ''           AS SPLIT_OUT_PATIENT,
+		  ''           AS SPLIT_TEMPORARY,
+		  ''           AS SPLIT_LONG,
+		  ''           AS DRUG_NATURE,
+		  ''           AS CODE_SYSTYPE,
+		  ''           AS NAMA_SYSTYPE,
+		  ''           AS FLAG_OTC,
+		  ''           AS FLAG_SHOW,
+		  ''           AS ACTIVE_INGREDIENT,
+		  ''           AS ZXBZ,
+		  ''           AS YJYLZY,
+		  ''           AS EJYLZY,
+		  ''           AS SJYLZY,
+		  ''           AS ZBY,
+		  ''           AS GHGS,
+		  ''           AS ZCSB,
+		  ''           AS CD,
+		  ''           AS SFBYJJQ,
+		  ''           AS YBXZBZ,
+		  ''           AS QKYYBZ,
+		  ''           AS KSUDDDZ,
+		  ''           AS DICT_DRUG_SOURCE,
+		  ''           AS CODE_GRADE_DRUG,
+		  ''           AS CODE_DRUG_NATURE,
+		  ''           AS FLAG_JY 
+		FROM bd_pd pd
+		  INNER JOIN bd_unit pack ON pack.PK_UNIT = pd.pk_unit_pack
+		  INNER JOIN bd_unit min ON min.PK_UNIT = pd.pk_unit_min
+		  INNER JOIN bd_unit vol ON vol.PK_UNIT = pd.PK_UNIT_VOL
+		  INNER JOIN bd_factory fac ON fac.PK_FACTORY = pd.PK_FACTORY
+		  LEFT JOIN bd_unit weight ON weight.PK_UNIT = pd.PK_UNIT_WT
+		  LEFT JOIN bd_unit dosdef ON dosdef.pk_unit = pd.pk_unit_def
+		  LEFT JOIN bd_defdoc def ON def.CODE_DEFDOCLIST = '030400' AND def.code = pd.dt_dosage
+		  LEFT JOIN bd_defdoc def1 ON def1.code_defdoclist = '080004' AND def1.code = pd.dt_made
+		  LEFT JOIN BD_SUPPLY sup ON sup.CODE = pd.code_supply
+		  LEFT JOIN BD_TERM_FREQ freq ON freq.CODE = pd.code_freq
+		  LEFT JOIN bd_defdoc def2 ON def2.code_defdoclist = '080012' AND def2.code = pd.dt_storetype
+		where pd.pk_pd=#{pkPd,jdbcType=VARCHAR}
+	</select>
+</mapper>

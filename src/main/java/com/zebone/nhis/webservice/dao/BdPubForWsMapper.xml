@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.webservice.dao.BdPubForWsMapper">
+	
+	<select id="queryOrg" parameterType="java.util.Map" resultType="DynaBean">
+		select
+ 			org.pk_org,
+ 			org.name_org,
+ 			org.code_org,
+ 			org.shortname,
+ 			org.pk_father,
+ 			defht.name  as hosptype,
+ 			defgd.name as grade,
+ 			org.bednum,
+			org.org_type,
+			org.flag_active,
+			org.addr,
+      		org.intro,
+      		org.leader,
+			org.contacter,
+			org.phone,
+			org.code_hosp,
+			org.code_division,
+			org.eu_level,
+			org.website,
+			org.del_flag
+		from bd_ou_org org
+		left join bd_defdoc defht on defht.code = org.dt_hosptype and defht.code_defdoclist = '010100'
+		left join bd_defdoc defgd on defgd.code = org.dt_grade and defgd.code_defdoclist='010101'
+		where 1=1
+		<if test="flagActive != null  and  flagActive != ''">
+			and org.flag_active = #{flagActive,jdbcType=CHAR} 
+		</if>
+		<if test="delFlag != null  and  delFlag != ''">
+			and org.del_flag = #{delFlag,jdbcType=CHAR} 
+		</if>
+		<if test="pkFather != null  and  pkFather != ''">
+			and org.pk_father = #{pkFather,jdbcType=CHAR} 
+		</if>	 
+	</select>
+	
+	<select id="LbqueryOrgs" parameterType="java.util.Map" resultType="DynaBean">
+		select
+ 			org.pk_org,
+ 			org.name_org,
+ 			org.code_org,
+ 			org.shortname,
+ 			org.pk_father,
+ 			defht.name  as hosptype,
+ 			defgd.name as grade,
+ 			org.bednum
+		from bd_ou_org org
+		left join bd_defdoc defht on defht.code = org.dt_hosptype and defht.code_defdoclist = '010100'
+		left join bd_defdoc defgd on defgd.code = org.dt_grade and defgd.code_defdoclist='010101'
+		where
+			org.flag_active = '1' and org.del_flag = '0'
+	</select>
+	
+	<select id="queryOrgArea" parameterType="java.util.Map" resultType="DynaBean">
+		select
+   			area.pk_orgarea as pk_org_area,
+       		area.pk_org,
+       		area.code_area,
+	        area.name_area,
+	        area.note,
+	        area.creator,
+	        area.create_time,
+	        area.modifier,
+	        area.modity_time,
+	        area.del_flag,
+	        area.ts
+		from bd_ou_org_area area 
+		where 1=1
+		<if test="pkOrg != null  and  pkOrg != ''">
+			and area.pk_org = #{pkOrg,jdbcType=CHAR} 
+		</if>
+	</select>
+	<select id="queryDept" parameterType="java.util.Map" resultType="DynaBean">
+		select
+   			dept.pk_dept,
+   			dept.pk_org,
+   			org.code_org,
+   			dept.name_dept,
+   			dept.code_dept,
+   			dept.pk_father,
+   			dept.shortname,
+   			dept.bednum,
+   			dept.bednum_open,
+   			dept.name_place,
+   			dept.dept_desc,
+   			dept.py_code,
+   			dept.flag_active,
+			dept.del_flag,
+			dept.flag_op,
+			dept.flag_er,
+			dept.flag_ip,
+			dept.flag_pe,
+			dept.flag_hm,
+  			dept.pk_orgarea as pk_area
+		from bd_ou_dept dept
+		inner join bd_ou_org org on org.pk_org = dept.pk_org
+		where dept.flag_active = '1' and dept.del_flag = '0'
+		<if test="pkOrg != null  and  pkOrg != ''">
+		and dept.pk_org = #{pkOrg,jdbcType=CHAR} 
+		</if>
+		<if test="codeOrg != null  and  codeOrg != ''">
+		and org.code_org = #{codeOrg,jdbcType=VARCHAR} 
+		</if>
+		<if test="pyCode != null  and  pyCode != ''">
+		and dept.py_code like '%'||#{pyCode,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="codeDept != null  and  codeDept != ''">
+		and dept.code_dept = #{codeDept,jdbcType=VARCHAR} 
+		</if>
+		<if test="pkDept != null  and  pkDept != ''">
+		and dept.pk_dept = #{pkDept,jdbcType=VARCHAR} 
+		</if>
+		<if test="flagOp != null  and  flagOp != ''">
+		 and (dept.flag_op =#{flagOp,jdbcType=VARCHAR} OR flag_er = #{flagOp,jdbcType=VARCHAR})
+		 AND dt_depttype = '01'
+		</if>
+	</select>
+	
+	<select id="queryEmp" parameterType="java.util.Map" resultType="DynaBean">
+		select
+ 			emp.pk_emp,
+ 			emp.pk_org,
+ 			emp.name_emp,
+ 			emp.code_emp,
+ 			defsex.name as sex,
+ 			emp.workphone,
+ 			defemp.name as empsrvtype,
+ 			emp.spec,
+ 			emp.flag_active,
+			emp.del_flag,
+			emp.photo
+		from  bd_ou_employee emp
+ 		left join  bd_ou_empjob job on emp.pk_emp = job.pk_emp
+ 		<if test="codeDept != null  and  codeDept != ''">
+ 		left join  bd_ou_dept dept  on dept.pk_dept = job.pk_dept
+ 		</if>
+ 		left join  bd_defdoc defsex on defsex.code = emp.dt_sex and defsex.code_defdoclist = '000000'
+ 		left join  bd_defdoc defemp on defemp.code = emp.dt_empsrvtype and defemp.code_defdoclist = '010305'
+		where 1=1
+		<if test="flagActive != null  and  flagActive != ''">
+			and emp.flag_active = #{flagActive,jdbcType=CHAR} 
+		</if>
+		<if test="delFlag != null  and  delFlag != ''">
+			and emp.del_flag = #{delFlag,jdbcType=CHAR} 
+		</if>
+		<if test="pkDept != null  and  pkDept != ''">
+			and job.pk_dept = #{pkDept,jdbcType=CHAR} 
+		</if>
+		<if test="codeDept != null  and  codeDept != ''">
+			and dept.code_dept = #{codeDept,jdbcType=VARCHAR} 
+		</if>		
+	</select>
+	<select id="queryAllEmployee" parameterType="java.util.Map" resultType="DynaBean">
+		select
+			emp.pk_emp,
+			emp.pk_org,
+			emp.name_emp,
+			emp.code_emp,
+			defsex.name as sex,
+			emp.workphone,
+			defemp.name as empsrvtype,
+			emp.spec,
+			emp.flag_active,
+			emp.del_flag,
+			emp.photo,
+			emp.PY_CODE doct_initials,
+			job.JOBNAME rank_name,
+			emp.spec doct_desc,
+			job.pk_dept,
+			dept.NAME_DEPT,
+			dept.NAME_DEPT dept_name,
+			dept.CODE_DEPT,
+			emp.name_emp doct_name,
+			emp.code_emp doct_code,
+			emp.email,
+			emp.mobile,
+			emp.work_date
+		from  bd_ou_employee emp
+				  left join  bd_ou_empjob job on emp.pk_emp = job.pk_emp
+				  left join  bd_ou_dept dept  on dept.pk_dept = job.pk_dept
+				  left join  bd_defdoc defsex on defsex.code = emp.dt_sex and defsex.code_defdoclist = '000000'
+				  left join  bd_defdoc defemp on defemp.code = emp.dt_empsrvtype and defemp.code_defdoclist = '010305'
+		where  emp.DT_EMPTYPE = '01'
+		  and emp.pk_emp in (select pk_emp from sch_resource) and dept.pk_dept in (select distinct pk_dept_belong from sch_resource)
+		  and dept.NAME_DEPT not like '%测试%'
+	</select>
+	<select id="queryEmployee" parameterType="java.util.Map" resultType="DynaBean">
+		select
+ 			emp.pk_emp,
+ 			emp.pk_org,
+ 			emp.name_emp,
+ 			emp.code_emp,
+ 			defsex.name as sex,
+ 			emp.workphone,
+ 			defemp.name as empsrvtype,
+ 			emp.spec,
+ 			emp.flag_active,
+			emp.del_flag,
+			emp.photo,
+			emp.PY_CODE doct_initials,
+			job.JOBNAME rank_name,
+			emp.spec doct_desc,
+			job.pk_dept,
+			dept.NAME_DEPT,
+			dept.NAME_DEPT dept_name,
+			dept.CODE_DEPT,
+			emp.name_emp doct_name,
+ 			emp.code_emp doct_code,
+ 			emp.email,
+			emp.mobile,
+			emp.work_date 
+		from  bd_ou_employee emp
+ 		left join  bd_ou_empjob job on emp.pk_emp = job.pk_emp
+		left join  bd_ou_dept dept  on dept.pk_dept = job.pk_dept
+ 		left join  bd_defdoc defsex on defsex.code = emp.dt_sex and defsex.code_defdoclist = '000000'
+ 		left join  bd_defdoc defemp on defemp.code = emp.dt_empsrvtype and defemp.code_defdoclist = '010305'
+		where 1=1
+		and dept.NAME_DEPT not like '%测试%'
+		and dept.FLAG_OP = '1'
+		<if test="pkOrg != null  and  pkOrg != ''">
+			and emp.pk_org = #{pkOrg,jdbcType=CHAR} 
+		</if>
+		<if test="flagActive != null  and  flagActive != ''">
+			and emp.flag_active = #{flagActive,jdbcType=CHAR} 
+		</if>
+		<if test="delFlag != null  and  delFlag != ''">
+			and emp.del_flag = #{delFlag,jdbcType=CHAR} 
+		</if>
+		<if test="pkDept != null  and  pkDept != ''">
+			and job.pk_dept = #{pkDept,jdbcType=CHAR} 
+		</if>
+		<if test="deptCode != null  and  deptCode != ''">
+			and dept.code_dept = #{deptCode,jdbcType=VARCHAR} 
+		</if>
+		<if test="codeDept != null  and  codeDept != ''">
+			and dept.code_dept = #{codeDept,jdbcType=VARCHAR} 
+		</if>
+		<if test="doctCode != null  and  doctCode != ''">
+			and emp.code_emp = #{doctCode,jdbcType=VARCHAR} 
+		</if>
+		<if test="codeEmp != null  and  codeEmp != ''">
+			and emp.code_emp = #{codeEmp,jdbcType=VARCHAR} 
+		</if>
+		<if test="empType != null  and  empType != ''">
+			and emp.DT_EMPTYPE = #{empType,jdbcType=VARCHAR}
+		</if>
+	</select>
+
+	<select id="getItemCateInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select pk_itemcate,name,pk_parent from bd_itemcate where del_flag='0'
+	</select>
+	
+	<select id="getHpInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select pk_hp,name from bd_hp where del_flag = '0' 
+		<if test="euHptypes != null  and  euHptypes != ''">
+		  and eu_hptype in 
+		  <foreach collection="euHptypes" item="hptype" index="index" open="(" close=")" separator=",">
+        	   #{hptype}
+            </foreach> 
+		</if> 
+		<if test="flagOp != null  and  flagOp != ''">
+		  and flag_op='1'
+		</if>
+	</select>
+	
+	<select id="selectSn" resultType="java.lang.Double" >
+    select val  
+    from BD_SERIALNO
+    where name_tb = #{tableName,jdbcType=VARCHAR} and name_fd = #{fieldName,jdbcType=VARCHAR}
+  </select>
+  
+  <insert id="initSn" parameterType="com.zebone.nhis.webservice.vo.BdSerialNoWs" >
+  	insert into BD_SERIALNO (PK_SERIALNO, PK_ORG, NAME_TB, NAME_FD, VAL_INIT, VAL )
+  	<trim prefix="values (" suffix=")" suffixOverrides="," >
+  		 #{pkSerialno,jdbcType=CHAR},
+  		 #{pkOrg,jdbcType=CHAR},
+  		 #{nameTb,jdbcType=VARCHAR},
+  		 #{nameFd,jdbcType=VARCHAR},
+  		 #{valInit,jdbcType=DECIMAL},
+  		 #{val,jdbcType=DECIMAL},
+  	</trim>
+  </insert>
+  
+  
+  <select id="LbgetBdItemInfo" resultType="com.zebone.nhis.webservice.vo.ItemPriceVo">
+    SELECT item.*,orit.*,srv.* FROM bd_item item 
+     LEFT JOIN bd_ord_item orit ON  orit.pk_item = item.pk_item and orit.del_flag = '0'
+     LEFT JOIN sch_srv_ord srv ON orit.pk_ord = srv.pk_ord and srv.del_flag = '0'
+     WHERE  srv.pk_schsrv = #{pkSchsrv} and item.del_flag = '0'
+  </select>
+  
+  	<select id="getDeptTypes"  parameterType="java.util.List" resultType="com.zebone.nhis.webservice.vo.deptvo.DeptTypesVo">
+	   select a.pk_dept, t.code as code_type,t.name as name_type from bd_ou_dept_type a left join bd_defdoc t on t.code_defdoclist ='010200' and a.dt_depttype = t.code where a.del_flag ='0'
+	    and a.pk_dept in	
+	    <foreach collection="list" index="index" item="item" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+    </select>
+    
+    <select id="LbgetOuEmployee"  resultType="DynaBean">
+      SELECT 
+        emp.code_emp,
+        emp.name_emp,
+        emp.dt_sex,
+        dept.code_dept,
+        dept.name_dept,
+        emp.spec,
+        eu_drtype,
+        defemp.name,
+        emp.photo
+      FROM bd_ou_employee emp
+		INNER join  bd_ou_empjob job on emp.pk_emp = job.pk_emp
+ 		INNER join  bd_ou_dept dept  on dept.pk_dept = job.pk_dept
+ 		INNER join  bd_defdoc defemp on defemp.code = emp.dt_empsrvtype 
+      WHERE defemp.code_defdoclist = '010305' 
+        <if test="DepartmentCode != null  and  DepartmentCode != ''">
+		  and dept.code_dept=#{DepartmentCode,jdbcType=VARCHAR}
+		</if>
+		<if test="DoctorCode != null  and  DoctorCode != ''">
+		  and emp.code_emp=#{DoctorCode,jdbcType=VARCHAR}
+		</if>
+    </select>
+
+	<select id="getBdItemAttrtemp" resultType="com.zebone.nhis.webservice.vo.BdItemAttrVo" >
+		select tmp.pk_dictattrtemp,--属性主键
+		tmp.code_attr, --属性编码
+		tmp.name_attr, --属性名称
+		tmp.val_attr,  --默认值
+		tmp.desc_attr, --值域说明
+		tmp.pk_org_use, --为空表示集团属性
+		org.name_org as orgUseName --使用机构名称
+		from bd_dictattr_temp tmp
+		left join BD_OU_ORG org on tmp.pk_org_use = org.pk_org
+		where tmp.dt_dicttype='01' and
+		tmp.del_flag='0'
+		<if test='pkOrg!=null and pkOrg!=""'>
+			and (tmp.pk_org_use=#{pkOrg,jdbcType=VARCHAR} or tmp.pk_org_use is null)
+		</if>
+		order by tmp.pk_org_use desc
+	</select>
+	<select id="queryAllDept" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT code_dept deptCode,
+			   name_dept,
+			   fj deptName,
+			   dept_desc deptDesc
+		FROM (SELECT code_dept,
+					 name_dept,
+					 '' fj,
+					 dept_desc
+			  FROM bd_ou_dept
+			  WHERE pk_father = 'e89c6503ef084bf7b74e308b269e1811'
+			  UNION ALL
+			  SELECT b.code_dept code_dept,
+					 b.name_dept name_dept,
+					 (SELECT code_dept
+					  FROM bd_ou_dept a
+					  WHERE a.pk_dept = b.pk_father)
+								 fj,
+					 b.dept_desc dept_desc
+			  FROM bd_ou_dept b
+			  WHERE b.pk_father IN
+					(SELECT pk_dept
+					 FROM bd_ou_dept
+					 WHERE pk_father = 'e89c6503ef084bf7b74e308b269e1811'))
+		ORDER BY code_dept
+	</select>
+	<select id="queryAllDoctor" parameterType="java.util.Map" resultType="DynaBean">
+
+		SELECT A.CODE_EMP doct_code,
+			   a.name_emp doct_name,
+			   D.CODE_DEPT CODE_DEPT,
+			   D.NAME_DEPT dept_name,
+			   a.spec doct_desc,
+			   photo
+		FROM bd_ou_employee a
+				 INNER JOIN bd_ou_empjob b
+							ON a.pk_emp = b.pk_emp AND b.del_flag = '0'
+				 LEFT JOIN bd_defdoc c
+						   ON     c.code = b.jobname
+							   AND c.code_defdoclist = '010301'
+							   AND c.del_flag = '0'
+				 LEFT JOIN bd_ou_dept d ON d.pk_dept = b.pk_dept
+		WHERE     a.dt_emptype IN ('01')
+		  AND d.pk_dept IN
+			  (SELECT pk_dept
+			   FROM bd_ou_dept
+			   WHERE pk_father = 'e89c6503ef084bf7b74e308b269e1811'
+			   UNION ALL
+			   SELECT b.pk_dept
+			   FROM bd_ou_dept b
+			   WHERE b.pk_father IN
+					 (SELECT pk_dept
+					  FROM bd_ou_dept
+					  WHERE pk_father =
+							'e89c6503ef084bf7b74e308b269e1811'))
+		ORDER BY A.CODE_EMP, D.CODE_DEPT;
+
+	</select>
+</mapper>

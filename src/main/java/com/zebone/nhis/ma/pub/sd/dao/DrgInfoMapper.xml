@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.sd.dao.DrgInfoMapper">
+
+	<select id="queryOrgList"  parameterType="java.util.Map" resultType="java.util.Map">
+        <!-- org.code_hosp ORG_CODE, -->
+        select 
+	       org.name_org HOS_NAME,
+	       substr(org.dt_grade,1,1) HOS_LEVEL_CODE_1,
+	       substr(org.dt_grade,2,1) HOS_LEVEL_CODE_2,
+	       org.dt_hosptype HOS_TYPE_CODE,
+	       org.code_division REGION_CODE
+  		from bd_ou_org org
+ 		where org.code_org='0101'
+    </select>
+    <select id="queryDeptList"  parameterType="java.util.Map" resultType="java.util.Map">
+         <!-- org.code_hosp ORG_CODE, -->
+          select 
+		       dept.code_dept H_DEPARTMENT_CODE,
+		       dept.name_dept H_DEPARTMENT_NAME,
+		       dt.code S_DEPARTMENT_CODE,
+		       dt.name S_DEPARTMENT_NAME
+		  from bd_ou_dept dept
+		       inner join bd_ou_org org on dept.pk_org=org.pk_org
+		       left outer join bd_defdoc dt on dept.dt_stdepttype=dt.code and dt.code_defdoclist='010202'
+		 where org.code_org='0101' and dept.DT_DEPTTYPE='01' and dept.FLAG_IP='1' and dept.FLAG_ACTIVE='1'
+		 <!-- select 
+		       '010209' H_DEPARTMENT_CODE,
+		       '泌尿外科' H_DEPARTMENT_NAME,
+		       'A04.04' S_DEPARTMENT_CODE,
+		       '泌尿外科专业' S_DEPARTMENT_NAME
+					 from dual -->
+    </select>
+    <select id="queryDoctorList"  parameterType="java.util.Map" resultType="java.util.Map">
+          <!-- org.code_hosp ORG_CODE, -->
+          select 
+		       dept.code_dept H_DEPARTMENT_CODE,
+		       '' as DOCTOR_CODE,
+		       emp.name_emp USER_NAME,
+		       case when emp.dt_sex='02' then 1 else 2 end USER_SEX,
+		       emp.code_emp USER_CODE,
+		       '' as ID_TYPE,
+		       emp.idno ID_NUMBER
+		  from bd_ou_employee emp
+		       inner join bd_ou_empjob job on emp.pk_emp=job.pk_emp and job.is_main='1'
+		       inner join bd_ou_dept dept on job.pk_dept=dept.pk_dept
+		       inner join bd_ou_org org on dept.pk_org=org.pk_org
+		 where org.code_org='0101' and
+		       emp.flag_pres='1'
+		        and dept.DT_DEPTTYPE='01' and dept.FLAG_IP='1' and dept.FLAG_ACTIVE='1'
+		  <!-- select 
+		       '010209' H_DEPARTMENT_CODE,
+		       '' as DOCTOR_CODE,
+		       '林怡' USER_NAME,
+		       2 USER_SEX,
+		       '51609' USER_CODE,
+		       '' as ID_TYPE,
+		       '362426198702059062' ID_NUMBER
+		  from dual -->
+    </select>
+    <select id="queryMinDataOff"  parameterType="java.util.Map" resultType="DynaBean">
+          select org.code_hosp org_code,
+		       att.val_attr || pv.code_pv yblsh,
+		       ip.ip_times zycs,
+		       pi.code_ip bah
+		  from pv_encounter pv
+		       inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+		       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		       inner join bd_ou_org org on pv.pk_org=org.pk_org
+		       left outer join bd_dictattr att on pv.pk_insu=att.pk_dict and att.code_attr='0322'
+		 where pv.pk_pv in ( ${pkPv} )
+    </select>
+    <select id="queryServiceDetail"  parameterType="java.util.Map" resultType="DynaBean">
+          select org.code_hosp org_code,
+		       att.val_attr || pv.code_pv yblsh,
+		       pv.code_pv jzlsh,
+		       ip.ip_times zycs,
+		       pi.code_ip bah,
+		       pv.date_end cysj,
+		       case when map.code_hosp is null then (case when cg.flag_pd='1' then bp.code Else bi.code End) else map.code_hosp end hos_detail_code,
+		       cg.name_cg hos_detail_name,
+		       map.ake001 center_detail_code,
+		       map.ake002 center_detail_name,
+		       '' as drg_detail_code,
+		       case when cg.flag_pd='1' then '1'
+		            when item.dt_itemtype like '07%' then '2' else '3' end type,
+		       '0' as is_special,
+		       dos.name dosage,
+		       cg.spec specification,
+		       fac.name contractor,
+		       unit.name unit,
+		       round(cg.price,2) d_price,
+		       round(cg.quan,2) d_number,
+		       cg.amount price,
+		       cg.ratio_self proporition,
+		       cg.date_hap price_time
+		  from pv_encounter pv
+		       inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+		       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		       inner join bd_ou_org org on pv.pk_org=org.pk_org
+		       left outer join bd_dictattr att on pv.pk_insu=att.pk_dict and att.code_attr='0322'
+		       inner join bl_ip_dt cg on pv.pk_pv=cg.pk_pv
+		       inner join bd_unit unit on cg.pk_unit=unit.pk_unit
+		       left join BD_HP bh on bh.PK_HP=pv.PK_INSU
+		       left outer join ins_szyb_itemmap map on cg.pk_item=map.pk_item 
+								and map.EU_HPDICTTYPE=(case when bh.DT_EXTHP='03' then '01' else '02' end)
+		       left outer join bd_pd pd on cg.pk_pd=pd.pk_pd
+		       left outer join bd_item item on cg.pk_item=item.pk_item and cg.flag_pd='0'
+		       left outer join bd_defdoc dos on pd.dt_dosage=dos.code and dos.code_defdoclist='030400' and dos.DEL_FLAG='0'
+		       left outer join bd_factory fac on pd.pk_factory=fac.pk_factory
+					 left join BD_PD bp on bp.pk_pd=cg.pk_item
+					 left join BD_ITEM bi on bi.pk_item=cg.pk_item
+		 where pv.pk_pv in ( ${pkPv} )
+		 <!-- select org.code_hosp org_code,
+		       att.val_attr || pv.code_pv yblsh,
+		       pv.code_pv jzlsh,
+		       ip.ip_times zycs,
+		       pi.code_ip bah,
+		       pv.date_end cysj,
+		       'F00000110866' hos_detail_code,
+		       cg.name_cg hos_detail_name,
+		       map.ake001 center_detail_code,
+		       map.ake002 center_detail_name,
+		       '' as drg_detail_code,
+		       case when cg.flag_pd='1' then '1'
+		            when item.dt_itemtype like '07%' then '2' else '3' end type,
+		       '0' as is_special,
+		       dos.name dosage,
+		       cg.spec specification,
+		       fac.name contractor,
+		       unit.name unit,
+		       round(cg.price,2) d_price,
+		       round(cg.quan,2) d_number,
+		       cg.amount price,
+		       cg.ratio_self proporition,
+		       cg.date_hap price_time
+		  from pv_encounter pv
+		       inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+		       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		       inner join bd_ou_org org on pv.pk_org=org.pk_org
+		       left outer join bd_dictattr att on pv.pk_insu=att.pk_dict and att.code_attr='0322'
+		       inner join bl_ip_dt cg on pv.pk_pv=cg.pk_pv
+		       inner join bd_unit unit on cg.pk_unit=unit.pk_unit
+		       left outer join ins_szyb_itemmap map on cg.pk_item=map.pk_item
+		       left outer join bd_pd pd on cg.pk_pd=pd.pk_pd
+		       left outer join bd_item item on cg.pk_item=item.pk_item and cg.flag_pd='0'
+		       left outer join bd_defdoc dos on pd.dt_dosage=dos.code and dos.code_defdoclist='030400'
+		       left outer join bd_factory fac on pd.pk_factory=fac.pk_factory
+		 where pv.pk_pv in ( ${pkPv} ) and rownum=1 -->
+    </select>
+    <select id="queryControl"  parameterType="java.util.Map" resultType="DynaBean">
+         select org.code_hosp org_code,
+		       <!-- att.val_attr || pv.code_pv yblsh, -->
+		       ip.ip_times zycs,
+		       pi.code_ip bah
+		  from pv_encounter pv
+		       inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+		       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		       inner join bd_ou_org org on pv.pk_org=org.pk_org
+		       left outer join bd_dictattr att on pv.pk_insu=att.pk_dict and att.code_attr='0322'
+		 where pv.pk_pv in ( ${pkPv} )
+    </select>
+    <select id="queryBasicInfo"  parameterType="java.util.Map" resultType="DynaBean">
+         select hp.pk_page,
+				org.name_org hos_name,
+		       att.val_attr hos_id,
+		       hp.med_pay_mode ylfkfs,
+		       pi.insur_no ybkh,
+			   case when yb.PVCODE_INS is null then 'IP'||pv.CODE_PV else yb.PVCODE_INS end yblsh,
+		       pv.code_pv jzlsh,
+		       pi.code_ip bah,
+		       ip.ip_times zycs,
+		       hp.dt_sex xb,
+		       to_char(pi.birth_date,'yyyy-mm-dd') csrq,
+		       hp.age_year nl,
+		       hp.age_month bzyzsnl,
+		       hp.AGE_TXT,
+		       hp.newborn_weight xsecstz,
+		       hp.newborn_in_weight xserytz,
+		       hp.admit_path_code rytj,
+		       to_char(hp.admit_time,'yyyy-mm-dd hh24:mi') rysj,
+		       hp.admit_dept_name rykb,
+		       hp.pk_admit_dept rykbbm,
+		       
+		       hp.dis_time cysj,
+		       hp.dis_dept_name cykb,
+		       hp.pk_dept_dis cykbbm,
+		       hp.pk_emp_director czzzysgh,
+		       hp.director_name cyzzysxm,
+		       hp.pk_emp_refer cygcysgh,
+		       hp.refer_name cygcysxm,
+		       hp.pk_emp_consult cyzgysgh,
+		       hp.consult_name cyzgysxm,
+		       hp.in_hos_days sjzyts,
+		       hp.days_gdiii sjhl,
+		       hp.days_gdii ejhl,
+		       hp.days_gdi yjhl,
+		       hp.days_gds tjhlt,
+		       hp.hours_gds tjhls,
+		       
+		       hp.num_res qjcs,
+		       hp.num_succ qjcgcs,
+		       hp.diag_name_clinic mjzsymc,
+		       hp.code_dcdt_clinic mjzsybm,
+		       hp.desc_bodypart mjzsybw,
+		       hp.desc_drgprop mjzsysx,
+		       hp.desc_diag mjzzsms,
+		       
+		       hp.leave_hos_code lyfs,
+		       hp.hours_bm hxjsysjs,
+		       hp.minutes_bm hxjsysjf,
+		       hp.total_cost zfy,
+		       hp.self_cost zfje,
+		       (select sum(AMOUNT_PI) from BL_SETTLE where PK_PV=pv.PK_PV and DEL_FLAG='0') ,
+		       
+		       0.00 as cbcwf,
+		       0.00 as cwhcf,
+		       0.00 as cwypf,
+		       0.00 as cwxmf,
+				case ins.code
+					when '01' then '999'
+					when '05' then '999'
+					when '310' then '999'
+					when '390' then '999'
+					when '08' then '999'
+					when 'Z06' then '999'
+					when null then '999'
+					else ins.code
+				end cblx_code,
+		       hp.dt_drgcasetype
+		  from pv_encounter pv
+		       inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+		       inner join bd_hp ins on pv.pk_insu=ins.pk_hp
+		       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		       inner join bd_ou_org org on pv.pk_org=org.pk_org
+		       inner join emr_home_page hp on pv.pk_pv=hp.pk_pv
+			   left join INS_SZYB_VISIT yb on yb.PK_PV=pv.PK_PV and yb.DEL_FLAG='0'
+		       left outer join bd_dictattr att on pv.pk_insu=att.pk_dict and att.code_attr='0322'
+		 where pv.pk_pv in ( ${pkPv} )
+    </select>
+    <select id="queryTransferInfo"  parameterType="java.util.Map" resultType="DynaBean">
+         select to_char(adt.trans_date,'yyyy-mm-dd') zksj,
+		       to_char(adt.trans_date,'hh24') zjsjs,
+		       adt.dept_name zkkb
+		  from emr_home_page_trans adt
+		 where adt.pk_page=#{pkPage,jdbcType=VARCHAR}
+    </select>
+    <select id="queryICUInfo"  parameterType="java.util.Map" resultType="DynaBean">
+         select case adt.flag_icu when '1' then 1 else 2 end rzzjhs,
+		       adt.code_icutype rzzjhslx,
+		       to_char(adt.trans_date,'yyyy-mm-dd hh24:mi') rzzjhsj,
+		       to_char(adt.date_transout,'yyyy-mm-dd hh24:mi') czzjhsj
+		  from emr_home_page_trans adt
+		 where adt.pk_page=#{pkPage,jdbcType=VARCHAR} and
+		       adt.flag_icu='1'
+    </select>
+    <select id="queryDiagInfo"  parameterType="java.util.Map" resultType="DynaBean">
+         select DISTINCT dcdt.NAME_DCDT symc,
+		       diag.code_dcdt sybm,
+		       diag.desc_bodypart sybw,
+		       diag.desc_drgprop sysx,
+		       diag.diag_desc zdms,
+		       diag.flag_cure sfzy,
+		       diag.flag_primary 
+		  from emr_home_page_diags diag
+		   inner join BD_TERM_DCDT dcdt on dcdt.CODE_DCDT=diag.CODE_DCDT
+		 where diag.pk_page=#{pkPage,jdbcType=VARCHAR} and diag.flag_primary=#{flagPrimary,jdbcType=VARCHAR}
+    </select>
+    <select id="queryCCHIInfo"  parameterType="java.util.Map" resultType="DynaBean">
+         select cchi.sortno,
+		       cchi.code_cchi cchibm,
+		       cchi.name_cchi cchimc,
+		       cchi.desc_cchi cchixsf,
+		       cchi.flag_maj sfzyss,
+		       emp.code_emp cchizdysgh,
+		       cchi.name_emp cchizdysxm,
+		       dept.name_dept cchizdyskb,
+		       dept.code_dept cchizdyskbbm
+		  from cn_cchi cchi
+		       inner join bd_ou_dept dept on cchi.pk_dept=dept.pk_dept
+		       left outer join bd_ou_employee emp on cchi.pk_emp=emp.pk_emp
+		 where cchi.pk_pv in ( ${pkPv} ) and
+		       cchi.flag_drg='1'
+		 order by cchi.sortno
+    </select>
+    <select id="queryItemInfo"  parameterType="java.util.Map" resultType="DynaBean">
+         select dc.ba_code itemcode,
+		       dc.name itemname,
+		       sum(cg.item_amount) amount
+		  from emr_home_page_charges cg
+		       inner join bd_defdoc dc on cg.item_code=dc.code and dc.code_defdoclist='030800'
+		 where cg.pk_page=#{pkPage,jdbcType=VARCHAR} and
+		       dc.ba_code!='0'
+		group by dc.ba_code,
+		         dc.name
+		         <!--  and dc.ba_code=#{baCode,jdbcType=VARCHAR} -->
+    </select>
+</mapper>

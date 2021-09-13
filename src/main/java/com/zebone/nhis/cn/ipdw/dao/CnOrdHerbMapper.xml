@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.CnOrdHerbMapper">
+
+    <select id="getHerbOrderSrv" resultType="com.zebone.nhis.common.module.base.bd.srv.BdOrd"
+            parameterType="java.lang.String">
+  	select * from bd_ord
+  	where pk_ord = #{pkOrder,jdbcType=CHAR}
+  </select>
+
+    <select id="getHerbOrders" resultType="DynaBean"
+            parameterType="java.lang.String">
+  	select ord.*,pres.pres_no,pres.eu_boil,pres.dt_properties,pres.dt_boiltype,pres.fried_num,pres.usage_count,
+  	      pres.dosage_pack,pres.name_diag,pres.name_symp,pres.name_pres
+  	      from cn_order ord
+          inner join cn_prescription pres on pres.pk_pres = ord.pk_pres and pres.dt_prestype='02' and pres.del_flag='0' 
+  	where ord.pk_pv = #{pkPv,jdbcType=CHAR} and ord.code_ord=#{herbOrder,jdbcType=CHAR}  order by pres.pres_no desc 
+  </select>
+
+    <select id="getHerbItemsSqlServer" resultType="DynaBean" parameterType="java.lang.String">
+        select herb.*,unit.name unit_name, pd.name pd_name,pd.code pd_code,def.name as dt_herbusage_name,stk.quan_min as stock,con.spec,
+        '' hp_rate
+        from CN_ORD_HERB herb
+        inner join bd_unit unit on herb.pk_unit = unit.pk_unit and unit.del_flag='0'
+        inner join bd_pd pd on  herb.pk_pd = pd.pk_pd and pd.del_flag='0'
+        inner join bd_pd_convert con on herb.PK_PD = con.PK_PD and con.del_flag = '0' and herb.PK_UNIT=con.PK_UNIT
+        inner join bd_pd_store pds on con.pk_pdconvert = pds.pk_pdconvert and pds.flag_stop = '0' and pds.del_flag = '0' and pds.pk_dept=#{pkDeptExe,jdbcType=CHAR}
+        left  join bd_defdoc def on def.code_defdoclist='030410' and def.code=herb.dt_herbusage and def.del_flag='0'
+        left outer join (select t.* from (
+        select sum(quan_min - quan_prep) quan_min, pk_pd,
+        price,row_number() over ( partition by pk_pd ORDER BY  price  )as pdIDS
+        from pd_stock
+        where del_flag = '0'
+        and pk_dept =#{pkDeptExe,jdbcType=CHAR}
+        group by pk_pd, price, pk_org, pk_dept) t where t.pdIDS=1) stk
+        on pd.pk_pd = stk.pk_pd
+        where  herb.pk_cnord = #{pkCnord,jdbcType=CHAR}
+        order by sort_no
+    </select>
+
+    <select id="getHerbItems" resultType="DynaBean" parameterType="java.lang.String">
+ 	select herb.*,unit.name unit_name, pd.name pd_name,pd.code pd_code,def.name as dt_herbusage_name,stk.quan_min as stock,con.spec
+        <if test="pkHp != null and pkHp != ''">
+        ,ph.hp_rate
+        </if>
+	 from CN_ORD_HERB herb
+	inner join bd_unit unit on herb.pk_unit = unit.pk_unit and unit.del_flag='0'
+	inner join bd_pd pd on  herb.pk_pd = pd.pk_pd and pd.del_flag='0'
+    left join bd_pd_convert con on herb.PK_PD = con.PK_PD and con.del_flag = '0' and herb.PK_UNIT=con.PK_UNIT
+	left  join bd_defdoc def on def.code_defdoclist='030410' and def.code=herb.dt_herbusage and def.del_flag='0'
+	left outer join (select t.* from (
+                                  select sum(quan_min - quan_prep) quan_min, pk_pd,
+                                 price,row_number() over ( partition by pk_pd ORDER BY  price  )as pdIDS
+                     from pd_stock
+                    where del_flag = '0'
+                    and pk_dept =#{pkDeptExe,jdbcType=CHAR}  
+                    group by pk_pd, price, pk_org, pk_dept) t where t.pdIDS=1) stk
+    on pd.pk_pd = stk.pk_pd
+        <if test="pkHp != null and pkHp != ''">
+        left join ( select ihp.pk_item,(CASE
+        WHEN ihp.eu_level = '0' THEN ('甲' || '(' || (1 - NVL(ihp.ratio_self, 0)) * 100 || '%)')
+        WHEN ihp.eu_level = '1' THEN ('乙' || '(' || (1 - NVL(ihp.ratio_self, 0)) * 100 || '%)')
+        WHEN ihp.eu_level = '2' THEN ('自费' || '(' || (1 - NVL(ihp.ratio_self, 0)) * 100 || '%)')
+        ELSE '' END ) as hp_rate from bd_item_hp ihp where ihp.del_flag='0'
+            and ihp.pk_hp =#{pkHp,jdbcType=VARCHAR}
+        ) ph on ph.pk_item=pd.pk_pd
+        </if>
+    where  herb.pk_cnord = #{pkCnord,jdbcType=CHAR}
+  	order by sort_no
+  </select>
+
+    <update id="cancelHerbOrder" parameterType="java.lang.String">
+        update cn_order
+        set eu_status_ord = '9', flag_erase='1',
+        pk_emp_erase=#{empSn,jdbcType=VARCHAR}, name_emp_erase=#{empName,jdbcType=VARCHAR}, date_erase = sysdate
+        where
+        <foreach collection="pkOrderList" item="pkOp" open="" close="" separator="OR">
+            PK_CNORD = #{pkOp,jdbcType=VARCHAR}
+        </foreach>
+    </update>
+
+    <update id="signHerbOrder" parameterType="java.lang.String">
+        update cn_order
+        set eu_status_ord = '1', flag_sign='1' ,
+        date_sign = sysdate
+        where
+        <foreach collection="pkOrderList" item="pkOp" open="" close="" separator="OR">
+            PK_CNORD = #{pkOp,jdbcType=VARCHAR}
+        </foreach>
+    </update>
+
+    <select id="getPdStore" parameterType="String" resultType="String">
+    	select sto.pk_store  
+         from bd_dept_bus bus
+              inner join bd_dept_bu bu on bus.pk_deptbu=bu.pk_deptbu
+              inner join bd_dept_bus busa on bus.pk_deptbu=busa.pk_deptbu
+              inner join bd_store sto on sto.pk_dept=busa.pk_dept
+        where busa.dt_depttype='0402' and
+              bu.dt_butype='03' and
+              bus.pk_dept=#{pkDept,jdbcType=CHAR}
+    </select>
+
+    <delete id="removeHerbOrder" parameterType="java.lang.String">
+    begin 
+    delete from cn_prescription where pk_pres = (select pk_pres from cn_order 
+  	where PK_CNORD = #{pkCnOrd,jdbcType=VARCHAR} and eu_status_ord = '0');
+  	delete from cn_ord_herb where PK_CNORD = (select PK_CNORD  from cn_order 
+  	where PK_CNORD = #{pkCnOrd,jdbcType=VARCHAR} and eu_status_ord = '0');
+  	delete from cn_order where PK_CNORD = #{pkCnOrd,jdbcType=VARCHAR} and eu_status_ord = '0';
+  	end; 
+  </delete>
+
+    <select id="getUnitVol" resultType="com.zebone.nhis.common.module.cn.ipdw.BdUnit" parameterType="java.lang.String">
+	SELECT c.NAME FROM BD_PD a,BD_PD_CONVERT b, BD_UNIT c WHERE 1=1 and  a.PK_PD = 
+ 	b.PK_PD AND b.PK_UNIT = c.PK_UNIT  and  a.PK_PD = #{pkPd,jdbcType=CHAR}
+	</select>
+
+    <select id="queryHerbTempList" resultType="DynaBean" parameterType="java.util.Map">
+	 	SELECT * FROM BD_ORD_SET
+		WHERE
+			1=1
+		AND EU_ORDTYPE = '2'
+		and flag_ip = '1'
+		AND DEL_FLAG = '0'
+		and (( EU_RIGHT = '1' and PK_DEPT = #{pkDept,jdbcType=VARCHAR} ) 
+		     or (EU_RIGHT = '2' and pk_emp= #{pkEmp,jdbcType=VARCHAR})
+		     <if test=' isContainsFather == "1" '>
+                 or (eu_right='1' and pk_dept =(select d.pk_dept from bd_ou_dept d left join bd_ou_dept b on d.pk_dept = b.pk_father
+                 where b.pk_dept=#{pkDept,jdbcType=VARCHAR} and d.flag_active='1' and d.del_flag='0'))
+             </if>
+		     )
+  	</select>
+    <select id="findByPkCnOrd" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOrdHerb">
+		SELECT * FROM CN_ORD_HERB WHERE PK_CNORD = #{pkCnOrd,jdbcType=CHAR}
+	</select>
+
+</mapper>

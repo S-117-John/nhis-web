@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.CnIpScheduleMapper">
+	
+	<select id="qrySchPreviewList" resultType="DynaBean" parameterType="java.lang.String">
+	 	 select sch.pk_schip,
+		       dt.pk_schipdt,
+		       dt.date_work,
+			   decode(dt.weekno,'1','一','2','二','3','三','4','四','5','五','6','六','0','日') weeknoStr,
+			   dt.weekno,
+		       dt.pk_emp,
+		       dt.name_emp,
+		       dt.dt_schtypedr,
+		       doc.name schName 
+		  from sch_ip sch 
+		  inner join sch_ip_dt dt on sch.pk_schip=dt.pk_schip 
+		  left join bd_defdoc doc on doc.code = dt.dt_schtypedr and doc.code_defdoclist = '020009' 
+		  where sch.eu_type='0' 
+		  		and sch.pk_dept = #{pkDept} 
+		  		and sch.month_sch = #{monthSch}
+	</select>
+	
+	<select id="qryDoctorList" resultType="DynaBean" parameterType="java.lang.String">
+	 	 select emp.pk_emp,
+		       emp.code_emp,
+		       emp.name_emp,
+		       ejb.pk_dept 
+		 from bd_ou_employee emp 
+         inner join bd_ou_empjob ejb on emp.pk_emp=ejb.pk_emp 
+		 where emp.flag_active='1' and 
+		       (ejb.date_left is null or ejb.date_left &gt;= to_date(#{date},'yyyy-MM-dd hh24:mi:ss')) 
+		       and ejb.pk_dept = #{pkDept} 
+		       and ejb.del_flag='0' 
+		order by emp.code_emp 
+	</select>
+	
+	<select id="qrySchCopyYear" resultType="DynaBean" parameterType="java.lang.String">
+	 	 select distinct 
+		       substr(month_sch,1,4) yearSch 
+		 from sch_ip 
+		 where pk_dept = #{pkDept} 
+	</select>
+	
+	<select id="qrySchCopyMonth" resultType="DynaBean" parameterType="java.lang.String">
+	 	 select month_sch 
+		 from sch_ip 
+		 where pk_dept = #{pkDept} 
+		 		and month_sch like '${yearSch}%'
+	</select>
+	
+	<select id="qrySchCopyEmployee" resultType="DynaBean" parameterType="java.lang.String">
+	 	 select distinct 
+		       dt.pk_emp,
+		       emp.code_emp,
+		       dt.name_emp 
+		 from sch_ip sch 
+		       inner join sch_ip_dt dt on sch.pk_schip=dt.pk_schip 
+		       inner join bd_ou_employee emp on dt.pk_emp=emp.pk_emp 
+		 where sch.pk_dept = #{pkDept} 
+		 		and sch.month_sch = #{monthSch}
+	</select>
+	
+	<select id="qrySchCopyList" resultType="com.zebone.nhis.common.module.cn.ipdw.SchIpDt" parameterType="java.util.Map">
+	 	 select 
+	 	 	dt.* 
+		 from sch_ip sch
+         inner join sch_ip_dt dt on sch.pk_schip=dt.pk_schip
+		 where sch.pk_dept = #{pkDept} 
+		 		and sch.month_sch = #{monthSch} 
+		 		and dt.pk_emp 
+		 		<foreach collection="pkEmps" index="index" item="item" open=" in (" separator="," close=")">  
+		       		 #{item}  
+		    	</foreach>     	
+		order by dt.date_work,
+		         dt.name_emp
+	</select>
+	
+	<select id="qrySchIpDtByDate" resultType="com.zebone.nhis.common.module.cn.ipdw.SchIpDt" parameterType="java.lang.String">
+		select
+		* 
+		from 
+			sch_ip_dt 
+		where 
+        	date_work &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss') 
+        	and date_work &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+	</select>
+</mapper>

@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ex.nis.pi.dao.PvAdtMapper">
+	
+	<!-- 查询待入科患者列表 -->
+	<select id="getPatiByIn"  parameterType="java.util.Map" resultType="DynaBean">
+		select pv.code_pv,
+			   pi.code_pi,
+			   pi.code_ip,
+		       pv.name_pi,
+		       pv.dt_sex,
+		       pv.age_pv,
+		       pv.eu_status,
+		       pv.pk_pv,
+		       pv.date_reg,
+		       pv.pk_picate,
+		       hp.name as hpname, 
+		       hp.eu_hptype, 
+		       hp.code as hpcode,
+		       '入院' as adtType, 
+		       '' as dept_name, 
+		       dept.code_dept,
+		       dept.name_dept as dept_name_to,
+		       deptns.name_dept as dept_name_ns_to,
+		       '' as dept_ns_name,
+		       '' as pk_adt,
+		       pv.pk_dept,
+           	   pv.pk_dept_ns,
+           	   pv.date_begin,
+           	   pv.flag_spec,
+           	   pv.eu_pvmode,
+           	   '' bed_no_old,
+		       <if test=" isBaInDept != null and isBaInDept == '1'.toString() ">
+			   	  '' code_fa,
+			   </if>
+           	   '' dt_depttype,
+           	   '' dt_depttype_old,
+           	   '' pk_dept_old,
+           	   '' pk_dept_ns_old,
+           	   inf.pk_pv pk_pv_ma,
+           	   inf.sort_no,
+           	   case when inf.pk_infant is not null then '1' else '0' end flag_infant,pv.name_emp_tre,ip.name_diag,
+           	   pv.pk_pi        
+		  from pv_encounter pv  
+		  inner join pi_master pi on pi.pk_pi = pv.pk_pi
+		  inner join bd_ou_dept dept on dept.pk_dept = pv.pk_dept   
+		  inner join bd_ou_dept deptns on deptns.pk_dept = pv.pk_dept_ns 
+		  inner join pv_ip ip on pv.pk_pv = ip.pk_pv and ip.del_flag = '0'
+		   left join pv_insurance ins on pv.pk_pv=ins.pk_pv and ins.flag_maj = '1' and ins.del_flag = '0'
+		  inner join bd_hp hp on hp.pk_hp = ins.pk_hp 
+		   left join pv_infant inf on inf.pk_pv_infant = pv.pk_pv and inf.del_flag = '0'
+		  where pv.eu_status = '0' and pv.eu_pvtype = '3'  
+		  and ((ip.flag_infant = '1' and ip.quan_infant &gt; 0) or (ip.flag_infant = '0' and ip.quan_infant = 0) )  
+		  <if test=" pkDeptNs != null  and  pkDeptNs != ''">
+		       and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		  </if>
+		  <if test=" pkDept != null  and  pkDept != ''">
+		       and pv.pk_dept = #{pkDept,jdbcType=CHAR}
+		  </if>
+		  <if test=" pkPv != null  and  pkPv != ''">
+		        and pv.pk_pv = #{pkPv,jdbcType=CHAR} 
+	      </if>	
+		union 
+		select pv.code_pv,
+			   pi.code_pi,
+			   pi.code_ip,
+		       pv.name_pi,
+		       pv.dt_sex,
+		       pv.age_pv,
+		       'z' as eu_status, 
+		       pv.pk_pv,
+		       pv.date_reg,
+		       pv.pk_picate,
+		       hp.name as hpname,  
+		       hp.eu_hptype,
+		       hp.code as hpcode,
+		       	CASE  WHEN inf.eu_status_adt is not null  THEN
+				'婴儿转科' else '转科'  END AS adtType,
+		       <!-- '转科' as adtype,  -->
+		       dept.name_dept as dept_name,
+		       deptt.code_dept,
+		       deptt.name_dept as dept_name_to,
+		       deptnst.name_dept as dept_name_ns_to,
+		       deptns.name_dept as dept_ns_name,
+		       adtt.pk_adt,
+		       adtt.pk_dept,
+               adtt.pk_dept_ns,
+               pv.date_begin,
+               pv.flag_spec,
+               pv.eu_pvmode,
+               pv.bed_no bed_no_old,
+			   <if test=" isBaInDept != null and isBaInDept == '1'.toString() ">
+				   bed.code_fa,
+			   </if>
+               deptt.dt_depttype,
+               dept.dt_depttype dt_depttype_old,
+               adtf.pk_dept pk_dept_old,
+               adtf.pk_dept_ns pk_dept_ns_old,
+               inf.pk_pv pk_pv_ma,
+               inf.sort_no,
+           	   case when inf.pk_infant is not null then '1' else '0' end flag_infant,pv.name_emp_tre,ip.name_diag,
+               pv.pk_pi      
+		  from pv_adt adtt 
+		  inner join pv_adt adtf on adtt.pk_adt_source = adtf.pk_adt 
+		  inner join bd_ou_dept dept on dept.pk_dept = adtf.pk_dept 
+		  inner join bd_ou_dept deptt on deptt.pk_dept = adtt.pk_dept 
+		  inner join bd_ou_dept deptnst on deptnst.pk_dept = adtt.pk_dept_ns 
+		  inner join bd_ou_dept deptns on deptns.pk_dept = adtf.pk_dept_ns  
+		  inner join pv_encounter pv on pv.pk_pv=adtt.pk_pv and pv.eu_pvtype = '3'
+		  <if test=" isBaInDept != null and isBaInDept == '1'.toString() ">
+			  inner join bd_res_bed bed on bed.pk_pi = pv.pk_pi and bed.pk_ward = adtf.pk_dept_ns and bed.del_flag = '0'
+		  </if>
+		  inner join pi_master pi on pi.pk_pi = pv.pk_pi 
+		  left  join pv_ip ip on pv.pk_pv = ip.pk_pv and ip.del_flag = '0'
+		  left join pv_insurance ins on pv.pk_pv=ins.pk_pv and ins.flag_maj = '1'
+		  inner join bd_hp hp on hp.pk_hp = ins.pk_hp 
+		   left join pv_infant inf on inf.pk_pv_infant = pv.pk_pv and inf.del_flag = '0'
+		 where adtt.eu_status='0'  
+		  <if test=" pkDeptNs != null  and  pkDeptNs != ''">
+		       and adtt.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}	
+		  </if> 
+	      <if test=" pkDept != null  and  pkDept != ''">
+		       and adtt.pk_dept = #{pkDept,jdbcType=CHAR}	
+	      </if>	
+		  <if test=" pkPv != null  and  pkPv != ''">
+		        and pv.pk_pv = #{pkPv,jdbcType=CHAR}
+	      </if>
+	</select>
+	
+	<!-- 查询待出院患者列表 -->
+	<select id="getPatiByOut"  parameterType="java.util.Map" resultType="DynaBean">
+	   select pv.code_pv,pi.code_pi,pi.code_ip, pv.name_pi, pv.dt_sex , pv.pk_pv,ord.date_start date_out, pv.bed_no code_bed
+		 , inf.pk_pv pk_pv_ma,case when inf.pk_infant is not null then '1' else '0' end flag_infant
+  		 from pv_encounter pv
+  		inner join pi_master pi on pi.pk_pi = pv.pk_pi 
+  		 left join pv_infant inf on inf.pk_pv_infant = pv.pk_pv and inf.del_flag = '0'
+  		inner join cn_order ord on pv.pk_pv = ord.pk_pv and ord.eu_status_ord &gt; '1'  and ord.eu_status_ord &lt; '9' and  ord.code_ordtype in ('1102','1103')and ord.flag_erase = '0'
+ 		where pv.eu_status ='1'
+ 		  and pv.eu_pvtype = '3' 
+		  and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}  		
+	</select>	
+	<!-- 查询待出院患者列表  （新增明日出院） -->
+	<select id="getPatiByStayOut"  parameterType="java.util.Map" resultType="DynaBean">
+	    select pv.code_pv,
+	        pi.code_pi,
+	        pv.pk_pv, 
+            pv.bed_no as code_bed, 
+       		pi.code_ip,
+       		pi.name_pi,
+       		pi.dt_sex, 
+       		odt.name as ordtype, 
+       		ord.date_start as date_out, 
+       		inf.pk_pv pk_pv_ma,case when inf.pk_infant is not null then '1' else '0' end flag_infant
+  		from pv_encounter pv
+       	inner join pi_master pi on pv.pk_pi=pi.pk_pi
+       	inner join cn_order ord on pv.pk_pv=ord.pk_pv
+       	inner join bd_ordtype odt on ord.code_ordtype=odt.code
+       	left join pv_infant inf on inf.pk_pv_infant = pv.pk_pv and inf.del_flag = '0'
+ 		where pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}    
+ 		and pv.eu_status='1'  
+ 		and ord.code_ordtype like '1102%'  
+ 		and ord.flag_erase='0'		
+	</select>
+	
+	
+	<!-- 查询取消出院患者列表 -->
+	<select id="queryCancelPatiOut" parameterType="java.util.Map" resultType="DynaBean">
+	select pv.pk_pi, pv.pk_pv, pv.name_pi,pi.code_ip, pv.bed_no, pv.code_pv, pv.dt_sex, sex.name sex, pv.date_end
+		 , inf.pk_pv pk_pv_ma,case when inf.pk_infant is not null then '1' else '0' end flag_infant
+	  from pv_encounter pv
+	 inner join pi_master pi on pi.pk_pi = pv.pk_pi
+	  left join pv_infant inf on inf.pk_pv_infant = pv.pk_pv and inf.del_flag = '0'
+	  left join bd_defdoc sex on sex.code = pv.dt_sex and sex.code_defdoclist = '000000'
+	 where (pv.flag_settle = '0' or pv.flag_settle is null)
+	   and pv.eu_status = '2'
+	   and pv.eu_pvtype = '3'  
+	   and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	</select>
+
+	<!-- 查询取消转科患者列表 -->
+	<select id="queryCancelPatiDeptOut" parameterType="java.util.Map" resultType="DynaBean">
+	select pv.bed_no,
+		   pv.name_pi,
+		   pi.code_ip,
+		   pv.pk_pi, 
+		   pv.pk_pv, 
+		   pv.code_pv, 
+		   pv.dt_sex, 
+		   sex.name sex,
+		   pv.pk_dept,
+		   pv.pk_dept_ns,
+		   inf.pk_pv pk_pv_ma,
+		   case when inf.pk_infant is not null then '1' else '0' end flag_infant,
+		   dept.name_dept,
+		   dept.dt_depttype,
+		   deptNs.name_dept name_dept_ns,
+		   adt.pk_adt,
+		   adt.pk_adt_source,
+		   adt.date_begin,
+		   adtOld.pk_dept pk_dept_old,
+       	   adtOld.pk_dept_ns pk_dept_ns_old,
+       	   olddept.dt_depttype dt_depttype_old,
+           olddept.name_dept name_dept_old,
+		   olddeptNs.name_dept name_dept_ns_old,
+		   pvbed.pk_pvbed  
+	  from pv_encounter pv
+	 inner join pi_master pi on pi.pk_pi = pv.pk_pi
+	 inner join pv_adt adt on adt.pk_pv = pv.pk_pv and adt.del_flag = '0' 
+	 inner join pv_adt adtOld on adtOld.pk_pv = pv.pk_pv and adtOld.pk_adt = adt.pk_adt_source and adtOld.del_flag = '0'
+	  left join pv_bed pvbed on pvbed.pk_pv = pv.pk_pv and pvbed.bedno = pv.bed_no and pvbed.del_flag = '0' and pvbed.date_end is null
+	  left join pv_infant inf on inf.pk_pv_infant = pv.pk_pv and inf.del_flag = '0'
+	  left join bd_ou_dept dept on dept.pk_dept = adt.pk_dept and dept.del_flag = '0'
+	  left join bd_ou_dept deptNs on deptNs.pk_dept = adt.pk_dept_ns and deptNs.del_flag = '0'
+	  left join bd_ou_dept olddept on olddept.pk_dept = adtOld.pk_dept and olddept.del_flag = '0'
+	  left join bd_ou_dept olddeptNs on olddeptNs.pk_dept = adtOld.pk_dept_ns and olddeptNs.del_flag = '0'
+	  left join bd_defdoc sex on sex.code = pv.dt_sex and sex.code_defdoclist = '000000'
+	 where pv.eu_status = '1'
+	   and pv.eu_pvtype = '3'
+	   and adt.flag_admit = '0' 
+	   and adt.eu_status = '0' 
+	   and adt.pk_adt_source is not null
+	   and adtOld.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	   <if test=" pkPv != null  and  pkPv != ''">
+		   and pv.pk_pv = #{pkPv,jdbcType=CHAR}	
+	   </if> 
+	</select>
+	
+	<!-- 通过记录数判断患者是否为转科患者 -->
+	<select id="countPvAdt" parameterType="java.lang.String" resultType="java.lang.Integer">
+		select count(1) from pv_adt where pk_pv = #{pkPv}
+	</select>
+	
+	<!-- 检验当前选中科室是否可以转科不停嘱 -->
+	<select id="chkNoStopOrdByChg" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(1) from bd_dept_bu bu
+		 where exists(select 1 from BD_DEPT_BUS bs where bs.PK_DEPTBU = bu.PK_DEPTBU 
+						   and bu.DT_BUTYPE='20' and bs.del_flag='0' and bs.PK_DEPT = #{pkDept})
+ 		   and exists(select 1 from BD_DEPT_BUS bs1 where bs1.PK_DEPTBU = bu.PK_DEPTBU
+						   and bu.DT_BUTYPE='20' and bs1.del_flag='0' and bs1.PK_DEPT= #{pkDeptNew})
+	</select>
+
+	<select id="getWaitDeptChange"  parameterType="java.util.Map" resultType="DynaBean">
+    	    select pv.pk_pv,
+                   pv.bed_no,
+                   pi.code_ip,
+                   pi.name_pi,
+                   pi.dt_sex,
+                   odt.name ordtype,
+                   ord.date_start
+              from pv_encounter pv
+                   inner join pi_master pi on pv.pk_pi=pi.pk_pi
+                   inner join cn_order ord on pv.pk_pv=ord.pk_pv
+                   inner join bd_ordtype odt on ord.code_ordtype=odt.code
+  					INNER JOIN ex_order_occ occ ON ord.PK_CNORD = occ.PK_CNORD
+             where pv.pk_dept_ns=#{pkDeptNs,jdbcType=CHAR}
+                   and pv.eu_status='1'
+                   and ord.code_ordtype like '1101%'
+                   and ord.flag_erase='0'
+                   and ord.eu_status_ord in ('1','2','3')
+      				AND occ.eu_status = 0
+    	</select>
+</mapper>

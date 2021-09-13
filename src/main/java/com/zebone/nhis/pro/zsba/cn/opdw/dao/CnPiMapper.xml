@@ -1,0 +1,572 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.cn.opdw.dao.CnPiMapper">
+    <select id="qryOrd" resultType="com.zebone.nhis.cn.pub.vo.OrdBlVo" parameterType="java.util.Map">
+        select CASE
+                       WHEN HS = 1 THEN ''
+                       WHEN HS = 0 THEN ''
+                       WHEN R = 1 AND HS != 0 THEN '┏'
+                       WHEN R = HS THEN '┗'
+                       ELSE '┃' END AS Hs,
+               date_start,
+               ordsn,
+               ordsn_parent,
+               eu_always,
+               name_ord,
+               dosage,
+               PK_UNIT_DOS,
+               unit,
+               supply,
+               freq,
+               ords,
+               DAYS,
+               date_stop,
+               name_emp_ord,
+               code_ordtype,
+               price_cg,
+               quan,
+               quan_cg,
+               pk_ord,
+               pk_dept_exec,
+               code_ord,
+               spec,
+               pk_unit,
+               pack_size,
+               code_freq,
+               code_supply,
+               pk_pres,
+               pk_unit_cg,
+               FLAG_FIT,
+               eu_st,
+               PK_CNORD,
+               DESC_FIT,
+               dt_excardtype,
+               DT_HPPROP,
+               EU_PVTYPE,
+               name_dept_exec,
+               pres_no_ord,
+               dt_prestype,
+               FLAG_ERASE,
+               FLAG_DISP,
+               FLAG_DURG,
+               flag_self,
+               plan_occ_num,
+               flag_sp_unit,
+               eu_injury
+        from (
+                     select ord.date_start,
+                            ord.ordsn,
+                            ord.ordsn_parent,
+                            ord.eu_always,
+                            ord.name_ord,
+                            ord.dosage,
+                            ord.PK_UNIT_DOS,
+                            unit.name                                                      unit,
+                            sup.name                                                       supply,
+                            freq.name                                                      freq,
+                            ord.ords,
+                            ord.DAYS,
+                            ord.date_stop,
+                            ord.name_emp_ord,
+                            ord.code_ordtype,
+                            ord.price_cg,
+                            ord.quan,
+                            ord.quan_cg,
+                            ord.pk_ord,
+                            ord.pk_dept_exec,
+                            ord.code_ord,
+                            ord.spec,
+                            ord.pk_unit,
+                            ord.pack_size,
+                            ord.code_freq,
+                            ord.code_supply,
+                            ord.pk_pres,
+                            ord.pk_unit_cg,
+                            RANK() OVER (PARTITION BY ord.ordsn_parent ORDER BY ord.ordsn) R,
+                            (SELECT COUNT(*)
+                             FROM cn_order
+                             WHERE ord.ordsn_parent = ordsn_parent
+                               and pk_pv = ord.pk_pv
+                                    )      AS                                              HS,
+                            ord.FLAG_FIT,
+                            ord.eu_st,
+                            ord.PK_CNORD,
+                            ord.DESC_FIT,
+                            sup.dt_excardtype,
+                            ord.DT_HPPROP,
+                            ord.EU_PVTYPE,
+                            dept.name_dept as                                              name_dept_exec,
+                            cnpr.pres_no   as                                              pres_no_ord,
+                            cnpr.dt_prestype,
+                            ord.FLAG_ERASE,
+                            ord.FLAG_DISP,
+                            ord.FLAG_DURG,
+                            ord.flag_self,
+                            ord.plan_occ_num,
+                            ord.flag_sp_unit,
+                            ord.eu_injury
+                     from cn_order ord
+                                  left join bd_term_freq freq on ord.code_freq = freq.code
+                                  left outer join bd_unit unit on ord.pk_unit_dos = unit.pk_unit
+                                  left outer join bd_supply sup on ord.code_supply = sup.code
+                                  left outer join BD_OU_DEPT dept on dept.pk_dept = ord.pk_dept_exec
+                                  left join cn_prescription cnpr on cnpr.pk_pres = ord.pk_pres
+                     where ord.pk_pv = #{pkPv, jdbcType=VARCHAR}
+                       and ord.DEL_FLAG != '1'
+                     UNION
+                     select ord.date_start,
+                            ord.ordsn,
+                            ord.ordsn_parent,
+                            ord.eu_always,
+                            ord.name_ord,
+                            ord.dosage,
+                            ord.PK_UNIT_DOS,
+                            unit.name                                                      unit,
+                            sup.name                                                       supply,
+                            freq.name                                                      freq,
+                            ord.ords,
+                            ord.DAYS,
+                            ord.date_stop,
+                            ord.name_emp_ord,
+                            ord.code_ordtype,
+                            ord.price_cg,
+                            ord.quan,
+                            ord.quan_cg,
+                            ord.pk_ord,
+                            ord.pk_dept_exec,
+                            ord.code_ord,
+                            ord.spec,
+                            ord.pk_unit,
+                            ord.pack_size,
+                            ord.code_freq,
+                            ord.code_supply,
+                            ord.pk_pres,
+                            ord.pk_unit_cg,
+                            RANK() OVER (PARTITION BY ord.ordsn_parent ORDER BY ord.ordsn) R,
+                            (SELECT COUNT(*)
+                             FROM cn_order
+                             WHERE ord.ordsn_parent = ordsn_parent
+                               and pk_pv = ord.pk_pv
+                                    )      AS                                              HS,
+                            ord.FLAG_FIT,
+                            ord.eu_st,
+                            ord.PK_CNORD,
+                            ord.DESC_FIT,
+                            sup.dt_excardtype,
+                            ord.DT_HPPROP,
+                            ord.EU_PVTYPE,
+                            dept.name_dept as                                              name_dept_exec,
+                            cnpr.pres_no   as                                              pres_no_ord,
+                            cnpr.dt_prestype,
+                            ord.FLAG_ERASE,
+                            ord.FLAG_DISP,
+                            ord.FLAG_DURG,
+                            ord.flag_self,
+                            ord.plan_occ_num,
+                            ord.flag_sp_unit,
+                         ord.eu_injury
+                     from CN_ORDER_B ord
+                                  left join bd_term_freq freq on ord.code_freq = freq.code
+                                  left outer join bd_unit unit on ord.pk_unit_dos = unit.pk_unit
+                                  left outer join bd_supply sup on ord.code_supply = sup.code
+                                  left outer join BD_OU_DEPT dept on dept.pk_dept = ord.pk_dept_exec
+                                  left join cn_prescription_b cnpr on cnpr.pk_pres = ord.pk_pres
+                     where ord.pk_pv = #{pkPv, jdbcType=VARCHAR}
+                       and ord.DEL_FLAG != '1'
+                     ) cns
+        ORDER BY ordsn_parent, ordsn
+    </select>
+    <!--根据结算类型，是否被取消，是否结算三个来进行判断收费状态-->
+    <select id="qryBlByPv" resultType="com.zebone.nhis.cn.pub.vo.OrdBlVo" parameterType="java.util.Map">
+        select distinct pk_cnord,
+                        case
+                                when FLAG_SETTLE = 0 then 0
+                                when (-1) * FLAG_SETTLE = num then 3
+                                else 1 end as FLAG_SETTLE,
+                        amount
+        from (
+                     select PK_CNORD,
+                            sum(BOD.FLAG_SETTLE *
+                                case
+                                        when BS.DT_STTYPE = 21 or isnull(convert(numeric(4), BS.FLAG_CANC), 0) = 1
+                                                then -1
+                                        else 1 end
+                                    )
+                                over ( partition by PK_CNORD)                FLAG_SETTLE,
+                            sum(AMOUNT) over ( partition by BOD.PK_CNORD) as amount,
+
+                            count(*) over ( partition by PK_CNORD)           num
+                     from BL_OP_DT BOD
+                                  left join BL_SETTLE BS on BS.PK_SETTLE = BOD.PK_SETTLE
+                     where BOD.PK_PV = #{pkPv, jdbcType=VARCHAR}
+                       and BOD.del_flag != '1'
+                       and BOD.PK_CNORD is not null
+                     ) aa
+    </select>
+    <select id="qryOrdEx" resultType="com.zebone.nhis.cn.pub.vo.OrdBlVo" parameterType="java.util.Map">
+        select occ.pk_cnord,sum(case when occ.flag_occ='1' then 1 else 0 end ) as occ,sum(case when occ.flag_refund='1'
+        then 1 else 0 end ) as refund,count(1) as ex_sum
+        from EX_ASSIST_OCC occ
+        where occ.pk_cnord in
+        <foreach collection="orders" index="index" item="item" open="(" separator="," close=")">
+            #{item.pkCnord, jdbcType=VARCHAR}
+        </foreach>
+        group by occ.pk_cnord
+        UNION
+        SELECT
+        occ.PK_CNORD,
+        0 as occ,
+        refund,
+        sum(occ.quan_pack) as ex_sum
+        from (select
+        dt.PK_CNORD,
+        pddt.quan_pack,
+        0 as refund
+        from ex_pres_occ_dt dt
+        inner join ex_pres_occ_pddt pddt
+        on dt.pk_presoccdt = pddt.pk_presoccdt and pddt.EU_DIRECT ='1'
+        UNION select
+        dt.PK_CNORD,
+        pddt.quan_pack * pddt.eu_direct as quan_pack ,
+        1 as refund
+        from ex_pres_occ_dt dt
+        inner join ex_pres_occ_pddt pddt
+        on dt.pk_presoccdt = pddt.pk_presoccdt
+        and pddt.eu_direct = '-1'
+        ) occ
+        where occ.pk_cnord in
+        <foreach collection="orders" index="index" item="item" open="(" separator="," close=")">
+            #{item.pkCnord, jdbcType=VARCHAR}
+        </foreach>
+        group by occ.PK_CNORD,occ.refund
+        order by pk_cnord,refund desc
+    </select>
+    <select id="qryBlByOrd" resultType="com.zebone.nhis.cn.pub.vo.OrdBlVo" parameterType="java.util.Map">
+        select occ.pk_cnord,sum(case when flag_occ='1' then 1 else 0 end) occ,sum(case when flag_refund='1' then 1 else
+        0 end) as refund,count(1) as ex_sum
+        from EX_ASSIST_OCC occ
+        where occ.pk_cnord in
+        <foreach collection="orders" index="index" item="item" open="(" separator="," close=")">
+            #{item.pkCnord, jdbcType=VARCHAR}
+        </foreach>
+        group by occ.pk_cnord
+        UNION
+        select pk_cnord,sum(quan_de) occ,sum(quan_ret) refund,sum(quan_cg) ex_sum
+        from EX_PRES_OCC_DT
+        where pk_cnord in
+        <foreach collection="orders" index="index" item="item" open="(" separator="," close=")">
+            #{item.pkCnord, jdbcType=VARCHAR}
+        </foreach>
+        group by pk_cnord
+    </select>
+    <select id="qryBlSettle" resultType="com.zebone.nhis.pro.zsba.cn.opdw.vo.BaOrdBlVo" parameterType="java.util.Map">
+        select DT.*,depo.DT_PAYMODE from BL_OP_DT dt
+        inner join BL_SETTLE st on st.PK_SETTLE = dt.PK_SETTLE
+        INNER JOIN BL_DEPOSIT depo on st.PK_SETTLE=depo.PK_SETTLE
+        where
+        dt.pk_cnord in
+        <foreach collection="orders" index="index" item="item" open="(" separator="," close=")">
+            #{item.pkCnord, jdbcType=VARCHAR}
+        </foreach>
+        and st.DT_STTYPE= '01' and not exists (select 1 from bl_settle back
+        where st.pk_settle=back.pk_settle_canc
+        and st.pk_pv=back.PK_PV)
+    </select>
+
+    <select id="qryHistoryNoSettle" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.pk_pv,
+               pv.PK_PI,
+               pv.PK_EMP_PHY,
+               pv.NAME_PI,
+               pv.NAME_EMP_PHY,
+               pv.DATE_BEGIN
+        from bl_op_dt dt
+                     inner join PV_ENCOUNTER pv on pv.pk_pv = dt.PK_PV
+        where (dt.pk_settle is null or dt.pk_settle = '')
+          and dt.pk_pi = #{pkPi, jdbcType=VARCHAR}
+          and dt.FLAG_PV = '1'
+          and dt.DATE_CG &lt; dateadd(hh, -24, getdate())
+    </select>
+
+    <select id="qryBlCon" resultType="com.zebone.nhis.pro.zsba.cn.opdw.vo.BlConsultationFree">
+        select PK_DIAG, PK_ORD, EU_REL, EU_TYPE
+        from BL_CONSULTATION_FREE
+        where DEL_FLAG = '0'
+          and FLAG_STOP = '0'
+          and PK_ORG = #{pkOrg, jdbcType=VARCHAR}
+    </select>
+
+    <select id="qryCnInf" resultType="DynaBean">
+        select PK_ORD, 'CN' type
+        from CN_ORDER CO
+        where DEL_FLAG = '0'
+          and PK_PV = #{pkPv, jdbcType=VARCHAR}
+        union all
+        select PK_DIAG, 'DIAG' type
+        from PV_DIAG PD
+        where DEL_FLAG = '0'
+          and PK_PV = #{pkPv, jdbcType=VARCHAR}
+    </select>
+
+    <select id="searchPv" parameterType="java.util.Map" resultType="DynaBean">
+        select distinct
+        pv.date_begin,
+        dept.name_dept,
+        pv.eu_pvtype,
+        pv.pk_pv,
+        pv.code_pv,
+        pi.code_op,
+        pi.code_ip,
+        pv.NAME_PI as name,
+        sexdoc.name as sex,
+        pv.AGE_PV as age,
+        hp.name as medical_Insurance,
+        diag.NAME_DIAG as diagnosis,
+        pi.code_pi,
+        pv.pk_pi,
+        pv.NAME_EMP_PHY,
+        pi.birth_date,
+        pv.bed_no,
+        pi.MOBILE,
+        pv.PK_INSU,
+        pi.MCNO,
+        pi.ID_NO,pi.INSUR_NO,pv.ADDRESS,pv.DATE_CLINIC,pv.DT_SEX, pv.eu_pvmode, pv.eu_disetype,
+        pv.EU_STATUS,pi.TEL_NO
+        from
+        pv_encounter pv
+        inner join bd_ou_dept dept on pv.pk_dept = dept.pk_dept
+        inner join PI_MASTER pi on pi.pk_pi = pv.pk_pi
+        inner join bl_op_dt dt on dt.pk_pv = pv.pk_pv and dt.FLAG_SETTLE =0
+        inner join bd_defdoc sexdoc on sexdoc.code = pv.dt_sex and sexdoc.CODE_DEFDOCLIST = '000000' and sexdoc.DEL_FLAG
+        = '0'
+        inner join bd_hp hp on hp.pk_hp = pv.pk_insu
+        left join pv_diag diag on diag.pk_pv = pv.pk_pv and diag.flag_maj = '1'
+        where pv.EU_STATUS!='9' and pv.eu_status!='0' and pv.del_flag = '0'
+        <if test="euPvtype!=null and euPvtype!=''">
+            and pv.eu_pvtype != #{euPvtype,jdbcType=VARCHAR}
+        </if>
+        <if test="pkPi!=null and pkPi!=''">
+            and pv.pk_pi=#{pkPi,jdbcType=VARCHAR}
+        </if>
+        <if test="codeOp!=null and codeOp!=''">
+            and pi.code_op=#{codeOp,jdbcType=VARCHAR}
+        </if>
+        <if test="codePi!=null and codePi!=''">
+            and pi.code_Pi=#{codePi,jdbcType=VARCHAR}
+        </if>
+        <if test="codeIp!=null and codeIp!=''">
+            and pi.code_ip=#{codeIp,jdbcType=VARCHAR}
+        </if>
+        <if test="idNo!=null and idNo!=''">
+            and pi.id_no=#{idNo,jdbcType=VARCHAR}
+        </if>
+        <if test="namePi!=null and namePi!=''">
+            and pi.name_pi=#{namePi,jdbcType=VARCHAR}
+        </if>
+        <if test="codePv!=null and codePv!=''">
+            and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+        </if>
+        <if test="dateStartS != null">
+            and pv.date_begin &gt;= to_date(#{dateStartS,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateEndS != null">
+            and pv.date_begin &lt;= to_date(#{dateEndS,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        </if>
+        <if test="type!=null">
+            <if test="type==0 and pkEmpId != null and pkEmpId!=''">
+                and pv.PK_EMP_PHY = #{pkEmpId,jdbcType=CHAR}
+            </if>
+            <if test="type==1 and pkDepId != null and pkDepId!=''">
+                and pv.pk_dept = #{pkDepId,jdbcType=CHAR}
+            </if>
+        </if>
+        and not exists(
+        select 1
+        from EX_ASSIST_OCC_DT EAOD
+        inner join EX_ASSIST_OCC EAO on EAOD.PK_ASSOCC = EAO.PK_ASSOCC
+        where EAOD.PK_CNORD=dt.PK_CNORD AND EAO.EU_STATUS='1'
+        )
+        order by pv.date_begin desc
+    </select>
+
+    <select id="qryPimaster" parameterType="java.util.Map" resultType="com.zebone.nhis.pi.pub.vo.PiMasterVo">
+        select
+        pi.pk_pi,pi.pk_org,pi.code_pi,pi.code_op,pi.code_ip,pi.barcode,pi.pk_picate,pi.name_pi,pi.dt_idtype,pi.id_no,pi.hic_no,pi.insur_no,pi.mpi,pi.flag_ehr,
+        pi.dt_sex,pi.birth_date,pi.place_birth,pi.dt_marry,pi.dt_occu,pi.dt_edu,pi.dt_country,pi.dt_nation,pi.tel_no,pi.mobile,pi.wechat_no,pi.email,pi.unit_work,
+        pi.tel_work,pi.address,pi.name_rel,pi.tel_rel,pi.dt_blood_abo,pi.dt_blood_rh,pi.creator,pi.create_time,pi.modifier,pi.del_flag,pi.ts
+        ,'' as age_format
+        from PI_MASTER pi
+        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+            and pi.del_flag = '0'
+            <if test="codePi != null and codePi != ''">
+                and code_pi = #{codePi,jdbcType=VARCHAR}
+            </if>
+            <if test="codeOp != null and codeOp != ''">
+                and code_op = #{codeOp,jdbcType=VARCHAR}
+            </if>
+            <if test="codeIp != null and codeIp != ''">
+                and code_ip = #{codeIp,jdbcType=VARCHAR}
+            </if>
+            <if test="namePi != null and namePi != ''">
+                and name_pi =#{namePi,jdbcType=VARCHAR}
+            </if>
+            <if test="dtSex != null and dtSex != ''">
+                and dt_sex = #{dtSex,jdbcType=VARCHAR}
+            </if>
+            <if test="idNo != null and idNo != ''">
+                and id_no = #{idNo,jdbcType=VARCHAR}
+            </if>
+            <if test="pkPi != null and pkPi != ''">
+                and pi.PK_PI = #{pkPi,jdbcType=VARCHAR}
+            </if>
+            <if test="insurNo != null and insurNo != ''">
+                and insur_no = #{insurNo,jdbcType=VARCHAR}
+            </if>
+            <if test="mobile != null and mobile != ''">
+                and mobile =#{mobile,jdbcType=VARCHAR}
+            </if>
+            <if test="dialysisFlag  == 1">
+                <!-- 透析患者过滤未建档患者 -->
+                and exists (select 1 from pi_hd where pi_hd.pk_pi=pi.pk_pi)
+            </if>
+            <if test="cardNo != null and cardNo != ''">
+                AND EXISTS(
+                SELECT 1 FROM PI_CARD PC WHERE PI.PK_PI=PC.PK_PI AND    PC.DEL_FLAG = '0'
+                AND PC.EU_STATUS = '0'
+                AND PC.FLAG_ACTIVE = '1'
+                and PC.card_no =#{cardNo,jdbcType=VARCHAR}
+                )
+            </if>
+            <if test="hicNo != null and hicNo != ''">
+                <!--健康 卡号 -->
+                and pi.hic_no = #{hicNo,jdbcType=VARCHAR}
+            </if>
+        </trim>
+        order by CODE_PI
+    </select>
+
+    <select id="queryPati" parameterType="java.util.Map" resultType="DynaBean">
+        SELECT pv.pk_pi,
+               pv.pk_pv,
+               pi.code_pi,
+               pi.code_op,
+               pi.code_ip,
+               pv.name_pi,
+               pi.dt_idtype,
+               pi.id_no,
+               pi.dt_sex,
+               pi.birth_date,
+               pi.mobile,
+               pi.mcno,
+               pi.dt_idtype_rel,
+               pi.idno_rel,
+               pv.addrcode_cur,
+               pv.addr_cur_dt,
+               pv.addr_cur,
+               pv.postcode_cur,
+               pi.name_rel,
+               pi.dt_ralation,
+               pi.tel_rel,
+               pi.addr_rel,
+               pi.insur_no,
+               pv.height,
+               pv.weight,
+               pv.dt_spcdtype,
+               pv.pk_insu,
+               pi.DT_MARRY,
+               pi.DT_COUNTRY,
+               pi.DT_OCCU,
+               pi.DT_NATION,
+               pi.TEL_NO,
+               pi.TEL_WORK,
+               pi.UNIT_WORK,
+               pi.POSTCODE_WORK,
+               pi.POSTCODE_REGI,
+               pi.ADDRCODE_BIRTH,
+               pi.ADDR_BIRTH,
+               pi.ADDR_ORIGIN,
+               pi.ADDRCODE_ORIGIN,
+               pi.ADDRCODE_REGI,
+               pi.ADDR_REGI,
+               pi.ADDR_REGI_DT
+        FROM pv_encounter pv
+                     INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+        WHERE pv.del_flag = '0'
+          AND pi.del_flag = '0'
+          AND pv.pk_pv = #{pkPv,jdbcType=VARCHAR}
+    </select>
+
+    <select id="qryPhycalData" parameterType="java.util.Map" resultType="DynaBean">
+        select pk_piphysi,
+               pk_pi,
+               dt_physi,
+               desc_physi,
+               date_begin,
+               date_end,
+               date_rec,
+               pk_emp_rec,
+               name_emp_rec,
+               note
+        from PI_PHYSIOLOGICAL
+        where PK_PI = #{pkPi, jdbcType=VARCHAR}
+          and DEL_FLAG = '0'
+        order by create_time
+    </select>
+
+    <select id="qryPvIpNoticeList" parameterType="java.util.Map" resultType="DynaBean">
+        select
+        notice.pk_in_notice,
+        notice.pk_pv_op,
+        pi.code_op,
+        pi.name_pi,
+        deptIp.name_dept as name_dept_ip,
+        notice.date_begin,
+        notice.date_admit,
+        notice.dt_level_dise,
+        dise.name as level_dise_name,
+        deptOp.name_dept as name_dept_op,
+        notice.name_emp_op,
+        notice.desc_diag_maj
+        from PV_IP_NOTICE notice
+        LEFT JOIN PI_MASTER pi ON pi.PK_PI = notice.PK_PI
+        LEFT join bd_ou_dept deptIp on deptIp.pk_dept=notice.PK_DEPT_IP
+        LEFT join bd_ou_dept deptOp on deptOp.pk_dept=notice.pk_dept_op
+        LEFT JOIN PV_ENCOUNTER pv on pv.pk_pv=notice.pk_pv_op
+        LEFT JOIN bd_defdoc dise on dise.code = notice.dt_level_dise AND dise.code_defdoclist = '000202' and dise.del_flag='0'
+        WHERE notice.EU_STATUS IN ( '0', '1' )
+            <if test=' codeOp !=null and codeOp !=""'>
+            and pi.code_op = #{codeOp,jdbcType=VARCHAR}
+            </if>
+            <if test='codeType!=null and codeType=="0" '>
+				AND EXISTS(
+				SELECT 1 FROM PI_CARD PC WHERE pi.PK_PI=PC.PK_PI AND    PC.DEL_FLAG = '0'
+				AND PC.EU_STATUS = '0'
+				AND PC.FLAG_ACTIVE = '1'
+				and PC.card_no = #{code,jdbcType=VARCHAR}
+				)
+			</if>
+            <if test='codeType!=null and codeType=="1" '>
+			and  pi.code_op = #{code,jdbcType=VARCHAR}
+			</if>
+			<if test='codeType!=null and codeType=="2" '>
+				AND EXISTS(
+				SELECT 1 FROM PI_CARD PC WHERE pi.PK_PI=PC.PK_PI AND    PC.DEL_FLAG = '0'
+				AND PC.EU_STATUS = '0'
+				AND PC.FLAG_ACTIVE = '1'
+				and PC.card_no = #{code,jdbcType=VARCHAR}
+				)
+			</if>
+			<if test='codeType!=null and codeType=="3"'>
+			and pi.hic_no = #{code,jdbcType=VARCHAR}
+			</if>
+			<if test='codeType!=null and codeType=="4"'>
+			and pi.insur_no = #{code,jdbcType=VARCHAR}
+			</if>
+			<if test='codeType!=null and codeType=="5"'>
+			and pi.id_no = #{code,jdbcType=VARCHAR}
+			</if>
+        and notice.date_admit &lt;= #{dateEndPlan,jdbcType=DATE}
+        and notice.date_admit &gt;= #{dateBeginPlan,jdbcType=DATE}
+        order by notice.date_admit asc
+    </select>
+</mapper>

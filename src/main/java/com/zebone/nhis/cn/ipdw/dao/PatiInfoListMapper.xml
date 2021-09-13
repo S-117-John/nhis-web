@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.PatiInfoListMapper">
+
+	<select id="qryCnOrder" parameterType="java.util.Map" resultType="DynaBean">		 
+		select 
+           psn.name_emp   as name_emp_ord,
+           dept.name_dept    as dept_phy_name,
+           d.name_dept       as name_dept_exec,
+           t.name_ord     as desc_ord,
+           t.*
+      from cn_order t
+      left join bd_ou_dept d
+        on d.pk_dept = t.pk_dept_exec
+       left join bd_ou_dept dept
+        on dept.pk_dept = t.pk_dept    
+     inner join bd_ou_employee psn
+		    on psn.pk_emp = t.pk_emp_ord
+     where t.pk_pv = #{pkPv,jdbcType=VARCHAR} 
+      <if test="EncHistoryOrd!=null">
+           and t.flag_sign='1' and t.flag_erase='0'  
+      </if>  
+      <if test="EncHistoryOrd==null">
+        and ((t.eu_status_ord = '1' or t.eu_status_ord = '2' or t.eu_status_ord = '3' or
+           t.eu_status_ord = '4') and
+           t.date_start &lt; to_date(#{beginDate,jdbcType=VARCHAR}, 'yyyy/mm/dd HH24:mi:ss') and
+           (t.date_stop is null or
+           t.date_stop &gt;= to_date(#{beginDate,jdbcType=VARCHAR},  'yyyy/mm/dd HH24:mi:ss')) or
+           ((t.eu_status_ord = '2' or t.eu_status_ord = '3') and
+           (t.date_stop &gt;= to_date(#{beginDate,jdbcType=VARCHAR}, 'yyyy/mm/dd HH24:mi:ss') and
+           t.date_start &lt; to_date(#{beginDate,jdbcType=VARCHAR},  'yyyy/mm/dd HH24:mi:ss'))))  
+       </if>
+         and t.flag_doctor = '1' and t.del_flag='0' 
+        order by t.ordsn
+    </select>
+    
+    <select id="qryCnOrderAndDump" parameterType="java.util.Map" resultType="DynaBean">		 
+    	select a.* from  (
+			select 
+			 dept.name_dept    as dept_phy_name,
+			 d.name_dept       as name_dept_exec,
+			 t.PK_CNORD, t.PK_ORG, t.EU_PVTYPE, t.PK_PV, t.PK_PI, t.DATE_EFFE, t.CODE_ORDTYPE, t.EU_ALWAYS, t.ORDSN, t.ORDSN_PARENT,
+				t.PK_ORD, t.CODE_ORD, t.PK_PRES, t.NAME_ORD, t.DESC_ORD, t.CODE_APPLY, t.CODE_FREQ, t.SPEC, t.DOSAGE, t.PK_UNIT_DOS,
+			  	t.QUAN, t.PK_UNIT, t.CODE_SUPPLY, t.QUAN_CG, t.PK_UNIT_CG, t.PACK_SIZE, t.PRICE_CG, t.NOTE_SUPPLY, t.DAYS, t.DRIP_SPEED,
+				t.ORDS, t.FLAG_FIRST, t.LAST_NUM, t.PK_ORG_EXEC, t.PK_DEPT_EXEC, t.EU_STATUS_ORD, t.DATE_ENTER, t.DATE_START, t.FLAG_DURG,
+			    t.FLAG_SELF, t.FLAG_NOTE, t.FLAG_BASE, t.FLAG_BL, t.PK_DEPT, t.PK_DEPT_NS, t.PK_WG, t.PK_EMP_INPUT, t.NAME_EMP_INPUT,
+			    t.PK_EMP_ORD, t.NAME_EMP_ORD, t.DATE_SIGN, t.PK_EMP_CHK, t.NAME_EMP_CHK, t.DATE_CHK, t.DATE_LAST_EX, t.DATE_PLAN_EX,
+			    t.DATE_STOP, t.PK_EMP_STOP, t.NAME_EMP_STOP, t.FLAG_STOP, t.DATE_STOP_CHK, t.PK_EMP_STOP_CHK, t.NAME_EMP_STOP_CHK,
+			    t.FLAG_STOP_CHK, t.DATE_ERASE, t.PK_EMP_ERASE, t.NAME_EMP_ERASE, t.FLAG_ERASE, t.DATE_ERASE_CHK, t.PK_EMP_ERASE_CHK,
+			    t.NAME_ERASE_CHK, t.FLAG_ERASE_CHK, t.FLAG_CP, t.FLAG_DOCTOR, t.INFANT_NO, t.PK_EVENT, t.FLAG_PRINT, t.FLAG_MEDOUT,
+			    t.EU_EXCTYPE, t.PK_ORD_EXC, t.FLAG_EMER, t.FLAG_THERA, t.FLAG_PREV, t.FLAG_FIT, t.QUAN_BED, t.NOTE_ORD, t.CREATOR,
+			    t.CREATE_TIME, t.MODIFIER, t.MODITY_TIME, t.DEL_FLAG, t.FLAG_SIGN, t.SORT_IV, t.TS, t.FLAG_ITC, t.EU_INTERN, t.EU_ST,
+			    t.DT_USAGENOTE, t.FIRST_NUM, t.FLAG_PIVAS, t.DT_HERBUSAGE, t.PK_CNORD_RL, t.GROUPNO, t.QUAN_DISP, t.RATIO_HP, t.DESC_FIT,
+			    t.PK_EMP_EX, t.NAME_EMP_EX, t.ORDSN_CHK, t.CODE_SUPPLY_ADD, t.EU_ORDTYPE, t.DT_HPPROP, t.EU_HPTYPE, t.FLAG_OCC,
+			    t.PK_DEPT_JOB, t.PK_DEPT_AREA, t.FLAG_DISP, t.QUAN_BACK, t.PK_DEPT_AREAAPP, t.FLAG_RESCUE, t.PLAN_OCC_NUM, t.DATE_TAKE,
+			    t.DT_REASON_ERASE, t.FLAG_SP_UNIT, t.AMOUNT_DISC, t.FLAG_DISCST
+			from cn_order t
+			left join bd_ou_dept d	on d.pk_dept = t.pk_dept_exec
+			left join bd_ou_dept dept	on dept.pk_dept = t.pk_dept    
+		    inner join bd_ou_employee psn	on psn.pk_emp = t.pk_emp_ord
+		    where t.pk_pv = #{pkPv,jdbcType=VARCHAR} 
+		      <if test="EncHistoryOrd!=null">
+		           and t.flag_sign='1' and t.flag_erase='0'  
+		      </if>  
+		      <if test="EncHistoryOrd==null">
+		        and ((t.eu_status_ord = '1' or t.eu_status_ord = '2' or t.eu_status_ord = '3' or
+		           t.eu_status_ord = '4') and
+		           t.date_start &lt; to_date(#{beginDate,jdbcType=VARCHAR}, 'yyyy/mm/dd HH24:mi:ss') and
+		           (t.date_stop is null or
+		           t.date_stop &gt;= to_date(#{beginDate,jdbcType=VARCHAR},  'yyyy/mm/dd HH24:mi:ss')) or
+		           ((t.eu_status_ord = '2' or t.eu_status_ord = '3') and
+		           (t.date_stop &gt;= to_date(#{beginDate,jdbcType=VARCHAR}, 'yyyy/mm/dd HH24:mi:ss') and
+		           t.date_start &lt; to_date(#{beginDate,jdbcType=VARCHAR},  'yyyy/mm/dd HH24:mi:ss'))))  
+		       </if>
+		         and t.flag_doctor = '1' and t.del_flag='0' 
+		union all 
+			select 
+			 dept.name_dept    as dept_phy_name,
+			 d.name_dept       as name_dept_exec,
+			t.PK_CNORD, t.PK_ORG, t.EU_PVTYPE, t.PK_PV, t.PK_PI, t.DATE_EFFE, t.CODE_ORDTYPE, t.EU_ALWAYS, t.ORDSN, t.ORDSN_PARENT,
+			t.PK_ORD, t.CODE_ORD, t.PK_PRES, t.NAME_ORD, t.DESC_ORD, t.CODE_APPLY, t.CODE_FREQ, t.SPEC, t.DOSAGE, t.PK_UNIT_DOS,
+			t.QUAN, t.PK_UNIT, t.CODE_SUPPLY, t.QUAN_CG, t.PK_UNIT_CG, t.PACK_SIZE, t.PRICE_CG, t.NOTE_SUPPLY, t.DAYS, t.DRIP_SPEED,
+			t.ORDS, t.FLAG_FIRST, t.LAST_NUM, t.PK_ORG_EXEC, t.PK_DEPT_EXEC, t.EU_STATUS_ORD, t.DATE_ENTER, t.DATE_START, t.FLAG_DURG,
+			t.FLAG_SELF, t.FLAG_NOTE, t.FLAG_BASE, t.FLAG_BL, t.PK_DEPT, t.PK_DEPT_NS, t.PK_WG, t.PK_EMP_INPUT, t.NAME_EMP_INPUT,
+			t.PK_EMP_ORD, t.NAME_EMP_ORD, t.DATE_SIGN, t.PK_EMP_CHK, t.NAME_EMP_CHK, t.DATE_CHK, t.DATE_LAST_EX, t.DATE_PLAN_EX,
+			t.DATE_STOP, t.PK_EMP_STOP, t.NAME_EMP_STOP, t.FLAG_STOP, t.DATE_STOP_CHK, t.PK_EMP_STOP_CHK, t.NAME_EMP_STOP_CHK,
+			t.FLAG_STOP_CHK, t.DATE_ERASE, t.PK_EMP_ERASE, t.NAME_EMP_ERASE, t.FLAG_ERASE, t.DATE_ERASE_CHK, t.PK_EMP_ERASE_CHK,
+			t.NAME_ERASE_CHK, t.FLAG_ERASE_CHK, t.FLAG_CP, t.FLAG_DOCTOR, t.INFANT_NO, t.PK_EVENT, t.FLAG_PRINT, t.FLAG_MEDOUT,
+			t.EU_EXCTYPE, t.PK_ORD_EXC, t.FLAG_EMER, t.FLAG_THERA, t.FLAG_PREV, t.FLAG_FIT, t.QUAN_BED, t.NOTE_ORD, t.CREATOR,
+			t.CREATE_TIME, t.MODIFIER, t.MODITY_TIME, t.DEL_FLAG, t.FLAG_SIGN, t.SORT_IV, t.TS, t.FLAG_ITC, t.EU_INTERN, t.EU_ST,
+			t.DT_USAGENOTE, t.FIRST_NUM, t.FLAG_PIVAS, t.DT_HERBUSAGE, t.PK_CNORD_RL, t.GROUPNO, t.QUAN_DISP, t.RATIO_HP, t.DESC_FIT,
+			t.PK_EMP_EX, t.NAME_EMP_EX, t.ORDSN_CHK, t.CODE_SUPPLY_ADD, t.EU_ORDTYPE, t.DT_HPPROP, t.EU_HPTYPE, t.FLAG_OCC,
+			t.PK_DEPT_JOB, t.PK_DEPT_AREA, t.FLAG_DISP, t.QUAN_BACK, t.PK_DEPT_AREAAPP, t.FLAG_RESCUE, t.PLAN_OCC_NUM, t.DATE_TAKE,
+			t.DT_REASON_ERASE, t.FLAG_SP_UNIT, t.AMOUNT_DISC, t.FLAG_DISCST
+		from cn_order_b t
+			left join bd_ou_dept d	on d.pk_dept = t.pk_dept_exec
+			left join bd_ou_dept dept	on dept.pk_dept = t.pk_dept    
+		    inner join bd_ou_employee psn	on psn.pk_emp = t.pk_emp_ord
+		    where t.pk_pv = #{pkPv,jdbcType=VARCHAR} 
+		      <if test="EncHistoryOrd!=null">
+		           and t.flag_sign='1' and t.flag_erase='0'  
+		      </if>  
+		      <if test="EncHistoryOrd==null">
+		        and ((t.eu_status_ord = '1' or t.eu_status_ord = '2' or t.eu_status_ord = '3' or
+		           t.eu_status_ord = '4') and
+		           t.date_start &lt; to_date(#{beginDate,jdbcType=VARCHAR}, 'yyyy/mm/dd HH24:mi:ss') and
+		           (t.date_stop is null or
+		           t.date_stop &gt;= to_date(#{beginDate,jdbcType=VARCHAR},  'yyyy/mm/dd HH24:mi:ss')) or
+		           ((t.eu_status_ord = '2' or t.eu_status_ord = '3') and
+		           (t.date_stop &gt;= to_date(#{beginDate,jdbcType=VARCHAR}, 'yyyy/mm/dd HH24:mi:ss') and
+		           t.date_start &lt; to_date(#{beginDate,jdbcType=VARCHAR},  'yyyy/mm/dd HH24:mi:ss'))))  
+		       </if>
+		         and t.flag_doctor = '1' and t.del_flag='0' 
+		) a order by ordsn
+    </select>
+    
+    <select id="qryCnDiag" parameterType="java.lang.String" resultType="DynaBean">
+    	select diag.pk_diag,
+                 bd.name as dt_diagtype,
+                 diag.sort_no,
+                 diag.desc_diag,
+                 bd.name as diagtype_name  
+            from pv_diag diag 
+                 inner join bd_defdoc bd
+                 on diag.dt_diagtype=bd.code and bd.code_defdoclist='060005' and bd.del_flag='0' 
+           where diag.pk_pv=#{id}  and diag.del_flag='0'            
+          order by diag.dt_diagtype,diag.sort_no
+    </select>
+    
+    <select id="qryCnOcc" parameterType="java.lang.String" resultType="DynaBean">
+    	select '体重' as val_st,occ.val_weight,occ.date_vts,'KG' as val_al  from ex_vts_occ occ where occ.pk_pv=#{id} 
+
+		union all
+		select '收缩压' as val_st,ltrim(occ.val_sbp) as val_weight ,occ.date_vts,'mmHG' as val_al  from ex_vts_occ occ where occ.pk_pv=#{id} 
+		
+		union all 
+		select '舒张压' as val_st,ltrim(occ.val_dbp) as val_weight ,occ.date_vts,'mmHG' as val_al  from ex_vts_occ occ where occ.pk_pv=#{id} order by date_vts desc
+    </select>
+    
+    <select id="qryCnRisOcc" parameterType="java.lang.String" resultType="DynaBean">
+    	select occ.date_rpt, co.name_ord, 
+			  case occ.eu_result 
+		         when '1' then
+		          '异常'
+		         else
+		          '正常'
+		       end eu_result	
+			  from ex_ris_occ occ
+			 inner join cn_order co
+			    on co.pk_cnord = occ.pk_cnord
+		 where occ.pk_pv = #{id}
+    </select>
+    
+    <select id="qryCnLabOcc" parameterType="java.lang.String" resultType="DynaBean">
+    	select occ.date_rpt,
+	       occ.name_index,
+	       occ.val,
+	       occ.val1,
+	       occ.val2,
+	       occ.val3,
+	       occ.val4,
+	       occ.unit,
+	       occ.eu_result
+	  from ex_lab_occ occ
+	  where occ.pk_pv =  #{id} and (occ.eu_result is not null and occ.eu_result != '0')
+    </select>
+
+    <select id="qryInfor" parameterType="java.lang.String" resultType="DynaBean">
+    	select * from NIS.XL_NIS_INFECTION
+        where PATIENTID in (
+	        select pi.CODE_IP from PV_ENCOUNTER pv
+	        inner join PI_MASTER pi on pv.pk_pi=pi.PK_PI
+	        where pv.pk_dept=#{pkDept} and pv.flag_in='1'
+        )
+    </select>
+		   
+</mapper>

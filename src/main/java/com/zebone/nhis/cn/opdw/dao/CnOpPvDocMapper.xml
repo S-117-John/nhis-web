@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.opdw.dao.CnOpPvDocMapper" >
+	 <resultMap id="PvDocTempData" type="com.zebone.nhis.common.module.cn.opdw.BdPvDocTemp">
+        <id column="PK_PVDOCTEMP" jdbcType="CHAR" property="pkPvdoctemp"/>
+        <result column="DATA_DOC" jdbcType="BLOB" property="dataDoc"/>
+     </resultMap>
+     
+     <resultMap id="PvDocData" type="com.zebone.nhis.common.module.cn.opdw.PvDoc">
+        <id column="PK_PVDOC" jdbcType="CHAR" property="pkPvdoc"/>
+        <result column="DATA_DOC" jdbcType="BLOB" property="dataDoc"/>
+     </resultMap>
+     
+     <select id="getPvDocTempData" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.cn.opdw.BdPvDocTemp">
+		select t.* from bd_pvdoc_temp t where t.pk_pvdoctemp=#{id}
+     </select> 
+     
+     <select id="getPvDocData" parameterType="java.lang.String" resultMap="PvDocData">
+		select t.data_doc from pv_doc t where t.pk_pvdoc=#{id}
+     </select>  
+     
+     <insert id="insertPvDoc" parameterType="com.zebone.nhis.common.module.cn.opdw.PvDoc">
+     	 INSERT INTO PV_DOC
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkPvdoc != null" >
+                PK_PVDOC,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="pkPi != null" >
+                PK_PI,
+            </if>
+            <if test="pkPv != null" >
+                PK_PV,
+            </if>
+            <if test="dateDoc != null" >
+                DATE_DOC,
+            </if>
+            <if test="pkEmpDoc != null" >
+                PK_EMP_DOC,
+            </if>
+            <if test="nameEmpDoc != null" >
+                NAME_EMP_DOC,
+            </if>
+            <if test="pkPvdoctemp != null" >
+                PK_PVDOCTEMP,
+            </if>
+            <if test="dataDoc != null" >
+                DATA_DOC,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="modifier != null" >
+                MODIFIER,
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkPvdoc != null" >
+                #{pkPvdoc,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=CHAR},
+            </if> 
+            <if test="pkPi != null" >
+                #{pkPi,jdbcType=CHAR},
+            </if> 
+            <if test="pkPv != null" >
+                #{pkPv,jdbcType=CHAR},
+            </if> 
+            <if test="dateDoc != null" >
+                #{dateDoc,jdbcType=DATE},
+            </if> 
+            <if test="pkEmpDoc != null" >
+                #{pkEmpDoc,jdbcType=CHAR},
+            </if> 
+            <if test="nameEmpDoc != null" >
+                #{nameEmpDoc,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkPvdoctemp != null" >
+                #{pkPvdoctemp,jdbcType=CHAR},
+            </if> 
+            <if test="dataDoc != null" >
+                #{dataDoc,jdbcType=BLOB},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=CHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="modifier != null" >
+                #{modifier,jdbcType=CHAR},
+            </if> 
+            <if test="modityTime != null" >
+                #{modityTime,jdbcType=DATE},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+     </insert>
+     
+     <select id="getOnleCodeOrName" resultType="int" parameterType="java.util.Map">
+     		SELECT COUNT(*) FROM BD_OPEMR_TEMP 
+     		WHERE PK_TEMPCATE IN (SELECT pk_tempcate FROM BD_OPEMR_TEMPCATE WHERE PK_EMP = #{pkEmp,jdbcType=VARCHAR})
+     		 AND CODE = #{code,jdbcType=VARCHAR} OR  NAME = #{name,jdbcType=VARCHAR}
+     		   AND FLAG_ACTIVE = '1' AND DEL_FLAG = '0'
+     </select>
+     
+</mapper>

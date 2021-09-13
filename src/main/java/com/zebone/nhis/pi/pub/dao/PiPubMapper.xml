@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pi.pub.dao.PiPubMapper">
+    <select id="getPiCardIss" resultType="com.zebone.nhis.common.module.pi.acc.PiCardIss">
+        SELECT iss.pk_cardiss,
+               iss.date_opera,
+               iss.DT_CARDTYPE dtcardtype,
+               iss.CNT_USE,
+               iss.flag_active,
+               iss.pk_emp_iss,
+               iss.name_machine,
+               iss.begin_no,
+               iss.end_no,
+               iss.cur_no,
+               iss.flag_use,
+               iss.cnt_iss,
+               iss.eu_status
+        FROM pi_card_iss iss
+
+        WHERE iss.flag_active = '1'
+          and iss.flag_use = '1'
+          and iss.eu_status = '1'
+    </select>
+
+    <!-- 根据就诊主键获取预交金总额  -->
+    <select id="getTotalPrepayAmountByPkPv" resultType="java.lang.Double">
+        select case sum(amount) when null then 0 else sum(amount) end
+        from BL_DEPOSIT
+        where flag_settle = 0
+          and del_flag = '0'
+          and eu_dptype = '9'
+          and pk_pv = #{pkPv,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 根据就诊主键获取费用总额  -->
+    <select id="getTotalAmountByPkPv" resultType="java.lang.Double">
+        select nvl(sum(amount), 0)
+        from BL_IP_DT
+        where flag_settle = 0
+          and del_flag = '0'
+          and pk_pv = #{pkPv,jdbcType=VARCHAR}
+    </select>
+
+    <select id="getTotalAmountPiByPkPv" resultType="java.lang.Double">
+        select nvl(sum(amount), 0)
+        from BL_IP_DT
+        where flag_settle = 0
+          and del_flag = '0'
+          and ratio_self = 1
+          and pk_pv = #{pkPv,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 根据就诊主键查询患者就诊_临床综合诊断信息列表 -->
+    <select id="getPvDiagListByPkPv" resultType="com.zebone.nhis.pi.pub.vo.PvDiagVo">
+        select case when name_diag is null then desc_diag else name_diag end diag_text ,
+        d.*
+        from PV_DIAG d
+        <!--left join BD_TERM_DIAG t on d.pk_diag = t.pk_diag-->
+        where d.del_flag = '0' and d.flag_maj = '1' and d.pk_pv = #{pkPv,jdbcType=VARCHAR}
+        order by d.date_diag
+    </select>
+
+    <!-- 根据患者主键查询过敏史列表 -->
+    <select id="getPiAllergicListByPkPi" resultType="com.zebone.nhis.common.module.pi.PiAllergic">
+        select *
+        from PI_ALLERGIC
+        where del_flag = '0'
+          and pk_pi = #{pkPi,jdbcType=VARCHAR}
+        order by date_find
+    </select>
+
+    <!-- 根据卡编码查询患者卡信息 -->
+    <select id="getPiCardByCardNo" resultType="com.zebone.nhis.common.module.pi.PiCard">
+        select *
+        from PI_CARD
+        where del_flag = '0'
+          and EU_STATUS = '0'
+          and CARD_NO = #{cardNo,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 获取患者就诊信息列表  -->
+    <select id="getPvEncounterList" parameterType="com.zebone.nhis.common.module.pv.PvEncounter"
+            resultType="com.zebone.nhis.common.module.pv.PvEncounter">
+        select pv.*,emp.name_emp emp_name,emp.pk_emp as pk_emp_pv,emp.name_emp as name_emp_pv,emp.DT_EMPSRVTYPE,rop.sbp,rop.dbp,
+        case infant.eu_status_adt when '0' then '新出生' when '2' then '转入院转回' end as adtType
+        from PV_ENCOUNTER pv
+        left join pv_op op on op.pk_pv = pv.pk_pv
+        left join sch_resource schRes on schRes.pk_schres = op.pk_res
+        left join bd_ou_employee emp on emp.pk_emp = schRes.pk_emp
+        left join pv_infant infant on pv.pk_pv = infant.pk_pv_infant
+        left OUTER join cn_emr_op rop ON pv.pk_pv = rop.pk_pv
+        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+            and pv.del_flag = '0'
+            and pv.flag_cancel='0'
+            <if test="codePv != null and codePv != ''">
+                and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+            </if>
+            <if test="bedNo != null and bedNo != ''">
+                and pv.bed_no = #{bedNo,jdbcType=VARCHAR}
+            </if>
+            <if test="pkPi != null and pkPi != ''">
+                and pv.pk_pi = #{pkPi,jdbcType=VARCHAR}
+            </if>
+            <if test="pkPv != null and pkPv != ''">
+                and pv.pk_pv = #{pkPv,jdbcType=VARCHAR}
+            </if>
+            <if test="pkDeptNs != null and pkDeptNs != ''">
+                and pv.pk_dept_ns = #{pkDeptNs,jdbcType=VARCHAR}
+            </if>
+            <if test="pkDept != null and pkDept != ''">
+                and pv.pk_dept = #{pkDept,jdbcType=VARCHAR}
+            </if>
+            <if test="euPvtype != null and euPvtype != ''">
+                and pv.eu_pvtype = #{euPvtype,jdbcType=VARCHAR}
+            </if>
+            <if test="dateEnd != null and dateEnd != ''">
+                and ((pv.eu_pvtype = '1' or pv.eu_pvtype = '2')
+                and to_char(op.date_end,'yyyy-MM-DD') &gt;= to_char(#{dateEnd,jdbcType=TIMESTAMP},'yyyy-MM-DD')
+                and ((schRes.pk_dept is not null and schRes.pk_dept = #{pkWg,jdbcType=VARCHAR})
+                or (schRes.pk_emp is not null and schRes.pk_emp = #{pkEmpReg,jdbcType=VARCHAR}))
+                )
+            </if>
+            <if test="euStatuss != null">
+                and pv.eu_status in
+                <foreach item="item" index="index" collection="euStatuss" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </trim>
+        order by pv.eu_pvtype,pv.DATE_BEGIN desc
+    </select>
+
+    <!-- 获取患者基本信息 -->
+    <select id="getPiMaster" parameterType="com.zebone.nhis.common.module.pi.PiMaster"
+            resultType="com.zebone.nhis.common.module.pi.PiMaster">
+        select m.*, c.NAME as namePicate,bed.dt_bedtype
+        from PI_MASTER m
+        left join PI_CATE c on c.PK_PICATE = m.PK_PICATE and c.DEL_FLAG = '0'
+        left join bd_res_bed bed on bed.pk_pi = m.pk_pi
+        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+            and m.del_flag = '0'
+            <if test="codePi != null and codePi != ''">
+                and m.code_pi = #{codePi,jdbcType=VARCHAR}
+            </if>
+            <if test="codeIp != null and codeIp != ''">
+                and m.code_ip = #{codeIp,jdbcType=VARCHAR}
+            </if>
+            <if test="codeOp != null and codeOp != ''">
+                and m.code_op = #{codeOp,jdbcType=VARCHAR}
+            </if>
+            <if test="idNo != null and idNo != ''">
+                and m.id_no = #{idNo,jdbcType=VARCHAR}
+            </if>
+            <if test="insurNo != null and insurNo != ''">
+                and m.insur_no = #{insurNo,jdbcType=VARCHAR}
+            </if>
+            <if test="pkPi != null and pkPi != ''">
+                and m.pk_pi = #{pkPi,jdbcType=VARCHAR}
+            </if>
+            <if test="hicNo != null and hicNo != ''">
+                and m.hic_no = #{hicNo,jdbcType=VARCHAR}
+            </if>
+        </trim>
+        order by m.ts
+    </select>
+    <!-- 获取最大无名氏编号 -->
+    <select id="getAnonymousMaxNumberSqlServer" resultType="java.lang.Integer">
+        select MAX(CONVERT(int, SUBSTRING(NAME_PI, 4, LEN(NAME_PI))))
+        from PI_MASTER
+        where NAME_PI like '无名氏%'
+          and NAME_PI is not null
+    </select>
+    <select id="getAnonymousMaxNumberOracle" resultType="java.lang.Integer">
+        select MAX(TO_NUMBER(substr(NAME_PI, 4, length(NAME_PI))))
+        from PI_MASTER
+        where NAME_PI like '无名氏%'
+          and NAME_PI is not null
+    </select>
+
+    <select id="getPkAndPvtype" parameterType="java.lang.String" resultType="DynaBean">
+        select pk_pv, eu_pvtype
+        from pv_encounter
+        where (eu_status = '0' or eu_status = '1')
+          and flag_cancel = '0'
+          and pk_pi = #{pkPi}
+        ORDER BY ts DESC
+    </select>
+
+    <select id="qryBlSettleByCodeSt" resultType="com.zebone.nhis.common.module.bl.BlSettle">
+        select *
+        from bl_settle
+        where del_flag = '0'
+          and FLAG_CANC = '0'
+          and CODE_ST = #{codeSt,jdbcType=VARCHAR}
+    </select>
+
+    <select id="qryPvCgInfo" resultType="DynaBean">
+        select dtsum.pk_pv,count(op_cnt) op_cnt from (
+        select dt.pk_pv,count(DISTINCT dt.PK_PV) op_cnt from bl_op_dt dt
+        left join cn_order cnord on cnord.pk_cnord = dt.pk_cnord
+        where sysdate &lt;= cnord.date_effe
+        and dt.flag_settle = '0'
+        <if test='pkList!=null and pkList.size()>0'>
+            and dt.pk_pv in
+            <foreach collection="pkList" item="pkPv" index="no" open="("
+                     separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        group by dt.pk_pv
+        union all
+        select dt.pk_pv,count(DISTINCT dt.PK_PV) op_cnt from bl_op_dt dt
+        where dt.FLAG_SETTLE = '0' and PK_CNORD is null
+        <if test='pkList!=null and pkList.size()>0'>
+            and dt.pk_pv in
+            <foreach collection="pkList" item="pkPv" index="no" open="("
+                     separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        group by dt.pk_pv
+        union all
+        select dt.pk_pv,count(DISTINCT dt.PK_PV) op_cnt from bl_op_dt dt
+        left join cn_order cnord on cnord.pk_cnord = dt.pk_cnord
+        where sysdate &lt;= cnord.date_effe
+        and dt.flag_settle = '0'
+        <if test='pkList!=null and pkList.size()>0'>
+            and dt.pk_pv in
+            <foreach collection="pkList" item="pkPv" index="no" open="("
+                     separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        group by dt.pk_pv
+        ) dtsum
+        group by dtsum.pk_pv
+    </select>
+
+    <select id="qryPvCgInfoByMssql" resultType="DynaBean">
+        select dtsum.pk_pv,count(op_cnt) op_cnt from (
+        select dt.pk_pv,count(DISTINCT dt.PK_PV) op_cnt from bl_op_dt dt
+        left join cn_order cnord on cnord.pk_cnord = dt.pk_cnord
+        where GETDATE() &lt;= cnord.date_effe
+        and dt.flag_settle = '0'
+        <if test='pkList!=null and pkList.size()>0'>
+            and dt.pk_pv in
+            <foreach collection="pkList" item="pkPv" index="no" open="("
+                     separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        group by dt.pk_pv
+        union all
+        select dt.pk_pv,count(DISTINCT dt.PK_PV) op_cnt from bl_op_dt dt
+        where dt.FLAG_SETTLE = '0' and PK_CNORD is null
+        <if test='pkList!=null and pkList.size()>0'>
+            and dt.pk_pv in
+            <foreach collection="pkList" item="pkPv" index="no" open="("
+                     separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        group by dt.pk_pv
+        ) dtsum
+        group by dtsum.pk_pv
+    </select>
+
+    <select id="qryPvCgInfos" resultType="DynaBean">
+        select dtsum.pk_pv,count(op_cnt) op_cnt from (
+        select dt.pk_pv,count(DISTINCT dt.PK_PV) op_cnt from bl_op_dt dt
+        left join cn_order cnord on cnord.pk_cnord = dt.pk_cnord
+        where sysdate &lt;= cnord.date_effe
+        and dt.flag_settle = '0'
+        <if test="termOfValidity!=null and termOfValidity=='1' ">
+            and (cnord.code_ordtype In('0101','0102') And cnord.date_effe>Sysdate Or cnord.code_ordtype Not In('0101','0102'))
+        </if>
+        <if test='pkList!=null and pkList.size()>0'>
+            and dt.pk_pv in
+            <foreach collection="pkList" item="pkPv" index="no" open="("
+                     separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        group by dt.pk_pv
+        union all
+        select dt.pk_pv,count(DISTINCT dt.PK_PV) op_cnt from bl_op_dt dt
+        where dt.FLAG_SETTLE = '0' and PK_CNORD is null
+        <if test='pkList!=null and pkList.size()>0'>
+            and dt.pk_pv in
+            <foreach collection="pkList" item="pkPv" index="no" open="("
+                     separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        group by dt.pk_pv
+        union all
+        select dt.pk_pv,count(DISTINCT dt.PK_PV) op_cnt from bl_op_dt dt
+        left join cn_order cnord on cnord.pk_cnord = dt.pk_cnord
+        where (dt.flag_settle = '0' or cnord.FLAG_OCC = '1')
+        <if test="termOfValidity!=null and termOfValidity!='' ">
+            and (cnord.code_ordtype In('0101','0102') And cnord.date_effe>Sysdate Or cnord.code_ordtype Not In('0101','0102'))
+        </if>
+        <if test='pkList!=null and pkList.size()>0'>
+            and dt.pk_pv in
+            <foreach collection="pkList" item="pkPv" index="no" open="("
+                     separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        group by dt.pk_pv
+        ) dtsum
+        group by dtsum.pk_pv
+    </select>
+
+</mapper>
+
+
+
+

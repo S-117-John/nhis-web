@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.syx.dao.OldHisMapper">
+
+	<select id="qryOpApplys" resultType="com.zebone.nhis.ma.pub.syx.vo.ExOpSchVo" parameterType="java.util.Map" >
+	 	SELECT
+	 	name_cd,
+	 	dt_nae_name,
+        pk_emp_anae,
+        pk_emp_circul,
+        pk_emp_scrub,
+			code_apply,
+			pk_dept,
+			name_dept,
+			code_ip,
+			name_pi,
+			sex AS dt_sex,
+			age_pv,
+			bed_no,
+			operation AS name_opt,
+			note AS spec_equipment,
+			PK_EMP_PHY_OP as pk_emp,
+			name_emp,
+			PK_DEPT_EXEC,
+			exdept AS name_dept_op,
+			NULL AS room_no,
+			ticketno,
+			dateplan AS date_plan,
+			PK_ORGAREA,
+			name_area AS name_orgarea,
+			pk_cnord,
+			pk_pv,
+			pk_org,
+			eu_optype,
+			'0' as eu_status,
+			date_apply,
+			pk_emp_asst, 
+			NAME_EMP_YZ as name_emp_asst
+		FROM
+			VIEW_OPSCHEDULE_NHIS02
+		where 1=1
+		<if test='dateType != null and dateType == "apply" '>  
+			and date_apply <![CDATA[>=]]> #{dateBegin,jdbcType=VARCHAR}
+		  	and date_apply <![CDATA[<=]]> #{dateEnd,jdbcType=VARCHAR}
+		</if>
+		<if test='dateType != null and dateType == "plane" '>  
+			and dateplan <![CDATA[>=]]> #{dateBegin,jdbcType=VARCHAR}
+		  	and dateplan <![CDATA[<=]]> #{dateEnd,jdbcType=VARCHAR}
+		</if>
+		<if test="codeIp != null and codeIp != '' ">
+			and code_ip=#{codeIp,jdbcType=VARCHAR}
+		</if>
+		  
+  	</select>
+	<select id="qryOpApplysHIS" resultType="com.zebone.nhis.ma.pub.syx.vo.ExOpSchVo">
+		SELECT
+		name_cd,
+		dt_nae_name,
+        pk_emp_anae,
+        pk_emp_circul,
+        pk_emp_scrub,
+		code_apply,
+		pk_dept,
+		name_dept,
+		code_ip,
+		name_pi,
+		sex AS dt_sex,
+		age_pv,
+		bed_no,
+		operation AS name_opt,
+		note AS spec_equipment,
+		PK_EMP_PHY_OP as pk_emp,
+		name_emp,
+		PK_DEPT_EXEC,
+		exdept AS name_dept_op,
+		NULL AS room_no,
+		ticketno,
+		dateplan AS date_plan,
+		PK_ORGAREA,
+		name_area AS name_orgarea,
+		pk_cnord,
+		pk_pv,
+		pk_org,
+		eu_optype,
+		'0' as eu_status,
+		date_apply,
+		pk_emp_asst,
+		NAME_EMP_YZ as name_emp_asst
+		FROM
+		VIEW_OPSCHEDULE_NHIS02
+		where 1=1
+		<if test='dateType != null and dateType == "apply" '>
+			and date_apply <![CDATA[>=]]> to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+			and date_apply <![CDATA[<=]]>  to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test='dateType != null and dateType == "plane" '>
+			and dateplan <![CDATA[>=]]> to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+			and dateplan <![CDATA[<=]]> to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="codeIp != null and codeIp != '' ">
+			and code_ip=#{codeIp,jdbcType=VARCHAR}
+		</if>
+
+
+	</select>
+
+    <select id="qryInfectedFlag"  parameterType="java.util.Map"  resultType="java.lang.Integer">
+          select count(1) 
+          
+              from tExamineRequestForIP
+              where 1=1
+              <if test="codeIp != null and codeIp != '' ">
+			       and IPSeqNoText=#{codeIp,jdbcType=VARCHAR}
+		      </if>
+		      <if test="ipTimes != null and ipTimes != '' ">
+			       and IPTimes=#{ipTimes,jdbcType=VARCHAR}
+		      </if>
+		      <if test="codePi != null and codePi != '' ">
+			       and PatientID=#{codePi,jdbcType=VARCHAR}
+		      </if>		
+		       and ResultDateTime &gt; #{date}    
+               and isnull(CancleFlag,'0') ='0' and Flag='2'
+               and InfectedFlag='1'
+    </select>
+
+</mapper>

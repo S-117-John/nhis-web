@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.material.dao.MtlReceiptAcceptMapper">
+	<select id="queryPdStToApt" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.material.vo.MtlPdStVo">
+		select st.pk_pdst,
+			   st.pk_store_st,
+			   st.pk_supplyer,
+		       sup.name as supplyer_name,
+		       st.date_st,
+		       st.code_st,
+		       bs.name store_st_name,
+		       st.date_chk,
+		       st.name_emp_chk,
+       		   st.note		       
+		  from pd_st st inner join
+		       bd_supplyer sup on st.pk_supplyer = sup.pk_supplyer left outer join
+		       bd_store bs on st.pk_store_st = bs.pk_store
+		  where st.flag_chk='1'
+		    and st.eu_direct='1'
+		    and st.flag_pu='1'
+		    and st.pk_org = #{pkOrg,jdbcType=CHAR}
+		    and exists (select 1 
+                 from pd_st_detail dt 
+                 inner join bd_pd pd on pd.pk_pd=dt.pk_pd
+                where st.pk_pdst=dt.pk_pdst and 
+                      dt.flag_chk_rpt='0' and pd.dt_pdtype like '1%')
+			<if test='codeSt!=null and codeSt!=""'>
+ 				and st.code_st = #{codeSt,jdbcType=VARCHAR} 
+	 	    </if>			
+			<if test='pkSupplyer!=null and pkSupplyer!=""'>
+				and st.pk_supplyer=#{pkSupplyer,jdbcType=VARCHAR}
+			</if>
+	       <if test='beginDate!=null and beginDate!=""'>
+	 			and st.date_st&gt;= to_date(#{beginDate},'yyyyMMddHH24MISS') 
+		   </if>
+		   <if test='endDate!=null and endDate!=""'>
+				and st.date_st &lt;= to_date(#{endDate},'yyyyMMddHH24MISS') 
+		   </if>
+			<if test='pkEmpOp!=null and pkEmpOp!=""'>
+				and st.pk_emp_op=#{pkEmpOp,jdbcType=VARCHAR}
+			</if>
+	</select>
+	<select id="queryPdStToAptDetail" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.material.vo.MtlPdStDtVo">
+		select dt.pk_pdstdt,
+		       pd.code,
+		       pd.name,
+		       pd.spec,
+		       pd.pk_factory,
+		       pd.spcode,
+		       bf.name factory_name,
+		       dt.pk_unit_pack,
+		       bu.name unit_pack_name,
+		       dt.price_cost,
+		       dt.quan_pack,
+		       dt.amount_cost,
+		       dt.disc, 
+		       dt.amount_pay,
+		       dt.receipt_no,
+		       st.pk_store_st,
+		       bs.name store_st_name,
+		       st.code_st,
+		       dt.note
+    	  from pd_st st inner join
+		       pd_st_detail dt on st.pk_pdst=dt.pk_pdst inner join
+		       bd_pd pd on dt.pk_pd=pd.pk_pd left outer join
+		       bd_unit bu on pd.pk_unit_pack = bu.pk_unit left outer join
+		       bd_factory bf on pd.pk_factory=bf.pk_factory left outer join
+		       bd_store bs on st.pk_store_st = bs.pk_store
+		  where dt.flag_chk_rpt='0' and
+		  	 	st.pk_pdst in 
+				<foreach item="pkPdSt" index="index" collection="pkPdSts" open="(" separator="," close=")">
+            	   #{pkPdSt}                                                                 
+          		</foreach>    
+	</select>
+	<select id="queryPdStApted" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.material.vo.MtlPdStDtQryVo">
+		select distinct 
+			   dt.receipt_no,
+			   dt.pk_supplyer,
+		       sup.name as supplyer_name,
+		       dt.date_chk_rpt,
+		       name_emp_chk_rpt
+		  from pd_st st inner join
+		       pd_st_detail dt on st.pk_pdst=dt.pk_pdst left outer join
+		       bd_supplyer sup on st.pk_supplyer = sup.pk_supplyer 
+		       inner join bd_pd pd on pd.pk_pd=dt.pk_pd
+		  where st.flag_pu='1'
+		    and dt.flag_chk_rpt='1'
+		    and st.pk_org = #{pkOrg,jdbcType=CHAR}
+		    and pd.dt_pdtype like '1%'
+			<if test='receiptNo!=null and receiptNo!=""'>
+ 				and dt.receipt_no = #{receiptNo,jdbcType=VARCHAR} 
+	 	    </if>			
+			<if test='pkSupplyer!=null and pkSupplyer!=""'>
+				and dt.pk_supplyer=#{pkSupplyer,jdbcType=VARCHAR}
+			</if>
+	       <if test='beginDate!=null and beginDate!=""'>
+	 			and dt.date_chk_rpt &gt;= to_date(#{beginDate},'yyyyMMddHH24MISS') 
+		   </if>
+		   <if test='endDate!=null and endDate!=""'>
+				and dt.date_chk_rpt &lt;= to_date(#{endDate},'yyyyMMddHH24MISS') 
+		   </if>
+			<if test='pkEmpChk!=null and pkEmpChk!=""'>
+				and dt.pk_emp_chk_rpt=#{pkEmpChk,jdbcType=VARCHAR}
+			</if>
+	</select>
+	<select id="queryPdStAptedDetail" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.material.vo.MtlPdStDtVo">
+		select dt.pk_pdstdt,
+		       pd.code,
+		       pd.name,
+		       pd.spec,
+		       pd.pk_factory,
+		       pd.spcode,
+		       bf.name factory_name,
+		       dt.pk_unit_pack,
+		       bu.name unit_pack_name,
+		       dt.price_cost,
+		       dt.quan_pack,
+		       dt.amount_cost,
+		       dt.disc, 
+		       dt.amount_pay,
+		       dt.receipt_no,
+		       st.pk_store_st,
+		       bs.name store_st_name,
+		       st.code_st,
+		       dt.note
+    	  from pd_st st inner join
+		       pd_st_detail dt on st.pk_pdst=dt.pk_pdst inner join
+		       bd_pd pd on dt.pk_pd=pd.pk_pd left outer join
+		       bd_unit bu on pd.pk_unit_pack = bu.pk_unit left outer join
+		       bd_factory bf on pd.pk_factory=bf.pk_factory left outer join
+		       bd_store bs on st.pk_store_st = bs.pk_store
+		  where dt.flag_chk_rpt='1' and
+		  	 	st.pk_org = #{pkOrg,jdbcType=CHAR} 
+		  	 	and pd.dt_pdtype like '1%'
+			<if test='receiptNo!=null and receiptNo!=""'>
+ 				and dt.receipt_no = #{receiptNo,jdbcType=VARCHAR} 
+	 	    </if>			
+  			<if test='dateChkRpt!=null and dateChkRpt!=""'>
+	 			and dt.date_chk_rpt = to_date(#{dateChkRpt},'yyyyMMddHH24MISS') 
+		   </if>
+			<if test='pkSupplyer!=null and pkSupplyer!=""'>
+				and dt.pk_supplyer=#{pkSupplyer,jdbcType=VARCHAR}
+			</if>		   
+	</select>		
+</mapper>

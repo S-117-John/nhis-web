@@ -1,0 +1,425 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.ipdedrug.dao.IpDeDrugPrintMapper">
+
+    <!-- 根据患者的主键查询患者的请领单明细 -->
+    <select id="qryIpDeDrugSummary" parameterType="java.util.Map" resultType="DynaBean">
+        SELECT
+        pd.name,
+        pd.spec,
+        sum(pdde.quan_pack * pdde.eu_direct) quan,
+        unit.name unit,
+        pdde.price,
+        sum(pdde.amount * pdde.eu_direct) amount,
+        sto.posi_no,
+        pdde.date_de,
+        pdde.name_emp_de,
+        pdde.name_emp_sign,
+        pd.code code_pd,
+        pd.vol dosage,
+        dept.code_dept,
+        dept.name_dept,
+        unitDos.name unitDos,
+        apMax.date_ap date_ap,
+        pd.flag_st,
+        ord.eu_st,
+        sum(dt.quan_pack * pdde.eu_direct) quan_ap
+        FROM ex_pd_de pdde
+        inner join ex_pd_apply_detail dt on dt.pk_pdapdt=pdde.pk_pdapdt
+        INNER JOIN bd_pd pd ON pdde.pk_pd = pd.pk_pd
+        INNER JOIN bd_unit unit ON pdde.pk_unit = unit.pk_unit
+        INNER JOIN bd_pd_store sto ON pdde.pk_store_de = sto.pk_store AND pdde.pk_pd = sto.pk_pd
+        INNER JOIN cn_order ord ON ord.pk_cnord = pdde.pk_cnord
+        INNER JOIN bd_unit unitDos ON unitDos.pk_unit = pd.pk_unit_vol
+        INNER JOIN bd_ou_dept dept ON dept.pk_dept = pdde.pk_dept_ap
+        inner join
+        (select code_de,date_ap from
+        (select row_number() OVER (PARTITION BY de.code_de order by ap.date_ap desc ) num ,de.code_de,ap.DATE_AP
+        from EX_PD_APPLY ap
+        inner join ex_pd_apply_detail dt on dt.pk_pdap=ap.PK_PDAP
+        inner join EX_PD_DE de on de.PK_PDAPDT=dt.PK_PDAPDT
+        ) apdt where apdt.num=1
+        ) apMax on apMax.CODE_DE=pdde.CODE_DE
+        where pdde.code_de = #{codeDe,jdbcType=VARCHAR} and pdde.pk_org = #{pkOrg,jdbcType=CHAR}
+        <if test="nameDecate!=null and nameDecate!=''">
+            and pdde.name_decate = #{nameDecate,jdbcType=VARCHAR}
+        </if>
+        <if test="pkStoreDe!=null and pkStoreDe!=''">
+            and pdde.pk_store_de = #{pkStoreDe,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDeptDe!=null and pkDeptDe!=''">
+            and pdde.pk_dept_de = #{pkDeptDe,jdbcType=VARCHAR}
+        </if>
+        group by pd.name,
+        pd.spec,
+        unit.name,
+        pdde.price,
+        sto.posi_no,
+        pdde.date_de,
+        pdde.name_emp_de,
+        pdde.name_emp_sign,
+        pd.code ,
+        pd.vol,
+        dept.code_dept,
+        dept.name_dept,
+        unitDos.name,
+        apMax.date_ap,
+        pd.flag_st,
+        ord.eu_st
+        order by sto.posi_no
+    </select>
+    <select id="qryIpDeDrugDetail" resultType="DynaBean" parameterType="java.util.Map">
+        SELECT
+        DISTINCT
+        pdde.PK_PDAPDT,
+        pi.code_ip,
+        pdde.code_de,
+        pd.code code_pd,
+        pv.bed_no,
+        pv.name_pi,
+        pv.age_pv,
+        '√ ' || pd.name AS name,
+        pd.spec,
+        ord.dosage,
+        unit_dos.name unit_dos,
+        pdde.QUAN_PACK,
+        unit.name unit,
+        pdde.price,
+        occ.quan * pdde.price amount,
+        ord.code_freq,
+        freq.name_print name_freq,
+        supply.name AS name_supply,
+        pdde.eu_direct,
+        pd.vol,
+        vol.name unit_vol,
+        occ.date_ord,
+        ap.date_ap,
+        pdde.flag_prt,
+        deptap.code_dept code_dept,
+        deptap.name_dept name_dept,
+        deptde.name_dept name_dept_de,
+        ord.eu_always note,
+        pdde.name_decate head_type,
+        pdde.date_de,
+        pd.flag_st,
+        occ.quan,
+        ord.eu_st,
+        ord.name_emp_ord,
+        pdde.flag_pivas,
+        ord.ordsn
+        FROM ex_pd_de pdde
+        INNER JOIN bd_pd pd ON pdde.pk_pd = pd.pk_pd
+        INNER JOIN (SELECT
+        to_char(date_plan, 'YYYY-MM-dd') date_ord,
+        sum(quan_occ) quan,
+        PK_PDAPDT,
+        PK_PDBACK
+        FROM EX_ORDER_OCC
+        GROUP BY to_char(DATE_PLAN, 'YYYY-MM-dd'), PK_PDAPDT, PK_PDBACK) occ
+        ON (occ.pk_pdapdt = pdde.pk_pdapdt OR occ.pk_pdback = pdde.pk_pdapdt)
+        INNER JOIN (SELECT
+        de.code_de,
+        max((SELECT max(date_ap)
+        FROM ex_pd_apply ap INNER JOIN ex_pd_apply_detail dt ON ap.pk_pdap = dt.pk_pdap
+        WHERE de.pk_pdapdt = dt.pk_pdapdt)) date_ap
+        FROM ex_pd_de de
+        GROUP BY de.code_de
+        ) ap ON ap.code_de = pdde.code_de
+        INNER JOIN cn_order ord ON pdde.pk_cnord = ord.pk_cnord
+        INNER JOIN bd_unit unit ON pdde.pk_unit = unit.pk_unit
+        LEFT JOIN bd_unit unit_dos ON ord.pk_unit_dos = unit_dos.pk_unit
+        LEFT JOIN bd_supply supply ON supply.code = ord.code_supply
+        LEFT JOIN bd_term_freq freq ON freq.code = ord.code_freq
+        INNER JOIN pv_encounter pv ON pdde.pk_pv = pv.pk_pv
+        INNER JOIN bd_unit vol ON vol.pk_unit = pd.pk_unit_vol
+        INNER JOIN bd_ou_dept deptap ON deptap.pk_dept = pdde.PK_DEPT_AP
+        INNER JOIN bd_ou_dept deptde ON deptde.pk_dept = pdde.pk_dept_de
+        INNER JOIN pi_master pi ON pi.pk_pi = pv.pk_pi
+        where pdde.code_de = #{codeDe,jdbcType=VARCHAR} and pdde.pk_org = #{pkOrg,jdbcType=CHAR}
+        <if test="nameDecate!=null and nameDecate!=''">
+            and pdde.name_decate = #{nameDecate,jdbcType=VARCHAR}
+        </if>
+        <if test="pkStoreDe!=null and pkStoreDe!=''">
+            and pdde.pk_store_de = #{pkStoreDe,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDeptDe!=null and pkDeptDe!=''">
+            and pdde.pk_dept_de = #{pkDeptDe,jdbcType=VARCHAR}
+        </if>
+        order by pv.bed_no,date_ord,ord.ordsn
+    </select>
+    <select id="queryDePresTypeList" resultType="DynaBean" parameterType="java.util.Map">
+        select dept.pk_dept,
+        dept.name_dept,<!-- 请领科室 -->
+        pdde.code_de,<!-- 发药单号 -->
+        pdde.date_de,<!-- 发药日期 -->
+        pdde.name_emp_de,<!-- 发药人 -->
+        pdde.flag_pivas,<!-- 静配标志 -->
+        pdde.flag_prt,<!-- 打印标志 -->
+        pdde.name_decate, <!-- 发放分类 -->
+        sum(pdde.amount*pdde.eu_direct) amount <!-- 合计金额 -->
+        from ex_pd_de pdde
+        inner join bd_ou_dept dept
+        on pdde.pk_dept_ap = dept.pk_dept
+        where pdde.pk_dept_de = #{pkDept,jdbcType=VARCHAR} and pdde.pk_org=#{pkOrg,jdbcType=VARCHAR}
+        <if test="codeDe!=null and codeDe!=''">
+            and pdde.code_de = #{codeDe,jdbcType=VARCHAR}
+        </if>
+        group by
+        pdde.code_de,dept.pk_dept,dept.name_dept,pdde.date_de,pdde.name_emp_de,pdde.flag_pivas,pdde.flag_prt,pdde.name_decate
+        order by date_de desc
+    </select>
+
+    <update id="updatePrintApply" parameterType="java.util.Map">
+		update ex_pd_apply set eu_print='2' 
+			where pk_pdap=#{pkPdap,jdbcType=VARCHAR} 
+			and flag_cancel='0' and (eu_print='0' or eu_print is null)
+	</update>
+
+    <select id="checkPrintApply" parameterType="java.util.List" resultType="java.lang.Integer">
+        select count(1) from ex_pd_apply where pk_pdap in
+        <foreach collection="list" index="index" open="(" item="item" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+        and flag_cancel='1'
+    </select>
+    <select id="qryPrintPresSum" parameterType="java.util.Map" resultType="DynaBean">
+        select distinct dept.name_dept,
+        to_char( pres.date_pres,'yyyy-MM-dd') date_pres,
+        pres.pres_no,
+        case pd.EU_DRUGTYPE when '0' then '西药'
+        when '1' then '成药'
+        when '2' then '草药' end pdHead,
+        case when doc.NAME is null or doc.name='无' then '普通'
+        else doc.name end presType,
+        pres.name_emp_ord,
+        pi.name_pi,
+        pv.bed_no,
+        pi.code_ip,
+        pv.age_pv,
+        hp.name nameHp,
+        ord.name_ord,
+        ord.spec,
+        ord.dosage,
+        ordunit.name unitDos,
+        supply.NAME supplyName,
+        freq.NAME_PRINT nameFreq,
+        ord.days,
+        dt.quan_pack,
+        unit.name unitName,
+        dt.price,
+        dt.amount,
+        pd.dt_storetype,
+        pds.posi_no,
+        diag.name_diag,
+        dt.name_emp_de,
+        dt.flag_prt,
+        ap.date_ap,
+        dt.date_de
+        from ex_pd_de dt
+        inner join cn_order ord on dt.pk_cnord=ord.pk_cnord
+        inner join cn_prescription pres on ord.pk_pres=pres.pk_pres
+        inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+        inner join pi_master pi on pv.pk_pi=pi.pk_pi
+        inner join bd_ou_dept dept on pres.pk_dept=dept.pk_dept
+        inner join bd_hp hp on pv.pk_insu=hp.pk_hp
+        inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+        inner join bd_pd_store pds on dt.pk_store_de=pds.pk_store and dt.pk_pd=pds.pk_pd
+        left join bd_unit unit on unit.PK_UNIT=dt.PK_UNIT
+        left join bd_unit ordunit on ordunit.PK_UNIT=ord.PK_UNIT_DOS
+        left join BD_SUPPLY supply on supply.CODE=ord.CODE_SUPPLY
+        left join BD_TERM_FREQ freq on freq.CODE=ord.CODE_FREQ
+        left join bd_defdoc doc on doc.CODE=pres.DT_PROPERTIES and doc.CODE_DEFDOCLIST='060103'
+        left join pv_diag diag on diag.pk_pv=pres.pk_pv and diag.pk_diag=pres.pk_diag and diag.flag_maj='1'
+        INNER JOIN (SELECT
+        pdde.code_de,
+        max((SELECT max(date_ap)
+        FROM ex_pd_apply ap INNER JOIN ex_pd_apply_detail dt ON ap.pk_pdap = dt.pk_pdap
+        WHERE pdde.pk_pdapdt = dt.pk_pdapdt)) date_ap
+        FROM ex_pd_de pdde
+        GROUP BY pdde.code_de
+        ) ap ON ap.code_de = dt.code_de
+        where dt.code_de in
+        <foreach collection="codeDes" index="index" open="(" close=")" separator="," item="codeDe">
+            #{codeDe}
+        </foreach>
+        and pres.pk_pres in
+        <foreach collection="pkPreses" index="index" open="(" separator="," close=")" item="pkPres">
+            #{pkPres}
+        </foreach>
+        order by pres.pres_no,pds.posi_no
+    </select>
+    <select id="qryPresListData" parameterType="java.util.Map" resultType="DynaBean">
+        select distinct
+        pdde.pk_pv,
+        pv.bed_no,
+        pi.code_ip,
+        pi.name_pi,
+        pres.pres_no,
+        pdde.code_de,
+        pdde.date_de,
+        dept.pk_dept,
+        dept.name_dept,
+        pdde.name_emp_de,
+        pdde.flag_pivas,
+        pdde.flag_prt,
+        pres.pk_pres ,
+        pres.dt_prestype,
+        ap.pk_pdap
+        from ex_pd_de pdde
+        inner join bd_ou_dept dept on pdde.pk_dept_ap = dept.pk_dept
+        inner join pv_encounter pv on pdde.pk_pv = pv.pk_pv
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi
+        inner join cn_order ord on pdde.pk_cnord = ord.pk_cnord
+        inner join cn_prescription pres on ord.pk_pres = pres.pk_pres
+        inner join ex_pd_apply_detail apdt on apdt.pk_pdapdt=pdde.pk_pdapdt
+        inner join ex_pd_apply ap on ap.pk_pdap=apdt.pk_pdap
+        where pdde.eu_direct = '1'
+        and pdde.pk_dept_de = #{pkDeptDe,jdbcType=VARCHAR}
+        <if test='pkDeptAp!=null and pkDeptAp!=""'>
+            and pdde.pk_dept_ap = #{pkDeptAp,jdbcType=VARCHAR}
+        </if>
+
+        <if test='dateStart!=null and dateStart!="" '>
+            and pdde.date_de &gt;=to_date(#{dateStart,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        </if>
+        <if test='dateEnd!=null and dateEnd!=""'>
+            and pdde.date_de &lt;=to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        </if>
+
+        <if test='codeIp!=null and codeIp!=""'>
+            and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+        </if>
+        order by date_de desc
+    </select>
+    <select id="qryPrintLableData" parameterType="java.util.Map" resultType="DynaBean">
+        select
+        distinct
+        org.name_org,
+        dept.name_dept,
+        pres.pres_no,
+        pi.name_pi,
+        pv.bed_no,
+        pi.code_ip,
+        pv.age_pv,
+        case pv.dt_sex when '02' then '男'
+        when '03' then '女'
+        else '未说明性别' end sex,
+        hp.name nameHp,
+        ord.name_ord,
+        ord.spec,
+        ord.dosage/pd.vol dosage,
+        ordunit.NAME unitDos,
+        supply.NAME supplyName,
+        freq.NOTE nameFreq,
+        unit.name unitName,
+        pv.DATE_END,
+        ord.NAME_EMP_ORD,
+        deptAp.NAME_DEPT nameDeptAp,
+        sto.POSI_NO,
+        dt.quan_pack,
+        pd.PACK_SIZE,
+        dt.QUAN_MIN,
+        unitPack.NAME namePack,
+        unitMin.NAME nameMin,
+        ord.eu_st,
+        pd.flag_st,
+        pd.eu_labeltype,
+        ord.dosage dosage_vol,
+        dosunit.NAME dos_unit_vol,
+        nvl(ord.ords,0) ords
+        FROM ex_pd_apply ap
+        INNER JOIN ex_pd_apply_detail dt ON ap.pk_pdap = dt.pk_pdap
+        inner join BD_OU_ORG org on org.PK_ORG=ap.PK_ORG_DE
+        INNER JOIN cn_order ord ON dt.pk_cnord = ord.pk_cnord
+        INNER JOIN cn_prescription pres ON ord.pk_pres = pres.pk_pres
+        INNER JOIN pv_encounter pv ON ord.pk_pv = pv.pk_pv
+        INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+        INNER JOIN bd_ou_dept dept ON ap.PK_DEPT_DE = dept.pk_dept
+        inner join BD_OU_DEPT deptAp on deptAp.PK_DEPT=ap.PK_DEPT_AP
+        INNER JOIN bd_hp hp ON pv.pk_insu = hp.pk_hp
+        inner join BD_PD pd on pd.PK_PD=dt.PK_PD
+        inner join BD_PD_STORE sto on sto.PK_DEPT=ap.PK_DEPT_DE and dt.PK_PD=sto.PK_PD
+        LEFT JOIN BD_UNIT unitPack on unitPack.PK_UNIT=pd.PK_UNIT_PACK
+        LEFT JOIN BD_UNIT unitMin on unitMin.PK_UNIT=pd.PK_UNIT_MIN
+        left join bd_unit unit on unit.PK_UNIT=dt.PK_UNIT
+        left join bd_unit ordunit on ordunit.PK_UNIT=pd.pk_unit_min
+        left join bd_unit dosunit on dosunit.PK_UNIT=ord.PK_UNIT_DOS
+        left join BD_SUPPLY supply on supply.CODE=ord.CODE_SUPPLY
+        left join BD_TERM_FREQ freq on freq.CODE=ord.CODE_FREQ
+        WHERE ap.pk_pdap in
+        <foreach collection="pkPdaps" index="index" item="pkPdap" open="(" separator="," close=")">
+            #{pkPdap}
+        </foreach>
+        and dt.pk_pres IN
+        <foreach collection="pkPreses" index="index" item="pkPres" open="(" separator="," close=")">
+            #{pkPres}
+        </foreach>
+        and (dt.flag_canc ='0' or dt.flag_canc is null)
+        and (dt.flag_stop='0' or dt.flag_stop is null)
+        and ap.pk_dept_de=#{pkDeptDe,jdbcType=VARCHAR}
+        order by pres.pres_no
+    </select>
+
+    <select id="qryPrintHrebPresInfo" parameterType="java.util.Map" resultType="DynaBean">
+        SELECT
+        to_char(pres.date_pres, 'yyyy-MM-dd') date_pres,
+        pres.pres_no,
+        pres.name_emp_ord,
+        pi.name_pi,
+        pv.bed_no,
+        pv.pk_pv,
+        pi.code_ip,
+        pd.name name_ord,
+        pd.spec,
+        herb.quan dosage,
+        ordunit.name unitDos,
+        supply.name supplyName,
+        freq.name_print nameFreq,
+        ord.ords,
+        dt.quan_pack quan,
+        unit.name unitName,
+        dt.price,
+        dt.amount,
+        pd.dt_storetype,
+        pds.posi_no,
+        dt.name_emp_de,
+        dt.pk_pd,
+        pres.dt_prestype,
+        ord.ords,
+        dept.name_dept name_dept_ap,
+        dt.code_de,
+        to_char(dt.date_de, 'yyyy-MM-dd') date_de,
+        dt.flag_prt,
+        ap.date_ap
+        from ex_pd_de dt
+        inner join cn_ord_herb herb on herb.pk_pd = dt.pk_pd and dt.pk_cnord=herb.pk_cnord
+        inner join cn_order ord on herb.pk_cnord = ord.pk_cnord
+        inner join cn_prescription pres on ord.pk_pres = pres.pk_pres
+        inner join pv_encounter pv on ord.pk_pv = pv.pk_pv
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi
+        inner join bd_ou_dept dept on pres.pk_dept = dept.pk_dept
+        inner join bd_pd pd on dt.pk_pd = pd.pk_pd
+        inner join bd_pd_store pds on dt.pk_store_de = pds.pk_store and dt.pk_pd = pds.pk_pd
+        left join bd_unit unit on unit.pk_unit = dt.pk_unit
+        left join bd_unit ordunit on ordunit.pk_unit = herb.pk_unit
+        left join bd_supply supply on supply.code = ord.code_supply
+        left join bd_term_freq freq on freq.code = ord.code_freq
+        left join bd_defdoc doc on doc.code = pres.dt_properties and doc.code_defdoclist = '060103'
+        inner join (select pdde.code_de,max(DATE_AP) date_ap
+        from ex_pd_de pdde inner join ex_pd_apply_detail dt on pdde.PK_PDAPDT=dt.PK_PDAPDT
+        inner join ex_pd_apply ap on ap.pk_pdap = dt.pk_pdap
+        where pdde.pk_pdapdt = dt.pk_pdapdt
+        group by pdde.code_de
+        ) ap on ap.code_de = dt.code_de
+        where pres.DT_PRESTYPE='02'
+        and dt.code_de in
+        <foreach collection="codeDes" index="index" open="(" close=")" separator="," item="codeDe">
+            #{codeDe}
+        </foreach>
+        and pres.pk_pres in
+        <foreach collection="pkPreses" index="index" open="(" separator="," close=")" item="pkPres">
+            #{pkPres}
+        </foreach>
+        order by pres.pres_no
+    </select>
+</mapper>

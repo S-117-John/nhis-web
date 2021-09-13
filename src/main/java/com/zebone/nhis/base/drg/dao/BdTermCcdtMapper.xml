@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.base.drg.dao.BdTermCcdtMapper">
+	<sql id="Base_Column_List" >
+		      pk_ccdt,
+			  pk_org,
+			  code_ccdt,
+			  name_ccdt,
+			  spcode,
+			  d_code ,
+			  dt_ccdttype ,
+			  version,
+			  note,
+			  content,
+			  eu_sex,
+			  flag_newborn,
+			  age_max,
+			  age_min,
+			  eu_maj,
+			  flag_stop,
+			  code_icd,
+			  name_icd,
+			  creator,
+			  create_time,
+			  modifier,
+			  flag_del,
+			  ts
+	  </sql>
+	
+	<select id="queryTremCcdtList"  parameterType="java.util.Map" resultType="DynaBean">
+        select 
+        	<include refid="Base_Column_List" />
+        from BD_TERM_CCDT
+        where    
+        	FLAG_DEL = '0'    
+        <if test="codeCcdt !=null and codeCcdt != ''">
+            and code_ccdt like #{codeCcdt,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test="nameCcdt !=null and nameCcdt != ''">
+            and name_ccdt like '%' || #{nameCcdt,jdbcType=VARCHAR} || '%'   
+        </if>
+        <if test="dtCcdttype !=null and dtCcdttype != ''">
+            and dt_ccdttype = #{dtCcdttype,jdbcType=VARCHAR}
+        </if>
+        <if test="euMaj !=null and euMaj != ''">
+            and eu_maj = #{euMaj,jdbcType=VARCHAR}
+        </if>
+        <if test="flagStop !=null and flagStop != ''">
+            and flag_stop = #{flagStop,jdbcType=VARCHAR}
+        </if>
+        <if test="version !=null and version != ''">
+            and version = #{version,jdbcType=VARCHAR}
+        </if>
+        <if test="codeOrName !=null and codeOrName != ''">
+            and (code_ccdt like #{codeOrName,jdbcType=VARCHAR} || '%'
+            	or name_ccdt like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'   
+            	or spcode like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'  
+            )	
+        </if>
+    </select>
+</mapper>

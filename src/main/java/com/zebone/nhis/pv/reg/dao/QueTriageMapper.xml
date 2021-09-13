@@ -1,0 +1,586 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pv.reg.dao.QueTriageMapper">
+    <!-- 查询当前诊台所属的队列 -->
+    <select id="qryQueByplatForm" parameterType="java.util.Map" resultType="DynaBean">
+        SELECT que.pk_qcque,
+               que.pk_dept,
+               dept.name_dept,
+               que.pk_schres,
+               res.name name_res
+        FROM bd_qc_que que
+                 INNER JOIN bd_ou_dept dept ON que.pk_dept = dept.pk_dept
+                 INNER JOIN sch_resource res ON que.pk_schres = res.pk_schres
+                 INNER JOIN sch_sch sch ON que.pk_dept = sch.pk_dept AND que.pk_schres = sch.pk_schres
+        WHERE que.pk_qcplatform = #{pkQcplatform,jdbcType=VARCHAR}
+          AND sch.date_work = #{dateWork,jdbcType=VARCHAR}
+          AND sch.pk_dateslot = #{pkDateslot,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 查询挂号信息 -->
+    <select id="qryRegisterInfo" parameterType="java.util.Map" resultType="DynaBean">
+        select * from (
+        SELECT pv.pk_pv,
+            pi.CODE_OP,
+            op.pk_sch,
+            pv.code_pv,
+            pv.name_pi,
+            pv.dt_sex,
+            pv.age_pv,
+            pv.pk_insu,
+            pv.pk_picate,
+            pv.date_begin,
+            op.DATE_BEGIN as expect_time,
+            pv.eu_pvtype,
+            op.pk_dateslot,
+            bcd.name_dateslot,
+            op.ticketno,
+            op.pk_res,
+            res.name name_res,
+            res.eu_restype,
+            res.pk_schres,
+            op.pk_schsrv,
+            op.pk_dept_pv,
+            op.pk_emp_pv,
+            op.name_emp_pv,
+            srv.name name_srv,
+            pv.flag_spec,
+            CASE WHEN op.pk_schappt IS NULL THEN '0' ELSE '1' END eu_source,
+        emr.sbp,emr.dbp
+        FROM pv_encounter pv
+            INNER JOIN PI_MASTER pi ON pi.PK_PI = pv.PK_PI
+            INNER JOIN bd_hp hp ON pv.pk_insu = hp.pk_hp
+            INNER JOIN pv_op op ON pv.pk_pv = op.pk_pv
+            INNER JOIN bd_code_dateslot bcd ON bcd.PK_DATESLOT = op.PK_DATESLOT
+            INNER JOIN sch_resource res ON op.pk_res = res.pk_schres
+            INNER JOIN sch_srv srv ON op.pk_schsrv = srv.pk_schsrv
+            left join cn_emr_op emr on pv.PK_PV=emr.PK_PV and emr.DEL_FLAG='0'
+        WHERE op.pk_dept_pv = #{pkDeptPv,jdbcType=VARCHAR}
+            AND op.date_begin &lt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+            AND op.date_end &gt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+            <if test="pkRes != null and pkRes != ''">
+                AND op.pk_res = #{pkRes,jdbcType=VARCHAR}
+            </if>
+            AND pv.flag_cancel = '0'
+            AND pv.eu_status = '0'
+            AND NOT exists(SELECT 1
+                            FROM pv_que que
+                            WHERE pv.pk_pv = que.pk_pv
+                            AND que.flag_cancel = '0'
+                            )
+        union all
+        SELECT pv.pk_pv,
+            pi.CODE_OP,
+            er.pk_sch,
+            pv.code_pv,
+            pv.name_pi,
+            pv.dt_sex,
+            pv.age_pv,
+            pv.pk_insu,
+            pv.pk_picate,
+            pv.date_begin,
+            er.DATE_BEGIN as expect_time,
+            pv.eu_pvtype,
+            er.pk_dateslot,
+            bcd.name_dateslot,
+            er.ticketno,
+            er.pk_res,
+            res.name name_res,
+            res.eu_restype,
+            res.pk_schres,
+            er.pk_schsrv,
+            er.pk_dept_pv,
+            er.pk_emp_pv,
+            er.name_emp_pv,
+            srv.name name_srv,
+            pv.flag_spec,
+            '0' eu_source,
+            emr.sbp,emr.dbp
+        FROM pv_encounter pv
+            INNER JOIN PI_MASTER pi ON pi.PK_PI = pv.PK_PI
+            INNER JOIN bd_hp hp ON pv.pk_insu = hp.pk_hp
+            INNER JOIN PV_ER er ON pv.pk_pv = er.pk_pv
+            INNER JOIN bd_code_dateslot bcd ON bcd.PK_DATESLOT = er.PK_DATESLOT
+            INNER JOIN sch_resource res ON er.pk_res = res.pk_schres
+            INNER JOIN sch_srv srv ON er.pk_schsrv = srv.pk_schsrv
+            left join cn_emr_op emr on pv.PK_PV=emr.PK_PV and emr.DEL_FLAG='0'
+        WHERE er.pk_dept_pv = #{pkDeptPv,jdbcType=VARCHAR}
+            AND er.date_begin &lt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+            AND er.date_end &gt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+            <if test="pkRes != null and pkRes != ''">
+                AND er.pk_res = #{pkRes,jdbcType=VARCHAR}
+            </if>
+            AND pv.flag_cancel = '0'
+            AND pv.eu_status = '0'
+            AND NOT exists(SELECT 1
+                            FROM pv_que que
+                            WHERE pv.pk_pv = que.pk_pv
+                            AND que.flag_cancel = '0'
+                            )
+        )
+        <where>
+            <if test="codeOp != null and codeOp != ''">
+                CODE_OP=#{codeOp,jdbcType=VARCHAR}
+            </if>
+            <if test="codePv != null and codePv != ''">
+                AND CODE_PV=#{codePv,jdbcType=VARCHAR}
+            </if>
+            <if test="namePi != null and namePi != ''">
+                AND NAME_PI like '%${namePi}%'
+            </if>
+        </where>
+        <!--SELECT
+            pv.pk_pv,
+            op.pk_sch,
+            pv.code_pv,
+            pv.name_pi,
+            pv.dt_sex,
+            pv.age_pv,
+            pv.pk_insu,
+            pv.pk_picate,
+            pv.date_begin,
+            op.DATE_BEGIN as expect_time,
+            pv.eu_pvtype,
+            op.pk_dateslot,
+            bcd.name_dateslot,
+            op.ticketno,
+            op.pk_res,
+            res.name name_res,
+            res.eu_restype,
+            res.pk_schres,
+            op.pk_schsrv,
+            op.pk_dept_pv,
+            op.pk_emp_pv,
+            op.name_emp_pv,
+            srv.name name_srv,
+            pv.flag_spec,
+            CASE WHEN op.pk_schappt IS NULL
+            THEN '0'
+            ELSE '1' END eu_source
+        FROM pv_encounter pv
+            INNER JOIN PI_MASTER pi ON pi.PK_PI=pv.PK_PI
+            INNER JOIN bd_hp hp ON pv.pk_insu = hp.pk_hp
+            INNER JOIN pv_op op ON pv.pk_pv = op.pk_pv
+            INNER JOIN bd_code_dateslot bcd on bcd.PK_DATESLOT=op.PK_DATESLOT
+            INNER JOIN sch_resource res ON op.pk_res = res.pk_schres
+            INNER JOIN sch_srv srv ON op.pk_schsrv = srv.pk_schsrv
+        WHERE op.pk_dept_pv = #{pkDeptPv,jdbcType=VARCHAR} AND
+            pv.flag_cancel = '0' AND
+            pv.eu_status = '0' AND
+            op.date_begin &lt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss') AND
+            op.date_end &gt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss') AND
+        NOT exists(SELECT 1 FROM pv_que que WHERE pv.pk_pv = que.pk_pv AND que.flag_cancel = '0')
+        <if test="pkRes != null and pkRes != ''">
+            AND op.pk_res = #{pkRes,jdbcType=VARCHAR}
+        </if>
+        <if test="codeOp != null and codeOp != ''">
+            AND pi.CODE_OP=#{codeOp,jdbcType=VARCHAR}
+        </if>
+        <if test="codePv != null and codePv != ''">
+            AND pv.CODE_PV=#{codePv,jdbcType=VARCHAR}
+        </if>
+        <if test="namePi != null and namePi != ''">
+            AND pv.NAME_PI like '%${namePi}%'
+        </if>-->
+    </select>
+
+    <!-- 根据病情评估等级生成“排序号”和“调整排队序号” -->
+    <select id="qryNo" parameterType="com.zebone.nhis.pv.reg.vo.PvQueVO" resultType="DynaBean">
+        SELECT
+        case when (max(que.SORTNO_ADJ)) is null then 100 else (max(que.SORTNO_ADJ) + 10) end as SORTNO_ADJ,
+        case when (max(que.SORTNO) + 1) is null then 1 else (max(que.SORTNO) + 1) end as SORTNO
+        FROM PV_QUE que
+        inner join PV_OP op on op.PK_PV=que.PK_PV
+        WHERE 1=1
+        AND que.DEL_FLAG='0'
+        AND que.eu_status = '0'
+        AND que.flag_cancel = '0'
+        AND que.PK_QCQUE=#{pkQcque,jdbcType=VARCHAR}
+        <if test="pkSchres != null and pkSchres != ''">
+            AND que.pk_Schres=#{pkSchres,jdbcType=VARCHAR}
+        </if>
+        AND op.date_begin &lt;= to_date(#{today,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        AND op.date_end &gt;= to_date(#{today,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        <if test="levelDise != null and levelDise != ''">
+            AND que.LEVEL_DISE=#{levelDise,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+    <!-- 查询科室下出诊医生和待诊人数 ，传入的是科室资源排班信息，传出的是对应人员资源排班信息-->
+    <select id="qryEmpToAutoDistribute" parameterType="java.lang.String" resultType="DynaBean">
+        select
+        emp.pk_emp,
+        emp.name_emp,
+        sch.PK_SCH,
+        resdp.PK_SCHRES,
+        case when que.PK_QCQUE is null then 0 else count(1) end cnt
+    from sch_sch sch
+        inner join sch_resource res on res.PK_SCHRES=sch.pk_schres and res.EU_RESTYPE='1'
+        inner join sch_resource resdp on resdp.PK_SCHRES=res.PK_DEPT and resdp.EU_RESTYPE='0'
+        inner join bd_ou_employee emp on res.PK_EMP = emp.pk_emp
+        left join pv_que que on emp.pk_emp = que.pk_emp_phy and que.eu_status = '0'
+        where sch.date_work = to_date(#{dateWork,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        and sch.pk_dateslot = #{pkDateslot,jdbcType=VARCHAR}
+        and res.PK_DEPT = #{pkSchres,jdbcType=VARCHAR}
+        group by emp.pk_emp, que.PK_QCQUE,resdp.PK_SCHRES, emp.name_emp, sch.PK_SCH
+        order by cnt
+    </select>
+
+    <!-- 查询分诊台下的排班 -->
+    <select id="qrySchByPlatForm" parameterType="java.lang.String" resultType="DynaBean">
+        SELECT que.pk_qcque,
+               sch.pk_dept,
+               dept.name_dept,
+               sch.pk_schres,
+               res.name    name_res,
+               sch.pk_schsrv,
+               sch.pk_dateslot,
+               srv.name    name_srv,
+               sch.pk_sch,
+               res.PK_EMP,
+               emp.name_emp,
+               res.PK_DEPT res_dept,
+               res.eu_restype
+        FROM bd_qc_que que
+                 INNER JOIN sch_sch sch ON que.pk_dept = sch.pk_dept
+                 INNER JOIN bd_ou_dept dept ON sch.pk_dept = dept.pk_dept
+                 INNER JOIN sch_resource res ON sch.pk_schres = res.pk_schres
+                 INNER JOIN sch_srv srv ON sch.pk_schsrv = srv.pk_schsrv
+                 inner join bd_code_dateslot ds on sch.pk_dateslot = ds.pk_dateslot
+                 left join BD_OU_EMPLOYEE emp on emp.PK_EMP = res.PK_EMP
+        WHERE que.pk_qcplatform = #{pkQcplatform,jdbcType=VARCHAR}
+          AND que.flag_stop = '0'
+          AND sch.eu_schclass = '0'
+          AND sch.flag_stop = '0'
+          AND sch.EU_STATUS='8'
+          AND sch.date_work = to_date(#{dateWork,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+          and to_date(ds.time_begin, 'hh24:mi:ss') &lt;= to_date(#{timeBegin,jdbcType=VARCHAR}, 'hh24miss')
+          and to_date(ds.time_end, 'hh24:mi:ss') &gt;= to_date(#{timeEnd,jdbcType=VARCHAR}, 'hh24miss')
+        union all
+        SELECT que.pk_qcque,
+               dept.pk_dept,
+               dept.name_dept,
+               '',
+               '',
+               '',
+               '',
+               '',
+               '',
+               '',
+               '',
+               '',
+               ''
+        FROM bd_qc_que que
+                 INNER JOIN bd_ou_dept dept ON que.pk_dept = dept.pk_dept
+        WHERE que.pk_qcplatform = #{pkQcplatform,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 查询可专科的列表 -->
+    <select id="qryTransDept" parameterType="java.lang.String" resultType="DynaBean">
+        SELECT que.pk_qcque,
+               sch.pk_dept,
+               dept.name_dept,
+               sch.pk_schres,
+               res.name    name_res,
+               sch.pk_schsrv,
+               sch.pk_dateslot,
+               srv.name    name_srv,
+               sch.pk_sch,
+               res.PK_EMP,
+               emp.name_emp,
+               res.PK_DEPT res_dept,
+               res.eu_restype
+        FROM bd_qc_que que
+                 INNER JOIN sch_sch sch ON que.pk_dept = sch.pk_dept
+                 INNER JOIN bd_ou_dept dept ON sch.pk_dept = dept.pk_dept
+                 INNER JOIN sch_resource res ON sch.pk_schres = res.pk_schres
+                 INNER JOIN sch_srv srv ON sch.pk_schsrv = srv.pk_schsrv
+                 inner join bd_code_dateslot ds on sch.pk_dateslot = ds.pk_dateslot
+                 left join BD_OU_EMPLOYEE emp on emp.PK_EMP = res.PK_EMP
+        WHERE que.pk_qcplatform = #{pkQcplatform,jdbcType=VARCHAR}
+          AND que.flag_stop = '0'
+          AND sch.eu_schclass = '0'
+          AND sch.flag_stop = '0'
+          AND sch.EU_STATUS = '8'
+          and sch.date_work = to_date(#{dateWork,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+          and sch.PK_DEPT != #{pkDeptPv,jdbcType=VARCHAR}
+          and to_date(ds.time_begin, 'hh24:mi:ss') &lt;= to_date(#{timeBegin,jdbcType=VARCHAR}, 'hh24miss')
+          and to_date(ds.time_end, 'hh24:mi:ss') &gt;= to_date(#{timeEnd,jdbcType=VARCHAR}, 'hh24miss')
+    </select>
+
+    <!-- 更新门诊就诊pv_op -->
+    <update id="updatePvOp">
+        update pv_op
+        set pk_sch=#{transParam.pkSch,jdbcType=VARCHAR},
+            pk_schsrv=#{transParam.pkSchsrv,jdbcType=VARCHAR},
+            pk_res=#{transParam.pkSchres,jdbcType=VARCHAR},
+            pk_dept_pv=#{transParam.pkDept,jdbcType=VARCHAR},
+            pk_emp_pv=#{bdOuEmployee.pkEmp,jdbcType=VARCHAR},
+            name_emp_pv=#{bdOuEmployee.nameEmp,jdbcType=VARCHAR}
+        where pk_pv = #{transParam.pkPv,jdbcType=VARCHAR}
+    </update>
+
+    <!-- 查询排队信息 -->
+    <select id="qryQueinfo" parameterType="java.util.Map" resultType="DynaBean">
+        select qu.*,
+            <if test="flagAppt == true">
+                row_number() over (order by qu.eu_source desc ,qu.LEVEL_DISE desc ,qu.SORTNO_ADJ,qu.SORTNO) order_num
+            </if>
+            <if test="flagAppt == false">
+                row_number() over (order by qu.LEVEL_DISE desc ,qu.SORTNO_ADJ,qu.SORTNO) order_num
+            </if>
+        from (
+            SELECT
+                pv.pk_pv,
+                pv.code_pv,
+                pv.name_pi,
+                pv.dt_sex,
+               <!--  op.pk_res pk_schres, -->
+                que.pk_schres,
+                que.eu_type,
+                sch.pk_deptunit,
+                srv.eu_srvtype,
+                du.NAME deptunit,
+                que.pk_pvque,
+                que.pk_qcque,
+                que.name_emp_phy,
+                que.sortno,
+                que.level_dise,
+                que.eu_source,
+                que.sortno_adj ,
+                que.eu_status,
+                que.pk_dept,
+                que.ts,
+                que.PK_DATESLOT
+            FROM pv_que que
+                INNER JOIN pv_encounter pv ON que.pk_pv = pv.pk_pv
+                INNER JOIN pv_op op ON pv.pk_pv = op.pk_pv
+                INNER JOIN sch_sch sch ON op.pk_sch = sch.pk_sch
+                inner join SCH_SRV srv on srv.pk_schsrv=sch.pk_schsrv
+                left outer join bd_dept_unit du on sch.pk_deptunit=du.pk_deptunit
+            WHERE que.pk_qcque = #{pkQcque,jdbcType=VARCHAR}
+                AND que.eu_status = '0'
+                AND que.flag_cancel = '0'
+                AND op.date_begin &lt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+                AND op.date_end &gt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+            <if test="pkSchres != null and pkSchres != ''">
+                and que.pk_schres=#{pkSchres,jdbcType=VARCHAR}
+            </if>
+            union all
+            SELECT
+                pv.pk_pv,
+                pv.code_pv,
+                pv.name_pi,
+                pv.dt_sex,
+                <!-- er.pk_res pk_schres, -->
+                que.pk_schres,
+                que.eu_type,
+                sch.pk_deptunit,
+                srv.eu_srvtype,
+                du.NAME deptunit,
+                que.pk_pvque,
+                que.pk_qcque,
+                que.name_emp_phy,
+                que.sortno,
+                que.level_dise,
+                que.eu_source,
+                que.sortno_adj ,
+                que.eu_status,
+                que.pk_dept,
+                que.ts,
+                que.PK_DATESLOT
+            FROM pv_que que
+                INNER JOIN pv_encounter pv ON que.pk_pv = pv.pk_pv
+                INNER JOIN PV_ER er ON pv.pk_pv = er.pk_pv
+                INNER JOIN sch_sch sch ON er.pk_sch = sch.pk_sch
+                inner join SCH_SRV srv on srv.pk_schsrv=sch.pk_schsrv
+                left outer join bd_dept_unit du on sch.pk_deptunit=du.pk_deptunit
+            WHERE que.pk_qcque = #{pkQcque,jdbcType=VARCHAR}
+                AND que.eu_status = '0'
+                AND que.flag_cancel = '0'
+                AND er.date_begin &lt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+                AND er.date_end &gt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+                <if test="pkSchres != null and pkSchres != ''">
+                    and que.pk_schres=#{pkSchres,jdbcType=VARCHAR}
+                </if>
+        ) qu
+    </select>
+
+    <!-- 查询可转发的队列 -->
+    <select id="qryChangeQue" parameterType="java.util.Map" resultType="DynaBean">
+        SELECT que.pk_qcque,
+               sch.pk_dept,
+               dept.name_dept,
+               sch.pk_schres,
+               sch.pk_sch,
+               sch.pk_dateslot,
+               res.name name_res,
+               res.pk_emp,
+               res.eu_restype,
+               sch.pk_schsrv,
+               srv.name name_srv,
+               srv.eu_srvtype,
+               np.cnt
+        FROM bd_qc_que que
+                 INNER JOIN sch_sch sch ON que.pk_dept = sch.pk_dept
+                 INNER JOIN bd_ou_dept dept ON sch.pk_dept = dept.pk_dept
+                 INNER JOIN sch_resource res ON sch.pk_schres = res.pk_schres
+                 INNER JOIN sch_srv srv ON sch.pk_schsrv = srv.pk_schsrv
+                 inner join bd_code_dateslot ds on sch.pk_dateslot = ds.pk_dateslot
+                 INNER JOIN pv_que pv ON que.pk_qcque = pv.pk_qcque
+                 left join (select count(1) cnt, pq.PK_QCQUE, pq.PK_SCHRES
+                            from PV_QUE pq
+                            where pq.EU_STATUS = '0'
+                            group by pq.PK_QCQUE, pq.PK_SCHRES) np
+                           on np.PK_QCQUE = que.PK_QCQUE and np.PK_SCHRES = res.PK_SCHRES
+        WHERE que.pk_dept = #{pkDept,jdbcType=VARCHAR}
+          AND que.flag_stop = '0'
+          <if test="pkSchres != null and pkSchres != ''">
+		   	   AND sch.pk_schres not in (#{pkSchres,jdbcType=VARCHAR})
+          </if>
+          AND sch.eu_schclass = '0'
+          AND sch.flag_stop = '0'
+          AND sch.date_work = to_date(#{dateWork,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+          and to_date(ds.time_begin, 'hh24:mi:ss') &lt;= to_date(#{timeBegin,jdbcType=VARCHAR}, 'hh24miss')
+          and to_date(ds.time_end, 'hh24:mi:ss') &gt;= to_date(#{timeEnd,jdbcType=VARCHAR}, 'hh24miss')
+          <!-- AND sch.pk_dateslot = #{pkDateslot,jdbcType=VARCHAR} -->
+          AND pv.eu_status = '0'
+          AND sch.EU_STATUS='8'
+        group by que.pk_qcque, sch.pk_dept, dept.name_dept, sch.pk_schres
+               , res.name, sch.pk_schsrv, srv.name, srv.eu_srvtype, res.pk_emp, res.eu_restype, sch.pk_sch
+               , sch.pk_dateslot, np.cnt
+    </select>
+
+    <!-- 转发队列 -->
+    <update id="changeQue" parameterType="java.util.Map">
+        update pv_que
+        set sortno=#{sortno,jdbcType=VARCHAR},
+            sortno_adj=#{sortnoAdj,jdbcType=VARCHAR},
+            pk_schres=#{pkschres,jdbcType=VARCHAR},
+            pk_emp_phy=#{pkempphy,jdbcType=VARCHAR},
+            name_emp_phy=#{nameempphy,jdbcType=VARCHAR},
+            eu_status=0,
+            date_sign=#{datesign,jdbcType=VARCHAR},
+            pk_emp_sign=#{pkempsign,jdbcType=VARCHAR},
+            name_emp_sign=#{nameempsign,jdbcType=VARCHAR}
+        where pk_pvque = #{pkpvque,jdbcType=VARCHAR}
+          and pk_pv = #{pkpv,jdbcType=VARCHAR}
+    </update>
+
+    <!-- 查询患者就诊信息 -->
+    <select id="qryPvInfo" parameterType="java.util.Map" resultType="DynaBean">
+        SELECT
+        que.pk_pv,
+        que.date_pv,
+        que.pk_dateslot,
+        que.pk_qcque,
+        que.pk_sch,
+        que.pk_dept,
+        que.pk_schres,
+        que.pk_emp_phy,
+        que.name_emp_phy,
+        que.dt_qctype,
+        que.pk_paticate,
+        que.eu_source,
+        que.flag_cancel,
+        que.eu_status,
+        que.eu_type,
+        pv.code_pv,
+        pv.name_pi,
+        pv.dt_sex,
+        pv.age_pv,
+        pv.pk_insu,
+        pv.eu_pvtype,
+        que.date_arr,
+        que.ticketno,
+        que.pk_schres,
+        res.name name_res,
+        op.pk_schsrv,
+        op.ticketno,
+        srv.eu_srvtype,
+        que.eu_type,
+        que.sortno,
+        que.ts
+        FROM pv_que que
+        INNER JOIN pv_encounter pv ON que.pk_pv = pv.pk_pv
+        INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+        INNER JOIN pv_op op ON pv.pk_pv = op.pk_pv
+        inner join sch_resource res on res.pk_schres=que.pk_schres
+        inner join sch_srv srv on srv.pk_schsrv=op.pk_schsrv
+        WHERE que.pk_dept = #{pkDept,jdbcType=VARCHAR} 
+        <if test="pkSchres != null and pkSchres != ''">
+			AND que.pk_schres = #{pkSchres,jdbcType=VARCHAR} 
+        </if>
+        AND que.eu_status &gt; '0'
+        and que.eu_status &lt; '3'
+        and op.date_begin &lt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        AND op.date_end &gt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        <if test="namePi != null and namePi != ''">
+            and pv.name_pi like '%${namePi}%'
+        </if>
+        <if test="codeOp != null and codeOp != ''">
+            and pi.code_op =#{codeOp,jdbcType=VARCHAR}
+        </if>
+        <if test="codePv != null and codePv != ''">
+            and pv.code_pv =#{codePv,jdbcType=VARCHAR}
+        </if>
+        order by que.eu_status
+    </select>
+
+    <!-- 查询过号信息 -->
+    <select id="qryOverPvInfo" parameterType="java.util.Map" resultType="DynaBean">
+        select que.pk_pv,
+        pv.code_pv,
+        pv.name_pi,
+        pv.dt_sex,
+        pv.age_pv,
+        pv.pk_insu,
+        que.pk_pvque,
+        que.date_arr,
+        que.ticketno,
+        que.pk_schres,
+        que.date_over,
+        que.pk_qcque,
+        que.level_dise,
+        que.sortno,
+        op.pk_schsrv,
+        que.eu_type,
+        res.name name_res,
+        srv.eu_srvtype
+        from pv_que que
+        inner join pv_encounter pv on que.pk_pv=pv.pk_pv
+        inner join pi_master pi on pv.pk_pi=pi.pk_pi
+        inner join pv_op op on pv.pk_pv=op.pk_pv
+        inner join sch_resource res on res.pk_schres=que.pk_schres
+        inner join sch_srv srv on srv.pk_schsrv=op.pk_schsrv
+        where que.pk_dept=#{pkDept,jdbcType=VARCHAR} 
+        <if test="pkSchres != null and pkSchres != ''">
+            and que.pk_schres=#{pkSchres,jdbcType=VARCHAR} 
+        </if>
+        and que.eu_status='8'
+        and op.date_begin &lt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        AND op.date_end &gt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        <if test="namePi != null and namePi != ''">
+            and pv.name_pi like '%${namePi}%'
+        </if>
+        <if test="codeOp != null and codeOp != ''">
+            and pi.code_op =#{codeOp,jdbcType=VARCHAR}
+        </if>
+        <if test="codePv != null and codePv != ''">
+            and pv.code_pv =#{codePv,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+    <!--查询患者是否续诊-->
+    <select id="isSeek" parameterType="java.lang.String" resultType="java.lang.Integer">
+        select count(1)
+        from pv_que que
+                 inner join pv_op pp on pp.pk_pv = que.pk_pv
+        where que.pk_pv = #{pkPv,jdbcType=VARCHAR}
+          and que.eu_status = '0'
+          and que.eu_type = '1'
+          and pp.date_begin &lt; #{dateNow}
+          and pp.date_end &gt; #{dateNow}
+    </select>
+
+</mapper>

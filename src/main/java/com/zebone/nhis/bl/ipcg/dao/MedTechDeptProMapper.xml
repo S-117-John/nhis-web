@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.bl.ipcg.dao.MedTechDeptProMapper">
+<select id="qryOrdtype" resultType="com.zebone.nhis.common.module.base.bd.srv.BdOrdtype">
+			select ordtype.pk_ordtype, 
+			       ordtype.code,       
+			       ordtype.name,
+			       ordtype.pk_parent        
+			  from bd_ordtype ordtype
+			 where ordtype.code like '02%' or 
+			       ordtype.code like '03%' or 
+			       ordtype.code like '04%' or 
+			       ordtype.code like '05%'
+</select>
+
+<delete id="delByOrdDept" parameterType="java.util.Map">
+			delete from bd_ord_dept 
+			where pk_ord in 
+			<foreach collection="poList" item="poList" index="no" open="(" separator="," close=")">
+	                #{poList}
+	            </foreach> 
+			and pk_dept=#{pkDept,jdbcType=VARCHAR}
+</delete>
+
+<select id="qryOrd" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.base.bd.srv.BdOrd">
+			select ord.pk_ord,       
+			       ord.code,         
+			       ord.name,         
+			       ord.spec,         
+			       ord.code_ordtype, 
+			       ord.spcode,       
+			       ord.note,         
+			       oo.pk_ordorg
+			  from bd_ord ord
+			       inner join bd_ord_org oo on ord.pk_ord=oo.pk_ord
+			 where oo.pk_org=#{pkOrg,jdbcType=VARCHAR} and   
+			       ord.code_ordtype like '${codeOrdtype}%' and  
+			       not exists (select 1
+			                     from bd_ord_dept dept
+			                    where oo.pk_ordorg=dept.pk_ordorg and
+			                          dept.pk_dept=#{pkDept,jdbcType=VARCHAR})
+
+</select>
+
+<select id="qryPro" resultType="com.zebone.nhis.common.module.base.bd.srv.BdOrd" parameterType="java.util.Map">
+			select ord.*        
+			  from bd_ord ord
+			       inner join bd_ord_dept dept on ord.pk_ord=dept.pk_ord
+			 where dept.pk_dept=#{pkDept,jdbcType=VARCHAR} 
+			 <if test="pkOrdtype!=null">
+			 	and ord.pk_ordtype = #{pkOrdtype,jdbcType=VARCHAR}
+			 </if>
+			 <if test = "code!=null">
+			       and ord.code like '${code}%' 
+			       </if>
+			       <if test="name!=null">
+			       and ord.name like '%${name}%'  
+			       </if>
+			       <if test="codeOrdtype!=null">  
+			       and ord.code_ordtype like '${codeOrdtype}%'
+				   </if>  
+</select>
+
+</mapper>

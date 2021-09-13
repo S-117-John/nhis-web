@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.lb.dao.LbXFReferralMapper">
+	<select id="qryPatientInfo" resultType="com.zebone.nhis.ma.pub.lb.vo.referral.PatientInfo">
+		SELECT
+			code_op AS outpatientId,
+			pm.pk_pi AS patientId,
+			pm.name_pi AS patientName,
+			CASE
+				WHEN TO_NUMBER (pm.DT_SEX) = '2' THEN
+					'1'
+				WHEN TO_NUMBER (pm.DT_SEX) = '3' THEN
+					'2'
+				WHEN TO_NUMBER (pm.DT_SEX) = '4' THEN
+					'9'
+				END sexCode,
+			TO_CHAR (birth_date, 'yyyyMMdd') AS birthday,
+			age_pv AS age,
+			id_no AS certificateId,
+			CASE
+				WHEN dt_idtype = '01' THEN
+					'1'
+				WHEN dt_idtype = '03' THEN
+					'6'
+				WHEN dt_idtype = '08' THEN
+					'7'
+				END certificateTypeCode,
+			card_no AS healthCardId,
+			mobile AS phone,
+			pm.addr_cur AS residentialAddress,
+			insur_no AS insuranceCardNo,
+			TO_CHAR (
+					pe.date_begin,
+					'yyyyMMddHHmmss'
+				) AS outpatientTime
+		FROM
+			pi_master pm
+				INNER JOIN pv_encounter pe ON pm.pk_pi = pe.pk_pi
+				LEFT JOIN PI_CARD pc ON pc.pk_pi = pm.pk_pi AND pc.EU_STATUS = '0' AND FLAG_ACTIVE = '1'
+		WHERE
+			pe.pk_pv = #{pkPv}
+
+	</select>
+	<select id="qryDoctorInfo" resultType="com.zebone.nhis.ma.pub.lb.vo.referral.DoctorInfo">
+		select
+			CODE_EMP as doctorId,
+			name_emp as doctorName,
+			CODE_EMP as referralDoctorId,
+			name_emp as referralDoctorName
+		from pv_encounter pe
+				 inner join BD_OU_EMPLOYEE boe on PK_EMP = pe.PK_EMP_PHY
+		where pk_pv = #{pkPv}
+	</select>
+	<select id="qryOrgInfo" resultType="com.zebone.nhis.ma.pub.lb.vo.referral.ProviderOrg">
+		select
+			   bd.code_org as orgCode,
+			   bd.name_org as orgName,
+			   bod.code_dept as deptCode,
+			   bod.name_dept as deptName
+		FROM PV_ENCOUNTER pe
+				 inner join BD_OU_ORG bd on pe.pk_org = bd.pk_org
+				inner join BD_OU_DEPT bod on bod.pk_dept = pe.pk_dept
+		where pe.pk_pv=#{pkPv}
+	</select>
+	<select id="qryPatientLeave" resultType="com.zebone.nhis.ma.pub.lb.vo.referral.PatientInfoleave">
+		select
+			pm.pk_pi as patientId,
+			pm.name_pi as patientName,
+			CASE when to_number(pm.DT_SEX) = '2'
+					 then '1'
+				 when to_number(pm.DT_SEX) = '3'
+					 then '2'
+				 when to_number(pm.DT_SEX) = '4'
+					 then '9'
+				end sexCode,
+			to_char(birth_date,'yyyyMMdd') as birthday,
+			age_pv as age,
+			id_no as certificateId,
+			dt_idtype as certificateTypeCode,
+			card_no as healthCardId,
+			mobile as patientPhone,
+			pm.addr_cur as residentialAddress,
+			insur_no as insuranceCardNo,
+			pm.dt_marry as maritalStatus,
+			pm.dt_occu  as jobTypeCode
+		from pi_master pm
+				 inner join pv_encounter pe on pm.pk_pi=pe.pk_pi
+				 LEFT JOIN PI_CARD pc ON pc.pk_pi = pm.pk_pi AND pc.EU_STATUS = '0' AND FLAG_ACTIVE = '1'
+		where pe.pk_pv = #{pkPv}
+	</select>
+	<select id="qryDoctorleave" resultType="com.zebone.nhis.ma.pub.lb.vo.referral.DoctorInfoleave">
+		SELECT
+			CODE_EMP AS residentDctId,
+			NAME_EMP AS residentDctSign,
+			CODE_EMP AS attendingDctId,
+			NAME_EMP AS attendingDctSign,
+			CODE_EMP AS chiefPhysicianId,
+			NAME_EMP AS chiefPhysicianSign,
+			TO_CHAR (
+					date_begin,
+					'yyyyMMddHHmmss'
+				) AS signTime
+		FROM
+			pv_encounter pe
+				INNER JOIN BD_OU_EMPLOYEE boe ON PK_EMP = pe.PK_EMP_tre
+		WHERE
+			pk_pv = #{pkPv}
+	</select>
+	<select id="qryElse" resultType="java.util.Map">
+		SELECT
+			ALLERGY as irritabilityHistory,
+			PROBLEM as mainSuit,
+			PRESENT as illnessHistory,
+			history as previousHistory
+		FROM
+			PV_ENCOUNTER pe
+				INNER JOIN CN_EMR_OP ceo ON pe.pk_pv = ceo.pk_pv
+		WHERE
+			pe.pk_pv = #{pkPv}
+	</select>
+	<select id="qryPhysicalExamination" resultType="com.zebone.nhis.ma.pub.lb.vo.referral.PhysicalExamination">
+		SELECT
+			dbp AS diastolicPressure,
+			sbp AS systolicPressure,
+			temperature AS temperature,
+			breathe AS respiratoryRate,
+			ceo.height,
+			ceo.weight,
+			pulse
+		FROM
+			PV_ENCOUNTER pe
+				INNER JOIN CN_EMR_OP ceo ON pe.pk_pv = ceo.pk_pv
+		WHERE
+			pe.pk_pi = #{pkPi} and ceo.pk_pv=#{pkPv}
+	</select>
+	<select id="qryDiagList" resultType="com.zebone.nhis.ma.pub.lb.vo.referral.DiagList">
+		SELECT
+			pd.pk_diag AS diagnosticCode,
+			name_diag AS diagnosticName,
+			flag_maj AS diagnosticMainSign,
+			CASE when btd.dt_system = '00' THEN '2'
+				 when btd.dt_system = '01' THEN '2'
+				 when btd.dt_system = '02' THEN '1'
+				END diagTypeCode
+		FROM
+			pv_encounter pe
+				LEFT JOIN pv_diag pd ON pe.pk_pv = pd.pk_pv
+				LEFT JOIN bd_term_diag btd on btd.pk_diag = pd.pk_diag
+				LEFT JOIN bd_defdoc d on d.CODE=btd.DT_DIAGCATE and d.CODE_DEFDOCLIST='060009' and d.del_flag='0'
+		WHERE
+			pe.flag_cancel = '0'
+		  --and btd.del_flag='0'
+		  AND pe.pk_pv =  #{pkPv}
+	</select>
+	<select id="qryAdmissionDiagnosis" resultType="com.zebone.nhis.ma.pub.lb.vo.referral.AdmissionDiagnosis">
+		select
+			termdiag.DIAGCODE as leaveDiagnosisWestCode,
+			termdiag.DIAGNAME as leaveDiagnosisWestName,
+			'' as leaveDiagnosisCnCode,
+			'' as leaveDiagnosisCnName,
+			'' as leaveSyndromeCnCode,
+			'' as leaveSyndromeCnName
+		from PV_ENCOUNTER pv inner join PV_IP ip on pv.pk_pv=ip.pk_pv
+							 left join pv_diag diag on diag.pk_pv=pv.pk_pv
+							 left join bd_cndiag cndiag on cndiag.pk_cndiag=diag.PK_DIAG
+							 left join BD_TERM_DIAG termdiag on  cndiag.PK_DIAG=termdiag.PK_DIAG
+		where diag.DT_DIAGTYPE='0100' and pv.EU_PVTYPE=3 and pv.EU_STATUS in(2,3)
+		  and pv.pk_pv = #{pkPv}
+	</select>
+	<select id="qryTreatmentPlanning" resultType="com.zebone.nhis.ma.pub.lb.vo.referral.TreatmentPlanning">
+		SELECT principle
+		FROM cn_emr_op
+		WHERE
+			pk_pv = #{pkPv}
+	</select>
+	<select id="qryLeaveDiagnosis" resultType="com.zebone.nhis.ma.pub.lb.vo.referral.LeaveDiagnosis">
+		select
+			pv.DATE_END as leaveTime,		--出院日期时间
+			ip.DT_OUTCOMES as leaveDesc,		--出院情况
+			'' as leaveSymptom,		--出院时症状和体征
+			termdiag.DIAGCODE as leaveDiagnosisWestCode,		--出院诊断-西医诊断编码
+			termdiag.DIAGNAME as leaveDiagnosisWestName,		--出院诊断-西医诊断名称
+			'' as leaveDiagnosisCnCode,		--出院诊断-中医病名代码
+			'' as leaveDiagnosisCnName,		--出院诊断-中医病名名称
+			'' as leaveSyndromeCnCode,		--出院诊断-中医证候代码
+			'' as leaveSyndromeCnName		--出院诊断-中医证候名称
+		from PV_ENCOUNTER pv inner join PV_IP ip on pv.pk_pv=ip.pk_pv
+							 left join pv_diag diag on diag.pk_pv=pv.pk_pv
+							 left join bd_cndiag cndiag on cndiag.pk_cndiag=diag.PK_DIAG
+							 left join BD_TERM_DIAG termdiag on  cndiag.PK_DIAG=termdiag.PK_DIAG
+		where diag.DT_DIAGTYPE='0109' and pv.EU_PVTYPE=3 and pv.EU_STATUS in(2,3)
+		  and pv.pk_pv = #{pkPv}
+	</select>
+	<select id="qryMainhealthIssues" resultType="com.zebone.nhis.ma.pub.lb.vo.referral.MainHealthIssues">
+		select pi.CODE_IP as inHospitalNo,--住院号
+			   PV.BED_NO AS sickbedNo,		--病床号
+			   bed.HOUSENO as sickroomNo,		--病房号
+			   dept.NAME_DEPT as sickbayName,		--病区名称
+			   pv.DATE_BEGIN as admissionTime		--入院时间
+
+		from PI_MASTER pi inner join PV_ENCOUNTER pv on pi.pk_pi=pv.PK_Pi
+						  LEFT JOIN bd_res_bed bed on pv.PK_DEPT=bed.PK_DEPT and pv.BED_NO=bed.CODE
+						  left join BD_OU_DEPT dept on pv.PK_DEPT_NS=dept.PK_DEPT
+		where pv.EU_PVTYPE=3 and pv.EU_STATUS in(2,3) AND pv.pk_pv = #{pkPv}
+	</select>
+	<select id="qryMedicalAdviceLeave" resultType="com.zebone.nhis.ma.pub.lb.vo.referral.MedicalAdviceLeave">
+		select
+
+			case when pres.DT_PRESTYPE=02 then  pd.name||','||herb.QUAN||unit1.name||','||pres.USAGE_COUNT
+				 else
+					 ord.NAME_ORD||','||ord.DOSAGE||unit.name||','||freq.name end as leaveAdvice,		--出院医嘱
+			case when pres.DT_PRESTYPE=02 then doc.NAME end as decoctionWay,		--中药煎煮方法
+			case when pres.DT_PRESTYPE=02 then supp.NAME end as medicationWay,		--中药用药方法
+			'' as fourDiagnostic		--中医“四诊”观察结果
+		from PV_ENCOUNTER pv inner join cn_prescription pres on pv.pk_pv=pres.PK_PV
+							 inner join cn_order ord on pres.pk_pv=ord.PK_PV and pres.PK_PRES=ord.PK_PRES
+							 left join cn_ord_herb herb  on  ord.PK_CNORD=herb.PK_CNORD
+							 left join BD_UNIT unit on ord.PK_UNIT_DOS=UNIT.pk_unit
+							 left join BD_PD pd on herb.PK_PD=pd.pk_pd
+							 left join bd_unit unit1 on herb.PK_UNIT=unit1.pk_unit
+							 left join bd_term_freq freq on ord.CODE_FREQ=freq.CODE
+							 left join BD_DEFDOC doc on pres.DT_BOILTYPE=doc.CODE and doc.CODE_DEFDOCLIST='030411'
+							 left join bd_supply supp on ord.CODE_SUPPLY=supp.CODE
+		where pv.EU_PVTYPE=3 and pv.EU_STATUS in(2,3) and pres.DT_PROPERTIES='09'
+		  and ord.FLAG_ERASE=0 and pv.pk_pv = #{pkPv}
+	</select>
+	<select id="qryOperation" resultType="com.zebone.nhis.ma.pub.lb.vo.referral.Operation">
+		select
+
+			'' as operationProcess,		--手术过程
+			ops.OP_CODE as operationCode,		--手术操作编码
+			ops.OP_NAME as operationName,		--手术操作名称
+			ops.OP_DATE as operationTime,		--手术操作开始日期时间
+			ops.INCISION_TYPE_CODE as operationIncisionCode,		--手术切口类别代码
+			ops.HEAL_GRADE_CODE as woundHealingCode,		--切口愈合等级代码
+			ops.ANES_TYPE_CODE as anesthesiaMethodCode,			--麻醉方法代码
+			ops.ANES_TYPE_NAME as anesthesiaMethodName		--麻醉方法名称
+		from PV_ENCOUNTER pv inner join PV_IP ip on pv.pk_pv=ip.pk_pv
+							 inner join EMR_HOME_PAGE page on pv.pk_pv=page.pk_pv
+							 inner join EMR_HOME_PAGE_OPS ops on page.pk_page=ops.pk_page
+		where pv.EU_PVTYPE=3 and pv.EU_STATUS in(2,3) and page.DEL_FLAG=0 and ops.DEL_FLAG=0
+				and pv.pk_pv = #{pkPv}
+	</select>
+
+
+</mapper>

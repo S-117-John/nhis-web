@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ma.pub.platform.zsrm.dao.ZsrmPhSettleServiceMapper">
+
+    <select id="getApplyOpByPKSettle" resultType="java.util.Map">
+        select co.CODE_APPLY as APPLY, pm.CODE_OP as CODEOP
+        from BL_OP_DT bod
+                 inner join bl_settle bs on bod.PK_SETTLE = bs.PK_SETTLE
+                 inner join CN_ORDER co on bod.PK_CNORD = co.PK_CNORD
+                 inner join PI_MASTER pm on bod.PK_PI = pm.PK_PI
+        where bod.PK_SETTLE = #{pkSettle}
+          and co.CODE_ORDTYPE like '%02%'
+        group by co.CODE_APPLY,pm.CODE_OP
+    </select>
+</mapper>

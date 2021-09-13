@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.tpserv.dao.TpServItemUnitMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.pro.zsba.tpserv.vo.TpServItemUnit">
+        <id column="PK_ITEM_UNIT" jdbcType="CHAR" property="pkItemUnit"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="SPCODE" jdbcType="VARCHAR" property="spcode"/>
+        <result column="NOTE" jdbcType="VARCHAR" property="note"/>
+        <result column="USE_FLAG" jdbcType="CHAR" property="useFlag"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="CREATOR" jdbcType="CHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="MODIFIER" jdbcType="CHAR" property="modifier"/>
+        <result column="MODITY_TIME" jdbcType="TIMESTAMP" property="modityTime"/>
+        <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+    </resultMap>
+    <select id="getTpServItemUnitById" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+             tp_serv_item_unit
+        WHERE            
+            PK_ITEM_UNIT = #{pkItemUnit,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllTpServItemUnit" resultMap="BaseResultMap">
+          SELECT * FROM tp_serv_item_unit 
+    </select>
+    
+    <delete id="deleteTpServItemUnit">
+        DELETE
+        FROM
+             tp_serv_item_unit
+        WHERE            
+            PK_ITEM_UNIT = #{pkItemUnit,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveTpServItemUnit" parameterType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServItemUnit" >
+        INSERT INTO tp_serv_item_unit
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkItemUnit != null" >
+                PK_ITEM_UNIT,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="spcode != null" >
+                SPCODE,
+            </if>
+            <if test="note != null" >
+                NOTE,
+            </if>
+            <if test="useFlag != null" >
+                USE_FLAG,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="modifier != null" >
+                MODIFIER,
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkItemUnit != null" >
+                #{pkItemUnit,jdbcType=CHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="spcode != null" >
+                #{spcode,jdbcType=VARCHAR},
+            </if> 
+            <if test="note != null" >
+                #{note,jdbcType=VARCHAR},
+            </if> 
+            <if test="useFlag != null" >
+                #{useFlag,jdbcType=CHAR},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=CHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="modifier != null" >
+                #{modifier,jdbcType=CHAR},
+            </if> 
+            <if test="modityTime != null" >
+                #{modityTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=TIMESTAMP},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateTpServItemUnit" parameterType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServItemUnit" >
+        UPDATE tp_serv_item_unit
+        <set>
+            <if test="pkItemUnit != null" >
+                PK_ITEM_UNIT = #{pkItemUnit,jdbcType=CHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="spcode != null" >
+                SPCODE = #{spcode,jdbcType=VARCHAR},
+            </if>
+            <if test="note != null" >
+                NOTE = #{note,jdbcType=VARCHAR},
+            </if>
+            <if test="useFlag != null" >
+                USE_FLAG = #{useFlag,jdbcType=CHAR},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=CHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="modifier != null" >
+                MODIFIER = #{modifier,jdbcType=CHAR},
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME = #{modityTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        WHERE 
+            PK_ITEM_UNIT = #{pkItemUnit,jdbcType=CHAR}
+    </update>
+    
+    	<!-- 获取第三方服务项目单位列表 -->
+	<select id="getServItemUnitList" parameterType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServItemUnit" resultType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServItemUnit">
+		select t1.pk_item_unit,t1.name,t1.code,t1.spcode,t1.note,t1.use_flag,t1.del_flag,t1.creator,
+		t1.create_time,t1.modifier,t1.modity_time,t1.ts
+		from tp_serv_item_unit t1
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+		  	<if test="code != null and code != ''">
+		  		and t1.code = #{code,jdbcType=VARCHAR} 
+		  	</if> 
+		  	<!-- <if test="name != null and name != ''">
+		  		and t1.name like '%'||#{name,jdbcType=VARCHAR} or name like #{name,jdbcType=VARCHAR}||'%'
+		  	</if> -->
+  		</trim>
+	</select>
+</mapper>

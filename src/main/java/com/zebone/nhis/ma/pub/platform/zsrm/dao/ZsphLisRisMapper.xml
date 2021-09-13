@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ma.pub.platform.zsrm.dao.ZsphLisRisMapper">
+
+    <select id="getLisInfo" parameterType="java.lang.String" resultType="DynaBean">
+		 SELECT ord.pk_dept,
+			ord.pk_dept_ns,
+			emp.code_emp,
+			emp.name_emp,
+			ord.eu_status_ord,
+			ord.code_apply,
+			ord.name_ord,
+			pv.name_pi,
+			pv.eu_pvtype,
+			def.name AS lab_name,
+			lab.dt_samptype,
+			deftype.name name_ordcate,
+			bdord.dt_ordcate,
+			pv.dt_sex,
+			bdord.code code_name,
+		    lab.eu_status,
+		    ord.code_ord,
+		    pi.birth_date,
+		    empOrdChk.code_emp code_emp_ord_chk,
+		    empOrdChk.name_emp name_emp_ord_chk,
+		    dept.code_dept code_dept_exec,
+		    dept.name_dept name_dept_exec,
+		    pv.bed_no,
+		    term.diagcode,
+		    term.diagname,
+		    lab.note,
+		    ordtype.CODE code_ordtype,
+		    ordtype.NAME name_ordtype,
+		    pi.code_pi,
+		    pi.code_op,
+		    pv.code_pv,
+		    ord.pk_cnord
+		 FROM CN_LAB_APPLY lab
+		 inner join cn_order ord on ord.pk_cnord = lab.pk_cnord
+		left join BD_ORDTYPE ordtype on ordtype.code = ord.code_ordtype
+		left join bd_ou_employee emp on emp.pk_emp = ord.pk_emp_ord
+		 left join bd_ou_employee empOrdChk on empOrdChk.pk_emp = ord.pk_emp_chk
+		 LEFT JOIN bd_ou_dept dept on dept.pk_dept = ord.pk_dept_exec
+		 left join BD_DEFDOC def on def.code = lab.dt_samptype and def.del_flag = '0' and def.code_defdoclist = '030200'
+		 left join bd_ord bdord on bdord.pk_ord = ord.pk_ord
+		 left join BD_DEFDOC deftype on deftype.code = bdord.dt_ordcate and deftype.del_flag = '0' and deftype.code_defdoclist = '030000'
+		 inner join PV_ENCOUNTER pv on pv.pk_pv = ord.pk_pv
+		 left join PV_DIAG diag on pv.pk_pv = diag.pk_pv and  diag.DEL_FLAG = '0' and diag.FLAG_MAJ='1'
+		 left join bd_term_diag term on term.pk_diag = diag.pk_diag
+		 INNER JOIN PI_MASTER pi on pi.pk_pi = pv.pk_pi
+		 WHERE ord.DEL_FLAG = '0' and  lab.DEL_FLAG = '0'
+		<if test="codeApply!=null and codeApply!=''">
+			and ord.code_apply=#{codeApply,jdbcType=VARCHAR}
+		</if>
+		<if test="codePv!=null and codePv!=''">
+			and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+		</if>
+		<if test="codeOp!=null and codeOp!=''">
+			and pi.CODE_OP=#{codeOp,jdbcType=VARCHAR}
+		</if>
+		<if test="pkCnord!=null and pkCnord!=''">
+			and ord.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+		</if>
+    </select>
+
+	<select id="getRisInfo" parameterType="java.lang.String" resultType="DynaBean">
+		SELECT ord.pk_dept,
+			ord.pk_dept_ns,
+			emp.code_emp,
+			emp.name_emp,
+			ord.eu_status_ord,
+			ord.code_apply,
+			ord.name_ord,
+			pv.name_pi,
+			pv.eu_pvtype,
+			deftype.name name_ordcate,
+			bdord.dt_ordcate,
+			pv.dt_sex,
+			bdord.code code_name,
+			lab.eu_status,
+			ord.code_ord,
+			pi.birth_date,
+			empOrdChk.code_emp code_emp_ord_chk,
+			empOrdChk.name_emp name_emp_ord_chk,
+			dept.code_dept code_dept_exec,
+			dept.name_dept name_dept_exec,
+			pv.bed_no,
+			term.diagcode,
+			term.diagname,
+			lab.note,
+		    deftypebody.name name_body,
+		    lab.desc_body,
+		    ord.quan_cg,
+		    ord.price_cg,
+		    ordtype.CODE code_ordtype,
+		    ordtype.NAME name_ordtype,
+		    pi.code_pi,
+		    pi.code_op,
+		    pv.code_pv,
+		    ord.pk_cnord
+		 FROM cn_ris_apply lab
+		inner join cn_order ord on ord.pk_cnord = lab.pk_cnord
+		left join BD_ORDTYPE ordtype on ordtype.code = ord.code_ordtype
+		left join bd_ou_employee emp on emp.pk_emp = ord.pk_emp_ord
+		left join bd_ou_employee empOrdChk on empOrdChk.pk_emp = ord.pk_emp_chk
+		LEFT JOIN bd_ou_dept dept on dept.pk_dept = ord.pk_dept_exec
+		left join bd_ord bdord on bdord.pk_ord = ord.pk_ord
+		left join BD_DEFDOC deftypebody on deftypebody.code = lab.desc_body and deftypebody.del_flag = '0' and deftypebody.code_defdoclist = '030101'
+		left join BD_DEFDOC deftype on deftype.code = bdord.dt_ordcate and deftype.del_flag = '0' and deftype.code_defdoclist = '030000'
+		inner join PV_ENCOUNTER pv on pv.pk_pv = ord.pk_pv
+		left join PV_DIAG diag on pv.pk_pv = diag.pk_pv and  diag.DEL_FLAG = '0' and diag.FLAG_MAJ='1'
+		left join bd_term_diag term on term.pk_diag = diag.pk_diag
+		INNER JOIN PI_MASTER pi on pi.pk_pi = pv.pk_pi
+		 WHERE ord.DEL_FLAG = '0' and  lab.DEL_FLAG = '0'
+		<if test="codeApply!=null and codeApply!=''">
+			and ord.code_apply=#{codeApply,jdbcType=VARCHAR}
+		</if>
+		<if test="codePv!=null and codePv!=''">
+			and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+		</if>
+		<if test="codeOp!=null and codeOp!=''">
+			and pi.CODE_OP=#{codeOp,jdbcType=VARCHAR}
+		</if>
+		<if test="pkCnord!=null and pkCnord!=''">
+			and ord.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+		</if>
+    </select>
+
+	<select id="getRisAppointList" resultType="DynaBean">
+		SELECT ord.pk_dept,
+		ord.pk_dept_ns,
+		emp.code_emp,
+		emp.name_emp,
+		ord.eu_status_ord,
+		ord.code_apply,
+		ord.name_ord,
+		pv.name_pi,
+		pv.eu_pvtype,
+		bdord.dt_ordcate,
+		pv.dt_sex,
+		bdord.code code_name,
+		lab.eu_status,
+		ord.code_ord,
+		pi.birth_date,
+		dept.code_dept code_dept_exec,
+		dept.name_dept name_dept_exec,
+		pv.bed_no,
+		lab.note,
+		lab.desc_body,
+		ord.quan_cg,
+		ord.price_cg,
+		ordtype.CODE code_ordtype,
+		ordtype.NAME name_ordtype,
+		pi.code_pi,
+		pi.code_op,
+		pv.code_pv,
+		ord.pk_cnord,
+		lab.eu_status_appo,
+		lab.date_begin_appo,
+		lab.date_end_appo,
+		lab.date_appo,
+		lab.PK_EMP_APPO,
+		lab.NAME_EMP_APPO,
+		empLab.CODE_EMP code_emp_appo,
+		lab.addr_appo,
+		lab.notice_appo,
+		lab.note_appo
+		FROM cn_ris_apply lab
+		inner join cn_order ord on ord.pk_cnord = lab.pk_cnord
+		inner join BL_SETTLE bl on bl.pk_pv = ord.pk_pv
+		left join BD_ORDTYPE ordtype on ordtype.code = ord.code_ordtype
+		left join bd_ou_employee emp on emp.pk_emp = ord.pk_emp_ord
+		left join bd_ou_employee empLab on lab.PK_EMP_APPO = empLab.pk_emp
+		LEFT JOIN bd_ou_dept dept on dept.pk_dept = ord.pk_dept_exec
+		left join bd_ord bdord on bdord.pk_ord = ord.pk_ord
+		inner join PV_ENCOUNTER pv on pv.pk_pv = ord.pk_pv
+		INNER JOIN PI_MASTER pi on pi.pk_pi = pv.pk_pi
+		WHERE ord.DEL_FLAG = '0' and  lab.DEL_FLAG = '0'
+		<if test="visitNo!=null and visitNo!=''">
+			and pv.code_pv=#{visitNo,jdbcType=VARCHAR}
+		</if>
+		<if test="patientNo!=null and patientNo!=''">
+			and pi.CODE_OP=#{patientNo,jdbcType=VARCHAR}
+		</if>
+		<if test="codeSt!=null and codeSt!=''">
+		    and bl.CODE_ST = #{codeSt,jdbcType=VARCHAR}
+		</if>
+	</select>
+</mapper>

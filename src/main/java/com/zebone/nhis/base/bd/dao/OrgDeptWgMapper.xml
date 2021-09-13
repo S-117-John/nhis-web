@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.OrgDeptWgMapper">
+
+   <select id="getFlowConfig" resultType="com.zebone.nhis.base.bd.vo.BdFlowBpExt">
+		select fl.pk_flow,
+		       fl.code_flow,
+		       fl.name_flow,
+		       fl.eu_type,
+		       sp.pk_flowstep,
+		       sp.sortno,
+		       sp.name_step,
+		       sp.eu_depttype,
+		       sp.pk_dept,
+		       sp.pk_emp,
+		       sp.name_emp
+		 from bd_flow fl inner join bd_flow_step sp on fl.pk_flow=sp.pk_flow
+		 where fl.object_flow='ORG_DEPT_WG'
+               and sp.flag_start='1' and fl.flag_active='1' and sp.del_flag = '0' 
+	</select>
+	
+	 <select id="findNextOrPreStep" parameterType="java.util.Map" resultType="com.zebone.nhis.base.bd.vo.BdFlowBpExt">
+		select bfs.pk_flowstep,bfs.eu_depttype,bfs.pk_dept,bfs.pk_emp
+        from bd_flow_step bfs ,(select pk_flow,sortno  from bd_flow_step where pk_flowstep =#{pkFlowStep,jdbcType=VARCHAR}) tb
+		<choose>
+            <when test="nextStep">
+                 where (bfs.pk_flow = tb.pk_flow and bfs.sortno = (tb.sortno+1) )
+            </when>
+            <otherwise>
+                 where (bfs.pk_flow = tb.pk_flow and bfs.sortno = (tb.sortno-1) )
+            </otherwise>
+        </choose>
+	</select>
+	
+	<select id="queryApproveWg" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.base.bd.res.OrgDeptWg">
+		select wg.pk_wg,
+		       wg.code_wg,
+		       wg.name_wg,
+		       wg.pk_dept,
+		       wg.eu_status,
+		       wg.desc_wg
+		from   (SELECT * from org_dept_wg where del_flag = '0' 
+		            <if test="codeWg != null and codeWg != ''">
+	                    AND code_wg like CONCAT(#{codeWg,jdbcType=VARCHAR},'%') 
+                    </if>
+                    <if test="nameWg != null and nameWg != ''">
+	                     AND name_wg like CONCAT(#{nameWg,jdbcType=VARCHAR},'%')
+                    </if>
+		           AND pk_dept = #{pkDept,jdbcType=VARCHAR}) wg
+		       inner join (SELECT * from bd_flow_bp where del_flag = '0' and eu_result='0') fb on wg.pk_wg=fb.pk_bppk
+		       inner join (SELECT * from bd_flow where flag_active='1' and del_flag = '0') fl on fb.pk_flow=fl.pk_flow
+		where (fl.eu_type='0' and fb.pk_dept = #{curDept,jdbcType=VARCHAR} ) or (fl.eu_type='1' and fb.pk_emp = #{curEmp,jdbcType=VARCHAR}) 
+		
+	</select>
+
+</mapper>

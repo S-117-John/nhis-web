@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.syx.dao.LisApplyMapper">
+
+	<!-- 写表 tExamineRequestForIP检验申请表 -->
+	<select id="queryLisAppList" parameterType="java.util.Map" 
+		resultType="com.zebone.nhis.ma.pub.syx.vo.TExamineRequestForIP">
+		select t.* from (
+		select distinct 
+			   case when lis.form_app is not null then lis.form_app else ord.code_apply end examineRequestID,
+			   pi.code_pi PatientID ,
+			   pv.name_pi PatientName ,
+			   case pi.dt_sex when '02' then '1' when '03' then '2' else '9' end  PatientSexFlag  ,
+			   pi.birth_date PatientBirthDay ,
+			   pv.age_pv Age ,
+			   pi.tel_rel Phone ,
+			   pi.addr_cur Address ,
+			   'I' PatType   ,
+			   '' OganID  ,
+			   '' OganName  ,
+			   pi.code_ip IPSeqNoText ,
+			   ip.ip_times IPTimes ,
+			   pv.bed_no SickBedNo ,
+			   empreq.old_id RequestDoctorEmployeeID ,
+			   empreq.old_code RequestDoctorEmployeeNo ,
+			   empreq.name_emp RequestDoctorEmployeeName ,
+			   deptreq.old_id RequestDepartmentID ,
+			   deptreq.old_code RequestDepartmentNo ,
+			   deptreq.name_dept RequestDepartmentName ,
+			   deptex.old_id ExamineDepartmentID ,
+			   deptex.old_code ExamineDepartmentNo ,
+			   deptex.name_dept ExamineDepartmentName ,
+			   to_char(ord.date_start,'yyyy-MM-dd HH24:mi:') || '00' RequestExecutiveDateTime  ,<!-- 开始时间-定位到时分 -->
+			   '1900-01-01 0:00:00' as ResultDateTime,
+			   (case when indiag.name_diag = null then indiag.desc_diag else indiag.name_diag end) DiseaseName ,
+			   indiag.code_icd ICDCode ,
+			   ord.flag_emer EmergencyFlag ,
+			   '0' Flag
+ 	      from cn_order ord
+ 	     inner join cn_lab_apply lis on lis.pk_cnord = ord.pk_cnord
+ 	     inner join ex_order_occ occ on occ.pk_cnord = ord.pk_cnord
+ 		 inner join pv_encounter pv  on ord.pk_pv=pv.pk_pv
+		 inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+		 inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		 inner join bd_ou_employee empreq on empreq.pk_emp = ord.pk_emp_ord <!--开单医生-->
+		 inner join bd_ou_dept deptreq on deptreq.pk_dept = ord.pk_dept<!--开单科室-->
+		 inner join bd_ou_dept deptex on deptex.pk_dept = ord.pk_dept_exec<!--执行科室-->
+		  left join pv_diag indiag on indiag.pk_pv = pv.pk_pv and indiag.flag_maj = '1' and indiag.del_flag = '0'
+		   <!--and indiag.dt_diagtype='0100'-->
+		 where 1=1 
+		   and occ.eu_status = '1'
+		   and ord.pk_cnord in 
+		<foreach item="pkCnord" index="index" collection="pkCnords" open="(" separator="," close=")">
+				#{pkCnord}
+		</foreach>
+		)t
+		where  t.RequestDoctorEmployeeID=(select min(RequestDoctorEmployeeID) from ( <!--主要目的未依据申请单号去重-->
+											select distinct
+											case when lis.form_app is not null then lis.form_app else ord.code_apply end examineRequestID,
+											empreq.old_id RequestDoctorEmployeeID ,
+											empreq.old_code RequestDoctorEmployeeNo ,
+											empreq.name_emp RequestDoctorEmployeeName
+											from cn_order ord
+											inner join cn_lab_apply lis on lis.pk_cnord = ord.pk_cnord
+											inner join ex_order_occ occ on occ.pk_cnord = ord.pk_cnord
+											inner join pv_encounter pv  on ord.pk_pv=pv.pk_pv
+											inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+											inner join pi_master pi on pv.pk_pi=pi.pk_pi
+											inner join bd_ou_employee empreq on empreq.pk_emp = ord.pk_emp_ord <!--开单医生-->
+											inner join bd_ou_dept deptreq on deptreq.pk_dept = ord.pk_dept<!--开单科室-->
+											inner join bd_ou_dept deptex on deptex.pk_dept = ord.pk_dept_exec<!--执行科室-->
+											left join pv_diag indiag on indiag.pk_pv = pv.pk_pv and indiag.flag_maj = '1' and indiag.del_flag = '0'
+											<!--and indiag.dt_diagtype='0100'-->
+											where 1=1
+											and occ.eu_status = '1'
+											and ord.pk_cnord in
+											<foreach item="pkCnord" index="index" collection="pkCnords" open="(" separator="," close=")">
+												#{pkCnord}
+											</foreach>
+		) a where t.examineRequestID = a.examineRequestID )
+		order by t.examineRequestID
+		
+	</select>
+	
+	<!-- 写表 tExamineRequestForIP检验申请表 -->
+	<select id="queryOpLisAppList" parameterType="java.util.Map" 
+		resultType="com.zebone.nhis.ma.pub.syx.vo.TExamineRequestForIP">
+		select t.* from (
+		select distinct 
+			   case when lis.form_app is not null then lis.form_app else ord.code_apply end examineRequestID,
+			   pi.code_pi PatientID ,
+			   pv.name_pi PatientName ,
+			   case pi.dt_sex when '02' then '1' when '03' then '2' else '9' end  PatientSexFlag  ,
+			   pi.birth_date PatientBirthDay ,
+			   pv.age_pv Age ,
+			   pi.tel_rel Phone ,
+			   pi.addr_cur Address ,
+			   'O' PatType   ,
+			   '' OganID  ,
+			   '' OganName  ,
+			   pi.code_ip IPSeqNoText ,
+			   op.op_times IPTimes ,
+			   ' ' SickBedNo ,
+			   case 
+			   	when empreq.old_id is null then ' '
+			   	else empreq.old_id
+			   end RequestDoctorEmployeeID,
+			   case 
+			   	when empreq.old_code is null then ' '
+			   	else empreq.old_code
+			   end RequestDoctorEmployeeNo,
+			   empreq.name_emp RequestDoctorEmployeeName ,
+			   deptreq.old_id RequestDepartmentID ,
+			   deptreq.old_code RequestDepartmentNo ,
+			   deptreq.name_dept RequestDepartmentName ,
+			   deptex.old_id ExamineDepartmentID ,
+			   deptex.old_code ExamineDepartmentNo ,
+			   deptex.name_dept ExamineDepartmentName ,
+			   to_char(ord.date_start,'yyyy-MM-dd HH24:mi:') || '00' RequestExecutiveDateTime  ,<!-- 开始时间-定位到时分 -->
+			   '1900-01-01 0:00:00' as ResultDateTime,
+			   (case when indiag.name_diag = null then indiag.desc_diag else indiag.name_diag end) DiseaseName ,
+			   indiag.code_icd ICDCode ,
+			   ord.flag_emer EmergencyFlag ,
+			   '0' Flag,
+			   '0' CancleFlag,
+			   '1' PayFlag 
+ 	      from cn_order ord
+ 	     inner join cn_lab_apply lis on lis.pk_cnord = ord.pk_cnord
+ 		 inner join pv_encounter pv  on ord.pk_pv=pv.pk_pv
+		 inner join pv_op op on pv.pk_pv=op.pk_pv
+		 inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		 inner join bd_ou_employee empreq on empreq.pk_emp = ord.pk_emp_ord <!--开单医生-->
+		 inner join bd_ou_dept deptreq on deptreq.pk_dept = ord.pk_dept<!--开单科室-->
+		 inner join bd_ou_dept deptex on deptex.pk_dept = ord.pk_dept_exec<!--执行科室-->
+		  left join pv_diag indiag on indiag.pk_pv = pv.pk_pv and indiag.flag_maj = '1' and indiag.del_flag = '0'
+		   <!--and indiag.dt_diagtype='0100'-->
+		 where 1=1 
+		   and ord.pk_cnord in 
+		<foreach item="pkCnord" index="index" collection="pkCnords" open="(" separator="," close=")">
+				#{pkCnord}
+		</foreach>
+		)t order by t.examineRequestID
+		
+	</select>
+	
+	<!-- 写表tExamineItemSetListForIP检验申请明细  -->
+	<select id="queryLisFeeList" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.ma.pub.syx.vo.TExamineItemSetListForIP">
+			select case when lis.form_app is not null then lis.form_app else ord.code_apply end ExamineRequestID,
+				   bdOrd.old_id ItemSetID ,
+				   ord.ordsn,
+				   ord.code_ord ItemSetNo ,
+				   ord.name_ord ItemSetDesc ,
+				   <!-- ord.price_cg ItemSetPrice  ,套餐价格 - 医嘱价格 -->
+				   (select sum(amount) from bl_ip_dt dt 
+				     where dt.pk_cnord = ord.pk_cnord and dt.del_flag = '0' 
+				       and (dt.pk_cgip_back is null or dt.pk_cgip_back = '')) as ItemSetPrice,<!-- 套餐价格 -->
+				   samp.old_id ExamineExemplarID ,<!-- 样本类型ID -->
+				   samp.code_std ExamineExemplarNo ,<!-- 样本类型编码 - 待数据库同步 -->
+				   samp.name ExamineExemplarDesc <!-- 样本类型描述 -->
+ 			  from cn_order ord 
+ 			 inner join bd_ord bdOrd on bdOrd.pk_ord = ord.pk_ord
+ 			 inner join cn_lab_apply lis on lis.pk_cnord = ord.pk_cnord
+ 			  left join bd_defdoc samp on samp.code = lis.dt_samptype and samp.code_defdoclist = '030200'
+  	         where 1=1 
+		       and ord.pk_cnord in 
+		<foreach item="pkCnord" index="index" collection="pkCnords" open="(" separator="," close=")">
+				#{pkCnord}
+		</foreach>
+	</select>
+	
+	<!-- 已经写表 tExamineRequestForIP检验申请表 -->
+	<select id="queryLisAppListFromLis" parameterType="java.util.List"
+		resultType="com.zebone.nhis.ma.pub.syx.vo.TExamineRequestForIP">
+		SELECT *
+		FROM tExamineRequestForIP 
+		WHERE ExamineRequestID in
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">  
+            #{item.examineRequestID}  
+        </foreach>
+	</select>
+	
+	<!-- 已经写表tExamineItemSetListForIP检验申请明细  -->
+	<select id="queryLisFeeListFromLis" parameterType="java.util.List" 
+		resultType="com.zebone.nhis.ma.pub.syx.vo.TExamineItemSetListForIP">
+		select *
+ 			  from tExamineItemSetListForIP 
+		WHERE ExamineRequestID in
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">  
+            #{item.examineRequestID}  
+        </foreach>
+	</select>
+	
+	<!-- 更新检验申请单状态【核收】 -->
+	<update id="updateLabApplyToChk" parameterType="java.util.List">
+		UPDATE CN_LAB_APPLY SET
+			eu_status='3'
+		where eu_status = '2' and pk_cnord in 
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">  
+            #{item}  
+        </foreach>
+	</update>
+	
+	<!-- 删除 LIS 库 检验申请单信息【作废,不再使用】-->
+	<delete id="delExamineRequestForIP" parameterType="java.util.List">
+		delete from tExamineRequestForIP where Flag = '0' and (LabRecvStatus is null or LabRecvStatus = '0') and ExamineRequestID in
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">  
+            #{item}  
+        </foreach>
+	</delete>
+		
+	<!-- 删除 LIS 库 检验申请明细信息【作废,不再使用】-->
+	<delete id="delExamineItemSetListForIP" parameterType="java.util.List">
+		delete from tExamineItemSetListForIP where ExamineRequestID in
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">  
+            #{item}  
+        </foreach>
+	</delete>
+
+	<!-- 更新 LIS 库 检验申请单信息【作废 - 已读取未处理】 -->
+	<update id="updateExamineRequestForIP" parameterType="java.util.List">
+		UPDATE tExamineRequestForIP 
+		   SET CancleFlag = '1'
+		      ,CancleTime = #{item.cancleTime}  
+		      ,CancleEmployeeID = #{item.cancleEmployeeID}  
+		      <!-- ,LisCancelFlag = '1'
+		      ,LisCancelBy = #{item.lisCancelBy}  
+		      ,LisCancelTime = #{item.lisCancelTime}  
+		      ,LisCancelMsg = '病区取消' -->
+		WHERE Flag = '0' <!-- 未处理 -->
+		  AND ExamineRequestID in
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">  
+            #{item.examineRequestID}  
+        </foreach>
+	</update>
+	
+	<!-- 查询当前操作人的旧患者ID -->
+	<select id="queryOldIdByPkEmp" parameterType="java.util.Map" resultType="java.lang.String">
+		SELECT OLD_ID FROM BD_OU_EMPLOYEE WHERE PK_EMP = #{pkEmp,jdbcType=CHAR} AND DEL_FLAG = '0'
+	</select>	
+	
+</mapper>

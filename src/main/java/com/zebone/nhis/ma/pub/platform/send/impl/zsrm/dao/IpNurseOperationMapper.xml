@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.dao.IpNurseOperationMapper" >
+
+    <select id="qryPvStaff" resultType="com.zebone.nhis.common.module.pv.PvStaff">
+        select stf.DT_ROLE, stf.PK_EMP,emp.NAME_EMP,emp.CODE_EMP modifier
+        from PV_STAFF stf
+                 inner join BD_OU_EMPLOYEE emp on stf.PK_EMP = emp.PK_EMP
+        where stf.PK_PV = #{pkPv,jdbcType=VARCHAR}
+          and stf.DEL_FLAG = '0'
+    </select>
+
+    <select id="qryPvInfo" resultType="DynaBean">
+        select pv.CODE_PV,pi.CODE_IP,pi.CODE_OP,pi.CODE_PI
+             ,pt.CODE_DEPT,pta.CODE_DEPT CODE_DEPT_AREA,ptv.CODE_DEPT pv_dept,ptva.CODE_DEPT pv_dept_area
+             ,eo.CODE_EMP,eo.NAME_EMP,to_char(nvl(pv.DATE_ADMIT,sysdate),'yyyy-MM-dd HH24:mi:ss') optTime,pv.BED_NO,ip.IP_TIMES
+        from PV_ENCOUNTER pv
+            inner join PV_IP ip on pv.PK_PV=ip.PK_PV
+            inner join PI_MASTER pi on pv.PK_PI=pi.PK_PI
+            left join BD_OU_EMPLOYEE eo on pv.PK_EMP_TRE=eo.PK_EMP
+            left join BD_OU_DEPT ptv on pv.PK_DEPT=ptv.PK_DEPT
+            left join BD_OU_DEPT ptva on pv.PK_DEPT_NS=ptva.PK_DEPT
+            left join BD_OU_DEPT pt on ip.PK_DEPT_ADMIT=pt.PK_DEPT
+            left join BD_OU_DEPT pta on ip.PK_DEPT_NS_ADMIT=pta.PK_DEPT
+        where pv.PK_PV = #{pkPv,jdbcType=VARCHAR}
+    </select>
+
+    <select id="qryChangeDeptInfo" resultType="DynaBean">
+        select pv.CODE_PV,pi.CODE_IP,pi.CODE_OP,pi.CODE_PI,
+               ptv.CODE_DEPT,ptva.CODE_DEPT CODE_DEPT_AREA,ptvt.CODE_DEPT CODE_DEPT_T,ptvta.CODE_DEPT CODE_DEPT_T_AREA
+             ,pv.BED_NO,eo.CODE_EMP,eo.NAME_EMP,ip.IP_TIMES
+        from PV_ADT adt
+             inner join PV_ENCOUNTER pv on adt.PK_PV=pv.PK_PV
+             inner join PV_IP ip on pv.PK_PV=ip.PK_PV
+             inner join PI_MASTER pi on pv.PK_PI=pi.PK_PI
+             left join BD_OU_EMPLOYEE eo on pv.PK_EMP_TRE=eo.PK_EMP
+             left join BD_OU_DEPT ptv on pv.PK_DEPT=ptv.PK_DEPT
+             left join BD_OU_DEPT ptva on pv.PK_DEPT_NS=ptva.PK_DEPT
+             left join BD_OU_DEPT ptvt on adt.PK_DEPT=ptvt.PK_DEPT
+             left join BD_OU_DEPT ptvta on adt.PK_DEPT_NS=ptvta.PK_DEPT
+        where adt.PK_PV=#{pkPv,jdbcType=VARCHAR}
+        <if test="req!=null and req">
+            adt.flag_admit=0 and adt.eu_status='0'
+        </if>
+    </select>
+
+    <select id="qryBedInfo" resultType="com.zebone.nhis.common.module.base.ou.BdOuDept">
+        select dept.CODE_DEPT,dept.NAME_DEPT,'dept' as dept_type
+        from BD_OU_DEPT dept where PK_DEPT=#{pkDept,jdbcType=VARCHAR}
+        union all
+        select dept.CODE_DEPT,dept.NAME_DEPT,'ward' as dept_type
+        from BD_OU_DEPT dept where PK_DEPT=#{pkDeptNs,jdbcType=VARCHAR}
+    </select>
+</mapper>

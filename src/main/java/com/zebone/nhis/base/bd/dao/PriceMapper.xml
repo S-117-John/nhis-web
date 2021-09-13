@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.PriceMapper">
+
+<select id="findAllPayers" resultType="com.zebone.nhis.common.module.base.bd.price.BdPayer">
+select * from bd_payer where del_flag = '0' and ltrim(rtrim(pk_org)) ='~'  
+</select>
+
+<select id="queryHp"  parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.base.bd.price.BdHp">
+	select * from bd_hp where del_flag = '0'
+</select>
+
+<select id="queryHpOrg"  parameterType="java.lang.String" resultType="DynaBean">
+	select hrg.PK_HPORG,
+		  org.pk_org as pk_org_ou,  
+	      org.code_org, 
+	      org.name_org, 
+	      hrg.pk_org_use,
+	      case when hrg.pk_org_use is null  or hrg.del_flag='1' then '0' else '1' end isRela 
+	 from bd_ou_org org
+	      left outer join bd_hp_org hrg on org.pk_org=hrg.pk_org_use and hrg.PK_HP= #{pkHp,jdbcType=VARCHAR}
+	where org.flag_active='1' and
+	      org.del_flag='0' 
+</select>
+
+<select id="queryHpDivConfig"  parameterType="java.lang.String" resultType="DynaBean">
+	select cfg.PK_HPDIVCONFIG,
+	cfg.pk_hpcgdiv, 
+       cfg.eu_pvtype, 
+       cfg.pk_hpcgdiv, 
+       cfg.pk_hpstdiv, 
+       cfg.note        
+  from bd_hp_divconfig cfg
+ where cfg.pk_hp=#{pkHp,jdbcType=VARCHAR}
+   and cfg.del_flag='0' 
+</select>
+
+<select id="queryHpDictAttr" parameterType="java.util.Map" resultType="DynaBean">
+	select null as pk_dictattr,
+	       tmp.pk_dictattrtemp,
+	       tmp.code_attr, 
+	       tmp.name_attr, 
+	       tmp.val_attr,  
+	       tmp.desc_attr  
+	  from bd_dictattr_temp tmp
+	 where tmp.dt_dicttype='03' and  
+	       (tmp.pk_org_use= #{pkOrgUse,jdbcType=VARCHAR}  or tmp.pk_org_use is null) and
+	       tmp.del_flag='0' and
+	       not exists (select 1
+	                     from bd_dictattr att
+	                    where att.pk_dictattrtemp=tmp.pk_dictattrtemp and
+	                          att.pk_dict= #{pkDict,jdbcType=VARCHAR} )
+		union all
+		
+		select att.pk_dictattr,
+		       att.pk_dictattrtemp,
+		       tmp.code_attr, 
+		       tmp.name_attr,
+		       att.val_attr,  
+		       tmp.desc_attr  
+		  from bd_dictattr att
+		       inner join bd_dictattr_temp tmp on att.pk_dictattrtemp=tmp.pk_dictattrtemp
+		 where att.pk_dict= #{pkDict,jdbcType=VARCHAR} 
+
+</select>
+
+
+<select id="queryHpDept"  parameterType="java.lang.String" resultType="DynaBean">
+	select
+	   hrg.PK_HP,
+	   hrg.PK_HPdept,
+	   dept.pk_dept,
+	   dept.code_dept,
+	   dept.name_dept,
+	   hrg.pk_dept_use,
+     CASE  WHEN hrg.pk_dept_use IS NULL 
+		    OR hrg.del_flag= '1' THEN '0' ELSE '1' 
+	 END isRela  
+	from bd_hp_dept hrg
+	INNER JOIN bd_ou_dept dept ON dept.pk_dept= hrg.pk_dept_use 
+	WHERE dept.flag_active= '1' 
+	  AND dept.del_flag= '0'
+      AND hrg.PK_HP= #{pkHp,jdbcType=VARCHAR}
+</select>
+
+</mapper>

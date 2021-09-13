@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.ns.dao.DrugRetreatMapper">
+
+<select id="queryOccList" parameterType="java.lang.String" resultType="DynaBean">
+	 select ord.pk_org_exec,
+  			ord.pk_dept_exec,
+  			occ.pk_exocc,
+  			occ.date_plan,
+  			occ.date_plan date_plan_dis,
+  			pv.bed_no,
+  			pv.name_pi,
+  			ord.name_ord,
+  			ord.ordsn,
+  			occ.quan_occ,
+  			freq.name name_freq,
+  			sup.name name_supply,
+  			ord.date_stop,
+  			occ.name_emp_canc,
+  			occ.date_canc,
+  			occ.pk_unit,
+  			occ.flag_pivas,
+  			dt.pk_pdapdt,
+  			unit.name name_unit,
+  			ord.ordsn_parent  
+	   from ex_order_occ occ
+      inner join cn_order ord on occ.pk_cnord = ord.pk_cnord  
+      inner join ex_pd_apply_detail dt on occ.pk_pdapdt = dt.pk_pdapdt 
+      inner join pv_encounter pv on pv.pk_pv = occ.pk_pv 
+      inner join bd_term_freq freq on freq.code = ord.code_freq 
+      inner join bd_unit unit on unit.pk_unit = occ.pk_unit 
+       left join bd_supply sup on sup.code = ord.code_supply 
+      where occ.eu_status = '9' 
+        and (occ.pk_pdback is null or occ.pk_pdback = '') 
+        and dt.quan_min &gt; 0 
+        and ord.flag_stop_chk = '1'
+        and (ord.code_supply not like '01%' or sup.dt_excardtype &lt;&gt; '2') <!-- 非口服类 -->
+  	    and pv.pk_pv in 
+    <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+          	#{pkpv}
+    </foreach> 
+     order by pv.bed_no,pv.name_pi,ord.ordsn_parent,occ.date_plan
+</select>
+
+<select id="queryMedicineList" parameterType="java.lang.String"
+resultType="com.zebone.nhis.ex.nis.ns.vo.MedicineVo">
+	 select pd.name,
+  			pd.spec,
+  			de.pk_pd,
+  			de.quan_pack,
+  			de.date_de,
+  			de.date_expire,
+  			de.batch_no,
+  			de.price,
+  			de.price_cost,
+  			de.name_emp_de,
+  			de.pk_cnord,
+  			de.pack_size,
+  			de.pk_unit,
+  			de.quan_min,
+  			de.pk_pdde,
+  			unit.name as name_unit, 
+  			ord.flag_base,
+  			ord.flag_medout,
+  			ord.flag_self,
+  			ord.ords,
+  			ord.pk_pres,
+  			ord.pk_pv,
+  			occ.pk_exocc,
+  			dt.pk_cgip   
+	   from ex_pd_de de 
+      inner join bd_pd pd on pd.pk_pd = de.pk_pd 
+      inner join bd_unit unit on unit.pk_unit = de.pk_unit 
+      inner join cn_order ord on ord.pk_cnord = de.pk_cnord 
+      inner join ex_order_occ occ on occ.pk_pdapdt = de.pk_pdapdt 
+       left join bl_ip_dt dt on dt.pk_ordexdt = de.pk_pdde  
+       left join bd_supply sup on sup.code = ord.CODE_SUPPLY
+      where occ.eu_status = '9' 
+        and (occ.pk_pdback is null or occ.pk_pdback = '') 
+        and ord.flag_stop_chk = '1'
+        and (ord.code_supply not like '01' or sup.dt_excardtype!='2') <!-- 非口服类 -->
+        and occ.pk_pv in 
+   <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+          	#{pkpv}
+   </foreach>  
+  	  order by ord.ordsn_parent,occ.date_plan 
+</select>
+
+<update id="updateExOrderOcc" parameterType="com.zebone.nhis.ex.nis.ns.vo.ExPdApplyDetailVo">
+	Update ex_order_occ set pk_pdback = #{pkPdap} where pk_exocc =#{pkExOcc}
+</update>
+
+<update id="updateExList" parameterType="java.util.Map">
+  	update ex_order_occ set pk_emp_occ = #{pkEmp,jdbcType=VARCHAR},name_emp_occ = #{nameEmp,jdbcType=VARCHAR} 
+  		,flag_canc='0',eu_status='1',pk_emp_canc='',name_emp_canc='',date_canc = null,pk_dept_canc=''
+  		,date_occ= to_date(#{dateCur},'YYYYMMDDHH24MISS')
+   where pk_exocc in 
+   <foreach item="pkExOcc" index="index" collection="pkExList" open="(" separator="," close=")">
+          	#{pkExOcc}
+   </foreach>  
+</update>
+
+<select id="queryOccListBySyx" parameterType="java.lang.String" resultType="DynaBean">
+	 select ord.pk_org_exec,
+  			ord.pk_dept_exec,
+  			occ.pk_exocc,
+  			occ.date_plan,
+  			occ.date_plan date_plan_dis,
+  			pv.bed_no,
+  			pv.name_pi,
+  			ord.name_ord,
+  			occ.quan_occ,
+  			freq.name name_freq,
+  			sup.name name_supply,
+  			ord.date_stop,
+  			occ.name_emp_canc,
+  			occ.date_canc,
+  			occ.flag_pivas,
+  			occ.pk_unit,
+  			dt.pk_pdapdt,
+  			unit.name name_unit,
+  			ord.ordsn,
+  			ord.ordsn_parent  ,
+			deapp.NAME_DEPT as name_dept_app,
+			ord.PK_DEPT as pk_dept_app,
+			ord.PK_DEPT_NS as pk_dept_ns_app
+	   from ex_order_occ occ
+      inner join cn_order ord on occ.pk_cnord = ord.pk_cnord
+	  inner join BD_OU_DEPT deapp on deapp.PK_DEPT=ord.PK_DEPT
+      inner join ex_pd_apply_detail dt on occ.pk_pdapdt = dt.pk_pdapdt 
+      inner join pv_encounter pv on pv.pk_pv = occ.pk_pv
+	  <if test="pkDept != null  and  pkDept != ''">
+		 and pv.PK_DEPT = ord.PK_DEPT
+	  </if>
+      inner join bd_term_freq freq on freq.code = ord.code_freq 
+      inner join bd_unit unit on unit.pk_unit = occ.pk_unit 
+       left join bd_supply sup on sup.code = ord.code_supply 
+      where occ.eu_status = '9' 
+        and (occ.pk_pdback is null or occ.pk_pdback = '') 
+        and dt.quan_min &gt; 0 
+  	    and pv.pk_pv in 
+    <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+          	#{pkpv}
+    </foreach> 
+    <if test=' "0"==flagPo '> <!-- 非口服类【执行卡】 -->
+       and sup.dt_excardtype &lt;&gt; '2'
+    </if>
+    <if test=' "1"==flagPo '> <!-- 口服类【执行卡】 -->
+       and sup.dt_excardtype = '2'
+    </if>
+    <if test="flagMedout != null  and  flagMedout != ''"> <!-- 出院带药 -->
+       and ord.flag_medout = #{flagMedout,jdbcType=CHAR} 
+    </if>
+    <if test="euAlways != null  and  euAlways != ''"> <!-- 临时|长期 -->
+       and ord.eu_always = #{euAlways,jdbcType=CHAR} 
+   </if>
+
+     order by pv.bed_no,pv.name_pi,occ.date_plan,ord.ordsn_parent,ord.ordsn
+</select>
+
+<select id="queryMedicineListBySyx" parameterType="java.lang.String"
+resultType="com.zebone.nhis.ex.nis.ns.vo.MedicineVo">
+	 select pd.name,
+  			pd.spec,
+  			de.pk_pd,
+  			de.quan_pack,
+  			de.date_de,
+  			de.date_expire,
+  			de.batch_no,
+  			de.price,
+  			de.price_cost,
+  			de.name_emp_de,
+  			de.pk_cnord,
+  			de.pk_pdde,
+  			de.pack_size,
+  			de.pk_unit,
+  			de.quan_min,
+  			unit.name as name_unit, 
+  			ord.flag_base,
+  			ord.flag_medout,
+  			ord.flag_self,
+  			ord.ords,
+  			ord.pk_pres,
+  			ord.pk_pv,
+  			occ.pk_exocc,
+  			dt.pk_cgip   
+	   from ex_pd_de de 
+      inner join bd_pd pd on pd.pk_pd = de.pk_pd 
+      inner join bd_unit unit on unit.pk_unit = de.pk_unit 
+      inner join cn_order ord on ord.pk_cnord = de.pk_cnord 
+      inner join ex_order_occ occ on occ.pk_pdapdt = de.pk_pdapdt 
+       left join bl_ip_dt dt on dt.pk_ordexdt = de.pk_pdde  
+       left join bd_supply sup on sup.code = ord.CODE_SUPPLY
+      where occ.eu_status = '9' 
+        and (occ.pk_pdback is null or occ.pk_pdback = '') 
+        and occ.pk_pv in 
+   <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+          	#{pkpv}
+   </foreach>  
+  <if test=' "0"==flagPo '> <!-- 非口服类【执行卡】 -->
+       and sup.dt_excardtype &lt;&gt; '2'
+    </if>
+    <if test=' "1"==flagPo '> <!-- 口服类【执行卡】 -->
+       and sup.dt_excardtype = '2'
+    </if>
+   <if test="flagMedout != null  and  flagMedout != ''"> <!-- 出院带药 -->
+       and ord.flag_medout = #{flagMedout,jdbcType=CHAR} 
+   </if>
+   <if test="euAlways != null  and  euAlways != ''"> <!-- 临时|长期 -->
+       and ord.eu_always = #{euAlways,jdbcType=CHAR} 
+   </if>
+  	  order by ord.ordsn_parent,occ.date_plan 
+</select>
+<select id="queryRtnApply" parameterType="java.util.Map" resultType="DynaBean">
+  select ap.pk_pdap,
+	ap.code_apply,
+	ap.pk_emp_ap,
+	ap.name_emp_ap,
+	ap.date_ap,
+	ap.eu_print  
+  from ex_pd_apply ap  
+  where  ap.flag_cancel='0'  and ap.eu_direct = '-1'
+   and ap.pk_dept_ap = #{pkDeptAp,jdbcType=CHAR}  
+   <if test="dateBegin != null  and  dateBegin != ''"> <!--开始时间 -->
+       and ap.date_ap &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+   </if>
+   <if test="dateEnd != null  and  dateEnd != ''"> <!-- 截止时间-->
+        and ap.date_ap &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+   </if>
+   <if test="pkEmpAp != null  and  pkEmpAp != ''"> <!-- 申请人 -->
+       and ap.pk_emp_ap = #{pkEmpAp,jdbcType=CHAR} 
+   </if>
+  <if test="euPrint != null  and  euPrint != ''"> <!-- 打印状态 -->
+       and ap.eu_print = #{euPrint,jdbcType=VARCHAR} 
+   </if>
+
+    <if test="  euPrint != 0">
+       and  ap.flag_finish ='0'
+   </if>
+
+</select>
+</mapper>

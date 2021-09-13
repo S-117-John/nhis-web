@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.CnIpPresMapper">
+
+    <!-- qryCnIpPres诊断名称走的是临床诊断（非标准诊断） -->
+    <select id="qryCnIpPres" parameterType="java.lang.String" resultType="com.zebone.nhis.cn.ipdw.vo.CnIpPressVO">
+		select pres.*,nvl(ord.eu_status_ord,'0') as  eu_status_ord,diag.name_cd as diagname,emp.code_emp,ord1.pk_dept_exec as pk_dept_ex,ord1.ords_count,ord1.total_price,ord1.herb_cnord
+        ,case when occ.eu_status is null then '0' when  occ.eu_status !='9' then '1' else '3' end flag_settle
+		  from cn_prescription pres
+		       left join (select distinct
+		                          pk_pres,
+		                          max(pk_dept_exec) as pk_dept_exec,
+		                          max(eu_status_ord) as eu_status_ord
+		                     from cn_order
+		                    where pk_pv=#{pkPv} group by pk_pres) ord on pres.pk_pres=ord.pk_pres
+		       left join (select distinct
+		                          pk_pres,
+		                          max(pk_dept_exec) as pk_dept_exec,
+		                          max(eu_status_ord) as eu_status_ord,
+		                           max(ords) as ords_count,
+		                                  max(PRICE_CG*ords) as total_price,
+		                                  max(PK_CNORD) as herb_cnord
+		                     from cn_order
+		                    where pk_pv=#{pkPv} and flag_self='0' and flag_base='0' group by pk_pres) ord1 on pres.pk_pres=ord1.pk_pres
+		       left join EX_PRES_OCC occ on occ.PK_PRES=ord.PK_PRES
+		       left join bd_cndiag diag on diag.pk_cndiag=pres.pk_diag and diag.del_flag='0'
+		       left join bd_ou_employee emp on emp.pk_emp=pres.pk_emp_ord and emp.del_flag='0'
+		 where pres.pk_pv=#{pkPv}
+		 order by PRES.date_pres desc
+    </select>
+
+    <select id="qryCnIpPresOrd" parameterType="java.util.Map" resultType="com.zebone.nhis.cn.ipdw.vo.CnOrderVO">
+        select ord.*,nvl(freq.cnt,1) as cnt,nvl(freq.cnt_cycle,1) as cnt_cycle,
+        pstk.quan as stock,
+        pstk.pk_unit as pk_unit_stock,
+        pd.vol,
+        pd.pk_unit_min,
+        pd.eu_muputype,
+        pd.dt_pois,
+        att.val_att adjuvant_drug,
+        pstk.PACK_SIZE pack_size_store_def,
+        sup.dt_excardtype,wg.name_wg
+        from cn_order ord
+        left join bd_supply sup on ord.code_supply=sup.code
+        inner join bd_pd pd on PD.pk_pd=ORD.pk_ord and PD.del_flag='0'
+        left outer join BD_TERM_FREQ freq on ord.code_freq=freq.code and freq.del_flag='0'
+        left outer join (select pds.pk_pd,
+            pds.pk_dept,
+            pack.pk_unit,
+            pack.pack_size,
+            sum(stk.quan_min-stk.quan_prep)/pack.pack_size quan
+            from bd_pd_store pds
+            inner join bd_pd_store_pack pack on pds.pk_pdstore=pack.pk_pdstore AND pack.flag_def = '1'
+            inner join pd_stock stk on pds.pk_pd=stk.pk_pd and pds.pk_store=stk.pk_store
+            where stk.flag_stop='0' and
+            pds.flag_stop='0'
+            group by pds.pk_pd,
+            pds.pk_dept,
+            pack.pk_unit,
+            pack.pack_size
+        ) pstk on ord.pk_ord=pstk.pk_pd and ord.pk_dept_exec=pstk.pk_dept
+        left outer join (
+            SELECT
+            max(bd_pd_att.val_att) as val_att,
+            bd_pd_att.pk_pd,
+            bd_pd_att.pk_org
+            FROM bd_pd_att
+            INNER JOIN bd_pd_att_define ON bd_pd_att.pk_pdattdef = bd_pd_att_define.pk_pdattdef
+            WHERE bd_pd_att_define.code_att = '0503' AND bd_pd_att.del_flag = '0' AND bd_pd_att_define.del_flag = '0'
+            group by bd_pd_att.pk_pd, bd_pd_att.pk_org
+        ) att on att.pk_pd=pd.pk_pd
+        left join org_dept_wg wg on wg.pk_wg = ord.pk_wg
+        where ord.eu_always='1'
+        and ord.pk_pv=#{pkPv,jdbcType=VARCHAR}
+        and ord.pk_pres is not null
+        <if test='pkPres != null and pkPres != "" '>
+            and ord.pk_pres =#{pkPres,jdbcType=VARCHAR}
+        </if>
+
+
+    </select>
+
+    <select id="qryPresOrdSetDt" resultType="DynaBean" parameterType="java.util.Map">
+    	SELECT
+			setdt.*, 
+		    ord.eu_usecate,
+			ord.flag_st,
+			ind.desc_ind,
+			ord.code,
+			ordtype.code AS code_ordtype,
+			freq.eu_always,
+		    freq.cnt,
+			supply.flag_pivas,
+			ord.pk_unit_min,
+			ord.weight,
+			ord.pk_unit_wt,
+			ord.vol,
+			ord.pk_unit_vol,
+			'1' AS flag_cg,
+			ord.note AS descord,
+			ord.spec,
+			'0' as flag_stop,
+			pstk.quan as quan_min,
+			pstk.pack_size,
+			ord.dt_pois,
+			ord.dt_anti,
+			0 AS price_cg,
+			'04' AS dt_depttype,
+			'' AS desc_body,
+			'' AS dt_type,
+			'' AS dt_colltype,
+			'' AS dt_contype,
+			'' AS dt_samptype,
+			CASE
+		    WHEN bas.pk_pd IS NULL THEN '0' ELSE '1' END flag_base
+		FROM
+			bd_ord_set_dt setdt
+		INNER JOIN bd_pd ord ON setdt.pk_ord = ord.pk_pd AND ord.del_flag = '0'
+		INNER JOIN bd_ordtype ordtype ON ord.pk_ordtype = ordtype.pk_ordtype AND ordtype.del_flag = '0'
+		LEFT JOIN bd_pd_base bas ON bas.pk_pd = setdt.pk_ord
+		AND bas.del_flag = '0'
+		AND bas.pk_dept = #{pkDeptNs,jdbcType=CHAR} 
+		
+		LEFT OUTER JOIN (
+			SELECT
+				ip.pk_pd pk_pd,
+				ind.desc_ind desc_ind
+			FROM
+				bd_pd_indpd ip
+			INNER JOIN bd_pd_ind ind ON ip.pk_pdind = ind.pk_pdind AND ind.del_flag = '0'
+			WHERE
+				ind.pk_hp =#{pkHp,jdbcType=CHAR} 
+		) ind ON ord.pk_pd = ind.pk_pd 
+		
+		
+		LEFT JOIN 
+			(SELECT
+				pds.pk_pd,
+				pack.pk_unit,
+				pack.pack_size,
+				SUM (stk.quan_min - stk.quan_prep) / pack.pack_size quan
+			FROM
+				bd_pd_store pds
+			INNER JOIN bd_pd_store_pack pack ON pds.pk_pdstore = pack.pk_pdstore
+			INNER JOIN pd_stock stk ON pds.pk_pd = stk.pk_pd
+			AND pds.pk_store = stk.pk_store
+			WHERE
+				pds.pk_dept = #{pkDeptExec,jdbcType=CHAR}
+			AND stk.flag_stop = '0'
+			AND pds.flag_stop = '0'
+			GROUP BY
+				pds.pk_pd,
+				pack.pk_unit,
+				pack.pack_size) pstk ON ord.pk_pd = pstk.pk_pd
+		
+		LEFT JOIN bd_term_freq freq ON setdt.code_freq = freq.code
+		AND freq.del_flag = '0'
+		LEFT JOIN bd_supply supply ON setdt.code_supply = supply.code
+		AND supply.del_flag = '0'
+		WHERE
+			setdt.pk_ordset = #{pkOrdSet,jdbcType=CHAR}  
+		AND setdt.flag_pd = '1'
+		AND setdt.del_flag = '0'
+		ORDER BY
+			setdt.sort_no
+    </select>
+
+    <select id="qryPresOrdCopy" resultType="DynaBean" parameterType="java.util.Map">
+    	select 
+    		ord.pk_ord,   
+       		ord.name_ord, 
+       		ord.spec,  
+       		ord.dosage,  
+       		ord.pk_unit_dos,
+       		ord.code_supply, 
+       		ord.code_freq, 
+       		ord.pk_emp_ord, 
+       		ord.name_emp_ord,
+       		ord.pk_dept,  
+       		ord.code_ordtype,
+       		ord.date_start, 
+       		ord.eu_always, 
+       		ord.pk_dept_exec,
+       		ord.ordsn,
+       		ord.ordsn_parent, 
+       		freq.cnt,
+       		ord.EU_STATUS_ORD,ord.FLAG_ERASE,ord.DATE_ENTER,ord.FLAG_STOP,ord.FLAG_STOP_CHK
+    	from cn_order ord
+    	inner join bd_term_freq freq on freq.code=ord.code_freq
+    	where 
+    		ord.pk_pv=#{pkPv,jdbcType=VARCHAR} and 
+       		ord.flag_durg='1' and 
+       		ord.pk_pres is null 
+        order by ord.date_start asc
+    </select>
+
+    <select id="qryPresOrdUse" resultType="DynaBean" parameterType="java.util.Map">
+        select
+        it.pk_pd,
+        it.pk_pd as pk_ord,
+        it.name_ord,
+        it.spec,
+        it.dosage_def as dosage,
+        it.pk_unit_def as pk_unit_dos,
+        it.code_supply,
+        it.code_freq,
+        it.code,
+        it.eu_always,
+        it.cnt,
+        it.name_freq,
+        it.use_cnt,
+        it.dt_pois,
+        1 as flag_pd,
+        1 as days
+        from(
+        select
+        pd.pk_pd,
+        ord.name_ord,
+        ord.spec,
+        pd.dosage_def,
+        pd.pk_unit_def,
+        pd.dt_pois,
+        pd.code_supply,
+        pd.code_freq,
+        pd.code,
+        freq.eu_always,
+        freq.cnt,
+        freq.name as name_freq,
+        count(1) as use_cnt
+        from cn_order ord
+        inner join bd_pd pd on ord.pk_ord=pd.pk_pd
+        left join bd_term_freq freq on pd.code_freq = freq.code and freq.del_flag='0'
+        where ord.flag_durg='1' and
+        ord.pk_emp_input=#{pkEmpInput,jdbcType=VARCHAR}
+        <if test="dateEnter != null and  dateEnter != ''">
+            and ord.date_enter &gt;= to_date(#{dateEnter,jdbcType=VARCHAR},'yyyymmddHH24miss')
+        </if>
+        <if test="dtPois !=null and dtPois.size()>0">
+            and pd.dt_pois in
+            <foreach collection="dtPois" index="index" item="item" open="(" separator="," close=")">
+                #{item, jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        group by pd.pk_pd,
+        ord.name_ord,
+        ord.spec,
+        pd.dosage_def,
+        pd.pk_unit_def,
+        pd.dt_pois,
+        pd.code_supply,
+        pd.code_freq,
+        pd.code,
+        freq.eu_always,
+        freq.cnt,
+        freq.name
+        ) it
+        order by it.use_cnt desc
+    </select>
+    <select id="getOrdStoreUnit" resultType="DynaBean">
+        SELECT
+        pds.pk_pd,
+        pack.pk_unit,
+        pack.pack_size
+        FROM
+        bd_pd_store pds
+        INNER JOIN bd_pd_store_pack pack ON pds.pk_pdstore = pack.pk_pdstore
+        INNER JOIN pd_stock stk ON pds.pk_pd = stk.pk_pd
+        AND pds.pk_store = stk.pk_store
+        LEFT OUTER JOIN bd_pd_base bas ON pds.pk_pd = bas.pk_pd
+        <if test=" pkDeptNs != null and  pkDeptNs != ''">
+            and bas.pk_dept = #{pkDeptNs,jdbcType=VARCHAR}
+        </if>
+        WHERE stk.flag_stop = '0'
+        AND pds.flag_stop = '0'
+        and pack.flag_def='1'
+        <if test=" pkDeptExe != null and  pkDeptExe != ''">
+            and pds.pk_dept in (${pkDeptExe})
+        </if>
+        <if test=" pkPd != null and pkPd != ''">
+            and pds.pk_pd=#{pkPd,jdbcType=VARCHAR}
+        </if>
+        <if test=" pkStore != null and  pkStore != ''">
+            and pds.pk_store=#{pkStore,jdbcType=VARCHAR}
+        </if>
+
+    </select>
+
+</mapper>

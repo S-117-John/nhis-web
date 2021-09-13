@@ -1,0 +1,1434 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.pub.dao.PatiListQryMapper">
+    <select id="qryPiAmount" parameterType="java.util.Map" resultType="DynaBean">
+		select sum(cg.amount) amt
+		from pv_encounter pv
+		inner join bl_ip_dt cg on pv.pk_pv=cg.pk_pv
+ where pv.pk_pv=#{pkPv,jdbcType=VARCHAR} and
+       cg.flag_settle='0'
+
+    </select>
+    <select id="qryPiTreatWayAmount" parameterType="java.util.Map" resultType="DynaBean">
+  select pd.val  
+	  from pv_diag pd
+	       inner join bd_term_diag diag on pd.pk_diag=diag.pk_diag  and diag.del_flag='0' 
+	 where pd.pk_pv=#{pkPv,jdbcType=VARCHAR} 
+	      and pd.flag_maj='1' and pd.del_flag='0' 
+	      
+  </select>
+    <select id="qryDeptPatiTotal" parameterType="java.lang.String" resultType="int">
+        <!--
+        select count(pk_emp_phy) as count_total
+         from pv_encounter
+        where pk_dept = #{pk_dept,jdbcType=VARCHAR}
+          and eu_status > 0
+          and eu_pvtype = '3'
+          and flag_cancel != '1'
+          and (bed_no is not null or bed_no != '~')
+          and flag_in = '1'
+          and del_flag='0'
+          -->
+        select count (distinct(pv.pk_pv)) as count_total
+        from pv_encounter pv
+        inner join bd_res_bed bed on pv.pk_pi=bed.pk_pi and pv.bed_no=bed.code
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi and pi.del_flag = '0'
+        inner join pv_ip ip on pv.pk_pv = ip.pk_pv and ip.del_flag = '0'
+        left join pv_infant infant on pv.pk_pv=infant.pk_pv_infant and infant.del_flag='0'
+        where pv.flag_cancel != '1'
+        and pv.eu_pvtype = '3'
+        and pv.eu_status > 0
+        and pv.del_flag='0'
+        and pv.pk_dept = #{pk_dept,jdbcType=VARCHAR}
+        and pv.flag_in ='1'
+        and infant.pk_pv is null
+    </select>
+    <select id="qryDeptOpToday" parameterType="java.util.Map" resultType="int">
+        select count(distinct pv.pk_pv)
+        from pv_encounter pv
+        inner join cn_order ord on pv.pk_pv = ord.pk_pv
+        inner join cn_op_apply apply on ord.pk_cnord = apply.pk_cnord
+        where pv.eu_status = '1'<!-- 就诊中 -->
+        and ord.eu_status_ord &gt; '1' and ord.eu_status_ord &lt; '9'<!-- 签署1，作废9 -->
+        <if test="date_begin != null and  date_begin != ''">
+            and apply.date_plan &gt;= to_date(#{date_begin,jdbcType=VARCHAR},'yyyy-mm-dd HH24:mi:ss')
+        </if>
+        <if test="date_end != null and  date_end != ''">
+            and apply.date_plan &lt;= to_date(#{date_end,jdbcType=VARCHAR},'yyyy-mm-dd HH24:mi:ss')
+        </if>
+        <if test=" pk_org != null  and  pk_org != ''">
+            and ord.pk_org = #{pk_org,jdbcType=VARCHAR}
+        </if>
+        <if test=" pk_dept != null  and  pk_dept != ''">
+            and pv.pk_dept = #{pk_dept,jdbcType=VARCHAR}
+        </if>
+        <if test=" dateBegin != null and dateBegin != '' "><!-- 住院护士站-床位大卡使用时添加参数 -->
+            and apply.date_plan &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyymmddHH24miss')
+        </if>
+        <if test="dateEnd != null  and  dateEnd != ''"><!-- 住院护士站-床位大卡使用时添加参数 -->
+            and apply.date_plan &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyymmddHH24miss')
+        </if>
+        <if test=" pkDeptNs != null  and  pkDeptNs != ''"><!-- 住院护士站-床位大卡使用时添加参数 -->
+            and pv.pk_dept_ns = #{pkDeptNs,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+    <select id="qryDeptOpTomorrow" parameterType="java.util.Map" resultType="int">
+        select count(distinct pv.pk_pv)
+        from pv_encounter pv
+        inner join cn_order ord on pv.pk_pv = ord.pk_pv
+        inner join cn_op_apply apply on ord.pk_cnord = apply.pk_cnord
+        where pv.eu_status = '1'<!-- 就诊中 -->
+        and ord.eu_status_ord &gt; '1' and ord.eu_status_ord &lt; '9'<!-- 签署1，作废9 -->
+        <if test="date_tomorrow_begin != null">
+            and apply.date_plan &gt;= to_date(#{date_tomorrow_begin,jdbcType=VARCHAR},'yyyy-mm-dd HH24:mi:ss')
+        </if>
+        <if test="date_tomorrow_end != null">
+            and apply.date_plan &lt;= to_date(#{date_tomorrow_end,jdbcType=VARCHAR},'yyyy-mm-dd HH24:mi:ss')
+        </if>
+        <if test=" pk_org != null  and  pk_org != ''">
+            and ord.pk_org = #{pk_org,jdbcType=VARCHAR}
+        </if>
+        <if test=" pk_dept != null  and  pk_dept != ''">
+            and pv.pk_dept = #{pk_dept,jdbcType=VARCHAR}
+        </if>
+    </select>
+    <select id="qryDeptPatiInNum" parameterType="java.util.Map" resultType="int">
+	    select count(pk_pv) as count_in
+		  from pv_encounter
+		 where date_admit &gt;= to_date(#{date_begin,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss')  
+		   and date_admit &lt;= to_date(#{date_end,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss') 
+		   and eu_pvtype = '3'  
+		   and flag_in = '1' 
+		   and pk_dept = #{pk_dept,jdbcType=VARCHAR}    
+		   and flag_cancel = '0' 
+		   and del_flag='0'   
+    </select>
+    <select id="qryDeptPatiOutNum" parameterType="java.util.Map" resultType="int">
+       select count(pk_pv) as count_leave 
+		  from pv_encounter 
+		 where date_end &gt;= to_date(#{date_begin,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss') 
+		   and date_end &lt;= to_date(#{date_end,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss') 
+		   and pk_dept = #{pk_dept,jdbcType=VARCHAR}      
+		   and eu_status > 0  
+		   and flag_in = '0' 
+		   and eu_pvtype = '3'  
+		   and del_flag='0'   
+    </select>
+    <select id="qryDeptPatiTransInNum" parameterType="java.util.Map" resultType="int">
+         select count(upd.pk_pv) as count_receive 
+			  from pv_adt upd  
+			 inner join pv_adt updo  
+			    on upd.pk_adt_source = updo.pk_adt  and updo.del_flag='0' 
+			 where upd.date_begin &gt;= to_date(#{date_begin,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss') 
+			   and upd.date_begin &lt;= to_date(#{date_end,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss') 
+			   and upd.pk_dept = #{pk_dept,jdbcType=VARCHAR}      
+			   and upd.eu_status = 1 
+			   and upd.del_flag='0'   
+    </select>
+    <select id="queryDeptPatiTransOutNum" parameterType="java.util.Map" resultType="int">
+          select count(updo.pk_pv) as count_out 
+			  from pv_adt upd   
+			 inner join pv_adt updo   
+			    on upd.pk_adt_source = updo.pk_adt  and updo.del_flag='0' 
+			 where updo.date_end &gt;= to_date(#{date_begin,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss') 
+			     and updo.date_end &lt;= to_date(#{date_end,jdbcType=VARCHAR},'yyyy/mm/dd HH24:mi:ss') 
+			   and updo.pk_dept =  #{pk_dept,jdbcType=VARCHAR}       
+			   and upd.eu_status = 1  
+			   and upd.del_flag='0'   
+    </select>
+    <select id="queryDeptPatiDiseaseNum" parameterType="java.util.Map" resultType="int">
+      select count(pv.pk_pv) as count_disease 
+		  from pv_encounter pv 
+		 inner join pv_ip ip 
+		    on ip.pk_pv = pv.pk_pv  and ip.del_flag='0' 
+		 where pv.eu_status > 0  
+		   and pv.eu_pvtype = '3'  
+           and pv.flag_cancel != '1' 
+		   and pv.bed_no is not null
+		   and pv.flag_in = '1'  
+		   and pv.pk_dept = #{pk_dept,jdbcType=VARCHAR}   
+		   and ip.dt_level_dise ='02' 
+		   and pv.del_flag='0'   
+    </select>
+    <select id="queryDeptPatiDangerNum" parameterType="java.util.Map" resultType="int">
+	    select count(pv.pk_pv) as count_danger 
+			  from pv_encounter pv 
+			 inner join pv_ip ip 
+			    on ip.pk_pv = pv.pk_pv  and ip.del_flag='0' 
+			 where pv.eu_status > 0  
+			   and pv.eu_pvtype = '3'  
+               and pv.flag_cancel != '1' 
+			   and pv.bed_no is not null
+			   and pv.flag_in = '1' 
+			   and pv.pk_dept = #{pk_dept,jdbcType=VARCHAR}   
+			   and ip.dt_level_dise ='03'  
+			   and pv.del_flag='0'  
+    </select>
+    <select id="queryDeptCpRecNum" parameterType="java.util.Map" resultType="int">
+	      select count(distinct(pv.pk_pv)) 
+   from   pv_encounter pv  
+   where pv.eu_status > 0  
+         and pv.eu_pvmode='1'
+         and pv.eu_pvtype = '3'  
+         and pv.flag_cancel != '1'   
+         and pv.bed_no is not null
+         and pv.flag_in = '1'  
+         and pv.pk_dept = #{pk_dept,jdbcType=VARCHAR}  
+         and pv.del_flag='0' 
+    </select>
+    <select id="querySinglePat" parameterType="java.util.Map" resultType="DynaBean">
+        select distinct(pv.pk_pv),
+        pv.eu_pvtype,
+        pv.eu_pvmode,
+        pv.pk_pi,
+        pv.weight,
+        pv.pk_dept_ns,
+        pv.date_admit,
+        pi.name_pi as patiname,
+        pi.name_pi,
+        pi.code_pi,
+        pi.code_pi as paticode,
+        pi.mobile as teleno,
+        pv.bed_no as bedno,
+        pi.code_ip as pvcode,
+        pi.code_ip,
+        pi.code_op,
+        pi.mcno,
+        pv.dt_sex,
+        sex.name as sexname,
+        pv.age_pv as agepv,
+        hp.name as hpname,
+        pv.pk_insu as pk_hp,
+        psn.name_emp as namePsnPhy,
+        pv.pk_dept,
+        dp.name_dept as deptPhyName,
+        dp.code_dept as deptCode,
+        dp.code_orig as deptCodeOrig,
+        ns.name_dept as deptNsName,
+        ns.code_dept as deptNsCode,
+        ns.code_orig as deptNsCodeOrig,
+        pv.date_begin as datePvbegin,
+        pv.date_end as datePvend,
+        pv.code_pv,
+        (case pv.flag_in
+        when '1' then
+        ''
+        else
+        ((select name
+        from bd_defdoc
+        where code_defdoclist = '000110'
+        and code = ip.dt_outcomes
+        and del_flag = '0'))
+        end) as outcomesName,
+        outdiag.desc_diag as DisDiag,
+        '' as dateEndZk,
+        indiag.desc_diag as DmissDiag,
+        indiag.name_diag,
+        indiag.pk_diag,
+        ord.name as NameSrvNurse,
+        ip.dt_level_dise,
+        outtype.name as PvIpDischmodeName,
+        pv.eu_status,
+        cprec.eu_status as cp_eu_status,
+        pi.name_rel,
+        pi.tel_rel,
+        pv.addr_cur_dt,
+        pv.addr_cur,
+        pv.pk_wg,
+        ip.ip_times,
+        pi.insur_no,
+        pi.id_no,
+        pv.flag_in,
+        pv.flag_spec,
+        rec.eu_status as eu_status_emr,
+        ip.flag_infected,
+        bed.dt_bedtype,
+        pv.pk_emp_phy,
+        pi.birth_date
+        from pv_encounter pv
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi and pi.del_flag = '0'
+        inner join pv_ip ip on pv.pk_pv = ip.pk_pv and ip.del_flag = '0'
+        left join bd_res_bed bed on pv.pk_pi=bed.pk_pi and pv.bed_no=bed.code and bed.pk_ward = pv.pk_dept_ns
+        left outer join pv_infant newborn
+        on ip.pk_pv = newborn.pk_pv
+        and newborn.del_flag = '0'
+        left outer join cp_rec cprec
+        on pv.pk_pv = cprec.pk_pv
+        and cprec.eu_rectype = '1'
+        and cprec.del_flag='0'
+        left outer join bd_ou_dept ns
+        on pv.pk_dept_ns = ns.pk_dept
+        and ns.del_flag = '0'
+        left outer join bd_ou_dept dp
+        on pv.pk_dept = dp.pk_dept
+        and dp.del_flag = '0'
+        left outer join bd_defdoc sex
+        on pv.dt_sex = sex.code
+        and sex.code_defdoclist = '000000'
+        and sex.del_flag = '0'
+        left join bd_defdoc outtype
+        on ip.dt_outtype = outtype.code and outtype.code_defdoclist='000105' and outtype.del_flag='0'
+        left outer join bd_ou_employee psn
+        on pv.pk_emp_phy = psn.pk_emp
+        and psn.del_flag = '0'
+        left outer join bd_hp hp
+        on pv.pk_insu = hp.pk_hp
+        and hp.del_flag = '0'
+        left outer join bd_ord ord
+        on ip.dt_level_ns = ord.code
+        and ord.del_flag='0'
+        left outer join pv_diag outdiag
+        on pv.pk_pv = outdiag.pk_pv
+        and outdiag.dt_diagtype = '0109'
+        and outdiag.flag_maj = '1'
+        and outdiag.del_flag = '0'
+        left outer join pv_diag indiag
+        on pv.pk_pv = indiag.pk_pv
+        and indiag.flag_maj = '1'
+        and indiag.del_flag = '0'
+        left outer join emr_pat_rec rec on rec.pk_pv=pv.pk_pv and rec.del_flag='0'
+        <where>
+            pv.flag_cancel != '1'
+            and pv.eu_pvtype = '3'
+            and pv.eu_status > 0
+            and pv.del_flag='0'
+            and pv.pk_pv = #{pkPv,jdbcType=VARCHAR}
+        </where>
+        order by pv.bed_no
+    </select>
+
+    <select id="queryDeptPatiList" parameterType="java.util.Map" resultType="DynaBean">
+        select distinct(pv.pk_pv),
+        pv.dt_marry,
+        pv.eu_pvtype,
+        pv.eu_pvmode,
+        pv.pk_pi,
+        pv.weight,
+        pv.pk_dept_ns,
+        pv.date_admit,
+        pi.name_pi as patiname,
+        pi.code_pi as paticode,
+        pi.mobile as teleno,
+        pv.bed_no as bedno,
+        pi.code_ip as pvcode,
+        pi.code_ip,
+        pi.code_op,
+        pi.mcno,
+        pv.dt_sex,
+        sex.name as sexname,
+        pv.age_pv as agepv,
+        hp.name as hpname,
+        pv.pk_insu as pk_hp,
+        psn.name_emp as namePsnPhy,
+        pv.pk_dept,
+        dp.name_dept as deptPhyName,
+        dp.code_dept as deptCode,
+        dp.code_orig as deptCodeOrig,
+        ns.name_dept as deptNsName,
+        ns.code_dept as deptNsCode,
+        ns.code_orig as deptNsCodeOrig,
+        pv.date_begin as datePvbegin,
+        pv.date_end as datePvend,
+        pv.code_pv,
+        pv.NAME_EMP_TRE,
+        (case pv.flag_in
+        when '1' then
+        ''
+        else
+        ((select name
+        from bd_defdoc
+        where code_defdoclist = '000110'
+        and code = ip.dt_outcomes
+        and del_flag = '0'))
+        end) as outcomesName,
+        outdiag.name_diag as DisDiag,
+        '' as dateEndZk,
+        indiag.name_diag as DmissDiag,
+        indiag.name_diag,
+        indiag.pk_diag,
+        ord.name as NameSrvNurse,
+        ip.dt_level_dise,
+        outtype.name as PvIpDischmodeName,
+        case when (select count(1) from pi_allergic where pk_pi = pi.pk_pi and del_flag='0')>0 then '1' else '0' end as
+        AlFlag,
+        pv.eu_status,
+        cprec.eu_status as cp_eu_status,
+        pi.name_rel,
+        pi.tel_rel,
+        pv.addr_cur_dt,
+        pv.addr_cur,
+        pv.pk_wg,
+        ip.ip_times,
+        pi.insur_no,
+        pi.id_no,
+        pv.flag_in,
+        pv.flag_spec,
+        sex.code as infantsex,
+        rec.eu_status as eu_status_emr,
+        ip.flag_infected,
+        pi.code_pi,
+        bed.dt_bedtype,
+        pv.pk_emp_phy,
+        pv.name_emp_phy,
+        hp.dt_exthp,
+        pi.dt_idtype,
+        pi.BIRTH_DATE,
+        indiag.code_icd,
+        GETPVAGE(pi.BIRTH_DATE,pv.DATE_BEGIN) as age_format
+        from pv_encounter pv
+        inner join bd_res_bed bed on pv.pk_pi=bed.pk_pi and pv.bed_no=bed.code
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi and pi.del_flag = '0'
+        inner join pv_ip ip on pv.pk_pv = ip.pk_pv and ip.del_flag = '0'
+        left outer join pv_infant newborn
+        on ip.pk_pv = newborn.pk_pv
+        and newborn.del_flag = '0'
+        left outer join cp_rec cprec
+        on pv.pk_pv = cprec.pk_pv
+        and cprec.eu_rectype = '1'
+        and cprec.del_flag='0'
+        left outer join bd_ou_dept ns
+        on pv.pk_dept_ns = ns.pk_dept
+        and ns.del_flag = '0'
+        left outer join bd_ou_dept dp
+        on pv.pk_dept = dp.pk_dept
+        and dp.del_flag = '0'
+        left outer join bd_defdoc sex
+        on pv.dt_sex = sex.code
+        and sex.code_defdoclist = '000000'
+        and sex.del_flag = '0'
+        left join bd_defdoc outtype
+        on ip.dt_outtype = outtype.code and outtype.code_defdoclist='000105' and outtype.del_flag='0'
+        left outer join bd_ou_employee psn
+        on pv.pk_emp_phy = psn.pk_emp
+        and psn.del_flag = '0'
+        left outer join bd_hp hp
+        on pv.pk_insu = hp.pk_hp
+        and hp.del_flag = '0'
+        left outer join bd_ord ord
+        on ip.dt_level_ns = ord.code
+        and ord.del_flag='0'
+        left outer join pv_diag outdiag
+        on pv.pk_pv = outdiag.pk_pv
+        and outdiag.dt_diagtype = '0109'
+        and outdiag.flag_maj = '1'
+        and outdiag.del_flag = '0'
+        left outer join pv_diag indiag
+        on pv.pk_pv = indiag.pk_pv
+        and indiag.flag_maj = '1'
+        and indiag.del_flag = '0'
+        left outer join emr_pat_rec rec on rec.pk_pv=pv.pk_pv and rec.del_flag='0'
+        <where>
+            pv.flag_cancel = '0'
+            and pv.eu_pvtype = '3'
+            and pv.eu_status in ('1','2','3','9')
+            and pv.del_flag='0'
+            <if test="patiTypeCode != 'ip_med'">
+                and pv.pk_dept = #{login_pk_dept,jdbcType=VARCHAR}
+            </if>
+            <if test="patiTypeCode != 'ip_leave'">
+                and pv.bed_no is not null
+            </if>
+            <if test="patiTypeCode == 'ip_my'">
+                and pv.flag_in = '1'
+                and pv.pk_emp_phy = #{login_pk_psn,jdbcType=VARCHAR}
+            </if>
+            <if test="patiTypeCode == 'ip_wg'">
+                and pv.flag_in ='1'
+                and pv.pk_wg in
+                <foreach item="item" index="index" collection="pkWgList" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="patiTypeCode == 'ip_dept'">
+                and pv.flag_in ='1'
+            </if>
+            <if test="patiTypeCode == 'ip_leave'">
+                and pv.flag_in ='0'
+                <if test="leave_date_begin != null">
+                    and pv.date_end &gt;= to_date(#{leave_date_begin,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+                </if>
+                <if test="leave_date_end != null">
+                    and pv.date_end &lt;= to_date(#{leave_date_end,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+                </if>
+            </if>
+            <if test="patiTypeCode == 'ip_bed'">
+                and pv.flag_in ='1'
+                and pv.bed_no = #{bedno,jdbcType=VARCHAR}
+            </if>
+            <if test="patiTypeCode == 'ip_med'">
+                and pv.flag_in ='1'
+                and pv.eu_status='1'
+                and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+            </if>
+        </where>
+        order by pv.bed_no
+    </select>
+
+    <!--病区患者查询-->
+    <select id="queryDeptNsPatiList" parameterType="java.util.Map" resultType="DynaBean">
+        select distinct(pv.pk_pv),
+        pv.dt_marry,
+        pv.eu_pvtype,
+        pv.eu_pvmode,
+        pv.pk_pi,
+        pv.weight,
+        pv.pk_dept_ns,
+        pv.date_admit,
+        pi.name_pi as patiname,
+        pi.code_pi as paticode,
+        pi.mobile as teleno,
+        pv.bed_no as bedno,
+        pi.code_ip as pvcode,
+        pi.code_ip,
+        pi.code_op,
+        pi.mcno,
+        pv.dt_sex,
+        sex.name as sexname,
+        pv.age_pv as agepv,
+        hp.name as hpname,
+        pv.pk_insu as pk_hp,
+        psn.name_emp as namePsnPhy,
+        pv.pk_dept,
+        dp.name_dept as deptPhyName,
+        dp.code_dept as deptCode,
+        dp.code_orig as deptCodeOrig,
+        ns.name_dept as deptNsName,
+        ns.code_dept as deptNsCode,
+        ns.code_orig as deptNsCodeOrig,
+        pv.date_begin as datePvbegin,
+        pv.date_end as datePvend,
+        pv.code_pv,
+        pv.NAME_EMP_TRE,
+        (case pv.flag_in
+        when '1' then
+        ''
+        else
+        ((select name
+        from bd_defdoc
+        where code_defdoclist = '000110'
+        and code = ip.dt_outcomes
+        and del_flag = '0'))
+        end) as outcomesName,
+        outdiag.name_diag as DisDiag,
+        '' as dateEndZk,
+        indiag.name_diag as DmissDiag,
+        indiag.name_diag,
+        indiag.pk_diag,
+        ord.name as NameSrvNurse,
+        ip.dt_level_dise,
+        outtype.name as PvIpDischmodeName,
+        case when (select count(1) from pi_allergic where pk_pi = pi.pk_pi and del_flag='0')>0 then '1' else '0' end as
+        AlFlag,
+        pv.eu_status,
+        cprec.eu_status as cp_eu_status,
+        pi.name_rel,
+        pi.tel_rel,
+        pv.addr_cur_dt,
+        pv.addr_cur,
+        pv.pk_wg,
+        ip.ip_times,
+        pi.insur_no,
+        pi.id_no,
+        pv.flag_in,
+        pv.flag_spec,
+        sex.code as infantsex,
+        rec.eu_status as eu_status_emr,
+        ip.flag_infected,
+        pi.code_pi,
+        bed.dt_bedtype,
+        pv.pk_emp_phy,
+        pv.name_emp_phy,
+        hp.dt_exthp,
+        pi.dt_idtype,
+        pi.BIRTH_DATE,
+        indiag.code_icd,
+        GETPVAGE(pi.BIRTH_DATE,pv.DATE_BEGIN) as age_format
+        from pv_encounter pv
+        inner join bd_res_bed bed on pv.pk_pi=bed.pk_pi and pv.bed_no=bed.code
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi and pi.del_flag = '0'
+        inner join pv_ip ip on pv.pk_pv = ip.pk_pv and ip.del_flag = '0'
+        left outer join pv_infant newborn
+        on ip.pk_pv = newborn.pk_pv
+        and newborn.del_flag = '0'
+        left outer join cp_rec cprec
+        on pv.pk_pv = cprec.pk_pv
+        and cprec.eu_rectype = '1'
+        and cprec.del_flag='0'
+        left outer join bd_ou_dept ns
+        on pv.pk_dept_ns = ns.pk_dept
+        and ns.del_flag = '0'
+        left outer join bd_ou_dept dp
+        on pv.pk_dept = dp.pk_dept
+        and dp.del_flag = '0'
+        left outer join bd_defdoc sex
+        on pv.dt_sex = sex.code
+        and sex.code_defdoclist = '000000'
+        and sex.del_flag = '0'
+        left join bd_defdoc outtype
+        on ip.dt_outtype = outtype.code and outtype.code_defdoclist='000105' and outtype.del_flag='0'
+        left outer join bd_ou_employee psn
+        on pv.pk_emp_phy = psn.pk_emp
+        and psn.del_flag = '0'
+        left outer join bd_hp hp
+        on pv.pk_insu = hp.pk_hp
+        and hp.del_flag = '0'
+        left outer join bd_ord ord
+        on ip.dt_level_ns = ord.code
+        and ord.del_flag='0'
+        left outer join pv_diag outdiag
+        on pv.pk_pv = outdiag.pk_pv
+        and outdiag.dt_diagtype = '0109'
+        and outdiag.flag_maj = '1'
+        and outdiag.del_flag = '0'
+        left outer join pv_diag indiag
+        on pv.pk_pv = indiag.pk_pv
+        and indiag.flag_maj = '1'
+        and indiag.del_flag = '0'
+        left outer join emr_pat_rec rec on rec.pk_pv=pv.pk_pv and rec.del_flag='0'
+        <where>
+            pv.flag_cancel = '0'
+            and pv.del_flag='0'
+            and pv.eu_pvtype = '3'
+            and pv.flag_in = '1'
+            and pv.eu_status >0
+            and pv.bed_no is not null
+            <if test="bedno != null">
+                and pv.bed_no = #{bedno,jdbcType=VARCHAR}
+            </if>
+            and pv.pk_dept_ns in
+            <foreach collection="pkDeptNsS" index="index" item="item" open="(" separator="," close=")" >
+                #{item.pkDept, jdbcType=VARCHAR}
+            </foreach>
+
+        </where>
+        order by pv.bed_no
+    </select>
+
+    <select id="queryTransPatiList" parameterType="java.util.Map" resultType="DynaBean">
+        select distinct(pv.pk_pv),
+        pv.eu_pvtype,
+        pv.eu_pvmode,
+        pv.pk_pi,
+        pv.weight,
+        pv.pk_dept_ns,
+        pv.date_admit,
+        pi.name_pi as patiname,
+        pi.code_pi as paticode,
+        pi.mobile as teleno,
+        pv.bed_no as bedno,
+        pi.code_ip as pvcode,
+        pi.CODE_IP,
+        pi.code_op,
+        pi.mcno,
+        pv.dt_sex,
+        sex.name as sexname,
+        pv.age_pv as agepv,
+        hp.name as hpname,
+        pv.pk_insu as pk_hp,
+        psn.name_emp as namePsnPhy,
+        dp.name_dept as deptPhyName,
+        dp.code_dept as deptCode,
+        dp.code_orig as deptCodeOrig,
+        ns.name_dept as deptNsName,
+        ns.code_dept as deptNsCode,
+        ns.code_orig as deptNsCodeOrig,
+        pv.date_begin as datePvbegin,
+        pv.date_end as datePvend,
+        pv.code_pv,
+        pv.NAME_EMP_TRE,
+        (case pv.flag_in
+        when '1' then
+        ''
+        else
+        ((select name
+        from bd_defdoc
+        where code_defdoclist = '000110'
+        and code = ip.dt_outcomes
+        and del_flag = '0'))
+        end) as outcomesName ,
+        '' as DisDiag,
+        updo.date_end as dateEndZk,
+        indiag.desc_diag as DmissDiag,
+        indiag.name_diag,
+        indiag.pk_diag,
+        srv.name as NameSrvNurse,
+        ip.dt_level_dise,
+        '' as PvIpDischmodeName,
+        case when (select count(1) from pi_allergic where pk_pi = pi.pk_pi and del_flag='0')>0 then '1' else '0' end as
+        AlFlag,
+        pv.eu_status,
+        cprec.eu_status as cp_eu_status,
+        pi.name_rel,
+        pi.tel_rel,
+        pi.addr_cur_dt,
+        pv.addr_cur,
+        pv.pk_wg,
+        ip.ip_times,
+        pi.insur_no,
+        pi.id_no,
+        pv.flag_in,
+        pv.flag_spec,
+        rec.eu_status as eu_status_emr,
+        ip.flag_infected,
+        pi.code_pi,
+        pi.BIRTH_DATE,
+        bed.dt_bedtype,
+        pv.pk_emp_phy,
+        hp.dt_exthp,
+        GETPVAGE(pi.BIRTH_DATE,pv.DATE_BEGIN) as age_format
+        from pv_encounter pv
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi and pi.del_flag='0'
+        inner join pv_ip ip on pv.pk_pv = ip.pk_pv and ip.del_flag='0'
+        left outer join bd_res_bed bed on pv.pk_pi=bed.pk_pi and pv.bed_no=bed.code
+        left outer join cp_rec cprec
+        on pv.pk_pv = cprec.pk_pv
+        and cprec.eu_rectype = '1'
+        and cprec.del_flag='0'
+        left outer join bd_ou_dept ns
+        on pv.pk_dept_ns = ns.pk_dept and ns.del_flag='0'
+        left outer join bd_ou_dept dp
+        on pv.pk_dept = dp.pk_dept and dp.del_flag='0'
+        left outer join bd_defdoc sex
+        on pv.dt_sex = sex.code
+        and sex.code_defdoclist = '000000' and sex.del_flag='0'
+        left outer join bd_ou_employee psn
+        on pv.pk_emp_phy = psn.pk_emp and psn.del_flag='0'
+        left outer join bd_ord srv
+        on ip.dt_level_ns = srv.code and srv.del_flag='0'
+        left outer join bd_hp hp
+        on pv.pk_insu = hp.pk_hp and hp.del_flag='0'
+        inner join pv_adt upd
+        on upd.pk_pv=pv.pk_pv and upd.del_flag='0'
+        inner join pv_adt updo
+        on upd.pk_adt_source=updo.pk_adt and updo.del_flag='0'
+        left outer join pv_diag indiag
+        on pv.pk_pv = indiag.pk_pv
+        and indiag.flag_maj = '1'
+        and indiag.del_flag = '0'
+        left outer join emr_pat_rec rec on rec.pk_pv=pv.pk_pv and rec.del_flag='0'
+        <where>
+            pv.flag_cancel != '1'
+            and pv.del_flag='0'
+            and pv.eu_pvtype = '3'
+            and pv.eu_status > 0
+            and pv.bed_no is not null
+            and pv.flag_in ='1'
+            and updo.pk_dept = #{login_pk_dept,jdbcType=VARCHAR}
+        </where>
+        order by pv.bed_no
+    </select>
+    <select id="qryLeavePatiList" parameterType="java.util.Map" resultType="DynaBean">
+        select distinct(pv.pk_pv),
+        pv.eu_pvtype,
+        pv.eu_pvmode,
+        pv.pk_pi,
+        pv.weight,
+        pv.pk_dept_ns,
+        pv.date_admit,
+        pi.name_pi as patiname,
+        pi.code_pi as paticode,
+        pi.mobile as teleno,
+        pv.bed_no as bedno,
+        pi.code_ip as pvcode,
+        pi.CODE_IP,
+        pi.code_op,
+        pi.mcno,
+        pv.dt_sex,
+        sex.name as sexname,
+        pv.age_pv as agepv,
+        hp.name as hpname,
+        pv.pk_insu as pk_hp,
+        psn.name_emp as namePsnPhy,
+        dp.name_dept as deptPhyName,
+        dp.code_dept as deptCode,
+        dp.code_orig as deptCodeOrig,
+        ns.name_dept as deptNsName,
+        ns.code_dept as deptNsCode,
+        ns.code_orig as deptNsCodeOrig,
+        pv.date_begin as datePvbegin,
+        pv.date_end as datePvend,
+        pv.code_pv,
+        pv.NAME_EMP_TRE,
+
+        (case pv.flag_in
+        when '1' then
+        ''
+        else
+        ((select name
+        from bd_defdoc
+        where code_defdoclist = '000110'
+        and code = ip.dt_outcomes
+        and del_flag = '0'))
+        end) as outcomesName,
+        outdiag.desc_diag as DisDiag,
+        null as dateEndZk,
+        indiag.desc_diag as DmissDiag,
+        indiag.name_diag,
+        indiag.pk_diag,
+        ord.name as NameSrvNurse,
+        ip.dt_level_dise,
+        outtype.name as PvIpDischmodeName,
+        case when (select count(1) from pi_allergic where pk_pi = pi.pk_pi and del_flag='0')>0 then '1' else '0' end as
+        AlFlag,
+        pv.eu_status,
+        cprec.eu_status as cp_eu_status,
+        pi.name_rel,
+        pi.tel_rel,
+        pi.addr_cur_dt,
+        pv.addr_cur,
+        pv.pk_wg,
+        ip.ip_times,
+        pi.insur_no,
+        pi.id_no,
+        pv.flag_in,
+        pv.flag_spec,
+        rec.eu_status as eu_status_emr,
+        ip.flag_infected,
+        pi.code_pi,
+        pv.pk_emp_phy,
+        hp.dt_exthp,
+        GETPVAGE(pi.BIRTH_DATE,pv.DATE_BEGIN) as age_format,
+        ip.EU_STATUS_DOC
+        from pv_encounter pv
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi and pi.del_flag = '0'
+        inner join pv_ip ip on pv.pk_pv = ip.pk_pv and ip.del_flag = '0'
+        left outer join pv_infant newborn
+        on ip.pk_pv = newborn.pk_pv
+        and newborn.del_flag = '0'
+        left outer join cp_rec cprec
+        on pv.pk_pv = cprec.pk_pv
+        and cprec.eu_rectype = '1'
+        and cprec.del_flag='0'
+        left outer join bd_ou_dept ns
+        on pv.pk_dept_ns = ns.pk_dept
+        and ns.del_flag = '0'
+        left outer join bd_ou_dept dp
+        on pv.pk_dept = dp.pk_dept
+        and dp.del_flag = '0'
+        left outer join bd_defdoc sex
+        on pv.dt_sex = sex.code
+        and sex.code_defdoclist = '000000'
+        and sex.del_flag = '0'
+        left join bd_defdoc outtype
+        on ip.dt_outtype = outtype.code and outtype.code_defdoclist='000105' and outtype.del_flag='0'
+        left outer join bd_ou_employee psn
+        on pv.pk_emp_phy = psn.pk_emp
+        and psn.del_flag = '0'
+        left outer join bd_hp hp
+        on pv.pk_insu = hp.pk_hp
+        and hp.del_flag = '0'
+        left outer join bd_ord ord
+        on ip.dt_level_ns = ord.code
+        and ord.del_flag='0'
+        left outer join pv_diag outdiag
+        on pv.pk_pv = outdiag.pk_pv
+        and outdiag.dt_diagtype = '0109'
+        and outdiag.flag_maj = '1'
+        and outdiag.del_flag = '0'
+        left outer join pv_diag indiag
+        on pv.pk_pv = indiag.pk_pv
+        and indiag.flag_maj = '1'
+        and indiag.del_flag = '0'
+        left outer join emr_pat_rec rec on rec.pk_pv=pv.pk_pv and rec.del_flag='0'
+        <where>
+            pv.flag_cancel != '1'
+            and pv.eu_pvtype = '3'
+            and pv.eu_status > 0
+            and pv.del_flag='0'
+            and pv.flag_in ='0'
+            <if test="pkDept != null">
+                and exists (select 1 from pv_adt adt where adt.pk_pv=PV.pk_pv and adt.pk_dept=
+                #{pkDept,jdbcType=VARCHAR} and (adt.flag_admit='1' or (adt.flag_admit='0' and adt.eu_status='1')))
+            </if>
+            <if test="pkDeptOut != null">
+                and pv.pk_dept=#{pkDeptOut,jdbcType=VARCHAR}
+            </if>
+            <if test="pkEmpPhy != null">
+                and pv.pk_emp_phy = #{pkEmpPhy,jdbcType=VARCHAR}
+            </if>
+            <if test="leave_date_begin != null">
+                and pv.date_end &gt;= to_date(#{leave_date_begin,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+            </if>
+            <if test="leave_date_end != null">
+                and pv.date_end &lt;= to_date(#{leave_date_end,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+            </if>
+            <if test="patiname != null">
+                and pi.name_pi like '%'||#{patiname,jdbcType=VARCHAR}||'%'
+            </if>
+            <if test="pvcode != null">
+                and pi.code_ip like '%'||#{pvcode,jdbcType=VARCHAR}||'%'
+            </if>
+            <if test="paticode != null">
+                and pi.code_pi like '%'||#{paticode,jdbcType=VARCHAR}||'%'
+            </if>
+        </where>
+
+    </select>
+
+    <select id="queryConsultPatiList" parameterType="java.util.Map" resultType="DynaBean">
+        select distinct(pv.pk_pv),
+        pv.eu_pvtype,
+        pv.eu_pvmode,
+        pv.pk_pi,
+        pv.weight,
+        pv.pk_dept_ns,
+        pv.date_admit,
+        pi.name_pi as patiname,
+        pi.code_pi as paticode,
+        pi.mobile as teleno,
+        pv.bed_no as bedno,
+        pi.code_ip as pvcode,
+        pi.code_ip,
+        pi.code_op,
+        pi.mcno,
+        pi.BIRTH_DATE,
+        pv.dt_sex,
+        sex.name as sexname,
+        pv.age_pv as agepv,
+        hp.name as hpname,
+        pv.pk_insu as pk_hp,
+        psn.name_emp as namePsnPhy,
+        pv.PK_DEPT,
+        dp.name_dept as deptPhyName,
+        dp.code_dept as deptCode,
+        dp.code_orig as deptCodeOrig,
+        ns.name_dept as deptNsName,
+        ns.code_dept as deptNsCode,
+        ns.code_orig as deptNsCodeOrig,
+        pv.date_begin as datePvbegin,
+        pv.date_end as datePvend,
+        pv.code_pv,
+        ip.dt_level_dise,
+        srv.name as nameSrvNurse,
+        diag.name_diag as dmissDiag,
+        consult.eu_status as euStatusOrd ,
+        dept.name_dept as deptConName,
+        ord.DATE_START as dateCon,
+        case when (select count(1) from pi_allergic where pk_pi = pi.pk_pi and del_flag='0')>0 then '1' else '0' end as
+        AlFlag,
+        pv.eu_status,
+        cprec.eu_status as cp_eu_status,
+        pv.flag_spec,
+        rec.eu_status as eu_status_emr,
+        ip.flag_infected,
+        pi.code_pi,
+        pv.NAME_EMP_TRE,
+        bed.dt_bedtype,
+        pv.pk_emp_phy,
+        ord.code_apply,
+        hp.dt_exthp,
+        resp.flag_finish,
+        GETPVAGE(pi.BIRTH_DATE,pv.DATE_BEGIN) as age_format,
+        pv.flag_in,
+        resp.pk_dept_rep
+        from pv_encounter pv
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi and pi.del_flag='0'
+        inner join pv_ip ip on pv.pk_pv = ip.pk_pv and ip.del_flag='0'
+        left join bd_res_bed bed on pv.pk_pi=bed.pk_pi and pv.bed_no=bed.code
+        left outer join cp_rec cprec
+        on pv.pk_pv = cprec.pk_pv
+        and cprec.eu_rectype = '1'
+        and cprec.del_flag='0'
+        left outer join bd_ou_dept ns
+        on pv.pk_dept_ns = ns.pk_dept and ns.del_flag='0'
+        left outer join bd_ou_dept dp
+        on pv.pk_dept = dp.pk_dept and dp.del_flag='0'
+        left outer join bd_defdoc sex
+        on pv.dt_sex = sex.code
+        and sex.code_defdoclist = '000000' and sex.del_flag='0'
+        left outer join bd_ou_employee psn
+        on pv.pk_emp_phy = psn.pk_emp and psn.del_flag='0'
+        left outer join bd_ord srv
+        on ip.dt_level_ns = srv.code and srv.del_flag='0'
+        left outer join bd_hp hp
+        on pv.pk_insu = hp.pk_hp and hp.del_flag='0'
+        left join pv_diag diag
+        on diag.pk_pv = pv.pk_pv
+        and diag.flag_maj = '1' and diag.del_flag='0'
+        inner join cn_order ord
+        on pv.pk_pv = ord.pk_pv
+        and ord.flag_erase = '0' and ord.del_flag='0'
+        inner join cn_consult_apply consult
+        on ord.pk_cnord = consult.pk_cnord and consult.del_flag='0'
+        inner join cn_consult_response resp on resp.pk_cons = consult.pk_cons and resp.del_flag='0'
+        left join bd_ou_dept dept
+        on consult.pk_dept=dept.pk_dept and dept.del_flag='0'
+        left outer join emr_pat_rec rec on rec.pk_pv=pv.pk_pv and rec.del_flag='0'
+        where pv.flag_cancel != '1'
+        and pv.eu_pvtype = '3'
+        and pv.eu_status > 0
+        and ( pv.flag_in = '1' Or pv.flag_in = '0' )
+
+        <choose>
+            <when test="dbType=='sqlserver'">
+                and (resp.pk_dept_rep = #{login_pk_dept,jdbcType=VARCHAR}
+                or  resp.pk_dept_rep in
+                (select pk_dept from CN_CHIEF_RESIDENT where PK_EMP = #{pkEmp,jdbcType=VARCHAR} and DATE_BEGIN  &lt; getdate() and DATE_END &gt;= getdate()
+                ))
+            </when>
+            <otherwise>
+                and resp.pk_dept_rep = #{login_pk_dept,jdbcType=VARCHAR}
+            </otherwise>
+        </choose>
+        and pv.del_flag='0'
+        and (ord.eu_status_ord='2' or ord.eu_status_ord='3')
+        order by ord.DATE_START desc
+    </select>
+
+    <select id="qryStoreByDept" resultType="DynaBean" parameterType="java.util.Map">
+	    select 
+	           busa.pk_dept,
+	           bu.dt_butype,
+               busa.pk_org  
+         from bd_dept_bus bus  
+              inner join bd_dept_bu bu on bus.pk_deptbu=bu.pk_deptbu  and bu.del_flag='0'  
+              inner join bd_dept_bus busa on bus.pk_deptbu=busa.pk_deptbu  and busa.del_flag='0'       
+        where busa.dt_depttype=#{deptType,jdbcType=VARCHAR}
+             <if test="dtButype!=null">
+                 and bu.dt_butype=#{dtButype,jdbcType=VARCHAR}
+             </if>
+              and bus.pk_dept=#{pkDept,jdbcType=CHAR}
+              and bus.del_flag='0'  
+              and busa.flag_def ='1'
+	</select>
+    <select id="queryLaborPati" parameterType="java.util.Map" resultType="DynaBean">
+        select distinct(pv.pk_pv),
+        pv.eu_pvtype,
+        pv.pk_pi,
+        pv.weight,
+        pv.date_admit,
+        labor.pk_dept_ns,
+        pi.name_pi as patiname,
+        pi.code_pi as paticode,
+        pi.mobile as teleno,
+        pv.bed_no as bedno,
+        pi.code_ip as pvcode,
+        pi.code_op,
+        pi.mcno,
+        pv.dt_sex,
+        sex.name as sexname,
+        pv.age_pv as agepv,
+        hp.name as hpname,
+        pv.pk_insu as pk_hp,
+        dp.name_dept as deptPhyName,
+        dp.code_dept as deptCode,
+        dp.code_orig as deptCodeOrig,
+        ns.name_dept as deptNsName,
+        ns.code_dept as deptNsCode,
+        ns.code_orig as deptNsCodeOrig,
+        pv.date_begin as datePvbegin,
+        pv.date_end as datePvend,
+        indiag.desc_diag as DmissDiag,
+        indiag.name_diag,
+        indiag.pk_diag,
+        pv.code_pv,
+        pv.flag_spec ,
+        pv.NAME_EMP_TRE,
+        pv.flag_in,
+        '1' as is_labor,
+        pv.pk_emp_phy,
+        hp.dt_exthp,
+        pv.PK_DEPT,
+        GETPVAGE(pi.BIRTH_DATE,pv.DATE_BEGIN) as age_format
+        from pv_encounter pv
+        inner join pv_labor labor on labor.pk_pv = pv.pk_pv and labor.del_flag='0' and labor.eu_status ='1' and
+        labor.flag_in='1'
+        and labor.bed_no = #{bedno,jdbcType=VARCHAR} and labor.pk_dept = #{login_pk_dept,jdbcType=VARCHAR}
+        inner join pi_master pi
+        on pv.pk_pi = pi.pk_pi
+        and pi.del_flag = '0'
+        inner join pv_ip ip
+        on pv.pk_pv = ip.pk_pv
+        and ip.del_flag = '0'
+        left outer join bd_ou_dept ns
+        on labor.pk_dept_ns = ns.pk_dept
+        and ns.del_flag = '0'
+        left outer join bd_ou_dept dp
+        on labor.pk_dept = dp.pk_dept
+        and dp.del_flag = '0'
+        left outer join bd_defdoc sex
+        on pv.dt_sex = sex.code
+        and sex.code_defdoclist = '000000'
+        and sex.del_flag = '0'
+        left outer join bd_hp hp
+        on pv.pk_insu = hp.pk_hp
+        and hp.del_flag = '0'
+        left outer join pv_diag indiag
+        on pv.pk_pv = indiag.pk_pv
+        and indiag.flag_maj = '1'
+        and indiag.del_flag = '0'
+        <where>
+            pv.flag_cancel != '1'
+            and pv.eu_pvtype = '3'
+            and pv.eu_status > 0
+            and pv.flag_in ='1'
+            and pv.del_flag='0'
+        </where>
+    </select>
+
+    <select id="queryPatiBedList" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.pk_pv,
+        bed.pk_bed,
+        bed.code as bedno,
+        bed.pk_dept,
+        bed.pk_ward,
+        pi.pk_pi,
+        pi.name_pi as patiname,
+        pi.dt_sex,
+        pi.mcno,
+        pi.dt_idtype_rel,
+        pi.idno_rel,
+        pv.age_pv as agepv,
+        pv.pk_insu,
+        ip.dt_level_ns,
+        ip.dt_level_dise,
+        ip.dt_level_nutr,
+        bed.flag_ocupy,
+        psn.name_emp as namePsnPhy,
+        indiag.name_diag as DmissDiag,
+        indiag.name_diag,
+        hp.name as hpname,
+        pv.date_begin as datePvbegin,
+        pv.date_end as datePvend,
+        pv.pk_emp_phy,
+        GETPVAGE(pi.BIRTH_DATE,pv.DATE_BEGIN) as age_format
+        from bd_res_bed bed
+        left outer join pi_master pi on bed.pk_pi=pi.pk_pi
+        left outer join pv_encounter pv on pi.pk_pi=pv.pk_pi and pv.bed_no=bed.code
+        left outer join pv_ip ip on pv.pk_pv=ip.pk_pv
+        left outer join org_dept_wg wg on pv.pk_wg=wg.pk_wg
+        left outer join bd_ou_employee psn on pv.pk_emp_phy = psn.pk_emp and psn.del_flag = '0'
+        left outer join pv_diag indiag on pv.pk_pv = indiag.pk_pv
+        and indiag.flag_maj = '1' and indiag.del_flag = '0'
+        left outer join bd_hp hp on pv.pk_insu = hp.pk_hp and hp.del_flag = '0'
+        where bed.flag_active='1' and bed.del_flag='0'
+        and ((pv.flag_cancel != '1' and pv.pk_dept=bed.pk_dept) or pv.flag_cancel is null)
+        and ((pv.eu_pvtype = '3'and pv.pk_dept=bed.pk_dept) or pv.eu_pvtype is null)
+        and ((pv.del_flag = '0' and pv.pk_dept=bed.pk_dept) or pv.del_flag is null)
+        and ((pv.flag_in = '1'and pv.pk_dept=bed.pk_dept) or pv.flag_in is null)
+        and (
+        1=1
+        and bed.pk_dept = #{login_pk_dept}
+        <if test="patiTypeCode == 'ip_my'">
+            and pv.pk_emp_phy = #{login_pk_psn,jdbcType=VARCHAR}
+        </if>
+        <if test="patiTypeCode == 'ip_wg'">
+            and pv.pk_wg in
+            <foreach item="item" index="index" collection="pkWgList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <!--<if test="patiTypeCode == 'ip_dept'">
+            and bed.pk_dept = #{login_pk_dept}
+        </if>-->
+        )
+        order by bed.code
+
+    </select>
+
+    <select id="queryPatiBedNsList" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.pk_pv,
+        bed.pk_bed,
+        bed.code as bedno,
+        bed.pk_dept,
+        bed.pk_ward,
+        pi.pk_pi,
+        pi.name_pi as patiname,
+        pi.dt_sex,
+        pi.mcno,
+        pi.dt_idtype_rel,
+        pi.idno_rel,
+        pv.age_pv as agepv,
+        pv.pk_insu,
+        ip.dt_level_ns,
+        ip.dt_level_dise,
+        ip.dt_level_nutr,
+        bed.flag_ocupy,
+        psn.name_emp as namePsnPhy,
+        indiag.name_diag as DmissDiag,
+        indiag.name_diag,
+        hp.name as hpname,
+        pv.date_begin as datePvbegin,
+        pv.date_end as datePvend,
+        pv.pk_emp_phy,
+        GETPVAGE(pi.BIRTH_DATE,pv.DATE_BEGIN) as age_format
+        from bd_res_bed bed
+        left outer join pi_master pi on bed.pk_pi=pi.pk_pi
+        left outer join pv_encounter pv on pi.pk_pi=pv.pk_pi AND pv.bed_no = bed.code and pv.pk_dept_ns = bed.PK_WARD
+        left outer join pv_ip ip on pv.pk_pv=ip.pk_pv
+        left outer join org_dept_wg wg on pv.pk_wg=wg.pk_wg
+        left outer join bd_ou_employee psn on pv.pk_emp_phy = psn.pk_emp and psn.del_flag = '0'
+        left outer join pv_diag indiag on pv.pk_pv = indiag.pk_pv
+        and indiag.flag_maj = '1' and indiag.del_flag = '0'
+        left outer join bd_hp hp on pv.pk_insu = hp.pk_hp and hp.del_flag = '0'
+        where bed.flag_active='1' and bed.del_flag='0'
+        and (pv.flag_cancel != '1' or pv.flag_cancel is null)
+        and (pv.eu_pvtype = '3' or pv.eu_pvtype is null)
+        and (pv.del_flag = '0' or pv.del_flag is null)
+        and (pv.flag_in = '1' or pv.flag_in is null)
+        and (
+        1=1
+        <if test="patiTypeCode == 'ip_dept'">
+            and pv.pk_dept = #{login_pk_dept}
+        </if>
+        <if test="patiTypeCode == 'ip_my'">
+            and pv.pk_emp_phy = #{login_pk_psn,jdbcType=VARCHAR}
+        </if>
+        <if test="patiTypeCode == 'ip_wg'">
+            and pv.pk_wg in
+            <foreach item="item" index="index" collection="pkWgList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="patiTypeCode == 'ip_dept_ns'">
+            and pv.pk_dept_ns in
+            <foreach collection="pkDeptNsS" index="index" item="item" open="(" separator="," close=")" >
+                #{item.pkDept, jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <!--<if test="patiTypeCode == 'ip_dept'">
+            and bed.pk_dept = #{login_pk_dept}
+        </if>-->
+        )
+        order by bed.code
+
+    </select>
+
+    <select id="queryPati" parameterType="java.util.Map" resultType="DynaBean">
+			SELECT
+				pv.pk_pi,
+				pv.pk_pv,
+				pi.code_pi,
+				pi.code_op,
+				pi.code_ip,
+				pv.name_pi,
+				pi.dt_idtype,
+				pi.id_no,
+				pi.dt_sex,
+				pi.birth_date,
+				pi.mobile,
+				pi.mcno,
+				pi.dt_idtype_rel,
+                pi.idno_rel,
+				pv.addrcode_cur,
+  				pv.addr_cur_dt,
+  				pv.addr_cur,
+  				pv.postcode_cur,
+				pi.name_rel,
+				pi.dt_ralation,
+				pi.tel_rel,
+				pi.addr_rel,
+				pi.insur_no,
+				pv.height,
+				pv.weight,
+				pv.dt_spcdtype,
+				pv.pk_insu,
+				pv.cadre_level,
+				ip.dt_level_dise,
+				pi.DT_MARRY,
+				pi.DT_COUNTRY,
+				pi.DT_OCCU,
+				pi.DT_NATION,
+				pi.TEL_NO,
+				pi.TEL_WORK,
+				pi.UNIT_WORK,
+				pi.POSTCODE_WORK,
+				pi.POSTCODE_REGI,
+				pi.ADDRCODE_BIRTH,
+				pi.ADDR_BIRTH,
+				pi.ADDR_ORIGIN,
+				pi.ADDRCODE_ORIGIN,
+				pi.ADDRCODE_REGI,
+				pi.ADDR_REGI,
+				pi.ADDR_REGI_DT
+			FROM
+				pv_encounter pv
+			INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+			INNER join pv_ip ip on pv.pk_pv=ip.pk_pv
+			WHERE
+				pv.del_flag = '0'
+			AND pi.del_flag = '0'
+			AND pv.pk_pv =#{pkPv,jdbcType=VARCHAR}	
+	 </select>
+    <!-- 查询患者医保信息 -->
+    <select id="searchPvDeti" parameterType="java.util.Map" resultType="DynaBean" >
+        select pv.pk_inspv,pv.pk_pv,pv.med_type,dict.name as med_name,pv.dise_codg,pv.dise_name,
+        pv.birctrl_type,dict1.name as birctrl_name,pv.birctrl_matn_date,pv.matn_type,
+        dict2.name as matn_name,pv.geso_val
+        from ins_qgyb_pv pv
+        left join ins_qgyb_dict dict on pv.med_type=dict.code and dict.code_type='med_type'
+        left join ins_qgyb_dict dict1 on pv.birctrl_type=dict1.code and dict1.code_type='birctrl_type'
+        left join ins_qgyb_dict dict2 on pv.matn_type=dict2.code and dict2.code_type='matn_type'
+        where pv.pk_pv = #{pkPv,jdbcType=VARCHAR}
+    </select>
+
+    <select id="getPibaseVoByPi" parameterType="java.util.Map" resultType="DynaBean">
+        select distinct(pv.pk_pv),
+        pv.eu_pvtype,
+        pv.eu_pvmode,
+        pv.pk_pi,
+        pv.weight,
+        pv.pk_dept_ns,
+        pv.date_admit,
+        pi.name_pi as patiname,
+        pi.code_pi as paticode,
+        pi.mobile as teleno,
+        pv.bed_no as bedno,
+        pi.code_ip as pvcode,
+        pi.code_ip,
+        pi.code_op,
+        pi.mcno,
+        pv.dt_sex,
+        sex.name as sexname,
+        pv.age_pv as agepv,
+        hp.name as hpname,
+        pv.pk_insu as pk_hp,
+        psn.name_emp as namePsnPhy,
+        pv.pk_dept,
+        dp.name_dept as deptPhyName,
+        dp.code_dept as deptCode,
+        dp.code_orig as deptCodeOrig,
+        ns.name_dept as deptNsName,
+        ns.code_dept as deptNsCode,
+        ns.code_orig as deptNsCodeOrig,
+        pv.date_begin as datePvbegin,
+        pv.date_end as datePvend,
+        pv.code_pv,
+        pv.NAME_EMP_TRE,
+        (case pv.flag_in
+        when '1' then
+        ''
+        else
+        ((select name
+        from bd_defdoc
+        where code_defdoclist = '000110'
+        and code = ip.dt_outcomes
+        and del_flag = '0'))
+        end) as outcomesName,
+        outdiag.desc_diag as DisDiag,
+        '' as dateEndZk,
+        indiag.desc_diag as DmissDiag,
+        indiag.name_diag,
+        indiag.pk_diag,
+        ord.name as NameSrvNurse,
+        ip.dt_level_dise,
+        outtype.name as PvIpDischmodeName,
+        case when (select count(1) from pi_allergic where pk_pi = pi.pk_pi and del_flag='0')>0 then '1' else '0' end as
+        AlFlag,
+        pv.eu_status,
+        cprec.eu_status as cp_eu_status,
+        pi.name_rel,
+        pi.tel_rel,
+        pv.addr_cur_dt,
+        pv.addr_cur,
+        pv.pk_wg,
+        ip.ip_times,
+        pi.insur_no,
+        pi.id_no,
+        pv.flag_in,
+        pv.flag_spec,
+        sex.code as infantsex,
+        rec.eu_status as eu_status_emr,
+        ip.flag_infected,
+        pi.code_pi,
+        bed.dt_bedtype,
+        pv.pk_emp_phy,
+        pv.name_emp_phy,
+        hp.dt_exthp,
+        pi.dt_idtype,
+        indiag.code_icd,
+        GETPVAGE(pi.BIRTH_DATE,pv.DATE_BEGIN) as age_format
+        from pv_encounter pv
+        left  join bd_res_bed bed on pv.pk_pi=bed.pk_pi and pv.bed_no=bed.code
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi and pi.del_flag = '0'
+        inner join pv_ip ip on pv.pk_pv = ip.pk_pv and ip.del_flag = '0'
+        left outer join pv_infant newborn
+        on ip.pk_pv = newborn.pk_pv
+        and newborn.del_flag = '0'
+        left outer join cp_rec cprec
+        on pv.pk_pv = cprec.pk_pv
+        and cprec.eu_rectype = '1'
+        and cprec.del_flag='0'
+        left outer join bd_ou_dept ns
+        on pv.pk_dept_ns = ns.pk_dept
+        and ns.del_flag = '0'
+        left outer join bd_ou_dept dp
+        on pv.pk_dept = dp.pk_dept
+        and dp.del_flag = '0'
+        left outer join bd_defdoc sex
+        on pv.dt_sex = sex.code
+        and sex.code_defdoclist = '000000'
+        and sex.del_flag = '0'
+        left join bd_defdoc outtype
+        on ip.dt_outtype = outtype.code and outtype.code_defdoclist='000105' and outtype.del_flag='0'
+        left outer join bd_ou_employee psn
+        on pv.pk_emp_phy = psn.pk_emp
+        and psn.del_flag = '0'
+        left outer join bd_hp hp
+        on pv.pk_insu = hp.pk_hp
+        and hp.del_flag = '0'
+        left outer join bd_ord ord
+        on ip.dt_level_ns = ord.code
+        and ord.del_flag='0'
+        left outer join pv_diag outdiag
+        on pv.pk_pv = outdiag.pk_pv
+        and outdiag.dt_diagtype = '0109'
+        and outdiag.flag_maj = '1'
+        and outdiag.del_flag = '0'
+        left outer join pv_diag indiag
+        on pv.pk_pv = indiag.pk_pv
+        and indiag.flag_maj = '1'
+        and indiag.del_flag = '0'
+        left outer join emr_pat_rec rec on rec.pk_pv=pv.pk_pv and rec.del_flag='0'
+        <where>
+            pv.flag_cancel = '0'
+            and pv.eu_pvtype = '3'
+            and pv.eu_status in('1','2','3')
+            and pv.del_flag='0'
+            <if test="name != null and name != ''">
+                and (pi.CODE_IP = #{name,jdbcType=VARCHAR} or pi.NAME_PI = #{name,jdbcType=VARCHAR})
+            </if>
+            <if test="pkPv != null and pkPv != ''">
+                and pv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+            </if>
+            <if test="codePv != null and codePv != ''">
+                and pv.CODE_PV = #{codePv,jdbcType=VARCHAR}
+            </if>
+            <if test="codePi != null and codePi != ''">
+                and pi.CODE_PI = #{codePi,jdbcType=VARCHAR}
+            </if>
+            <if test="hicNo != null and hicNo != ''">
+                and pi.HIC_NO = #{hicNo,jdbcType=VARCHAR}
+            </if>
+            <if test="codeIp != null and codeIp != ''">
+                and pi.CODE_IP = #{codeIp,jdbcType=VARCHAR}
+            </if>
+            <if test="codeOp != null and codeOp != ''">
+                and pi.CODE_OP = #{codeOp,jdbcType=VARCHAR}
+            </if>
+            <if test="namePi != null and namePi != ''">
+                and pi.NAME_PI like '%'||#{namePi,jdbcType=VARCHAR}||'%'
+            </if>
+            <if test="dateClinic != null and dateClinic != ''">
+                and to_char(pv.DATE_ADMIT,'yyyy-MM-DD') = to_char(#{dateClinic,jdbcType=TIMESTAMP},'yyyy-MM-DD')
+            </if>
+            <if test="pkPi != null and pkPi != ''">
+                and pi.PK_PI = #{pkPi,jdbcType=VARCHAR}
+            </if>
+            <if test="bedNo != null and bedNo != ''">
+                and pv.BED_NO = #{bedNo,jdbcType=VARCHAR}
+            </if>
+            <if test="pkDept != null and pkDept != ''">
+                and pv.PK_DEPT = #{pkDept,jdbcType=VARCHAR}
+            </if>
+            <if test="pkDeptNs != null and pkDeptNs != ''">
+                and pv.PK_DEPT_NS = #{pkDeptNs,jdbcType=VARCHAR}
+            </if>
+            <if test="euStatus != null and euStatus != ''">
+                and pv.eu_status = #{euStatus,jdbcType=VARCHAR}
+            </if>
+        </where>
+        order by pv.bed_no
+    </select>
+</mapper>

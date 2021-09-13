@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.base.drg.dao.BdCchiItemMapper">
+	<sql id="Base_Column_List" >
+		  bci.PK_CCHIITEM,
+		  bci.PK_ORG,
+		  bci.PK_CCHI,
+		  bci.CODE_CCHI,
+		  cchi.name_cchi,
+		  bci.PK_ITEM,
+		  bci.CODE_ITEM,
+		  item.name name_item,
+		  bci.PK_DIAG,
+		  bci.CODE_ICD ,
+		  btd.DIAGNAME name_icd,
+		  bci.PK_ORD,
+		  bci.CREATOR,
+		  bci.CREATE_TIME,
+		  bci.MODIFIER,
+		  bci.FLAG_DEL,
+		  bci.TS,
+		  cchi.RISK,
+		  cchi.DIFF
+	  </sql>
+	  
+	<select id="queryCchiItemList"  parameterType="java.util.Map" resultType="DynaBean">
+        select 
+        	<include refid="Base_Column_List" />
+        from BD_CCHI_ITEM bci
+        left join bd_term_cchi cchi on bci.pk_cchi=cchi.pk_cchi
+        left join bd_item item on bci.pk_item=item.pk_item
+        left join bd_term_diag btd on btd.pk_diag=bci.pk_diag
+        
+        where    
+        	bci.FLAG_DEL = '0'    
+        <if test="codeCchi !=null and codeCchi != ''">
+            and bci.CODE_CCHI like #{codeCchi,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test="nameCchi !=null and nameCchi != ''">
+            and cchi.name_cchi  like '%' || #{nameCchi,jdbcType=VARCHAR} || '%'   
+        </if>
+        <if test="nameItem !=null and nameItem != ''">
+            and item.name   like '%' || #{nameItem,jdbcType=VARCHAR} || '%'   
+        </if>
+        <if test="codeOrName !=null and codeOrName != ''">
+            and (bci.CODE_CCHI like #{codeOrName,jdbcType=VARCHAR} || '%'
+            	or cchi.name_cchi like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'   
+            )	
+        </if>
+        order by bci.CODE_CCHI
+    </select>
+</mapper>

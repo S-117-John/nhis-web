@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.base.pub.dao.BdRptSqlMapper">
+	<select id="queryDeDrugSumRpt" resultType="DynaBean" parameterType="com.zebone.nhis.base.pub.vo.RptPrintDataDto">
+		select pd.name name_pd,
+		pd.spec,
+		pdde.flag_prt,
+		sum(pdde.quan_pack) quan,
+		unit.name unit,
+		pdde.price,
+		sum(pdde.amount) amount,
+		sto.posi_no,<!-- 货位号 -->
+		dept_ap.name_dept name_dept_ap,<!-- 请领病区 -->
+		dept_de.name_dept name_dept_de,<!-- 发药科室 -->
+		pdde.date_de,<!-- 发药日期 -->
+		pdde.name_emp_de <!-- 发药人 -->
+		from
+		ex_pd_de
+		pdde
+		inner join bd_pd pd on pdde.pk_pd=pd.pk_pd
+		inner join
+		bd_unit unit
+		on pdde.pk_unit=unit.pk_unit
+		inner join bd_pd_store sto on
+		pdde.pk_store_de=sto.pk_store and
+		pdde.pk_pd=sto.pk_pd
+		inner join
+		bd_ou_dept dept_ap on pdde.pk_dept_ap=dept_ap.pk_dept
+		inner join
+		bd_ou_dept dept_de on pdde.pk_dept_de=dept_de.pk_dept
+		where
+		<foreach collection="args" index="index" item="item" open="("
+			separator="," close=")">
+			pdde.code_de=#{item,jdbcType=VARCHAR}
+		</foreach>
+		group by pd.name,
+		pd.spec,
+		unit.name,
+		pdde.price,
+		sto.posi_no,
+		dept_ap.name_dept,
+		dept_de.name_dept,
+		pdde.date_de,
+		pdde.flag_prt,
+		pdde.name_emp_de
+		order by name_pd desc
+	</select>
+	<select id="queryDeDrugDetailRpt" resultType="DynaBean"  parameterType="com.zebone.nhis.base.pub.vo.RptPrintDataDto">
+		select pi.name_pi,
+		pi.code_pi,
+		pdde.flag_prt,
+		pv.pk_pv,
+		pv.bed_no,
+		pv.code_pv,
+		pd.name name_pd,
+		pd.spec,
+		ord.dosage,
+		unit_dos.name unit_dos,
+		pdde.quan_pack quan,
+		unit.name unit,
+		pdde.price,
+		pdde.batch_no,
+		pdde.amount,
+		dept_ap.name_dept name_dept_ap,
+		dept_de.name_dept name_dept_de,
+		pdde.date_de,
+		pdde.flag_prt,
+		pdde.name_emp_de
+		from ex_pd_de pdde
+		inner join
+		bd_pd pd on pdde.pk_pd=pd.pk_pd
+		inner join cn_order ord on
+		pdde.pk_cnord=ord.pk_cnord
+		inner join bd_unit unit on
+		pdde.pk_unit=unit.pk_unit
+		left outer join bd_unit unit_dos on
+		ord.pk_unit_dos=unit_dos.pk_unit
+		inner join bd_ou_dept dept_ap on
+		pdde.pk_dept_ap=dept_ap.pk_dept
+		inner join bd_ou_dept dept_de on
+		pdde.pk_dept_de=dept_de.pk_dept
+		inner join pv_encounter pv on
+		pdde.pk_pv=pv.pk_pv
+		inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		where
+		<!-- <foreach collection="args" index="index" item="item" open="("
+			separator="," close=")">
+			<if test="${index}==0">
+			pdde.code_de=#{args[${index}],jdbcType=VARCHAR}
+			</if>
+		</foreach> -->
+		<foreach collection="args" index="index" item="item" open="("
+			separator="," close=")">
+			pdde.code_de=#{item,jdbcType=VARCHAR}
+		</foreach>
+	</select>
+</mapper>

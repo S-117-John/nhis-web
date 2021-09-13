@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pi.acc.dao.CardDealMapper">
+    <!-- 查询可用的卡登记记录 -->
+    <select id="getPiCardIss" resultType="com.zebone.nhis.common.module.pi.acc.PiCardIss">
+		SELECT
+			iss.pk_cardiss,
+			iss.date_opera,
+			iss.DT_CARDTYPE dtcardtype,
+			
+			iss.CNT_USE,
+			iss.flag_active,
+			iss.pk_emp_iss,
+			iss.name_machine,
+			
+			iss.begin_no,
+			iss.end_no,
+			iss.cur_no,
+			iss.flag_use,
+			iss.cnt_iss,
+			iss.eu_status
+		FROM
+			pi_card_iss iss		
+		WHERE iss.flag_active='1' 
+			and iss.flag_use='1' 
+			and iss.eu_status='1'
+			and iss.pk_org = #{pkOrg,jdbcType=VARCHAR}
+	</select>
+
+    <select id="qryCardActionRec" resultType="Dynabean">
+        select cardtype.name cardtype,
+        card.card_no,
+        dt.eu_optype,
+        card.DEPOSIT  amount,
+        pi.code_pi,
+        pi.name_pi,
+        sex.name sex,
+        pi.birth_date,
+        pi.mobile,
+        dt.date_hap,
+        dt.name_emp_opera
+        from pi_master pi
+        inner join pi_card card on pi.pk_pi=card.pk_pi
+        inner join pi_card_detail dt on card.pk_picard=dt.pk_picard
+        inner join bd_defdoc cardtype on card.dt_cardtype=cardtype.code and cardtype.code_defdoclist='000016'
+        inner join bd_defdoc sex on pi.dt_sex=sex.code and sex.code_defdoclist='000000'
+        left outer join bl_pi bp on dt.pk_picarddt=bp.pk_bu and bp.eu_butype='0'
+        where dt.pk_org = #{pkOrg,jdbcType=CHAR}
+        <if test='codePi!=null and codePi!=""'>
+            and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+        </if>
+        <if test='namePi!=null and namePi!=""'>
+            and pi.name_pi like '%${namePi}%'
+        </if>
+        <if test='euOptype!=null and euOptype!=""'>
+            and dt.eu_optype = #{euOptype,jdbcType=VARCHAR}
+        </if>
+        <if test='cardNo!=null and cardNo!=""'>
+            and card.card_no = #{cardNo,jdbcType=VARCHAR}
+        </if>
+        <if test='dateBegin!=null and dateBegin!=""'>
+            and dt.date_hap &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+        </if>
+        <if test='dateEnd!=null and dateEnd!=""'>
+            and dt.date_hap &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+        </if>
+
+    </select>
+    <select id="queryPiAccs"   parameterType="com.zebone.nhis.pi.acc.vo.PageQueryPiccParam" resultType="Dynabean">
+
+        select pia.*,
+        pim.code_pi,
+        pim.name_pi,
+        pim.dt_sex,
+        pim.birth_date,
+        pim.dt_idtype,
+        pim.id_no,
+        pim.mobile,
+        pim.CODE_OP
+        from pi_acc pia
+        inner join pi_master pim on pia.pk_pi = pim.pk_pi
+        where  pim.PK_ORG= #{pkOrg,jdbcType=VARCHAR}
+            <if test="codePi != null and codePi != ''">
+                and  pim.code_pi  like '%${codePi}%'
+            </if>
+            <if test="namePi != null and namePi != ''">
+                and  pim.name_pi like '%${namePi}%'
+            </if>
+            <if test="idNo != null and idNo!= ''">
+                and pim.id_no like '%${idNo}%'
+            </if>
+            <if test="mobile != null and mobile!= ''">
+                and pim.mobile like '%${mobile}%'
+            </if>
+            <if test="cardNo != null and cardNo!= ''">
+            and pim.pk_pi in ( select pk_pi from pi_card where card_no  like'%${cardNo}%')
+            </if>
+        order by pim.code_pi
+    </select>
+    <select id="getCardNo"   parameterType="java.util.Map" resultType="Dynabean">
+        SELECT
+        iss.CUR_NO
+        FROM
+        pi_card_iss iss
+        where
+        iss.flag_active='1' and FLAG_USE = '1'
+        <if test="pkOrg != null and pkOrg != ''">
+            and iss.pk_org = #{pkOrg,jdbcType=VARCHAR}
+        </if>
+
+    </select>
+
+</mapper>

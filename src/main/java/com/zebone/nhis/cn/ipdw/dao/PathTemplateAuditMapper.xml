@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.PathTemplateAuditMapper">
+	
+	<select id="qryAudit" resultType="DynaBean" parameterType="java.util.Map">
+	 	 select 
+	 	 	tmp.*,
+	 	 	fl.pk_flow,
+	 	 	fb.pk_flowstep,
+	 	 	fb.pk_flowstep_pre 
+		 from cp_temp tmp 
+		      inner join bd_flow_bp fb on tmp.pk_cptemp=fb.pk_bppk 
+		      inner join bd_flow fl on fb.pk_flow=fl.pk_flow 
+		 where ((fl.eu_type='0' and fb.pk_dept = #{pkDept}) or 
+		       (fl.eu_type='1' and fb.pk_emp = #{pkEmp})) and 
+		       fb.eu_result='0' 
+	</select>
+	
+	<select id="existNullPharm" resultType="java.lang.Integer" parameterType="java.lang.String">
+	
+		select 
+		 count(1)
+		FROM
+			cp_temp temp
+		inner join cp_temp_phase phase on phase.pk_cptemp = temp.pk_cptemp
+		inner join cp_temp_cpord cpord on cpord.pk_cpphase = phase.pk_cpphase
+		inner join bd_cp_task task on task.pk_cptask = cpord.pk_ord
+		where cpord.eu_tasktype = '0'
+			and task.eu_reptype = '2'
+			and cpord.dt_pharm is null
+			and temp.pk_cptemp = #{pkCptemp}
+	</select>
+</mapper>

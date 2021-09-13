@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsrm.scm.dao.ZsrmScmPdBaseMapper">
+    <select id="getBdPdCodeMax" parameterType="java.util.Map" resultType="DynaBean">
+        select max(${filed}) max_code from BD_PD where ${filed} like #{befFiled,jdbcType=VARCHAR} || '%'
+    </select>
+</mapper>

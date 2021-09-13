@@ -1,0 +1,353 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.labor.pub.dao.PiLaborPubMapper">
+	
+	<!-- 根据选择条件查询孕妇档案信息 -->
+	<select id="queryPiLabor" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.labor.pub.vo.PiLaborVo">
+		 select labor.* ,
+		    pi.insur_no as code_hp,
+		    pi.code_ip,
+		    pi.code_pi,
+		    pi.name_pi,
+		    pi.id_no,
+		    pi.birth_date,
+		    pi.mobile, 
+		 	pi.dt_occu,
+		 	pi.dt_edu,
+		 	pi.unit_work as name_company,
+		 	pi.dt_country,
+		 	pi.dt_nation,
+		 	pi.dt_blood_abo as dt_blood,
+		 	pi.addr_cur,
+		 	pi.addrcode_cur,
+		 	pi.addr_cur_dt,
+		 	pi.addr_regi,
+		 	pi.addrcode_regi,
+		 	pi.addr_regi_dt 
+	   from pi_labor labor
+	  inner join pi_master pi on pi.pk_pi = labor.pk_pi 
+	   left join pv_encounter pv on pv.pk_pi = labor.pk_pi
+	   left join pv_labor pvLab on pvLab.pk_pv = pv.pk_pv
+      where labor.pk_org = #{pkOrg,jdbcType=CHAR}
+		and labor.del_flag = '0'
+		<!-- and pvLab.flag_in = '1'
+		and pvLab.eu_status = '1' -->
+		<if test="codeHp != null  and  codeHp != ''"><!-- 医保卡 -->
+			and pi.insur_no like '%${codeHp}%'
+		</if>
+		<if test="cardNo != null  and  cardNo != ''"><!-- 诊疗卡 -->
+			and labor.card_no like '%${cardNo}%'
+		</if>
+		<if test="namePi != null  and  namePi != ''"><!-- 患者名称 -->
+			and pi.name_pi like '%${namePi}%'
+		</if>
+		<if test="idNo != null  and  idNo != ''"><!-- 身份证号 -->
+			and pi.id_no like '%${idNo}%'
+		</if>
+		<if test="createTime != null  and  createTime != ''"><!-- 本次孕产校验 -->
+			and labor.create_time &gt; to_date(#{createTime,jdbcType=VARCHAR},'yyyymmddhh24miss')
+		</if>
+		  order by pi.code_ip 
+	</select>
+
+	<!-- 根据 孕妇患者主键 / 孕妇档案主键 查询孕妇档案信息 -->
+	<select id="queryPiLaborByPk" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.labor.pub.vo.PiLaborVo">
+		 select lab.* ,
+			    pi.insur_no as code_hp,
+		    	pi.code_ip,
+		    	pi.code_pi,
+		    	pi.name_pi,
+		    	pi.id_no,
+		    	pi.birth_date,
+		    	pi.mobile, 
+		 		pi.dt_occu,
+		 		pi.dt_edu,
+		 		pi.unit_work as name_company,
+		 		pi.dt_country,
+		 		pi.dt_nation,
+		 		pi.dt_blood_abo as dt_blood,
+		 		pi.addr_cur,
+		 		pi.addrcode_cur,
+		 		pi.addr_cur_dt,
+		 		pi.addr_regi,
+		 		pi.addrcode_regi,
+		 		pi.addr_regi_dt,
+		 		defOccu.name Occu,
+		 		defBlood.name Blood,
+		 		defOccuH.name OccuHus,
+		 		defBloodH.name BloodHus
+		   from pi_labor lab
+		   left join pi_master pi on pi.pk_pi = lab.pk_pi
+		   left join bd_defdoc defOccu on defOccu.code = pi.dt_occu and defOccu.code_defdoclist = '000010'
+		   left join bd_defdoc defBlood on defBlood.code = pi.dt_blood_abo and defBlood.code_defdoclist = '000004'
+		   left join bd_defdoc defOccuH on defOccuh.code = lab.dt_occu_hus and defOccuH.code_defdoclist = '000010'
+		   left join bd_defdoc defBloodH on defBloodH.code = lab.dt_blood_hus and defBloodH.code_defdoclist = '000004'
+		  where lab.pk_org = #{pkOrg,jdbcType=CHAR}
+		    and lab.del_flag = '0'
+		<if test="pkPi != null  and  pkPi != ''"><!-- 患者主键 -->
+			and lab.pk_pi = #{pkPi,jdbcType=CHAR}
+		</if>
+		<if test="pkPilabor != null  and  pkPilabor != ''"><!-- 孕妇档案主键 -->
+			and lab.pk_pilabor = #{pkPilabor,jdbcType=CHAR}
+		</if>
+		<if test="createTime != null  and  createTime != ''"><!-- 本次孕产校验 -->
+			and lab.create_time &gt; to_date(#{createTime,jdbcType=VARCHAR},'yyyymmddhh24miss')
+		</if>
+		  order by lab.create_time DESC
+	</select>
+		<!-- 根据 孕妇患者主键 / 孕妇档案主键 查询孕妇档案信息 -->
+	<select id="queryPiInfo" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.labor.pub.vo.PiLaborVo">
+		 select 
+			    pi.insur_no as code_hp,
+		    	pi.code_ip,
+		    	pi.code_pi,
+		    	pi.name_pi,
+		    	pi.id_no,
+		    	pi.birth_date,
+		    	pi.mobile, 
+		 		pi.dt_occu,
+		 		pi.dt_edu,
+		 		pi.unit_work as name_company,
+		 		pi.dt_country,
+		 		pi.dt_nation,
+		 		pi.dt_blood_abo as dt_blood,
+		 		defOccu.name Occu,
+		 		defBlood.name Blood,
+		 		pv.addr_cur,
+		 		pv.addrcode_cur,
+		 		pv.addr_cur_dt,
+		 		pv.addr_regi,
+		 		pv.addrcode_regi,
+		 		pv.addr_regi_dt 
+		  from  pi_master pi 
+		  inner join pv_encounter pv on pv.pk_pi=pi.pk_pi 
+		   left join bd_defdoc defOccu on defOccu.code = pi.dt_occu and defOccu.code_defdoclist = '000010'
+		   left join bd_defdoc defBlood on defBlood.code = pi.dt_blood_abo and defBlood.code_defdoclist = '000004'
+		  where pv.pk_org = #{pkOrg,jdbcType=CHAR}
+		    and pi.del_flag = '0'
+			and pv.pk_pv = #{pkPv,jdbcType=CHAR}<!-- 就诊主键，去掉判空，不传直接报错 -->
+	</select>
+	
+	<!-- 产房banner 新增查询信息 -->
+	<select id="queryPatiInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select pv.name_pi,
+		       pv.age_pv,
+		       pv.age_pv age,
+			   pi.dt_occu,
+		       pv.bed_no,
+		       pv.dt_sex,
+		       pv.code_pv,
+		       pv.pk_pv,
+		       pv.pk_pi,
+		       pv.pk_dept,
+		       pv.pk_dept_ns,
+		       pv.date_begin,
+		       pi.birth_date,
+		       pi.code_ip,
+		       pi.DT_IDTYPE,
+               pi.ID_NO,
+		       pv.EU_STATUS,
+		       labor.date_last,
+		       labor.num_preg,
+		       labor.num_product,
+			   pvLabor.pk_pvlabor, 
+			   pvLabor.date_in, 
+			   pvLabor.bed_no bed_no_lab,
+			   rec.pre_weeks week_no,
+			   rec.pk_laborrec
+			   ,rec.pk_emp_js
+			   ,GETPVAGE(pi.BIRTH_DATE,pv.DATE_BEGIN) as age_format
+		  from pv_encounter pv
+		 inner join pi_master pi on pi.pk_pi = pv.pk_pi
+		  left join pi_labor labor on labor.pk_pi = pv.pk_pi 
+		  left join pv_labor_rec rec on rec.pk_pv = pv.pk_pv 
+		  left join pv_labor pvLabor on pv.pk_pv = pvLabor.pk_pv and pvLabor.eu_status > '0'
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and pv.del_flag = '0'
+		    <if test="codePv != null and codePv != ''"><!-- 就诊号码 -->
+		  		and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="bedNo != null and bedNo != ''"><!-- 病区-床位号 -->
+		  		and pv.bed_no = #{bedNo,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="codeBed != null and codeBed != ''"><!-- 产房-床位号 -->
+		  		and pvLabor.bed_no = #{codeBed,jdbcType=VARCHAR}
+		  	</if> 	
+		  	<if test="pkPi != null and pkPi != ''"><!-- 患者主键 -->
+		  		and pv.pk_pi = #{pkPi,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="pkPv != null"><!-- 就诊主键 -->
+		  		and pv.pk_pv = #{pkPv,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="codePi != null and codePi != ''"><!-- 患者编码-->
+		  		and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="codeIp != null and codeIp != ''"><!-- 住院号 -->
+		  		and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="idNo != null and idNo != ''"><!-- 身份证号 -->
+		  		and pi.id_no = #{idNo,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="insurNo != null and insurNo != ''"><!-- 保险卡号 -->
+		  		and pi.insur_no = #{insurNo,jdbcType=VARCHAR}
+		  	</if>
+<!--		  	<if test="flagLabor != null and flagLabor != ''">&lt;!&ndash; 产房|病区使用 &ndash;&gt;-->
+<!--		  		and (('1' = #{flagLabor,jdbcType=VARCHAR} and pvLabor.pk_pvlabor is not null ) -->
+<!--		  		  or ('0' = #{flagLabor,jdbcType=VARCHAR} ))-->
+<!--		  	</if>-->
+		 	<if test="createTime != null  and  createTime != ''"><!-- 本次孕产校验 -->
+		   		and pvLabor.create_time &gt; to_date(#{createTime,jdbcType=VARCHAR},'yyyymmddhh24miss')
+			</if>
+			<if test="status != null and status != ''"><!-- 针对出院 -->
+		  		and pvLabor.eu_status = #{status,jdbcType=VARCHAR}
+		  	</if>
+  		</trim>
+-- 		order by pvLabor.date_out desc
+		order by date_begin desc
+	</select>
+	
+	<!-- 产房床位大卡床位信息 -->
+	<select id="getBedInfo" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.labor.pub.vo.LabPatiCardVo">
+		 select bed.pk_bed,
+				bed.code as bedno,
+				bed.name,
+				bed.flag_active,
+				bed.flag_temp,
+				bed.flag_ocupy,
+				bed.houseno,
+				bed.eu_status,
+				bed.dt_bedtype,
+				bed.pk_item,
+				item.price,
+				pv.pk_pi,
+				pv.name_pi,
+				pv.dt_sex,
+				pv.age_pv as age,
+				pv.pk_pv,
+				pv.code_pv,
+				pi.code_ip,
+		        pi.BIRTH_DATE,
+				pvLabor.date_in,
+				pvLabor.pk_dept,
+				pvLabor.pk_dept_ns,
+				pvLabor.name_emp_nurse as name_emp_ns,
+				pvLabor.name_emp_doctor as name_emp_phy,
+				pvLabor.pk_pvlabor,
+				pvLabor.pk_pvlabor_mother,
+                inf.sort_no,
+				deptns.name_dept as dept_name_ns,
+				dept.name_dept,
+				dept.code_dept,
+				hp.name as hpname,
+				diag.desc_diag,
+				ip.dt_level_ns,
+				ip.dt_level_dise,
+				ip.dt_level_nutr,
+				pvLabor.flag_infant,
+				pv.date_begin ,
+				def_dise.name level_dise_hint,
+				ord_ns.name level_ns_hint,
+				ord_nutr.name level_nutr_hint,
+				lab.num_preg,
+				lab.date_last  
+		   from bd_res_bed bed
+		  left join bd_item item on item.pk_item = bed.pk_item
+		   left join pv_labor pvLabor on pvLabor.bed_no = bed.code and pvLabor.flag_in = '1' and pvLabor.eu_status = '1'
+		   left join pv_encounter pv on pv.pk_pv = pvLabor.pk_pv
+		   left join pi_master pi on pi.pk_pi = pv.pk_pi
+		   left join pv_ip ip on ip.pk_pv = pv.pk_pv
+		   left join pv_infant inf on pvLabor.pk_pv = inf.pk_pv_infant
+		   left join bd_ou_dept deptns on pvLabor.pk_dept_ns = deptns.pk_dept
+		   left join bd_ou_dept dept on pvLabor.pk_dept = dept.pk_dept
+		   left join bd_hp hp on pv.pk_insu = hp.pk_hp
+		   left join pv_diag diag on diag.pk_pv = pv.pk_pv and diag.flag_maj = '1' and diag.del_flag = '0'
+		   left join bd_defdoc def_dise on ip.dt_level_dise = def_dise.code and def_dise.code_defdoclist = '000202'
+		   left join bd_ord ord_ns on ip.dt_level_ns = ord_ns.code and ord_ns.code_ordtype = '06'
+		   left join bd_ord ord_nutr on ip.dt_level_nutr = ord_nutr.code and ord_nutr.code_ordtype = '13'
+		   <!-- left join pi_labor lab on lab.pk_pi = pv.pk_pi and lab.create_time &gt; to_date(#{createTime},'YYYYMMDDHH24MISS') -->
+		   left join  (select * from (select t.*, row_number() over(PARTITION BY pk_pi order by date_prebirth desc) rn from pi_labor t) t where rn =1)
+				lab on lab.pk_pi = pv.pk_pi and lab.create_time &gt; to_date(#{createTime},'YYYYMMDDHH24MISS')
+		  where ( bed.flag_ocupy = '0'   or bed.flag_ocupy = '1'   and pvLabor.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR})
+		    and bed.pk_org = #{pkOrg,jdbcType=CHAR}
+		    and bed.pk_ward = #{pkDeptNs,jdbcType=CHAR}
+		    and bed.del_flag = '0' 
+		    and bed.flag_active = '1'
+		<if test="pkPv != null  and  pkPv != ''">
+			and pv.pk_pv = #{pkPv,jdbcType=CHAR}
+		</if>
+		<if test=" bednoDes != null  and  bednoDes != ''">
+			and bed.code = #{bednoDes,jdbcType=VARCHAR}
+		</if>
+		order by bed.code ,pi.code_ip
+	</select>
+	
+	<select id="getLabPatiList" parameterType="java.util.Map" resultType="DynaBean">
+		select pv.name_pi,
+			   pv.age_pv,
+       		   bed.name as name_bed,
+       		   bed.code as code_bed,
+       		   pv.pk_pv,
+       		   pv.code_pv,
+       		   pv.pk_pi,
+       		   pi.code_ip,
+       		   lab.date_in,
+       		   sex.name sex,
+       		   case when (pv.eu_pvmode='1' and pv.flag_cancel != '1' and pv.del_flag='0' and pv.bed_no is not null) then '1'
+                  else  '0'
+                  end as  cp_Eu_Status
+                       
+  		 from  pv_encounter pv 
+		inner join pv_labor lab on lab.pk_pv = pv.pk_pv and lab.flag_in = '1' and lab.eu_status = '1'
+		inner join pi_master pi on pi.pk_pi = pv.pk_pi 
+        inner join bd_res_bed bed on lab.bed_no = bed.code and bed.pk_org = #{pkOrg,jdbcType=CHAR} and bed.del_flag = '0'
+        and bed.pk_ward = #{pkDeptNs,jdbcType=CHAR} 
+        LEFT JOIN bd_defdoc sex ON sex.code = pv.dt_sex AND sex.code_defdoclist = '000000'
+ 		where pv.flag_in = '1'
+ 		  and pv.eu_pvtype = '3' 
+ 		  and lab.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR} 
+ 		  and pv.eu_status = '1'  		  
+ 		order by date_in,code_bed
+	</select>
+	
+	<select id="verfyPreBirthOracle" parameterType="java.util.Map" resultType="DynaBean">
+		  select max(DATE_PREBIRTH) mxdate from PI_LABOR   where PK_PI = #{pkPi,jdbcType=CHAR}
+          having  add_months(max(DATE_PREBIRTH),10) &gt; to_date(#{datePre},'yyyyMMddHH24MISS')      		
+	</select>
+	
+	<select id="verfyPreBirthSqlServer" parameterType="java.util.Map" resultType="DynaBean">			
+	 select max(DATE_PREBIRTH) mxdate from PI_LABOR   where PK_PI = #{pkPi,jdbcType=CHAR} 
+     having  dateadd(month,10,max(DATE_PREBIRTH))&gt; to_date(#{datePre},'yyyyMMddHH24MISS')   
+	</select>
+	
+		<select id="modifyverfyPreBirthOracle" parameterType="java.util.Map" resultType="DynaBean">
+		  select max(DATE_PREBIRTH) mxdate from PI_LABOR   where PK_PI = #{pkPi,jdbcType=CHAR}
+		   and DATE_PREBIRTH  &lt; (select MAX(DATE_PREBIRTH) from PI_LABOR ) 
+          having  add_months(max(DATE_PREBIRTH),10) &gt; to_date(#{datePre},'yyyyMMddHH24MISS')      		
+	</select>
+	
+	<select id="modifyverfyPreBirthSqlServer" parameterType="java.util.Map" resultType="DynaBean">			
+	 select max(DATE_PREBIRTH) mxdate from PI_LABOR   where PK_PI = #{pkPi,jdbcType=CHAR}  
+	 and DATE_PREBIRTH  &lt; (select MAX(DATE_PREBIRTH) from PI_LABOR ) 
+	 having dateadd(month,10,max(DATE_PREBIRTH))&gt; to_date(#{datePre},'yyyyMMddHH24MISS')   
+	</select>
+	
+	
+	<!-- 查询当前科室是否是业务线中配置的临床科室 -->
+	<select id="queryDeptBuByDept" parameterType="java.util.Map" resultType="DynaBean">
+		  select bus.PK_DEPTBU,bus.pk_org from bd_dept_bu bu
+	      inner join BD_DEPT_BUS bus on bu.PK_DEPTBU = bus.PK_DEPTBU 
+	      where bu.DT_BUTYPE ='01' and bus.DT_DEPTTYPE='01' and bus.PK_DEPT = #{pkDeptNs,jdbcType=CHAR} 
+	      and bus.pk_org = #{pkOrg,jdbcType=CHAR} 
+	</select>
+	<!-- 查询当前科室是否是业务线中配置的临床科室 -->
+	<select id="queryDeptByDeptBu" parameterType="java.util.Map" resultType="DynaBean">
+		   select bus.PK_DEPT from bd_dept_bu bu
+           inner join BD_DEPT_BUS bus on bu.PK_DEPTBU = bus.PK_DEPTBU
+           where bu.DT_BUTYPE ='01' and bus.DT_DEPTTYPE='02' and bus.PK_DEPTBU = #{pkDeptbu,jdbcType=CHAR}  
+           and bus.pk_org = #{pkOrg,jdbcType=CHAR}  
+	</select>
+</mapper>

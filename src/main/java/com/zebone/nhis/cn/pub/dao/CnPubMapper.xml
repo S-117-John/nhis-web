@@ -1,0 +1,572 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.pub.dao.CnPubMapper">
+    <select id="selectOrder" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOrder"
+            parameterType="java.lang.String">
+    select 
+    *
+    from CN_ORDER
+    where PK_CNORD = #{pkCnord,jdbcType=CHAR}
+  </select>
+
+    <delete id="removeChildApply" parameterType="java.lang.String">
+    begin 
+  	delete from cn_op_subjoin 
+  	where pk_ordop = #{pkOrdop,jdbcType=VARCHAR};
+  	delete from cn_op_jion 
+  	where pk_ordop = #{pkOrdop,jdbcType=VARCHAR};
+  	delete from cn_op_diag 
+  	where pk_ordop = #{pkOrdop,jdbcType=VARCHAR};
+  	end;
+  </delete>
+
+    <select id="queryHpdicttype" resultType="DynaBean" parameterType="java.util.Map">
+        <!--
+        select cgdiv.dt_hpdicttype,def.name hpdicttypename,config.pk_hpcgdiv from bd_hp_cgdiv cgdiv
+       inner join bd_hp_divconfig config on CGDIV.pk_hpcgdiv=CONFIG.pk_hpcgdiv and config.del_flag='0' and CONFIG.eu_pvtype='3'
+       inner join bd_hp hp on hp.pk_hp=config.pk_hp and hp.del_flag='0'
+       left join bd_defdoc def on cgdiv.dt_hpdicttype=DEF.code and DEF.code_defdoclist ='040010' and DEF.del_flag='0'
+       where hp.pk_hp=#{pkHp,jdbcType=VARCHAR}
+       -->
+        select attr.val_attr as dt_hpdicttype,ht.name as hpdicttypename,hp.name as hpname
+        from bd_hp hp
+        inner join bd_dictattr attr on hp.pk_hp=attr.pk_dict
+        inner join bd_dictattr_temp tmp on attr.pk_dictattrtemp=tmp.pk_dictattrtemp and tmp.code_attr='0318'
+        inner join bd_defdoc ht on attr.val_attr=ht.code and ht.code_defdoclist='040010'
+        where hp.pk_hp=#{pkHp,jdbcType=VARCHAR}
+    </select>
+
+    <select id="queryGyType" resultType="DynaBean" parameterType="java.util.Map">
+    select hci.dt_hptype,
+       hci.rate,
+       case when hci.rate=1 then '自费' else div.name_div end note
+  from bd_hp hp
+       inner join bd_hp_divconfig hdc on hp.pk_hp=hdc.pk_hp
+       inner join bd_hp_cgdiv div on hdc.pk_hpcgdiv=div.pk_hpcgdiv
+       inner join bd_hp_cgdiv_item hci on div.pk_hpcgdiv=hci.pk_hpcgdiv
+       inner join bd_dictattr attr on hp.pk_hp=attr.pk_dict
+       inner join bd_dictattr_temp tmp on attr.pk_dictattrtemp=tmp.pk_dictattrtemp and tmp.code_attr='0301'
+ where hdc.eu_pvtype='3' and
+       attr.val_attr='1' and 
+       hp.pk_hp=#{pkHp,jdbcType=VARCHAR} and
+       hci.pk_item=#{pkOrd,jdbcType=VARCHAR}
+  </select>
+
+    <select id="queryItemBaseInfo" resultType="DynaBean" parameterType="java.util.Map">
+ 	select * from (
+	 	SELECT
+	 	    item.pk_item,
+			item.code,
+			item.code_std,
+			item.name,
+			item.spec,
+			item.price,
+			item.desc_item,
+			item.except_item,
+			item.note,
+			unit. NAME AS name_unit,
+			oi.sortno
+		FROM
+			bd_item item
+		inner join bd_ord_item oi on ITEM.pk_item=OI.pk_item and OI.del_flag='0' and oi.flag_pd='0' 
+		inner join bd_ord ord on ord.pk_ord=oi.pk_ord and ord.del_flag='0' 
+		LEFT JOIN bd_unit unit ON unit.pk_unit = item.pk_unit
+		AND unit.del_flag = '0'
+		WHERE
+		item.del_flag = '0'
+		and oi.pk_ord =#{pkOrd,jdbcType=VARCHAR}
+		and ord.pk_ord =#{pkOrd,jdbcType=VARCHAR}
+		union all
+		SELECT
+		    pd.pk_pd as pk_item,
+			pd.code,
+			pd.code_std,
+			pd.name,
+			pd.spec,
+			pd.price,
+			null as desc_item,
+			null as except_item,
+			pd.note,
+			unit. NAME AS name_unit,
+			oi.sortno
+		FROM
+			bd_pd pd
+		inner join bd_ord_item oi on pd.pk_pd=OI.pk_item and OI.del_flag='0' and oi.flag_pd='1' 
+		inner join bd_ord ord on ord.pk_ord=oi.pk_ord and ord.del_flag='0' 
+		LEFT JOIN bd_unit unit ON unit.pk_unit = pd.pk_unit_pack
+		AND unit.del_flag = '0'
+		WHERE
+		pd.del_flag = '0'
+		and oi.pk_ord =#{pkOrd,jdbcType=VARCHAR}
+		and ord.pk_ord =#{pkOrd,jdbcType=VARCHAR}
+	) baseinfo
+	order by sortno
+  </select>
+
+
+    <select id="qryFreqTime" resultType="DynaBean" parameterType="java.util.Map">
+        SELECT ftime.*,
+        freq.code,
+        freq.name,
+        freq.spcode as py_code,
+        freq.d_code,
+        freq.eu_cycle,
+        freq.cnt_cycle,
+        freq.flag_plan,
+        freq.cnt,
+        freq.eu_always,
+        freq.dt_freqtype
+        FROM
+        bd_term_freq_time ftime
+        INNER JOIN bd_term_freq freq ON freq.pk_freq = ftime.pk_freq AND freq.del_flag = '0'
+        WHERE ftime.del_flag = '0'
+        <if test='code != null and code != "" '>
+            and freq.code=#{code,jdbcType=VARCHAR}
+        </if>
+        ORDER BY
+        freq.CODE,
+        ftime.time_occ
+    </select>
+
+    <select id="qryTheSameSpecialty" resultType="java.lang.Integer" parameterType="java.util.Map">
+        select count(*) from bd_dept_bu bu
+        where exists(select * from BD_DEPT_BUS bs
+        where bs.PK_DEPTBU=bu.PK_DEPTBU and bu.DT_BUTYPE='20'
+        and bs.PK_DEPT=#{pkDeptIn,jdbcType=VARCHAR})<!-- 转入科室主键  -->
+        and exists(select * from BD_DEPT_BUS bs1
+        where bs1.PK_DEPTBU=bu.PK_DEPTBU and bu.DT_BUTYPE='20'
+        and bs1.PK_DEPT=#{pkDeptOut,jdbcType=VARCHAR}) <!-- 转出科室主键  -->
+    </select>
+
+    <select id="qryBdDefdocFlagDef" resultType="com.zebone.nhis.cn.pub.vo.BdDefdocVo" parameterType="java.lang.String">
+  	select
+       CODE
+       ,BA_CODE
+       ,NAME
+       ,PY_CODE
+       ,D_CODE
+       ,DEL_FLAG
+       ,CODE_DEFDOCLIST
+       ,flag_def
+       ,shortname
+       ,pk_defdoc
+       ,memo
+ from BD_DEFDOC
+ where  FLAG_DEF = '1'
+        and BD_DEFDOC.CODE_DEFDOCLIST = #{codeDefdoclist,jdbcType=VARCHAR}
+ order by BD_DEFDOC.CODE
+  	</select>
+
+    <select id="qryDiag" resultType="DynaBean" parameterType="java.util.Map">
+        select d1.pk_cndiag,d2.pk_diag
+        from bd_cndiag d1
+        left join BD_TERM_DIAG d2 on d1.code_icd=d2.diagcode
+        where d2.flag_stop=0
+        <if test='pkCndiag != null and pkCndiag != "" '>
+            and d1.pk_cndiag=#{pkCndiag,jdbcType=VARCHAR}
+        </if>
+        <if test='pkDiag != null and pkDiag != "" '>
+            and d2.pk_diag=#{pkDiag,jdbcType=VARCHAR}
+        </if>
+        group by d1.pk_cndiag,d2.pk_diag
+    </select>
+    <select id="qryOrd" resultType="DynaBean" parameterType="java.util.Map">
+        select
+        item.*,
+        case when #{flagSpec,jdbcType=VARCHAR}='1' then item.price_vip when #{flagSpec,jdbcType=VARCHAR}='3' then
+        item.price_chd else item.price_ori end as pricestr
+        from(
+        select
+        srv.pk_ord,srv.pk_ordtype , srv.code_ordtype,srv.code,alias.alias as name,alias.spcode as
+        py_code,alias.d_code,srv.name as srvname,
+        srv.flag_pd , srv.flag_cg ,srv.flag_active ,srv.desc_ord,srv.except_ord,srv.note,
+        srv.flag_noc,so.pk_org ,so.code_freq ,so.quan_def ,alias.spcode as mnecode,
+        doc.name as desc_body,ris.dt_type, ris.desc_att,lab.dt_colltype,lab.dt_contype,lab.dt_samptype,srv.eu_sex,
+        srv.age_min,
+        srv.age_max, p.price as price_ori,p.price_vip, p.price_chd,srv.flag_emr, srv.flag_hm as
+        flag_emer,lab.dateslot,lab.duration_rpt
+        from bd_ord srv
+        inner join bd_ord_org so on srv.pk_ord = so.pk_ord and so.del_flag = '0' and so.pk_org=
+        #{pkOrg,jdbcType=VARCHAR}
+        inner join bd_ord_alias alias on so.pk_ord = alias.pk_ord and so.pk_org = alias.pk_org and alias.del_flag='0'
+        left outer join
+        (select oi.pk_ord,
+        sum(case when oi.flag_pd='0' then (case when item.price=null then 0 else item.price end) * (case when oi.quan is
+        null then 1 else oi.quan end) else (case when pd.price=null then 0 else pd.price end)/pd.pack_size*(case when
+        oi.quan is null then 1 else oi.quan end) end) price,
+        <if test='dbType == "oracle"'>
+            (sum(case when oi.flag_pd='0' then (case when item.price=null then 0 else
+            item.price*(1+nvl(sp.ratio_spec,0))
+            end) * (case when oi.quan is null then 1 else oi.quan end) else (case when pd.price=null then 0 else
+            pd.price
+            end)/pd.pack_size*(case when oi.quan is null then 1 else oi.quan end) end)) as price_vip,
+            (sum(case when oi.flag_pd='0' then (case when item.price=null then 0 else
+            item.price*(1+nvl(sp.ratio_children,0)) end) * (case when oi.quan is null then 1 else oi.quan end) else
+            (case
+            when pd.price=null then 0 else pd.price end)/pd.pack_size*(case when oi.quan is null then 1 else oi.quan
+            end)
+            end)) as price_chd
+        </if>
+        <if test='dbType == "sqlserver"'>
+            (sum(case when oi.flag_pd='0' then (case when item.price=null then 0 else
+            item.price*(1+isnull(sp.ratio_spec,0))
+            end) * (case when oi.quan is null then 1 else oi.quan end) else (case when pd.price=null then 0 else
+            pd.price
+            end)/pd.pack_size*(case when oi.quan is null then 1 else oi.quan end) end)) as price_vip,
+            (sum(case when oi.flag_pd='0' then (case when item.price=null then 0 else
+            item.price*(1+isnull(sp.ratio_children,0)) end) * (case when oi.quan is null then 1 else oi.quan end) else
+            (case
+            when pd.price=null then 0 else pd.price end)/pd.pack_size*(case when oi.quan is null then 1 else oi.quan
+            end)
+            end)) as price_chd
+        </if>
+        from bd_ord_item oi
+        left outer join bd_item item on oi.pk_item=item.pk_item and oi.flag_pd='0' and item.del_flag='0'
+        left outer join bd_pd pd on oi.pk_item=pd.pk_pd and oi.flag_pd='1' and pd.del_flag='0'
+        LEFT OUTER JOIN bd_item_sp sp ON item.pk_item = sp.pk_item AND sp.eu_pvtype = '3'
+        where oi.del_flag='0'
+        group by oi.pk_ord
+        ) p on so.pk_ord = p.pk_ord
+        left join bd_ord_ris ris on srv.pk_ord = ris.pk_ord and ris.del_flag='0'
+        left join bd_ord_lab lab on srv.pk_ord = lab.pk_ord and lab.del_flag='0'
+        left join bd_defdoc doc on ris.dt_body = doc.code and doc.del_flag='0' and doc.code_defdoclist = '030101'
+        left outer join bd_ord_atd atd on srv.pk_ord=atd.pk_ord and atd.pk_org= #{pkOrg,jdbcType=VARCHAR}
+        where 1=1 and srv.pk_ord=#{pkOrd,jdbcType=VARCHAR}
+        <!--
+        and srv.del_flag='0' and srv.flag_dr='1' and srv.flag_ip='1' and srv.flag_pd='0' and srv.flag_active = '1'
+        -->
+        ) item
+    </select>
+    <select id="queryPati" parameterType="java.util.Map" resultType="DynaBean">
+        	select
+        	    pv.pk_pi,
+        	    pv.pk_pv,
+        		pi.code_op,
+        		pv.name_pi,
+        		pi.dt_idtype,
+        		pi.id_no,
+        		pv.dt_sex,
+        		pi.birth_date,
+        		pi.mobile,
+        		pv.pk_insu,
+        		pi.insur_no,
+        		pv.flag_card_chk,
+        		nvl(pv.ADDR_CUR,pi.addr_cur) addr_cur	,
+        		nvl(pv.addr_cur_dt,pi.addr_cur_dt) addr_cur_dt	,
+        		pi.code_ip,
+        		pv.height,
+        		pv.weight,
+        		op.sbp,
+        		op.dbp,
+        		op.HEART_RATE,
+        		pv.name_agent,
+        		pv.idno_agent,
+        		pv.tel_agent,
+        		visit.persontype,
+        		city.pk_visitcity,
+        		city.cka303,
+        		city.cka304,
+        		city.cme320,
+        		city.amc021,
+        		city.cme331,
+        		city.alc005,
+        		city.cka305,
+        		yb.pk_inspv,
+        		yb.med_type,
+        		yb.dise_codg,
+        		yb.dise_name,
+        		yb.birctrl_type,
+        		yb.birctrl_matn_date,
+        		yb.matn_type,
+                yb.geso_val,
+        	    pv.pk_picate,pop.OP_TIMES,
+                pop.op_times_rel,pi.idno_rel
+        	From pv_encounter pv
+        	Inner Join pi_master pi On pv.pk_pi=pi.pk_pi
+            left join PV_OP pop on pv.PK_PV = pop.PK_PV
+        	Left Outer Join cn_emr_op op On pv.pk_pv=op.pk_pv
+        	Left Outer Join ins_szyb_visit visit On pv.pk_pv=visit.pk_pv
+        	Left Outer Join ins_szyb_visit_city city On pv.pk_pv=city.pk_pv
+        	left outer join ins_qgyb_pv yb on pv.PK_PV=yb.pk_pv
+			WHERE
+				pv.del_flag = '0'
+			AND pi.del_flag = '0'
+			AND pv.pk_pv =#{pkPv,jdbcType=VARCHAR}
+	 </select>
+
+    <select id="qryPrint" resultType="DynaBean" parameterType="java.util.Map">
+        select t.*,'1' as source_print from CN_ORDER_PRINT t
+        left join CN_ORDER  r on r.PK_CNORD=t.PK_CNORD
+        WHERE  t.pk_pv=#{pkPv,jdbcType=CHAR}
+        and t.eu_Always =#{euAlways,jdbcType=CHAR}
+        and r.date_enter &gt;= to_date(#{dateStart,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        and r.date_enter &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        and t.del_flag='0'
+    </select>
+
+    <select id="qryStoreByDept" resultType="DynaBean" parameterType="java.util.Map">
+        select
+        busa.pk_dept,
+        dept.code_dept,
+        bu.dt_butype,
+        busa.pk_org,
+        busa.flag_def
+        from bd_dept_bus bus
+        inner join bd_dept_bu bu on bus.pk_deptbu=bu.pk_deptbu  and bu.del_flag='0'
+        inner join bd_dept_bus busa on bus.pk_deptbu=busa.pk_deptbu  and busa.del_flag='0'
+        inner join bd_ou_dept dept on dept.pk_dept=busa.pk_dept
+        where busa.dt_depttype=#{deptType,jdbcType=VARCHAR}
+        <if test="dtButype!=null">
+            and bu.dt_butype=#{dtButype,jdbcType=VARCHAR}
+        </if>
+        and bus.pk_dept=#{pkDept,jdbcType=CHAR}
+        and bus.del_flag='0'
+    </select>
+    <select id="qryOrdOcc" resultType="DynaBean" parameterType="java.util.Map">
+        SELECT
+        t1.pk_cnord,
+        t2.name_ord
+        FROM
+        ex_order_occ t1
+        INNER JOIN cn_order t2 ON t1.pk_cnord = t2.pk_cnord
+        WHERE
+        t1.eu_status != '9'
+        and t1.pk_cnord in
+        <foreach item="item" index="index" collection="ords" open="(" separator="," close=")">
+            #{item, jdbcType=VARCHAR}
+        </foreach>
+        GROUP BY
+        t1.pk_cnord,
+        t2.name_ord
+    </select>
+      <select id="qryOrdCan" resultType="DynaBean" parameterType="java.util.Map">
+        SELECT
+        t1.pk_cnord,
+        t2.name_ord
+        FROM
+        ex_order_occ t1
+        INNER JOIN cn_order t2 ON t1.pk_cnord = t2.pk_cnord
+        WHERE
+        t1.eu_status = '9'
+        and (t1.pk_cnord in
+        <trim suffixOverrides=" or t1.pk_cnord in()">    <!-- 表示删除最后一个条件 -->
+		          <foreach collection="ords" item="item" index="index" open="(" close=")">
+		            <if test="index != 0">
+		              <choose>
+		                 <when test="index % 1000 == 999">) OR t1.pk_cnord in (</when>
+		                     <otherwise>,</otherwise>
+		              </choose>
+		            </if>
+		            #{item}
+		          </foreach>
+		       </trim>
+       ) GROUP BY
+        t1.pk_cnord,
+        t2.name_ord
+    </select>
+    <select id="qryPdQuanByStork" resultType="DynaBean" parameterType="com.zebone.nhis.cn.pub.vo.PdStrockVo">
+        SELECT
+        SUM(quan_min - quan_prep) quan,
+        pk_dept,
+        pk_pd,
+        FLAG_STOP_ER,
+        FLAG_STOP_OP,
+        FLAG_STOP
+        FROM
+        pd_stock sto
+        WHERE
+        sto.PK_DEPT=#{pkDept, jdbcType=VARCHAR}
+        <if test="euPvtyep!=null and euPvtyep!=''">
+            <choose>
+                <when test="euPvtyep=='1'.toString()" >
+                    and sto.FLAG_STOP_OP = '0'
+                </when>
+                <when test="euPvtyep=='2'.toString()" >
+                    and sto.FLAG_STOP_ER = '0'
+                </when>
+                <when test="euPvtyep=='3'.toString()" >
+                    and sto.FLAG_STOP = '0'
+                </when>
+            </choose>
+        </if>
+        and sto.pk_pd in
+        <foreach item="item" index="index" collection="pkPds" open="(" separator="," close=")">
+            #{item, jdbcType=VARCHAR}
+        </foreach>
+        GROUP BY
+        pk_dept,
+        pk_pd,
+        FLAG_STOP_ER,
+        FLAG_STOP_OP,
+        FLAG_STOP
+    </select>
+
+    <select id="qryPdStorkByDept" resultType="DynaBean" parameterType="com.zebone.nhis.cn.pub.vo.PdStrockVo">
+        SELECT
+        	pd.pk_pd,
+        	'0' as stop,
+        	stock.PK_DEPT,
+			stock.del_flag as stock_flag,
+        	stock.FLAG_STOP_ER,
+        	stock.FLAG_STOP_OP,
+        	stock.FLAG_STOP stock_stop,
+		    pd.del_flag as pd_del,
+			pd.flag_stop as pd_stop,
+			pds.del_flag as pds_del,
+        	pds.FLAG_STOP as pds_stop,
+        	con.pk_unit,
+			con.del_flag as con_flag,
+        	nvl(stk.quan_min,0) as quan_min
+        FROM
+        	BD_PD pd
+        LEFT JOIN PD_STOCK stock ON pd.PK_PD = stock.PK_PD
+				left join bd_pd_store pds on pds.pk_pd = pd.pk_pd
+				left join bd_pd_convert con on con.pk_pdconvert = pds.pk_pdconvert
+        left outer join (
+					select sum(quan_min - quan_prep) quan_min,pk_pd
+					from pd_stock
+					where del_flag = '0' and flag_stop='0' and pk_dept =#{pkDept, jdbcType=VARCHAR}
+					group by pk_pd
+				) stk on pds.pk_pd = stk.pk_pd
+        WHERE
+            pd.pk_pd =#{pkPd, jdbcType=VARCHAR}
+			<if test=" pkUnit!=null and pkUnit!=''">
+                and con.pk_unit=#{pkUnit, jdbcType=VARCHAR}
+            </if>
+			and stock.pk_dept=#{pkDept, jdbcType=VARCHAR}
+			and pds.pk_dept=#{pkDept, jdbcType=VARCHAR}
+    </select>
+
+    <select id="qryPiDiag" resultType="DynaBean" parameterType="java.util.Map">
+	   	select
+	   		pdg.*,
+       		dgt.name diagtype,
+       		bcd.dt_cndiagtype,
+       		bcd.CODE_CD as code_diag,
+       		nvl(icd.dt_system,bcd.dt_cndiagtype) dt_system,icd.dt_diagcate
+  		from pv_diag pdg
+				inner join PV_ENCOUNTER pv on PV.pk_pv = pdg.pk_pv
+       	inner join bd_defdoc dgt on pdg.dt_diagtype=dgt.code and dgt.code_defdoclist='060005'
+       	LEFT join bd_cndiag bcd on bcd.pk_cndiag = pdg.pk_diag
+       	left outer join bd_term_diag icd on bcd.pk_diag=icd.pk_diag
+ 		where pv.PK_PI=#{pkPi, jdbcType=VARCHAR}
+        <if test="pkDept!=null and pkDept!=''">
+            and pv.PK_DEPT=#{pkDept, jdbcType=VARCHAR}
+        </if>
+ 		order by  pdg.DATE_DIAG desc, pdg.SORT_NO asc
+	</select>
+    <select id="qryPvdiagDt" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.cn.ipdw.PvDiagDt">
+		select * from pv_diag_dt where pk_pvdiag=#{pkPvdiag}
+	</select>
+    <select id="qryPdQuanByStorkOne" resultType="DynaBean" parameterType="com.zebone.nhis.cn.pub.vo.PdStrockVo">
+        select
+        stk.pk_dept,
+        stk.pk_pd,
+        stk.FLAG_STOP_ER,
+        stk.FLAG_STOP_OP,
+        stk.FLAG_STOP,
+        PDS.PK_UNIT,
+        sum(quan_min - quan_prep) quan_min
+        from bd_pd_store pds
+        inner join PD_STOCK stk on pds.pk_pd = stk.pk_pd and stk.PK_STORE=pds.pk_store
+        where stk.PK_DEPT=#{pkDept, jdbcType=VARCHAR}
+        and pds.PK_DEPT=#{pkDept, jdbcType=VARCHAR}
+        and stk.pk_pd =#{pkPd, jdbcType=VARCHAR}
+        and pds.flag_stop='0'
+        <if test="pkUnit!=null and pkUnit!=''">
+            and PDS.PK_UNIT = #{pkUnit, jdbcType=VARCHAR}
+        </if>
+        <if test="euPvtype!=null and euPvtype!=''">
+            <choose>
+                <when test="euPvtype=='1'.toString()" >
+                    and stk.FLAG_STOP_OP = '0'
+                </when>
+                <when test="euPvtype=='2'.toString()" >
+                    and stk.FLAG_STOP_ER = '0'
+                </when>
+                <when test="euPvtype=='3'.toString()" >
+                    and stk.FLAG_STOP = '0'
+                </when>
+            </choose>
+        </if>
+        GROUP BY
+        stk.pk_dept,
+        stk.pk_pd,
+        stk.FLAG_STOP_ER,
+        stk.FLAG_STOP_OP,
+        stk.FLAG_STOP,
+        PDS.PK_UNIT
+    </select>
+
+    <select id="queryHpRateFormat" resultType="DynaBean">
+        select ihp.pk_item,itm.NAME,
+        (
+        CASE
+        WHEN ihp.eu_level = '0' THEN
+        concat('甲',concat('(', concat((case when ihp.ratio_self is null then 100 else (1-ihp.ratio_self) * 100 end),'%)')))
+        WHEN ihp.eu_level = '1' THEN
+        concat('乙',concat('(', concat((case when ihp.ratio_self is null then 100 else (1-ihp.ratio_self) * 100 end),'%)')))
+        WHEN ihp.eu_level = '2' THEN
+        concat('自费',concat('(', concat((case when ihp.ratio_self is null then 100 else (1-ihp.ratio_self) * 100 end),'%)')))
+        ELSE
+        ''
+        END
+        ) as hp_rate,boi.PK_ORD
+        from bd_item_hp ihp
+        inner join bd_ord_item boi on boi.PK_ITEM=ihp.PK_ITEM
+        inner join bd_item itm on boi.PK_ITEM = itm.PK_ITEM and itm.FLAG_ACTIVE='1' and itm.DEL_FLAG='0'
+        where ihp.del_flag='0' and ihp.pk_hp = #{pkHp,jdbcType=VARCHAR}
+        <if test="list!=null and list.size()>0">
+            and boi.PK_ORD in
+            <foreach collection="list" item="pkOrd" open="(" separator="," close=")">
+                #{pkOrd,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="queryOrdBaseInfo" resultType="DynaBean" parameterType="java.util.Map">
+        select * from (
+                          SELECT
+                              item.pk_ord pk_item,
+                              item.code,
+                              item.name,
+                              item.spec,
+                              null price,
+                              item.DESC_ORD DESC_ITEM,
+                              item.EXCEPT_ORD as EXCEPT_ITEM,
+                              item.note,
+                              unit. NAME AS name_unit,
+                              '0' sortno
+                          FROM
+                               bd_ord item
+                                  LEFT JOIN bd_unit unit ON unit.pk_unit = item.pk_unit
+                              AND unit.del_flag = '0'
+                          WHERE
+                              item.del_flag = '0'
+                            and item.pk_ord =#{pkOrd,jdbcType=VARCHAR}
+                          union all
+                          SELECT
+                              pd.pk_pd as pk_item,
+                              pd.code,
+                              pd.name,
+                              pd.spec,
+                              pd.price,
+                              null as desc_item,
+                              null as except_item,
+                              pd.note,
+                              unit. NAME AS name_unit,
+                              oi.sortno
+                          FROM
+                              bd_pd pd
+                                  inner join bd_ord_item oi on pd.pk_pd=OI.pk_item and OI.del_flag='0' and oi.flag_pd='1'
+                                  inner join bd_ord ord on ord.pk_ord=oi.pk_ord and ord.del_flag='0'
+                                  LEFT JOIN bd_unit unit ON unit.pk_unit = pd.pk_unit_pack
+                                  AND unit.del_flag = '0'
+                          WHERE
+                              pd.del_flag = '0'
+                            and oi.pk_ord =#{pkOrd,jdbcType=VARCHAR}
+                            and ord.pk_ord =#{pkOrd,jdbcType=VARCHAR}
+                      ) baseinfo
+        order by sortno
+    </select>
+</mapper>

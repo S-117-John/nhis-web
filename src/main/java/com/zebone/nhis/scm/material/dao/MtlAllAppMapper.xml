@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.material.dao.MtlAllAppMapper">
+
+	<select id="queryAllocationPlanList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.material.vo.MtlAllAppVo"> 
+	      select pla.*,
+	       platype.name plantype,
+	       sto.name name_store_acc,  
+	       dept.name_dept name_dept_acc,  
+	       org.name_org name_org_acc       
+	  from pd_plan pla
+	       inner join bd_ou_org org on pla.pk_org_acc=org.pk_org
+	       inner join bd_store sto on pla.pk_store_acc = sto.pk_store
+	       left join bd_ou_dept dept on dept.pk_dept = pla.pk_dept_acc
+	       inner join bd_defdoc platype on pla.dt_plantype=platype.code and platype.code_defdoclist='080007'
+	 where pla.pk_store=#{pkStore,jdbcType=CHAR} and
+	       pla.dt_plantype='0301'
+	       and exists (select 1 from PD_PLAN_DETAIL dt inner join bd_pd pd on pd.PK_PD=dt.PK_PD where dt.PK_PDPLAN=pla.PK_PDPLAN and pd.DT_PDTYPE like '1%')
+	       <if test="codePlan != null  and  codePlan != ''">
+	          and pla.code_plan = #{codePlan,jdbcType=VARCHAR} 
+	       </if> 
+	        <if test="datePlanBegin != null  and  datePlanBegin != ''">
+	          and pla.date_plan &gt;= to_date(#{datePlanBegin},'YYYYMMDDHH24MISS') 
+	       </if> 
+	        <if test="datePlanEnd != null  and  datePlanEnd != ''">
+	          and pla.date_plan &lt;= to_date(#{datePlanEnd},'YYYYMMDDHH24MISS') 
+	       </if> 
+	        <if test="pkEmpMak != null  and  pkEmpMak != ''">
+	          and pla.pk_emp_mak = #{pkEmpMak,jdbcType=CHAR} 
+	       </if> 
+	        <if test="euStatus != null  and  euStatus != ''">
+	          and pla.eu_status = #{euStatus,jdbcType=VARCHAR} 
+	       </if> 
+	       order by pla.date_plan
+	</select>
+
+	<select id="queryAllocationPlanDt"  parameterType="java.util.Map" resultType="com.zebone.nhis.scm.material.vo.MtlAllAppDtVo">
+	select dt.*,
+	       pd.code pdcode,
+	       pd.name pdname,
+	       pd.spec,
+	       pd.spcode,
+	       fa.name factory,
+	       unit.name unit,
+	       un.name unit_pd,
+	       org.name_org,
+	       sto.name name_store,
+	       stk.quan/dt.pack_size quan_stk 
+	  from pd_plan_detail dt
+	       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+	       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+	       inner join bd_unit unit on dt.pk_unit=unit.pk_unit
+	       inner join bd_unit un on un.pk_unit = pd.pk_unit_pack 
+	       inner join bd_ou_org org on dt.pk_org_srv=org.pk_org
+	       inner join bd_store sto on dt.pk_store_srv=sto.pk_store
+	       left outer join (select sum(quan_min-quan_prep) quan,pk_pd,pk_store from pd_stock where  flag_stop='0' group by pk_store,pk_pd) stk on dt.pk_pd=stk.pk_pd and dt.pk_store_srv = stk.pk_store
+	 where dt.pk_pdplan=#{pkPdplan,jdbcType=CHAR}
+	 order by sort_no 
+	</select>
+
+	<select id="queryStockMinList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.material.vo.MtlAllAppDtVo">
+	select pd.pk_pd,
+	       pd.code pdcode,
+	       pd.name pdname,
+	       fa.name factory,
+	       pd.spec,
+		   unit.pk_unit,
+		   unit.name unit,
+	       un.name unit_pd,
+		   pds.pack_size
+	  from bd_pd_store pds
+	       inner join bd_pd pd on pds.pk_pd=pd.pk_pd
+	       inner join bd_unit un on un.pk_unit = pd.pk_unit_pack 
+	       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+	       inner join bd_pd_convert cvt on cvt.pk_pdconvert = pds.pk_pdconvert 
+	       inner join bd_unit unit on cvt.pk_unit=unit.pk_unit 
+	       inner join
+	      	(select tbs.*,ps.STOCK_MIN from bd_pd_store ps
+				inner join(select sum(quan_min-quan_prep) quan,pk_pd from pd_stock where pk_store=#{pkStore,jdbcType=CHAR} and flag_stop='0' group by pk_pd) tbs
+	      		on tbs.pk_pd=ps.pk_pd where ps.pk_store=#{pkStore,jdbcType=CHAR}
+	      		  and nvl(ps.STOCK_MIN,0)>0 and ps.stock_min >= nvl(tbs.quan,0)
+	        ) stk on pds.pk_pd=stk.pk_pd
+	 where pds.pk_store=#{pkStore,jdbcType=CHAR}
+			and pd.dt_pdtype like '1%'
+			and pd.flag_stop !='1'
+	</select>
+
+	<select id="queryHisAllocationPlan" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.material.vo.MtlAllAppVo">
+	select pla.pk_pdplan,
+	       pla.date_plan,
+	       pla.code_plan
+	  from pd_plan pla
+	 where pla.dt_plantype='0301' 
+	       and pla.pk_store = #{pkStore,jdbcType=CHAR} 
+	       and pla.date_plan &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+	       and pla.date_plan &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+	       and pla.eu_status='2'
+	       order by pla.date_plan desc
+	</select>
+
+	<select id="queryHisAllocationPlanDt" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.material.vo.MtlAllAppDtVo">
+	select pldt.pk_pd,
+	       pd.name||'/'||pd.spec pdnameas, 
+	       pd.code pdcode, 
+	       pd.name pdname, 
+	       pd.spec, 
+	       pldt.pk_unit,  
+	       unit.name unit, 
+	       un.name unit_pd,
+	       pldt.quan_pack, 
+	       pldt.quan_min,  
+	       fa.name factory, 
+	       pldt.pack_size,   
+	       pldt.pk_org_srv,
+	       pldt.pk_dept_srv,
+	       pldt.pk_store_srv,  
+	       stk.quan/pldt.pack_size quan_stk 
+	  from pd_plan_detail pldt
+	       inner join bd_pd pd on pldt.pk_pd=pd.pk_pd
+	       inner join bd_unit unit on pldt.pk_unit=unit.pk_unit
+	       inner join bd_unit un on un.pk_unit = pd.pk_unit_pack 
+	       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+	       left outer join (select sum(quan_min-quan_prep) quan,pk_pd from pd_stock where pk_store=#{pkStore,jdbcType=CHAR} and flag_stop='0' group by pk_pd) stk on pldt.pk_pd=stk.pk_pd 
+	 where pldt.pk_pdplan = #{pkPdplan,jdbcType=CHAR} and pd.dt_pdtype like '1%'
+	</select>
+
+	<select id="queryPdByCon" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.material.vo.MtlAllAppDtVo">
+	select pd.pk_pd,
+	       pd.code pdcode,
+	       pd.name pdname, 
+	       pd.name||'/'||pd.spec pdnameas,
+	       pd.spec,
+	       unit.pk_unit,
+	       unit.name unit,
+	       un.name unit_pd,
+	       fa.name factory,
+	       cvt.pack_size,
+	       stk.quan/nvl(cvt.pack_size,1) quan_stk 
+	  from bd_pd_store pds
+	       inner join bd_pd pd on pds.pk_pd=pd.pk_pd
+	       inner join bd_unit un on un.pk_unit = pd.pk_unit_pack 
+	       inner join bd_pd_convert cvt on cvt.pk_pdconvert = pds.pk_pdconvert 
+	       inner join bd_unit unit on cvt.pk_unit=unit.pk_unit
+	       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+	       left outer join (select sum(quan_min-quan_prep) quan,pk_pd from pd_stock where pk_store=#{pkStore,jdbcType=CHAR} and flag_stop='0' group by pk_pd) stk on pds.pk_pd=stk.pk_pd
+	 where pds.pk_store = #{pkStore,jdbcType=CHAR} and pd.dt_pdtype like '1%' and pd.flag_stop!='1'
+			<if test="pkPdcate != null  and  pkPdcate != ''">
+				and pd.pk_pdcate = #{pkPdcate,jdbcType=VARCHAR}
+			</if>
+	       <if test="dtPdtype != null  and  dtPdtype != ''">
+	       	and pd.dt_pdtype = #{dtPdtype,jdbcType=VARCHAR}
+	       </if>
+			<if test="FlagPrecious != null  and  FlagPrecious != ''">
+				and pd.FLAG_PRECIOUS = #{FlagPrecious,jdbcType=VARCHAR}
+			</if>
+			<if test="code != null  and  code != ''">
+				and pd.code like '%' || #{code,jdbcType=VARCHAR} || '%'
+			</if>
+			<if test="name != null  and  name != ''">
+				and pd.name like '%' || #{name,jdbcType=VARCHAR} || '%'
+			</if>
+	       <if test="dtPois != null  and  dtPois != ''">
+	       and pd.dt_pois = #{dtPois,jdbcType=VARCHAR} 
+	       </if>
+	       <if test="dtAbrd != null  and  dtAbrd != ''">
+	       and pd.dt_abrd = #{dtAbrd,jdbcType=VARCHAR}
+	       </if>
+	       <if test="dtAnti != null  and  dtAnti != ''">
+	       and pd.dt_anti = #{dtAnti,jdbcType=VARCHAR}
+	       </if>
+	       <if test='minFlag == "1" '>
+	       and (stk.quan / nvl(cvt.pack_size,1) &lt;= pds.stock_min or stk.quan is null) and pds.stock_min is not null and pds.stock_min &lt;&gt;0
+	       </if>
+	</select>
+
+	<select id="queryQuanStk" parameterType="java.util.Map" resultType="DynaBean">
+	select sum(quan_min-quan_prep) as quan_stk
+	  from pd_stock stk
+	 where stk.pk_store = #{pkStore,jdbcType=CHAR} and stk.pk_pd = #{pkPd,jdbcType=CHAR} and stk.flag_stop = '0' 
+	</select>
+
+	<!-- 按采购计算-需要的物品-->
+	<select id="queryQuanNeedByPu" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.material.vo.MtlAllAppDtVo">
+		     select pd.pk_pd, 
+		            pd.code pdcode, 
+		     		pd.name pdname,  
+		            pd.spec,
+          			pd.pk_factory,
+          			fac.name factory,
+					stk.quan/dt.pack_size quan_stk,
+					dt.pack_size,
+          			dt.pk_unit_pack pk_unit,
+          			unit.name unit,
+          			round(sum(dt.quan_pack) / #{cntPlan} * #{cnt},2) quan_pack
+   			   from pd_st_detail dt 
+  			  inner join pd_st st on dt.pk_pdst=st.pk_pdst 
+  			  inner join bd_pd pd on dt.pk_pd=pd.pk_pd 
+     		   left join bd_factory fac on fac.pk_factory = pd.pk_factory 
+     		   left join bd_unit unit on unit.pk_unit = dt.pk_unit_pack 
+     		   left join (select sum(quan_min) quan,pk_pd from pd_stock
+                           where pk_store = #{pkStoreSrv,jdbcType=CHAR}
+                        group by pk_pd) stk on dt.pk_pd=stk.pk_pd
+ 			  where st.del_flag='0' 
+       			and pd.dt_pdtype like '1%'
+       			and pd.flag_stop !='1'
+				and st.eu_direct= #{euDirect,jdbcType=VARCHAR}
+				and dt.PACK_SIZE>0
+		<if test = "pkStore != null  and  pkStore != ''">
+   	         	and st.pk_store_st = #{pkStore,jdbcType=CHAR}
+	 	</if>
+	 	<if test = "dateStart != null  and  dateStart != ''">
+   	         	and st.date_st &gt;= to_date(#{dateStart},'yyyyMMddhh24miss')
+	 	</if>
+	 	<if test = "dateEnd != null  and  dateEnd != ''">
+   	         	and st.date_st &lt;= to_date(#{dateEnd},'yyyyMMddhh24miss')
+	 	</if>
+			  group by pd.pk_pd, 
+			        pd.code, 
+			        pd.name, 
+			        pd.spec,
+					pd.pk_factory,
+					fac.name,
+       				dt.pk_unit_pack,
+					unit.name,
+					dt.pack_size,
+					stk.quan/dt.pack_size
+	</select>
+	
+</mapper>

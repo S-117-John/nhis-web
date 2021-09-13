@@ -1,0 +1,468 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ma.pub.platform.pskq.dao.SysMsgRecDao">
+  <resultMap id="BaseResultMap1" type="com.zebone.nhis.common.module.ma.msg.SysMsgRec">
+    <id column="PK_MSG" jdbcType="CHAR" property="pkMsg" />
+    <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg" />
+    <result column="MSG_ID" jdbcType="VARCHAR" property="msgId" />
+    <result column="MSG_TYPE" jdbcType="VARCHAR" property="msgType" />
+    <result column="TRANS_TYPE" jdbcType="VARCHAR" property="transType" />
+    <result column="TRANS_DATE" jdbcType="TIMESTAMP" property="transDate" />
+    <result column="SYS_CODE" jdbcType="VARCHAR" property="sysCode" />
+    <result column="MSG_STATUS" jdbcType="VARCHAR" property="msgStatus" />
+    <result column="ERR_TXT" jdbcType="VARCHAR" property="errTxt" />
+    <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag" />
+    <result column="REMARK" jdbcType="VARCHAR" property="remark" />
+    <result column="CREATOR" jdbcType="VARCHAR" property="creator" />
+    <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="TS" jdbcType="TIMESTAMP" property="ts" />
+    <result column="MSG_CONTENT" jdbcType="CLOB" property="msgContent" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    PK_MSG, PK_ORG, MSG_ID, MSG_TYPE, TRANS_TYPE, TRANS_DATE, SYS_CODE, MSG_STATUS, ERR_TXT, 
+    PK_EMP, DEL_FLAG, REMARK, CREATOR, CREATE_TIME, TS
+  </sql>
+
+  <select id="selectMessage" parameterType="java.util.Map" resultMap="BaseResultMap1">
+    select 
+    <include refid="Base_Column_List" />
+    from SYS_MSG_REC
+    <where>
+      <if test="beginDate != null">
+        and rec.trans_date &gt;=
+        to_date(#{beginDate,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+      </if>
+      <if test="endDate != null">
+        and rec.trans_date &lt;
+        to_date(#{endDate,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+      </if>
+      <if test="msgType != null" >
+        and rec.msg_type like #{msgType,jdbcType=VARCHAR}
+      </if>
+      <if test="transType != null" >
+        and upper(rec.trans_type) = #{transType,jdbcType=VARCHAR}
+      </if>
+      <if test="msgContent != null" >
+        and rec.msg_content like '%${msgContent}%'
+      </if>
+      <if test="msgStatus != null" >
+        and rec.msg_status = #{msgStatus,jdbcType=VARCHAR}
+      </if>
+      <if test="pkOrgStr != null">
+        ${pkOrgStr}
+      </if>
+    </where>
+  </select>
+
+
+  <resultMap id="DiagResultMap" type="com.zebone.nhis.ma.pub.platform.pskq.model.OrdDiagInfo">
+    <result column="CODE_ORG" jdbcType="VARCHAR" property="orgCode" />
+    <result column="NAME_ORG" jdbcType="VARCHAR" property="orgName" />
+    <result column="encounterTypeCode" jdbcType="VARCHAR" property="encounterTypeCode" />
+    <result column="code_pv" jdbcType="VARCHAR" property="encounterId" />
+    <result column="code_pv" jdbcType="VARCHAR" property="visitId" />
+    <result column="MPI" jdbcType="VARCHAR" property="empiId" />
+    <result column="op_times" jdbcType="VARCHAR" property="visitNo" />
+      <result column="pvTime" jdbcType="VARCHAR" property="visitNo" />
+      <result column="name_pi" jdbcType="VARCHAR" property="patientName" />
+      <result column="code_pi" jdbcType="VARCHAR" property="pkPatient" />
+      <result column="sexCode" jdbcType="VARCHAR" property="genderCode" />
+      <result column="sexName" jdbcType="VARCHAR" property="genderName" />
+      <result column="BIRTH_DATE" jdbcType="VARCHAR" property="dateOfBirth" />
+      <result column="CODE_DEPT" jdbcType="VARCHAR" property="deptId" />
+      <result column="name_DEPT" jdbcType="VARCHAR" property="deptName" />
+      <result column="CODE_DEPT_NS" jdbcType="VARCHAR" property="wardId" />
+      <result column="name_DEPT_NS" jdbcType="VARCHAR" property="wardName" />
+      <result column="bed_no" jdbcType="VARCHAR" property="bedNo" />
+      <result column="DATE_DIAG" jdbcType="VARCHAR" property="diagDateTime" />
+      <result column="CODE_EMP_DIAG" jdbcType="VARCHAR" property="diagDoctorId" />
+      <result column="NAME_EMP_DIAG" jdbcType="VARCHAR" property="diagDoctorName" />
+      <result column="diagCode" jdbcType="VARCHAR" property="diagCode" />
+      <result column="diagName" jdbcType="VARCHAR" property="diagName" />
+      <result column="DESC_DIAG" jdbcType="VARCHAR" property="diagDesc" />
+      <result column="FLAG_MAJ" jdbcType="VARCHAR" property="primaryDiagFlag" />
+      <result column="PK_DIAG" jdbcType="VARCHAR" property="diagnosisId" />
+  </resultMap>
+
+
+  <select id="selectDiagInfo" resultMap="DiagResultMap">
+    select org.CODE_ORG ,org.NAME_ORG,pv.eu_pvtype encounterTypeCode,
+       pv.CODE_PV,nvl(case when pv.eu_pvtype  = '2' then pvip.ip_times else pvop.op_times end , '0') as  pvTime,
+       pi.MPI,pi.name_pi,pi.code_pi,bdDoc.code sexCode,bdDoc.name  sexName,pi.BIRTH_DATE,
+       dept.CODE_DEPT ,dept.name_DEPT,
+       deptNs.CODE_DEPT CODE_DEPT_NS ,deptNs.name_DEPT name_DEPT_NS,pv.bed_no,
+       diag.DATE_DIAG,emp.CODE_EMP CODE_EMP_DIAG ,emp.NAME_EMP NAME_EMP_DIAG,termDiag.DIAGCODE diagCode,termDiag.DIAGNAME diagName,diag.DESC_DIAG,diag.FLAG_MAJ,
+       diag.PK_DIAG
+
+      from PV_ENCOUNTER pv left join  PI_MASTER pi on pi.PK_PI = pv.PK_PI
+                     left join PV_DIAG diag on diag.PK_PV = pv.PK_PV
+                     left join BD_OU_ORG org on pv.PK_ORG = org.PK_ORG
+                     left join pv_op pvop on pvop.PK_PV = pv.PK_PV
+                     left join pv_ip pvip on pvip.PK_PV = pv.PK_PV
+                     left join BD_OU_DEPT dept on dept.PK_DEPT = pv.PK_DEPT
+                     left join BD_OU_DEPT deptNs on  deptNs.PK_DEPT =pv.pk_dept_ns
+                     left join BD_OU_EMPLOYEE emp on  emp.PK_EMP = diag.pk_emp_diag
+                     left join BD_DEFDOC bdDoc on bdDoc.CODE = pi.DT_SEX and bdDoc.CODE_DEFDOCLIST = '000000' and  bdDoc.DEL_FLAG = '0'
+                     left join bd_term_diag termDiag on termDiag.PK_DIAG = diag.PK_DIAG
+      where pv.PK_PV = #{pkpv} and dept.del_flag = '0'  and emp.del_flag = '0'  and diag.del_flag = '0' and pi.del_flag = '0'  and pv.del_flag = '0'
+      and rownum = '1'
+
+  </select>
+
+
+  <select id="selectSettleMasterInfo"  parameterType="java.util.Map" resultType="com.zebone.nhis.ma.pub.platform.pskq.model.SettlementMasterOutpat">
+    select
+        pi.MPI EMPI_ID
+        ,pi.CODE_PI PK_PATIENT
+        ,org.CODE_ORG ORG_CODE
+        ,org.NAME_ORG ORG_NAME
+        ,blSet.eu_pvtype ENCOUNTER_TYPE_CODE
+        ,(case blSet.eu_pvtype when '1' then '门诊' when '2' then '急诊' when '3' then '住院' when '4' then '体检' else '其他' end) as  ENCOUNTER_TYPE_NAME
+        ,pi.NAME_PI PATIENT_NAME
+        ,bdDoc.code GENDER_CODE
+        ,bdDoc.name  GENDER_NAME
+        ,pi.BIRTH_DATE as DATE_OF_BIRTH
+        ,hp.code PATIENT_TYPE_CODE
+        ,hp.name PATIENT_TYPE_NAME
+        ,deBl.PK_DEPO SETTLEMENT_MASTER_ID
+        ,pay.TRADE_NO SETTLEMENT_NO
+        ,'1' SETTLEMENT_TIMES
+        ,bdDeBl.code ACCOUNT_TYPE_CODE
+        ,bdDeBl.NAME ACCOUNT_TYPE_NAME
+        ,blSet.DATE_ST as SETTLEMENT_DATE_TIME
+        ,empSt.CODE_EMP SETTLEMENT_OPERA_ID
+        ,empSt.NAME_EMP SETTLEMENT_OPERA_NAME
+        ,empSt.CODE_EMP SETTLEMENT_WIN_NO
+        ,blSet.AMOUNT_ST TOTAL_FEE
+        ,'1'  CHARGE_STATUS
+        ,blSet.amount_insu  MI_PAYMENT_FEE
+        ,blSet.amount_pi SELF_PAYMENT_FEE
+        ,pay.SERIAL_NO as PAYMENT_NO
+        ,nvl(pay.sysname,'2000') as SOURCE_SYSTEM_CODE
+      from BL_SETTLE blSet
+      left join  bl_deposit deBl on deBl.PK_SETTLE = blSet.PK_SETTLE
+      left join  bl_ext_pay pay on deBl.PK_depo = pay.PK_depo
+      left join  PV_ENCOUNTER pv on pv.PK_PV = blSet.pk_pv
+      left join  PI_MASTER pi on pi.PK_PI = pv.PK_PI and pi.DEL_FLAG = '0'
+      left join  BD_HP hp on hp.pk_hp = pv.pk_insu
+      left join  bd_ou_org org on org.PK_ORG = blSet.PK_ORG
+      left join  BD_OU_EMPLOYEE empSt on empSt.PK_EMP = blSet.PK_EMP_ST and empSt.DEL_FLAG = '0'
+      left join  BD_DEFDOC bdDoc on bdDoc.CODE = pi.DT_SEX and bdDoc.CODE_DEFDOCLIST = '000000' and  bdDoc.DEL_FLAG = '0'
+      left join  BD_DEFDOC bdDeBl on bdDeBl.code = deBl.DT_PAYMODE and bdDeBl.CODE_DEFDOCLIST = '110100'
+     where  1= 1 and blSet.PK_SETTLE = #{pkSettle} 
+
+  </select>
+
+
+  <select id="selectSettleDetailInfo"  parameterType="java.util.Map" resultType="com.zebone.nhis.ma.pub.platform.pskq.model.SettlementDetailOutpat">
+          select
+            pi.MPI EMPI_ID
+            ,pi.CODE_PI PK_PATIENT
+            ,org.CODE_ORG ORG_CODE
+            ,org.NAME_ORG ORG_NAME
+            ,blSet.eu_pvtype ENCOUNTER_TYPE_CODE
+            ,(case blSet.eu_pvtype when '1' then '门诊' when '2' then '急诊' when '3' then '住院' when '4' then '体检' else '其他' end) as  ENCOUNTER_TYPE_NAME
+            ,pi.NAME_PI PATIENT_NAME
+            ,bdDoc.code GENDER_CODE
+            ,bdDoc.name GENDER_NAME
+            ,pi.BIRTH_DATE as DATE_OF_BIRTH
+            ,hp.CODE PATIENT_TYPE_CODE
+             ,hp.NAME PATIENT_TYPE_NAME
+            ,invo.PK_INVOICE SETTLEMENT_DETAIL_ID
+            ,invo.url_ebill SETTLEMENT_DETAIL_PDF_URL
+            ,'0' SETTLEMENT_DETAIL_PDF_STATUS
+            ,deBl.pk_depo SETTLEMENT_MASTER_ID
+            ,'1' SETTLEMENT_TIMES
+            ,bdDeBl.code ACCOUNT_TYPE_CODE
+            ,bdDeBl.NAME ACCOUNT_TYPE_NAME
+            ,blSet.DATE_ST as SETTLEMENT_DATE_TIME
+            ,empSt.CODE_EMP  SETTLEMENT_OPERA_ID
+            ,empSt.NAME_EMP SETTLEMENT_OPERA_NAM
+            ,empSt.CODE_EMP SETTLEMENT_WIN_NO
+            ,bdInvcate.CODE RCPT_CLASS_CODE
+            ,bdInvcate.NAME RCPT_CLASS_NAME
+            ,blSet.AMOUNT_ST TOTAL_FEE
+            ,'1' CHARGE_STATUS
+            ,nvl(pay.sysname,'2000') as SOURCE_SYSTEM_CODE
+            from  BL_SETTLE blSet   
+            left join bl_st_inv stinv on stinv.PK_SETTLE = blSet.PK_SETTLE 
+            left join bl_invoice invo on invo.PK_INVOICE = stinv.PK_INVOICE
+            left join  bl_deposit  deBl on deBl.PK_SETTLE = blSet.PK_SETTLE
+            left join  bl_ext_pay  pay on pay.PK_depo = deBl.pk_depo
+            left join  bd_invcate  bdInvcate on bdInvcate.PK_INVCATE =invo.PK_INVCATE
+            left join  PV_ENCOUNTER pv on pv.PK_PV = blSet.pk_pv
+      		left join  PI_MASTER pi on pi.PK_PI = pv.PK_PI and pi.DEL_FLAG = '0'
+      		left join  BD_HP hp on hp.pk_hp = pv.pk_insu
+            left join  bd_ou_org org on org.PK_ORG = blSet.PK_ORG
+            left join  BD_OU_EMPLOYEE empSt on empSt.PK_EMP = blSet.PK_EMP_ST and empSt.DEL_FLAG = '0'
+            left join  BD_DEFDOC bdDoc on bdDoc.CODE = pi.DT_SEX and bdDoc.CODE_DEFDOCLIST = '000000' and  bdDoc.DEL_FLAG = '0'
+            left join  BD_DEFDOC bdDeBl on bdDeBl.code = deBl.DT_PAYMODE and bdDeBl.CODE_DEFDOCLIST = '110100'
+        where  1= 1  and blSet.PK_SETTLE = #{pkSettle} 
+
+  </select>
+
+
+
+    <select id="selectCostDetailInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.ma.pub.platform.pskq.model.CostDetailOutpat">
+      SELECT pi.mpi EMPI_ID
+    ,pi.code_pi PK_PATIENT
+    ,pv.CODE_PV ENCOUNTER_ID
+    ,bo.code_org ORG_CODE
+    ,bo.name_org ORG_NAME
+    ,pv.EU_PVTYPE ENCOUNTER_TYPE_CODE
+    ,(case when pv.EU_PVTYPE='1' then '门诊' when pv.EU_PVTYPE='2' then '急诊' else '住院' end) as ENCOUNTER_TYPE_NAME
+    ,pv.CODE_PV VISIT_ID
+    ,op.op_times VISIT_NO
+    ,pi.name_pi PATIENT_NAME
+    ,bd.code GENDER_CODE
+    ,bd.name GENDER_NAME
+    ,pi.BIRTH_DATE as DATE_OF_BIRTH
+    ,pv.age_pv AGE_YEAR
+    ,bdHp.code PATIENT_TYPE_CODE
+    ,bdHp.NAME PATIENT_TYPE_NAME
+    ,opdt.PK_CGOP COST_DETAIL_ID
+    ,blInvoice.PK_INVOICE SETTLEMENT_DETAIL_ID
+    ,bdDeBl.code ACCOUNT_TYPE_CODE
+    ,bdDeBl.NAME as ACCOUNT_TYPE_NAME
+    ,item.CODE CHARGE_ITEM_CODE
+    ,item.NAME CHARGE_ITEM_NAME
+    ,opdt.price CHARGE_ITEM_PRICE
+    ,opdt.price CHARGE_ITEM_ORIG_PRICE
+    ,opdt.quan CHARGE_QUANTITY
+    ,'0' HERBAL_QUANTITY
+    ,opdt.amount_pi CHARGE_TOTAL
+    ,opdt.amount_pi ORIG_CHARGE_TOTAL
+    ,opdt.create_time INPUT_DATE_TIME
+    ,empApp.CODE_EMP INPUT_DOCTOR_ID
+   , empApp.NAME_EMP INPUT_DOCTOR_NAME
+    ,ord.create_time ENTER_DATE_TIME
+    ,empApp.CODE_EMP ENTER_DOCTOR_ID
+    ,empApp.NAME_EMP ENTER_DOCTOR_NAME
+    ,deptApp.CODE_DEPT APPLY_DEPT_ID
+    ,deptApp.NAME_DEPT APPLY_DEPT_NAME
+    ,empApp.CODE_EMP ACCOUNT_DEPT_ID
+    ,empApp.NAME_EMP ACCOUNT_DEPT_NAME
+    ,deptEx.CODE_DEPT EXEC_DEPT_ID
+    ,deptEx.NAME_DEPT EXEC_DEPT_NAME
+    ,opdt.date_hap EXEC_DATE_TIME
+    ,empEx.CODE_EMP EXEC_OPERA_ID
+    ,empEx.NAME_EMP EXEC_OPERA_NAME
+    ,empEx.CODE_EMP EXEC_WIN_NO
+    ,'1'  CHARGE_STATUS
+    ,itencat.CODE CHARGE_ITEM_CLASS_CODE
+    ,itencat.NAME CHARGE_ITEM_CLASS_NAME
+    ,bdHp.code ITEM_MI_TYPE_CODE
+    ,bdHp.name ITEM_MI_TYPE_NAME
+    ,bdinv.CODE RCPT_CLASS_CODE
+    ,bdinv.name RCPT_CLASS_NAME
+    ,AUD.CODE AUDIT_CLASS_CODE
+    ,AUD.NAME AUDIT_CLASS_NAME
+    ,AUD.CODE ACCOUNT_CLASS_CODE
+    ,AUD.NAME ACCOUNT_CLASS_NAME
+    ,baDefdoc.CODE MR_CLASS_CODE
+    ,baDefdoc.NAME MR_CLASS_NAME
+    ,(case when bdItemdoc.CODE = '0701' then '1' else '0' end ) as HQ_MAT_FLAG
+    ,'' ASSIST_DRUG_FLAG
+    ,'' SPECIAL_DRUG_FLAG
+    ,SETTLE.date_st as ACCOUNT_DATE_TIME
+    ,opdt.date_cg CHARGE_DATE_TIME
+    ,empApp.CODE_EMP CHARGE_OPERA_ID
+    ,empApp.NAME_EMP CHARGE_OPERA_NAME
+    ,pay.TRADE_NO  SETTLEMENT_NO
+    ,'1' SETTLEMENT_TIMES
+    ,SETTLE.date_st SETTLEMENT_DATE_TIME
+   ,empst.CODE_EMP SETTLEMENT_OPERA_ID
+   ,empst.NAME_EMP SETTLEMENT_OPERA_NAME
+    ,'0' MI_LIMIT_FEE
+    ,nvl(opdt.amount_pi,'0') IN_MI_FEE
+    ,'0' OUT_MI_FEE
+    ,opdt.amount_pi SELF_PAYMENT_FEE
+    ,'' MI_STATUS
+    ,'' MI_CLASS_CODE
+    ,'' MI_CLASS_NAME
+    ,SETTLE.amount_disc PREFERENTIAL_FEE
+    ,opdt.ratio_disc PREFERENTIAL_RATE
+    ,'' SUB_SYSTEM_CODE
+    ,'' INPUT_SOURCE_CODE
+    ,ord.ordsn ORDER_ID
+    ,nvl(pay.sysname,'2000') as SOURCE_SYSTEM_CODE
+FROM
+  BL_OP_DT opdt
+    left join  pv_op op on op.PK_PV = opdt.PK_PV
+    left join BL_SETTLE SETTLE on SETTLE.PK_SETTLE=opdt.PK_SETTLE
+    left join  bl_deposit deBl on deBl.PK_SETTLE = SETTLE.PK_SETTLE
+    left join  bl_ext_pay pay on pay.PK_depo = deBl.PK_depo
+    INNER join BD_ITEM item on item.PK_ITEM=opdt.PK_ITEM
+    left join PV_ENCOUNTER pv on pv.pk_pv=opdt.PK_PV
+    left join pv_insurance pvInsur on pv.pk_pv=pvInsur.pk_pv
+    left join bd_hp bdHp on bdHp.pk_hp = pv.PK_INSU
+    left join bl_st_inv blStInv on SETTLE.PK_SETTLE=blStInv.PK_SETTLE
+    left join bl_invoice blInvoice on blInvoice.pk_invoice=blStInv.pk_invoice
+    left join bd_invcate bdinv on bdinv.PK_INVCATE = blInvoice.PK_INVOICE
+    left join PI_MASTER pi on pi.PK_PI=pv.PK_PI
+    left join cn_order ord on ord.pk_cnord = opdt.pk_cnord
+    left join BD_OU_ORG bo on bo.pk_Org=pv.pk_org
+    left join BD_DEFDOC bd on bd.code=pi.dt_sex and bd.CODE_DEFDOCLIST = '000000'
+    LEFT JOIN bd_ou_employee empApp ON empApp.PK_EMP = opdt.pk_emp_app and empApp.DEL_FLAG = '0'
+    LEFT JOIN BD_OU_DEPT deptApp ON deptApp.pk_dept = opdt.pk_dept_app
+    LEFT JOIN BD_OU_DEPT deptEx ON deptEx.pk_dept = opdt.pk_dept_ex
+    LEFT JOIN bd_ou_employee empEx ON empEx.PK_EMP = opdt.pk_emp_ex and empEx.DEL_FLAG = '0'
+    LEFT JOIN bd_itemcate itencat on itencat.PK_ITEMCATE=opdt.PK_ITEMCATE
+    LEFT JOIN bd_audit AUD on AUD.PK_AUDIT=item.PK_AUDIT
+  left join  BD_DEFDOC bdDeBl on bdDeBl.code = deBl.DT_PAYMODE and bdDeBl.CODE_DEFDOCLIST = '110100'
+    left join BD_DEFDOC baDefdoc on baDefdoc.code=item.dt_chcate and baDefdoc.CODE_DEFDOCLIST = '030800'
+    left join BD_DEFDOC bdItemdoc on bdItemdoc.code=item.dt_itemtype  and bdItemdoc.CODE_DEFDOCLIST = '030800'
+   LEFT JOIN bd_ou_employee empst ON empst.PK_EMP = SETTLE.pk_emp_st and empst.DEL_FLAG = '0'
+where opdt.flag_pd='0'   and  SETTLE.PK_SETTLE  = #{pkSettle}
+union all
+SELECT pi.mpi EMPI_ID
+    , pi.code_pi PK_PATIENT
+    ,pv.CODE_PV ENCOUNTER_ID
+    ,bo.code_org ORG_CODE
+    ,bo.name_org ORG_NAME
+    ,pv.EU_PVTYPE ENCOUNTER_TYPE_CODE
+    ,case when pv.EU_PVTYPE='1' then '门诊' when pv.EU_PVTYPE='2' then '急诊' else '住院' end ENCOUNTER_TYPE_NAME
+    ,pv.CODE_PV VISIT_ID
+    ,op.op_times VISIT_NO
+    ,pi.name_pi PATIENT_NAME
+    ,pi.dt_sex GENDER_CODE
+    ,bd.name GENDER_NAME
+    ,pi.BIRTH_DATE as  DATE_OF_BIRTH
+    ,pv.age_pv AGE_YEAR
+    ,bdHp.code PATIENT_TYPE_CODE
+    ,bdHp.NAME PATIENT_TYPE_NAME
+    ,opdts.PK_CGOP COST_DETAIL_ID
+    ,blInvoice.PK_INVOICE SETTLEMENT_DETAIL_ID
+    ,bdDeBl.code ACCOUNT_TYPE_CODE
+    ,bdDeBl.NAME as ACCOUNT_TYPE_NAME
+    ,bdpd.CODE CHARGE_ITEM_CODE
+    ,bdpd.NAME CHARGE_ITEM_NAME
+    ,opdts.price CHARGE_ITEM_PRICE
+    ,opdts.price CHARGE_ITEM_ORIG_PRICE
+    ,opdts.quan CHARGE_QUANTITY
+    ,'0' HERBAL_QUANTITY
+    ,opdts.amount_pi CHARGE_TOTAL
+    ,opdts.amount_pi ORIG_CHARGE_TOTAL
+    ,opdts.create_time INPUT_DATE_TIME
+    ,empApp.CODE_EMP INPUT_DOCTOR_ID
+    ,empApp.NAME_EMP INPUT_DOCTOR_NAME
+    ,ord.create_time ENTER_DATE_TIME
+    ,empApp.CODE_EMP ENTER_DOCTOR_ID
+    ,empApp.NAME_EMP ENTER_DOCTOR_NAME
+    ,deptApp.CODE_DEPT APPLY_DEPT_ID
+    ,deptApp.NAME_DEPT APPLY_DEPT_NAME
+    ,empApp.CODE_EMP ACCOUNT_DEPT_ID
+    ,empApp.NAME_EMP ACCOUNT_DEPT_NAME
+    ,deptEx.CODE_DEPT EXEC_DEPT_ID
+    ,deptEx.NAME_DEPT EXEC_DEPT_NAME
+    ,opdts.date_hap EXEC_DATE_TIME
+    ,empEx.CODE_EMP EXEC_OPERA_ID
+    ,empEx.NAME_EMP EXEC_OPERA_NAME
+    ,empEx.CODE_EMP EXEC_WIN_NO
+    ,'1'  CHARGE_STATUS
+    ,itencat.CODE CHARGE_ITEM_CLASS_CODE
+    ,itencat.NAME CHARGE_ITEM_CLASS_NAME
+    ,bdHp.code ITEM_MI_TYPE_CODE
+    ,bdHp.name ITEM_MI_TYPE_NAME
+    ,bdinv.CODE RCPT_CLASS_CODE
+    ,bdinv.name RCPT_CLASS_NAME
+    ,AUD.CODE AUDIT_CLASS_CODE
+    ,AUD.NAME AUDIT_CLASS_NAME
+    ,AUD.CODE ACCOUNT_CLASS_CODE
+    ,AUD.NAME ACCOUNT_CLASS_NAME
+    ,baDefdoc.CODE MR_CLASS_CODE
+    ,baDefdoc.NAME MR_CLASS_NAME
+    ,'0' HQ_MAT_FLAG
+    ,pharmDefdoc.CODE ASSIST_DRUG_FLAG
+    ,'' SPECIAL_DRUG_FLAG
+    ,SETTLE.date_st ACCOUNT_DATE_TIME
+    ,opdts.date_cg CHARGE_DATE_TIME
+    ,empApp.CODE_EMP CHARGE_OPERA_ID
+    ,empApp.NAME_EMP CHARGE_OPERA_NAME
+    ,pay.TRADE_NO SETTLEMENT_NO
+    ,'1' SETTLEMENT_TIMES
+    ,SETTLE.date_st SETTLEMENT_DATE_TIME
+    ,empst.CODE_EMP SETTLEMENT_OPERA_ID
+    ,empst.NAME_EMP SETTLEMENT_OPERA_NAME
+    ,'0' MI_LIMIT_FEE
+    ,nvl(opdts.amount_pi,'0') IN_MI_FEE
+    ,'0' OUT_MI_FEE
+    ,opdts.amount_pi SELF_PAYMENT_FEE
+    ,'' MI_STATUS
+    ,bdDeBl.CODE MI_CLASS_CODE
+    ,bdDeBl.NAME MI_CLASS_NAME
+    ,SETTLE.amount_disc PREFERENTIAL_FEE
+    ,opdts.ratio_disc PREFERENTIAL_RATE
+    ,'' SUB_SYSTEM_CODE
+    ,'' INPUT_SOURCE_CODE
+    ,ord.ordsn ORDER_ID
+    ,nvl(pay.sysname,'2000') as SOURCE_SYSTEM_CODE
+FROM
+  BL_OP_DT opdts
+  left join  pv_op op on op.PK_PV = opdts.PK_PV
+    left join BL_SETTLE SETTLE on SETTLE.PK_SETTLE=opdts.PK_SETTLE
+    left join bl_deposit deBl on deBl.PK_SETTLE = SETTLE.PK_SETTLE
+    left join  bl_ext_pay pay on pay.PK_depo = deBl.PK_depo
+    INNER join BD_PD bdpd on bdpd.pk_pd=opdts.pk_pd
+    left join PV_ENCOUNTER pv on pv.pk_pv=opdts.PK_PV
+    left join pv_insurance pvInsur on pv.pk_pv=pvInsur.pk_pv
+    left join bd_hp bdHp on bdHp.pk_hp = pv.PK_INSU
+    left join bl_st_inv blStInv on SETTLE.PK_SETTLE=blStInv.PK_SETTLE
+    left join bl_invoice blInvoice on blInvoice.pk_invoice=blStInv.pk_invoice
+    left join bd_invcate bdinv on bdinv.PK_INVCATE = blInvoice.PK_INVOICE
+    left join PI_MASTER pi on pi.PK_PI=pv.PK_PI
+    left join cn_order ord on ord.pk_cnord = opdts.pk_cnord
+    left join BD_OU_ORG bo on bo.pk_Org=pv.pk_org
+    left join BD_DEFDOC bd on bd.code=pi.dt_sex and bd.CODE_DEFDOCLIST = '000000'
+    LEFT JOIN bd_ou_employee empApp ON empApp.PK_EMP = opdts.pk_emp_app
+    LEFT JOIN BD_OU_DEPT deptApp ON deptApp.pk_dept = opdts.pk_dept_app
+    LEFT JOIN BD_OU_DEPT deptEx ON deptEx.pk_dept = opdts.pk_dept_ex
+    LEFT JOIN bd_ou_employee empEx ON empEx.PK_EMP = opdts.pk_emp_ex
+    LEFT JOIN bd_itemcate itencat on itencat.PK_ITEMCATE=opdts.PK_ITEMCATE
+    left join BD_DEFDOC baDefdoc on baDefdoc.code=bdpd.dt_chcate and baDefdoc.CODE_DEFDOCLIST = '030800'
+    left join  BD_DEFDOC bdDeBl on bdDeBl.code = deBl.DT_PAYMODE and bdDeBl.CODE_DEFDOCLIST = '110100'
+    LEFT JOIN bd_audit AUD on AUD.PK_AUDIT=bdpd.PK_AUDIT
+    LEFT JOIN bd_ou_employee empst ON empst.PK_EMP = SETTLE.pk_emp_st
+    left join BD_DEFDOC pharmDefdoc on pharmDefdoc.code=bdpd.dt_pharm and pharmDefdoc.CODE_DEFDOCLIST = '030005'
+where opdts.flag_pd='1' and  SETTLE.PK_SETTLE  = #{pkSettle}
+
+    </select>
+
+
+    <select id="selectIpAdvancePayment" parameterType="java.util.Map" resultType="com.zebone.nhis.ma.pub.platform.pskq.model.AdvancePayment">
+          SELECT
+              PI.MPI EMPI_ID
+              ,pi.CODE_PI PK_PATIENT
+              ,pv.EU_PVTYPE ENCOUNTER_TYPE_CODE
+              ,case when pv.EU_PVTYPE='1' then '门诊' when pv.EU_PVTYPE='2' then '急诊' else '住院' end ENCOUNTER_TYPE_NAME
+              ,pi.NAME_PI PATIENT_NAME
+              ,sexDoc.code GENDER_CODE
+              ,sexDoc.name GENDER_NAME
+              ,PI.BIRTH_DATE   DATE_OF_BIRTH
+              ,pv.AGE_PV  AGE_YEAR
+              ,bdHp.code PATIENT_TYPE_CODE
+              ,bdHp.NAME PATIENT_TYPE_NAME
+              ,deposit.code_depo ADVANCE_MASTER_ID
+              ,deposit.rept_no ADVANCE_PAYMENT_NO
+              ,'1'  ADVANCE_TYPE_CODE
+              ,'住院预交金' ADVANCE_TYPE_NAME
+              ,deposit.date_pay  ADVANCE_DATE_TIME
+              ,payEmp.CODE_EMP ADVANCE_OPERA_ID
+              ,payEmp.NAME_EMP ADVANCE_OPERA_NAME
+              ,deposit.amount  TOTAL_FEE
+              ,deposit.eu_direct  CHARGE_STATUS
+              ,'2000' SOURCE_SYSTEM_CODE
+              ,deposit.pk_depo HIS_ORDER_NO
+            FROM PV_ENCOUNTER PV
+            left join BL_DEPOSIT deposit on deposit.pk_pv = pv.PK_PV
+            left join bd_hp bdHp on bdHp.pk_hp = pv.PK_INSU
+            LEFT JOIN PI_MASTER PI ON PI.PK_PI = PV.PK_PI
+            LEFT JOIN BD_DEFDOC sexDoc on sexDoc.CODE = pi.DT_SEX and sexDoc.CODE_DEFDOCLIST  = '000000'
+            left join BD_OU_EMPLOYEE payEmp on payEmp.PK_EMP =  deposit.pk_emp_pay
+            where pv.pk_pv = #{pkPv} and deposit.rept_no = #{reptNo}
+
+    </select>
+
+
+
+</mapper>

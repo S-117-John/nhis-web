@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.PlatFormOrderMapper">
+    <select id="getAreaInfo" parameterType="java.lang.String" resultType="com.zebone.nhis.webservice.syx.vo.platForm.DistrictInfo">
+
+        select org.name_org   hospitalName,
+               org.addr       addr,
+               org.phone      tel,
+               org.website    website,
+               org.intro      hospdesc,
+               area.code_area districtdeptid,
+               area.name_area districtdeptname,
+               area.addr      districtaddr
+        from bd_ou_org org
+                 inner join bd_ou_org_area area on org.pk_org = area.pk_org
+        where org.pk_org = #{pkOrg,jdbcType=VARCHAR}
+
+    </select>
+
+    <select id="qryDateLot" parameterType="java.util.Map" resultType="java.lang.Integer">
+        select count(1)
+        from sch_ticket st
+        INNER JOIN SCH_SCH sch ON sch.PK_SCH = st.PK_SCH
+        INNER JOIN BD_CODE_DATESLOT lot ON lot.PK_DATESLOT = sch.PK_DATESLOT
+        where 1 = 1
+        <if test="dateWork != null and dateWork != ''">
+           and sch.DATE_WORK = to_date(#{dateWork}, 'yyyy-mm-dd HH24:mi:ss')
+        </if>
+        and sch.FLAG_STOP = '0'
+        and sch.EU_APPTTYPE != '1'
+        and sch.EU_STATUS = '8'
+        and st.FLAG_USED = '0'
+        and st.FLAG_APPT = '1'
+        <if test="beginTime != null and beginTime != ''">
+           and st.BEGIN_TIME &lt; to_date(#{beginTime}, 'yyyy-mm-dd HH24:mi:ss')
+        </if>
+        <if test="endTime != null and endTime != ''">
+           and st.END_TIME &gt; to_date(#{endTime}, 'yyyy-mm-dd HH24:mi:ss')
+        </if>
+    </select>
+
+    <select id="qryIsApp" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.sch.plan.SchTicket">
+        select st.*
+        from sch_ticket st
+        inner join SCH_SCH sch on sch.PK_SCH = st.PK_SCH
+        inner join BD_CODE_DATESLOT lot on lot.PK_DATESLOT = sch.PK_DATESLOT
+        inner join SCH_RESOURCE res on res.PK_SCHRES = sch.PK_SCHRES
+        inner join BD_OU_EMPLOYEE emp on emp.PK_EMP = res.PK_EMP
+        inner join BD_OU_DEPT dept on dept.PK_DEPT = sch.PK_DEPT
+        where 1 = 1
+        and sch.DATE_WORK = to_date(#{dateWork}, 'yyyy-mm-dd HH24:mi:ss')
+        and sch.FLAG_STOP = '0'
+        and sch.EU_APPTTYPE != '1'
+        and sch.EU_STATUS = '8'
+        and st.FLAG_USED = '0'
+        and st.FLAG_APPT = '1'
+        and res.EU_RESTYPE = '1'
+        and emp.CODE_EMP = #{empId}
+        and dept.CODE_DEPT = #{deptId}
+        and st.BEGIN_TIME &lt;= to_date(#{beginTime}, 'yyyy-mm-dd HH24:mi:ss')
+        and st.END_TIME &gt;= to_date(#{endTime}, 'yyyy-mm-dd HH24:mi:ss')
+    </select>
+
+    <select id="getDeptInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.webservice.syx.vo.platForm.DeptInfo">
+        select res.code                                             deptid,
+               res.name                                             deptname,
+               case when ft.code is null then '-1' else ft.code end parentid,
+               res.desc_res                                         resdesc,
+               area.code_area                                       districtdeptid,
+               area.name_area                                       districtdeptname
+        from sch_resource res
+                 left outer join sch_resource ft on res.pk_father = ft.pk_schres
+                 left outer join bd_ou_dept dept on res.pk_dept_belong = dept.pk_dept
+                 left outer join bd_ou_org_area area on dept.pk_orgarea = area.pk_orgarea
+        where dept.pk_org = #{pkOrg,jdbcType=VARCHAR}
+          and res.eu_schclass = '0'
+          and res.eu_restype = '0'          
+          <if test="deptId != null and deptId != '' ">
+              and dept.code_dept = #{deptId}
+          </if>
+
+    </select>
+
+    <select id="qryTicket" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.sch.plan.SchTicket">
+        select st.*
+        from SCH_SCH sch
+                 inner join SCH_TICKET st on st.PK_SCH = sch.PK_SCH
+                 inner join SCH_RESOURCE res on res.PK_SCHRES = sch.PK_SCHRES
+                 inner join BD_OU_DEPT dept on dept.PK_DEPT = res.PK_DEPT
+                 inner join BD_OU_EMPLOYEE emp on emp.PK_EMP = res.PK_EMP
+        where sch.CNT_APPT > 0
+          and sch.DATE_WORK = to_date(#{dateWork}, 'yyyymmddHH24miss')
+          and sch.FLAG_STOP = '0'
+          and sch.EU_STATUS = '8'
+          and sch.EU_APPTTYPE != '1'
+          and dept.CODE_DEPT = #{deptId}
+          and emp.CODE_EMP = #{empId}
+          and st.BEGIN_TIME &lt;= to_date(#{beginTime}, 'yyyymmddHH24miss')
+          and st.END_TIME &gt;= to_date(#{endTime}, 'yyyymmddHH24miss')
+          and st.FLAG_STOP = '0'
+          and st.FLAG_USED = '0'
+          and st.FLAG_APPT = '1'
+          and st.FLAG_LOCK = '0'
+    </select>
+
+    <select id="qryApptInfo" parameterType="java.lang.String" resultType="DynaBean">
+        select pv.pk_pv,
+               appt.begin_time
+        from sch_appt appt
+                 inner join sch_appt_pv apv on appt.pk_schappt = apv.pk_schappt
+                 inner join pv_encounter pv on apv.pk_pv = pv.pk_pv
+        where appt.dt_apptype = #{orderType}
+          and appt.orderid_ext = #{orderId}
+          and pv.flag_cancel = '0'
+    </select>
+
+    <select id="qryRegPam" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.RegLockVo" resultType="com.zebone.nhis.common.module.sch.plan.SchTicket">
+        select st.*
+        from SCH_SCH sch
+            inner join SCH_TICKET st on st.PK_SCH=sch.PK_SCH
+            inner join SCH_RESOURCE res on sch.PK_SCHRES = res.PK_SCHRES
+            inner join SCH_RESOURCE dept on res.PK_DEPT = dept.PK_SCHRES and dept.EU_RESTYPE='0'
+            inner join BD_OU_EMPLOYEE emp on emp.PK_EMP = res.PK_EMP
+            inner join SCH_SRV srv on srv.PK_SCHSRV = sch.PK_SCHSRV
+            inner join BD_CODE_DATESLOT lot on lot.PK_DATESLOT = sch.PK_DATESLOT
+        where 1 = 1
+            and sch.EU_APPTTYPE != '1'
+            and sch.EU_STATUS = '8'
+            and sch.EU_SCHCLASS = '0'
+            and sch.FLAG_STOP='0'
+            and dept.code = #{deptId}
+            and res.code = #{doctorId}
+            and sch.DATE_WORK = to_date(#{regDate}, 'yyyy-mm-dd HH24:mi:ss')
+            and lot.CODE_DATESLOT = #{timeID}
+            and to_date(to_char(st.BEGIN_TIME,'HH24:mi'),'HH24:mi') &lt;= to_date(#{startTime}, 'HH24:mi')
+            and to_date(to_char(st.END_TIME,'HH24:mi'),'HH24:mi') &gt;= to_date(#{endTime}, 'HH24:mi')
+            and st.FLAG_STOP = '0'
+            and st.FLAG_USED = '0'
+            and st.FLAG_APPT = '1'
+           <!--  and st.FLAG_LOCK = '0' -->
+    </select>
+    
+    <select id="getRegListInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.webservice.syx.vo.platForm.RegListInfo">
+             select case when appt.code is null then pv.code_pv else appt.code end orderidhis,
+			       case when op.flag_first='1' then '0' else '1' end userflag,
+			       pv.date_begin waittime,
+			       du.name diagnoseroomname,
+			       case when pv.flag_cancel='1' then '1'
+			            when st.pk_settle is not null then '2'
+			            when op.date_sign is not null then '3'
+			            when back.pk_settle is not null then '4'
+			            else '0' end status
+			  from pv_encounter pv
+			       inner join pv_op op on pv.pk_pv=op.pk_pv
+			       inner join sch_sch sch on op.pk_sch=sch.pk_sch
+			       inner join bd_dept_unit du on sch.pk_deptunit=du.pk_deptunit and du.eu_unittype='0'
+			       left outer join sch_appt appt on op.pk_schappt=appt.pk_schappt
+			       left outer join bl_settle st on pv.pk_pv=st.pk_pv and st.dt_sttype='00'
+			       left outer join bl_settle back on pv.pk_pv=back.pk_pv and back.dt_sttype='20'
+			 where 1=1
+			 <if test="orderType != null and orderType != '' ">
+              and op.dt_apptype=#{orderType, jdbcType=VARCHAR}
+             </if>
+             <if test="orderId != null and orderId != '' ">
+              and op.orderid_ext=#{orderId, jdbcType=VARCHAR}
+             </if>            			
+    </select>
+    
+    
+</mapper>

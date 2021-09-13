@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.sch.shcta.dao.SchTaMapper">
+<select id="qryDeptSchTa" parameterType="java.lang.String" resultType="DynaBean">
+SELECT dept.pk_dept,
+       dept.name_dept,    
+       argu.arguval,     
+       (SELECT count(1) FROM sch_ta WHERE pk_dept = dept.pk_dept and del_flag='0' and pk_org=#{pkOrg,jdbcType=VARCHAR} AND 
+       dt_taschtype='01' AND
+       ((date_begin &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss') AND date_begin  &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')) 
+        or (date_end &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss') AND date_end  &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')) 
+        or (date_begin &lt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss') AND date_end  &gt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')) 
+        )) AS emp_count  
+  from bd_ou_dept dept 
+       left outer join bd_res_pc_argu argu on dept.pk_dept=argu.pk_dept and argu.code_argu='BD0002' AND argu.DEL_FLAG='0' AND argu.FLAG_STOP='0'  
+ where dept.del_flag='0' and  dept.PK_DEPT IN  
+    <foreach collection="pkDeptList" index="index" item="pkDept" open="(" separator="," close=")">  
+        #{pkDept}  
+    </foreach>
+       
+ ORDER BY emp_count 
+ 
+</select>
+<select id="qrySchTaDept" parameterType="java.lang.String" resultType="DynaBean">
+SELECT dept.pk_dept,    
+       dept.code_dept,  
+       dept.name_dept,  
+       dept.note,
+       argu.arguval         
+  from bd_ou_dept dept 
+   left outer join bd_res_pc_argu argu on dept.pk_dept=argu.pk_dept and argu.code_argu='BD0002' 
+ where dept.pk_org=#{pkOrg,jdbcType=VARCHAR} AND   
+       dept.flag_active='1' AND
+       dept.dt_depttype='01'
+</select>
+<select id="qrySchTaEmp" resultType="DynaBean" parameterType="java.util.Map">
+    SELECT emp.pk_emp,       
+       emp.code_emp,     
+       emp.name_emp,     
+       emp.dt_empsrvtype, 
+       inn.DATE_BEGIN,    
+       inn.DATE_END,      
+       inn.EU_WORKTYPE,   
+       inn.EU_TEACHTYPE,  
+       inn.CYCLE          
+  from bd_ou_employee emp 
+       inner join bd_ou_empjob empjob on emp.pk_emp=empjob.pk_emp 
+       inner join BD_OU_EMP_INTERN inn on emp.pk_emp=inn.PK_EMP      
+ where empjob.pk_dept=#{pkDept,jdbcType=VARCHAR} AND     
+       emp.flag_active='1' AND 
+       inn.DATE_END &gt; to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')  AND      
+       not exists (select 1 from sch_ta sch where emp.pk_emp=sch.pk_emp) 
+       <if test="dateBeginQry!=null">
+			  and  inn.date_begin &gt;= to_date(#{dateBeginHead,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')  
+			  and  inn.date_begin &lt;= to_date(#{dateBeginTail,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')  
+	   </if>
+	   <if test="dateEndQry!=null">
+		      and  inn.date_end &gt;= to_date(#{dateEndHead,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')  
+		      and  inn.date_end &lt;= to_date(#{dateEndTail,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')  
+	   </if>
+       <if test="dtEmpsrvtype!=null">
+			  and emp.dt_empsrvtype=#{dtEmpsrvtype,jdbcType=VARCHAR}   
+	   </if>
+ 
+</select>
+    <select id="qrySchTaByParam" resultType="DynaBean" parameterType="java.util.Map">
+      SELECT 
+       emp.code_emp,  
+       ta.name_emp, 
+       ta.pk_emp,      
+       emp.dt_empsrvtype,  
+       ta.pk_dept,       
+       dept.name_dept, 
+       ta.date_begin,    
+       ta.date_end, 
+       ta.note,         
+       ta.date_sch,      
+       ta.pk_emp_sch,    
+       ta.name_emp_sch, 
+       intern.dt_internsrc, 
+       intern.eu_worktype, 
+       intern.cycle,
+       intern.date_begin as intern_date_begin,
+       intern.date_end as intern_date_end,
+       ta.PK_SCHTA,     
+       ta.pk_org,        
+       ta.DT_TASCHTYPE 
+  from sch_ta ta
+       inner join bd_ou_employee emp on ta.pk_emp=emp.pk_emp AND emp.DEL_FLAG='0'
+       INNER JOIN bd_ou_emp_intern intern ON intern.pk_emp = emp.PK_EMP AND intern.del_flag='0' 
+       inner join bd_ou_dept dept on ta.pk_dept=dept.pk_dept AND dept.DEL_FLAG='0'  
+       <where>
+          emp.dt_empsrvtype>'08' 
+		     <if test="pkDept !=null">
+			     and ta.pk_dept=#{pkDept,jdbcType=VARCHAR}   
+			 </if>
+		     <if test="codeEmp !=null">
+			     and emp.code_emp=#{codeEmp,jdbcType=VARCHAR}   
+			 </if>
+			 <if test="pkEmp !=null">
+			     and emp.pk_emp=#{pkEmp,jdbcType=VARCHAR}   
+			 </if>
+		     <if test="nameEmp !=null">
+			     and emp.name_emp like  '%'||#{nameEmp,jdbcType=VARCHAR}||'%'   
+			 </if>
+		     <if test="dateBeginHead !=null">
+			      and  ta.date_begin &gt;= to_date(#{dateBeginHead,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')  
+			 </if>
+		     <if test="dateBeginTail !=null">
+			      and  ta.date_begin &lt;= to_date(#{dateBeginTail,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')  
+			 </if>
+		     <if test="dateEndHead !=null">
+			      and  ta.date_end &gt;= to_date(#{dateEndHead,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')  
+			 </if>
+		     <if test="dateEndTail !=null">
+			      and  ta.date_end &lt;= to_date(#{dateEndTail,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')  
+			 </if>
+	  </where>  
+	   order by ta.date_begin 
+    </select>
+</mapper>

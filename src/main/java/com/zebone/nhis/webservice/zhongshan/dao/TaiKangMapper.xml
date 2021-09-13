@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.webservice.zhongshan.dao.TaiKangMapper">
+    <select id="getPatientAdmInf" resultType="com.zebone.nhis.webservice.zhongshan.vo.TaiKangPatientAdmInf">
+        select pm.CODE_IP + '_' + CONVERT(varchar (100), pe.DATE_ADMIT, 112) as CODE_IP_DATE_ADMIT,
+        pm.CODE_IP,
+        CONVERT(varchar (100), pe.DATE_ADMIT, 23) as DATE_ADMIT,
+        CONVERT(varchar (100), pm.BIRTH_DATE, 23) as BIRTH_DATE,
+        pm.ID_NO as idNo,
+        pe.NAME_PI as NAME,
+        CASE
+        WHEN pe.DT_SEX = '02' THEN
+        '男'
+        WHEN pe.DT_SEX = '03' THEN
+        '女'
+        WHEN pe.DT_SEX = '04' THEN
+        '未说明的性别'
+        END AS SEX,
+        bod.NAME_DEPT as pkDeptName,
+        ward.NAME_DEPT as pkDeptNsName,
+        pe.BED_NO,
+        pi.NAME_DIAG as InitialDiagnoses,
+        pm.MOBILE
+        from PV_ENCOUNTER pe
+        inner join PI_MASTER pm on pe.PK_PI = pm.PK_PI
+        inner join BD_OU_DEPT bod on bod.PK_DEPT = pe.PK_DEPT
+        inner join bd_ou_dept ward on ward.PK_DEPT = pe.PK_DEPT_ns
+        inner join pv_ip pi on pi.pk_pv = pe.pk_pv
+        <where>
+            <if test="codeIp != null and codeIp != ''">
+                pm.CODE_IP = #{codeIp,jdbcType=VARCHAR}
+            </if>
+
+            <if test="dateAdmit != null">
+                and DATEDIFF(day, pe.DATE_ADMIT, #{dateAdmit,jdbcType=TIMESTAMP}) = 0
+            </if>
+            <if test="dataBegin != null and dataBegin != ''">
+                and DATEDIFF(day, pe.DATE_ADMIT, #{dataBegin,jdbcType=TIMESTAMP}) <![CDATA[<]]>= 0
+            </if>
+            <if test="dataEnd != null and dataEnd!='' ">
+                and DATEDIFF(day, pe.DATE_ADMIT, #{dataEnd,jdbcType=TIMESTAMP})  <![CDATA[>]]>= 0
+            </if>
+            <if test="name != null and name != ''">
+                and pm.NAME_PI = #{name,jdbcType=VARCHAR}
+            </if>
+            <if test="dtIdtype != null and dtIdtype != ''">
+                <choose>
+                    <when test="dtIdtype == '111'">
+                        and pm.DT_IDTYPE = '01'
+                    </when>
+                    <when test="dtIdtype == '114'">
+                        and pm.DT_IDTYPE = '02'
+                    </when>
+                    <when test="dtIdtype == '115'">
+                        and pm.DT_IDTYPE = '31'
+                    </when>
+
+                    <when test="dtIdtype == '162'">
+                        and pm.DT_IDTYPE = '21'
+                    </when>
+
+                    <when test="dtIdtype == '414'">
+                        and pm.DT_IDTYPE = '10'
+                    </when>
+                    <otherwise>
+                        and pm.DT_IDTYPE = '99'
+                    </otherwise>
+                </choose>
+            </if>
+            <if test="idNo != null and idNo != ''">
+                and pm.ID_NO = #{idNo,jdbcType=VARCHAR}
+            </if>
+        </where>
+    </select>
+    <select id="getPatientCostInfList" resultType="com.zebone.nhis.webservice.zhongshan.vo.TaiKangPatientCostInf">
+        SELECT pm.CODE_IP + '_' + CONVERT(varchar (100), pe.DATE_ADMIT, 112) as CODE_IP_DATE_ADMIT,
+        pm.CODE_IP,
+        CONVERT(varchar (100), pe.DATE_ADMIT, 23) as DATE_ADMIT,
+        dt.NAME_EMP_APP AS DOCTOR,
+        CASE
+        WHEN dt.PK_PD IS NULL THEN it.CODE
+        ELSE pd.CODE
+        END code,
+        dt.NAME_CG AS INFO_NAME,
+        DT.PRICE AS INFO_UNIT,--单价
+        DT.QUAN AS INFO_NUMBER,--数量
+        DT.AMOUNT_PI AS INFO_MONEY,--金额
+        CONVERT(VARCHAR (100), DT.DATE_CG, 23) AS FEESDATE,--费用日期
+        DT.CODE_CG AS SIGN --标识号
+        FROM PV_ENCOUNTER pe
+        INNER JOIN PI_MASTER pm ON pe.PK_PI = pm.PK_PI
+        INNER JOIN BL_IP_DT dt ON dt.PK_PV = pe.PK_PV
+        LEFT JOIN BD_ITEM it ON it.PK_ITEM = dt.PK_ITEM
+        LEFT JOIN BD_PD pd ON pd.PK_PD = dt.PK_ITEM
+        <where>
+            <if test="codeIp != null and codeIp != ''">
+                pm.CODE_IP = #{codeIp,jdbcType=VARCHAR}
+            </if>
+
+            <if test="dateAdmit != null">
+                and DATEDIFF(day, pe.DATE_ADMIT, #{dateAdmit,jdbcType=TIMESTAMP}) = 0
+            </if>
+        </where>
+    </select>
+    <select id="getTaiKangMedicalDirectoryList"
+            resultType="com.zebone.nhis.webservice.zhongshan.vo.TaiKangMedicalDirectory">
+        SELECT A.NAME HOSPITAL_LIST_NAME,
+        A.CODE,
+        A.SPEC SPEC,
+        B.NAME UNIT,
+        '' BETAKE_GENRE,
+        C.NAME SORT,
+        0 LIABLE_EXPENSE,
+        0 LIMITED_PRICE,
+        '' PAYMENT_PROPERTY,
+        0 TRIPARTITE_NUMBER,
+        PRICE UNIT_PRICE,
+        a.TS UPDATE_TIME
+        FROM BD_ITEM a
+        left JOIN BD_UNIT b ON a.PK_UNIT = b.PK_UNIT
+        INNER JOIN BD_ITEMCATE c ON a.PK_ITEMCATE = c.PK_ITEMCATE
+        <where>
+            a.CODE in
+            <foreach collection="code" item="item" open="(" close=")" separator=",">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </where>
+        UNION ALL
+        SELECT pd.NAME,
+        pd.CODE,
+        pd.SPEC,
+        unit.NAME,
+        BD.NAME,
+        cate.NAME,
+        0,
+        0,
+        '',
+        0,
+        PRICE,
+        pd.TS
+        FROM BD_PD pd
+        INNER JOIN BD_UNIT unit ON unit.PK_UNIT = pd.PK_UNIT_MIN
+        left join BD_DEFDOC BD on BD.CODE = pd.DT_DOSAGE and BD.CODE_DEFDOCLIST = '030400'
+        INNER JOIN BD_ITEMCATE cate ON cate.PK_ITEMCATE = pd.PK_ITEMCATE
+        <where>
+            pd.CODE in
+            <foreach collection="code" item="item" open="(" close=")" separator=",">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </where>
+    </select>
+    <select id="getPatientOutInf" resultType="com.zebone.nhis.webservice.zhongshan.vo.TaiKangPatientOutInf">
+        SELECT pm.CODE_IP + '_' + CONVERT(varchar (100), pe.DATE_ADMIT, 112) as CODE_IP_DATE_ADMIT,
+        pm.CODE_IP,
+        CONVERT(varchar (100), pe.DATE_ADMIT, 23) as DATE_ADMIT,
+        stuff((SELECT ',' + n.DESC_DIAG
+        FROM PV_DIAG n
+        WHERE n.PK_PV = pe.PK_PV
+        AND n.DT_DIAGTYPE = '0109'
+        FOR XML path ('')), 1, 1, '') OUT_HOSPITAL_DIAGNOSES,
+        CONVERT(varchar (100), pe.date_end, 23) as LEAVE_DATE,
+        pe.NAME_EMP_PHY MASTER_DOCTOR,
+        a.AMOUNT_ST TOTAL_MEDICAL_COST,
+        0 INSURANCE_DEDUCT,
+        0 UNDERWAY_CRITERION,
+        a.AMOUNT_INSU BASE_INSURANCE,
+        0 COMPLEMENTARITY_INSURANCE,
+        0 ELSE_INSURANCE_MONEY,
+        0 SELFAMNT,
+        0 UN_RATIONAL_MONEY,
+        a.PK_SETTLE
+        FROM PV_ENCOUNTER pe
+        INNER JOIN PI_MASTER pm ON pm.PK_PI = pe.PK_PI
+        INNER JOIN BL_SETTLE a ON a.PK_PV = pe.PK_PV
+        <where>
+            pe.EU_STATUS = '3'
+            and a.FLAG_CANC = '0'
+            and a.DT_STTYPE != '21'
+            <if test="codeIp != null and codeIp != ''">
+                and pm.CODE_IP = #{codeIp,jdbcType=VARCHAR}
+            </if>
+            <if test="dateAdmit != null">
+                and DATEDIFF(day, pe.DATE_ADMIT, #{dateAdmit,jdbcType=TIMESTAMP}) = 0
+            </if>
+        </where>
+    </select>
+    <select id="getInvoiceCareStr" resultType="com.zebone.nhis.webservice.zhongshan.vo.TaiKangInvoiceCareStr">
+        SELECT t.CODE_INV                             INVOICE_NO,
+               CONVERT(varchar (100), BS.DATE_ST, 23) SETTLE_DATE,
+               a.NAME_BILL                            NAME,
+               a.AMOUNT                               MONEY
+        FROM BL_SETTLE BS
+                     inner join BL_ST_INV BSI on BS.PK_SETTLE = BSI.PK_SETTLE
+                     inner join BL_INVOICE t on t.PK_INVOICE = BSI.PK_INVOICE
+                     INNER JOIN BL_INVOICE_DT a ON t.PK_INVOICE = a.PK_INVOICE
+        where t.FLAG_CANCEL = '0'
+          and BS.PK_SETTLE = #{pkSettle,jdbcType=VARCHAR}
+    </select>
+
+    <select id="getPatientSettleInfor" resultType="DynaBean">
+        select distinct
+        PE.PK_PV,
+        BS.PK_SETTLE
+        from PI_MASTER PM
+        inner join PV_ENCOUNTER PE on PM.PK_PI = pe.PK_PI
+        inner join BL_SETTLE BS on PE.PK_PV = BS.PK_PV
+        where BS.FLAG_CANC = '0'
+        and PM.CODE_IP =#{patientNumber,jdbcType=VARCHAR}
+        and DATEDIFF(day, PE.DATE_ADMIT, #{inHosDate,jdbcType=TIMESTAMP}) = 0
+        <if test=" customerIdNumber!=null and customerIdNumber!='' ">
+            and PM.ID_NO=#{customerIdNumber,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+    <select id="getPatientSettleCnacInfor" resultType="DynaBean">
+        select BS.PK_PV, B.PK_SETTLE,TS.PK_TKSETTLE
+        from TK_SETTLE TS
+                     inner join BL_SETTLE BS on TS.PK_SETTLE = BS.PK_SETTLE
+                     left join BL_SETTLE B on B.PK_SETTLE_CANC = TS.PK_SETTLE
+        where 1 = 0
+           or TS.TK_ID = #{compensateId,jdbcType=VARCHAR}
+    </select>
+</mapper>

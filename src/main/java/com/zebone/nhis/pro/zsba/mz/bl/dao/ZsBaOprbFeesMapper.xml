@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.mz.bl.dao.ZsBaOprbFeesMapper">
+
+	<!-- 查询已结算的处方明细-仅查处方药品 -->
+	<select id = "querySettlePressItem"  parameterType="com.zebone.nhis.bl.pub.vo.OprbFeesDto"  resultType="DynaBean">
+		select occ.pk_pres as pk,
+		        cg.pk_cgop,  
+				cg.name_cg, 
+				cg.spec,    
+				cg.pk_unit,
+				cg.pk_settle,
+				cg.pk_pv,
+				unit.name unit, 
+				cg.price as priceOrg,
+				cg.flag_pd, 
+				cg.eu_additem, 
+				cg.quan as quan_cg,  
+				cg.amount_pi, 
+				<!-- dt.quan_cg-dt.quan_ret-dt.quan_de+dt.quan_back as canBack -->
+				cg.quan-dt.quan_ret-dt.quan_de+dt.quan_back as canBack,
+				<!-- 是否处方 -->
+				'1' isPrescribe
+		from  ex_pres_occ occ
+		inner join ex_pres_occ_dt dt on occ.pk_presocc=dt.pk_presocc 
+		inner join bl_op_dt cg on dt.pk_cnord=cg.pk_cnord and cg.pk_pd=dt.pk_pd 
+		inner join bd_unit unit on cg.pk_unit=unit.pk_unit
+		where occ.pk_pres in (${pkPress}) 
+		and cg.pk_settle=#{pkSettle,jdbcType=VARCHAR} 
+		order by cg.PK_CNORD,cg.DATE_CG
+	</select>
+	<!-- 查询已结算的处方明细-仅查处方附加 -->
+	<select id = "querySettlePressAddItem"  parameterType="com.zebone.nhis.bl.pub.vo.OprbFeesDto"  resultType="DynaBean">
+		select occ.pk_pres as pk,
+		        cg.pk_cgop,  
+				cg.name_cg, 
+				cg.spec,    
+				cg.pk_unit,
+				cg.pk_settle,
+				cg.pk_pv,
+				unit.name unit, 
+				cg.price as priceOrg,
+				cg.flag_pd, 
+				cg.eu_additem, 
+				cg.quan as quan_cg,  
+				cg.amount_pi, 
+				<!-- dt.quan_cg-dt.quan_ret-dt.quan_de+dt.quan_back as canBack -->
+				cg.quan-dt.quan_ret-dt.quan_de+dt.quan_back as canBack,
+				<!-- 是否处方 -->
+				'1' isPrescribe
+		from  ex_pres_occ occ
+		inner join ex_pres_occ_dt dt on occ.pk_presocc=dt.pk_presocc 
+		inner join bl_op_dt cg on dt.pk_cnord=cg.pk_cnord and cg.flag_pd='0' 
+		inner join bd_unit unit on cg.pk_unit=unit.pk_unit
+		where occ.pk_pres in (${pkPress}) 
+		and cg.pk_settle=#{pkSettle,jdbcType=VARCHAR} 
+		order by cg.PK_CNORD,cg.DATE_CG
+	</select>
+	
+	<!-- 查询已结算的检查检验明细 -->
+	<select id = "querySettleAssistItem"  parameterType="com.zebone.nhis.bl.pub.vo.OprbFeesDto"  resultType="DynaBean">
+		select 	ord.pk_cnord as pk,
+				cg.pk_cgop,    
+				cg.name_cg,  
+				cg.spec,       
+				cg.pk_unit,
+				cg.pk_settle,
+				cg.pk_pv,
+				unit.name unit, 
+				cg.flag_pd,
+				cg.eu_additem, 
+			    cg.price as priceOrg,    
+			    cg.quan as quan_cg,  
+			    ord.quan as quan_ord,
+			    ord.pk_cnord,
+				(
+					(select sum(occ.quan_occ) from ex_assist_occ occ
+						where occ.pk_cnord=cg.pk_cnord 
+						and occ.eu_status&lt;&gt;1 
+						and (occ.flag_refund='0' or occ.flag_refund is null)
+					) 
+					<!-- *(cg.quan/ord.quan/nvl((select count(1) from ex_assist_occ occ where occ.pk_cnord=cg.pk_cnord and occ.flag_refund='0'),1)) -->
+					*(cg.quan/ord.quan/nvl((select case count(1) when 0 then 1 else count(1) end from ex_assist_occ occ where occ.pk_cnord=cg.pk_cnord and occ.flag_refund='0'),1))
+				) as canBack,
+				<!-- 是否处方 -->
+				'0' isPrescribe
+		from bl_op_dt cg
+		inner join cn_order ord on cg.pk_cnord=ord.pk_cnord
+		left join bd_unit unit on cg.pk_unit=unit.pk_unit
+		where cg.pk_cnord in (${pkCnords}) 
+		and   cg.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="qryCgItemByPkCgop" resultType="DynaBean">
+		select cg.pk_cgop as pk,
+		       cg.pk_cgop,     
+		       cg.name_cg,     
+		       cg.spec,        
+		       cg.pk_unit,
+		       cg.pk_settle,
+				cg.pk_pv,
+				unit.name unit, 
+				cg.flag_pd,
+				cg.eu_additem, 
+			    cg.price as priceOrg,    
+			    cg.quan as quan_cg,
+			    cg.quan as canBack,
+			    <!-- 是否处方 -->
+				'0' isPrescribe
+		  from bl_op_dt cg
+		       left join bd_unit unit on cg.pk_unit=unit.pk_unit
+		 where cg.pk_settle=#{pkSettle,jdbcType=CHAR} and
+		       cg.pk_cgop in (${pkCgops}) 
+	</select>
+	
+	<select id = "qryEtceterasItem"  resultType="DynaBean">
+		select cg.pk_cnord as pk,
+			   cg.pk_cgop,     
+		       cg.name_cg,     
+		       cg.spec,        
+		       cg.pk_unit,
+		       cg.pk_settle,
+				cg.pk_pv,
+				unit.name unit, 
+				cg.flag_pd,
+				cg.eu_additem, 
+			    cg.price as priceOrg,    
+			    cg.quan as quan_cg,
+			    cg.quan as canBack,
+			    <!-- 是否处方 -->
+				'0' isPrescribe
+		  from bl_op_dt cg
+		       left join bd_unit unit on cg.pk_unit=unit.pk_unit
+		 where cg.pk_settle=#{pkSettle,jdbcType=CHAR} and
+		       cg.pk_cnord in (${pkCnords})  and
+		       cg.flag_pd='0'
+	</select>
+	
+   <!-- 查询结算下的处方 -->
+	<select id = "querySettlePressRecord"  resultType="DynaBean">
+		select  occ.pk_pres as pk,
+				occ.pres_no,
+	      	 	dept.name_dept,     
+				occ.date_pres as dateOpen,      
+				occ.name_emp_pres, 
+				exdp.name_dept as nameDeptExec,
+				1 isPres,
+				case when sum(dt.quan_cg-dt.quan_ret-dt.quan_de+dt.quan_back)>0 then '可退' else '不可退' end state,
+				cg.pk_settle
+	  	from  ex_pres_occ occ
+		inner join ex_pres_occ_dt dt on occ.pk_presocc=dt.pk_presocc
+		inner join bl_op_dt cg on dt.pk_cnord=cg.pk_cnord  <!-- and cg.flag_pd='1' -->
+		left join bl_invoice_dt idt on idt.code_bill=cg.code_bill
+		inner join bd_ou_dept dept on occ.pk_dept_pres=dept.pk_dept
+		inner join bd_ou_dept exdp on occ.pk_dept_ex=exdp.pk_dept
+		where cg.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+		group by occ.pk_pres,
+			   dept.name_dept,
+		       occ.date_pres,
+		       occ.pres_no,
+		       occ.name_emp_pres,
+		       exdp.name_dept,
+		       cg.pk_settle
+	</select>
+	
+	<!-- 查询结算下的检查检验 -->
+	<select id = "querySettleAssistRecord"  resultType="DynaBean">
+		select  distinct cg.pk_cnord as pk,
+				ord.code_apply as pres_no,
+				case when cg.pk_cnord  is null then cg.pk_cgop else null end pk_cgop,
+	   		  	dept.name_dept,
+	   		  	ord.name_ord,
+				case when ord.date_enter is not null  
+	   		  		then ord.date_enter 
+	   		  		else cg.date_hap end as dateOpen,
+				cg.name_emp_app,  
+				case when exOrd.name_dept is not null then exOrd.NAME_DEPT else exdt.name_dept end as nameDeptExec,
+				cg.pk_settle,
+				0 isPres,
+				case when 
+						((select sum(occ.quan_occ) from ex_assist_occ occ
+						  where occ.pk_cnord=cg.pk_cnord and occ.eu_status&lt;&gt;1
+						  and nvl(occ.flag_refund,'0')='0')&gt;0 and st.pk_settle_canc is null)
+					then '可退' 
+					when cg.pk_cnord is null then '可退' 
+					<!-- code_ordtype为09时发现都是一些心理咨询、诊查费，部分存在pk_cnord但是没有ex_assist_occ记录导致不可退，这里对于09或者99的也默认直接可退，具体退不退可由收费员自行勾选决定 -->
+					when (ord.code_ordtype='04' and cg.eu_additem='1') or ord.code_ordtype='09' then '可退'
+					else '不可退' end state,
+				case when ord.code_ordtype='04' and cg.eu_additem='1' then '1'
+				else '0' end FlagEtce 
+	 	from bl_op_dt cg
+	 	left join cn_order ord on ord.pk_cnord = cg.pk_cnord
+		inner join bd_ou_dept dept on cg.pk_dept_app=dept.pk_dept
+		left join bd_ou_dept exOrd on ord.pk_dept_exec=exOrd.pk_dept
+		left join bd_ou_dept exdt on cg.pk_dept_cg=exdt.pk_dept
+		left join bl_invoice_dt idt on idt.code_bill=cg.code_bill
+		inner join bl_settle st on cg.pk_settle = st.pk_settle
+		where cg.pk_settle=#{pkSettle,jdbcType=VARCHAR} 
+		and cg.pk_pres is null 
+	</select>
+	
+	<select id = "qryEtceterasList"   resultType="DynaBean">
+		select distinct
+		       cg.pk_cnord as pk,
+		       dept.name_dept,     
+		       cg.date_hap dateOpen,
+		       cg.name_emp_app,    
+		       exdp.name_dept nameDeptExec,
+			   cg.pk_settle,
+			   0 isPres,
+		       case when inf.eu_status is null then '可退'
+            		when inf.eu_status &lt; '9' then '可退'
+            		else '不可退' end state,
+		       '1' as FlagEtce 
+		  from bl_op_dt cg
+		       inner join cn_order ord on cg.pk_cnord=ord.pk_cnord
+		       inner join bd_ou_dept dept on cg.pk_dept_app=dept.pk_dept
+		       inner join bd_ou_dept exdp on cg.pk_dept_ex=exdp.pk_dept
+		       left outer join ex_infusion_occ inf on ord.ordsn_parent=inf.ordsn_parent
+		 where cg.pk_settle=#{pkSettle,jdbcType=CHAR} 
+		 	   and cg.pk_pres=ord.pk_pres 
+		 	   and cg.flag_pd='0'
+	</select>
+    
+    <select id="qryExPresOccStatus" resultType="DynaBean">
+    	select top 1 occ.eu_status from EX_PRES_OCC occ 
+		inner join BL_SETTLE settle on occ.pk_settle=settle.pk_settle 
+		where settle.pk_settle=#{pkSettle,jdbcType=CHAR}
+	</select>
+</mapper>

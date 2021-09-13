@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.opdw.dao.CnOperationMapper">
+    <select id="selectOrder" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOrder" parameterType="java.lang.String" >
+        select * from CN_ORDER
+        where PK_CNORD = #{pkCnord,jdbcType=CHAR}
+    </select>
+
+    <delete id="removeChildApply" parameterType="java.lang.String" >
+  	    delete from cn_op_subjoin where pk_ordop = #{pkOrdop,jdbcType=VARCHAR}
+    </delete>
+    <delete id="removeOpApply" parameterType="java.lang.String" >
+  	    delete cn_op_apply where PK_ORDOP = #{pkOrdop,jdbcType=VARCHAR}
+    </delete>
+    <delete id="removeOpOrder" parameterType="java.lang.String" >
+  	    delete cn_order where ordsn_parent in (select ordsn_parent from cn_order where pk_cnord =  #{pkCnord,jdbcType=VARCHAR})
+    </delete>
+    <delete id="removeOpInfect" parameterType="java.lang.String" >
+  	    delete cn_op_infect where pk_cnord = #{pkCnord,jdbcType=VARCHAR}
+    </delete>
+    <delete id="removeOpCg" parameterType="java.lang.String" >
+  	    delete from bl_op_dt cg where cg.pk_cnord = #{pkCnord,jdbcType=VARCHAR}
+    </delete>
+    
+    <!-- 查询手术信息 -->
+    <select id="queryOperation" parameterType="java.lang.String"  resultType="DynaBean">
+        select cn.PK_CNORD,cn.PK_ORG,cn.EU_PVTYPE,cn.PK_PV,cn.PK_PI,cn.CODE_ORDTYPE,cn.EU_ALWAYS,cn.ORDSN,cn.ORDSN_PARENT,cn.PK_ORD,
+	      cn.CODE_ORD,cn.PK_PRES,cn.NAME_ORD,cn.DESC_ORD,cn.CODE_APPLY,cn.CODE_FREQ,cn.SPEC,cn.DOSAGE,cn.PK_UNIT_DOS,cn.QUAN,cn.PK_UNIT,
+	      cn.CODE_SUPPLY,cn.QUAN_CG,cn.PK_UNIT_CG,cn.PACK_SIZE,cn.PRICE_CG,cn.NOTE_SUPPLY,cn.DAYS,cn.DRIP_SPEED,cn.ORDS,cn.FLAG_FIRST,cn.LAST_NUM,
+	      cn.FLAG_DURG,cn.FLAG_SELF,cn.FLAG_NOTE,cn.FLAG_BASE,cn.FLAG_BL,cn.PK_DEPT,cn.PK_DEPT_NS,cn.PK_WG,cn.PK_EMP_INPUT,
+	      cn.NAME_EMP_INPUT,cn.PK_EMP_ORD,cn.NAME_EMP_ORD,cn.PK_EMP_CHK,cn.PK_ORG_EXEC,cn.PK_DEPT_EXEC,cn.EU_STATUS_ORD,cn.NAME_EMP_CHK,
+	      cn.PK_EMP_STOP_CHK,cn.NAME_EMP_STOP_CHK,cn.FLAG_ERASE,cn.PK_EMP_ERASE,cn.NAME_EMP_ERASE,cn.FLAG_STOP_CHK,
+	      cn.PK_EMP_STOP,cn.NAME_EMP_STOP,cn.FLAG_STOP,cn.PK_EMP_ERASE_CHK,cn.NAME_ERASE_CHK,cn.FLAG_ERASE_CHK,cn.FLAG_CP,cn.FLAG_DOCTOR,
+	      cn.FLAG_PRINT,cn.FLAG_MEDOUT,cn.EU_EXCTYPE,cn.PK_ORD_EXC,cn.FLAG_EMER,cn.FLAG_THERA,cn.FLAG_PREV,cn.FLAG_FIT,cn.QUAN_BED,
+	      cn.CREATE_TIME,cn.MODIFIER,cn.MODITY_TIME,cn.DEL_FLAG,cn.FLAG_SIGN,cn.SORT_IV,cn.TS,cn.FLAG_ITC,cn.EU_INTERN,cn.EU_ST,cn.DT_USAGENOTE,
+	      cn.FIRST_NUM,cn.FLAG_PIVAS,cn.DT_HERBUSAGE,cn.PK_CNORD_RL,cn.GROUPNO,cn.NOTE_ORD,cn.CREATOR,cn.INFANT_NO,cn.PK_EVENT,
+	      cn.QUAN_DISP,cn.RATIO_HP,cn.DESC_FIT,cn.PK_EMP_EX,cn.NAME_EMP_EX,cn.ORDSN_CHK,cn.CODE_SUPPLY_ADD,
+	      to_char(cn.DATE_STOP,'YYYYMMDDHH24MISS') DATE_STOP,
+	      to_char(cn.DATE_CHK,'YYYYMMDDHH24MISS') DATE_CHK,
+	      to_char(cn.DATE_LAST_EX,'YYYYMMDDHH24MISS') DATE_LAST_EX,
+	      to_char(cn.DATE_PLAN_EX,'YYYYMMDDHH24MISS') DATE_PLAN_EX,
+	      to_char(cn.DATE_EFFE,'YYYYMMDDHH24MISS') DATE_EFFE,
+	      to_char(cn.DATE_START,'YYYYMMDDHH24MISS') DATE_START,
+	      to_char(cn.DATE_ENTER,'YYYYMMDDHH24MISS') DATE_ENTER,
+	      to_char(cn.DATE_SIGN,'YYYYMMDDHH24MISS') DATE_SIGN,
+	      to_char(cn.DATE_ERASE,'YYYYMMDDHH24MISS') DATE_ERASE,
+	      to_char(cn.DATE_ERASE_CHK,'YYYYMMDDHH24MISS') DATE_ERASE_CHK,
+	      to_char(cn.DATE_STOP_CHK,'YYYYMMDDHH24MISS') DATE_STOP_CHK,
+	     
+	      op.PK_ORDOP,op.PK_ORG,op.PK_CNORD,op.EU_OPTYPE,op.PK_DIAG_PRE,op.DESC_DIAG_PRE,op.DT_OPLEVEL,op.PK_OP,
+	      op.DESC_OP,op.DESC_OP_SUB,op.PK_EMP_PHY_OP,op.NAME_EMP_PHY_OP,op.duration,op.DT_ANAE,
+	      op.PK_EMP_ANAE,op.NAME_EMP_ANAE,op.PK_EMP_ASIS,op.NAME_EMP_ASIS,op.PK_EMP_ASIS2,op.NAME_EMP_ASIS2,
+	      op.PK_EMP_ASIS3,op.NAME_EMP_ASIS3,op.PK_EMP_SCRUB,op.NAME_EMP_SCRUB,op.PK_EMP_CIRCUL,op.NAME_EMP_CRICUL,
+	      op.DT_OPBODY,op.PK_OPT,op.EU_STATUS,op.NOTE,op.CREATOR,op.CREATE_TIME,op.MODIFIER,op.MODITY_TIME,
+	      op.DEL_FLAG,op.TS,op.TICKETNO,op.FLAG_HEAD,op.PK_EMP_HEAD,op.NAME_EMP_HEAD,op.FLAG_AGAIN,op.DESC_ICJD,
+	      op.DESC_UNICJD,op.PURP_AGAIN,op.WEIGHT,op.DT_BLOOD_ABO,op.DT_BLOOD_RH,op.DESC_INFEC,op.PK_DEPT_ANAE,
+	      op.DESC_CPB,op.SPEC_EQUIPMENT,op.DT_INCITYPE,op.CNT_OP,op.FLAG_ED,op.FLAG_FINISH_ANAE,op.name_op,
+	      op.flag_carm,op.flag_frozen,
+	      to_char(op.DATE_CONFIRM_DEPT,'YYYYMMDDHH24MISS') DATE_CONFIRM_DEPT,
+	      to_char(op.DATE_BEGIN,'YYYYMMDDHH24MISS') DATE_BEGIN,
+	      to_char(op.DATE_CONFIRM,'YYYYMMDDHH24MISS') DATE_CONFIRM,
+		  to_char(op.DATE_PLAN,'YYYYMMDDHH24MISS') DATE_PLAN,
+		  to_char(op.DATE_APPLY,'YYYYMMDDHH24MISS') DATE_APPLY,
+		  to_char(op.DATE_HEAD,'YYYYMMDDHH24MISS') DATE_HEAD,
+		  (select d.old_id from bd_defdoc d where d.code_defdoclist='030302' and d.code=op.DT_ASALEVEL) DT_ASALEVEL,
+		  (select d.name from bd_defdoc d where d.code_defdoclist='030300' and d.code=op.DT_ANAE) anae_name, 
+	      (select d.old_id from bd_defdoc d where d.code_defdoclist='030307' and d.code=op.DT_ASEPSIS) dt_asepsis,
+	      ((select d.name from bd_defdoc d where d.code_defdoclist='030301' and d.code=op.DT_POSI)||'###'||op.note)  remark,
+	      ( (select d.name from cn_op_infect i left join bd_defdoc d on d.code=i.dt_infresult where d.code_defdoclist='060607' and i.dt_infect='04'and i.pk_cnord=op.pk_cnord)||'-'||
+	      	(select d.name from cn_op_infect i left join bd_defdoc d on d.code=i.dt_infresult where d.code_defdoclist='060607' and i.dt_infect='03'and i.pk_cnord=op.pk_cnord)||'-'||
+	        (select d.name from cn_op_infect i left join bd_defdoc d on d.code=i.dt_infresult where d.code_defdoclist='060607' and i.dt_infect='05'and i.pk_cnord=op.pk_cnord)||'-'||
+	        (select d.name from cn_op_infect i left join bd_defdoc d on d.code=i.dt_infresult where d.code_defdoclist='060607' and i.dt_infect='01'and i.pk_cnord=op.pk_cnord)||'-'||
+	        (select d.name from cn_op_infect i left join bd_defdoc d on d.code=i.dt_infresult where d.code_defdoclist='060607' and i.dt_infect='02'and i.pk_cnord=op.pk_cnord)
+	      ) dt_infresult
+		from cn_order cn,cn_op_apply op		
+        where cn.pk_cnord=op.pk_cnord and cn.pk_cnord= #{pkCnord,jdbcType=VARCHAR}
+        
+    </select>
+	<select id="queryOpOrdAmount" resultType="DynaBean" parameterType="java.lang.String">
+		select pk_cnord,sum(amount) amt
+		from bl_op_dt
+		where PK_CNORD=#{pkCnord,jdbcType=CHAR} and del_flag='0'
+		group by pk_cnord
+	</select>
+</mapper>

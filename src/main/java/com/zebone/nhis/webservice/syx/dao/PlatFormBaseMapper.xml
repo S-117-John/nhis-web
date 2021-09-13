@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.PlatFormBaseMapper">
+
+	<select id="getDoctorInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.webservice.syx.vo.platForm.DoctorInfo">
+
+		select res.code                                          doctorid,
+			res.name||'('||dept.name||')'                       doctorname,
+			res.spcode                                        doctorspellcode,
+			job.jobname                                       title,
+			case when emp.dt_sex = '02' then 'M' else 'F' end gender,
+			res.spec                                          drdesc,
+			emp.name_emp                                      loginname
+		from sch_resource res
+			inner join sch_resource dept on res.pk_dept = dept.pk_schres and dept.eu_restype = '0'
+			left outer join bd_ou_employee emp on res.pk_emp = emp.pk_emp
+			left outer join bd_ou_empjob job on emp.pk_emp = job.pk_emp and job.is_main = '1'
+		where res.eu_schclass = '0'
+		and res.eu_restype = '1'
+		<if test='deptId != null and deptId != "" '>
+			and	dept.code = #{deptId,jdbcType=CHAR}
+		</if>
+		<if test='doctorId != null and doctorId != "" '>
+			and res.code = #{doctorId,jdbcType=CHAR}
+		</if>
+
+    </select>
+
+    <select id="getRegInfo" parameterType="java.util.Map" resultType="DynaBean">
+
+		select res.code                                                                                              doctorid,
+			res.name                                                                                              doctorname,
+			NVL(def.NAME, '-1')                                                                                   doctortitle,
+			dept.code                                                                                             deptid,
+			dept.name                                                                                             deptname,
+			sch.date_work                                                                                         regdate,
+			to_char(date_work, 'day')                                                                             regweekday,
+			ds.name_dateslot                                                                                      timename,
+			ds.code_dateslot                                                                                      timeid,
+			case when sch.flag_stop = '0' then '1' else '2' end                                                   statustype,
+			sch.cnt_appt                                                                                          regtotalcount,
+			sch.cnt_appt - sch.cnt_used                                                                           regleavecount,
+			0.00 as                                                                                               treatfee,
+			price.price                                                                                           regfee,
+			case when (select count(1) from sch_ticket dt where sch.pk_sch = dt.pk_sch) > 0 then '1' else '0' end istimereg
+		from sch_sch sch
+			inner join sch_resource res on res.pk_schres = sch.pk_schres
+			left outer join bd_ou_employee emp on res.pk_emp = emp.pk_emp
+			left outer join bd_ou_empjob job on emp.pk_emp = job.pk_emp and job.is_main = '1'
+			inner join sch_resource dept on res.pk_dept = dept.pk_schres
+			inner join sch_srv srv on sch.pk_schsrv = srv.pk_schsrv
+			left outer join (select sum(oi.quan * item.price) price,
+									so.pk_schsrv              pk_schsrv
+							from sch_srv_ord so
+								inner join bd_ord_item oi on so.pk_ord = oi.pk_ord
+								inner join bd_item item on oi.pk_item = item.pk_item
+							where so.eu_type = '0'
+							group by so.pk_schsrv) price on srv.pk_schsrv = price.pk_schsrv
+			left outer join bd_code_dateslot ds on sch.pk_dateslot = ds.pk_dateslot
+			left outer join BD_DEFDOC def on def.CODE=job.JOBNAME and def.CODE_DEFDOCLIST='010301'
+		where sch.eu_schclass = '0'
+		and sch.eu_appttype != '1'
+		and sch.FLAG_STOP = '0'
+        and sch.EU_STATUS = '8'
+       
+		<if test='deptId != null and deptId != "" '>
+			and	dept.code=#{deptId,jdbcType=CHAR}
+		</if>
+		<if test='doctorId != null and doctorId != "" '>
+			and	res.code=#{doctorId,jdbcType=CHAR}
+		</if>
+		<if test='startDate != null and startDate != "" '>
+			and sch.date_work &gt;=to_date(#{startDate},'yyyy-mm-dd HH24:mi:ss')
+		</if>
+		<if  test='endDate != null and endDate != ""'>
+			and sch.date_work &lt;=to_date(#{endDate},'yyyy-mm-dd HH24:mi:ss')
+		</if>
+
+    </select>
+
+    <select id="getTimeRegInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.webservice.syx.vo.platForm.TimeRegInfo">
+		select to_char(tk.begin_time,'HH24:mi')                                          starttime,
+            to_char(tk.end_time ,'HH24:mi')                                              endtime,
+			sum(case when tk.flag_appt = '1' then 1 else 0 end)                        regtotalcount,
+			sum(case when tk.flag_appt = '1' and tk.flag_used = '0' then 1 else 0 end) regleavecount
+			from sch_sch sch
+			inner join sch_ticket tk on sch.pk_sch = tk.pk_sch
+			inner join sch_resource res on sch.pk_schres = res.pk_schres
+			inner join sch_resource dept on res.pk_dept = dept.pk_schres and dept.eu_restype = '0'
+			left outer join bd_ou_employee emp on res.pk_emp = emp.pk_emp
+			inner join bd_code_dateslot ds on sch.pk_dateslot = ds.pk_dateslot
+		where sch.eu_schclass = '0'
+			and sch.eu_appttype != '1'
+            and sch.FLAG_STOP = '0'
+            and sch.EU_STATUS = '8'
+            and tk.FLAG_APPT = '1'           
+			<if test='deptId != null and deptId != "" '>
+				and dept.code=#{deptId}
+			</if>
+			<if test='doctorId != null and doctorId != "" '>
+				and res.code=#{doctorId}
+			</if>
+			<if test='regDate != null and regDate != "" '>
+				and sch.date_work=#{regDate}
+			</if>
+			<if test='timeId != null and timeId != "" '>
+				and ds.code_dateslot=#{timeId}
+			</if>
+		group by tk.begin_time,
+		tk.end_time
+
+    </select>
+
+    <select id="getDeptRegInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.webservice.syx.vo.platForm.DeptRegInfo">
+		select res.code    doctorid,
+			res.name    doctorname,
+			def.NAME title
+		from sch_sch sch
+			inner join sch_resource res on sch.pk_schres = res.pk_schres and sch.cnt_appt > 0
+			inner join sch_resource dept on res.pk_dept = dept.pk_schres and dept.eu_restype = '0'
+			left outer join bd_ou_employee emp on res.pk_emp = emp.pk_emp
+			left outer join bd_ou_empjob job on emp.pk_emp = job.pk_emp and job.is_main = '1'
+			left join BD_DEFDOC def on def.CODE=job.JOBNAME and def.CODE_DEFDOCLIST='010301'
+		where sch.eu_schclass = '0'
+			and sch.eu_appttype != '1'
+			<if test='deptId != null and deptId != "" '>
+				and dept.code=#{deptId}
+			</if>
+			<if test='startDate != null and startDate != "" '>
+				and sch.date_work &gt;= #{startDate}
+			</if>
+			<if test='endDate != null and endDate != "" '>
+				and sch.date_work &lt;= #{endDate}
+			</if>
+    </select>
+
+    <select id="getUserInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.webservice.syx.vo.platForm.UserInfo">
+            select pi.code_pi userhispatientid,
+		       pi.id_no useridcard,
+		       pi.code_op userjkk,
+		       pi.citizen_no usersmk,
+		       pi.insur_no userybk,
+		       pi.idno_rel userparentidcard,
+		       pi.name_pi username,
+		       case when dt_sex='02' then 'M' else 'F' end usergender,
+		       pi.mobile usermobile,
+		       pi.birth_date userbirthday,
+		       pi.addr_cur_dt useraddress,
+		       '' as userpatientypelistname
+            from pi_master pi
+            where pi.del_flag='0'
+               <if test='userCardType == 1 and userCardId != null and userCardId != "" '>
+	              and pi.code_op= #{userCardId}
+	           </if>
+	           <if test='userCardType == 2 and userCardId != null and userCardId != "" '>
+	              and pi.citizen_no= #{userCardId}
+	           </if>
+	           <if test='userCardType == 3 and userCardId != null and userCardId != "" '>
+	              and pi.insur_no= #{userCardId}
+	           </if>
+	           <if test='userCardType == 4 and userCardId != null and userCardId != "" '>
+	              and pi.idno_rel= #{userCardId}
+	           </if>
+	           <if test='userCardType == 5 and userCardId != null and userCardId != "" '>
+	              and pi.mobile= #{userCardId}
+	           </if>
+         <if test='userIdCard != null and userIdCard != "" '>
+	           and pi.id_no= #{userIdCard}
+	     </if>
+	     <if test='userName != null and userName != "" '>
+	           and pi.name_pi= #{userName}
+	     </if>
+    </select>
+
+	<select id="getPatientAddress" parameterType="java.lang.String" resultType="com.zebone.nhis.webservice.syx.vo.platForm.PiAddrInfo">
+		select addr.pk_addr   addrid,
+			   addr.name_prov province,
+			   addr.name_city city,
+			   addr.name_dist district,
+			   addr.addr      address,
+			   addr.name_rel  contact,
+			   addr.tel       phone,
+			   addr.sort_no   sortno,
+			   addr.flag_use  falgdef
+		from pi_address addr
+				 inner join pi_master pi on addr.pk_pi = pi.pk_pi
+		where
+		<if test="userCardType == 0">
+			pi.id_no=#{userCardId}
+		</if>
+		<if test="userCardType == 1">
+			pi.code_op=#{userCardId}
+		</if>
+		<if test="userCardType == 2">
+			pi.citizen_no=#{userCardId}
+		</if>
+		<if test="userCardType == 3">
+			pi.insur_no=#{userCardId}
+		</if>
+		<if test="userCardType == 4">
+			pi.idno_rel=#{userCardId}
+		</if>
+		<if test="userCardType == 5">
+			pi.mobile=#{userCardId}
+		</if>
+	</select>
+
+
+</mapper>

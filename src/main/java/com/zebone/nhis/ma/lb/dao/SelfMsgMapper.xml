@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.lb.dao.SelfMsgMapper">	
+	<!-- 获取患者基本信息列表 -->
+	<select id="getPiMasterListNoPhoto" parameterType="java.util.Map"  
+	resultType="DynaBean">
+		select pk_pi,pk_org,code_pi,code_op,code_ip,barcode,pk_picate,name_pi,dt_idtype,id_no,hic_no,insur_no,mpi,flag_ehr,
+		dt_sex,birth_date,place_birth,dt_marry,dt_occu,dt_edu,dt_country,dt_nation,tel_no,mobile,wechat_no,email,unit_work,
+		tel_work,address,name_rel,tel_rel,dt_blood_abo,dt_blood_rh,creator,create_time,modifier,del_flag,ts
+		from PI_MASTER 	
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and del_flag = '0'
+		  	<if test="namePi != null and namePi != ''">
+		  		and name_pi like '%'||#{namePi,jdbcType=VARCHAR}||'%'
+		  	</if> 
+		  	<if test="dtSex != null and dtSex != ''">
+		  		and dt_sex = #{dtSex,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="idNo != null and idNo != ''">
+		  		and (id_no like '%'||#{idNo,jdbcType=VARCHAR} or id_no like #{idNo,jdbcType=VARCHAR}||'%')
+		  	</if>
+		  	<if test="insurNo != null and insurNo != ''">
+		  		and (insur_no like '%'||#{insurNo,jdbcType=VARCHAR} or insur_no like #{insurNo,jdbcType=VARCHAR}||'%')
+		  	</if>
+		  	<if test="mobile != null and mobile != ''">
+		  		and (mobile like '%'||#{mobile,jdbcType=VARCHAR} or mobile like #{mobile,jdbcType=VARCHAR}||'%')
+		  	</if>
+		  	
+		  	<if test="dtIdtype != null and dtIdtype != ''">
+		  		and dt_idtype = #{dtIdtype,jdbcType=VARCHAR}
+		  	</if>
+  		</trim>
+  		order by code_ip
+	</select>	
+	
+	<!-- 获取当天目前可用的排班 -->
+	<select id="qrySchedulInfo" resultType="DynaBean">
+		select s.pk_org,r.pk_schres,s.pk_schsrv,h.pk_sch, r.eu_restype,d.time_begin,
+		       d.time_end,r.pk_dept,dept.name_dept,dept.code_dept,r.pk_emp,emp.name_emp,h.cnt_total,
+               h.cnt_used,h.cnt_appt,s.code,s.name
+  		  from sch_sch h
+  		 inner join sch_srv s on h.pk_schsrv = s.pk_schsrv and s.eu_schclass = '0'
+  		 inner join sch_resource r on h.pk_schres = r.pk_schres and r.eu_schclass = '0'
+  		 inner join bd_code_dateslot d on h.pk_dateslot = d.pk_dateslot
+  		 inner join bd_ou_dept dept on dept.pk_dept = r.pk_dept_belong
+  		  left join bd_ou_employee emp on emp.pk_emp = r.pk_emp 
+  		  left join bd_code_dateslot_time d_time on d_time.pk_dateslot = d.pk_dateslot
+		 where h.del_flag = '0'
+      	   and h.flag_stop = '0'
+		 <if test="pkSchres != null  and  pkSchres != ''">
+		   and r.pk_schres = #{pkSchres,jdbcType=VARCHAR}
+		 </if>
+		 <!-- 等于0：根据科室 -->
+		 <if test='queryTag != null and queryTag =="0" '>
+		   and r.pk_dept is not null
+		 </if>
+		 <!-- 等于1：根据人员 -->
+		 <if test='queryTag != null and queryTag =="1" '>
+		   and r.pk_emp is not null
+		 </if>
+		   and h.date_Work = to_date(#{nowDate},'YYYYMMDDHH24MISS') 
+		   and h.cnt_used &lt; h.cnt_total 
+		   and (lpad(valid_month_begin,2,'0') || '-' || lpad(valid_day_begin,2,'0') &lt;= #{nowDay,jdbcType=VARCHAR}
+                 and lpad(valid_month_end,2,'0') || '-' || lpad(valid_day_end,2,'0') &gt;= #{nowDay,jdbcType=VARCHAR}
+                 and lpad(d_time.time_end, 8, '0') &gt;= #{nowTime,jdbcType=VARCHAR}
+                 and d_time.pk_dateslottime is not null )
+		 order by h.pk_schres,h.pk_schsrv
+	</select>
+	
+	<!-- 根据排班主键获得相关信息 -->
+	<select id="getPlanInfo" parameterType="java.lang.String" resultType="DynaBean">
+	   select ss.pk_sch,
+		      ss.pk_schres,
+		      ss.pk_schsrv,
+		      ss.pk_dateslot,
+		      sr.name,
+		      sr.pk_dept,
+		      sr.pk_emp
+		 from sch_sch ss
+		 left join sch_resource sr
+		   on ss.pk_schres = sr.pk_schres
+		   <if test="key != null and key != ''">
+				where ss.pk_sch = '${key}'
+		   </if>
+		
+	</select>
+
+	<!-- 查询患者 -->
+	<select id="getOpPiMaster" parameterType="com.zebone.nhis.common.module.pv.PvEncounter" resultType="com.zebone.nhis.pi.pub.vo.PibaseVo">
+		select distinct e.CODE_PV, e.EU_PVTYPE, e.PK_PI, e.PK_PV, e.BED_NO, e.PK_DEPT,bod.code_dept,bod.name_dept, e.PK_DEPT_NS,
+			   e.DATE_BEGIN, e.DATE_END,e.eu_status,
+		  case when e.DATE_CLINIC is null then e.DATE_BEGIN else e.DATE_CLINIC end as DATE_CLINIC,
+			   m.code_ip,m.code_pi,m.name_pi,m.dt_sex,m.birth_date,m.id_no,m.mobile,m.insur_no,
+			   m.code_op,m.barcode,m.pk_picate,m.dt_idtype,m.hic_no, m.mpi,m.flag_ehr,
+			   m.place_birth,m.dt_marry,m.dt_occu,m.dt_edu,m.dt_country,m.dt_nation,m.tel_no,
+			   m.wechat_no,m.email,m.name_rel,m.tel_rel,m.dt_ralation,m.addr_rel,m.dt_blood_abo,m.dt_blood_rh,
+			   m.addrcode_birth,m.addr_birth,m.addrcode_origin,m.addr_origin,
+			   m.addrcode_regi ,m.addr_regi ,m.addr_regi_dt,m.postcode_regi,
+			   m.addrcode_cur ,m.addr_cur ,m.addr_cur_dt,m.postcode_cur ,
+			   m.unit_work,m.tel_work,m.address,m.postcode_work,
+			   c.name as namePicate,
+			   c.pk_picate ,
+			   h.name as nameInsu
+		  from PV_ENCOUNTER e
+		 inner join pi_master m on m.pk_pi = e.pk_pi and m.del_flag = '0'
+		  left join pi_cate c on c.pk_picate = m.pk_picate and c.del_flag = '0'
+		  left join pi_card card on card.pk_pi = m.pk_pi and card.del_flag = '0' and card.eu_status = '0'
+		  left join bd_hp h on h.pk_hp = e.PK_INSU and h.del_flag = '0'
+		  left join pv_op op on op.pk_pv = e.pk_pv and op.del_flag = '0'
+		  left join pv_ip ip on ip.pk_pv = e.pk_pv and ip.del_flag = '0'
+		  left join bd_ou_dept bod on e.pk_dept = bod.pk_dept
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and e.del_flag = '0' and op.del_flag = '0' and to_char(e.date_reg,'yyyyMMdd') <![CDATA[>=]]> to_char(SYSDATE,'yyyyMMdd')
+			<!-- 0-不判断就诊状态，查全部；1-判断就诊状态，查0、1、3，再根据参数euStatus过滤；默认1 -->		
+			<if test="flagStatus == 1">
+				and (e.eu_status = '0' or e.eu_status = '1' or e.eu_status = '2')
+			</if>
+		    <if test="euPvtype != null and euPvtype != ''">
+		  		and e.EU_PVTYPE = #{euPvtype,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="euPvtype == 1 or euPvtype == 2 ">
+		  	    and (e.eu_status = '0' or e.eu_status = '1' or e.eu_status = '2')
+		  		and to_char(op.date_end,'yyyy-MM-DD') &gt;= to_char(#{dateEnd,jdbcType=TIMESTAMP},'yyyy-MM-DD')
+		  	</if> 
+		  	<if test="codePi != null and codePi != ''">
+		  		and m.code_Pi like '%'||#{codePi,jdbcType=VARCHAR}||'%'
+		  	</if>
+		  	<if test="namePi != null and namePi != ''">
+		  		and m.NAME_PI like '%'||#{namePi,jdbcType=VARCHAR}||'%'
+		  	</if>  	
+		  	<if test="dateEnd != null and dateEnd != ''">
+		  		and to_char(op.date_end,'yyyy-MM-DD') &gt;= to_char(#{dateEnd,jdbcType=TIMESTAMP},'yyyy-MM-DD')
+		  	</if> 
+		  	<if test="idNo != null and idNo != ''"><!--【门急诊】 证件号码 -->
+		  		and m.id_no = #{idNo,jdbcType=VARCHAR}
+		  	</if>
+  		</trim>
+  		order by e.CODE_PV desc
+	</select>
+
+    <!-- 根据患者主键获取患者当前挂号记录  Oracle -->
+    <select id="getPvOpVoTodayListOracle" parameterType="java.lang.String" resultType="com.zebone.nhis.ma.lb.vo.PvOpVo">
+		select en.*,op.pk_pvop,op.op_times,op.pk_schsrv,op.pk_res,op.pk_dateslot,op.pk_dept_pv,op.pk_emp_pv,op.name_emp_pv,op.ticketno,op.pk_sch,op.flag_first,op.pk_appo,res.name as resourcename,da.name_dateslot as dateslotName,settle.pk_settle as pkSettle
+		from pv_op op
+		inner join pv_encounter en on en.pk_pv = op.pk_pv and en.del_flag = '0' and en.pk_pi = #{pkPi,jdbcType=VARCHAR}
+		inner join sch_resource res on res.pk_schres = op.pk_res and res.del_flag = '0'		
+		left join bd_code_dateslot da on da.pk_dateslot = op.pk_dateslot
+		left join bl_settle settle on settle.pk_pv = en.pk_pv and settle.dt_sttype = '01'
+		where op.pk_org = #{pkOrg,jdbcType=VARCHAR} and op.del_flag = '0' and to_char(en.date_reg,'yyyyMMdd') <![CDATA[>=]]> to_char(SYSDATE,'yyyyMMdd') order by en.date_reg
+	</select>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+

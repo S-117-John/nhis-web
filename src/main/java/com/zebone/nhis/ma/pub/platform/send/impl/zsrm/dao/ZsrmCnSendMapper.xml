@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.dao.ZsrmCnSendMapper" >
+
+	<select id="getChargeInfo" parameterType="java.lang.String" resultType="DynaBean">
+		select st.CODE_ST,
+		pi.CODE_OP,
+		pv.NAME_PI,
+		pi.NAME_PI,
+		to_char(pi.BIRTH_DATE,'yyyy-MM-dd') as birth_date,
+		pv.CODE_PV as visitno,
+		pv.EU_PVTYPE,
+		dept.CODE_DEPT,
+		dept.NAME_DEPT,
+		diag.NAME_DIAG,
+		diag.CODE_ICD,
+		ord.ORDSN,
+		item.CODE as CODE_ITEM,
+		item.NAME as NAME_ITEM,
+		cate.name as name_cate,
+		cate.code code_cate,
+		item.SPEC as SPEC,
+		emp.CODE_EMP,
+		emp.NAME_EMP,
+		to_char(st.DATE_ST,'yyyy-MM-dd HH24:mi:ss') as DATE_ST,
+		deptapp.NAME_DEPT as NAME_DEPT_APP,
+		deptapp.CODE_DEPT AS CODE_DEPT_APP,
+		empapp.NAME_EMP as NAME_EMP_app,
+		empapp.CODE_EMP as CODE_EMP_app,
+		deptex.NAME_DEPT as NAME_DEPT_EX,
+		deptex.CODE_DEPT AS CODE_DEPT_EX,
+		dt.QUAN,
+		UNIT.NAME as name_UNIT,
+		dt.PRICE,
+		dt.barcode
+		from BL_OP_DT dt
+		inner join BL_SETTLE st on dt.PK_SETTLE=st.PK_SETTLE
+		inner join PV_ENCOUNTER pv on pv.PK_PV = st.PK_PV
+		inner join PI_MASTER pi on pi.PK_PI=st.PK_PI
+		left join BD_OU_DEPT dept on dept.PK_DEPT=pv.PK_DEPT
+		left join BD_OU_DEPT deptapp on deptapp.PK_DEPT=dt.PK_DEPT_app
+		left join BD_OU_DEPT deptex on deptex.PK_DEPT=dt.PK_DEPT_ex
+		left join pv_diag diag on diag.PK_PV = pv.PK_PV and diag.FLAG_MAJ ='1'
+		left join CN_ORDER ord on ord.PK_CNORD=dt.PK_CNORD
+		inner join bd_item item on item.PK_item=dt.PK_ITEM
+		left join BD_ITEMCATE cate on cate.PK_ITEMCATE=item.PK_ITEMCATE
+		left join BD_OU_EMPLOYEE emp on emp.PK_EMP=st.pk_emp_st
+		left JOIN BD_UNIT UNIT ON UNIT.PK_UNIT=DT.PK_UNIT
+		left join BD_OU_EMPLOYEE empapp on empapp.PK_EMP=dt.pk_emp_app
+		where 1=1 and item.dt_itemtype like '07%'
+		  <if test="pkCnords != null and pkCnords !='' ">
+		  	  and dt.pk_cnord in (${pkCnords}) 
+		  </if>
+		  <if test="pkCgops != null and pkCgops !='' ">
+		      and dt.pk_cgop in (${pkCgops}) 
+		  </if>
+    </select>
+    
+    <select id="getLisInfo" parameterType="java.lang.String" resultType="DynaBean">
+        SELECT ord.pk_dept,
+        ord.pk_dept_ns,
+        emp.code_emp,
+        emp.name_emp,
+        ord.eu_status_ord,
+        ord.code_apply,
+        ord.name_ord,
+        pv.name_pi,
+        pv.eu_pvtype,
+        pv.flag_spec,
+        def.name AS lab_name,
+        lab.dt_samptype,
+        deftype.name name_ordcate,
+        bdord.dt_ordcate,
+        pv.dt_sex,
+        bdord.code code_name,
+        lab.eu_status,
+        ord.code_ord,
+        pi.birth_date,
+        empOrdChk.code_emp code_emp_ord_chk,
+        empOrdChk.name_emp name_emp_ord_chk,
+        dept.code_dept code_dept_exec,
+        dept.name_dept name_dept_exec,
+        pv.bed_no,
+        term.diagcode,
+        term.diagname,
+        lab.note,
+        pi.code_pi,
+        pi.code_op,
+        pi.mobile,
+        pi.addr_cur_dt,
+        pv.code_pv,
+        empCol.code_emp code_emp_col,
+        empCol.name_emp name_emp_col,
+        lab.date_col,
+        ord.date_enter,
+		ordtype.CODE code_ordtype,
+		ordtype.NAME name_ordtype,
+		diag.code_icd,
+		diag.name_diag,
+		bdou.code_dept code_dept_area,
+		bdou.name_dept name_dept_area
+        FROM CN_LAB_APPLY lab
+        inner join cn_order ord on ord.pk_cnord = lab.pk_cnord
+         left join BD_ORDTYPE ordtype on ordtype.code = ord.code_ordtype
+        left join bd_ou_employee emp on emp.pk_emp = ord.pk_emp_ord
+        left join bd_ou_employee empOrdChk on empOrdChk.pk_emp = ord.pk_emp_chk
+        LEFT JOIN bd_ou_dept dept on dept.pk_dept = ord.pk_dept_exec
+        left join bd_ou_employee empCol on empCol.pk_emp = lab.pk_emp_col
+        left join BD_DEFDOC def on def.code = lab.dt_samptype and def.del_flag = '0' and def.code_defdoclist = '030200'
+        left join bd_ord bdord on bdord.pk_ord = ord.pk_ord
+        left join BD_DEFDOC deftype on deftype.code = bdord.dt_ordcate and deftype.del_flag = '0' and deftype.code_defdoclist = '030000'
+        inner join PV_ENCOUNTER pv on pv.pk_pv = ord.pk_pv
+        left join bd_ou_dept bdou on bdou.pk_dept =pv.PK_DEPT_AREA
+        left join PV_DIAG diag on pv.pk_pv = diag.pk_pv and  diag.DEL_FLAG = '0' and diag.FLAG_MAJ='1'
+        left join bd_term_diag term on term.pk_diag = diag.pk_diag
+        INNER JOIN PI_MASTER pi on pi.pk_pi = pv.pk_pi
+        WHERE ord.DEL_FLAG = '0' and  lab.DEL_FLAG = '0' AND ord.pk_cnord in
+		<foreach collection="list" open="(" separator="," close=")" item="pk" index="index">
+			#{pk,jdbcType=VARCHAR}
+		</foreach>
+    </select>
+
+    <select id="getRisInfo" parameterType="java.util.List" resultType="DynaBean">
+        SELECT ord.pk_dept,
+        ord.pk_dept_ns,
+        emp.code_emp,
+        emp.name_emp,
+        ord.eu_status_ord,
+        ord.code_apply,
+        ord.name_ord,
+        pv.name_pi,
+        pv.eu_pvtype,
+        pv.flag_spec,
+        deftype.name name_ordcate,
+        bdord.dt_ordcate,
+        pv.dt_sex,
+        bdord.code code_name,
+        lab.eu_status,
+        ord.code_ord,
+        pi.birth_date,
+        empOrdChk.code_emp code_emp_ord_chk,
+        empOrdChk.name_emp name_emp_ord_chk,
+        dept.code_dept code_dept_exec,
+        dept.name_dept name_dept_exec,
+        pv.bed_no,
+        term.diagcode,
+        term.diagname,
+        lab.note,
+        pi.code_pi,
+        pi.code_op,
+        pi.mobile,
+        pi.addr_cur_dt,
+        pv.code_pv,
+        ord.date_enter,
+        deftypebody.name name_body,
+        lab.desc_body,
+        ord.quan_cg,
+        ord.price_cg,
+		ordtype.CODE code_ordtype,
+		ordtype.NAME name_ordtype,
+		ord.pk_cnord,
+		diag.code_icd,
+		diag.name_diag,
+		lab.note_dise,
+		ins.geso_val,
+		bdou.code_dept code_dept_area,
+		bdou.name_dept name_dept_area
+        FROM cn_ris_apply lab
+        inner join cn_order ord on ord.pk_cnord = lab.pk_cnord
+        left join BD_ORDTYPE ordtype on ordtype.code = ord.code_ordtype
+        left join BD_DEFDOC deftypebody on deftypebody.code = lab.desc_body and deftypebody.del_flag = '0' and deftypebody.code_defdoclist = '030101'
+        left join bd_ou_employee emp on emp.pk_emp = ord.pk_emp_ord
+        left join bd_ou_employee empOrdChk on empOrdChk.pk_emp = ord.pk_emp_chk
+        LEFT JOIN bd_ou_dept dept on dept.pk_dept = ord.pk_dept_exec
+        left join bd_ord bdord on bdord.pk_ord = ord.pk_ord
+        left join BD_DEFDOC deftype on deftype.code = bdord.dt_ordcate and deftype.del_flag = '0' and deftype.code_defdoclist = '030000'
+        inner join PV_ENCOUNTER pv on pv.pk_pv = ord.pk_pv
+		left join bd_ou_dept bdou on bdou.pk_dept =pv.PK_DEPT_AREA
+		left join PV_DIAG diag on pv.pk_pv = diag.pk_pv and  diag.DEL_FLAG = '0' and diag.FLAG_MAJ='1'
+        left join bd_term_diag term on term.pk_diag = diag.pk_diag
+		left join ins_qgyb_pv ins on ins.pk_pv = pv.pk_pv
+		INNER JOIN PI_MASTER pi on pi.pk_pi = pv.pk_pi
+        WHERE ord.DEL_FLAG = '0' and  lab.DEL_FLAG = '0' AND ord.pk_cnord in
+		<foreach collection="list" open="(" separator="," close=")" item="pk" index="index">
+			#{pk,jdbcType=VARCHAR}
+		</foreach>
+    </select>
+
+    <select id="qryOpApplyInfo" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT
+			ord.code_apply,
+			opdiag.diagname,
+			note_ord,
+			op.date_apply,
+			op.eu_optype,
+			doc.NAME anae_name,
+			doc.CODE anae_code,
+			empord.code_emp ord_emp_code,
+			empord.name_emp ord_emp_name,
+			ord.date_chk,
+			opdiag.diagcode,
+			op.desc_op,
+			leve.CODE op_level_code,
+			leve.NAME op_level_name,
+			op.date_plan,
+			opemp.code_emp op_emp_code,
+			opemp.name_emp op_emp_name,
+			opdept.code_dept op_dept_code,
+			opdept.name_dept op_dept_name,
+			pv.code_pv,
+			pi.address,
+			pv.eu_pvtype,
+			pv.date_admit,
+			pi.code_ip,
+			pi.code_op,
+			pi.pk_pi,
+			pi.id_no,
+			pi.insur_no,
+			pi.name_pi,
+			pi.tel_no,
+			pi.birth_date,
+			pv.bed_no,
+			bed.houseno,
+			bed.code bed_code,
+			bed.name bed_name,
+			diag.NAME_DIAG,
+			diag.CODE_ICD,
+			op.pk_ordop ,
+			op.eu_status eu_status_op,
+			ord.ordsn,
+			pi.code_pi,
+			asleve.CODE op_asalevel_code,
+			asleve.NAME op_asalevel_name,
+			incitype.CODE op_incitype_code,
+			incitype.NAME op_incitype_name,
+			ordtype.CODE code_ordtype,
+			ordtype.NAME name_ordtype,
+			op.name_emp_phy_op,
+			empop.CODE_EMP code_emp_op,
+			dept.code_dept code_dept_exec,
+			dept.name_dept name_dept_exec,
+			pv.PK_DEPT,
+			pv.PK_DEPT_NS,
+			op.desc_diag_pre,
+			op.dt_posi,
+			d.NAME name_posi
+		 from cn_order ord
+         inner join cn_op_apply op on op.pk_cnord=ord.pk_cnord
+         left join pv_encounter pv on pv.pk_pv =ord.pk_pv
+         left join pi_master pi on pi.pk_pi=pv.pk_pi
+         left join BD_ORDTYPE ordtype on ordtype.code = ord.code_ordtype
+         left join bd_defdoc doc on doc.code=op.dt_anae and doc.code_defdoclist='030300'
+         left join bd_ou_employee empord on empord.pk_emp=ord.pk_emp_ord
+         left join bd_ou_employee empop on empop.pk_emp=op.pk_emp_phy_op
+         LEFT JOIN bd_ou_dept dept on dept.pk_dept = ord.pk_dept_exec
+         left join bd_term_diag opdiag on opdiag.pk_diag=op.pk_op and opdiag.dt_system='01'
+         left join bd_ou_employee opemp on opemp.pk_emp=op.pk_emp_phy_op
+         left join bd_ou_dept opdept on opdept.pk_dept=op.pk_dept_anae
+         left join bd_defdoc leve on leve.code=op.dt_oplevel and leve.code_defdoclist='030305'
+         left join bd_defdoc asleve on asleve.code=op.dt_asalevel and asleve.code_defdoclist='030302'
+         left join bd_defdoc incitype on incitype.code=op.dt_incitype and incitype.code_defdoclist='030303'
+         left join bd_res_bed bed on bed.pk_pi =pi.pk_pi
+         left join pv_diag diag on diag.PK_PV = pv.PK_PV and diag.FLAG_MAJ ='1'
+         left join bd_defdoc d on  d.code=op.DT_POSI and d.code_defdoclist='030301'
+		where ord.PK_CNORD=#{pkCnord,jdbcType=VARCHAR}
+	</select>
+
+	<select id="getTreatmentInfo" parameterType="java.util.List" resultType="DynaBean">
+		SELECT ord.pk_dept,
+		ord.pk_dept_ns,
+		emp.code_emp,
+		emp.name_emp,
+		ord.eu_status_ord,
+		ord.code_apply,
+		ord.name_ord,
+		pv.name_pi,
+		pv.eu_pvtype,
+		deftype.name name_ordcate,
+		bdord.dt_ordcate,
+		pv.dt_sex,
+		bdord.code code_name,
+		ord.code_ord,
+		pi.birth_date,
+		empOrdChk.code_emp code_emp_ord_chk,
+		empOrdChk.name_emp name_emp_ord_chk,
+		dept.code_dept code_dept_exec,
+		dept.name_dept name_dept_exec,
+		pv.bed_no,
+		term.diagcode,
+		term.diagname,
+		pi.code_pi,
+		pi.code_op,
+		pi.mobile,
+		pi.addr_cur_dt,
+		pv.code_pv,
+		ord.date_enter,
+		ord.quan_cg,
+		ord.price_cg,
+		ordtype.CODE code_ordtype,
+		ordtype.NAME name_ordtype,
+		ord.pk_cnord,
+		diag.code_icd,
+		diag.name_diag,
+		ord.code_freq,
+		ord.code_supply,
+		ord.days,
+		sp.name name_supply,
+		ord.NOTE_ORD,
+		bdou.code_dept code_dept_area,
+		bdou.name_dept name_dept_area
+		FROM cn_order ord
+		left join BD_ORDTYPE ordtype on ordtype.code = ord.code_ordtype
+		left join bd_ou_employee emp on emp.pk_emp = ord.pk_emp_ord
+		left join bd_ou_employee empOrdChk on empOrdChk.pk_emp = ord.pk_emp_chk
+		LEFT JOIN bd_ou_dept dept on dept.pk_dept = ord.pk_dept_exec
+		left join bd_ord bdord on bdord.pk_ord = ord.pk_ord
+		left join BD_DEFDOC deftype on deftype.code = bdord.dt_ordcate and deftype.del_flag = '0' and deftype.code_defdoclist = '030000'
+		inner join PV_ENCOUNTER pv on pv.pk_pv = ord.pk_pv
+		left join bd_ou_dept bdou on bdou.pk_dept =pv.PK_DEPT_AREA
+		left join PV_DIAG diag on pv.pk_pv = diag.pk_pv and  diag.DEL_FLAG = '0' and diag.FLAG_MAJ='1'
+		left join bd_term_diag term on term.pk_diag = diag.pk_diag
+		inner join bd_supply sp on sp.code=ord.code_supply
+		INNER JOIN PI_MASTER pi on pi.pk_pi = pv.pk_pi
+		WHERE ord.DEL_FLAG = '0' and ord.code_ordtype like '05%'  AND ord.pk_cnord in
+		<foreach collection="list" open="(" separator="," close=")" item="pk" index="index">
+			#{pk,jdbcType=VARCHAR}
+		</foreach>
+	</select>
+	<select id="getPtPresInfo" parameterType="java.util.List" resultType="DynaBean">
+		SELECT
+		pres.pk_presocc,
+		pres.pres_no,
+		cnpre.dt_prestype,
+		pd.code,
+		pd.name,
+		cn.quan,
+		unit.name as unit_name,
+		pi.CODE_OP,
+		pi.NAME_PI,
+		pi.CODE_PI,
+		pi.dt_sex,
+		pv.code_pv,
+		dept.code_dept,
+		dept.name_dept,
+		cn.date_enter,
+		cn.date_effe,
+		emp.code_emp empord_code,
+		emp.name_emp empord_name,
+		empchk.code_emp empchk_code,
+		empchk.name_emp empchk_name,
+		empinput.code_emp empinput_code,
+		empinput.name_emp empinput_name,
+		cn.groupno,
+		cnpre.note,
+		supply.code supply_code,
+		supply.code supply_name,
+		freq.name freq_name,
+		cn.dosage,
+		unitdos.name as unitdos_name,
+		cn.quan_disp,
+		deptexe.code_dept code_deptexe,
+		deptexe.name_dept name_deptexe,
+		pv.eu_pvtype
+		FROM ex_pres_occ pres
+		inner join cn_order cn on cn.PK_PRES = pres.pk_pres
+		INNER JOIN pv_encounter pv ON pres.pk_pv = pv.pk_pv
+		INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+		INNER JOIN CN_PRESCRIPTION cnpre ON cnpre.PK_PRES = pres.PK_PRES
+		left join bd_pd pd on pd.pk_pd=cn.pk_ord
+		left join bd_unit unit on unit.pk_unit=cn.pk_unit
+		left join bd_ou_dept dept on dept.pk_dept=cn.pk_dept
+		left join bd_ou_dept deptexe on deptexe.pk_dept=cn.pk_dept_exec
+		left join bd_ou_employee emp on emp.pk_emp=cn.pk_emp_ord
+		left join bd_ou_employee empchk on empchk.pk_emp=cn.pk_emp_chk
+		left join bd_ou_employee empinput on empinput.pk_emp=cn.pk_emp_input
+		left join bd_supply supply on supply.code=cn.code_supply
+		left join bd_term_freq freq on freq.code=cn.code_freq
+		left join bd_unit unitdos on unitdos.pk_unit=cn.pk_unit_dos
+		where pres.pk_presocc in
+		<foreach collection="list" index="index" close=")" item="pkPresocc" open="(" separator=",">
+			#{pkPresocc,jdbcType=VARCHAR}
+		</foreach>
+		or pres.PK_PRES in
+		<foreach collection="list" index="index" close=")" item="pkPresocc" open="(" separator=",">
+			#{pkPresocc,jdbcType=VARCHAR}
+		</foreach>
+	</select>
+
+
+	<select id="getCnOrderInfo" parameterType="java.util.List" resultType="DynaBean">
+		SELECT cn.*
+		FROM cn_order cn
+		where cn.pk_cnord in
+		<foreach collection="list" index="index" close=")" item="pkCnOrd" open="(" separator=",">
+			#{pkCnOrd,jdbcType=VARCHAR}
+		</foreach>
+	</select>
+</mapper>

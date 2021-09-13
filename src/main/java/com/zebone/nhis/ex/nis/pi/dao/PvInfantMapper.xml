@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ex.nis.pi.dao.PvInfantMapper">
+	<select id="queryInfantAndPV"  parameterType="java.util.Map" resultType="DynaBean">
+		select 
+		infant.code,
+		infant.pk_pv as pkPvM,
+		infant.pk_infant,
+		infant.pk_pi_infant,
+		infant.name,
+		infant.dt_sex,
+		infant.date_birth,
+		infant.sort_no,
+		pi.dt_country,
+		pi.dt_nation,
+		pi.mobile,
+		pimother.name_pi,
+		pv.name_rel,
+		pv.tel_rel,
+		pv.pk_dept,
+		pv.pk_dept_ns,
+		pv.pk_pv  
+		from pv_infant infant
+		left join pi_master pi on infant.pk_pi_infant = pi.pk_pi 
+		left join pv_encounter pv on infant.pk_pv_infant = pv.pk_pv 
+		left join pi_master pimother on  pimother.pk_pi = infant.pk_pi  
+		where 1=1  
+		 <if test=" pkPv != null  and  pkPv != ''">
+		        and infant.pk_pv_infant = #{pkPv,jdbcType=CHAR} 
+	      </if>	
+	      <if test=" sortNo != null  and  sortNo != ''">
+		        and infant.sort_no = #{sortNo,jdbcType=INTEGER} 
+	      </if>	
+	      <if test=" pkInfant != null  and  pkInfant != ''">
+		        and infant.pk_infant = #{pkInfant,jdbcType=CHAR} 
+	      </if>	
+		
+	</select>
+	<select id="queryInfantListByRec"  parameterType="java.util.Map" resultType="com.zebone.nhis.ex.pub.vo.PvInfantVo">
+		select recdt.pk_laborrecdt,
+		   recdt.pk_laborrec,
+		   recdt.pk_pv,
+		   recdt.date_out date_birth,
+		   recdt.dt_out_mode,
+		   recdt.pos_fo,
+		   recdt.pla_about,
+		   recdt.pla_defect_len,
+		   recdt.pla_defect_wid,
+		   recdt.pla_rough_len,
+		   recdt.pla_rough_wid,
+		   recdt.pla_len,
+		   recdt.pla_wid,
+		   recdt.pla_high,
+		   recdt.pla_wight,
+		   recdt.pla_others,
+		   recdt.caul_about,
+		   recdt.caul_defect_len,
+		   recdt.caul_defect_wid,
+		   recdt.caul_others,
+		   recdt.umb_len,
+		   recdt.umb_about,
+		   recdt.umb_cross_cycle,
+		   recdt.umb_turn_cycle,
+		   recdt.umb_poistion,
+		   recdt.umb_others ,
+		   recdt.umb_adh,
+		   recdt.am_fluid_after,
+		   recdt.am_fluid_other,
+		   recdt.am_fluid_anum,
+		   recdt.am_fluid_all,
+		   recdt.sort_no,
+		   recdt.dt_sex_inf dt_sex,
+		   recdt.date_begin_sx,
+		   recdt.date_end_sx ,
+		   recdt.out_about,
+		   recdt.dt_breath,
+		   recdt.dt_asp,
+		   recdt.inf_wight weight,
+		   recdt.inf_len len,
+		   recdt.other_flag,
+		   recdt.is_pm ,
+		   recdt.pm_part,
+		   recdt.pm_len,
+		   recdt.pm_wid,
+		   recdt.pm_high,
+		   rec.pk_emp_hy,
+		   rec.pre_weeks,
+		   infant.code,                
+	       infant.name,                 
+	       recdt.week_preg,           
+	   	   infant.eu_birth,                     
+		   recdt.eu_inf,             
+		   rec.dt_excep,            
+		   rec.eu_hb,                
+		   recdt.time_early,           
+		   recdt.op_reason,            
+		   recdt.special,              
+		   infant.eye_lev,              
+		   infant.ear_lev,             
+		   infant.nose_lev,            
+		   infant.lip_lev,              
+		   infant.tongue_lev,           
+		   infant.mouth_lev,            
+		   infant.neck_lev,            
+		   infant.limb_lev,            
+		   infant.anus_lev,             
+		   infant.gen_lev ,   
+		   infant.umb_lev,          
+		   infant.eu_fra,               
+		   infant.skin_gene ,           
+		   infant.oxy,   
+		   infant.oxy_note,             
+		   infant.eu_mec,               
+		   infant.eu_pee ,              
+		   infant.others,               
+		   infant.eu_anabiosis,        
+		   infant.eu_anatype ,          
+		   infant.drug_anabiosis,                     
+		   infant.eu_status_adt,        
+		   infant.reason_adt ,          
+		   infant.date_adt,                   
+		   infant.remark,              
+		   infant.pk_emp_dir,          
+		   infant.name_emp_dir, 
+		   infant.pk_infant,
+		   infant.name_app,
+		   infant.dt_relation,
+		   infant.dt_iden_app,
+		   infant.iden_no_app,
+		   infant.dt_pro,
+		   infant.dt_city,
+		   infant.dt_region,
+		   infant.street     
+		from pv_labor_rec_dt recdt
+		left join  pv_infant infant on recdt.pk_laborrecdt = infant.pk_laborrecdt
+		left join  pv_labor_rec rec on rec.pk_pv = recdt.pk_pv
+		where 1=1  
+		 <if test=" pkPv != null  and  pkPv != ''">
+		        and recdt.pk_pv = #{pkPv,jdbcType=CHAR} 
+	      </if>	
+	      <if test=" pkLaborrecdt != null  and  pkLaborrecdt != ''">
+		        and recdt.pk_laborrecdt = #{pkLaborrecdt,jdbcType=CHAR} 
+	      </if>
+	      <if test=" sortNo != null  and  sortNo != ''">
+		        and recdt.sort_no = #{sortNo,jdbcType=INTEGER} 
+	      </if>		
+	      <if test=" pkInfant != null  and  pkInfant != ''">
+		        and infant.pk_infant = #{pkInfant,jdbcType=CHAR} 
+	      </if>	
+	      order by infant.sort_no
+	</select>
+	<select id="queryInfantListByInfant"  parameterType="java.util.Map" resultType="com.zebone.nhis.ex.pub.vo.PvInfantVo">
+		select recdt.pk_laborrecdt,
+		   recdt.pk_laborrec,
+		   recdt.pk_pv,
+		   <!-- recdt.dt_out_mode,-->
+		   recdt.pos_fo,
+		   recdt.pla_about,
+		   recdt.pla_defect_len,
+		   recdt.pla_defect_wid,
+		   recdt.pla_rough_len,
+		   recdt.pla_rough_wid,
+		   recdt.pla_len,
+		   recdt.pla_wid,
+		   recdt.pla_high,
+		   recdt.pla_wight,
+		   recdt.pla_others,
+		   recdt.caul_about,
+		   recdt.caul_defect_len,
+		   recdt.caul_defect_wid,
+		   recdt.caul_others,
+		   recdt.umb_len,
+		   recdt.umb_about,
+		   recdt.umb_cross_cycle,
+		   recdt.umb_turn_cycle,
+		   recdt.umb_poistion,
+		   recdt.umb_others ,
+		   recdt.umb_adh,
+		   recdt.am_fluid_after,
+		   recdt.am_fluid_other,
+		   recdt.am_fluid_anum,
+		   recdt.am_fluid_all,
+		   recdt.date_begin_sx,
+		   recdt.date_end_sx ,
+		   recdt.out_about,
+		   --recdt.dt_breath,
+		   recdt.dt_asp,
+		   recdt.other_flag,
+		   recdt.is_pm ,
+		   recdt.pm_part,
+		   recdt.pm_len,
+		   recdt.pm_wid,
+		   recdt.pm_high,
+		   recdt.time_early,           
+		   recdt.op_reason,            
+		   recdt.special,              
+	       recdt.week_preg,           
+		   rec.pre_weeks,
+		   recdt.eu_inf,             
+		   rec.pk_emp_hy,
+		   rec.dt_excep,            
+		   rec.eu_hb,       
+		   infant.pk_pv,
+		   infant.pk_pv_infant,
+		   infant.pk_pi_infant,        
+		   infant.dt_sex,
+		   infant.sort_no,
+		   infant.weight,
+		   infant.len,
+		   infant.code,                
+	       infant.name, 
+	       infant.date_birth,                
+	   	   infant.eu_birth ,                     
+		   infant.eye_lev,              
+		   infant.ear_lev,             
+		   infant.nose_lev,            
+		   infant.lip_lev,              
+		   infant.tongue_lev,           
+		   infant.mouth_lev,            
+		   infant.neck_lev,            
+		   infant.limb_lev,            
+		   infant.anus_lev,             
+		   infant.gen_lev ,   
+		   infant.umb_lev,          
+		   infant.eu_fra,               
+		   infant.skin_gene ,           
+		   infant.oxy  ,  
+		   infant.oxy_note,              
+		   infant.eu_mec,               
+		   infant.eu_pee ,              
+		   infant.others,               
+		   infant.eu_anabiosis,        
+		   infant.eu_anatype ,          
+		   infant.drug_anabiosis,                     
+		   infant.eu_status_adt,        
+		   infant.reason_adt ,          
+		   infant.date_adt,                   
+		   infant.remark,              
+		   infant.pk_emp_dir,          
+		   infant.name_emp_dir, 
+		   infant.pk_infant,
+		   infant.name_app,
+		   infant.dt_relation,
+		   infant.dt_iden_app,
+		   infant.iden_no_app,
+		   infant.dt_pro,
+		   infant.dt_city,
+		   infant.dt_region,
+		   infant.street,
+		   infant.dt_labresult2,
+		   infant.dt_breath,
+		   infant.dt_infantoutcome,
+		   infant.cnt_rescue,
+		   infant.cnt_succeed,
+		   infant.dt_out_mode,
+	       infant.weeks_preg,
+	       infant.weeks_inpreg,
+	       infant.num_preg,
+	       infant.num_product
+		from  pv_infant infant  
+		left join pv_labor_rec_dt recdt on recdt.pk_laborrecdt = infant.pk_laborrecdt
+		  <if test=" pkPv != null  and  pkPv != ''">
+		        and recdt.pk_pv = #{pkPv,jdbcType=CHAR} 
+	      </if>	
+	      <if test=" pkLaborrecdt != null  and  pkLaborrecdt != ''">
+		        and recdt.pk_laborrecdt = #{pkLaborrecdt,jdbcType=CHAR} 
+	      </if>
+	      <if test=" sortNo != null  and  sortNo != ''">
+		        and recdt.sort_no = #{sortNo,jdbcType=INTEGER} 
+	      </if>		
+		left join  pv_labor_rec rec on rec.pk_pv = recdt.pk_pv
+		where 1=1  
+		  <if test=" pkInfant != null  and  pkInfant != ''">
+		        and infant.pk_infant = #{pkInfant,jdbcType=CHAR} 
+	      </if>	
+	      order by infant.sort_no
+	</select>
+	<select id="queryRecList"  parameterType="java.lang.String" resultType="com.zebone.nhis.ex.pub.vo.PvInfantVo">
+		select recdt.pk_laborrecdt,
+		   	recdt.pk_laborrec,
+		   recdt.pk_pv,
+		   recdt.date_out date_birth,
+		   recdt.sort_no,
+		   recdt.dt_sex_inf dt_sex,
+		   recdt.inf_wight weight,
+		   recdt.inf_len len,               
+	       infant.name,                 
+		   infant.pk_infant     
+		from pv_labor_rec_dt recdt
+		left join  pv_infant infant on recdt.pk_laborrecdt = infant.pk_laborrecdt 
+		where  recdt.pk_pv = #{pkPv,jdbcType=CHAR}  and infant.PK_INFANT is null   
+		order by recdt.sort_no
+	</select>
+	<select id="queryInfantByPv"  parameterType="java.util.Map" resultType="DynaBean">
+		select 
+		infant.pk_infant,
+		infant.date_birth,
+		infant.pk_pv,
+		pvm.pk_dept_ns,
+		pvm.name_pi 
+		from  pv_encounter pv 
+		inner join pv_infant infant on infant.pk_pi_infant = pv.pk_pi 
+		inner join pv_encounter pvm on pvm.pk_pv = infant.pk_pv 
+		where pv.pk_pv = #{pkPv,jdbcType=CHAR}  
+	</select>
+	<select id="getInfantNoBedList"  parameterType="java.util.Map" resultType="DynaBean">
+		select 
+		pv.code_pv,
+		pi.code_ip,
+		pv.dt_sex,
+		pv.age_pv,
+		pv.eu_status,
+		pv.name_pi,
+		pv.date_reg,
+		<!-- '全自费' as hpname, -->
+		hp.name as hpname,
+		hp.code as hpcode,
+		hp.eu_hptype,
+		case infant.eu_status_adt when '0' then '新出生' when '2' then '转入院转回' end  as adtType,
+		'' as dept_name, 
+		'' as dept_ns_name,
+		'' as pk_adt,
+		pv.pk_dept,
+        pv.pk_dept_ns,
+        pv.pk_pi,
+        pv.pk_pv,
+        pv.date_begin,
+		infant.date_birth,
+		infant.eu_status_adt,
+		infant.pk_infant,
+		infant.sort_no,
+		pvmother.name_pi name_pi_mother,
+		pvmother.bed_no bed_no_mother,
+		'1' as flag_infant,pv.name_emp_tre,ip.name_diag 
+		from pv_encounter pv  
+		inner join pv_infant infant on pv.pk_pv = infant.pk_pv_infant 
+	    inner join pv_encounter pvmother on pvmother.pk_pv = infant.pk_pv
+		inner join pi_master pi on pv.pk_pi = pi.pk_pi
+		left  join pv_ip ip on pv.pk_pv = ip.pk_pv and ip.del_flag = '0' 
+		left join pv_insurance ins on pv.pk_pv=ins.pk_pv and ins.flag_maj = '1'
+		inner join bd_hp hp on hp.pk_hp = ins.pk_hp 
+		where  pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}  
+		and pv.eu_status = '0'  and pv.eu_pvtype = '3' 
+		and infant.eu_status_adt in ('0','2')  <!-- 新生或转出院婴儿 -->   
+		 <if test=" pkPv != null  and  pkPv != ''">
+		        and pv.pk_pv = #{pkPv,jdbcType=CHAR} 
+	      </if>	  
+	</select>
+	<select id="getInfantListByMother" parameterType="java.util.Map" resultType="DynaBean">
+	    select pvinf.pk_pv,pvinf.bed_no,pvinf.pk_pi,inf.sort_no,bed.code_fa
+	    from pv_infant inf
+	    inner join pv_encounter pvinf on pvinf.pk_pv = inf.pk_pv_infant
+	    inner join bd_res_bed bed on bed.pk_pi = pvinf.pk_pi and bed.pk_ward = #{pkDeptNs,jdbcType=CHAR} and bed.del_flag = '0'
+	    where pvinf.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	    and inf.pk_pv = #{pkPv,jdbcType=CHAR}
+	    and pvinf.flag_in='1'
+	    and pvinf.eu_status='1'
+	    order by bed_no
+	</select>
+</mapper>

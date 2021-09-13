@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.PlatFormPayOrderDetailMapper">
+    <select id="getPayOrderDetail" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.PayOrderDetailReq"
+            resultType="DynaBean">
+		select pv.name_pi   username,
+			st.amount_st payamout,
+			iitem.name   detailfee,
+			cg.pk_cgop   detailid,
+			cg.name_cg   detailname,
+			cg.quan      detailcount,
+			unit.name    detailunit,
+			cg.amount    detailamout
+		from pv_encounter pv
+			inner join bl_settle st on pv.pk_pv = st.pk_pv
+			inner join bl_op_dt cg on st.pk_settle = cg.pk_settle
+			inner join bd_unit unit on cg.pk_unit = unit.pk_unit
+			inner join bd_invcate_item iitem on cg.code_bill = iitem.code
+			inner join bd_invcate icate on iitem.pk_invcate = icate.pk_invcate
+		where st.code_st = #{orderIdHis,jdbcType=VARCHAR}
+			and icate.eu_type = '0'
+    </select>
+</mapper>

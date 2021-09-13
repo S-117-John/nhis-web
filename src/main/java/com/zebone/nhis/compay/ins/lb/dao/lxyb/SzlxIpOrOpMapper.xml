@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.compay.ins.lb.dao.lxyb.SzlxIpOrOpMapper">
+	<select id="getHpAdmit" parameterType="java.util.Map" resultType="DynaBean">
+		select
+  			id,ickh,fylb,ylfwjgbm,ywdm,ylfs,yllb,cfys,
+  			czy,czrq,icdbmgz,icdjbbm,icdjbmc,djyy,ksmc,
+ 		 	djbq,djcw,djdm,pk_pv,ywlx,pk_org
+		from ins_szlx_mzdj
+		where pk_pv=#{pkPv,jdbcType=VARCHAR} and del_flag='0'
+		order by ins_szlx_mzdj.create_time
+	</select>
+	
+	<select id="getHpAdmitByDjdm" parameterType="java.util.Map" resultType="DynaBean">
+		select
+  			id,ickh,fylb,ylfwjgbm,ywdm,ylfs,yllb,cfys,
+  			czy,czrq,icdbmgz,icdjbbm,icdjbmc,djyy,ksmc,
+ 		 	djbq,djcw,djdm,pk_pv,ywlx,pk_org
+		from ins_szlx_mzdj
+		where DJDM=#{djdm,jdbcType=VARCHAR} and del_flag='0'
+		order by ins_szlx_mzdj.create_time
+	</select>
+	
+	<select id="getYbJsData" parameterType="java.util.Map" resultType="DynaBean">
+		select
+		  id,ickh,fylb,ylfwjgbm,djdm,jscllx,ywdm,sfsygrzh,czy,yydjzzfy,
+		  bz,jspjh,cwqj,bcqzhye,stzycs,zycs,zfy,fwnfy,cbzfy,zfeify,zffy,
+		  jlyzfy,ylyzfy,ylyzffy,zfyzfy,jlxmzfy,ylxmzfy,ylxmzffy,zfxmzfy,
+		  jbyljjzf,jbylgrzf,yljzjjzf,yljzjjgrzf,qybcbxjjzf,qybcbxgrzf,
+		  gwybcgrzf,grzhzf,xjzf,tjtlxmzfy,tjtlxmzffy,bcqfbz,cgdbjzfdfy,
+		  dydjjzf,dydgrzf,dedjjzf,dedgrzf,dsdjjzf,dsdgrzf,dsidjjzf,dsidgrzf,
+		  dwdjjzf,dwdgrzf,dldjjzf,dldgrzf,dqdjjzf,dqdgrzf,dbdjjzf,dbdgrzf,
+		  debzj,bcqfwnfylj,jbyljjfwnlj,dbjzjjfwnlj,dqywjjzflj,lxjjdbdydzf,
+		  lxjjbxgsdydzf,lxjjdbdedzf,lxbxgsdedzf,lxjjdbdsdzf,lxbxgsdsdzf,
+		  lxjjdbdsidzf,lxbxgsdsidzf,bxgszf,lxdbdwzf,lxjbyldwzf,pk_org,ywlx,pk_pv
+		  pk_settle 
+		from ins_szlx_js
+		  where  del_flag='0'
+		  <if test="pkSettle !=null and pkSettle !='' ">
+					and pk_settle=#{pkSettle,jdbcType=VARCHAR}
+		  </if>
+		   <if test="id !=null and id !='' ">
+					and id=#{id,jdbcType=VARCHAR}
+		  </if>
+	</select>
+	
+	<select id="qryLxItemWithInfo" parameterType="java.util.Map" resultType="DynaBean">
+	 	select DISTINCT
+  			isim.pk_insitemmap,bi.pk_item,bi.name,bi.code,bi.name_prt,bi.spec,
+  			bi.price,bi.pk_unit,isi.itemcode,isi.itemname,isi.categoryid,isi.itemclass,bi.spcode,
+  			isi.itemcodestd,isi.imepinyin,isi.imewubi,isi.measureid,isi.isactive,isi.description,isim.create_time,bf.name as factory_name
+		from bd_item bi
+			inner join ins_szyb_item_map isim on isim.pk_item=bi.PK_ITEM and bi.del_flag='0'
+			inner join ins_szlx_item isi on isim.code=isi.itemcode and isi.del_flag='0'
+			left join bd_factory bf on bi.pk_factory = bf.pk_factory
+		where isim.pk_hp=#{pkHp,jdbcType=VARCHAR} and isim.del_flag='0'
+		    <if test="euActive != null and euActive != '' ">
+			  and bi.flag_active=#{euActive,jdbcType=VARCHAR}
+			</if>
+	</select>
+	<select id="qryLxPdWithInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select DISTINCT
+        	bp.pk_pd pk_items,bp.name,bp.short_name,bp.spcode,bf.name factory_name,bp.spec,
+  			bp.dt_dosage,bp.price,bp.pk_unit_pack,bp.dt_abrd,isim.pk_insitemmap,
+        	isp.itemcode,isp.itemname,isp.itemclass,isp.categoryid,isp.imepinyin,
+        	isp.imewubi,itemcodestd,isp.measureid,isp.itemdosage,isp.isactive,isp.description,isim.create_time
+		from bd_pd bp
+			inner join bd_factory bf on bf.pk_factory=bp.pk_factory
+			inner join bd_pd_store bps on bp.pk_pd=bps.pk_pd
+			inner join ins_szyb_item_map isim on isim.pk_item=bp.pk_pd and bp.del_flag='0'
+			inner join ins_szlx_pd isp on isp.itemcode=isim.code  and isp.del_flag='0'
+			where isim.pk_hp=#{pkHp,jdbcType=VARCHAR} and isim.del_flag='0' 
+			<if test="euActive != null and euActive != '' ">
+			  and bp.flag_stop=#{euActive,jdbcType=VARCHAR}
+			</if>
+	</select>
+	
+	<select id="qryLxFymx" parameterType="java.util.Map" resultType="com.zebone.nhis.compay.ins.lb.vo.lxyb.InsSzlxFymx">
+		select * from ins_szlx_fymx where del_flag='0' and pk_pv=#{pkPv,jdbcType=VARCHAR}
+	</select>
+</mapper>

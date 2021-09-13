@@ -1,0 +1,559 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>transcode弹窗</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+    <link href="${ctx}/ui/css/main.css" rel="stylesheet" type="text/css" />
+    <script src="${ctx}/ui/boot.js" type="text/javascript"></script>
+    
+
+    <style type="text/css">
+    html, body
+    {
+        font-size:12px;
+        padding:0;
+        margin:0;
+        border:0;
+        height:100%;
+        overflow:hidden;
+    }
+    </style>
+</head>
+<body>    
+     
+    <form id="form1" method="post">
+        <div style="padding-left:11px;padding-bottom:2px;">
+            <table id="table1" style="width:99%;">
+                <tr>
+               		<td style="width:60px;">模&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;块：</td>
+                    <td>    
+                        <input id="moduleselect" class="zbui-treeselect"  style="width:200px;"  url="${ctx}/transcode/gettranscodeSetNoTwoLevelLeaf" multiSelect="false"  valueFromSelect="false"
+					        textField="text" valueField="id" parentField="pid" expandOnLoad="0"  onbeforenodeselect="beforenodeselect" 
+					        showRadioButton="false" showFolderCheckBox="false" popupWidth="200" showTreeIcon="true"
+					    />
+                    </td>
+                    <td style="width:60px;">交&nbsp;易&nbsp;号：</td>
+                    <td>    
+                        <input id="codetext" name="transcode" class="zbui-textbox" style="width:120px;" required="true"  emptyText="请输入交易号"/>
+                    </td>
+                    <td  style="width:60px;">类&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;型：</td>
+                    <td  style="width:60px;">    
+                        <input id="typeselect" name="type" class="zbui-combobox" style="width:100%;" valueField="systypename" textField="typedesc" 
+                        url="${ctx}/transdict/getSyscodeTypes" value="rpc"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>功能名称：</td>
+                    <td colspan="3">    
+                        <input name="name" class="zbui-textbox" style="width:436px"/>
+                    </td>
+                   <td style="width:60px;">状&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;态：</td>
+                <td>    
+                    <input id="zt" name="zt" class="zbui-combobox" style="width:60px;"
+                    textField="typedesc" valueField="zttypename" value="0"
+                     url="${ctx}/transdict/getZtList"/>
+                </td>
+                </tr>
+                <tr class="pro_tr">
+	                <td style="width:60px;">代&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;理：</td>
+                    <td>   
+                        <input id="proxy" name="proxy" class="zbui-combobox"  style="width:200px;"
+					        textField="proxyname" valueField="proxyname" 
+					        popupWidth="200" showTreeIcon="true" expandOnLoad="0" allowInput="true"/>
+                    </td>
+                   <td  style="width:60px;">时&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;间：</td>
+                    <td>    
+                        <input id="proxytimeselect" name="time" class="zbui-combobox"  style="width:120px;"  valueField="pxytypename" textField="typedesc" 
+                        url="${ctx}/transdict/getProxytimeTypes" value="15"/>秒
+                    </td>
+                    <td style="width:60px;">读&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;写：</td>
+                    <td>
+                    	<input id="readWriteSelect" name="readOrwrite" class="zbui-combobox" style="width:100%;" valueField="rwid" textField="rwtext"
+                    	url="${ctx}/ui/readOrwrite.txt" value="R"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>功能描述：</td>
+                    <td colspan="5">    
+                        <textarea id="remark" name="remark"  class="zbui-textarea" style="width:100%;height:120px;" required="true"></textarea>
+                    </td>
+                </tr>
+                <tr>
+	                <td>内&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;容：</td>
+                    <td colspan="5">
+                        <textarea id="ta" name="address"  class="zbui-textarea" style="width:100%;height:40px;"></textarea>
+                    </td>
+                </tr>
+                
+                <tr class="whe_tr" style="display:none;">
+                	<td>条&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;件：</td>
+                	<td colspan="5">
+                		<textarea id="condition" name="condition"  class="zbui-textarea" style="width:100%;height:50px;"></textarea>
+               		</td>
+                </tr>
+                
+                <tr>
+                	<td>入参/出参格式：</td>
+                	<td colspan="2">
+                        <textarea id="inputformat" name="inputformat"  class="zbui-textarea" style="width:100%;height:240px;"></textarea>
+                    </td>
+               
+                	<td colspan="3">
+                         <textarea id="outputformat" name="outputformat"  class="zbui-textarea" style="width:100%;height:240px;"></textarea>
+                    </td>
+                </tr>
+    
+               
+            </table>
+        </div>
+        
+        <div style="text-align:center;padding:10px;">               
+            <a class="zbui-button" onclick="onOk" style="width:60px;margin-right:20px;">确定</a>       
+            <a class="zbui-button" onclick="onCancel" style="width:60px;">取消</a>  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 帮&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;助  <a href="#" onclick="openHelpDsec();return false;"><img src="${ctx}/ui/img/help.png" alt="" /></a>
+        </div>        
+    </form>
+    <script type="text/javascript">
+        zbui.parse();
+
+        var module_combox = zbui.get('moduleselect');
+        var combox = zbui.get('typeselect');
+        var form = new zbui.Form("form1");
+		//指示弹窗是新增还是修改类型
+        var wintype ;
+		
+      /*只允许选中第三层子节点*/
+        function beforenodeselect(e) {
+    	    if( !(e.isLeaf  == true && e.node.id.length==9) ){
+            	e.cancel = true;
+            	
+            } else{
+            	//选中第三层子节点后，交易号随之变化
+            	var text = e.node.id;
+      	      	/*自动生成交易号*/
+      	      	var trajson = zbui.encode({transcode : text });
+      	      	$.ajax({
+      	              url: "${ctx}/transcode/fuzzySearchTranscodes",//模糊查询交易号
+      	              data: { transcode : trajson },
+      	              cache: false,
+      	              success: function (tra) {//返回交易号对象的数组
+      	              	var codetextvalue = "";//定义新增模块交易链界面 自动显示的交易号
+      	              	if(tra.length==0){//没有相关的交易号，则以‘text.id’+‘001’为准，自动生成
+      	              		codetextvalue=text + "001";
+      	              	}else{
+      	              		codetextvalue = autoGetTranscode(codetextvalue, text, tra);
+      	              	}
+      	              	zbui.get('codetext').setValue(codetextvalue);
+      	              }
+      	      	});
+            	
+            }
+        }
+		
+      /*选择不同的代理，对应时间控制*/
+      zbui.get("proxy").on('itemclick',function(e){
+		console.info(e);
+    	 if(e.item.proid.length==3){
+    		  zbui.get("proxytimeselect").setValue("15");
+      		  zbui.get("proxytimeselect").enable();
+    	  }else if(e.item.proid.length==6){
+    		  zbui.get("proxytimeselect").setValue("15");
+      		  zbui.get("proxytimeselect").disable();
+    	  } 
+      }); 
+      
+      /*选择不同的模块，对应代理和时间的控制*/
+      module_combox.on('nodeclick',function(e){
+    	  if(e.node.id.length==9){
+    	  		var projson = zbui.encode({pid : e.node.pid});
+      			produceProxyShow(projson);
+    	  }
+      });
+      
+		/*transcode的类型rpc,sql,call选择不同的类型要求显示不同的界面*/
+		combox.on('valuechanged',function(){
+			if(combox.getValue()=="rpc"){
+				
+				zbui.get("ta").set ( {height:40} );
+				zbui.get("remark").set ( {height:120} );
+				zbui.get("inputformat").set ( {height:240} );
+				zbui.get("outputformat").set ( {height:240} );
+				
+				var whetr = $("tr[class='whe_tr']"); 
+				var trs = $("tr[class='pro_tr']"); 
+        		for(i = 0; i < trs.length; i++){ 
+        		trs[i].style.display = ""; 
+        		}
+        		zbui.get('proxy').set({
+        			required:true
+        		}); 
+        		for(i = 0; i < whetr.length; i++){ 
+					whetr[i].style.display = "none";  
+        		}
+        		
+        		//切换的时候也需要注意rpc的代理初始
+        		var value = module_combox.getValue();
+        		console.info(value);
+        		var projson = zbui.encode({pid : value.substring(0,6)});
+      			produceProxyShow(projson);
+      			zbui.get("readWriteSelect").setValue("R");
+        		
+			}else if(combox.getValue()=="sql" || combox.getValue()=="call" || combox.getValue()=="insert" || combox.getValue()=="update" || combox.getValue()=="java"){
+				
+				if(combox.getValue()=="sql" ){
+					zbui.get("ta").set ( {height:190} );
+					zbui.get("remark").set ( {height:80} );
+					zbui.get("inputformat").set ( {height:200} );
+					zbui.get("outputformat").set ( {height:200} );
+					
+				}else if(combox.getValue()=="update" ){
+					zbui.get("ta").set ( {height:40} );
+					zbui.get("remark").set ( {height:100} );
+					zbui.get("inputformat").set ( {height:200} );
+					zbui.get("outputformat").set ( {height:200} );
+					
+				}else{
+					zbui.get("ta").set ( {height:40} );
+					zbui.get("remark").set ( {height:120} );
+					zbui.get("inputformat").set ( {height:240} );
+					zbui.get("outputformat").set ( {height:240} );
+				}
+				
+		
+        		var whetr = $("tr[class='whe_tr']"); 
+				if(combox.getValue()=="update"){
+					for(i = 0; i < whetr.length; i++){ 
+						whetr[i].style.display = "";  
+	        		}
+				}else{
+					for(i = 0; i < whetr.length; i++){ 
+						whetr[i].style.display = "none";  
+	        		}
+				}
+        		
+				//代理显示
+				var trs = $("tr[class='pro_tr']"); 
+        		for(i = 0; i < trs.length; i++){ 
+        			trs[i].style.display = "none"; //这里获取的trs[i]是DOM对象而不是jQuery对象，因此不能直接使用hide()方法 
+        		}
+        		zbui.get('proxy').set({
+        			required:false
+        		});
+			}
+		});
+		
+		/*帮助*/
+		function openHelpDsec() {
+	        var win = zbui.open({
+	            title: '帮助',
+	            url: '${ctx}/view?page=transcode/overview',
+	            showModal: false,
+	            width: 800,
+	            height: 600
+	        });
+	
+	       // var x = "center";
+	       // var y = "center";
+	        //win.showAtPos(x, y);
+	    }
+		
+        /*保存数据到表*/
+        function onOk(e) {
+            SaveData();
+        }
+        
+        function GetData() {
+            var o = form.getData();
+            return o;
+        }
+        
+        function SaveData() {
+            var o = form.getData();    
+            if(o.type == "rpc"){
+            	console.info(o);
+            	o.address =o.readOrwrite + o.proxy +o.time+"/"+o.address;
+            	if(!o.proxy){
+            		alert('请选择代理！');
+            		return ;
+            	}
+            	
+            }else if(o.type == "sql" || o.type == "call" || o.type == "insert" || o.type == "update" || o.type == "java"){
+            }
+            form.validate();
+            if (form.isValid() == false) return;
+
+            var json = zbui.encode(o);
+            
+            var reqparam = {data : json};
+            	reqparam.kind = wintype;
+            if(confirm("确定保存编辑吗？")){
+	            $.ajax({
+	                url: "${ctx}/oper/saveTranscode",
+					type: 'post',
+	                data: reqparam,
+	                cache: false,
+	                success: function (text) {
+	                	var obstr = zbui.encode(text);
+	                	if(obstr.indexOf("<title>404 - 页面不存在</title>") != -1){
+	                		alert("正式运行环境下，无此操作权限！");
+	                		return ;
+	                	}
+	                		
+	                	var a = zbui.decode(text);
+	                    if(a.alert=="error"){
+	                    	alert("该交易号已经存在！");
+	                    }else{
+	                    	CloseWindow();
+	                    }
+	                },
+	                error: function (jqXHR, textStatus, errorThrown) {
+	                    alert(jqXHR.responseText);
+	                    CloseWindow();
+	                }
+	            });   
+            }else{
+            	CloseWindow();
+            	return false;
+            }
+        }
+
+        /*取消编辑信息*/
+        function onCancel(e) {
+            CloseWindow("cancel");
+        }
+        
+        function CloseWindow(action) {            
+            if (action == "cancel" && form.isChanged()) {
+                if (confirm("数据被修改了，是否先保存？")) {
+                    return false;
+                }
+            }
+            if (window.CloseOwnerWindow) return window.CloseOwnerWindow(action);
+            else window.close();            
+        }
+        
+        /*标准方法接口定义*/
+        function SetData(data) {
+        	//跨页面传递的数据对象，克隆后才可以安全使用
+            var d = zbui.clone(data);
+            
+        	wintype = d.action;//弹窗类型
+            if(wintype=="edit"){//交易号不可修改
+            	zbui.get("codetext").set({
+            		allowInput: false
+            	});
+            	zbui.get("moduleselect").set({
+            		enabled: false
+            	});
+            }
+            
+            if (data.action == "edit") {
+                var json = zbui.encode({transcode:d.transcode});
+                $.ajax({
+                    url: "${ctx}/transcode/getTranscode",
+                    data: { data: json },
+                    cache: false,
+                    success: function (text) {
+                    	module_combox.setValue(text.transcode.substring(0,9));
+                    	
+                    	if(text.type == "rpc"){
+                    		/*根据不同的模块，加载代理列表*/
+                    		var projson = zbui.encode({  pid : text.transcode.substring(0,6)  });
+                    		zbui.get("proxy").load("${ctx}/transcode/getRelativeProxyNames?param="+projson);
+                    		
+                    		/*编辑交易号弹窗时，分配如“RPROXY10/”中的R,PROXY和10给弹窗上的‘读写’，‘代理’和‘时间’*/
+                    		text = reProduceText(text);
+                    		
+                    		zbui.get("ta").set ( {height:40} );
+        					zbui.get("remark").set ( {height:120} );
+        					zbui.get("inputformat").set ( {height:240} );
+        					zbui.get("outputformat").set ( {height:240} );
+                    				
+                    	}else if(text.type == "sql" || text.type == "call" || text.type == "insert" || text.type == "update" || text.type == "java"){
+								
+                    		
+                    		if(text.type =="sql" ){
+            					zbui.get("ta").set ( {height:190} );
+            					zbui.get("remark").set ( {height:80} );
+            					zbui.get("inputformat").set ( {height:200} );
+            					zbui.get("outputformat").set ( {height:200} );
+            					
+            				}else if(text.type =="update" ){
+            					zbui.get("ta").set ( {height:40} );
+            					zbui.get("remark").set ( {height:100} );
+            					zbui.get("inputformat").set ( {height:200} );
+            					zbui.get("outputformat").set ( {height:200} );
+            					
+            				}else{
+            					zbui.get("ta").set ( {height:40} );
+            					zbui.get("remark").set ( {height:120} );
+            					zbui.get("inputformat").set ( {height:240} );
+            					zbui.get("outputformat").set ( {height:240} );
+            				}
+            				
+                    		
+                    		var whetr = $("tr[class='whe_tr']"); 
+            				if(text.type=="update"){
+            					for(i = 0; i < whetr.length; i++){ 
+            						whetr[i].style.display = "";  
+            	        		}
+            				}else{
+            					for(i = 0; i < whetr.length; i++){ 
+            						whetr[i].style.display = "none";  
+            	        		}
+            				}
+                    			
+								
+                    		var trs = $("tr[class='pro_tr']"); 
+                    		for(i = 0; i < trs.length; i++){ 
+	                    		trs[i].style.display = "none"; 
+                    		}
+                    		zbui.get('proxy').set({
+                    			required:false
+                    		}); 
+                    	}
+                    	
+                        var o = zbui.decode(text);
+                        form.setData(o);
+                        form.setChanged(false);
+                    }
+                });
+            }
+            
+            if(data.action == "new"){
+            	if(d.node.id != undefined){//选中左侧树里的第三层叶子节点，新增弹窗中显示模块和交易号
+		            	 var json = zbui.encode({id : d.node.id} );
+		            	$.ajax({
+		                    url: "${ctx}/transcode/gettranscodeSetById",
+		                    data: { data:json },
+		                    cache: false,
+		                    success: function (text) {
+			                    	if(text != null){
+			                    	module_combox.setValue(text.id);
+			                    	
+			                    	/*1.自动生成交易号*/
+			                    	var trajson = zbui.encode({transcode : text.id });
+			                    	$.ajax({
+					                    url: "${ctx}/transcode/fuzzySearchTranscodes",//模糊查询交易号
+					                    data: { transcode : trajson },
+					                    cache: false,
+					                    success: function (tra) {//返回交易号对象的数组
+					                    	var codetextvalue = "";//定义新增模块交易链界面 自动显示的交易号
+					                    	if(tra.length==0){//没有相关的交易号，则以‘text.id’+‘001’为准，自动生成
+					                    		codetextvalue=text.id + "001";
+					                    	}else{
+					                    		codetextvalue = autoGetTranscode(codetextvalue, text.id, tra);
+					                    	}
+					                    	zbui.get('codetext').setValue(codetextvalue);
+					                    }
+			                    	});
+			                    	
+			                    	/*2.加载代理列表*/
+			                    	/*3.设置弹窗代理值显示*/
+			                    	var projson = zbui.encode({pid : text.pid});
+			                    	produceProxyShow(projson);
+			                    	
+			                    }
+		                    }
+		                });
+		            }else{
+		            	//未选中第三层叶子
+		            	//代理列表加载所有
+		            	var projson = zbui.encode({pid : ""});
+                    	produceProxyShow(projson);
+		            }
+            }
+        }
+        
+        /*代理值封装处理*/
+        function produceProxyShow(projson){
+        	/*2.加载代理列表*/
+        		zbui.get("proxy").load("${ctx}/transcode/getRelativeProxyNames?param="+projson);
+        	
+       			/*3.设置弹窗代理值显示*/
+               	/*
+               	逻辑：通过text.id找到父节点的proxyname，如果不为空，该proxyname即为代理；如果为空，继续上一层的proxyname为代理
+               	*/
+               	$.ajax({
+                       url: "${ctx}/transcode/getSelfProxy",
+                       data: { param : projson },
+                       cache: false,
+                       success: function (tra) {
+                       	console.info(tra);
+                       	zbui.get("proxy").setValue(tra.proxyname);
+                       	
+                       	/*4.根据返回的代理，如果是第二级节点(id长度为6)，时间取15，且不可更改，如果是第一级节点(id长度为3)，时间可以为15，可以为60，可更改*/
+                       	if(tra.id.length==6){
+                       		zbui.get("proxytimeselect").setValue("15");
+                       		zbui.get("proxytimeselect").disable();
+                       	}else if(tra.id.length==3){
+                       		zbui.get("proxytimeselect").setValue("15");
+                  		    zbui.get("proxytimeselect").enable();
+                       	}
+                       }
+               	}); 
+        			
+        }
+        
+        /*编辑交易号弹窗时，分配如“RPROXY10/”中的R,PROXY和10给弹窗上的‘读写’，‘代理’和‘时间’*/
+        function reProduceText(text){
+        	var proxy = text.address.substring(0,text.address.indexOf ("/"));
+        	text.address = text.address.substring(text.address.indexOf ("/")+1);
+        	
+    		if(isNaN(parseInt(proxy.substr(proxy.length-2)))){//PROXY**  末两位不是数字
+    			if(isNaN(parseInt(proxy.substr(proxy.length-1)))){//PROXY**  末一位不是数字
+    				text.time = 0;
+    				text.readOrwrite = proxy.substring(0,1);
+    				text.proxy = proxy.substring(1,proxy.length);
+    			}else{//PROXY**  末一位是数字
+        			text.time = parseInt(proxy.substr(proxy.length-1));
+        			text.readOrwrite = proxy.substring(0,1);
+        			text.proxy = proxy.substring(1,proxy.length-1);
+    			}
+    		}else{//PROXY**  末两位是数字
+    			text.time = parseInt(proxy.substr(proxy.length-2));
+    			text.readOrwrite = proxy.substring(0,1);
+    			text.proxy = proxy.substring(1,proxy.length-2);
+    		}
+    		return text;
+        }
+        
+        /*自动生成交易号
+        	参数：codetextvalue=“”，modulecode(9位的模块编码)，tra(交易号对象数组)
+        	返回：codetextvalue
+        */
+        function autoGetTranscode(codetextvalue,modulecode,tra){
+        	var max = 0;
+    		for(var i=0; i<tra.length; i++){
+    			//补充完整再解析成int
+    			var filltranscode = fillTranscode(tra[i].transcode);
+    			var transnum = parseInt(filltranscode.substring(9,12));
+    			if(max<transnum){
+    				max = transnum;
+    			}
+    		}
+    		needtransnum = max+1;
+    		var needtrans = needtransnum.toString();
+    		//数字字符串补足为3位
+    		codetextvalue =modulecode + fill3lengthstr(needtrans);
+    		return codetextvalue;
+        }
+        
+        /*补足12位交易号*/
+        function fillTranscode(transcode){
+        	var full = "000000000000";//12位
+        	var last = full.substring(transcode.length,full.length);
+        	return transcode+last;
+        }
+
+        /*将位数<=3的数字左边补0*/
+        function fill3lengthstr(numstr){
+        	var full = "000";//3位
+        	var last = full.substr(0,full.length-numstr.length);
+        	return last+numstr;
+        }
+        
+    </script>
+</body>
+</html>

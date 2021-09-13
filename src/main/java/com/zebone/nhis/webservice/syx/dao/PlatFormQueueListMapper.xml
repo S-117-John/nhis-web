@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.PlatFormQueueListMapper">
+    <select id="getQueueList" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.QueueListReq"
+            resultType="com.zebone.nhis.webservice.syx.vo.platForm.QueueListRes">
+        
+        SELECT
+			pvq.sortno queueNum,
+			pv.code_pv patientId,
+			pv.name_pi patientName,
+			pvq.date_arr callingTime,
+		CASE
+			pvq.eu_status 
+			WHEN '0' THEN
+			'0' 
+			WHEN '1' THEN
+			'1' 
+			WHEN '8' THEN
+			'2' 
+			WHEN '2' THEN
+			'3' 
+			WHEN '9' THEN
+			'4' 
+			END callingFlag,
+			CASE	
+				WHEN ds.code_dateslot = '0101' THEN '2' ELSE '4' 
+			END clinicTime,
+			emp.code_emp doctorCode,
+			emp.name_emp doctorName,
+			title.name title,
+			du.code roomCode,
+			du.name roomName,
+			du.code roomNo,
+			dept.code_dept deptCode,
+			dept.name_dept deptName  
+		FROM
+			pv_que pvq 
+			INNER join bd_qc_que que ON pvq.pk_qcque = que.pk_qcque 
+			INNER join pv_encounter pv ON pvq.pk_pv = pv.pk_pv 
+			INNER join bd_code_dateslot ds ON pvq.pk_dateslot = ds.pk_dateslot 
+			INNER join sch_sch sch ON pvq.pk_sch = sch.pk_sch 
+			INNER join bd_ou_dept dept ON sch.pk_dept = dept.pk_dept 
+			left outer join bd_dept_unit du ON sch.pk_deptunit = du.pk_deptunit 
+			AND du.eu_unittype = '0' 
+			left outer join bd_ou_employee emp ON pvq.pk_emp_phy = emp.pk_emp 
+			left outer join bd_ou_empjob job ON emp.pk_emp = job.pk_emp 
+			left outer join bd_defdoc title ON job.jobname = title.code 
+			AND title.code_defdoclist = '010301' 
+		WHERE 
+			to_char(pvq.date_sign,'yyyy-MM-dd') = #{clinicDate,jdbcType=VARCHAR}
+			<if test = "clinicTime != null and clinicTime != ''">
+			 	AND ds.code_dateslot = #{clinicTime,jdbcType=VARCHAR} 
+			</if>
+			<if test = "callingFlag != null and callingFlag != ''">
+			 	AND pvq.eu_status = #{callingFlag,jdbcType=VARCHAR} 
+			</if>
+    </select>
+</mapper>

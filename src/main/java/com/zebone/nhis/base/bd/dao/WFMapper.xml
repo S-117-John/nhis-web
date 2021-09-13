@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.WFMapper">
+
+	
+	<select id="BdWfcateCheckExist" resultType="int" parameterType="java.util.Map">
+		select count(1) from BD_WFCATE
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+		    <if test="code != null and code != ''">
+		  		and code = #{code,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="name != null and name != ''">
+		  		and name = #{name,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="pkOrg != null and pkOrg != ''">
+		  		and pk_org like #{pkOrg,jdbcType=VARCHAR}||'%'
+		  	</if> 
+		  	<if test="pkWfcate != null and pkWfcate != ''">
+		  		and PK_WFCATE ! = #{pkWfcate,jdbcType=VARCHAR}
+		  	</if> 
+  		</trim>
+	</select>
+	
+	<select id="BdWfCheckExist" resultType="int" parameterType="java.util.Map">
+		select count(1) from BD_WF
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+		    <if test="code != null and code != ''">
+		  		and code = #{code,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="name != null and name != ''">
+		  		and name = #{name,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="pkOrg != null and pkOrg != ''">
+		  		and pk_org like #{pkOrg,jdbcType=VARCHAR}||'%'
+		  	</if> 
+		  	<if test="pkWf != null and pkWf != ''">
+		  		and PK_WF ! = #{pkWf,jdbcType=VARCHAR}
+		  	</if> 
+  		</trim>
+	</select>
+	
+	<select id="BdWfOrdArguCheckExist" resultType="int" parameterType="java.util.Map">
+		select count(1) from BD_WF_ORD_ARGU
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+		    <if test="pkOrgExec != null and pkOrgExec != ''">
+		  		and PK_ORG_EXEC = #{pkOrgExec,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="pkDept != null and pkDept != ''">
+		  		and PK_DEPT = #{pkDept,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="pkOrg != null and pkOrg != ''">
+		  		and pk_org like #{pkOrg,jdbcType=VARCHAR}||'%'
+		  	</if> 
+		  	<if test="pkWf != null and pkWf != ''">
+		  		and PK_WF = #{pkWf,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="pkWfargu != null and pkWfargu != ''">
+		  		and PK_WFARGU != #{pkWfargu,jdbcType=VARCHAR}
+		  	</if> 
+  		</trim>
+	</select>
+	
+	<select id="BdWfSelectPkWf" resultType="java.lang.String" parameterType="java.util.Map">
+		select PK_WFCATE from BD_WF
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+		    <if test="code != null and code != ''">
+		  		and CODE like '%'||#{code,jdbcType=VARCHAR}||'%'
+		  	</if> 
+		  	<if test="name != null and name != ''">
+		  		and NAME like '%'||#{name,jdbcType=VARCHAR}||'%'
+		  	</if> 
+		  	<if test="pkOrg != null and pkOrg != ''">
+		  		and PK_ORG like #{pkOrg,jdbcType=VARCHAR}||'%'
+		  	</if> 
+  		</trim>
+	</select>
+	
+	<select id="BdWfCateSelectAll" resultType="com.zebone.nhis.common.module.base.bd.wf.BdWfcate" parameterType="java.util.Map">
+		select PK_WFCATE pkWfcate,PK_ORG pkOrg,code,name,CREATOR,CREATE_TIME createTime,ts
+		from BD_WFCATE
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+		    <if test="code != null and code != ''">
+		  		and CODE like '%'||#{code,jdbcType=VARCHAR}||'%'
+		  	</if> 
+		  	<if test="name != null and name != ''">
+		  		and NAME like '%'||#{name,jdbcType=VARCHAR}||'%'
+		  	</if> 
+		  	<if test="pkOrg != null and pkOrg != ''">
+		  		and PK_ORG like #{pkOrg,jdbcType=VARCHAR}||'%'
+		  	</if> 
+		  	<if test="pkWfCates != null">
+		  		and PK_WFCATE in
+		        <foreach collection="pkWfCates" item="pkWfcate" index="index"
+		            open="(" close=")" separator=",">
+		            #{pkWfcate}
+		        </foreach>
+		  	</if>
+  		</trim>
+	</select>
+    
+   
+</mapper>

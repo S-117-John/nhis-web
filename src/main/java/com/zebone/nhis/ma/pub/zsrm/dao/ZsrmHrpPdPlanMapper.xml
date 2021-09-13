@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.zsrm.dao.ZsrmHrpPdPlanMapper">
+    <select id="getPdplanByPkPdplan" resultType="com.zebone.nhis.ma.pub.zsrm.vo.ApplyVo">
+        select
+            '1' hospital,
+            pla.PK_PDPLAN sourceId,
+            pla.CODE_PLAN orderNo,
+            exde.CODE_DEPT locationTo,
+            pla.EU_STATUS status,
+            exemp.CODE_EMP userCode,
+            exde.CODE_DEPT deptCode,
+            pla.DATE_PLAN  orderDate,
+            exde.name_dept  address ,
+            pla.note remarks,
+            '' projectNo,
+            dt.PK_PDPLANDT lineId,
+            exde.CODE_DEPT locationTo,
+            accde.CODE_DEPT locationFrom,
+            dt.SORT_NO lineNumber,
+            pd.code medicineCode,
+            min.NAME unit,
+            dt.QUAN_MIN quantity
+        from PD_PLAN pla
+                 inner join PD_PLAN_DETAIL dt on dt.PK_PDPLAN=pla.PK_PDPLAN
+                 inner join bd_pd  pd on pd.PK_PD=dt.PK_PD
+                 inner join bd_ou_dept exde on exde.PK_DEPT=pla.PK_DEPT
+                 inner join bd_ou_dept accde on accde.PK_DEPT=pla.PK_DEPT_ACC
+                 inner join BD_OU_EMPLOYEE exemp on exemp.PK_EMP=pla.PK_EMP_MAK
+                 inner join bd_pd_store bps on bps.PK_PD=dt.PK_PD and bps.PK_STORE=pla.PK_STORE
+                 inner join bd_unit min on min.PK_UNIT=pd.PK_UNIT_MIN
+            left join bd_item item on item.PK_ITEM=pd.PK_ITEM
+        where pla.PK_PDPLAN = #{pkPdplan,jdbcType=VARCHAR} and pla.EU_STATUS='1'
+    </select>
+    <select id="getPaplanDetailInof" parameterType="java.util.Map" resultType="java.util.List">
+          select dt.pk_pdplandt, --PK
+               pd.code,        --物品编码
+               pd.name,        --物品名称
+               pd.spec,         --规格
+               (pd.pack_size_max*pd.pack_size)/dt.pack_size,--箱包装
+               dt.pk_unit,     --单位
+               pd.pk_factory,  --生产厂家
+               dt.pack_size,
+               dt.quan_pack,   --申请数量-包装单位
+               dt.quan_min,    --申请数量-基本单位
+               dt.quan_de,    --实发/已入库数量_基本
+               dt.note
+          from pd_plan_detail dt
+          inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+          where dt.flag_finish='0'
+          and dt.pk_pdplan= #{pkPdplan, jdbcType=VARCHAR}     --申请单PK
+          and dt.pk_store_srv=#{pkStoreSrv} --当前仓库
+    </select>
+
+    <select id="getOutStoreInfo" parameterType="com.zebone.nhis.common.module.scm.st.PdSt" resultType="com.zebone.nhis.common.module.scm.st.PdSt">
+        select st.pk_pdst,
+        st.dt_sttype,  --业务类型，码表080008
+        st.code_st,
+        st.date_st,
+        st.pk_org_lk,  --申请机构
+        st.pk_dept_lk, --申请科室
+        st.pk_store_lk,--申请仓库
+        st.eu_status,  --状态
+        st.pk_emp_op,
+        st.name_emp_op,
+        st.pk_emp_chk,
+        st.name_emp_chk,
+        st.date_chk,
+        st.note
+        from pd_st st
+        where st.eu_direct='-1'
+        <if test="pkStoreSt != null and pKStoreSt != ''">
+            and st.pk_store_st=#{pKStoreSt, jdbcType=VARCHAR}
+        </if>
+        <if test="dtSttype != null and dtSttype != ''">
+            and st.dt_sttype=#{dtSttype, jdbcType=VARCHAR}
+        </if>
+        <if test="pkOrgLk != null and pkOrgLk != ''">
+            and st.pk_org_lk=#{pkOrgLk, jdbcType=VARCHAR}
+        </if>
+        <if test="pkDeptLk != null and pkDeptLk != ''">
+            and st.pk_dept_lk= #{pkDeptLk, jdbcType=VARCHAR}
+        </if>
+        <if test="pkStore != null and pkStore != ''">
+            and st.pk_store_lk=#{pkStore, jdbcType=VARCHAR}
+        </if>
+
+        <if test="CodeSt != null and CodeSt != ''">
+            and st.code_st=#{CodeSt, jdbcType=VARCHAR}
+        </if>
+        <if test="dateSt != null and dateSt != ''">
+            and
+            st.date_st &gt;= #{dateSt, jdbcType=VARCHAR}
+        </if>
+        <if test="dateSt != null and dateSt != ''">
+            and
+            st.date_st &lt;= #{dateSt, jdbcType=VARCHAR}
+        </if>
+        <if test="pkEmpOp != null and pkEmpOp != ''">
+            and
+            st.pk_emp_op= #{pkEmpOp, jdbcType=VARCHAR}
+        </if>
+        <if test="euStatus != null and euStatus != ''">
+            and st.eu_status= #{euStatus, jdbcType=VARCHAR}
+        </if>
+    </select>
+    <select id="pharmacyDrugWithdrawal" resultType="com.zebone.nhis.ma.pub.zsrm.vo.ApplyVo">
+        select
+            '1' hospital,
+            st.PK_PDST sourceId,
+            st.CODE_ST orderNo,
+            stde.CODE_DEPT locationFrom,
+            lkde.CODE_DEPT locationTo,
+            st.EU_STATUS status,
+            stemp.CODE_EMP userCode,
+            stde.CODE_DEPT deptCode,
+            st.DATE_CHK orderDate,
+            st.note remarks,
+            dt.PK_PDSTDT lineId,
+            dt.SORT_NO lineNumber,
+            pd.code medicineCode,
+            minun.NAME unit,
+            dt.QUAN_MIN quantity,
+            dt.PRICE_COST price,
+            dt.BATCH_NO lot,
+            dt.DATE_EXPIRE lotDate
+        from PD_ST st
+                 inner join PD_ST_DETAIL dt on dt.PK_PDST=st.PK_PDST
+                 inner join bd_ou_dept stde on stde.PK_DEPT=st.PK_DEPT_ST
+                 inner join bd_ou_dept lkde on lkde.PK_DEPT=st.PK_DEPT_LK
+                 inner join BD_OU_EMPLOYEE stemp on stemp.PK_EMP=st.PK_EMP_OP
+                 inner join bd_pd pd on pd.PK_PD=dt.PK_PD
+                 inner join bd_unit minun on minun.PK_UNIT=pd.PK_UNIT_MIN
+        where st.DT_STTYPE='0201' and st.PK_PDST=#{pkPdst, jdbcType=VARCHAR}
+    </select>
+    <select id="getPdplanDetailByPkPdplandt"  resultType="com.zebone.nhis.common.module.scm.purchase.PdPlanDetail">
+        select
+            dt.PK_ORG,
+            ROWNUM sort_no,
+            dt.PK_PD,
+            pd.PK_UNIT_MIN PK_UNIT,
+            dt.pack_size,
+            quan_pack,
+            quan_min,
+            price,
+            pd.pack_size,
+            dt.creator,
+            dt.create_time,
+            dt.del_flag,
+            dt.ts
+        from PD_PLAN_DETAIL dt
+                 inner join bd_pd pd on pd.PK_PD=dt.PK_PD
+        where dt.PK_PDPLANDT in (#{orderlineId,jdbcType=VARCHAR})
+    </select>
+    <select id="querylistToHrp" parameterType="com.zebone.nhis.ma.pub.zsrm.vo.ZsrmHrpStock" resultType="com.zebone.nhis.ma.pub.zsrm.vo.ApplyVo">
+        select '1' hospital,
+               pd.CODE medicineCode,
+               pd.NAME medicineName,
+               pd.spec medicineSpec,
+               pt.CODE_DEPT locationCode,
+               pt.NAME_DEPT locationName,
+               pack.NAME unit,
+               st.PRICE priceS,
+               st.PRICE_COST price,
+               st.BATCH_NO lot,
+               st.DATE_EXPIRE lotDate,
+               round(st.QUAN_MIN/pd.PACK_SIZE,2) stockQuantity,
+               st.CREATE_TIME stockDate
+        from PD_STOCK st
+                 INNER JOIN bd_pd pd on st.PK_PD = pd.PK_PD
+                 INNER JOIN BD_OU_DEPT pt on st.pk_dept=pt.pk_dept
+                 inner join bd_unit pack on pack.PK_UNIT=pd.PK_UNIT_PACK
+                 where st.DEL_FLAG = 0
+                 <if test="stock.medicineCode != null and stock.medicineCode.size() > 0">
+                  and pd.CODE in
+                   <foreach collection="stock.medicineCode" item="item" index="index" open="(" separator="," close=")">
+                         #{item}
+                   </foreach>
+                 </if>
+                   <if test="stock.locationCode != null and stock.locationCode.size() > 0">
+        and code_dept in
+                    <foreach collection="stock.locationCode" item="item" index="index" open="(" separator="," close=")">
+                         #{item}
+                    </foreach>
+                   </if>
+    </select>
+
+    <select id="getPdInfoByKeyCode" resultType="com.zebone.nhis.common.module.scm.purchase.PdPlanDetail">
+        select
+            pk_org pkOrg, rownum sort_no , PK_UNIT_MIN PK_UNIT, pk_pd,
+            pack_size,price
+        from bd_pd where code = #{medicineCode,jdbcType=VARCHAR}
+    </select>
+</mapper>

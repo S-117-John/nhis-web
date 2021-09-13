@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.compay.ins.lb.dao.nhyb.InsSuZhouNHWebMapper">
+     <!--   <select id="getInsSuzhounhTreatList" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.common.module.compay.ins.lb.nhyb.InsSuzhounhTreat">
+		select * from INS_SUZHOUNH_TREAT ist
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			 ist.del_flag = '0'
+			<if test="key != null and key != ''">
+				and (ist.ZLFSBM LIKE '%${key}%' or ist.ZLFSMC like '%${key}%')
+			</if>
+		</trim>
+		order by ist.ZLFSBM desc
+	</select>
+	
+<select id="getInsSuzhounhHospitalinfoList" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.common.module.compay.ins.lb.nhyb.InsSuzhounhHospitalinfo">
+		select * from Ins_Suzhounh_Hospitalinfo ish
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			 ish.del_flag = '0'
+			<if test="key != null and key != ''">
+				and (ist.ZZJGDM LIKE '%${key}%' or ist.YLJGMC like '%${key}%')
+			</if>
+		</trim>
+	</select>-->
+	
+	<update id="deleteRegInfo" parameterType="java.lang.String">
+		update INS_SUZHOUNH_WEB_REGINFO set del_flag='1' where PKPV=#{pkPv,jdbcType=CHAR}
+	</update> 
+	
+    <update id="deleteRegInfoById" parameterType="java.lang.String">
+		update INS_SUZHOUNH_WEB_REGINFO set del_flag='1' where Id=#{id,jdbcType=CHAR}
+	</update> 
+	
+	<select id="getRegInfoByPkPv" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.common.module.compay.ins.lb.nhyb.InsSuzhounhWebReginfo" >
+	     select * from INS_SUZHOUNH_WEB_REGINFO WHERE PKPV=#{pkpv,jdbcType=CHAR} and DEL_FLAG='0' order by create_time desc
+	</select>
+	
+	 <select id="getJsInfoByPkSettle" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.common.module.compay.ins.lb.nhyb.InsSuzhounhWebJs" >
+	     select * from INS_SUZHOUNH_WEB_JS WHERE PK_SETTLE=#{pkSettle,jdbcType=CHAR} and DEL_FLAG='0'
+	</select>
+	
+<!--	
+	<update id="deleteJsInfo" parameterType="java.lang.String">
+		update ins_suzhounh_js set del_flag='1' where pk_settle=#{pkSettle,jdbcType=VARCHAR}
+	</update>
+	
+	<select id="qryBdItemAndOrderByPkPv" parameterType="java.util.Map" resultType="com.zebone.nhis.compay.ins.lb.vo.nhyb.CnOrderAndBdItem">
+		select
+      		distinct bid.pk_cgip,bid.pk_item,bid.code_cg,bid.code_bill,bid.name_cg,bid.pk_unit,bid.pk_dept_app,
+      		bid.pk_emp_app pk_emp_ord,bid.name_emp_app name_emp_ord,bid.price,co.quan order_quan,
+      		co.code_freq,co.code_supply,co.days,bid.name_emp_cg,bid.amount,bid.date_hap,co.flag_durg,bid.flag_pd,
+           (case when bid.flag_pd =0 then bi.code else bp.code  end) code_item,pres.pres_no,bid.quan,bid.amount,co.ordsn,co.ORDSN_PARENT,bid.PK_CGIP_BACK
+		from  bl_ip_dt bid
+  			left join cn_order co on bid.pk_cnord=co.pk_cnord
+  			left join cn_prescription pres on pres.pk_pres=co.pk_pres
+  			left join bd_item bi on bi.pk_item=bid.pk_item
+        	left join bd_pd bp on bp.pk_pd =bid.pk_pd
+			where bid.flag_insu='0' and bid.flag_settle = '0' and bid.pk_pv=#{pkPv,jdbcType=VARCHAR}
+	</select>
+
+	<select id="qrySettleInfoForFpPrint" parameterType="java.util.Map" resultType="DynaBean">
+		select bs.pk_settle,bs.pk_pv,bs.pk_pi,bh.dt_exthp
+		from bl_settle bs
+		left join pv_encounter pe on bs.pk_pv = pe.pk_pv
+		left join bd_hp bh on pe.pk_insu = bh.pk_hp
+		right join pi_insurance pi on pi.pk_hp=bh.pk_hp
+		where 1=1 and bs.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+		group by bs.pk_settle,bs.pk_pv,bs.pk_pi,bh.dt_exthp
+	</select>
+	
+	
+	<select id="qrySettleInfoForFpid" parameterType="java.util.Map" resultType="string">
+		select pi.pk_insurance
+		from bl_settle bs
+		left join pv_encounter pe on bs.pk_pv = pe.pk_pv
+		left join bd_hp bh on pe.pk_insu = bh.pk_hp
+		right join pi_insurance pi on pi.pk_hp=bh.pk_hp
+		select bsi.pk_invoice from bl_settle bs
+        left join bl_st_inv bsi on bs.pk_settle = bsi.pk_settle
+		where 1=1 and bs.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+	</select> -->
+	
+	<select id="qryNhPdWithInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select DISTINCT
+        	bp.pk_pd pk_item,bp.code,bp.name,bp.short_name,bp.spcode,bf.name factory_name,bp.spec,bp.appr_no, 
+  			bp.dt_dosage,bp.price,bp.pk_unit_pack,bp.dt_abrd,isim.pk_insitemmap,isim.check_state,
+  			bp.flag_stop,bp.eu_drugtype,isim.ts,ism.*,iswc.name as classname  
+		from bd_pd bp
+			left join bd_factory bf on bf.pk_factory=bp.pk_factory
+			inner join ins_szyb_item_map isim on isim.pk_item=bp.pk_pd and bp.del_flag='0'
+			inner join Ins_Suzhounh_Web_Insure ism on isim.code=ism.insureid and ism.del_flag='0'
+			inner join Ins_Suzhounh_Web_Classdown iswc on iswc.code=ism.classno and iswc.del_flag='0'
+			where isim.pk_hp=#{pkHp,jdbcType=VARCHAR} and isim.del_flag='0' and  FLAG_RM != '1'
+		<!--	<if test="euActive != null and euActive != ''">
+               and bp.flag_stop=#{euActive,jdbcType=VARCHAR}
+           </if>  -->
+           <if test="checkState != null and checkState != ''">
+               and isim.check_state=#{checkState,jdbcType=VARCHAR}
+           </if>
+	</select>
+	
+	<select id="qryNhItemWithInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select DISTINCT
+  			isim.pk_insitemmap,bi.pk_item,bi.name,bi.code,bi.name_prt,bi.spec,bi.spcode,isim.check_state,
+  			bi.price,bi.pk_unit,isim.ts,ism.*,iswc.name as classname ,bf.PK_FACTORY,bf.Name as factory_name
+		from bd_item bi
+			inner join ins_szyb_item_map isim on isim.pk_item=bi.PK_ITEM and bi.del_flag='0'
+			inner join Ins_Suzhounh_Web_Insure ism on isim.code=ism.insureid and ism.del_flag='0'
+			inner join Ins_Suzhounh_Web_Classdown iswc on iswc.code=ism.classno and iswc.del_flag='0'
+			LEFT JOIN BD_FACTORY bf on bf.PK_FACTORY = bi.PK_FACTORY
+		where isim.pk_hp=#{pkHp,jdbcType=VARCHAR} and isim.del_flag='0'
+		   <!-- <if test="euActive != null and euActive != '' ">
+			  and bi.flag_active=#{euActive,jdbcType=VARCHAR}
+			</if>  -->
+			<if test="checkState != null and checkState != ''">
+               and isim.check_state=#{checkState,jdbcType=VARCHAR}
+           </if>
+	</select>
+	
+	<select id="qryNhDisWithInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select DISTINCT
+  			isim.pk_insitemmap,bi.pk_cndiag AS pkitem,bi.name_cd as name,bi.code_cd as code,bi.spcode,
+  			isim.ts,ism.icdallno,ism.*
+		from bd_cndiag bi
+			inner join INS_SUZHOUNH_WEB_DISMAP isim on isim.pk_item=bi.pk_cndiag and bi.del_flag='0'
+			inner join INS_SUZHOUNH_WEB_ICD ism on isim.code=ism.icdallno and ism.del_flag='0'
+			<!--  inner join Ins_Suzhounh_Web_Classdown iswc on iswc.code=ism.classno and iswc.del_flag='0'-->
+		where isim.pk_hp=#{pkHp,jdbcType=VARCHAR} and isim.del_flag='0'
+		    <!-- <if test="euActive != null and euActive != '' ">
+			  and bi.flag_active=#{euActive,jdbcType=VARCHAR}
+			</if>-->
+			order by code,name
+	</select>
+	
+	<!-- 获取结算基本信息列表 -->
+	<select id="getJSList" parameterType="com.zebone.nhis.common.module.compay.ins.lb.nhyb.InsSuzhounhWebJs"  
+	resultType="com.zebone.nhis.common.module.compay.ins.lb.nhyb.InsSuzhounhWebJs">
+		select * from INS_SUZHOUNH_WEB_JS 	
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and del_flag = '0'
+		    <if test="inpatientsn != null and inpatientsn != ''">
+		  		and (INPATIENTSN like '%'||#{inpatientsn,jdbcType=VARCHAR} or INPATIENTSN like #{inpatientsn,jdbcType=VARCHAR}||'%')
+		  	</if> 
+		  	<if test="redeemno != null and redeemno != ''">
+		  		and (REDEEMNO like '%'||#{redeemno,jdbcType=VARCHAR} or REDEEMNO like #{redeemno,jdbcType=VARCHAR}||'%')
+		  	</if> 
+		  	<if test="name != null and name != ''">
+		  		and NAME like '%'||#{name,jdbcType=VARCHAR}||'%'
+		  	</if> 
+		  	<if test="bookno != null and bookno != ''">
+		  		and BOOKNO = #{bookno,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="idcard != null and idcard != ''">
+		  		and (IDCARD like '%'||#{idcard,jdbcType=VARCHAR} or IDCARD like #{idcard,jdbcType=VARCHAR}||'%')
+		  	</if>
+		  	<if test="sexname != null and sexname != ''">
+		  		and (SEXNAME like '%'||#{sexname,jdbcType=VARCHAR} or SEXNAME like #{sexname,jdbcType=VARCHAR}||'%')
+		  	</if>
+		  	<if test="memberno != null and memberno != ''">
+		  		and (MEMBERNO like '%'||#{memberno,jdbcType=VARCHAR} or MEMBERNO like #{memberno,jdbcType=VARCHAR}||'%')
+		  	</if>
+  		</trim>
+  		order by TS DESC
+	</select>	
+	
+	
+	<select id="qryYbPdDicNoWithInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select DISTINCT
+               bp.pk_pd pk_item,bp.name,bp.code,bp.short_name,bp.spcode,bf.name factory_name,bp.spec,bp.appr_no,
+               bp.dt_dosage,bp.price,bp.pk_unit_pack,bp.dt_abrd,bp.flag_stop,bp.eu_drugtype,isim.create_time 
+          from bd_pd bp
+     left join bd_factory bf on bf.pk_factory=bp.pk_factory
+     left join ins_szyb_item_map isim on bp.pk_pd=isim.pk_item and isim.pk_hp=#{pkHp,jdbcType=VARCHAR}
+         where 1=1 
+           and FLAG_RM != '1'
+           and bp.pk_pd not in (select pk_item from ins_szyb_item_map map where map.DEL_FLAG = '0' 
+           and map.pk_hp=#{pkHp,jdbcType=VARCHAR}) 
+            <!--<if test="euActive != null and euActive != ''">
+               and bp.flag_stop=#{euActive,jdbcType=VARCHAR}
+           </if>-->
+	</select>
+	
+	
+	<select id="qryYbItemDicNoWithInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select DISTINCT
+			bi.pk_item,bi.code,bi.name,bi.name_prt,bi.pk_unit,bi.spec,
+			bi.price,bi.spcode,isim.create_time ,bf.PK_FACTORY,bf.Name as factory_name
+		from bd_item bi
+		    LEFT JOIN BD_FACTORY bf on bf.PK_FACTORY = bi.PK_FACTORY
+			left join ins_szyb_item_map isim on isim.pk_item=bi.pk_item and isim.del_flag = '0' and isim.pk_hp=#{pkHp,jdbcType=VARCHAR}
+		where 1=1 
+			and bi.pk_item not in (select pk_item from ins_szyb_item_map map where map.DEL_FLAG &lt;&gt; '1' and map.pk_hp=#{pkHp,jdbcType=VARCHAR}) 
+			<!--<if test="euActive != null and euActive != '' ">
+			  and bi.flag_active=#{euActive,jdbcType=VARCHAR}
+			</if> -->
+	</select>
+	
+	<select id="qryYbDisDicNoWithInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select DISTINCT
+			bi.pk_cndiag AS pkitem,bi.name_cd as name,bi.code_cd as code,bi.spcode,isim.create_time 
+		from bd_cndiag bi
+			left join INS_SUZHOUNH_WEB_DISMAP isim on isim.pk_item=bi.pk_cndiag and isim.del_flag = '0'  and isim.pk_hp=#{pkHp,jdbcType=VARCHAR}
+		where 1=1 
+			and bi.pk_cndiag not in (select pk_item from INS_SUZHOUNH_WEB_DISMAP map where map.DEL_FLAG &lt;&gt; '1' and map.pk_hp=#{pkHp,jdbcType=VARCHAR}) 
+			<!--  <if test="euActive != null and euActive != '' ">
+			  and bi.flag_active=#{euActive,jdbcType=VARCHAR}
+			</if>
+			-->
+			order by code,name
+	</select>
+	
+	
+	<select id="qrySzybItemMapInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.compay.ins.lb.nhyb.InsSuzhouNHWebDisMap">
+		select * 
+		from INS_SUZHOUNH_WEB_DISMAP 
+		where del_flag='0' and pk_hp=#{pkHp,jdbcType=VARCHAR} 
+			and pk_item in
+			<foreach collection="pkItems" item="pkItem" open="(" separator="," close=")">
+				#{pkItem,jdbcType=VARCHAR}
+			</foreach>
+	</select>
+	
+	<select id="qryYbDicNoWithInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.base.bd.mk.BdCndiag">
+		select 
+			pk_cndiag,name_cd ,code_cd ,spcode
+		from bd_cndiag 
+		where del_flag='0'
+		and pk_cndiag in
+			<foreach collection="pkItems" item="pkItem" open="(" separator="," close=")">
+				#{pkItem,jdbcType=VARCHAR}
+			</foreach>
+	</select> 
+	
+    <select id="qrySzybItemMapInfoForMZ" parameterType="java.util.Map" resultType="com.zebone.nhis.compay.ins.lb.vo.nhyb.InsNhybItemMap">
+		select m.pkInsitemmap,m.pkHp,m.pkItem,m.code,m.name,m.fylb,m.xmlb,i.everymoney,i.ratio
+		from ins_szyb_item_map m
+		left join INS_SUZHOUNH_WEB_INSURE i on m.code = i.insureid
+		where m.del_flag='0' and m.pk_hp=#{pkHp,jdbcType=VARCHAR} 
+			and pk_item in
+			<foreach collection="pkItems" item="pkItem" open="(" separator="," close=")">
+				#{pkItem,jdbcType=VARCHAR}
+			</foreach>
+	</select>
+	
+	
+	 <select id="qryIpVisitCount" parameterType="java.util.Map" resultType="com.zebone.nhis.compay.ins.lb.vo.nhyb.BdHpExPro">
+		select attr.val_attr,hp.pk_hp,hp.dt_exthp
+        from bd_hp hp
+        inner join bd_dictattr attr on hp.pk_hp=attr.pk_dict
+        inner join bd_dictattr_temp tmp on attr.pk_dictattrtemp=tmp.pk_dictattrtemp and tmp.code_attr='0321'
+        where hp.del_flag = '0' and hp.dt_exthp=#{dtExthp,jdbcType=VARCHAR}		
+	</select>
+	
+</mapper>

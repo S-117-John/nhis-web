@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.bl.pub.dao.NssPatientListMapper">
+	<!-- 根据患者的主键查询患者未结算的收费信息 -->
+	<select id="getChargeSchedule" resultType="com.zebone.nhis.bl.pub.vo.NssBlInvoiceListVo">
+	    select 
+	    	dt.* 
+	    from 
+	    	bl_st_inv stinv 
+			inner join 
+				bl_invoice inv on stinv.pk_invoice=inv.pk_invoice and inv.del_flag = '0'
+			inner join 
+				bl_invoice_dt dt on inv.pk_invoice=dt.pk_invoice and (dt.del_flag = '0' or dt.del_flag is null)
+	    where 
+	    	stinv.del_flag='0' 
+	    and 
+	      	stinv.pk_settle = #{pkSettle,jdbcType=VARCHAR}
+	    order by 
+	    	dt.code_bill
+	</select>
+</mapper>

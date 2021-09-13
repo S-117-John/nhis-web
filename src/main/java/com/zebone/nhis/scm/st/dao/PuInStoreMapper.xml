@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.st.dao.PuInStoreMapper">
+<select id="queryOrderList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PuOrderVo"> 
+       select pdp.pk_pdpu,
+       spr.name name_spr,
+       pdp.code_pu,
+       pdp.date_pu,
+       pdp.pk_supplyer 
+     from pd_purchase pdp
+       inner join bd_supplyer spr on pdp.pk_supplyer=spr.pk_supplyer
+     where pdp.pk_org=#{pkOrg,jdbcType=CHAR}  and pdp.eu_status='1'
+     and  exists (select 1
+          from pd_purchase_dt dt
+          inner join bd_pd bp on bp.pk_pd=dt.pk_pd and bp.dt_pdtype like '0%'
+         where pdp.pk_pdpu = dt.pk_pdpu
+           and dt.pk_org_use = #{pkOrg,jdbcType=CHAR}
+           and dt.pk_dept_use = #{pkDept,jdbcType=CHAR} 
+           and dt.pk_store_use = #{pkStore,jdbcType=CHAR} )
+           order by pdp.date_pu
+</select>
+<select id="queryOrderDtList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PuOrderDtVo">  
+       select dt.pk_pdpudt,
+       dt.pk_pdpu,
+       dt.pk_pd,
+       pd.code code_pd,
+       pd.name name_pd,
+       pd.spec,
+       pd.spcode,
+       fa.name factory,
+       dt.pk_unit,
+       unit.name unit,
+       dt.quan_min - dt.quan_in_min as quan_min,
+       dt.quan_in_min,
+       pd.price,
+       sup.price as price_cost,
+       dt.pack_size,
+       pd.eu_pdprice,
+       pd.eu_pap,
+       pd.amt_pap,
+       pd.pap_rate,
+       sto.pk_pdstore,
+       <!--  (dt.quan_min-dt.quan_in_min)/dt.pack_size as  quan_pack,-->
+       (case when dt.pack_size is null or dt.pack_size=0 then 0 else(dt.quan_min-dt.quan_in_min)/dt.pack_size end ) as  quan_pack,
+       sum(stk.quan_min/nvl(sto.pack_size,1)) as quan_stk,<!-- 仓库物品不存在时，此字段值无意义 -->
+       sto.pack_size as pack_size_cvt,
+       sto.pk_unit as pk_unit_cvt,
+       unitsto.name as name_unit_cvt ,
+       pd.appr_no   
+  from pd_purchase_dt dt  
+       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+       inner join bd_unit unit on dt.pk_unit=unit.pk_unit 
+       left join pd_stock stk on stk.pk_pd = dt.pk_pd  and stk.pk_store = #{pkStore,jdbcType=CHAR}
+       left join bd_pd_store sto on sto.pk_pd = pd.pk_pd and sto.pk_store = #{pkStore,jdbcType=CHAR}
+       left join bd_unit unitsto on unitsto.pk_unit = sto.pk_unit   
+       left join bd_pd_supplyer sup on sup.pk_pd = dt.pk_pd and sup.flag_active='1' 
+       and sup.pk_supplyer = #{pkSupply,jdbcType=CHAR} and sup.del_flag = '0'  and sup.pk_org = #{pkOrg,jdbcType=CHAR} 
+       and sup.date_begin &lt;= to_date(#{curDate},'YYYYMMDDHH24MISS') and sup.date_end &gt; to_date(#{curDate},'YYYYMMDDHH24MISS') 
+ where dt.pk_pdpu=#{pkPdpu,jdbcType=CHAR} and  dt.flag_acc='0'  and pd.dt_pdtype like '0%' 
+ group by dt.pk_pdpudt,
+       dt.pk_pdpu,
+       dt.pk_pd,
+       pd.code,
+       pd.name,
+       pd.spec,
+       pd.spcode,
+       fa.name,
+       dt.pk_unit,
+       unit.name,
+       dt.quan_min - dt.quan_in_min ,
+       dt.quan_in_min,
+       pd.price,
+       sup.price,
+       dt.pack_size,
+       pd.eu_pdprice,
+       pd.eu_pap,
+       pd.amt_pap,
+       pd.pap_rate,
+       sto.pk_pdstore,
+       <!-- (dt.quan_min-dt.quan_in_min)/dt.pack_size,-->
+        sto.pack_size ,
+       sto.pk_unit ,
+       unitsto.name ,
+       pd.appr_no
+</select>
+<select id="queryPuPdStList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdStVo">
+select distinct st.*,
+       spr.name spr,
+       stype.name sttype,
+       rsp.cgjhbh,
+       rsp.gysbm
+  from pd_st st
+       inner join bd_supplyer spr on st.pk_supplyer=spr.pk_supplyer
+       inner join bd_defdoc stype on st.dt_sttype=stype.code and stype.code_defdoclist='080008'
+       inner join (select ps.pk_pdst,ps.pk_pd,ps.batch_no,ps.receipt_no from pd_st_detail ps
+    inner join bd_pd bp on bp.pk_pd=ps.pk_pd and bp.dt_pdtype like '0%' ) pps on pps.pk_pdst=st.pk_pdst
+    left join reg_szyj_pddelivery rsp on rsp.pk_pdst = st.pk_pdst  
+    
+ where st.pk_store_st = #{pkStoreSt,jdbcType=CHAR}  and st.flag_pu='1' and st.eu_direct='1' 
+       <if test="codeSt != null  and  codeSt != ''">
+          and st.code_st = #{codeSt,jdbcType=VARCHAR} 
+       </if>
+      <if test="pkSupplyer != null  and  pkSupplyer != ''">
+          and st.pk_supplyer = #{pkSupplyer,jdbcType=CHAR} 
+       </if>
+       <if test="dateBegin != null  and  dateBegin != ''">
+          and st.date_st &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+       </if>
+       <if test="dateEnd != null  and  dateEnd != ''">
+          and st.date_st &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+       </if>
+       <if test="pkEmpOp != null  and  pkEmpOp != ''">
+          and st.pk_emp_op = #{pkEmpOp,jdbcType=CHAR} 
+       </if>
+       <if test="euStatus != null  and  euStatus != ''">
+          and st.eu_status = #{euStatus,jdbcType=VARCHAR} 
+       </if>
+        <if test="pkPd != null  and  pkPd != ''">
+            and pps.pk_pd = #{pkPd,jdbcType=CHAR}
+        </if>
+        <if test="batchNo != null  and  batchNo != ''">
+            and pps.batch_no = #{batchNo,jdbcType=VARCHAR}
+        </if>
+        <if test="receiptNo != null  and  receiptNo != ''">
+            and (pps.receipt_No = #{receiptNo,jdbcType=VARCHAR} or st.receipt_No= #{receiptNo,jdbcType=VARCHAR})
+        </if>
+       order by st.date_st 
+</select>
+<select id="queryPuPdStDetailList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdStDtVo">
+select dt.*,
+       pd.code pdcode,
+       pd.name pdname,
+       pd.spec,
+       pd.spcode,
+       un.name unit_pd,
+       fa.name factory,
+       unit.name unit,
+       unit.pk_unit pk_unit_pds,
+       pd.pack_size as pack_size_pd,
+       sto.quan/dt.pack_size quan_stk ,
+       pd.appr_no,
+       dt.price_cost price_cost_old,
+       rspdt.ypbm,
+       rspdt.scph,
+       rspdt.psdmxbh 
+  from pd_st_detail dt
+       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+       INNER JOIN pd_st psd1 on psd1.pk_pdst=dt.pk_pdst
+       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+       inner join bd_unit unit on dt.pk_unit_pack=unit.pk_unit
+       inner join bd_unit un on un.pk_unit = pd.pk_unit_pack 
+       left join reg_szyj_pddelivery rsp on rsp.pk_pdst = dt.pk_pdst and rsp.PSDBH=psd1.CODE_RTN 
+       left join reg_szyj_pdmap pdmap on pdmap.pk_pd=dt.pk_pd
+       left join REG_SZYJ_PDDELIVERY_DT rspdt on rspdt.ypbm = pdmap.ypbm and rspdt.pk_pddiv=rsp.pk_pddiv
+       left outer join (select pk_pd,sum(quan_min) quan from pd_stock 
+       where pk_store=#{pkStore,jdbcType=CHAR}  group by pk_pd) sto 
+       on dt.pk_pd=sto.pk_pd
+ where dt.pk_pdst=#{pkPdst,jdbcType=CHAR} and pd.dt_pdtype like '0%'
+ <if test='"1"==flagRtn'><!--  如果是采购退回，则只查询未完成出库的明细-->
+        and dt.quan_min-dt.quan_outstore>0 and dt.flag_finish='0' 
+ </if>
+order by dt.sort_no
+</select>
+<select id="qryPkStoreByPkdept" parameterType="java.util.Map" resultType="java.lang.String">
+	select pk_store from bd_store where pk_dept=#{pkDept,jdbcType=VARCHAR}
+</select>
+
+	<select id="getPdPuPrice" parameterType="java.util.Map" resultType="java.lang.Double">
+		select 
+			data.price_cost 
+		from (
+			select 
+				PRICE_COST ,row_number() over(partition by PK_PD order by st.DATE_CHK desc) cnt  
+			from PD_ST_DETAIL dt
+			inner join PD_ST st on st.PK_PDST=dt.PK_PDST
+			where 
+			st.DT_STTYPE='0101'  
+			and dt.PK_PD=#{pkPd,jdbcType=VARCHAR} 
+			and st.PK_STORE_ST=#{pkStore,jdbcType=VARCHAR}
+		) data  
+		where data.cnt='1'
+    </select>
+</mapper>

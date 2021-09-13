@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.ou.dao.TraineeSetMapper">
+      <select id="qryTraineeSet" parameterType="java.lang.String"  resultType="DynaBean">
+           select
+           employee.CODE_EMP,
+           employee.NAME_EMP,
+           doc.NAME,
+           intern.DATE_BEGIN,
+           intern.pk_emp,
+           intern.DATE_END,
+           intern.NOTE,
+           intern.cycle,
+           intern.dt_internsrc,
+           intern.pk_emp_teach,
+           intern.pk_empintern,
+           intern.eu_teachtype,
+           intern.eu_worktype,          
+           intern.DEL_FLAG 
+           from BD_OU_EMP_INTERN intern
+           inner join BD_OU_EMPLOYEE employee on intern.PK_EMP=employee.PK_EMP
+           inner join BD_DEFDOC doc on employee.DT_EMPSRVTYPE = doc.CODE and doc.CODE_DEFDOCLIST='010305'                                
+            where 1=1
+			<if test="pkEmp != null and pkEmp !=''">
+			and intern.PK_EMP_TEACH = #{pkEmp,jdbcType=VARCHAR}
+			</if>
+			and intern.DEL_FLAG='0'
+      </select>   
+      
+      <update id="delTrainee" parameterType="java.util.Map">
+		      update BD_OU_EMP_INTERN set PK_EMP_TEACH = null
+		      where  
+		      <if test="pkEmpTeach != null and pkEmpTeach !=''">
+                   PK_EMP_TEACH= #{pkEmpTeach,jdbcType=VARCHAR}        
+	          </if>
+	           <if test="pkEmp != null and pkEmp !=''">
+	              and pk_emp = #{pkEmp,jdbcType=VARCHAR}
+	           </if>
+      </update>
+      
+      <update id="updateTraineeByPkEmp" parameterType="java.util.Map">      
+           update BD_OU_EMP_INTERN set PK_EMP_TEACH = #{pkEmpTeach,jdbcType=VARCHAR},
+           date_begin=#{dateBegin},
+           date_end=#{dateEnd},
+           cycle=#{cycle,jdbcType=INTEGER},
+           note=#{note,jdbcType=VARCHAR},
+           name_emp_teach=#{nameEmpTeach,jdbcType=VARCHAR},
+           del_flag=#{delFlag,jdbcType=VARCHAR}   
+           where                           
+           <if test="pkEmp != null and  pkEmp != ''">
+                pk_emp = #{pkEmp,jdbcType=VARCHAR}
+           </if>               
+      </update>                    
+      
+      <select id="qryTraineeSetByPkEmp" parameterType="java.lang.String" resultType="DynaBean">
+             select 
+				  pk_empintern,
+				  pk_org,
+				  pk_emp,
+				  dt_internsrc,
+				  date_begin,
+				  date_end,
+				  eu_worktype,
+				  cycle,
+				  eu_teachtype,
+				  pk_emp_teach,
+				  name_emp_teach,
+				  note,
+				  del_flag				
+	              from BD_OU_EMP_INTERN 
+	              where 
+	              <if test="pkEmp != null and pkEmp !=''">
+                     pk_emp = #{pkEmp,jdbcType=VARCHAR}
+                  </if>                 
+                   and (DEL_FLAG='0' or DEL_FLAG is null)                            
+      </select>
+      
+      <select id="getTeacherName" parameterType="java.lang.String"  resultType="java.lang.String">
+          select name_emp_teach from BD_OU_EMP_INTERN 
+          where DEL_FLAG='0' and pk_emp_teach IS NOT NULL 
+          <if test="pkEmp != null and pkEmp !=''">
+             and pk_emp = #{pkEmp,jdbcType=VARCHAR}
+          </if>          
+      </select>
+           
+      
+</mapper>

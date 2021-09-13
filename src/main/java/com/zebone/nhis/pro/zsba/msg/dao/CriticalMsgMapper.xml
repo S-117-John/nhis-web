@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.msg.dao.CriticalMsgMapper">
+	<sql id="queryCvMsgCustBydoctor">
+		emp.pk_emp,emp.CODE_EMP codeCust,emp.NAME_EMP nameCust
+					from PV_ENCOUNTER pv inner join BD_OU_EMPLOYEE emp on pv.pk_emp_phy=emp.PK_EMP
+					  where pv.code_pv=#{pvcode};
+	</sql>
+	<sql id="queryCvMsgCustBynurse">
+		emp.pk_emp,emp.CODE_EMP codeCust,emp.NAME_EMP  nameCust  
+  from PV_ENCOUNTER pv inner join BD_OU_EMPLOYEE emp on pv.pk_emp_ns=emp.PK_EMP
+  where pv.code_pv=#{pvcode};
+	</sql>
+	<sql id="queryCvMsgCustBygroup">
+		wg.pk_wg,wg.code_wg codeCust,wg.name_wg nameCust
+  from pv_encounter pv inner join org_dept_wg wg on pv.pk_wg=wg.pk_wg
+  where pv.code_pv=#{pvcode};
+	</sql>
+	<sql id="queryCvMsgCustBydept">
+		dept.pk_dept,dept.code_dept codeCust,dept.name_dept nameCust
+  from pv_encounter pv inner join bd_ou_dept dept on pv.pk_dept=dept.pk_dept
+  where pv.code_pv=#{pvcode};
+	</sql>
+	<sql id="queryCvMsgCustByregion">
+		dept.pk_dept,dept.code_dept codeCust,dept.name_dept nameCust
+  from pv_encounter pv inner join bd_ou_dept dept on pv.pk_dept_ns=dept.pk_dept
+  where pv.code_pv=#{pvcode};
+	</sql>
+	
+	<!-- 查询消息列表 -->
+	<select id="queryCriticalMsg" parameterType="com.zebone.nhis.pro.zsba.msg.vo.ConditionVo"
+		resultType="com.zebone.nhis.common.module.base.support.CvMsg">
+	select pk_msg,date_msg,subject,content,eu_level,eu_status,name_pi,code_pi,
+	dt_systype,name_dept,eu_pvtype,code_pv,content,flag_reply,code_src from cv_msg 
+	<trim prefix="WHERE" prefixOverrides="AND |OR ">
+	<if test="dateS != null  and  dateS != ''">
+	and date_msg>=#{dateS,jdbcType=VARCHAR} 
+	</if>
+	<if test="dateE != null  and  dateE != ''">
+	and date_msg &lt;=#{dateE,jdbcType=VARCHAR} 
+	</if>
+	<if test="name != null  and  name != ''">
+	and name_pi like '%'||#{name,jdbcType=VARCHAR}||'%' 
+	</if>
+	<if test="piNo != null  and  piNo != ''">
+	and code_pi=#{piNo,jdbcType=VARCHAR} 
+	</if>
+	<if test="pvNo != null  and  pvNo != ''">
+	and code_pv=#{pvNo,jdbcType=VARCHAR} 
+	</if>
+	<if test="subject != null  and  subject != ''">
+	and subject like '%'||#{subject,jdbcType=VARCHAR}||'%' 
+	</if>	
+	<if test="root != null  and  root != ''">
+	and dt_systype=#{root,jdbcType=VARCHAR}
+	</if>
+	<if test="level != null  and  level != ''">
+	and eu_level=#{level,jdbcType=VARCHAR} 
+	</if>	
+	<if test="state != null  and  state != ''">
+	and eu_status=#{state,jdbcType=VARCHAR} 
+	</if>
+	<if test="type != null  and  type != ''">
+	and eu_pvtype=#{type,jdbcType=VARCHAR} 
+	</if>
+	<if test="dept != null  and  dept != ''">
+	and name_dept=#{dept,jdbcType=VARCHAR}
+	</if>
+	</trim>
+	</select>
+	<!-- 删除消息 -->
+	<delete id="deleteCriticalMsg" parameterType="java.lang.String">
+	<foreach collection="list" item="msgpk" index="index">
+	delete from cv_msg where pk_msg =#{msgpk}
+	</foreach>
+	</delete>
+	<!-- 删除接收人 -->
+	<delete id="deleteMsgCust" parameterType="java.lang.String">
+	<foreach collection="list" item="msgpk" index="index">
+	delete from cv_msg_cust where pk_msg =#{msgpk}
+	</foreach>
+	</delete>
+	  <!-- 更新消息 -->
+	<update id="updateCriticalMsg" parameterType="com.zebone.nhis.common.module.base.support.CvMsg">
+	update cv_msg 
+	<trim prefix="SET" prefixOverrides=",">
+	<if test="EuPvtype != null  and  EuPvtype != ''">
+	,eu_pvtype=#{EuPvtype,jdbcType=VARCHAR}
+	</if>
+		<if test="CodePv != null  and  CodePv != ''">
+	,code_pv=#{CodePv,jdbcType=VARCHAR}
+	</if>
+		<if test="CodePi != null  and  CodePi != ''">
+	,code_pi=#{CodePi,jdbcType=VARCHAR}
+	</if>
+		<if test="NamePi != null  and  NamePi != ''">
+	,name_pi=#{NamePi,jdbcType=VARCHAR}
+	</if>
+		<if test="EuLevel != null  and  EuLevel != ''">
+	,eu_level=#{EuLevel,jdbcType=VARCHAR}
+	</if>
+		<if test="Subject != null  and  Subject != ''">
+	,subject=#{Subject,jdbcType=VARCHAR}
+	</if>
+		<if test="Content != null  and  Content != ''">
+	,content=#{Content,jdbcType=VARCHAR}
+	</if>
+	where pk_msg=#{PkMsg,jdbcType=VARCHAR}
+	</trim>
+	</update>   
+	  <!-- 查询接收人消息 -->
+	<select id="queryMsgCust" parameterType="java.lang.String"
+	resultType="com.zebone.nhis.common.module.base.support.CvMsgCust">
+	select eu_role,code_cust,name_cust,note,pk_msgcust,pk_msg from cv_msg_cust
+	<if test="PkMsg != null  and  PkMsg != ''">
+	where pk_msg=#{PkMsg,jdbcType=VARCHAR}
+	</if>
+	</select>
+	  <!-- 查询接收类型 -->
+	<select id="queryMsgCust_PvCode" parameterType="com.zebone.nhis.pro.zsba.msg.vo.Refuse"
+	resultType="com.zebone.nhis.common.module.base.support.CvMsgCust">
+	select
+	<if test="doctor!=0 and doctor !=null">
+		<include refid="queryCvMsgCustBydoctor"/>
+	</if>
+	<if test="nurse!=0 and nurse !=null">
+		<include refid="queryCvMsgCustBynurse"/>
+	</if>
+	<if test="group!=0 and group !=null">
+		<include refid="queryCvMsgCustBygroup"/>
+	</if>
+	<if test="dept!=0 and dept !=null">
+		<include refid="queryCvMsgCustBydept"/>
+	</if>
+	<if test="region!=0 and region !=null">
+		<include refid="queryCvMsgCustByregion"/>
+	</if>
+	</select>
+	  <!-- 发送消息记录-->
+	<select id="queryMsgSend" parameterType="java.lang.String"
+	resultType="com.zebone.nhis.common.module.base.support.CvMsgSend">
+		select send.date_send,
+       send.name_recver,
+       send.date_read,
+       send.cont_reply,
+       send.date_reply,
+       send.ip_reply,
+       send.pk_msgsend,
+       send.pk_msg,
+       send.code_recver,
+       send.code_dept
+  from cv_msg_send send
+ where send.pk_msg=#{PkMsg}
+	</select>
+	
+	  <!-- 阅读消息 -->
+	<select id="queryMsgReplyOne" 
+	parameterType="com.zebone.nhis.pro.zsba.msg.vo.ConditionVo"
+	resultType="com.zebone.nhis.common.module.base.support.CvMsg">
+		select msg.pk_msg,
+       send.date_send date_send,
+       msg.subject,
+       msg.code_pi,
+       msg.code_pv,
+       msg.name_pi,
+       msg.dt_systype,
+       msg.eu_level,
+       msg.eu_status,
+       msg.name_dept,
+       msg.name_sender,msg.content,
+       msg.bed_no,
+       msg.name_dr,
+       msg.desc_diag,
+       msg.name_dept_pv
+   from cv_msg msg 
+   inner join cv_msg_send send on msg.pk_msg=send.pk_msg
+   where 1=1 
+     <if test="userCode != null ">
+        and send.code_dept in
+	    <foreach collection="userCode" item="item" index="index"
+		open="(" close=")" separator=",">
+			#{item}
+		</foreach>
+	</if>
+	<if test="dateS != null  and  dateS != ''">
+	and msg.date_msg &gt;=to_date(#{dateS},'YYYYMMDDHH24MISS')
+	</if>
+	<if test="dateE != null  and  dateE != ''">
+	and msg.date_msg &lt;=to_date(#{dateE},'YYYYMMDDHH24MISS') 
+	</if>
+	<if test="name != null  and  name != ''">
+	and msg.name_pi like '%'||#{name,jdbcType=VARCHAR}||'%' 
+	</if>
+	<if test="piNo != null  and  piNo != ''">
+	and msg.code_pi=#{piNo,jdbcType=VARCHAR} 
+	</if>
+	<if test="pvNo != null  and  pvNo != ''">
+	and msg.code_pv=#{pvNo,jdbcType=VARCHAR} 
+	</if>
+	<if test="subject != null  and  subject != ''">
+	and msg.subject like '%'||#{subject,jdbcType=VARCHAR}||'%' 
+	</if>	
+	<if test="root != null  and  root != ''">
+	and msg.dt_systype=#{root,jdbcType=VARCHAR}
+	</if>
+	<if test="level != null  and  level != ''">
+	and msg.eu_level=#{level,jdbcType=VARCHAR} 
+	</if>	
+	<if test="state != null  and  state != ''">
+	and msg.eu_status=#{state,jdbcType=VARCHAR} 
+	</if>
+	<if test="type != null  and  type != ''">
+	and msg.eu_pvtype=#{type,jdbcType=VARCHAR} 
+	</if>
+	<if test="dept != null  and  dept != ''">
+	and msg.name_dept=#{dept,jdbcType=VARCHAR}
+	</if>
+	</select>
+	
+	<!-- 回车查询患者编码 -->
+	<select id="queryPiPvMsgByPv" parameterType="java.lang.String"
+	resultType="com.zebone.nhis.pro.zsba.msg.vo.PiPvVo">
+		select	pi.code_pi,
+       pi.name_pi,
+       pv.code_pv
+  from pi_master pi
+       inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+			where pv.code_pv=#{code} 
+		<if test=" eutype!=null and eutype!='' ">
+		   and pv.eu_pvtype=#{eutype}
+         </if>
+	</select>
+	  <!-- 回车查询就诊编码 -->
+	<select id="queryPiPvMsgByPi" parameterType="java.lang.String"
+	resultType="com.zebone.nhis.pro.zsba.msg.vo.PiPvVo">
+	 select pi.code_pi,
+       pi.name_pi,
+       pv.code_pv
+from pi_master pi
+     inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+where pi.code_pi=#{code} 
+		<if test=" eutype!=null and eutype!='' ">
+		and
+      pv.eu_pvtype=#{eutype} and
+      pv.date_begin=(select max(a.date_begin) 
+                       from PV_ENCOUNTER a
+                      where a.pk_pi=pi.pk_pi)
+                      </if>
+	</select>
+	
+	
+	<select id="queryCustByDept" parameterType="java.lang.String"
+	resultType="java.lang.String">
+	select pk_emp from bd_ou_empjob emp inner join BD_OU_DEPT dept on 
+emp.pk_dept=dept.pk_dept
+where code_dept=#{deptcode}
+	</select>
+	
+		<select id="queryCustByGroup" parameterType="java.lang.String"
+	resultType="java.lang.String">
+	 select
+  emp.pk_emp
+   from ORG_DEPT_WG_EMP emp inner join org_dept_wg wg on emp.pk_wg=wg.pk_wg 
+   where wg.code_wg=#{groupcode}
+	</select>
+	
+	<select id="queryCustByEmp" parameterType="java.lang.String"
+	resultType="com.zebone.nhis.common.module.base.support.CvMsgCust">
+	select code_user codeCust,name_user nameCust from  bd_ou_user where pk_emp in
+		<foreach collection="list" item="empcode" index="index"
+		open="(" close=")" separator=",">
+		#{empcode}
+		</foreach>
+	</select>
+	
+	<select id="queryRead" parameterType="java.util.Map"
+	resultType="java.lang.String">
+	select COUNT(*) from CV_MSG_SEND send
+	 inner join cv_msg msg on msg.pk_msg=send.pk_msg
+	where send.code_dept in 
+	<foreach collection="list" item="list" index="index"
+	open="(" close=")" separator=",">
+		#{list}
+	</foreach>
+	      and msg.eu_status ='1'
+	</select>
+	
+	<update id="updateMsgSend" parameterType="java.lang.String">
+			<if test=" state !=null and state !='' ">
+				update cv_msg set eu_status=#{state}  where pk_msg=#{pkMsg}
+			</if>
+	</update>
+	
+	<select id="queryPacs" parameterType="java.lang.String" 
+		resultType="com.zebone.nhis.pro.zsba.msg.vo.PacsVo">
+		select patient_id,inpatient_no,record_sn,item_name,name,apply_unit,apply_doctor,report_doctor from emergency_info 
+		where record_sn not in
+		<foreach collection="list" item="list" index="index"
+		open="(" close=")" separator=",">
+		#{list}
+		</foreach>
+		and (finish_flag is null or finish_flag='0') and (patient_id is not null and patient_id !='')
+	</select>
+	
+	<select id="queryPacsByNull" parameterType="java.lang.String" 
+		resultType="com.zebone.nhis.pro.zsba.msg.vo.PacsVo">
+		select patient_id,inpatient_no,record_sn,item_name,name,apply_unit,apply_doctor,report_doctor from emergency_info 
+		where finish_flag is null or finish_flag='0' and (patient_id is not null and patient_id !='')
+	</select>
+	
+	<select id="queryDept" parameterType="java.lang.String"
+	resultType="java.util.Map">
+	select dept,inpatient_no,bed_no,admiss_diag_str from zy_actpatient  
+	where patient_id=#{patientId}
+	</select>
+	
+</mapper>

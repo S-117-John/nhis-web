@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.zsrm.dao.AtfYpxxDetailMapper">
+
+    <select id="getPackagePlant" parameterType="com.zebone.nhis.scm.pub.vo.PdDeDrugVo" resultType="com.zebone.nhis.ma.pub.zsrm.vo.AtfYpxxDetailVo">
+        SELECT
+            bod2.CODE_DEPT AS codeDept,
+            bod2.NAME_DEPT AS nameDept,
+            epad.pk_pdapdt AS PAGE_NO,
+            co.ORDSN AS pk_cnord,
+            eoo.date_plan AS OCC_TIME,
+            '201000' AS GROUP_NO,
+            --bod3.old_code AS GROUP_NO,
+            bod.old_code AS WARD_SN,
+            bod.name_dept AS WARD_NAME,
+            pm.CODE_OP AS PATIENT_ID,
+            pm.NAME_PI AS PATIENT_NAME,
+            pe.EU_PVTYPE AS PATIENT_TYPE,
+            pe.BED_NO AS BED_NO,
+            boe.NAME_EMP AS DOCTOR,
+            pm.code_ip AS INPATIENT_NO,
+            bp.code_hp AS DRUG_CODE,
+            bp.name AS DRUG_NAME,
+            bp.spec AS SPECIFICATION,
+            bd.name AS MANUFACTORY,
+            '' AS LOT,
+            '' AS EXP_DATE,
+            co.QUAN AS AMOUNT,
+            bu.name AS AMOUNT_UNIT,
+            co.dosage AS DOSAGE,
+            bu2.name AS DOS_UNIT,
+            co.dosage AS DOS_PER,
+            bu2.name AS DOS_PER_UNITS,
+            '' AS INCLUDE_FLAG,
+            freq.NAME AS FREQUENCY,
+            bs.name AS COMMENT1,
+            co.note_ord AS COMMENT2,
+            '1' AS PRINT_TYPE,
+            '1' AS Atf_no,
+            co.ordsn_parent AS PARENT_ORDER,
+            co.DATE_START AS START_TIME,
+            co.DATE_STOP AS END_TIME,
+            co.EU_ALWAYS AS MZ_FLAG,
+            epad.PK_PDAPDT AS detailSn
+        FROM
+            EX_PD_APPLY_DETAIL epad
+                --INNER JOIN EX_PD_APPLY epa ON epad.pk_pdap = epa.PK_PDAP
+                INNER JOIN CN_ORDER co ON epad.PK_CNORD = co.PK_CNORD
+                INNER JOIN EX_ORDER_OCC eoo ON eoo.PK_PDAPDT = epad.PK_PDAPDT
+                INNER JOIN pv_encounter pe ON pe.PK_PV = epad.PK_PV
+                INNER JOIN BD_OU_DEPT bod ON pe.PK_DEPT_NS= bod.pk_dept
+                INNER JOIN PI_MASTER pm ON pe.pk_pi= pm.pk_pi
+                INNER JOIN BD_PD bp ON epad.PK_PD= bp.PK_PD
+                INNER JOIN bd_supply bs ON co.code_supply= bs.code
+                INNER JOIN BD_UNIT bu ON bu.pk_unit= co.pk_unit
+                INNER JOIN BD_OU_EMPLOYEE boe ON boe.PK_EMP= co.pk_emp_input
+                INNER JOIN BD_OU_DEPT bod2 ON pe.PK_DEPT= bod2.PK_DEPT
+                --INNER JOIN BD_OU_DEPT bod3 ON epa.pk_dept_de= bod3.PK_DEPT
+                INNER JOIN BD_UNIT bu2 ON bu2.pk_unit= co.pk_unit_dos
+                INNER JOIN BD_FACTORY bd on bp.pk_factory=bd.pk_factory
+                LEFT JOIN BD_TERM_FREQ freq ON freq.CODE= co.CODE_FREQ
+        WHERE epad.pk_pdapdt=#{pkPdapdt}
+    </select>
+    <select id="getSumQuanOcc" parameterType="com.zebone.nhis.scm.pub.vo.PdDeDrugVo" resultType="map">
+        select   sum(quan_occ) as quanOcc,TO_CHAR(date_plan,'yyyy-mm-dd') as datePlan
+        from  EX_ORDER_OCC epad
+        WHERE epad.pk_pdapdt=#{pkPdapdt}
+        GROUP BY TO_CHAR(date_plan,'yyyy-mm-dd')
+    </select>
+    <select id="getPdDeDrugVo" resultType="com.zebone.nhis.scm.pub.vo.PdDeDrugVo">
+        select
+            pk_pdapdt as pkPdapdt
+        from ex_pd_de
+        where code_de=#{codeDe,jdbcType=VARCHAR}
+    </select>
+</mapper>

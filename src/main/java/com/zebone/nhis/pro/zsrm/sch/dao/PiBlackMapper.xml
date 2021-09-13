@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsrm.sch.dao.PiBlackMapper" >
+
+	<!--累计失约4次，置为黑名单，科室拓展属性【0602】值为1的，患者爽约不计算黑名单；医生拓展属性【0703】值为1的，患者爽约不计算黑名单-->
+	<select id="getPiOfAppt" resultType="com.zebone.nhis.pro.zsrm.sch.vo.PiBlackVo">
+		select appt.PK_PI, appt.PK_ORG, appt.DATE_APPT occurred_time, '0' as qry_type, '0' as eu_lock_type,appv.PK_PV
+		from sch_appt appt
+		left join SCH_APPT_PV appv on appt.PK_SCHAPPT = appv.PK_SCHAPPT
+		where appt.EU_STATUS = 0
+		  and appt.DATE_APPT >= to_date(#{limitTime,jdbcType=VARCHAR},'yyyyMMddHH24miss')
+		  and appt.DATE_APPT &lt; to_date(#{nowTime,jdbcType=VARCHAR},'yyyyMMddHH24miss')
+		  and (not exists(select 1
+						  from BD_DICTATTR attr
+						  where (attr.CODE_ATTR = '0602'
+							  and attr.VAL_ATTR = '1'
+							  and attr.PK_DICT = appt.PK_DEPT_EX)
+							 or (attr.CODE_ATTR = '0703'
+							  and attr.VAL_ATTR = '1'
+							  and attr.PK_DICT = appv.PK_EMP_PHY))
+			)
+	</select>
+
+
+	<select id="getPiOfNoPayRegfee" resultType="com.zebone.nhis.pro.zsrm.sch.vo.PiBlackVo">
+		select cg.PK_PI,cg.PK_ORG, min(cg.DATE_CG) occurred_time,'1' as qry_type,'3' as eu_lock_type,cg.PK_PV
+		from bl_op_dt cg
+		 inner join pv_encounter pv on cg.pk_pv = pv.pk_pv and pv.eu_status in ('1', '2', '3')
+		where cg.flag_pv = '1'
+		  and cg.flag_settle = '0'
+		  and cg.date_cg >= to_date(#{limitTime,jdbcType=VARCHAR},'yyyyMMddHH24miss')
+		  and cg.date_cg &lt; to_date(#{blackTime,jdbcType=VARCHAR},'yyyyMMddHH24miss')
+		group by cg.PK_PI,cg.pk_pv,cg.PK_ORG
+	</select>
+
+	<select id="getPiOfNoPayExeFee" resultType="com.zebone.nhis.pro.zsrm.sch.vo.PiBlackVo">
+		select cg.PK_PI,cg.PK_ORG, min(cg.DATE_CG) occurred_time,'2' as qry_type,'3' as eu_lock_type,cg.PK_PV
+		from bl_op_dt cg
+		inner join cn_order ord on cg.pk_cnord = ord.pk_cnord and ord.flag_occ = '1'
+		where cg.flag_settle = '0'
+		  and cg.date_cg >= to_date(#{limitTime,jdbcType=VARCHAR},'yyyyMMddHH24miss')
+		  and cg.date_cg &lt; to_date(#{blackTime,jdbcType=VARCHAR},'yyyyMMddHH24miss')
+		group by cg.PK_PI,cg.PK_PV,cg.PK_ORG
+	</select>
+
+	<select id="getPiLockApptOfRecord" resultType="com.zebone.nhis.pro.zsrm.sch.vo.PiBlackVo">
+		select lr.PK_ORG,lr.PK_PI,min(lr.DATE_RECORD) occurred_time,'0' as qry_type,'0' eu_lock_type
+		     ,listagg(lr.PK_PILOCKREC) within group ( order by lr.DATE_RECORD) pk_record_str
+		from PI_LOCK_RECORD lr
+		where lr.EU_LOCKTYPE='0' and lr.EU_STATUS='1'
+		  and lr.DATE_RECORD>=to_date(#{dateBegin,jdbcType=VARCHAR},'yyyyMMddHH24miss')
+		group by lr.PK_PI,lr.PK_ORG
+		having count(*)>=4
+	</select>
+
+	<select id="getPiLockFeeOfRecord" resultType="com.zebone.nhis.pro.zsrm.sch.vo.PiBlackVo">
+		select t1.*,
+		to_char(occurred_time, 'yyyy-MM-dd HH24:mi:ss') || ',科室【' || pt.NAME_DEPT || '】,医生：' || emp.NAME_EMP as note,
+		pv.PK_PV
+		from (
+			select lr.PK_PILOCKREC pk_record_str,lr.PK_ORG,
+			lr.DATE_RECORD occurred_time,
+			lr.PK_PV,
+			lr.PK_PI,
+			substr(lr.CODE,0,1) qry_type,
+			lr.EU_LOCKTYPE eu_lock_type
+			from PI_LOCK_RECORD lr
+			where lr.EU_LOCKTYPE = '3'
+			and lr.EU_STATUS = '1'
+			and lr.DATE_RECORD>=to_date(#{dateBegin,jdbcType=VARCHAR},'yyyyMMddHH24miss')
+		) t1
+		inner join PV_ENCOUNTER pv on t1.pk_pv = pv.PK_PV
+		left join bd_ou_dept pt on pv.PK_DEPT = pt.PK_DEPT
+		left join bd_ou_employee emp on pv.PK_EMP_PHY = emp.PK_EMP
+	</select>
+
+</mapper>

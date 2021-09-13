@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.cn.opdw.dao.PvDocMapper">
+  <resultMap id="ResultMapPvDoc" type="com.zebone.nhis.common.module.cn.opdw.PvDoc">
+    <id column="PK_PVDOC" jdbcType="CHAR" property="pkPvdoc" />
+    <result column="PK_ORG" jdbcType="CHAR" property="pkOrg" />
+    <result column="PK_PI" jdbcType="CHAR" property="pkPi" />
+    <result column="PK_PV" jdbcType="CHAR" property="pkPv" />
+    <result column="DATE_DOC" jdbcType="TIMESTAMP" property="dateDoc" />
+    <result column="PK_EMP_DOC" jdbcType="CHAR" property="pkEmpDoc" />
+    <result column="NAME_EMP_DOC" jdbcType="VARCHAR" property="nameEmpDoc" />
+    <result column="PK_PVDOCTEMP" jdbcType="CHAR" property="pkPvdoctemp" />
+    <result column="CREATOR" jdbcType="CHAR" property="creator" />
+    <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="MODIFIER" jdbcType="CHAR" property="modifier" />
+    <result column="MODITY_TIME" jdbcType="TIMESTAMP" property="modityTime" />
+    <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag" />
+    <result column="TS" jdbcType="TIMESTAMP" property="ts" />
+    <result column="FLAG_EMR" jdbcType="CHAR" property="flagEmr" />
+    <result column="NAME" jdbcType="VARCHAR" property="tempName" />
+    <result column="FLAG_PRINT" jdbcType="CHAR" property="flagPrint" />
+    <result column="FLAG_SECRET" jdbcType="CHAR" property="flagSecret" />
+    <result column="DOC_XML" jdbcType="VARCHAR" property="docXml" />
+  </resultMap>
+
+  <select id="queryPvDocByIdEmr" parameterType="java.lang.String" resultMap="ResultMapPvDoc">
+    select * 
+    from ${dbName}PV_DOC
+    where PK_PVDOC = #{pkPvdoc,jdbcType=CHAR}
+  </select>
+  <select id="queryDocListEmrByPks" resultMap="ResultMapPvDoc">
+     select
+		* 
+	   from ${dbName}pv_doc where pk_pvdoc in
+		<foreach item="item" index="index" collection="list" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+  </select>
+  <insert id="savePvDocEmr" parameterType="com.zebone.nhis.common.module.cn.opdw.PvDoc">
+    insert into ${dbName}PV_DOC
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="pkPvdoc != null">
+        PK_PVDOC,
+      </if>
+      <if test="pkOrg != null">
+        PK_ORG,
+      </if>
+      <if test="pkPi != null">
+        PK_PI,
+      </if>
+      <if test="pkPv != null">
+        PK_PV,
+      </if>
+      <if test="dateDoc != null">
+        DATE_DOC,
+      </if>
+      <if test="pkEmpDoc != null">
+        PK_EMP_DOC,
+      </if>
+      <if test="nameEmpDoc != null">
+        NAME_EMP_DOC,
+      </if>
+      <if test="pkPvdoctemp != null">
+        PK_PVDOCTEMP,
+      </if>
+      <if test="creator != null">
+        CREATOR,
+      </if>
+      <if test="createTime != null">
+        CREATE_TIME,
+      </if>
+      <if test="modifier != null">
+        MODIFIER,
+      </if>
+      <if test="modityTime != null">
+        MODITY_TIME,
+      </if>
+      <if test="delFlag != null">
+        DEL_FLAG,
+      </if>
+      <if test="ts != null">
+        TS,
+      </if>
+      <if test="flagEmr != null">
+        FLAG_EMR,
+      </if>
+      <if test="tempName != null">
+        NAME,
+      </if>
+      <if test="flagPrint != null">
+        FLAG_PRINT,
+      </if>
+      <if test="flagSecret != null">
+        FLAG_SECRET,
+      </if>
+      <if test="docXml != null">
+        DOC_XML,
+      </if>
+      <if test="dataDoc != null">
+        DATA_DOC,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="pkPvdoc != null">
+        #{pkPvdoc,jdbcType=CHAR},
+      </if>
+      <if test="pkOrg != null">
+        #{pkOrg,jdbcType=CHAR},
+      </if>
+      <if test="pkPi != null">
+        #{pkPi,jdbcType=CHAR},
+      </if>
+      <if test="pkPv != null">
+        #{pkPv,jdbcType=CHAR},
+      </if>
+      <if test="dateDoc != null">
+        #{dateDoc,jdbcType=TIMESTAMP},
+      </if>
+      <if test="pkEmpDoc != null">
+        #{pkEmpDoc,jdbcType=CHAR},
+      </if>
+      <if test="nameEmpDoc != null">
+        #{nameEmpDoc,jdbcType=VARCHAR},
+      </if>
+      <if test="pkPvdoctemp != null">
+        #{pkPvdoctemp,jdbcType=CHAR},
+      </if>
+      <if test="creator != null">
+        #{creator,jdbcType=CHAR},
+      </if>
+      <if test="createTime != null">
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifier != null">
+        #{modifier,jdbcType=CHAR},
+      </if>
+      <if test="modityTime != null">
+        #{modityTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="delFlag != null">
+        #{delFlag,jdbcType=CHAR},
+      </if>
+      <if test="ts != null">
+        #{ts,jdbcType=TIMESTAMP},
+      </if>
+      <if test="flagEmr != null">
+        #{flagEmr,jdbcType=CHAR},
+      </if>
+      <if test="tempName != null">
+        #{tempName,jdbcType=VARCHAR},
+      </if>
+      <if test="flagPrint != null">
+        #{flagPrint,jdbcType=CHAR},
+      </if>
+      <if test="flagSecret != null">
+        #{flagSecret,jdbcType=CHAR},
+      </if>
+      <if test="docXml != null">
+        #{docXml,jdbcType=VARCHAR},
+      </if>
+      <if test="dataDoc != null">
+        #{dataDoc,jdbcType=BLOB},
+      </if>
+    </trim>
+  </insert>
+  <update id="updatePvDocEmr" parameterType="com.zebone.nhis.common.module.cn.opdw.PvDoc">
+    update ${dbName}PV_DOC
+    <set>
+      <if test="pkOrg != null">
+        PK_ORG = #{pkOrg,jdbcType=CHAR},
+      </if>
+      <if test="pkPi != null">
+        PK_PI = #{pkPi,jdbcType=CHAR},
+      </if>
+      <if test="pkPv != null">
+        PK_PV = #{pkPv,jdbcType=CHAR},
+      </if>
+      <if test="dateDoc != null">
+        DATE_DOC = #{dateDoc,jdbcType=TIMESTAMP},
+      </if>
+      <if test="pkEmpDoc != null">
+        PK_EMP_DOC = #{pkEmpDoc,jdbcType=CHAR},
+      </if>
+      <if test="nameEmpDoc != null">
+        NAME_EMP_DOC = #{nameEmpDoc,jdbcType=VARCHAR},
+      </if>
+      <if test="pkPvdoctemp != null">
+        PK_PVDOCTEMP = #{pkPvdoctemp,jdbcType=CHAR},
+      </if>
+      <if test="creator != null">
+        CREATOR = #{creator,jdbcType=CHAR},
+      </if>
+      <if test="createTime != null">
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifier != null">
+        MODIFIER = #{modifier,jdbcType=CHAR},
+      </if>
+      <if test="modityTime != null">
+        MODITY_TIME = #{modityTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="delFlag != null">
+        DEL_FLAG = #{delFlag,jdbcType=CHAR},
+      </if>
+      <if test="ts != null">
+        TS = #{ts,jdbcType=TIMESTAMP},
+      </if>
+      <if test="flagEmr != null">
+        FLAG_EMR = #{flagEmr,jdbcType=CHAR},
+      </if>
+      <if test="tempName != null">
+        NAME = #{tempName,jdbcType=VARCHAR},
+      </if>
+      <if test="flagPrint != null">
+        FLAG_PRINT = #{flagPrint,jdbcType=CHAR},
+      </if>
+      <if test="flagSecret != null">
+        FLAG_SECRET = #{flagSecret,jdbcType=CHAR},
+      </if>
+      <if test="docXml != null">
+        DOC_XML = #{docXml,jdbcType=VARCHAR},
+      </if>
+      <if test="dataDoc != null">
+        DATA_DOC = #{dataDoc,jdbcType=BLOB},
+      </if>
+    </set>
+    where PK_PVDOC = #{pkPvdoc,jdbcType=CHAR}
+  </update>
+</mapper>

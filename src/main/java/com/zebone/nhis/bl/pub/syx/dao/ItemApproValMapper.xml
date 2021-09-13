@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.bl.pub.syx.dao.ItemApproValMapper">
+	
+	<select id="qryApproValList" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.compay.ins.syx.gzyb.InsGzgyChk">
+		select chk.pk_gzgychk,  
+		       chk.eu_pvtype,   
+		       pi.code_pi,      
+		       chk.pk_pi,       
+		       chk.pk_pv,       
+		       chk.name_pi,     
+		       chk.pk_hp,       
+		       chk.name_hp,     
+		       chk.pk_cnord,    
+		       chk.pk_item,     
+		       chk.name_item,   
+		       chk.price,       
+		       chk.flag_chk,    
+		       chk.eu_result,   
+		       chk.name_emp_chk,
+		       chk.date_chk,    
+		       chk.pk_dept,     
+		       chk.name_dept,  
+		       chk.name_emp_app,
+		       chk.date_app,
+		       chk.name_diag,
+		       chk.sex,
+		       chk.idno,
+		       chk.insur_no,
+		       case
+		          when chk.eu_result='0' then '通过'
+		          when chk.eu_result is null or chk.eu_result = '' then ''
+		          else '不通过' end nameEuResult
+		  from ins_gzgy_chk chk
+		       inner join pi_master pi on chk.pk_pi=pi.pk_pi
+		 where 1=1
+		 	<if test='codePi!=null and codePi!=""'>
+		 		and pi.code_pi=#{codePi,jdbcType=VARCHAR}
+		 	</if>
+		 	<if test='codeIp!=null and codeIp!=""'>
+		 		and pi.code_ip=#{codeIp,jdbcType=VARCHAR}
+		 	</if>
+		    <if test='codeOp!=null and codeOp!=""'>
+		    	and pi.code_op=#{codeOp,jdbcType=VARCHAR}
+		    </if>
+		    <if test='flagChk!=null and flagChk!=""'>
+		    	and chk.flag_chk=#{flagChk,jdbcType=VARCHAR}
+		    </if>
+		    <if test='dateBegin!=null and dateBegin!="" and dateBegin!="00010101000000"'>
+		    	and chk.date_chk &gt;=to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+		    </if>
+		    <if test='dateEnd!=null and dateEnd!="" and dateEnd!="00010101000000"'>
+		    	and chk.date_chk &lt;=to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+		    </if>   
+	</select>
+	
+	<update id="updateApproVal" parameterType="com.zebone.nhis.common.module.compay.ins.syx.gzyb.InsGzgyChk">
+		update ins_gzgy_chk
+		   set flag_chk='1',  
+		       eu_result=#{euResult,jdbcType=VARCHAR},   
+		       date_chk=#{dateChk},    
+		       pk_emp_chk=#{pkEmpChk,jdbcType=VARCHAR},     
+		       name_emp_chk=#{nameEmpChk,jdbcType=VARCHAR} 
+		 where pk_gzgychk=#{pkGzgychk,jdbcType=CHAR} and
+		       flag_chk='0'
+	</update>
+	
+</mapper>

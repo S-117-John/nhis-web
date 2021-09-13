@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.QcEhpMapper">
+	<sql id="Base_Column_List" >
+		       ehp.pk_pv,  
+		       ehp.pat_no,
+		       ehp.times, 
+		       ehp.name, 
+		       ehp.dt_sex, 
+		       ehp.pk_dept_dis, 
+		       ehp.dis_dept_name, 
+		       ehp.pk_emp_consult,
+		       ehp.consult_name, 
+		       ehp.dis_time,
+		       Case When indrg.PK_INDRG is not null AND indrg.in_drg != '1' then '0'
+                When indrg.PK_INDRG is not null AND indrg.in_drg = '1' then '1'
+                When  ip.eu_status_drg ='1' then '2'
+                When   ip.eu_status_drg ='-1' then '3'
+              	When   qc.EU_STATUS ='1' then '4'
+                When    qc.EU_STATUS ='0' and qc.eu_qc_dept ='1' then '5'
+              	When    ip.eu_status_doc ='0' then '6'
+              	When     ip.eu_status_doc ='-2' then '8'
+				 				else '7' End eu_status,
+					Case When indrg.PK_INDRG is not null AND indrg.in_drg != '1' then '入组失败'
+                When indrg.PK_INDRG is not null AND indrg.in_drg = '1' then '入组成功'
+                When  ip.eu_status_drg ='1' then '上传成功'
+                When   ip.eu_status_drg ='-1' then '上传失败'
+              	When   qc.EU_STATUS ='1' then '质控完成'
+                When    qc.EU_STATUS ='0' and qc.eu_qc_dept ='1' then '质控'
+              	When    ip.eu_status_doc ='0' then '提交'
+              	When     ip.eu_status_doc ='-2' then '回退'
+			 				else '未提交' End eu_status_name,
+			   ip.date_commit_doc,
+		       qc.eu_qc_dept,
+		       qc.eu_qc_mm,
+		       qc.eu_qc_ins,
+		       qc.eu_qc_pce, 
+		       defect.cnt_def,
+		       defect.cnt_rep,
+		       qc.pk_qcehp,
+		       qc.score  
+	  </sql>
+	
+	<select id="queryQcEhpList"  parameterType="java.util.Map" resultType="DynaBean">
+      select * from (  select 
+        	<include refid="Base_Column_List" />
+        from emr_home_page ehp
+		       inner join pv_ip ip on ehp.pk_pv=ip.pk_pv
+		       left join BD_OU_DEPT bod  on bod.code_dept=ehp.pk_dept_dis
+		       left outer join qc_ehp qc on ehp.pk_pv=qc.pk_pv
+		       left outer join (select dt.pk_qcehp,
+		                               count(1) cnt_def,
+		                               sum(case dt.eu_status when '1' then 1 else 0 end) cnt_rep
+		                          from qc_ehp_detail dt
+		                         where dt.eu_type='0'
+		                      group by dt.pk_qcehp
+		                       ) defect on qc.pk_qcehp=defect.pk_qcehp
+		     left OUTER JOIN (select drg.*,pi.PK_PI from QC_EHP_INDRG drg
+								inner join  PI_MASTER pi on drg.BAH = pi.CODE_IP) indrg on indrg.PK_PI = ehp.PK_PI
+		 where 1=1  
+		  <if test="patNo !=null and patNo != ''">
+          		and ehp.pat_no like '%' || #{patNo,jdbcType=VARCHAR} || '%'   
+          </if>
+          <if test="name !=null and name != ''">
+          		and ehp.name like '%' || #{name,jdbcType=VARCHAR} || '%'   
+          </if>
+		  <if test="pkDeptDis !=null and pkDeptDis != ''">
+            	and bod.PK_DEPT= #{pkDeptDis,jdbcType=VARCHAR}
+          </if>
+          <if test="pkEmpConsult !=null and pkEmpConsult != ''">
+            	and ehp.pk_emp_consult= #{pkEmpConsult,jdbcType=VARCHAR}
+          </if>
+          <if test="beginDisTime !=null and beginDisTime != ''">
+        	 	and ehp.dis_time<![CDATA[>=]]> to_date(#{beginDisTime,jdbcType=VARCHAR},'yyyy-mm-dd')
+          </if>
+          <if test="endDisTime !=null and endDisTime != ''">
+        	 	and ehp.dis_time<![CDATA[<=]]> to_date(#{endDisTime,jdbcType=VARCHAR},'yyyy-mm-dd')
+          </if>
+          ) t where 1=1
+          <if test="euStatus !=null and euStatus != ''">
+            	and nvl(EU_STATUS,0)= #{euStatus,jdbcType=VARCHAR}
+          </if>
+		order by DATE_COMMIT_DOC
+    </select>
+    <select id="queryQcEhpRecList"  parameterType="java.util.Map" resultType="DynaBean">
+        select rec.eu_qctype, 
+		       rec.date_qc,
+		       rec.name_emp_qc,
+		       rec.eu_result
+		  from qc_ehp_rec rec
+		 where 1=1 and eu_result is not null
+          <if test="pkQcehp !=null and pkQcehp != ''">
+            	and rec.pk_qcehp= #{pkQcehp,jdbcType=VARCHAR}
+          </if>
+    </select>
+    <select id="queryQcEhpdetailList"  parameterType="java.util.Map" resultType="DynaBean">
+        select dt.dt_ehpitem,
+		       dt.name_item,
+		       dt.desc_defect,
+		       case dt.eu_status when '1' then '修复' else '未修复' end eu_status
+		  from qc_ehp_detail dt
+		 where dt.eu_type='0'
+          <if test="pkQcehp !=null and pkQcehp != ''">
+            	and dt.pk_qcehp= #{pkQcehp,jdbcType=VARCHAR}
+          </if>
+          <if test="pkQcehprec !=null and pkQcehprec != ''">
+            	and dt.PK_QCEHPREC= #{pkQcehprec,jdbcType=VARCHAR}
+          </if>
+    </select>
+    <!-- 评分-查询质控项目评分项 -->
+    <select id="queryBdScoreItem"  parameterType="java.util.Map" resultType="DynaBean">
+        select a.*,aa.item_count,bd.name 
+        from bd_ehp_qcitem a 
+		left join (select dt_ehpitemtype,eu_itemcate,count(1) item_count 
+					from bd_ehp_qcitem 
+					where flag_active='1' and del_flag='0'
+					group by dt_ehpitemtype,eu_itemcate ) aa 
+					on aa.dt_ehpitemtype=a.dt_ehpitemtype and aa.eu_itemcate=a.eu_itemcate
+		left join bd_defdoc bd on bd.code_defdoclist='060314' and bd.code=a.dt_ehpitemtype
+		where a.flag_active='1'and a.del_flag='0'
+		ORDER BY a.SORTNO
+    </select>
+    <!--  评分-查询评分历史记录 -->
+    <select id="queryScoreItem"  parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.cn.ipdw.QcEhpDetail">
+        select a.NAME_QC Score_Item,a.VAL_MAX,qed.*,aa.item_count
+    	from qc_ehp_detail qed 
+		left join  bd_ehp_qcitem a on a.PK_QCITEM=qed.PK_QCITEM
+		left join (select dt_ehpitemtype,eu_itemcate,count(1) item_count 
+					from bd_ehp_qcitem 
+					group by dt_ehpitemtype,eu_itemcate ) aa 
+					on aa.dt_ehpitemtype=a.dt_ehpitemtype and aa.eu_itemcate=a.eu_itemcate
+		left join bd_defdoc bd on bd.code_defdoclist='060314' and bd.code=a.dt_ehpitemtype
+		where qed.PK_QCEHPREC=#{pkQcehprec,jdbcType=VARCHAR} and qed.PK_QCEHP=#{pkQcehp,jdbcType=VARCHAR} and qed.EU_TYPE='1'
+		ORDER BY a.SORTNO
+    </select>
+</mapper>

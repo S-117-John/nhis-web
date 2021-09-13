@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.pub.dao.ScmPddictMapper">
+	<select id="searchBdPds" resultType="DynaBean">
+		select pd.pk_pd,  --Pk
+		       pd.code,   --编码
+		       pd.name,   --名称
+		       pd.spec,    --规格
+		       pd.spcode,
+		       minu.pk_unit ,
+		       minu.name unit
+		  from bd_pd pd
+		  inner join bd_unit minu on minu.pk_unit=pd.pk_unit_min
+		 where pd.dt_pdtype='01' and
+		       pd.flag_rm='0' and
+		       pd.flag_reag='0' and
+		       pd.del_flag='0'
+	 <if test="spcode!=null and spcode!=''">
+	 	and UPPER(pd.spcode) like '%${spcode}%'
+	 </if>
+	</select>
+	
+	<select id="searchPdRestByPkPd" resultType="DynaBean">
+		select cl.pk_pdrest, 	 --PK
+		       cl.pk_pd,         --药品主键
+		       cl.eu_ctrltype,   --控制类型
+		       cl.pk_emp,        --医生
+		       emp.code_emp,     --医生编码
+		       cl.name_emp,      --医生姓名
+		       cl.pk_dept,       --科室
+		       dept.code_dept,   --科室编码
+		       dept.name_dept,   --科室名称
+		       cl.pk_diag,       --诊断
+		       diag.diagcode,    --诊断编码
+		       diag.diagname,    --诊断名称
+		       cl.pk_dept_pharm,  --关联药房
+		       GETPVAGE(pi.BIRTH_DATE, null) age,
+		       sex.name sex,
+		       to_char(cl.date_end,'yyyy-MM-dd') date_end,
+		       cl.amount,
+		       cl.pk_unit,
+		       un.name unit,
+		       cl.pk_pi,
+		       cl.name_pi,
+		       pi.code_op
+		  from bd_pd_rest cl
+		    left join bd_ou_employee emp on cl.pk_emp = emp.pk_emp
+		    left join bd_ou_dept dept on cl.pk_dept = dept.pk_dept
+		    left join Bd_term_diag diag on cl.pk_diag = diag.pk_diag
+		    left join pi_master pi on  pi.pk_pi=cl.pk_pi
+		    left join bd_defdoc sex on sex.CODE_DEFDOCLIST='000000' and sex.code=pi.dt_sex
+		    left join bd_unit un on un.pk_unit=cl.pk_unit
+		 where cl.pk_org=#{pkOrg,jdbcType=VARCHAR} and
+		       cl.pk_pd=#{pkPd,jdbcType=VARCHAR}
+	</select>
+	
+	<delete id="batchDelBdPdRest">
+		delete from bd_pd_rest where pk_pdrest in
+		<foreach collection="list" item="pkPdRests" index="no" open="("
+			separator="," close=")">
+			#{pkPdRests}
+		</foreach>
+	</delete>
+	
+	<select id="qryPdStorePack" parameterType="java.lang.String" resultType="DynaBean">
+		select
+			cvt.pk_pdconvert,
+			cvt.pk_org,
+			cvt.pk_pd,
+			cvt.spec,
+			cvt.pack_size,
+			cvt.pk_unit,
+			cvt.flag_op,
+			cvt.flag_ip,
+			pack.num
+		from bd_pd_convert cvt
+			left join (select count(1) num, sto.pk_pdconvert
+						from bd_pd_store sto
+						where sto.del_flag = '0'
+						group by sto.pk_pdconvert
+					  ) pack on pack.pk_pdconvert = cvt.pk_pdconvert
+		where cvt.del_flag = '0' and cvt.pk_pd = #{pkPd,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="searchPdStRecord" parameterType="java.util.Map"  resultType="DynaBean">
+		select st.dt_sttype,
+		       def.name as sttypeName,
+		       pd.code,
+		       pd.name,
+		       pd.spec,
+		       pd.pk_factory,
+		       bf.name as factoryName,
+		       pd.pk_unit_pack,
+		       unit.name as unitName,
+               round(dt.PRICE_COST/pd.PACK_SIZE*dt.PACK_SIZE,4) price_cost,
+               round(dt.PRICE/pd.PACK_SIZE*dt.PACK_SIZE,4) price,
+		       dt.quan_pack,
+		       dt.amount_cost,
+		       dt.amount,
+		       st.date_chk,
+		       apdept.name_dept name_dept_ap,
+		       spr.NAME supplyer_name
+		  from pd_st st
+		       inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst
+		       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+		       left join bd_supplyer spr on st.pk_supplyer=spr.pk_supplyer
+		       left join bd_defdoc def on def.code_defdoclist = '080008' and st.dt_sttype = def.code
+		       left join bd_factory bf on pd.pk_factory = bf.pk_factory
+		       left join bd_unit unit on dt.pk_unit_pack = unit.pk_unit
+		       left join bd_ou_dept apdept on apdept.pk_dept=st.pk_dept_lk
+		  where st.pk_store_st = #{pkStoreSt,jdbcType=VARCHAR}
+	       		and st.flag_chk='1' 
+	       <if test='pkPd!=null and pkPd!=""'>
+ 				and dt.pk_pd = #{pkPd,jdbcType=VARCHAR} 
+	 	   </if>
+	 	   <if test='dtSttype!=null and dtSttype!=""'>
+ 				and st.dt_sttype like  #{dtSttype,jdbcType=VARCHAR} || '%'
+	 	   </if>
+	       <if test='dateBegin!=null and dateBegin!=""'>
+	 			and st.date_chk &gt;= to_date(#{dateBegin},'yyyyMMddHH24MISS') 
+		   </if>
+		   <if test='dateEnd!=null and dateEnd!=""'>
+				and st.date_chk &lt;=to_date(#{dateEnd},'yyyyMMddHH24MISS') 
+		   </if>
+		   <if test='pkDept!=null and pkDept!=""'>
+		   		and st.pk_dept_lk=#{pkDept,jdbcType=VARCHAR}
+		   </if>
+	</select>
+
+	<select id="qryPdStorePackInfo" parameterType="java.lang.String" resultType="DynaBean">
+		select
+			sto.NAME store_name,
+			un.NAME unit_name,
+			bps.PACK_SIZE
+		from BD_PD_STORE bps
+		inner join bd_store sto on sto.PK_STORE=bps.PK_STORE
+		inner join BD_PD pd on pd.PK_PD=bps.PK_PD
+		inner join bd_unit un on un.PK_UNIT=bps.PK_UNIT
+		where pd.PK_PD=#{pkPd,jdbcType=VARCHAR} and bps.del_flag='0'
+		order by sto.name
+	</select>
+
+	<select id="qryPdStopLogInfo" parameterType="java.lang.String" resultType="DynaBean">
+		select
+			   applog.DATE_OP,
+			   applog.NAME_EMP_OP,
+			   applog.CONTENT,
+			   applog.note
+		from SYS_APPLOG applog
+		where applog.PK_OBJ=#{pkPd,jdbcType=VARCHAR}
+		and eu_optype='99'
+		order by applog.date_op
+	</select>
+</mapper>
+

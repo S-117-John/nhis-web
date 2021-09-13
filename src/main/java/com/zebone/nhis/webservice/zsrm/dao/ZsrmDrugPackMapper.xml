@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.webservice.zsrm.dao.ZsrmDrugPackMapper">
+
+    <!-- 避免多个，每个pressNO取一条[取门诊就诊次数，急诊没有这个属性，默认为1]-->
+    <select id="getPresInfo" resultType="com.zebone.nhis.webservice.zsrm.vo.pack.MachOrder">
+        select * from (
+            select lpad(st.CODE_ST||nvl(st.EU_PVTYPE, '1')||lpad(nvl(occ.WINNO_CONF, '0'), 2, '0'), 16,'0') order_id
+            ,pi.code_op patient_id
+            ,pi.NAME_PI patient_name
+            ,doc.NAME patient_gender
+            ,pi.ADDRESS
+            ,pi.TEL_NO tel1
+            ,pi.TEL_REL tel2
+            ,emp.NAME_EMP doctor_name
+            ,diag.NAME_DIAG primary_diagnosis
+            ,'' secondary_diagnosis
+            ,pv.AGE_PV patient_age
+            ,nvl(op.OP_TIMES,1) AS no_of_visit
+            ,nvl(substr(st.CODE_ST,-4),'0000') payment_no
+            ,occ.PRES_NO current_no
+            ,dept.NAME_DEPT ward
+            ,st.NAME_EMP_ST cashier_name
+            ,(select to_char(sum(dtocc.AMOUNT_CG),'fm999999999990.000') from ex_pres_occ_dt dtocc where dtocc.PK_PRESOCC=occ.PK_PRESOCC)
+            total_payment
+            ,st.DATE_ST date_time_of_payment
+            ,occ.date_reg date_time_of_printing
+            ,'' drug_Flag
+            ,occ.PK_PRESOCC
+            ,ROW_NUMBER() OVER ( PARTITION BY occ.PRES_NO ORDER BY PRES_NO ASC) as idx
+            from EX_PRES_OCC occ
+            inner join PV_ENCOUNTER pv on pv.PK_PV=occ.PK_PV
+            inner join PI_MASTER pi on pv.PK_PI=pi.PK_PI
+            inner join BL_SETTLE st on pv.PK_PV=st.PK_PV and occ.PK_SETTLE=st.PK_SETTLE and nvl(st.FLAG_CANC,'0')='0'
+            LEFT JOIN bd_defdoc doc on doc.code =pi.dt_sex and doc.code_defdoclist='000000' and doc.DEL_FLAG='0'
+            left join BD_OU_EMPLOYEE emp on pv.PK_EMP_PHY=emp.PK_EMP
+            left join pv_diag diag on pv.pk_pv=diag.pk_pv and diag.flag_maj='1'
+            left join BD_OU_DEPT dept on pv.PK_DEPT=dept.PK_DEPT
+            left join pv_op op on pv.PK_PV=op.PK_PV
+            where st.PK_SETTLE=#{pkSettle,jdbcType=VARCHAR} and occ.winno_conf in ('6','7','8','9')
+        ) tmp where tmp.idx=1
+
+    </select>
+
+    <select id="getPresItems" resultType="com.zebone.nhis.webservice.zsrm.vo.pack.MachItem">
+        select * from (
+              select occ.PRES_NO order_number
+                   ,(case when pd.PK_UNIT_PACK=pack.PK_UNIT then '01' else '00' end) spc
+                   ,lpad(pd.code_hp,6,'0')
+                        ||(case when pd.PK_UNIT_PACK=pack.PK_UNIT then '01' else '00' end)
+                        ||nvl(substr(st.CODE_ST,-4),'0000') yp_id
+                   ,dt.quan_cg quanCg
+                   ,pack.PACK_SIZE
+                   ,trunc(dt.quan_cg*dt.PACK_SIZE/pack.PACK_SIZE) amount
+                   ,freq.NAME_print frequency
+                   ,su.NAME_print usage
+                   ,ord.dosage dosage
+                   ,unit_dos.name dosage_unit
+                   ,ROW_NUMBER() OVER ( PARTITION BY occ.PRES_NO ORDER BY PRES_NO ASC) AS order_item
+                   ,round(dt.price/dt.PACK_SIZE*pack.PACK_SIZE,3) order_item_price
+                   ,(case when attr.VAL_ATTR is not null then 'Y' else 'N' end) high_risk_indicator
+                   ,ord.NOTE_ORD "comment"
+                   ,ROW_NUMBER() OVER ( PARTITION BY dt.PK_PRESOCCDT ORDER BY PK_PRESOCCDT ASC) as idx
+              FROM bd_pd pd
+               inner join ex_pres_occ_dt dt on pd.pk_pd = dt.pk_pd
+               inner join EX_PRES_OCC occ on dt.PK_PRESOCC=occ.PK_PRESOCC
+               inner join cn_order ord on dt.pk_cnord = ord.pk_cnord
+               inner join BL_SETTLE st on ord.PK_PV=st.PK_PV and occ.PK_SETTLE=st.PK_SETTLE and nvl(st.FLAG_CANC,'0')='0'
+               inner join BD_PD_STORE sto on dt.PK_PD=sto.PK_PD and sto.PK_DEPT=occ.PK_DEPT_EX
+               inner join BD_PD_STORE_PACK pack on sto.PK_PDSTORE=pack.PK_PDSTORE and pack.FLAG_DEF='1'
+               left join bd_dictattr attr on attr.pk_dict = pd.PK_PD and attr.CODE_ATTR='0511' and attr.DEL_FLAG = '0'
+               left join bd_unit unit_dos ON ord.pk_unit_dos = unit_dos.pk_unit
+               left join bd_supply su on su.code = ord.code_supply and su.del_flag = '0'
+               left join bd_term_freq freq on freq.code = ord.code_freq and freq.del_flag = '0'
+              where st.PK_SETTLE=#{pkSettle,jdbcType=VARCHAR}
+                and pd.eu_drugtype in('0','1') and occ.winno_conf in ('6','7','8','9')
+               order by occ.PRES_NO
+              )tmp where tmp.idx=1
+    </select>
+
+    <select id="getBdPdStoreInfo" resultType="com.zebone.nhis.ma.pub.zsrm.vo.MachDrug">
+        select * from(
+        select lpad(pd.code_hp,6,'0') code
+        ,replace(pd.CODE_EXT,' ','') code_ISN
+        ,'01' bs
+        ,pd.NAME,
+        pd.SPCODE,
+        al.D_CODE,
+        pd.PACK_SIZE,
+        pd.SPEC,
+        fac.NAME factory
+        ,'1' flag_in
+        ,pd.NAME_CHEM name_sp
+        ,pd.PRICE price
+        ,un.NAME unit
+        ,(case when pd.DEL_FLAG ='0' then '0' else '1' end) flag_del
+        ,pd.PRICE price_cost
+        ,row_number() over (partition by sto.PK_PDSTORE order by sto.ts desc) idx
+        from BD_PD_STORE sto
+        inner join BD_PD pd on sto.PK_PD=pd.PK_PD
+        inner join BD_OU_DEPT dept on sto.PK_DEPT=dept.PK_DEPT
+        left join BD_PD_AS al on pd.PK_PD=al.PK_PD and al.DEL_FLAG='0'
+        inner join BD_UNIT un on pd.PK_UNIT_PACK=un.PK_UNIT
+        left join BD_FACTORY fac on pd.PK_FACTORY=fac.PK_FACTORY
+        where dept.CODE_DEPT in
+        <foreach collection="configs" item="conf" index="index" open="(" separator="," close=")">
+            #{conf.codeDept,jdbcType=VARCHAR}
+        </foreach>
+        union  all
+        select lpad(pd.code_hp,6,'0') code
+        ,replace(pd.CODE_EXT,' ','') code_ISN
+        ,'00' bs
+        ,pd.NAME,
+        pd.SPCODE,
+        al.D_CODE,
+        1 PACK_SIZE,
+        pd.SPEC,
+        fac.NAME factory
+        ,'1' flag_in
+        ,pd.NAME_CHEM name_sp
+        ,round(pd.PRICE/pd.PACK_SIZE,4)price
+        ,un.NAME unit
+        ,(case when pd.DEL_FLAG ='0' then '0' else '1' end) flag_del
+        ,round(pd.PRICE/pd.PACK_SIZE,4) price_cost
+        ,row_number() over (partition by sto.PK_PDSTORE order by sto.ts desc) idx
+        from BD_PD_STORE sto
+        inner join BD_PD pd on sto.PK_PD=pd.PK_PD
+        inner join BD_OU_DEPT dept on sto.PK_DEPT=dept.PK_DEPT
+        left join BD_PD_AS al on pd.PK_PD=al.PK_PD and al.DEL_FLAG='0'
+        inner join BD_UNIT un on pd.PK_UNIT_MIN=un.PK_UNIT
+        left join BD_FACTORY fac on pd.PK_FACTORY=fac.PK_FACTORY
+            where dept.CODE_DEPT in
+            <foreach collection="configs" item="conf" index="index" open="(" separator="," close=")">
+                #{conf.codeDept,jdbcType=VARCHAR}
+            </foreach>
+        ) tmp where tmp.idx=1
+    </select>
+</mapper>

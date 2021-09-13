@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.dao.ZsphPlatFormSendOpMapper" >
+    <select id="getPriceInquiry" parameterType="java.util.Map" resultType="com.zebone.nhis.ma.pub.platform.zsrm.vo.PriceInquiryVo">
+        select code,codeHp,name,spec,price,unit from (select
+        pd.code code,
+        map.MED_LIST_CODG codeHp,
+        pd.NAME name,
+        unit.NAME unit,
+        pd.SPEC spec,
+        unit.d_code dCode,
+        pd.spcode spcode,
+        pd.PRICE price,
+        pd.del_flag
+        from bd_pd pd
+        inner join ins_qgyb_itemmap map on map.PK_ITEM=pd.PK_PD
+        inner join bd_unit unit on unit.PK_UNIT=pd.PK_UNIT_PACK
+        union all
+        select item.code code,
+        map.MED_LIST_CODG codeHp,
+        item.NAME name,
+        unit.NAME unit,
+        item.SPEC spec,
+        unit.d_code dCode,
+        item.SPCODE spcode,
+        item.PRICE price,
+        item.del_flag
+        from bd_item item
+        inner join ins_qgyb_itemmap map on map.PK_ITEM=item.PK_ITEM
+        left join bd_unit unit on unit.PK_UNIT=item.PK_UNIT)
+        where del_flag='0'
+            <if test="pyCode != null and pyCode != ''">
+                and spcode like '%${pyCode}%'
+            </if>
+            <if test="dCode != null and dCode != ''">
+                and dCode like '%${dCode}%'
+            </if>
+            <if test="name != null and name != ''">
+                and name like '%${name}%'
+            </if>
+            <if test="(pyCode == null or pyCode == '') and (name == null or name == '') and (dCode == null or dCode == '')">
+                and name like '%%' and dCode like '%%' and spcode like '%%'
+            </if>
+    </select>
+</mapper>

@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.opdw.dao.CnOpSettleInforMapper">
+
+    <select id="qryChargeDetail" resultType="DynaBean" parameterType="java.util.Map">
+        select pi.code_op,
+        pi.name_pi,
+        hp.name        name_hp,
+        cg.name_cg,
+        cg.spec,
+        unit.name      name_unit,
+        cg.quan,
+        cg.amount,
+        cg.amount_pi,
+        dp.name_dept,
+        dpns.name_dept name_dept_ns,
+        dpex.name_dept name_dept_ex,
+        cg.name_emp_ex,
+        cg.barcode,
+        cg.DATE_CG ,
+        cg.date_hap,
+        st.date_st,
+        cg.name_emp_cg,
+        cg.price_org,
+        cg.flag_pd,
+        -- cg.eu_bltype,
+        cn.code_apply  cnapply,
+        cnb.code_apply cnbapply,
+        pv.age_pv
+        from bl_op_dt cg
+        left join CN_ORDER cn on (cg.PK_CNORD = cn.PK_CNORD)
+        left join cn_order cna on cg.pk_cnord = cna.pk_cnord
+        left join cn_order cnb on cnb.pk_cnord = cna.PK_CNORD_RL
+        inner join pv_encounter pv on cg.pk_pv = pv.pk_pv
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi
+        inner join bd_hp hp on pv.pk_insu = hp.pk_hp
+        inner join bd_ou_dept dp on cg.pk_dept_app = dp.pk_dept
+        inner join bd_ou_dept dpns on cg.PK_DEPT_APP = dpns.pk_dept
+        inner join bd_ou_dept dpex on cg.pk_dept_ex = dpex.pk_dept
+        inner join bd_unit unit on cg.pk_unit = unit.pk_unit
+        left join bd_ou_employee emp on emp.pk_emp = cg.pk_emp_ex
+        left outer join bl_settle st on cg.pk_settle = st.pk_settle
+        where
+        (cg.flag_settle='1' and st.dt_sttype <![CDATA[<]]> '20' or cg.flag_settle='0')
+        and not exists ( select 1
+        from bl_settle back
+        where st.pk_settle = back.pk_settle_canc and
+        back.dt_sttype='21' and
+        back.eu_pvtype='3'
+        )
+        <if test="pkOrg!=null and  pkOrg!='' ">
+            and cg.pk_org=#{pkOrg,jdbcType=VARCHAR}
+        </if>
+        <if test="codeApply!=null and  codeApply!='' ">
+            and (cn.code_apply=#{codeApply,jdbcType=VARCHAR} or cnb.code_apply=#{codeApply,jdbcType=VARCHAR})
+        </if>
+        <if test="pkDeptEx!=null and  pkDeptEx!='' ">
+            and cg.pk_dept_ex = #{pkDeptEx,jdbcType=VARCHAR}
+        </if>
+        <if test="pkPv !=null and pkPv !='' ">
+            and cg.pk_pv=#{pkPv,jdbcType=VARCHAR}
+        </if>
+        <if test="pkEmpCg!=null and pkEmpCg!='' ">
+            and cg.pk_emp_cg=#{pkEmpCg,jdbcType=VARCHAR}
+        </if>
+        <if test="priceOrg!=null and  priceOrg!='' ">
+            and cg.price_org &gt;= #{priceOrg,jdbcType=VARCHAR}
+        </if>
+        <if test='priceOrgMax !=null and  priceOrgMax !="" and  priceOrgMax !="0.0" '>
+            and cg.price_org &lt;= #{priceOrgMax,jdbcType=VARCHAR}
+        </if>
+        <if test="namePi!=null and  namePi!=''">
+            and pi.name_pi like '%' || #{namePi,jdbcType=VARCHAR} || '%'
+        </if>
+
+        <if test="codeOp!=null and  codeOp!=''">
+            and pi.code_op =#{codeOp,jdbcType=VARCHAR}
+        </if>
+
+        <if test='dateCgType == "0" and dateCgBegin!=null'>
+            and cg.DATE_CG &gt;= to_date(#{dateCgBegin,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        </if>
+        <if test='dateCgType == "0" and dateCgEnd!=null'>
+            and cg.date_cg &lt;= to_date(#{dateCgEnd,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        </if>
+        <if test='dateCgType == "1" and dateCgBegin!=null'>
+            and cg.date_hap &gt;= to_date(#{dateCgBegin,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        </if>
+        <if test='dateCgType == "1" and dateCgEnd!=null'>
+            and cg.date_hap &lt;= to_date(#{dateCgEnd,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        </if>
+        <if test="pkItemcate!=null and  pkItemcate!='' ">
+            and cg.pk_itemcate in ${pkItemcate}
+        </if>
+        order by pi.code_ip,cg.DATE_CG,cg.sortno
+    </select>
+    <select id="qryChargeSum" resultType="Dynabean">
+        select dpex.name_dept name_dept_ex,
+        cg.name_cg,
+        cg.spec,
+        unit.name name_unit,
+        sum(cg.quan) quan,
+        sum(cg.amount) amount,
+        sum(cg.amount_pi) amount_pi,
+        dp.name_dept ,
+        cg.flag_pd ,
+        case when bp.SPCODE is not null then bp.SPCODE else bi.SPCODE end spcode,
+        case when bp.CODE is not null then bp.CODE else bi.CODE end code
+        from bl_op_dt cg
+        inner join pv_encounter pv on cg.pk_pv=pv.pk_pv
+        inner join pi_master pi on pv.pk_pi=pi.pk_pi
+        inner join bd_hp hp on pv.pk_insu=hp.pk_hp
+        inner join bd_ou_dept dp on cg.pk_dept_app=dp.pk_dept
+        inner join bd_ou_dept dpex on cg.pk_dept_ex=dpex.pk_dept
+        inner join bd_unit unit on cg.pk_unit=unit.pk_unit
+        LEFT OUTER JOIN BD_PD bp ON bp.PK_PD=cg.PK_PD
+        LEFT OUTER JOIN BD_ITEM bi ON bi.PK_ITEM=cg.PK_ITEM
+        left outer join bl_settle st on cg.pk_settle=st.pk_settle
+        where
+        (cg.flag_settle='1' and st.dt_sttype <![CDATA[<]]> '20' or cg.flag_settle='0')
+        and not exists ( select 1
+        from bl_settle back
+        where st.pk_settle = back.pk_settle_canc and
+        back.dt_sttype='21' and
+        back.eu_pvtype='3'
+        )
+        <if test="pkOrg!=null and pkOrg!='' ">
+            and cg.pk_org=#{pkOrg,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDeptEx!=null and pkDeptEx!='' ">
+            and cg.pk_dept_ex=#{pkDeptEx,jdbcType=VARCHAR}
+        </if>
+        <if test="pkPv !=null and pkPv !='' ">
+            and cg.pk_pv=#{pkPv,jdbcType=VARCHAR}
+        </if>
+        <if test="pkEmpCg!=null and pkEmpCg!='' ">
+            and cg.pk_emp_cg=#{pkEmpCg,jdbcType=VARCHAR}
+        </if>
+        <if test="priceOrg!=null and priceOrg!='' ">
+            and cg.price_org &gt;= #{priceOrg,jdbcType=VARCHAR}
+        </if>
+        <if test='priceOrgMax !=null and  priceOrgMax !="" and  priceOrgMax !="0" '>
+            and cg.price_org &lt;= #{priceOrgMax,jdbcType=VARCHAR}
+        </if>
+        <if test="namePi!=null and namePi!=''">
+            and pi.name_pi like '%' || #{namePi,jdbcType=VARCHAR} || '%'
+        </if>
+
+        <if test="codeOp!=null and  codeOp!=''">
+            and pi.code_op =#{codeOp,jdbcType=VARCHAR}
+        </if>
+
+        <if test='dateCgType == "0" and dateCgBegin!=null'>
+            and cg.DATE_CG &gt;= to_date(#{dateCgBegin,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+        </if>
+        <if test='dateCgType == "0" and dateCgEnd!=null'>
+            and cg.DATE_CG &lt;= to_date(#{dateCgEnd,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+        </if>
+        <if test='dateCgType == "1" and dateCgBegin!=null'>
+            and cg.date_hap &gt;= to_date(#{dateCgBegin,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+        </if>
+        <if test='dateCgType == "1" and dateCgEnd!=null'>
+            and cg.date_hap &lt;= to_date(#{dateCgEnd,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+        </if>
+        <if test="pkItemcate!=null and pkItemcate!='' ">
+            and cg.pk_itemcate in ${pkItemcate}
+        </if>
+        group by dpex.name_dept,cg.name_cg, cg.spec,unit.name,dp.name_dept,
+        cg.flag_pd,bp.SPCODE,bi.SPCODE,bp.CODE,bi.CODE
+    </select>
+    <select id="qryItemSum" resultType="Dynabean">
+        SELECT
+        dpex.name_dept name_dept_ex,
+        cg.name_cg,
+        cg.spec,
+        unit.name name_unit,
+        sum(cg.quan) quan,
+        sum(cg.amount) amount,
+        sum(cg.amount_pi) amount_pi,
+        cg.flag_pd,
+        case when bp.SPCODE is not null then bp.SPCODE else bi.SPCODE end spcode,
+        case when bp.CODE is not null then bp.CODE else bi.CODE end code
+        FROM bl_op_dt cg INNER JOIN pv_encounter pv ON cg.pk_pv = pv.pk_pv
+        INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+        INNER JOIN bd_hp hp ON pv.pk_insu = hp.pk_hp
+        INNER JOIN bd_ou_dept dp ON cg.pk_dept_app = dp.pk_dept
+        INNER JOIN bd_ou_dept dpex ON cg.pk_dept_ex = dpex.pk_dept
+        INNER JOIN bd_unit unit ON cg.pk_unit = unit.pk_unit
+        LEFT OUTER JOIN BD_PD bp ON bp.PK_PD=cg.PK_PD
+        LEFT OUTER JOIN BD_ITEM bi ON bi.PK_ITEM=cg.PK_ITEM
+        left outer join bl_settle st on cg.pk_settle=st.pk_settle
+        WHERE
+        (cg.flag_settle='1' and st.dt_sttype <![CDATA[<]]> '20' or cg.flag_settle='0')
+        and not exists ( select 1
+        from bl_settle back
+        where st.pk_settle = back.pk_settle_canc and
+        back.dt_sttype='21' and
+        back.eu_pvtype='3'
+        )
+        <if test="pkOrg!=null and pkOrg!='' ">
+            and cg.pk_org=#{pkOrg,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDeptEx!=null and pkDeptEx!='' ">
+            and cg.pk_dept_ex=#{pkDeptEx,jdbcType=VARCHAR}
+        </if>
+        <if test="pkPv !=null and pkPv !='' ">
+            and cg.pk_pv=#{pkPv,jdbcType=VARCHAR}
+        </if>
+        <if test="pkEmpCg!=null and pkEmpCg!='' ">
+            and cg.pk_emp_cg=#{pkEmpCg,jdbcType=VARCHAR}
+        </if>
+        <if test="priceOrg!=null and priceOrg!='' ">
+            and cg.price_org &gt;= #{priceOrg,jdbcType=VARCHAR}
+        </if>
+        <if test='priceOrgMax !=null and  priceOrgMax !="" and  priceOrgMax !="0" '>
+            and cg.price_org &lt;= #{priceOrgMax,jdbcType=VARCHAR}
+        </if>
+        <if test="namePi!=null and namePi!=''">
+            and pi.name_pi like '%' || #{namePi,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test="codeOp!=null and  codeOp!=''">
+            and pi.code_op =#{codeOp,jdbcType=VARCHAR}
+        </if>
+        <if test='dateCgType == "0" and dateCgBegin!=null'>
+            and cg.DATE_CG &gt;= to_date(#{dateCgBegin,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+        </if>
+        <if test='dateCgType == "0" and dateCgEnd!=null'>
+            and cg.DATE_CG &lt;= to_date(#{dateCgEnd,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+        </if>
+        <if test='dateCgType == "1" and dateCgBegin!=null'>
+            and cg.date_hap &gt;= to_date(#{dateCgBegin,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+        </if>
+        <if test='dateCgType == "1" and dateCgEnd!=null'>
+            and cg.date_hap &lt;= to_date(#{dateCgEnd,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+        </if>
+        <if test="pkItemcate!=null and pkItemcate!='' ">
+            and cg.pk_itemcate in ${pkItemcate}
+        </if>
+        group by dpex.name_dept, cg.name_cg,cg.spec,unit.name,cg.flag_pd,bp.SPCODE,bi.SPCODE,bp.CODE,bi.CODE
+    </select>
+</mapper>

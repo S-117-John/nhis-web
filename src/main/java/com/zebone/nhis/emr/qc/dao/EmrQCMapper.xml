@@ -1,0 +1,3960 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.emr.qc.dao.EmrQCMapper">
+    <resultMap id="ResultMapGradeType" type="com.zebone.nhis.common.module.emr.qc.EmrGradeType">
+        <id column="PK_GRADETYPE" jdbcType="CHAR" property="pkGradetype"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="SCORE" jdbcType="DECIMAL" property="score"/>
+        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    <select id="queryGradeTypeList" resultMap="ResultMapGradeType">
+          SELECT * 
+            FROM EMR_GRADE_TYPE 
+          where del_flag !='1'
+        order by sort_num,code,name
+    </select>    
+    <resultMap id="ResultMapGradeRec" type="com.zebone.nhis.common.module.emr.qc.EmrGradeRec">
+        <id column="PK_GRADEREC" jdbcType="CHAR" property="pkGraderec"/>
+        <result column="PK_PI" jdbcType="VARCHAR" property="pkPi"/>
+        <result column="TIMES" jdbcType="DECIMAL" property="times"/>
+        <result column="PK_PV" jdbcType="VARCHAR" property="pkPv"/>
+        <result column="EU_GRADE_TYPE" jdbcType="VARCHAR" property="euGradeType"/>
+        <result column="EU_GRADE" jdbcType="CHAR" property="euGrade"/>
+        <result column="SCORE" jdbcType="DECIMAL" property="score"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp"/>
+        <result column="PK_EMP_QC" jdbcType="VARCHAR" property="pkEmpQc"/>
+        <result column="QC_DATE" jdbcType="DATE" property="qcDate"/>
+        <result column="FLAG_SEND" jdbcType="CHAR" property="flagSend"/>
+        <result column="FLAG_RESP" jdbcType="CHAR" property="flagResp"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    
+    <select id="findAllEmrGradeRec" resultMap="ResultMapGradeRec">
+          SELECT * FROM EMR_GRADE_REC 
+    </select>
+    
+    <delete id="deleteEmrGradeRec">
+        DELETE
+        FROM
+             EMR_GRADE_REC
+        WHERE            
+            pk_graderec = #{pkGraderec,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrGradeRec" parameterType="com.zebone.nhis.common.module.emr.qc.EmrGradeRec" >
+        INSERT INTO EMR_GRADE_REC
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkGraderec != null" >
+                pk_graderec,
+            </if>
+            <if test="pkPi != null" >
+                pk_pi,
+            </if>
+            <if test="times != null" >
+                times,
+            </if>
+            <if test="pkPv != null" >
+                pk_pv,
+            </if>
+            <if test="euGradeType != null" >
+                eu_grade_type,
+            </if>
+            <if test="euGrade != null" >
+                eu_grade,
+            </if>
+            <if test="score != null" >
+                score,
+            </if>
+            <if test="pkDept != null" >
+                pk_dept,
+            </if>
+            <if test="pkEmp != null" >
+                pk_emp,
+            </if>
+            <if test="pkEmpQc != null" >
+                pk_emp_qc,
+            </if>
+            <if test="qcDate != null" >
+                qc_date,
+            </if>
+            <if test="flagSend != null" >
+                flag_send,
+            </if>
+            <if test="flagResp != null" >
+                flag_resp,
+            </if>
+            <if test="delFlag != null" >
+                del_flag,
+            </if>
+            <if test="remark != null" >
+                remark,
+            </if>
+            <if test="creator != null" >
+                creator,
+            </if>
+            <if test="createTime != null" >
+                create_time,
+            </if>
+            <if test="ts != null" >
+                ts,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkGraderec != null" >
+                #{pkGraderec,jdbcType=CHAR},
+            </if> 
+            <if test="pkPi != null" >
+                #{pkPi,jdbcType=VARCHAR},
+            </if> 
+            <if test="times != null" >
+                #{times,jdbcType=DECIMAL},
+            </if> 
+            <if test="pkPv != null" >
+                #{pkPv,jdbcType=VARCHAR},
+            </if> 
+            <if test="euGradeType != null" >
+                #{euGradeType,jdbcType=VARCHAR},
+            </if> 
+            <if test="euGrade != null" >
+                #{euGrade,jdbcType=CHAR},
+            </if> 
+            <if test="score != null" >
+                #{score,jdbcType=DECIMAL},
+            </if> 
+            <if test="pkDept != null" >
+                #{pkDept,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkEmp != null" >
+                #{pkEmp,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkEmpQc != null" >
+                #{pkEmpQc,jdbcType=VARCHAR},
+            </if> 
+            <if test="qcDate != null" >
+                #{qcDate,jdbcType=DATE},
+            </if>
+            <if test="flagSend != null" >
+                #{flagSend,jdbcType=CHAR},
+            </if> 
+            <if test="flagResp != null" >
+                #{flagResp,jdbcType=CHAR},
+            </if>  
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrGradeRec" parameterType="com.zebone.nhis.common.module.emr.qc.EmrGradeRec" >
+        UPDATE EMR_GRADE_REC
+        <set>
+            <if test="pkGraderec != null" >
+                pk_graderec = #{pkGraderec,jdbcType=CHAR},
+            </if>
+            <if test="pkPi != null" >
+                pk_pi = #{pkPi,jdbcType=VARCHAR},
+            </if>
+            <if test="times != null" >
+                times = #{times,jdbcType=DECIMAL},
+            </if>
+            <if test="pkPv != null" >
+                pk_pv = #{pkPv,jdbcType=VARCHAR},
+            </if>
+            <if test="euGradeType != null" >
+                eu_grade_type = #{euGradeType,jdbcType=VARCHAR},
+            </if>
+            <if test="euGrade != null" >
+                eu_grade = #{euGrade,jdbcType=CHAR},
+            </if>
+            <if test="score != null" >
+                score = #{score,jdbcType=DECIMAL},
+            </if>
+            <if test="pkDept != null" >
+                pk_dept = #{pkDept,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmp != null" >
+                pk_emp = #{pkEmp,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmpQc != null" >
+                pk_emp_qc = #{pkEmpQc,jdbcType=VARCHAR},
+            </if>
+            <if test="qcDate != null" >
+                qc_date = #{qcDate,jdbcType=DATE},
+            </if>
+             <if test="flagSend != null" >
+                flag_send = #{flagSend,jdbcType=CHAR},
+            </if>
+             <if test="flagResp != null" >
+                flag_resp = #{flagResp,jdbcType=CHAR},
+            </if>
+            <if test="delFlag != null" >
+                del_flag = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="remark != null" >
+                remark = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                creator = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                create_time = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                ts = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            pk_graderec = #{pkGraderec,jdbcType=CHAR}
+    </update>
+    <resultMap id="ResultMapStandard" type="com.zebone.nhis.common.module.emr.qc.EmrGradeStandard">
+        <id column="PK_STAND" jdbcType="CHAR" property="pkStand"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="SHORT_NAME" jdbcType="VARCHAR" property="shortName"/>
+        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+        <result column="EU_STAND_TYPE" jdbcType="VARCHAR" property="euStandType"/>
+        <result column="DOC_TYPE_CODE" jdbcType="VARCHAR" property="docTypeCode"/>
+        <result column="SCORE_STAND" jdbcType="VARCHAR" property="scoreStand"/>
+        <result column="SCORE_TYPE" jdbcType="VARCHAR" property="scoreType"/>
+        <result column="SINGLE_SCORE" jdbcType="DECIMAL" property="singleScore"/>
+        <result column="SCORE_XML" jdbcType="CLOB" property="scoreXml"/>
+        <result column="STAND_MODE" jdbcType="CHAR" property="standMode"/>
+        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+        <result column="FLAG_TIME" jdbcType="CHAR" property="flagTime"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+        <association property="gradeType" javaType="com.zebone.nhis.common.module.emr.qc.EmrGradeType"> 
+	        <id column="PK_GRADETYPE" jdbcType="CHAR" property="pkGradetype"/>
+	        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+	        <result column="TYPE_CODE" jdbcType="VARCHAR" property="code"/>
+	        <result column="TYPE_NAME" jdbcType="VARCHAR" property="name"/>
+	        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+	        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+	        <result column="TYPE_SCORE" jdbcType="DECIMAL" property="score"/>
+	        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+	        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+	        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+	        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+	        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+	        <result column="TS" jdbcType="DATE" property="ts"/>
+        </association>   
+    </resultMap>
+    <select id="queryGradeStdByTypes" resultMap="ResultMapStandard">
+        SELECT
+            std.*,typ.code type_code,typ.name type_name,typ.score type_score
+        FROM
+             EMR_GRADE_STANDARD std,EMR_GRADE_TYPE typ
+        WHERE            
+            std.DEL_FLAG !='1' and std.eu_status='1' and std.type_code=typ.code
+           <if test="typeCodeList != null" >
+	            and  std.TYPE_CODE in 
+	           <foreach item="item" index="index" collection="typeCodeList" open="(" separator="," close=")">
+				  #{item}
+			   </foreach>
+           </if>
+           <if test="pkDept != null" >
+                and (exists
+			        (select cate_code
+			           from emr_grade_dept
+			          where pk_dept = #{pkDept,jdbcType=VARCHAR}
+			            and cate_code = std.cate_code) 
+			        or
+			        (not exists 
+			           (select cate_code
+			             from emr_grade_dept
+			            where pk_dept = #{pkDept,jdbcType=VARCHAR}) 
+			              and nvl(std.cate_code, '00') = '00')
+			        )
+            </if>  
+            <if test="cateCode != null" >
+	            and std.cate_code=#{cateCode,jdbcType=VARCHAR}
+           </if>
+		   order by std.type_code,std.code,std.name
+    </select>
+    <select id="qryGradeStdByCenter" resultMap="ResultMapStandard">
+        SELECT
+            std.*,typ.code type_code,typ.name type_name,typ.score type_score
+        FROM
+             EMR_GRADE_STANDARD std,EMR_GRADE_TYPE typ
+        WHERE            
+            std.DEL_FLAG !='1' and std.eu_status='1' and std.type_code=typ.code
+           <if test="typeCodeList != null" >
+	            and  std.TYPE_CODE in 
+	           <foreach item="item" index="index" collection="typeCodeList" open="(" separator="," close=")">
+				  #{item}
+			   </foreach>
+           </if>
+            <if test="cateCode != null" >
+	            and std.cate_code=#{cateCode,jdbcType=VARCHAR}
+           </if>
+		   order by std.type_code,std.code,std.name
+    </select>
+    <select id="queryGradeStdByConds" resultMap="ResultMapStandard">
+        SELECT
+            std.*,typ.code type_code,typ.name type_name,typ.score type_score
+        FROM
+             EMR_GRADE_STANDARD std,EMR_GRADE_TYPE typ
+        WHERE            
+            std.DEL_FLAG !='1' and std.eu_status='1' and std.type_code=typ.code
+           	<if test="stdTypes != null" >
+            	${stdTypes}
+			</if>
+			<if test="typeCodes != null" >
+              ${typeCodes}
+        	</if>  
+			<if test="docTypeCodes != null" >
+              ${docTypeCodes}
+        	</if>
+        	<if test="cateCode != null" >
+            	and nvl(std.cate_code,'00') = #{cateCode,jdbcType=VARCHAR}
+			</if>
+			<if test="pkDept != null" >
+                and (exists
+			        (select cate_code
+			           from emr_grade_dept
+			          where pk_dept = #{pkDept,jdbcType=VARCHAR}
+			            and cate_code = std.cate_code) 
+			        or
+			        (not exists 
+			           (select cate_code
+			             from emr_grade_dept
+			            where pk_dept = #{pkDept,jdbcType=VARCHAR}) 
+			              and nvl(std.cate_code, '00') = '00')
+			        )
+            </if>    
+			<if test="scoreXml != null" >
+              ${scoreXml}
+        	</if>  
+			<if test="orderBy != null" >
+              ${orderBy}
+        	</if>  
+    </select>
+    <select id="queryGradeRecByConds" resultMap="ResultMapGradeRec">
+        SELECT
+            *
+        FROM
+              emr_grade_rec
+        where pk_pv = #{pkPv,jdbcType=VARCHAR} and del_flag !='1' 
+   	    <if test="euGradeType != null" >
+            and eu_grade_type = #{euGradeType,jdbcType=VARCHAR}
+        </if>
+   		<if test="orderBy != null" >
+            ${orderBy}
+        </if>           
+    </select>
+    <select id="queryGradeRecByPk" resultMap="ResultMapGradeRec">
+        SELECT
+            *
+        FROM
+              emr_grade_rec
+        where pk_graderec = #{pkGraderec,jdbcType=VARCHAR} and del_flag !='1' 
+    </select>     
+	<resultMap id="ResultMapGradeItem" type="com.zebone.nhis.common.module.emr.qc.EmrGradeItem">
+        <id column="PK_GRADEITEM" jdbcType="CHAR" property="pkGradeitem"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="PK_GRADEREC" jdbcType="VARCHAR" property="pkGraderec"/>
+        <result column="PK_REC" jdbcType="VARCHAR" property="pkRec"/>
+        <result column="STAND_CODE" jdbcType="VARCHAR" property="standCode"/>
+        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+        <result column="SCORE_DESC" jdbcType="VARCHAR" property="scoreDesc"/>
+        <result column="NUM" jdbcType="DECIMAL" property="num"/>
+        <result column="SCORE" jdbcType="VARCHAR" property="score"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp"/>
+        <result column="EU_SCORE" jdbcType="CHAR" property="euScore"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+        <result column="FLAG_FINISH" jdbcType="CHAR" property="flagFinish"/>
+    </resultMap>    
+    <select id="queryGradeItemByConds" resultMap="ResultMapGradeItem">
+        SELECT
+            *
+        FROM
+             EMR_GRADE_ITEM
+        WHERE            
+            pk_graderec = #{pkGraderec,jdbcType=CHAR} and 
+            del_flag !='1' 
+   		<if test="orderBy != null" >
+            ${orderBy}
+        </if>           
+    </select>
+    <delete id="deleteEmrGradeItem">
+        DELETE
+        FROM
+             EMR_GRADE_ITEM
+        WHERE            
+            PK_GRADEITEM = #{pkGradeitem,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrGradeItem" parameterType="com.zebone.nhis.common.module.emr.qc.EmrGradeItem" >
+        INSERT INTO EMR_GRADE_ITEM
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkGradeitem != null" >
+                PK_GRADEITEM,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="pkGraderec != null" >
+                PK_GRADEREC,
+            </if>
+            <if test="pkRec != null" >
+                PK_REC,
+            </if>
+            <if test="standCode != null" >
+                STAND_CODE,
+            </if>
+            <if test="typeCode != null" >
+                TYPE_CODE,
+            </if>
+            <if test="scoreDesc != null" >
+                SCORE_DESC,
+            </if>
+            <if test="num != null" >
+                NUM,
+            </if>
+            <if test="score != null" >
+                SCORE,
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT,
+            </if>
+            <if test="pkEmp != null" >
+                PK_EMP,
+            </if>
+            <if test="euScore != null" >
+                EU_SCORE,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+            <if test="euStatus != null" >
+                eu_status,
+            </if>
+            <if test="flagFinish != null" >
+                FLAG_FINISH,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkGradeitem != null" >
+                #{pkGradeitem,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkGraderec != null" >
+                #{pkGraderec,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkRec != null" >
+                #{pkRec,jdbcType=VARCHAR},
+            </if> 
+            <if test="standCode != null" >
+                #{standCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="typeCode != null" >
+                #{typeCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="scoreDesc != null" >
+                #{scoreDesc,jdbcType=VARCHAR},
+            </if> 
+            <if test="num != null" >
+                #{num,jdbcType=DECIMAL},
+            </if> 
+            <if test="score != null" >
+                #{score,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkDept != null" >
+                #{pkDept,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkEmp != null" >
+                #{pkEmp,jdbcType=VARCHAR},
+            </if> 
+            <if test="euScore != null" >
+                #{euScore,jdbcType=CHAR},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+            <if test="euStatus != null" >
+                #{euStatus,jdbcType=DATE},
+            </if> 
+            <if test="flagFinish != null" >
+                #{flagFinish,jdbcType=CHAR},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrGradeItem" parameterType="com.zebone.nhis.common.module.emr.qc.EmrGradeItem" >
+        UPDATE EMR_GRADE_ITEM
+        <set>
+            <if test="pkGradeitem != null" >
+                PK_GRADEITEM = #{pkGradeitem,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="pkGraderec != null" >
+                PK_GRADEREC = #{pkGraderec,jdbcType=VARCHAR},
+            </if>
+            <if test="pkRec != null" >
+                PK_REC = #{pkRec,jdbcType=VARCHAR},
+            </if>
+            <if test="standCode != null" >
+                STAND_CODE = #{standCode,jdbcType=VARCHAR},
+            </if>
+            <if test="typeCode != null" >
+                TYPE_CODE = #{typeCode,jdbcType=VARCHAR},
+            </if>
+            <if test="scoreDesc != null" >
+                SCORE_DESC = #{scoreDesc,jdbcType=VARCHAR},
+            </if>
+            <if test="num != null" >
+                NUM = #{num,jdbcType=DECIMAL},
+            </if>
+            <if test="score != null" >
+                SCORE = #{score,jdbcType=VARCHAR},
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT = #{pkDept,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmp != null" >
+                PK_EMP = #{pkEmp,jdbcType=VARCHAR},
+            </if>
+            <if test="euScore != null" >
+                EU_SCORE = #{euScore,jdbcType=CHAR},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+            <if test="flagFinish != null" >
+                FLAG_FINISH = #{flagFinish,jdbcType=CHAR},
+            </if>
+        </set>
+        WHERE 
+            PK_GRADEITEM = #{pkGradeitem,jdbcType=CHAR}
+    </update>
+
+	<update id="updteEventRec" statementType="CALLABLE" parameterType="java.util.Map">
+	   {call emr_proc_gen_event_rec(#{pkDept,mode=IN,jdbcType=VARCHAR},#{pkEmp,mode=IN,jdbcType=VARCHAR},#{pkPv,mode=IN,jdbcType=VARCHAR},#{sysDate,mode=IN,jdbcType=TIMESTAMP})}
+	</update>
+	<resultMap id="ResultMapGradeRule" type="com.zebone.nhis.common.module.emr.qc.EmrGradeRule">
+        <id column="PK_RULE" jdbcType="CHAR" property="pkRule"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="SHORT_NAME" jdbcType="VARCHAR" property="shortName"/>
+        <result column="DT_RULE_TYPE" jdbcType="VARCHAR" property="dtRuleType"/>
+        <result column="DOC_TYPE_CODE" jdbcType="VARCHAR" property="docTypeCode"/>
+        <result column="RULE_XML" jdbcType="VARCHAR" property="ruleXml"/>
+        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+        <result column="FLAG_TIME" jdbcType="CHAR" property="flagTime"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+	<select id="queryGradeRuleByConds" resultMap="ResultMapGradeRule">
+        SELECT
+            *
+        FROM
+              emr_grade_rule
+        where del_flag !='1' and eu_status='1'
+   	    <if test="dtRuleType != null" >
+            and dt_rule_type = #{dtRuleType,jdbcType=VARCHAR}
+        </if>
+        <if test="timeLimit != null" >
+            and dt_rule_type in ('time','relate')
+        </if>
+        <if test="flagTime != null" >
+            and flagTime = #{flagTime,jdbcType=VARCHAR}
+        </if>
+   		<if test="ruleCodes != null" >
+            ${ruleCodes}
+        </if>           
+   		<if test="orderBy != null" >
+            ${orderBy}
+        </if>           
+    </select>
+    <resultMap id="ResultMapEventRec" type="com.zebone.nhis.common.module.emr.qc.EmrEventRec">
+        <id column="PK_EVTREC" jdbcType="CHAR" property="pkEvtrec"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="PK_PI" jdbcType="VARCHAR" property="pkPi"/>
+        <result column="TIMES" jdbcType="DECIMAL" property="times"/>
+        <result column="PK_PV" jdbcType="VARCHAR" property="pkPv"/>
+        <result column="PK_REC" jdbcType="VARCHAR" property="pkRec"/>
+        <result column="EVENT_CODE" jdbcType="VARCHAR" property="eventCode"/>
+        <result column="EVENT_DATE" jdbcType="TIMESTAMP" property="eventDate"/>
+        <result column="MONIT_DATE" jdbcType="TIMESTAMP" property="monitDate"/>
+        <result column="EU_PAT_STATE" jdbcType="VARCHAR" property="euPatState"/>
+        <result column="EU_EVENT_STATUS" jdbcType="CHAR" property="euEventStatus"/>
+        <result column="RELATE_NO" jdbcType="VARCHAR" property="relateNo"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="PK_DEPT_NS" jdbcType="CHAR" property="pkDeptNs"/>
+        <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp"/>
+        <result column="PK_EMP_NS" jdbcType="VARCHAR" property="pkEmpNs"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+    </resultMap>
+    <select id="queryEventRecByConds" resultMap="ResultMapEventRec">
+        SELECT
+            *
+        FROM
+              emr_event_rec
+        where del_flag !='1'
+   	    <if test="pkPv != null" >
+            and pk_pv = #{pkPv,jdbcType=VARCHAR}
+        </if>
+   	    <if test="euEventStatus != null" >
+            and EU_EVENT_STATUS = #{euEventStatus,jdbcType=VARCHAR}
+        </if>
+   		<if test="orderBy != null" >
+            ${orderBy}
+        </if>           
+    </select>
+    
+    <select id="queryEventRecByCondsDC" resultMap="ResultMapEventRec">
+        SELECT
+            *
+        FROM
+              emr_event_rec
+        where del_flag !='1'
+   	    <if test="pkPv != null" >
+            and pk_pv = #{pkPv,jdbcType=VARCHAR}
+        </if>
+   	    <if test="euEventStatus != null" >
+            and EU_EVENT_STATUS = #{euEventStatus,jdbcType=VARCHAR}
+        </if>
+   		order by event_date           
+    </select>
+    
+    
+    
+    
+    
+    <resultMap id="ResultMapEmrMedRec" type="com.zebone.nhis.common.module.emr.rec.rec.EmrMedRec">
+        <id column="PK_REC" jdbcType="CHAR" property="pkRec"/>
+        <result column="PK_PATREC" jdbcType="VARCHAR" property="pkPatrec"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="SEQ_NO" jdbcType="DECIMAL" property="seqNo"/>
+        <result column="REC_DATE" jdbcType="TIMESTAMP" property="recDate" />
+        <result column="DESCRIBE" jdbcType="VARCHAR" property="describe"/>
+        <result column="PK_PI" jdbcType="VARCHAR" property="pkPi"/>
+        <result column="TIMES" jdbcType="DECIMAL" property="times"/>
+        <result column="PK_PV" jdbcType="VARCHAR" property="pkPv"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="PK_WARD" jdbcType="VARCHAR" property="pkWard"/>
+        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+        <result column="PK_TMP" jdbcType="VARCHAR" property="pkTmp"/>
+        <result column="PK_DOC" jdbcType="VARCHAR" property="pkDoc"/>
+        <result column="FLAG_AUDIT" jdbcType="CHAR" property="flagAudit"/>
+        <result column="EU_AUDIT_LEVEL" jdbcType="DECIMAL" property="euAuditLevel"/>
+        <result column="EU_DOC_STATUS" jdbcType="CHAR" property="euDocStatus"/>
+        <result column="EU_AUDIT_STATUS" jdbcType="CHAR" property="euAuditStatus"/>
+        <result column="PK_EMP_REFER" jdbcType="VARCHAR" property="pkEmpRefer"/>
+        <result column="REFER_SIGN_DATE" jdbcType="TIMESTAMP" property="referSignDate"/>
+        <result column="SUBMIT_DATE" jdbcType="TIMESTAMP" property="submitDate"/>
+        <result column="PK_EMP_CONSULT_ACT" jdbcType="VARCHAR" property="pkEmpConsultAct"/>
+        <result column="PK_EMP_CONSULT" jdbcType="VARCHAR" property="pkEmpConsult"/>
+        <result column="CONSULT_AUDIT_DATE" jdbcType="TIMESTAMP" property="consultAuditDate"/>
+        <result column="CONSULT_SIGN_DATE" jdbcType="TIMESTAMP" property="consultSignDate"/>
+        <result column="PK_EMP_DIRECTOR_ACT" jdbcType="VARCHAR" property="pkEmpDirectorAct"/>
+        <result column="PK_EMP_DIRECTOR" jdbcType="VARCHAR" property="pkEmpDirector"/>
+        <result column="DIRECTOR_AUDIT_DATE" jdbcType="TIMESTAMP" property="directorAuditDate"/>
+        <result column="DIRECTOR_SIGN_DATE" jdbcType="TIMESTAMP" property="directorSignDate"/>
+        <result column="DOC_DATA" jdbcType="BLOB" property="docData"/>
+        <result column="DOC_XML" jdbcType="CLOB" property="docXml"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+        <association property="template" javaType="com.zebone.nhis.common.module.emr.rec.tmp.EmrTemplate">
+	        <id column="PK_TMP" jdbcType="CHAR" property="pkTmp"/>
+	        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+	        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+	        <result column="DESCRIBE" jdbcType="VARCHAR" property="describe"/>
+	        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+	        <result column="EU_TMP_LEVEL" jdbcType="DECIMAL" property="euTmpLevel"/>
+	        <result column="TMP_TITLE" jdbcType="VARCHAR" property="tmpTitle"/>
+	        <result column="TEXT_TITLE" jdbcType="VARCHAR" property="textTitle"/>
+	        <result column="SORT_CODE" jdbcType="DECIMAL" property="sortCode"/>
+	        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+	        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+	        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+	        <result column="PK_WARD" jdbcType="VARCHAR" property="pkWard"/>
+	        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+	        <result column="FLAG_AUDIT" jdbcType="CHAR" property="flagAudit"/>
+	        <result column="AUDIT_LEVEL" jdbcType="DECIMAL" property="auditLevel"/>
+	        <result column="AUDIT_LEVEL_SET" jdbcType="VARCHAR" property="auditLevelSet"/>
+	        <result column="LIMIT_NUM" jdbcType="DECIMAL" property="limitNum"/>
+	        <result column="FLAG_DEFAULT" jdbcType="CHAR" property="flagDefault"/>
+	        <result column="FLAG_OPEN" jdbcType="CHAR" property="flagOpen"/>
+	        <result column="FLAG_MERGE" jdbcType="CHAR" property="flagMerge"/>
+	        <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp"/>
+	        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+	        <result column="DOC_DATA" jdbcType="BLOB" property="docData"/>
+	        <result column="DOC_XML" jdbcType="CLOB" property="docXml"/>
+	        <result column="ASSOCIATION_RULES" jdbcType="CLOB" property="associationRules"/>
+	        <result column="TMP_PATH" jdbcType="VARCHAR" property="tmpPath"/>
+	        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+	        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+	        <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime"/>
+	        <result column="TS" jdbcType="DATE" property="ts"/>
+        </association>   
+        <association property="docType" javaType="com.zebone.nhis.common.module.emr.rec.dict.EmrDocType">  
+            <id column="PK_DOCTYPE" jdbcType="CHAR" property="pkDoctype"/>
+	        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+	        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+	        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+	        <result column="PARENT_TYPE" jdbcType="VARCHAR" property="parentType"/>
+	        <result column="LEVELS" jdbcType="DECIMAL" property="levels"/>
+	        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+	        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+	        <result column="WS_CODE" jdbcType="VARCHAR" property="wsCode"/>
+	        <result column="EU_VISIT" jdbcType="CHAR" property="euVisit"/>
+	        <result column="EU_USED" jdbcType="CHAR" property="euUsed"/>
+	        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+	        <result column="TITLE" jdbcType="VARCHAR" property="title"/>
+	        <result column="FLAG_COURSE" jdbcType="CHAR" property="flagCourse"/>
+	        <result column="FLAG_FIRST" jdbcType="CHAR" property="flagFirst"/>
+	        <result column="FLAG_NEW_PAGE" jdbcType="CHAR" property="flagNewPage"/>
+	        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+	        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+	        <result column="PK_WARD" jdbcType="VARCHAR" property="pkWard"/>
+	        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+	        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+	        <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime"/>
+	        <result column="TS" jdbcType="TIMESTAMP" property="ts"/> 
+        </association>  
+    </resultMap>
+	<select id="queryMedRecListByType" resultMap="ResultMapEmrMedRec">
+        select rec.PK_REC,
+		       rec.PK_PATREC,
+		       rec.NAME,
+		       rec.SEQ_NO,
+		       rec.REC_DATE,
+		       rec.DESCRIBE,
+		       rec.PK_PI,
+		       rec.TIMES,
+		       rec.PK_PV,
+		       rec.PK_DEPT,
+		       rec.PK_WARD,
+		       rec.TYPE_CODE,
+		       rec.PK_TMP,
+		       rec.PK_DOC,
+		       rec.FLAG_AUDIT,
+		       rec.EU_AUDIT_LEVEL,
+		       rec.EU_DOC_STATUS,
+		       rec.EU_AUDIT_STATUS,
+		       rec.PK_EMP_REFER,
+		       rec.REFER_SIGN_DATE,
+		       rec.PK_EMP_CONSULT_ACT,
+		       rec.PK_EMP_CONSULT,
+		       rec.CONSULT_AUDIT_DATE,
+		       rec.CONSULT_SIGN_DATE,
+		       rec.PK_EMP_DIRECTOR_ACT,
+		       rec.PK_EMP_DIRECTOR,
+		       rec.DIRECTOR_AUDIT_DATE,
+		       rec.DIRECTOR_SIGN_DATE,
+		       rec.SUBMIT_DATE,
+		       rec.DEL_FLAG,
+		       rec.REMARK,
+		       rec.CREATOR,
+		       rec.CREATE_TIME,
+		       doc.doc_data,
+		       doc.doc_xml,
+		       tmp.PK_TMP,
+		       tmp.PK_ORG,
+		       tmp.CODE,
+		       tmp.NAME,
+		       tmp.DESCRIBE,
+		       tmp.TYPE_CODE,
+		       tmp.EU_TMP_LEVEL,
+		       tmp.TMP_TITLE,
+		       tmp.TEXT_TITLE,
+		       tmp.SORT_CODE,
+		       tmp.PY_CODE,
+		       tmp.D_CODE,
+		       tmp.PK_DEPT,
+		       tmp.PK_WARD,
+		       tmp.EU_STATUS,
+		       tmp.FLAG_AUDIT,
+		       tmp.AUDIT_LEVEL,
+		       tmp.LIMIT_NUM,
+		       tmp.FLAG_DEFAULT,
+		       tmp.FLAG_OPEN,
+		       tmp.FLAG_SYS,
+		       tmp.EU_TYPE,
+		       tmp.FLAG_EXT,
+		       tmp.PK_EMP,
+		       tmp.DEL_FLAG,
+		       tmp.TMP_PATH,
+		       tmp.REMARK,
+		       tmp.CREATOR,
+		       tmp.CREATE_TIME,
+		       tmp.TS,
+		       tmp.AUDIT_LEVEL_SET,
+		       typ.*
+		  from emr_med_rec rec
+		  inner  join emr_med_doc doc
+		    on rec.pk_doc = doc.pk_doc
+		  left outer join emr_template tmp
+		    on rec.pk_tmp = tmp.pk_tmp
+		  left outer join emr_doc_type typ
+		    on tmp.type_code = typ.code
+        where rec.pk_pv = #{pkPv,jdbcType=CHAR} and rec.del_flag !='1' 
+   	    <if test="typeCode != null" >
+            and rec.type_code like #{typeCode,jdbcType=VARCHAR}
+        </if> 
+   	    <if test="beginDate != null" >
+            and rec.create_time &gt;= #{beginDate,jdbcType=DATE}
+        </if> 
+   	    <if test="endDate != null" >
+            and rec.create_time &lt; #{endDate,jdbcType=DATE}
+        </if>
+        <if test="titleName != null" >
+            and rec.name like '%'||#{titleName,jdbcType=VARCHAR}||'%'
+        </if>  
+      	<if test="orderBy != null" >
+            ${orderBy}
+        </if>  
+    </select>
+    
+    
+    
+    
+    <select id="queryMedRecListByTypeDC" resultMap="ResultMapEmrMedRec">
+        select rec.PK_REC,
+		       rec.PK_PATREC,
+		       rec.NAME,
+		       rec.SEQ_NO,
+		       rec.REC_DATE,
+		       rec.DESCRIBE,
+		       rec.PK_PI,
+		       rec.TIMES,
+		       rec.PK_PV,
+		       rec.PK_DEPT,
+		       rec.PK_WARD,
+		       rec.TYPE_CODE,
+		       rec.PK_TMP,
+		       rec.PK_DOC,
+		       rec.FLAG_AUDIT,
+		       rec.EU_AUDIT_LEVEL,
+		       rec.EU_DOC_STATUS,
+		       rec.EU_AUDIT_STATUS,
+		       rec.PK_EMP_REFER,
+		       rec.REFER_SIGN_DATE,
+		       rec.PK_EMP_CONSULT_ACT,
+		       rec.PK_EMP_CONSULT,
+		       rec.CONSULT_AUDIT_DATE,
+		       rec.CONSULT_SIGN_DATE,
+		       rec.PK_EMP_DIRECTOR_ACT,
+		       rec.PK_EMP_DIRECTOR,
+		       rec.DIRECTOR_AUDIT_DATE,
+		       rec.DIRECTOR_SIGN_DATE,
+		       rec.DEL_FLAG,
+		       rec.REMARK,
+		       rec.CREATOR,
+		       rec.CREATE_TIME,
+		       doc.doc_data,
+		       doc.doc_xml,
+		       tmp.PK_ORG,
+		       tmp.PK_TMP,
+		       tmp.CODE,
+		       tmp.NAME,
+		       tmp.DESCRIBE,
+		       tmp.TYPE_CODE,
+		       tmp.EU_TMP_LEVEL,
+		       tmp.TMP_TITLE,
+		       tmp.TEXT_TITLE,
+		       tmp.SORT_CODE,
+		       tmp.PY_CODE,
+		       tmp.D_CODE,
+		       tmp.PK_DEPT,
+		       tmp.PK_WARD,
+		       tmp.EU_STATUS,
+		       tmp.FLAG_AUDIT,
+		       tmp.AUDIT_LEVEL,
+		       tmp.LIMIT_NUM,
+		       tmp.FLAG_DEFAULT,
+		       tmp.FLAG_OPEN,
+		       tmp.FLAG_SYS,
+		       tmp.EU_TYPE,
+		       tmp.FLAG_EXT,
+		       tmp.PK_EMP,
+		       tmp.TMP_PATH,
+		       tmp.DEL_FLAG,
+		       tmp.REMARK,
+		       tmp.CREATOR,
+		       tmp.CREATE_TIME,
+		       tmp.TS,
+		       tmp.AUDIT_LEVEL_SET,
+		       typ.*
+		  from emr_med_rec rec
+		  inner  join emr_med_doc doc
+		    on rec.pk_doc = doc.pk_doc
+		  left outer join emr_template tmp
+		    on rec.pk_tmp = tmp.pk_tmp
+		  left outer join emr_doc_type typ
+		    on tmp.type_code = typ.code
+        where rec.pk_pv = #{pkPv,jdbcType=CHAR} and rec.del_flag !='1' 
+   	    <if test="typeCode != null" >
+            and rec.type_code like #{typeCode,jdbcType=VARCHAR}
+        </if> 
+   	    <if test="beginDate != null" >
+            and rec.create_time &gt;= #{beginDate,jdbcType=DATE}
+        </if> 
+   	    <if test="endDate != null" >
+            and rec.create_time &lt; #{endDate,jdbcType=DATE}
+        </if> 
+      	<if test="orderTypeStatus != null" >
+            ${orderTypeStatus}
+        </if>  
+    </select>
+    
+    
+    
+    
+    
+    <resultMap id="ResultMapMedRecTask" type="com.zebone.nhis.common.module.emr.qc.EmrMedRecTask">
+        <id column="PK_TASK" jdbcType="CHAR" property="pkTask"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="PK_PI" jdbcType="VARCHAR" property="pkPi"/>
+        <result column="TIMES" jdbcType="DECIMAL" property="times"/>
+        <result column="PK_PV" jdbcType="VARCHAR" property="pkPv"/>
+        <result column="EU_TASKTYPE" jdbcType="VARCHAR" property="euTasktype"/>
+        <result column="RULE_CODE" jdbcType="VARCHAR" property="ruleCode"/>
+        <result column="PK_EVTREC" jdbcType="VARCHAR" property="pkEvtrec"/>
+        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+        <result column="PK_REC" jdbcType="VARCHAR" property="pkRec"/>
+        <result column="FLAG_REC_CYCLE" jdbcType="CHAR" property="flagRecCycle"/>
+        <result column="TASK_DESC" jdbcType="VARCHAR" property="taskDesc"/>
+        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+        <result column="EU_REC_STATUS" jdbcType="CHAR" property="euRecStatus"/>
+        <result column="REC_DATE" jdbcType="TIMESTAMP" property="recDate"/>
+        <result column="BEGIN_DATE" jdbcType="TIMESTAMP" property="beginDate"/>
+        <result column="END_DATE" jdbcType="TIMESTAMP" property="endDate"/>
+        <result column="FINISH_DATE" jdbcType="TIMESTAMP" property="finishDate"/>
+        <result column="BEGIN_DATE_RMD" jdbcType="TIMESTAMP" property="beginDateRmd"/>
+        <result column="FLAG_TIMEOUT" jdbcType="CHAR" property="flagTimeout"/>
+        <result column="REMAIN_TIME" jdbcType="DECIMAL" property="remainTime"/>
+        <result column="DUE_NUM" jdbcType="DECIMAL" property="dueNum"/>
+        <result column="FACT_NUM" jdbcType="DECIMAL" property="factNum"/>
+        <result column="DEDUCT_NUM" jdbcType="DECIMAL" property="deductNum"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp"/>
+        <result column="FLAG_SHOW" jdbcType="CHAR" property="flagShow"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+        <result column="TYPE_NAME" jdbcType="VARCHAR" property="typeName"/>
+    </resultMap>
+   	<select id="queryMedRecTaskByConds" resultMap="ResultMapMedRecTask">
+        SELECT
+            task.*,typ.name type_name
+        FROM
+              emr_med_rec_task task left outer join
+              emr_doc_type typ on task.type_code=typ.code 
+        where task.del_flag !='1'
+   	    <if test="pkPv != null" >
+            and task.pk_pv = #{pkPv,jdbcType=VARCHAR}
+        </if>
+   	    <if test="ruleCode != null" >
+            and task.rule_code = #{ruleCode,jdbcType=VARCHAR}
+        </if>
+   	    <if test="pkEvtrec != null" >
+            and task.pk_evtrec = #{pkEvtrec,jdbcType=VARCHAR}
+        </if>
+          <if test="pkDept != null" >
+              and task.pk_dept = #{pkDept,jdbcType=VARCHAR}
+           </if>
+           <if test="pkEmp != null" >
+              and task.pk_emp = #{pkEmp,jdbcType=VARCHAR}
+           </if>
+         <if test="beginDate != null" >
+            and task.begin_date &gt;= to_date(#{beginDate,jdbcType=VARCHAR},'yyyymmddhh24miss')
+        </if>           
+   		<if test="endDate != null" >
+            and task.end_date  &lt; to_date(#{endDate,jdbcType=VARCHAR},'yyyymmddhh24miss')
+        </if>           
+         <if test="pkRec != null" >
+              and task.pk_rec = #{pkRec,jdbcType=VARCHAR}
+          </if>
+   		<if test="orderBy != null" >
+            ${orderBy}
+        </if>           
+    </select>
+    
+    <delete id="deleteEmrMedRecTask">
+        DELETE
+        FROM
+             EMR_MED_REC_TASK
+        WHERE            
+            PK_TASK = #{pkTask,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrMedRecTask" parameterType="com.zebone.nhis.common.module.emr.qc.EmrMedRecTask" >
+        INSERT INTO EMR_MED_REC_TASK
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkTask != null" >
+                PK_TASK,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="pkPi != null" >
+                PK_PI,
+            </if>
+            <if test="times != null" >
+                TIMES,
+            </if>
+            <if test="pkPv != null" >
+                PK_PV,
+            </if>
+             <if test="euTasktype != null" >
+                EU_TASKTYPE,
+            </if>
+            <if test="ruleCode != null" >
+                RULE_CODE,
+            </if>
+            <if test="pkEvtrec != null" >
+                PK_EVTREC,
+            </if>
+            <if test="typeCode != null" >
+                TYPE_CODE,
+            </if>
+            <if test="pkRec != null" >
+                PK_REC,
+            </if>
+            <if test="flagRecCycle != null" >
+                FLAG_REC_CYCLE,
+            </if>
+            <if test="taskDesc != null" >
+                TASK_DESC,
+            </if>
+            <if test="euStatus != null" >
+                EU_STATUS,
+            </if>
+            <if test="euRecStatus != null" >
+                EU_REC_STATUS,
+            </if>
+             <if test="recDate != null" >
+                REC_DATE,
+            </if>
+            <if test="beginDate != null" >
+                BEGIN_DATE,
+            </if>
+            <if test="endDate != null" >
+                END_DATE,
+            </if>
+            <if test="finishDate != null" >
+                FINISH_DATE,
+            </if>
+            <if test="beginDateRmd != null" >
+                BEGIN_DATE_RMD,
+            </if>
+            <if test="flagTimeout != null" >
+                FLAG_TIMEOUT,
+            </if>
+            <if test="remainTime != null" >
+                REMAIN_TIME,
+            </if>
+            <if test="dueNum != null" >
+                DUE_NUM,
+            </if>
+            <if test="factNum != null" >
+                FACT_NUM,
+            </if>
+            <if test="deductNum != null" >
+                DEDUCT_NUM,
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT,
+            </if>
+            <if test="pkEmp != null" >
+                PK_EMP,
+            </if>
+            <if test="flagShow != null" >
+                FLAG_SHOW,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkTask != null" >
+                #{pkTask,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkPi != null" >
+                #{pkPi,jdbcType=VARCHAR},
+            </if> 
+            <if test="times != null" >
+                #{times,jdbcType=DECIMAL},
+            </if> 
+            <if test="pkPv != null" >
+                #{pkPv,jdbcType=VARCHAR},
+            </if> 
+            <if test="euTasktype != null" >
+                #{euTasktype,jdbcType=VARCHAR},
+            </if> 
+            <if test="ruleCode != null" >
+                #{ruleCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkEvtrec != null" >
+                #{pkEvtrec,jdbcType=VARCHAR},
+            </if> 
+            <if test="typeCode != null" >
+                #{typeCode,jdbcType=VARCHAR},
+            </if>
+            <if test="pkRec != null" >
+                #{pkRec,jdbcType=VARCHAR},
+            </if> 
+            <if test="flagRecCycle != null" >
+                #{flagRecCycle,jdbcType=CHAR},
+            </if> 
+            <if test="taskDesc != null" >
+                #{taskDesc,jdbcType=VARCHAR},
+            </if> 
+            <if test="euStatus != null" >
+                #{euStatus,jdbcType=CHAR},
+            </if> 
+            <if test="euRecStatus != null" >
+                #{euRecStatus,jdbcType=CHAR},
+            </if> 
+            <if test="beginDate != null" >
+                #{beginDate,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="endDate != null" >
+                #{endDate,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="finishDate != null" >
+                #{finishDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="beginDateRmd != null" >
+                #{beginDateRmd,jdbcType=TIMESTAMP},
+            </if>  
+            <if test="flagTimeout != null" >
+                #{flagTimeout,jdbcType=CHAR},
+            </if> 
+            <if test="remainTime != null" >
+                #{remainTime,jdbcType=DECIMAL},
+            </if> 
+            <if test="dueNum != null" >
+                #{dueNum,jdbcType=DECIMAL},
+            </if> 
+            <if test="factNum != null" >
+                #{factNum,jdbcType=DECIMAL},
+            </if> 
+             <if test="deductNum != null" >
+                #{deductNum,jdbcType=DECIMAL},
+            </if>
+            <if test="pkDept != null" >
+                #{pkDept,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkEmp != null" >
+                #{pkEmp,jdbcType=VARCHAR},
+            </if> 
+            <if test="flagShow != null" >
+                #{flagShow,jdbcType=CHAR},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=TIMESTAMP},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrMedRecTask" parameterType="com.zebone.nhis.common.module.emr.qc.EmrMedRecTask" >
+        UPDATE EMR_MED_REC_TASK
+        <set>
+            <if test="pkTask != null" >
+                PK_TASK = #{pkTask,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="pkPi != null" >
+                PK_PI = #{pkPi,jdbcType=VARCHAR},
+            </if>
+            <if test="times != null" >
+                TIMES = #{times,jdbcType=DECIMAL},
+            </if>
+            <if test="pkPv != null" >
+                PK_PV = #{pkPv,jdbcType=VARCHAR},
+            </if>
+            <if test="euTasktype != null" >
+                EU_TASKTYPE = #{euTasktype,jdbcType=VARCHAR},
+            </if>
+            <if test="ruleCode != null" >
+                RULE_CODE = #{ruleCode,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEvtrec != null" >
+                PK_EVTREC = #{pkEvtrec,jdbcType=VARCHAR},
+            </if>
+            <if test="typeCode != null" >
+                TYPE_CODE = #{typeCode,jdbcType=VARCHAR},
+            </if>
+            <if test="pkRec != null" >
+                PK_REC = #{pkRec,jdbcType=VARCHAR},
+            </if>
+            <if test="flagRecCycle != null" >
+                FLAG_REC_CYCLE = #{flagRecCycle,jdbcType=CHAR},
+            </if>
+            <if test="taskDesc != null" >
+                TASK_DESC = #{taskDesc,jdbcType=VARCHAR},
+            </if>
+            <if test="euStatus != null" >
+                EU_STATUS = #{euStatus,jdbcType=CHAR},
+            </if>
+            <if test="euRecStatus != null" >
+                EU_REC_STATUS = #{euRecStatus,jdbcType=CHAR},
+            </if>
+            <if test="recDate != null" >
+                REC_DATE = #{recDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="beginDate != null" >
+                BEGIN_DATE = #{beginDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="endDate != null" >
+                END_DATE = #{endDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="finishDate != null" >
+                FINISH_DATE = #{finishDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="beginDateRmd != null" >
+                BEGIN_DATE_RMD = #{beginDateRmd,jdbcType=TIMESTAMP},
+            </if>
+            <if test="flagTimeout != null" >
+                FLAG_TIMEOUT = #{flagTimeout,jdbcType=CHAR},
+            </if>
+            <if test="remainTime != null" >
+                REMAIN_TIME = #{remainTime,jdbcType=DECIMAL},
+            </if>
+            <if test="dueNum != null" >
+                DUE_NUM = #{dueNum,jdbcType=DECIMAL},
+            </if>
+            <if test="factNum != null" >
+                FACT_NUM = #{factNum,jdbcType=DECIMAL},
+            </if>
+            <if test="deductNum != null" >
+                DEDUCT_NUM = #{deductNum,jdbcType=DECIMAL},
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT = #{pkDept,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmp != null" >
+                PK_EMP = #{pkEmp,jdbcType=VARCHAR},
+            </if>
+            <if test="flagShow != null" >
+                FLAG_SHOW = #{flagShow,jdbcType=CHAR},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        WHERE 
+            PK_TASK = #{pkTask,jdbcType=CHAR}
+    </update>
+	<resultMap type="java.util.HashMap" id="ResultMapPatScore">
+    </resultMap>    
+	<select id="queryPatGradeScore" statementType="CALLABLE" parameterType="java.util.Map" >  
+		{call emr_proc_get_pat_socre(#{pkPv,mode=IN,jdbcType=VARCHAR},#{result,jdbcType=CURSOR,mode=OUT,javaType=ResultSet, resultMap=ResultMapPatScore})} 
+	</select>
+	<select id="queryPatGradeScoreSql" statementType="CALLABLE" parameterType="java.util.Map" resultMap="ResultMapPatScore">  
+		{call emr_proc_get_pat_socre(#{pkPv,mode=IN,jdbcType=VARCHAR})} 
+	</select>
+	<resultMap id="ResultMapMsgRec" type="com.zebone.nhis.common.module.emr.qc.EmrGradeMsgRec">
+        <id column="PK_GRADE_MSGREC" jdbcType="CHAR" property="pkGradeMsgrec"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="PK_PI" jdbcType="VARCHAR" property="pkPi"/>
+        <result column="TIMES" jdbcType="DECIMAL" property="times"/>
+        <result column="PK_PV" jdbcType="VARCHAR" property="pkPv"/>
+        <result column="EU_MSG_TYPE" jdbcType="VARCHAR" property="euMsgType"/>
+        <result column="PK_GRADEREC" jdbcType="VARCHAR" property="pkGraderec"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp"/>
+        <result column="PK_EMP_QC" jdbcType="VARCHAR" property="pkEmpQc"/>
+        <result column="QC_DATE" jdbcType="DATE" property="qcDate"/>
+        <result column="PK_EMP_SEND" jdbcType="VARCHAR" property="pkEmpSend"/>
+        <result column="SEND_DATE" jdbcType="DATE" property="sendDate"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="FLAG_SEND" jdbcType="CHAR" property="flagSend"/>
+        <result column="FLAG_RESP" jdbcType="CHAR" property="flagResp"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    <delete id="deleteEmrGradeMsgRec">
+        DELETE
+        FROM
+             EMR_GRADE_MSG_REC
+        WHERE            
+            PK_GRADE_MSGREC = #{pkGradeMsgrec,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrGradeMsgRec" parameterType="com.zebone.nhis.common.module.emr.qc.EmrGradeMsgRec" >
+        INSERT INTO EMR_GRADE_MSG_REC
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkGradeMsgrec != null" >
+                PK_GRADE_MSGREC,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="pkPi != null" >
+                PK_PI,
+            </if>
+            <if test="times != null" >
+                TIMES,
+            </if>
+            <if test="pkPv != null" >
+                PK_PV,
+            </if>
+            <if test="euMsgType != null" >
+                EU_MSG_TYPE,
+            </if>
+            <if test="pkGraderec != null" >
+                PK_GRADEREC,
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT,
+            </if>
+            <if test="pkEmp != null" >
+                PK_EMP,
+            </if>
+            <if test="pkEmpQc != null" >
+                PK_EMP_QC,
+            </if>
+            <if test="qcDate != null" >
+                QC_DATE,
+            </if>
+            <if test="pkEmpSend != null" >
+                PK_EMP_SEND,
+            </if>
+            <if test="sendDate != null" >
+                SEND_DATE,
+            </if>
+            <if test="flagSend != null" >
+                FLAG_SEND,
+            </if>
+             <if test="flagResp != null" >
+                FLAG_RESP,
+            </if>
+             <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkGradeMsgrec != null" >
+                #{pkGradeMsgrec,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkPi != null" >
+                #{pkPi,jdbcType=VARCHAR},
+            </if> 
+            <if test="times != null" >
+                #{times,jdbcType=DECIMAL},
+            </if> 
+            <if test="pkPv != null" >
+                #{pkPv,jdbcType=VARCHAR},
+            </if> 
+            <if test="euMsgType != null" >
+                #{euMsgType,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkGraderec != null" >
+                #{pkGraderec,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkDept != null" >
+                #{pkDept,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkEmp != null" >
+                #{pkEmp,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkEmpQc != null" >
+                #{pkEmpQc,jdbcType=VARCHAR},
+            </if> 
+            <if test="qcDate != null" >
+                #{qcDate,jdbcType=DATE},
+            </if> 
+            <if test="pkEmpSend != null" >
+                #{pkEmpSend,jdbcType=VARCHAR},
+            </if> 
+            <if test="sendDate != null" >
+                #{sendDate,jdbcType=DATE},
+            </if> 
+            <if test="flagSend != null" >
+                #{flagSend,jdbcType=CHAR},
+            </if> 
+            <if test="flagResp != null" >
+                #{flagResp,jdbcType=CHAR},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrGradeMsgRec" parameterType="com.zebone.nhis.common.module.emr.qc.EmrGradeMsgRec" >
+        UPDATE EMR_GRADE_MSG_REC
+        <set>
+            <if test="pkGradeMsgrec != null" >
+                PK_GRADE_MSGREC = #{pkGradeMsgrec,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="pkPi != null" >
+                PK_PI = #{pkPi,jdbcType=VARCHAR},
+            </if>
+            <if test="times != null" >
+                TIMES = #{times,jdbcType=DECIMAL},
+            </if>
+            <if test="pkPv != null" >
+                PK_PV = #{pkPv,jdbcType=VARCHAR},
+            </if>
+            <if test="euMsgType != null" >
+                EU_MSG_TYPE = #{euMsgType,jdbcType=VARCHAR},
+            </if>
+            <if test="pkGraderec != null" >
+                PK_GRADEREC = #{pkGraderec,jdbcType=VARCHAR},
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT = #{pkDept,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmp != null" >
+                PK_EMP = #{pkEmp,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmpQc != null" >
+                PK_EMP_QC = #{pkEmpQc,jdbcType=VARCHAR},
+            </if>
+            <if test="qcDate != null" >
+                QC_DATE = #{qcDate,jdbcType=DATE},
+            </if>
+            <if test="pkEmpSend != null" >
+                PK_EMP_SEND = #{pkEmpSend,jdbcType=VARCHAR},
+            </if>
+            <if test="sendDate != null" >
+                SEND_DATE = #{sendDate,jdbcType=DATE},
+            </if>
+            <if test="flagSend != null" >
+                FLAG_SEND = #{flagSend,jdbcType=CHAR},
+            </if>
+            <if test="flagResp != null" >
+                FLAG_RESP = #{flagResp,jdbcType=CHAR},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_GRADE_MSGREC = #{pkGradeMsgrec,jdbcType=CHAR}
+     </update>
+	 <resultMap id="ResultMapMsgItem" type="com.zebone.nhis.common.module.emr.qc.EmrGradeMsgItem">
+        <id column="PK_GRADE_MSGITEM" jdbcType="CHAR" property="pkGradeMsgitem"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="PK_GRADE_MSGREC" jdbcType="VARCHAR" property="pkGradeMsgrec"/>
+        <result column="PK_GRADEITEM" jdbcType="VARCHAR" property="pkGradeitem"/>
+        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+        <result column="SCORE_DESC" jdbcType="VARCHAR" property="scoreDesc"/>
+        <result column="SCORE" jdbcType="VARCHAR" property="score"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="PK_EMP_QC" jdbcType="VARCHAR" property="pkEmpQc"/>
+        <result column="QC_DATE" jdbcType="DATE" property="qcDate"/>
+        <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp"/>
+        <result column="PK_EMP_SEND" jdbcType="VARCHAR" property="pkEmpSend"/>
+        <result column="SEND_DATE" jdbcType="DATE" property="sendDate"/>
+        <result column="PK_EMP_RECEIVE" jdbcType="VARCHAR" property="pkEmpReceive"/>
+        <result column="RECEIVE_DATE" jdbcType="DATE" property="receiveDate"/>
+        <result column="PK_EMP_RESPONSE" jdbcType="VARCHAR" property="pkEmpResponse"/>
+        <result column="RESPONSE_DATE" jdbcType="DATE" property="responseDate"/>
+        <result column="RESPONSE_TXT" jdbcType="VARCHAR" property="responseTxt"/>
+        <result column="FLAG_SUBMIT" jdbcType="CHAR" property="flagSubmit"/>
+        <result column="SUBMIT_DATE" jdbcType="DATE" property="submitDate"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    <delete id="deleteEmrGradeMsgItem">
+        DELETE
+        FROM
+             EMR_GRADE_MSG_ITEM
+        WHERE            
+            PK_GRADE_MSGITEM = #{pkGradeMsgitem,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrGradeMsgItem" parameterType="com.zebone.nhis.common.module.emr.qc.EmrGradeMsgItem" >
+        INSERT INTO EMR_GRADE_MSG_ITEM
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkGradeMsgitem != null" >
+                PK_GRADE_MSGITEM,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="pkGradeMsgrec != null" >
+                PK_GRADE_MSGREC,
+            </if>
+            <if test="pkGradeitem != null" >
+                PK_GRADEITEM,
+            </if>
+            <if test="standCode != null" >
+                STAND_CODE,
+            </if>
+            <if test="typeCode != null" >
+                TYPE_CODE,
+            </if>
+            <if test="scoreDesc != null" >
+                SCORE_DESC,
+            </if>
+            <if test="score != null" >
+                SCORE,
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT,
+            </if>
+            <if test="pkEmpQc != null" >
+                PK_EMP_QC,
+            </if>
+            <if test="qcDate != null" >
+                QC_DATE,
+            </if>
+            <if test="pkEmp != null" >
+                PK_EMP,
+            </if>
+            <if test="pkEmpSend != null" >
+                PK_EMP_SEND,
+            </if>
+            <if test="sendDate != null" >
+                SEND_DATE,
+            </if>
+            <if test="pkEmpReceive != null" >
+                PK_EMP_RECEIVE,
+            </if>
+            <if test="receiveDate != null" >
+                RECEIVE_DATE,
+            </if>
+            <if test="pkEmpResponse != null" >
+                PK_EMP_RESPONSE,
+            </if>
+            <if test="responseDate != null" >
+                RESPONSE_DATE,
+            </if>
+            <if test="responseTxt != null" >
+                RESPONSE_TXT,
+            </if>
+            <if test="flagSubmit != null" >
+                FLAG_SUBMIT,
+            </if>
+            <if test="submitDate != null" >
+                SUBMIT_DATE,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+            <if test="euStatus != null" >
+                EU_STATUS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkGradeMsgitem != null" >
+                #{pkGradeMsgitem,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkGradeMsgrec != null" >
+                #{pkGradeMsgrec,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkGradeitem != null" >
+                #{pkGradeitem,jdbcType=VARCHAR},
+            </if>
+            <if test="standCode != null" >
+                #{standCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="typeCode != null" >
+                #{typeCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="scoreDesc != null" >
+                #{scoreDesc,jdbcType=VARCHAR},
+            </if> 
+            <if test="score != null" >
+                #{score,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkDept != null" >
+                #{pkDept,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkEmpQc != null" >
+                #{pkEmpQc,jdbcType=VARCHAR},
+            </if> 
+            <if test="qcDate != null" >
+                #{qcDate,jdbcType=DATE},
+            </if> 
+            <if test="pkEmp != null" >
+                #{pkEmp,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkEmpSend != null" >
+                #{pkEmpSend,jdbcType=VARCHAR},
+            </if> 
+            <if test="sendDate != null" >
+                #{sendDate,jdbcType=DATE},
+            </if> 
+            <if test="pkEmpReceive != null" >
+                #{pkEmpReceive,jdbcType=VARCHAR},
+            </if> 
+            <if test="receiveDate != null" >
+                #{receiveDate,jdbcType=DATE},
+            </if> 
+            <if test="pkEmpResponse != null" >
+                #{pkEmpResponse,jdbcType=VARCHAR},
+            </if> 
+            <if test="responseDate != null" >
+                #{responseDate,jdbcType=DATE},
+            </if> 
+            <if test="responseTxt != null" >
+                #{responseTxt,jdbcType=VARCHAR},
+            </if> 
+            <if test="flagSubmit != null" >
+                #{flagSubmit,jdbcType=CHAR},
+            </if> 
+             <if test="submitDate!= null" >
+                #{submitDate,jdbcType=DATE},
+            </if>
+             <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+            <if test="euStatus != null" >
+                #{euStatus,jdbcType=VARCHAR},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrGradeMsgItem" parameterType="com.zebone.nhis.common.module.emr.qc.EmrGradeMsgItem" >
+        UPDATE EMR_GRADE_MSG_ITEM
+        <set>
+            <if test="pkGradeMsgitem != null" >
+                PK_GRADE_MSGITEM = #{pkGradeMsgitem,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="pkGradeMsgrec != null" >
+                PK_GRADE_MSGREC = #{pkGradeMsgrec,jdbcType=VARCHAR},
+            </if>
+            <if test="pkGradeitem != null" >
+                PK_GRADEITEM = #{pkGradeitem,jdbcType=VARCHAR},
+            </if>
+            <if test="standCode != null" >
+                STAND_CODE = #{standCode,jdbcType=VARCHAR},
+            </if>
+            <if test="typeCode != null" >
+                TYPE_CODE = #{typeCode,jdbcType=VARCHAR},
+            </if>
+            <if test="scoreDesc != null" >
+                SCORE_DESC = #{scoreDesc,jdbcType=VARCHAR},
+            </if>
+            <if test="score != null" >
+                SCORE = #{score,jdbcType=VARCHAR},
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT = #{pkDept,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmpQc != null" >
+                PK_EMP_QC = #{pkEmpQc,jdbcType=VARCHAR},
+            </if>
+            <if test="qcDate != null" >
+                QC_DATE = #{qcDate,jdbcType=DATE},
+            </if>
+            <if test="pkEmp != null" >
+                PK_EMP = #{pkEmp,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmpSend != null" >
+                PK_EMP_SEND = #{pkEmpSend,jdbcType=VARCHAR},
+            </if>
+            <if test="sendDate != null" >
+                SEND_DATE = #{sendDate,jdbcType=DATE},
+            </if>
+            <if test="pkEmpReceive != null" >
+                PK_EMP_RECEIVE = #{pkEmpReceive,jdbcType=VARCHAR},
+            </if>
+            <if test="receiveDate != null" >
+                RECEIVE_DATE = #{receiveDate,jdbcType=DATE},
+            </if>
+            <if test="pkEmpResponse != null" >
+                PK_EMP_RESPONSE = #{pkEmpResponse,jdbcType=VARCHAR},
+            </if>
+            <if test="responseDate != null" >
+                RESPONSE_DATE = #{responseDate,jdbcType=DATE},
+            </if>
+            <if test="responseTxt != null" >
+                RESPONSE_TXT = #{responseTxt,jdbcType=VARCHAR},
+            </if>
+            <if test="flagSubmit != null" >
+                FLAG_SUBMIT = #{flagSubmit,jdbcType=CHAR},
+            </if>
+            <if test="submitDate != null" >
+                SUBMIT_DATE = #{submitDate,jdbcType=DATE},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+            <if test="euStatus != null" >
+                EU_STATUS = #{euStatus,jdbcType=VARCHAR},
+            </if>
+        </set>
+        WHERE 
+            PK_GRADE_MSGITEM = #{pkGradeMsgitem,jdbcType=CHAR}
+    </update>
+    <select id="queryGradeMsgRecByConds" resultMap="ResultMapMsgRec">
+        SELECT
+            *
+        FROM
+              emr_grade_msg_rec
+        where pk_pv = #{pkPv,jdbcType=VARCHAR} and del_flag !='1' 
+   	    <if test="euMsgType != null" >
+            and eu_msg_type = #{euMsgType,jdbcType=VARCHAR}
+        </if>
+   		<if test="orderBy != null" >
+            ${orderBy}
+        </if>           
+    </select>    
+    
+    <select id="queryGradeMsgItemByConds" resultMap="ResultMapMsgItem">
+        SELECT
+            *
+        FROM
+             emr_grade_msg_item
+        WHERE            
+            pk_grade_msgrec = #{pkGradeMsgrec,jdbcType=CHAR} and 
+            del_flag !='1' 
+   		<if test="orderBy != null" >
+            ${orderBy}
+        </if>           
+    </select>
+   	<resultMap id="ResultMapGradeScore" type="com.zebone.nhis.common.module.emr.qc.EmrGradeItem">
+        <id column="PK_GRADEITEM" jdbcType="CHAR" property="pkGradeitem"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="PK_GRADEREC" jdbcType="VARCHAR" property="pkGraderec"/>
+        <result column="PK_REC" jdbcType="VARCHAR" property="pkRec"/>
+        <result column="STAND_CODE" jdbcType="VARCHAR" property="standCode"/>
+        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+        <result column="SCORE_DESC" jdbcType="VARCHAR" property="scoreDesc"/>
+        <result column="NUM" jdbcType="DECIMAL" property="num"/>
+        <result column="SCORE" jdbcType="VARCHAR" property="score"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp"/>
+        <result column="EU_SCORE" jdbcType="CHAR" property="euScore"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+        <result column="GRADE_NAME" jdbcType="VARCHAR" property="gradeName"/>
+        <result column="GRADE_EMP_NAME" jdbcType="VARCHAR" property="gradeEmpName"/>
+        <result column="FLAG_FINISH" jdbcType="CHAR" property="flagFinish"/>
+        <association property="gradeRec" javaType="com.zebone.nhis.common.module.emr.qc.EmrGradeRec">
+            <id column="PK_GRADEREC" jdbcType="CHAR" property="pkGraderec"/>
+	        <result column="PK_PI" jdbcType="VARCHAR" property="pkPi"/>
+	        <result column="TIMES" jdbcType="DECIMAL" property="times"/>
+	        <result column="PK_PV" jdbcType="VARCHAR" property="pkPv"/>
+	        <result column="EU_GRADE_TYPE" jdbcType="VARCHAR" property="euGradeType"/>
+	        <result column="EU_GRADE" jdbcType="CHAR" property="euGrade"/>
+	        <result column="GRADE_SCORE" jdbcType="DECIMAL" property="score"/>
+	        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+	        <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp"/>
+	        <result column="PK_EMP_QC" jdbcType="VARCHAR" property="pkEmpQc"/>
+	        <result column="QC_DATE" jdbcType="DATE" property="qcDate"/>
+	        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+	        <result column="FLAG_SEND" jdbcType="CHAR" property="flagSend"/>
+	        <result column="FLAG_RESP" jdbcType="CHAR" property="flagResp"/>
+	        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+	        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+	        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+	        <result column="TS" jdbcType="DATE" property="ts"/>
+        </association>
+		<association property="gradeType" javaType="com.zebone.nhis.common.module.emr.qc.EmrGradeType"> 
+	        <id column="PK_GRADETYPE" jdbcType="CHAR" property="pkGradetype"/>
+	        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+	        <result column="TYPE_CODE" jdbcType="VARCHAR" property="code"/>
+	        <result column="TYPE_NAME" jdbcType="VARCHAR" property="name"/>
+	        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+	        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+	        <result column="TYPE_SCORE" jdbcType="DECIMAL" property="score"/>
+	        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+	        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+	        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+	        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+	        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+	        <result column="TS" jdbcType="DATE" property="ts"/>
+        </association>           
+        <association property="std" javaType="com.zebone.nhis.common.module.emr.qc.EmrGradeStandard">
+	        <id column="PK_STAND" jdbcType="CHAR" property="pkStand"/>
+	        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+	        <result column="STD_CODE" jdbcType="VARCHAR" property="code"/>
+	        <result column="STD_NAME" jdbcType="VARCHAR" property="name"/>
+	        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+	        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+	        <result column="SHORT_NAME" jdbcType="VARCHAR" property="shortName"/>
+	        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+	        <result column="EU_STAND_TYPE" jdbcType="VARCHAR" property="euStandType"/>
+	        <result column="DOC_TYPE_CODE" jdbcType="VARCHAR" property="docTypeCode"/>
+	        <result column="SCORE_STAND" jdbcType="VARCHAR" property="scoreStand"/>
+	        <result column="SCORE_TYPE" jdbcType="VARCHAR" property="scoreType"/>
+	        <result column="SINGLE_SCORE" jdbcType="DECIMAL" property="singleScore"/>
+	        <result column="SCORE_XML" jdbcType="CLOB" property="scoreXml"/>
+	        <result column="STAND_MODE" jdbcType="CHAR" property="standMode"/>
+	        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+	        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+	        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+	        <result column="FLAG_TIME" jdbcType="CHAR" property="flagTime"/>
+	        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+	        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+	        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+	        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+	        <result column="TS" jdbcType="DATE" property="ts"/>
+        </association>
+ 
+    </resultMap>    
+    <select id="queryGradeScoreByConds" resultMap="ResultMapGradeScore">
+        select item.*,
+               rec.score grade_score,rec.qc_date,
+        	   std.code std_code,std.name std_name,std.score_stand,std.score_type,std.single_score,std.flag_time,
+        	   typ.code type_code,typ.name type_name,typ.score type_score,
+			   CASE rec.eu_grade WHEN 'A' THEN '甲级' WHEN 'B' THEN '乙级' WHEN 'C' THEN '丙级' ELSE '' END AS grade_name,
+			   emp.name as grade_emp_name
+			from emr_grade_item item,emr_grade_rec rec,emr_grade_standard std,emr_grade_type typ,view_emr_emp_list emp
+			where rec.pk_pv = #{pkPv,jdbcType=VARCHAR}
+			  and rec.pk_graderec=item.pk_graderec 
+			  and rec.del_flag!='1'
+			  and item.del_flag!='1'
+			  and item.stand_code=std.code
+			  and std.type_code=typ.code
+			  and rec.pk_emp_qc=emp.pk_emp
+   	    <if test="euGradeType != null" >
+            and rec.eu_grade_type = #{euGradeType,jdbcType=VARCHAR}
+        </if>
+        <if test="flagTime != null" >
+            and nvl(std.flag_time,'0') = #{flagTime,jdbcType=VARCHAR}
+        </if>
+        <if test="flagTimeNot != null" >
+            and ((nvl(std.flag_time,'0') != #{flagTimeNot,jdbcType=VARCHAR}) or (nvl(std.flag_time,'0') = '1' and nvl(item.pk_rec,'') = ''))
+        </if>
+        <if test="flagFinish != null" >
+            and ((item.flag_finish=#{flagFinish,jdbcType=VARCHAR} and item.EU_SCORE = '1') or item.EU_SCORE='0')
+        </if>
+   		<if test="orderBy != null" >
+            ${orderBy}
+        </if>           
+    </select>
+    <resultMap id="ResultMapMedRecTaskVo" type="com.zebone.nhis.emr.qc.vo.EmrMedRecTaskVo">
+        <id column="TASK_ID" jdbcType="VARCHAR" property="taskId"/>
+        <result column="PK_TASK" jdbcType="CHAR" property="pkTask"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="PK_PI" jdbcType="VARCHAR" property="pkPi"/>
+        <result column="TIMES" jdbcType="DECIMAL" property="times"/>
+        <result column="PK_PV" jdbcType="VARCHAR" property="pkPv"/>
+        <result column="EU_TASKTYPE" jdbcType="VARCHAR" property="euTasktype"/>
+        <result column="RULE_CODE" jdbcType="VARCHAR" property="ruleCode"/>
+        <result column="PK_EVTREC" jdbcType="VARCHAR" property="pkEvtrec"/>
+        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+        <result column="PK_REC" jdbcType="VARCHAR" property="pkRec"/>
+        <result column="FLAG_REC_CYCLE" jdbcType="CHAR" property="flagRecCycle"/>
+        <result column="TASK_DESC" jdbcType="VARCHAR" property="taskDesc"/>
+        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+        <result column="EU_REC_STATUS" jdbcType="CHAR" property="euRecStatus"/>
+        <result column="REC_DATE" jdbcType="DATE" property="recDate"/>
+        <result column="BEGIN_DATE" jdbcType="DATE" property="beginDate"/>
+        <result column="END_DATE" jdbcType="DATE" property="endDate"/>
+        <result column="FINISH_DATE" jdbcType="DATE" property="finishDate"/>
+        <result column="BEGIN_DATE_RMD" jdbcType="DATE" property="beginDateRmd"/>
+        <result column="FLAG_TIMEOUT" jdbcType="CHAR" property="flagTimeout"/>
+        <result column="REMAIN_TIME" jdbcType="DECIMAL" property="remainTime"/>
+        <result column="DUE_NUM" jdbcType="DECIMAL" property="dueNum"/>
+        <result column="FACT_NUM" jdbcType="DECIMAL" property="factNum"/>
+        <result column="DEDUCT_NUM" jdbcType="DECIMAL" property="deductNum"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp"/>
+        <result column="FLAG_SHOW" jdbcType="CHAR" property="flagShow"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+        <result column="DOC_NAME" jdbcType="VARCHAR" property="docName"/>
+        <result column="REC_DATE" jdbcType="DATE" property="recDate"/>
+        <result column="CREATOR_NAME" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="EU_DOC_STATUS" jdbcType="VARCHAR" property="euDocStatus"/>
+        <result column="TASK_TYPE_CODE" jdbcType="VARCHAR" property="taskTypeCode"/>
+        <result column="TASK_TYPE_NAME" jdbcType="VARCHAR" property="taskTypeName"/>
+        <result column="TASK_CODE" jdbcType="VARCHAR" property="taskCode"/>
+        <result column="TASK_NAME" jdbcType="VARCHAR" property="taskName"/>
+        <result column="TASK_TXT" jdbcType="VARCHAR" property="taskTxt"/>
+        <result column="PK_REC" jdbcType="VARCHAR" property="pkRec"/>
+        <association property="patList" javaType="com.zebone.nhis.common.module.emr.rec.rec.EmrPatList">
+	        <id column="PK_PV" jdbcType="CHAR" property="pkPv"/>
+		    <result column="PK_PI" jdbcType="CHAR" property="pkPi"/>
+	        <result column="CODE_PI" jdbcType="VARCHAR" property="codePi"/>
+	        <result column="CODE_OP" jdbcType="VARCHAR" property="codeOp"/>
+	        <result column="CODE_IP" jdbcType="VARCHAR" property="codeIp"/>
+	        <result column="PAT_NO" jdbcType="VARCHAR" property="patNo"/>
+	        <result column="BARCODE" jdbcType="VARCHAR" property="barcode"/>
+	        <result column="PK_PICATE" jdbcType="CHAR" property="pkPicate"/>
+	        <result column="NAME_PI" jdbcType="VARCHAR" property="namePi"/>
+	        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+	        <result column="PHOTO_PI" jdbcType="BLOB" property="photoPi"/>
+	        <result column="DT_IDTYPE" jdbcType="VARCHAR" property="dtIdtype"/>
+	        <result column="ID_NO" jdbcType="VARCHAR" property="idNo"/>
+	        <result column="HIC_NO" jdbcType="VARCHAR" property="hicNo"/>
+	        <result column="INSUR_NO" jdbcType="VARCHAR" property="insurNo"/>
+	        <result column="MPI" jdbcType="VARCHAR" property="mpi"/>
+	        <result column="FLAG_EHR" jdbcType="CHAR" property="flagEhr"/>
+	        <result column="DT_SEX" jdbcType="VARCHAR" property="dtSex"/>
+	        <result column="SEX_NAME" jdbcType="VARCHAR" property="sexName"/>
+	        <result column="BIRTH_DATE" jdbcType="DATE" property="birthDate"/>
+	        <result column="AGE_TXT" jdbcType="VARCHAR" property="ageTxt"/>
+	        <result column="PLACE_BIRTH" jdbcType="VARCHAR" property="placeBirth"/>
+	        <result column="DT_MARRY" jdbcType="VARCHAR" property="dtMarry"/>
+	        <result column="MARRY_NAME" jdbcType="VARCHAR" property="marryName"/>
+	        <result column="DT_OCCU" jdbcType="VARCHAR" property="dtOccu"/>
+	        <result column="OCCU_NAME" jdbcType="VARCHAR" property="occuName"/>
+	        <result column="DT_EDU" jdbcType="VARCHAR" property="dtEdu"/>
+	        <result column="DT_COUNTRY" jdbcType="VARCHAR" property="dtCountry"/>
+	        <result column="DT_NATION" jdbcType="VARCHAR" property="dtNation"/>
+	        <result column="NATION_NAME" jdbcType="VARCHAR" property="nationName"/>
+	        <result column="TEL_NO" jdbcType="VARCHAR" property="telNo"/>
+	        <result column="MOBILE" jdbcType="VARCHAR" property="mobile"/>
+	        <result column="WECHAT_NO" jdbcType="VARCHAR" property="wechatNo"/>
+	        <result column="EMAIL" jdbcType="VARCHAR" property="email"/>
+	        <result column="UNIT_WORK" jdbcType="VARCHAR" property="unitWork"/>
+	        <result column="TEL_WORK" jdbcType="VARCHAR" property="telWork"/>
+	        <result column="ADDRESS" jdbcType="VARCHAR" property="address"/>
+	        <result column="NAME_REL" jdbcType="VARCHAR" property="nameRel"/>
+	        <result column="TEL_REL" jdbcType="VARCHAR" property="telRel"/>
+	        <result column="DT_BLOOD_ABO" jdbcType="VARCHAR" property="dtBloodAbo"/>
+	        <result column="BLOOD_ABO_NAME" jdbcType="VARCHAR" property="bloodAboName"/>
+	        <result column="DT_BLOOD_RH" jdbcType="VARCHAR" property="dtBloodRh"/>
+	        <result column="BLOOD_RH_NAME" jdbcType="VARCHAR" property="bloodRhName"/>
+	        <result column="PK_ORG" jdbcType="CHAR" property="pkOrg"/>
+	        <result column="CODE_PV" jdbcType="VARCHAR" property="codePv"/>
+	        <result column="EU_PVTYPE" jdbcType="VARCHAR" property="euPvtype"/>
+	        <result column="DATE_BEGIN" jdbcType="DATE" property="dateBegin"/>
+	        <result column="DATE_END" jdbcType="DATE" property="dateEnd"/>
+	        <result column="EU_STATUS_PV" jdbcType="VARCHAR" property="euStatusPv"/>
+	        <result column="FLAG_IN" jdbcType="CHAR" property="flagIn"/>
+	        <result column="FLAG_SETTLE" jdbcType="CHAR" property="flagSettle"/>
+	        <result column="NAME_PI_PV" jdbcType="VARCHAR" property="namePiPv"/>
+	        <result column="DT_SEX_PV" jdbcType="VARCHAR" property="dtSexPv"/>
+	        <result column="AGE_PV" jdbcType="VARCHAR" property="agePv"/>
+	        <result column="ADDRESS_PV" jdbcType="VARCHAR" property="addressPv"/>
+	        <result column="DT_MARRY_PV" jdbcType="VARCHAR" property="dtMarryPv"/>
+	        <result column="PK_DEPT" jdbcType="CHAR" property="pkDept"/>
+	        <result column="DEPT_NAME" jdbcType="VARCHAR" property="deptName"/>
+	        <result column="PK_DEPT_NS" jdbcType="CHAR" property="pkDeptNs"/>
+	        <result column="DEPT_NS_NAME" jdbcType="VARCHAR" property="deptNsName"/>
+	        <result column="DATE_CLINIC" jdbcType="DATE" property="dateClinic"/>
+	        <result column="DATE_ADMIT" jdbcType="DATE" property="dateAdmit"/>
+	        <result column="PK_WG" jdbcType="CHAR" property="pkWg"/>
+	        <result column="BED_NO" jdbcType="VARCHAR" property="bedNo"/>
+	        <result column="PK_EMP_TRE" jdbcType="CHAR" property="pkEmpTre"/>
+	        <result column="NAME_EMP_TRE" jdbcType="VARCHAR" property="nameEmpTre"/>
+	        <result column="PK_EMP_PHY" jdbcType="CHAR" property="pkEmpPhy"/>
+	        <result column="NAME_EMP_PHY" jdbcType="VARCHAR" property="nameEmpPhy"/>
+	        <result column="PK_EMP_NS" jdbcType="CHAR" property="pkEmpNs"/>
+	        <result column="NAME_EMP_NS" jdbcType="VARCHAR" property="nameEmpNs"/>
+	        <result column="PK_INSU" jdbcType="CHAR" property="pkInsu"/>
+	        <result column="INSU_NAME" jdbcType="VARCHAR" property="insuName"/>
+	        <result column="PK_PATICATE" jdbcType="VARCHAR" property="pkPaticate"/>
+	        <result column="PK_EMP_REG" jdbcType="CHAR" property="pkEmpReg"/>
+	        <result column="NAME_EMP_REG" jdbcType="VARCHAR" property="nameEmpReg"/>
+	        <result column="DATE_REG" jdbcType="DATE" property="dateReg"/>
+	        <result column="FLAG_CANCEL" jdbcType="CHAR" property="flagCancel"/>
+	        <result column="PK_EMP_CANCEL" jdbcType="CHAR" property="pkEmpCancel"/>
+	        <result column="NAME_EMP_CANCEL" jdbcType="VARCHAR" property="nameEmpCancel"/>
+	        <result column="DATE_CANCEL" jdbcType="DATE" property="dateCancel"/>
+	        <result column="EU_STATUS_FP" jdbcType="VARCHAR" property="euStatusFp"/>
+	        <result column="CREATOR" jdbcType="CHAR" property="creator"/>
+	        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+	        <result column="MODIFIER" jdbcType="CHAR" property="modifier"/>
+	        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+	        <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+	        <result column="PK_PVIP" jdbcType="CHAR" property="pkPvip"/>
+	        <result column="PK_IP_NOTICE" jdbcType="CHAR" property="pkIpNotice"/>
+	        <result column="IP_TIMES" jdbcType="DECIMAL" property="ipTimes"/>
+	        <result column="DATE_NOTICE" jdbcType="DATE" property="dateNotice"/>
+	        <result column="FLAG_OPT" jdbcType="CHAR" property="flagOpt"/>
+	        <result column="DT_LEVEL_NS" jdbcType="VARCHAR" property="dtLevelNs"/>
+	        <result column="LEVEL_NS_NAME" jdbcType="VARCHAR" property="levelNsName"/>
+	        <result column="DT_LEVEL_DISE" jdbcType="VARCHAR" property="dtLevelDise"/>
+	        <result column="LEVEL_DISE_NAME" jdbcType="VARCHAR" property="levelDiseName"/>
+	        <result column="DT_LEVEL_NUTR" jdbcType="VARCHAR" property="dtLevelNutr"/>
+	        <result column="DT_OUTCOMES" jdbcType="VARCHAR" property="dtOutcomes"/>
+	        <result column="FLAG_INFANT" jdbcType="CHAR" property="flagInfant"/>
+	        <result column="QUAN_INFANT" jdbcType="DECIMAL" property="quanInfant"/>
+	        <result column="EU_STATUS_DOC" jdbcType="VARCHAR" property="euStatusDoc"/>
+	        <result column="DATE_COMMIT_DOC" jdbcType="DATE" property="dateCommitDoc"/>
+	        <result column="FLAG_GA" jdbcType="CHAR" property="flagGa"/>
+	        <result column="FLAG_GA_NS" jdbcType="CHAR" property="flagGaNs"/>
+	        <result column="DT_INTYPE" jdbcType="VARCHAR" property="dtIntype"/>
+	        <result column="DT_OUTTYPE" jdbcType="VARCHAR" property="dtOuttype"/>
+	        <result column="PK_DEPT_ADMIT" jdbcType="CHAR" property="pkDeptAdmit"/>
+	        <result column="PK_DEPT_NS_ADMIT" jdbcType="CHAR" property="pkDeptNsAdmit"/>
+	        <result column="PK_DEPT_DIS" jdbcType="CHAR" property="pkDeptDis"/>
+	        <result column="PK_DEPT_NS_DIS" jdbcType="CHAR" property="pkDeptNsDis"/>
+	        <result column="FLAG_PREST" jdbcType="VARCHAR" property="flagPrest"/>
+	        <result column="DATE_PREST" jdbcType="DATE" property="datePrest"/>
+	        <result column="PK_EMP_PREST" jdbcType="CHAR" property="pkEmpPrest"/>
+	        <result column="NAME_EMP_PREST" jdbcType="VARCHAR" property="nameEmpPrest"/>
+	        <result column="PK_PATREC" jdbcType="CHAR" property="pkPatrec"/>
+	        <result column="DIAG_ADMIT_TXT" jdbcType="VARCHAR" property="diagAdmitTxt"/>
+	        <result column="DIAG_DIS_TXT" jdbcType="VARCHAR" property="diagDisTxt"/>
+	        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+	        <result column="PK_EMP_REFER" jdbcType="VARCHAR" property="pkEmpRefer"/>
+	        <result column="REFER_NAME" jdbcType="VARCHAR" property="referName"/>
+	        <result column="PK_EMP_CONSULT" jdbcType="VARCHAR" property="pkEmpConsult"/>
+	        <result column="CONSULT_NAME" jdbcType="VARCHAR" property="consultName"/>
+	        <result column="PK_EMP_DIRECTOR" jdbcType="VARCHAR" property="pkEmpDirector"/>
+	        <result column="DIRECTOR_NAME" jdbcType="VARCHAR" property="directorName"/>
+	        <result column="PK_EMP_NS_CHARGE" jdbcType="VARCHAR" property="pkEmpNsCharge"/>
+	        <result column="NS_CHARGE_NAME" jdbcType="VARCHAR" property="nsChargeName"/>
+	        <result column="PK_EMP_NS_HEAD" jdbcType="VARCHAR" property="pkEmpNsHead"/>
+	        <result column="NS_HEAD_NAME" jdbcType="VARCHAR" property="nsHeadName"/>
+	        <result column="PK_EMP_QC_DIS" jdbcType="VARCHAR" property="pkEmpQcDis"/>
+	        <result column="QC_DIS_NAME" jdbcType="VARCHAR" property="qcDisName"/>
+	        <result column="IN_HOS_DAYS" jdbcType="INTEGER" property="inHosDays"/>
+	        <result column="TEMPE" jdbcType="VARCHAR" property="tempe"/>
+	        <result column="PLUSE" jdbcType="VARCHAR" property="pluse"/>
+	        <result column="BREATH" jdbcType="VARCHAR" property="breath"/>
+	        <result column="SYSTOLIC" jdbcType="VARCHAR" property="systolic"/>
+	        <result column="DIASTOLIC" jdbcType="VARCHAR" property="diastolic"/>
+	        <result column="FLAG_AUDIT" jdbcType="CHAR" property="flagAudit"/>
+        </association>           
+    </resultMap>    
+  	<select id="queryEmpTaskList" statementType="CALLABLE" parameterType="java.util.Map" resultMap="ResultMapMedRecTaskVo">  
+		{call emr_proc_get_emp_taks_list(#{pkDept,mode=IN,jdbcType=VARCHAR},#{pkEmp,mode=IN,jdbcType=VARCHAR},#{beginDate,mode=IN,jdbcType=VARCHAR},#{endDate,mode=IN,jdbcType=VARCHAR},#{result,jdbcType=CURSOR,mode=OUT,javaType=ResultSet, resultMap=ResultMapMedRecTaskVo})} 
+	</select>
+  <resultMap id="ResultMapAuditRec" type="com.zebone.nhis.common.module.emr.qc.EmrAuditRec">
+    <id column="PK_AUDIT" jdbcType="CHAR" property="pkAudit" />
+    <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg" />
+    <result column="PK_PV" jdbcType="VARCHAR" property="pkPv" />
+    <result column="PK_REC" jdbcType="VARCHAR" property="pkRec" />
+    <result column="EU_LEVEL" jdbcType="VARCHAR" property="euLevel" />
+    <result column="CONTENT" jdbcType="VARCHAR" property="content" />
+    <result column="PK_EMP_APP" jdbcType="VARCHAR" property="pkEmpApp" />
+    <result column="DATE_APP" jdbcType="TIMESTAMP" property="dateApp" />
+    <result column="PK_EMP_AUDIT" jdbcType="VARCHAR" property="pkEmpAudit" />
+    <result column="EU_STATUS" jdbcType="CHAR" property="euStatus" />
+    <result column="DATE_RECEIVE" jdbcType="TIMESTAMP" property="dateReceive" />
+    <result column="DATE_FINISH" jdbcType="TIMESTAMP" property="dateFinish" />
+    <result column="REMARK" jdbcType="VARCHAR" property="remark" />
+    <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag" />
+    <result column="CREATOR" jdbcType="VARCHAR" property="creator" />
+    <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="TS" jdbcType="TIMESTAMP" property="ts" />
+  </resultMap>
+  <resultMap id="ResultMapAuditDoc" type="com.zebone.nhis.common.module.emr.qc.EmrAuditDoc">
+    <id column="PK_AUDIT_DOC" jdbcType="CHAR" property="pkAuditDoc" />
+    <result column="PK_AUDIT" jdbcType="VARCHAR" property="pkAudit" />
+    <result column="DOC_DATA_BAK" jdbcType="BINARY" property="docDataBak" />
+    <result column="DOC_XML_BAK" jdbcType="LONGVARCHAR" property="docXmlBak" />
+    <result column="CDA_XML_BAK" jdbcType="LONGVARCHAR" property="cdaXmlBak" />
+    <result column="DOC_CA_BAK" jdbcType="LONGVARCHAR" property="docCaBak" />
+    <result column="DOC_DATA" jdbcType="BINARY" property="docData" />
+    <result column="DOC_XML" jdbcType="LONGVARCHAR" property="docXml" />
+    <result column="CDA_XML" jdbcType="LONGVARCHAR" property="cdaXml" />
+    <result column="DOC_CA" jdbcType="LONGVARCHAR" property="docCa" />
+    <result column="REMARK" jdbcType="VARCHAR" property="remark" />
+    <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag" />
+    <result column="CREATOR" jdbcType="VARCHAR" property="creator" />
+    <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="TS" jdbcType="TIMESTAMP" property="ts" />
+  </resultMap>
+  <resultMap id="ResultMapAmendRec" type="com.zebone.nhis.common.module.emr.qc.EmrAmendRec">
+    <id column="PK_AMEND" jdbcType="CHAR" property="pkAmend" />
+    <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg" />
+    <result column="PK_PV" jdbcType="VARCHAR" property="pkPv" />
+    <result column="PK_GRADEITEM" jdbcType="VARCHAR" property="pkGradeitem" />
+    <result column="PK_REC" jdbcType="VARCHAR" property="pkRec" />
+    <result column="EU_TYPE" jdbcType="VARCHAR" property="euType" />
+    <result column="CONTENT" jdbcType="VARCHAR" property="content" />
+    <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp" />
+    <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept" />
+    <result column="DATE_RECEIVE" jdbcType="TIMESTAMP" property="dateReceive" />
+    <result column="DATE_FINISH" jdbcType="TIMESTAMP" property="dateFinish" />
+    <result column="EU_STATUS" jdbcType="CHAR" property="euStatus" />
+    <result column="PK_EMP_CREATE" jdbcType="VARCHAR" property="pkEmpCreate" />
+    <result column="DATE_CREATE" jdbcType="TIMESTAMP" property="dateCreate" />
+    <result column="REMARK" jdbcType="VARCHAR" property="remark" />
+    <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag" />
+    <result column="CREATOR" jdbcType="VARCHAR" property="creator" />
+    <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="TS" jdbcType="TIMESTAMP" property="ts" />
+  </resultMap>
+  <resultMap id="ResultMapAmendDoc" type="com.zebone.nhis.common.module.emr.qc.EmrAmendDoc">
+    <id column="PK_AMEND_DOC" jdbcType="CHAR" property="pkAmendDoc" />
+    <result column="PK_AMEND" jdbcType="VARCHAR" property="pkAmend" />
+    <result column="DOC_DATA_BAK" jdbcType="BINARY" property="docDataBak" />
+    <result column="DOC_XML_BAK" jdbcType="LONGVARCHAR" property="docXmlBak" />
+    <result column="CDA_XML_BAK" jdbcType="LONGVARCHAR" property="cdaXmlBak" />
+    <result column="DOC_CA_BAK" jdbcType="LONGVARCHAR" property="docCaBak" />
+    <result column="DOC_DATA" jdbcType="BINARY" property="docData" />
+    <result column="DOC_XML" jdbcType="LONGVARCHAR" property="docXml" />
+    <result column="CDA_XML" jdbcType="LONGVARCHAR" property="cdaXml" />
+    <result column="DOC_CA" jdbcType="LONGVARCHAR" property="docCa" />
+    <result column="REMARK" jdbcType="VARCHAR" property="remark" />
+    <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag" />
+    <result column="CREATOR" jdbcType="VARCHAR" property="creator" />
+    <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="TS" jdbcType="TIMESTAMP" property="ts" />
+  </resultMap>
+  <insert id="saveEmrAuditRec" parameterType="com.zebone.nhis.common.module.emr.qc.EmrAuditRec">
+    insert into EMR_AUDIT_REC
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="pkAudit != null">
+        PK_AUDIT,
+      </if>
+      <if test="pkOrg != null">
+        PK_ORG,
+      </if>
+      <if test="pkPv != null">
+        PK_PV,
+      </if>
+      <if test="pkRec != null">
+        PK_REC,
+      </if>
+      <if test="euLevel != null">
+        EU_LEVEL,
+      </if>
+      <if test="content != null">
+        CONTENT,
+      </if>
+      <if test="pkEmpApp != null">
+        PK_EMP_APP,
+      </if>
+      <if test="dateApp != null">
+        DATE_APP,
+      </if>
+      <if test="pkEmpAudit != null">
+        PK_EMP_AUDIT,
+      </if>
+      <if test="euStatus != null">
+        EU_STATUS,
+      </if>
+      <if test="dateReceive != null">
+        DATE_RECEIVE,
+      </if>
+      <if test="dateFinish != null">
+        DATE_FINISH,
+      </if>
+      <if test="remark != null">
+        REMARK,
+      </if>
+      <if test="delFlag != null">
+        DEL_FLAG,
+      </if>
+      <if test="creator != null">
+        CREATOR,
+      </if>
+      <if test="createTime != null">
+        CREATE_TIME,
+      </if>
+      <if test="ts != null">
+        TS,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="pkAudit != null">
+        #{pkAudit,jdbcType=CHAR},
+      </if>
+      <if test="pkOrg != null">
+        #{pkOrg,jdbcType=VARCHAR},
+      </if>
+      <if test="pkPv != null">
+        #{pkPv,jdbcType=VARCHAR},
+      </if>
+      <if test="pkRec != null">
+        #{pkRec,jdbcType=VARCHAR},
+      </if>
+      <if test="euLevel != null">
+        #{euLevel,jdbcType=VARCHAR},
+      </if>
+      <if test="content != null">
+        #{content,jdbcType=VARCHAR},
+      </if>
+      <if test="pkEmpApp != null">
+        #{pkEmpApp,jdbcType=VARCHAR},
+      </if>
+      <if test="dateApp != null">
+        #{dateApp,jdbcType=TIMESTAMP},
+      </if>
+      <if test="pkEmpAudit != null">
+        #{pkEmpAudit,jdbcType=VARCHAR},
+      </if>
+      <if test="euStatus != null">
+        #{euStatus,jdbcType=CHAR},
+      </if>
+      <if test="dateReceive != null">
+        #{dateReceive,jdbcType=TIMESTAMP},
+      </if>
+      <if test="dateFinish != null">
+        #{dateFinish,jdbcType=TIMESTAMP},
+      </if>
+      <if test="remark != null">
+        #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="delFlag != null">
+        #{delFlag,jdbcType=CHAR},
+      </if>
+      <if test="creator != null">
+        #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="ts != null">
+        #{ts,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateEmrAuditRec" parameterType="com.zebone.nhis.common.module.emr.qc.EmrAuditRec">
+    update EMR_AUDIT_REC
+    <set>
+      <if test="pkOrg != null">
+        PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+      </if>
+      <if test="pkPv != null">
+        PK_PV = #{pkPv,jdbcType=VARCHAR},
+      </if>
+      <if test="pkRec != null">
+        PK_REC = #{pkRec,jdbcType=VARCHAR},
+      </if>
+      <if test="euLevel != null">
+        EU_LEVEL = #{euLevel,jdbcType=VARCHAR},
+      </if>
+      <if test="content != null">
+        CONTENT = #{content,jdbcType=VARCHAR},
+      </if>
+      <if test="pkEmpApp != null">
+        PK_EMP_APP = #{pkEmpApp,jdbcType=VARCHAR},
+      </if>
+      <if test="dateApp != null">
+        DATE_APP = #{dateApp,jdbcType=TIMESTAMP},
+      </if>
+      <if test="pkEmpAudit != null">
+        PK_EMP_AUDIT = #{pkEmpAudit,jdbcType=VARCHAR},
+      </if>
+      <if test="euStatus != null">
+        EU_STATUS = #{euStatus,jdbcType=CHAR},
+      </if>
+      <if test="dateReceive != null">
+        DATE_RECEIVE = #{dateReceive,jdbcType=TIMESTAMP},
+      </if>
+      DATE_FINISH = #{dateFinish,jdbcType=TIMESTAMP},
+      <if test="remark != null">
+        REMARK = #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="delFlag != null">
+        DEL_FLAG = #{delFlag,jdbcType=CHAR},
+      </if>
+      <if test="creator != null">
+        CREATOR = #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="ts != null">
+        TS = #{ts,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where PK_AUDIT = #{pkAudit,jdbcType=CHAR}
+  </update>
+  <delete id="deleteEmrAuditRec" parameterType="java.lang.String">
+    delete from EMR_AUDIT_REC
+    where PK_AUDIT = #{pkAudit,jdbcType=CHAR}
+  </delete>
+  <delete id="deleteEmrAuditDoc" parameterType="java.lang.String">
+    delete from EMR_AUDIT_DOC
+    where PK_AUDIT_DOC = #{pkAuditDoc,jdbcType=CHAR}
+  </delete>
+  <delete id="deleteEmrAuditDocEmr" parameterType="java.lang.String">
+    delete from ${dbName}EMR_AUDIT_DOC
+    where PK_AUDIT_DOC = #{pkAuditDoc,jdbcType=CHAR}
+  </delete>
+  <insert id="saveEmrAuditDoc" parameterType="com.zebone.nhis.common.module.emr.qc.EmrAuditDoc">
+    insert into EMR_AUDIT_DOC
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="pkAuditDoc != null">
+        PK_AUDIT_DOC,
+      </if>
+      <if test="pkAudit != null">
+        PK_AUDIT,
+      </if>
+      <if test="remark != null">
+        REMARK,
+      </if>
+      <if test="delFlag != null">
+        DEL_FLAG,
+      </if>
+      <if test="creator != null">
+        CREATOR,
+      </if>
+      <if test="createTime != null">
+        CREATE_TIME,
+      </if>
+      <if test="ts != null">
+        TS,
+      </if>
+      <if test="docDataBak != null">
+        DOC_DATA_BAK,
+      </if>
+      <if test="docXmlBak != null">
+        DOC_XML_BAK,
+      </if>
+      <if test="cdaXmlBak != null">
+        CDA_XML_BAK,
+      </if>
+      <if test="docCaBak != null">
+        DOC_CA_BAK,
+      </if>
+      <if test="docData != null">
+        DOC_DATA,
+      </if>
+      <if test="docXml != null">
+        DOC_XML,
+      </if>
+      <if test="cdaXml != null">
+        CDA_XML,
+      </if>
+      <if test="docCa != null">
+        DOC_CA,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="pkAuditDoc != null">
+        #{pkAuditDoc,jdbcType=CHAR},
+      </if>
+      <if test="pkAudit != null">
+        #{pkAudit,jdbcType=VARCHAR},
+      </if>
+      <if test="remark != null">
+        #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="delFlag != null">
+        #{delFlag,jdbcType=CHAR},
+      </if>
+      <if test="creator != null">
+        #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="ts != null">
+        #{ts,jdbcType=TIMESTAMP},
+      </if>
+      <if test="docDataBak != null">
+        #{docDataBak,jdbcType=BINARY},
+      </if>
+      <if test="docXmlBak != null">
+        #{docXmlBak,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="cdaXmlBak != null">
+        #{cdaXmlBak,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="docCaBak != null">
+        #{docCaBak,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="docData != null">
+        #{docData,jdbcType=BINARY},
+      </if>
+      <if test="docXml != null">
+        #{docXml,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="cdaXml != null">
+        #{cdaXml,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="docCa != null">
+        #{docCa,jdbcType=LONGVARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <insert id="saveEmrAuditDocEmr" parameterType="com.zebone.nhis.common.module.emr.qc.EmrAuditDoc">
+    insert into ${dbName}EMR_AUDIT_DOC
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="pkAuditDoc != null">
+        PK_AUDIT_DOC,
+      </if>
+      <if test="pkAudit != null">
+        PK_AUDIT,
+      </if>
+      <if test="remark != null">
+        REMARK,
+      </if>
+      <if test="delFlag != null">
+        DEL_FLAG,
+      </if>
+      <if test="creator != null">
+        CREATOR,
+      </if>
+      <if test="createTime != null">
+        CREATE_TIME,
+      </if>
+      <if test="ts != null">
+        TS,
+      </if>
+      <if test="docDataBak != null">
+        DOC_DATA_BAK,
+      </if>
+      <if test="docXmlBak != null">
+        DOC_XML_BAK,
+      </if>
+      <if test="cdaXmlBak != null">
+        CDA_XML_BAK,
+      </if>
+      <if test="docCaBak != null">
+        DOC_CA_BAK,
+      </if>
+      <if test="docData != null">
+        DOC_DATA,
+      </if>
+      <if test="docXml != null">
+        DOC_XML,
+      </if>
+      <if test="cdaXml != null">
+        CDA_XML,
+      </if>
+      <if test="docCa != null">
+        DOC_CA,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="pkAuditDoc != null">
+        #{pkAuditDoc,jdbcType=CHAR},
+      </if>
+      <if test="pkAudit != null">
+        #{pkAudit,jdbcType=VARCHAR},
+      </if>
+      <if test="remark != null">
+        #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="delFlag != null">
+        #{delFlag,jdbcType=CHAR},
+      </if>
+      <if test="creator != null">
+        #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="ts != null">
+        #{ts,jdbcType=TIMESTAMP},
+      </if>
+      <if test="docDataBak != null">
+        #{docDataBak,jdbcType=BINARY},
+      </if>
+      <if test="docXmlBak != null">
+        #{docXmlBak,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="cdaXmlBak != null">
+        #{cdaXmlBak,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="docCaBak != null">
+        #{docCaBak,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="docData != null">
+        #{docData,jdbcType=BINARY},
+      </if>
+      <if test="docXml != null">
+        #{docXml,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="cdaXml != null">
+        #{cdaXml,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="docCa != null">
+        #{docCa,jdbcType=LONGVARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateEmrAuditDoc" parameterType="com.zebone.nhis.common.module.emr.qc.EmrAuditDoc">
+    update EMR_AUDIT_DOC
+    <set>
+      <if test="pkAudit != null">
+        PK_AUDIT = #{pkAudit,jdbcType=VARCHAR},
+      </if>
+      <if test="remark != null">
+        REMARK = #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="delFlag != null">
+        DEL_FLAG = #{delFlag,jdbcType=CHAR},
+      </if>
+      <if test="creator != null">
+        CREATOR = #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="ts != null">
+        TS = #{ts,jdbcType=TIMESTAMP},
+      </if>
+      <if test="docDataBak != null">
+        DOC_DATA_BAK = #{docDataBak,jdbcType=BINARY},
+      </if>
+      <if test="docXmlBak != null">
+        DOC_XML_BAK = #{docXmlBak,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="cdaXmlBak != null">
+        CDA_XML_BAK = #{cdaXmlBak,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="docCaBak != null">
+        DOC_CA_BAK = #{docCaBak,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="docData != null">
+        DOC_DATA = #{docData,jdbcType=BINARY},
+      </if>
+      <if test="docXml != null">
+        DOC_XML = #{docXml,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="cdaXml != null">
+        CDA_XML = #{cdaXml,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="docCa != null">
+        DOC_CA = #{docCa,jdbcType=LONGVARCHAR},
+      </if>
+    </set>
+    where PK_AUDIT_DOC = #{pkAuditDoc,jdbcType=CHAR}
+  </update>
+  <update id="updateEmrAuditDocEmr" parameterType="com.zebone.nhis.common.module.emr.qc.EmrAuditDoc">
+    update ${dbName}EMR_AUDIT_DOC
+    <set>
+      <if test="pkAudit != null">
+        PK_AUDIT = #{pkAudit,jdbcType=VARCHAR},
+      </if>
+      <if test="remark != null">
+        REMARK = #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="delFlag != null">
+        DEL_FLAG = #{delFlag,jdbcType=CHAR},
+      </if>
+      <if test="creator != null">
+        CREATOR = #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="ts != null">
+        TS = #{ts,jdbcType=TIMESTAMP},
+      </if>
+      <if test="docDataBak != null">
+        DOC_DATA_BAK = #{docDataBak,jdbcType=BINARY},
+      </if>
+      <if test="docXmlBak != null">
+        DOC_XML_BAK = #{docXmlBak,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="cdaXmlBak != null">
+        CDA_XML_BAK = #{cdaXmlBak,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="docCaBak != null">
+        DOC_CA_BAK = #{docCaBak,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="docData != null">
+        DOC_DATA = #{docData,jdbcType=BINARY},
+      </if>
+      <if test="docXml != null">
+        DOC_XML = #{docXml,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="cdaXml != null">
+        CDA_XML = #{cdaXml,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="docCa != null">
+        DOC_CA = #{docCa,jdbcType=LONGVARCHAR},
+      </if>
+    </set>
+    where PK_AUDIT_DOC = #{pkAuditDoc,jdbcType=CHAR}
+  </update>
+  <delete id="deleteEmrAmendRec" parameterType="java.lang.String">
+    delete from EMR_AMEND_REC
+    where PK_AMEND = #{pkAmend,jdbcType=CHAR}
+  </delete>
+  <insert id="saveEmrAmendRec" parameterType="com.zebone.nhis.common.module.emr.qc.EmrAmendRec">
+    insert into EMR_AMEND_REC
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="pkAmend != null">
+        PK_AMEND,
+      </if>
+      <if test="pkOrg != null">
+        PK_ORG,
+      </if>
+      <if test="pkPv != null">
+        PK_PV,
+      </if>
+      <if test="pkGradeitem != null">
+        PK_GRADEITEM,
+      </if>
+      <if test="pkRec != null">
+        PK_REC,
+      </if>
+      <if test="euType != null">
+        EU_TYPE,
+      </if>
+      <if test="content != null">
+        CONTENT,
+      </if>
+      <if test="pkEmp != null">
+        PK_EMP,
+      </if>
+      <if test="pkDept != null">
+        PK_DEPT,
+      </if>
+      <if test="dateReceive != null">
+        DATE_RECEIVE,
+      </if>
+      <if test="dateFinish != null">
+        DATE_FINISH,
+      </if>
+      <if test="euStatus != null">
+        EU_STATUS,
+      </if>
+      <if test="pkEmpCreate != null">
+        PK_EMP_CREATE,
+      </if>
+      <if test="dateCreate != null">
+        DATE_CREATE,
+      </if>
+      <if test="remark != null">
+        REMARK,
+      </if>
+      <if test="delFlag != null">
+        DEL_FLAG,
+      </if>
+      <if test="creator != null">
+        CREATOR,
+      </if>
+      <if test="createTime != null">
+        CREATE_TIME,
+      </if>
+      <if test="ts != null">
+        TS,
+      </if>
+      <if test="dateBack != null">
+        DATE_BACK,
+      </if>
+      <if test="noteBack != null">
+        NOTE_BACK,
+      </if>
+      <if test="pkEmpQc != null">
+        PK_EMP_QC,
+      </if>
+      <if test="dateQc != null">
+        DATE_QC,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="pkAmend != null">
+        #{pkAmend,jdbcType=CHAR},
+      </if>
+      <if test="pkOrg != null">
+        #{pkOrg,jdbcType=VARCHAR},
+      </if>
+      <if test="pkPv != null">
+        #{pkPv,jdbcType=VARCHAR},
+      </if>
+      <if test="pkGradeitem != null">
+        #{pkGradeitem,jdbcType=VARCHAR},
+      </if>
+      <if test="pkRec != null">
+        #{pkRec,jdbcType=VARCHAR},
+      </if>
+      <if test="euType != null">
+        #{euType,jdbcType=VARCHAR},
+      </if>
+      <if test="content != null">
+        #{content,jdbcType=VARCHAR},
+      </if>
+      <if test="pkEmp != null">
+        #{pkEmp,jdbcType=VARCHAR},
+      </if>
+      <if test="pkDept != null">
+        #{pkDept,jdbcType=VARCHAR},
+      </if>
+      <if test="dateFinish != null">
+        #{dateFinish,jdbcType=TIMESTAMP},
+      </if>
+      <if test="euStatus != null">
+        #{euStatus,jdbcType=CHAR},
+      </if>
+      <if test="pkEmpCreate != null">
+        #{pkEmpCreate,jdbcType=VARCHAR},
+      </if>
+      <if test="dateCreate != null">
+        #{dateCreate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="remark != null">
+        #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="delFlag != null">
+        #{delFlag,jdbcType=CHAR},
+      </if>
+      <if test="creator != null">
+        #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="ts != null">
+        #{ts,jdbcType=TIMESTAMP},
+      </if>
+      <if test="dateBack != null">
+        #{dateBack,jdbcType=TIMESTAMP},
+      </if>
+      <if test="noteBack != null">
+        #{noteBack,jdbcType=VARCHAR},
+      </if>
+      <if test="pkEmpQc != null">
+        #{pkEmpQc,jdbcType=VARCHAR},
+      </if>
+      <if test="dateQc != null">
+        #{dateQc,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateEmrAmendRec" parameterType="com.zebone.nhis.common.module.emr.qc.EmrAmendRec">
+    update EMR_AMEND_REC
+    <set>
+      <if test="pkOrg != null">
+        PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+      </if>
+      <if test="pkPv != null">
+        PK_PV = #{pkPv,jdbcType=VARCHAR},
+      </if>
+      <if test="pkGradeitem != null">
+        PK_GRADEITEM = #{pkGradeitem,jdbcType=VARCHAR},
+      </if>
+      <if test="pkRec != null">
+        PK_REC = #{pkRec,jdbcType=VARCHAR},
+      </if>
+      <if test="euType != null">
+        EU_TYPE = #{euType,jdbcType=VARCHAR},
+      </if>
+      <if test="content != null">
+        CONTENT = #{content,jdbcType=VARCHAR},
+      </if>
+      <if test="pkEmp != null">
+        PK_EMP = #{pkEmp,jdbcType=VARCHAR},
+      </if>
+      <if test="pkDept != null">
+        PK_DEPT = #{pkDept,jdbcType=VARCHAR},
+      </if>
+       DATE_RECEIVE = #{dateReceive,jdbcType=TIMESTAMP},
+       DATE_FINISH = #{dateFinish,jdbcType=TIMESTAMP},
+      <if test="euStatus != null">
+        EU_STATUS = #{euStatus,jdbcType=CHAR},
+      </if>
+      <if test="pkEmpCreate != null">
+        PK_EMP_CREATE = #{pkEmpCreate,jdbcType=VARCHAR},
+      </if>
+      <if test="dateCreate != null">
+        DATE_CREATE = #{dateCreate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="remark != null">
+        REMARK = #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="delFlag != null">
+        DEL_FLAG = #{delFlag,jdbcType=CHAR},
+      </if>
+      <if test="creator != null">
+        CREATOR = #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="ts != null">
+        TS = #{ts,jdbcType=TIMESTAMP},
+      </if>
+      <if test="dateBack != null">
+        DATE_BACK = #{dateBack,jdbcType=TIMESTAMP},
+      </if>
+      <if test="noteBack != null">
+        NOTE_BACK = #{noteBack,jdbcType=VARCHAR},
+      </if>
+      <if test="pkEmpQc != null">
+        PK_EMP_QC = #{pkEmpQc,jdbcType=VARCHAR},
+      </if>
+      <if test="dateQc != null">
+        DATE_QC = #{dateQc,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where PK_AMEND = #{pkAmend,jdbcType=CHAR}
+  </update>
+  <delete id="deleteEmrAmendDoc" parameterType="java.lang.String">
+    delete from EMR_AMEND_DOC
+    where PK_AMEND_DOC = #{pkAmendDoc,jdbcType=CHAR}
+  </delete>
+  <delete id="deleteEmrAmendDocEmr" parameterType="java.lang.String">
+    delete from ${dbName}EMR_AMEND_DOC
+    where PK_AMEND_DOC = #{pkAmendDoc,jdbcType=CHAR}
+  </delete>
+  <insert id="saveEmrAmendDoc" parameterType="com.zebone.nhis.common.module.emr.qc.EmrAmendDoc">
+    insert into EMR_AMEND_DOC
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="pkAmendDoc != null">
+        PK_AMEND_DOC,
+      </if>
+      <if test="pkAmend != null">
+        PK_AMEND,
+      </if>
+      <if test="remark != null">
+        REMARK,
+      </if>
+      <if test="delFlag != null">
+        DEL_FLAG,
+      </if>
+      <if test="creator != null">
+        CREATOR,
+      </if>
+      <if test="createTime != null">
+        CREATE_TIME,
+      </if>
+      <if test="ts != null">
+        TS,
+      </if>
+      <if test="docDataBak != null">
+        DOC_DATA_BAK,
+      </if>
+      <if test="docXmlBak != null">
+        DOC_XML_BAK,
+      </if>
+      <if test="cdaXmlBak != null">
+        CDA_XML_BAK,
+      </if>
+      <if test="docCaBak != null">
+        DOC_CA_BAK,
+      </if>
+      <if test="docData != null">
+        DOC_DATA,
+      </if>
+      <if test="docXml != null">
+        DOC_XML,
+      </if>
+      <if test="cdaXml != null">
+        CDA_XML,
+      </if>
+      <if test="docCa != null">
+        DOC_CA,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="pkAmendDoc != null">
+        #{pkAmendDoc,jdbcType=CHAR},
+      </if>
+      <if test="pkAmend != null">
+        #{pkAmend,jdbcType=VARCHAR},
+      </if>
+      <if test="remark != null">
+        #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="delFlag != null">
+        #{delFlag,jdbcType=CHAR},
+      </if>
+      <if test="creator != null">
+        #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="ts != null">
+        #{ts,jdbcType=TIMESTAMP},
+      </if>
+      <if test="docDataBak != null">
+        #{docDataBak,jdbcType=BLOB},
+      </if>
+      <if test="docXmlBak != null">
+        #{docXmlBak,jdbcType=CLOB},
+      </if>
+      <if test="cdaXmlBak != null">
+        #{cdaXmlBak,jdbcType=CLOB},
+      </if>
+      <if test="docCaBak != null">
+        #{docCaBak,jdbcType=CLOB},
+      </if>
+      <if test="docData != null">
+        #{docData,jdbcType=BLOB},
+      </if>
+      <if test="docXml != null">
+        #{docXml,jdbcType=CLOB},
+      </if>
+      <if test="cdaXml != null">
+        #{cdaXml,jdbcType=CLOB},
+      </if>
+      <if test="docCa != null">
+        #{docCa,jdbcType=CLOB},
+      </if>
+    </trim>
+  </insert>
+  <insert id="saveEmrAmendDocEmr" parameterType="com.zebone.nhis.common.module.emr.qc.EmrAmendDoc">
+    insert into ${dbName}EMR_AMEND_DOC
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="pkAmendDoc != null">
+        PK_AMEND_DOC,
+      </if>
+      <if test="pkAmend != null">
+        PK_AMEND,
+      </if>
+      <if test="remark != null">
+        REMARK,
+      </if>
+      <if test="delFlag != null">
+        DEL_FLAG,
+      </if>
+      <if test="creator != null">
+        CREATOR,
+      </if>
+      <if test="createTime != null">
+        CREATE_TIME,
+      </if>
+      <if test="ts != null">
+        TS,
+      </if>
+      <if test="docDataBak != null">
+        DOC_DATA_BAK,
+      </if>
+      <if test="docXmlBak != null">
+        DOC_XML_BAK,
+      </if>
+      <if test="cdaXmlBak != null">
+        CDA_XML_BAK,
+      </if>
+      <if test="docCaBak != null">
+        DOC_CA_BAK,
+      </if>
+      <if test="docData != null">
+        DOC_DATA,
+      </if>
+      <if test="docXml != null">
+        DOC_XML,
+      </if>
+      <if test="cdaXml != null">
+        CDA_XML,
+      </if>
+      <if test="docCa != null">
+        DOC_CA,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="pkAmendDoc != null">
+        #{pkAmendDoc,jdbcType=CHAR},
+      </if>
+      <if test="pkAmend != null">
+        #{pkAmend,jdbcType=VARCHAR},
+      </if>
+      <if test="remark != null">
+        #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="delFlag != null">
+        #{delFlag,jdbcType=CHAR},
+      </if>
+      <if test="creator != null">
+        #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="ts != null">
+        #{ts,jdbcType=TIMESTAMP},
+      </if>
+      <if test="docDataBak != null">
+        #{docDataBak,jdbcType=BLOB},
+      </if>
+      <if test="docXmlBak != null">
+        #{docXmlBak,jdbcType=CLOB},
+      </if>
+      <if test="cdaXmlBak != null">
+        #{cdaXmlBak,jdbcType=CLOB},
+      </if>
+      <if test="docCaBak != null">
+        #{docCaBak,jdbcType=CLOB},
+      </if>
+      <if test="docData != null">
+        #{docData,jdbcType=BLOB},
+      </if>
+      <if test="docXml != null">
+        #{docXml,jdbcType=CLOB},
+      </if>
+      <if test="cdaXml != null">
+        #{cdaXml,jdbcType=CLOB},
+      </if>
+      <if test="docCa != null">
+        #{docCa,jdbcType=CLOB},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateEmrAmendDoc" parameterType="com.zebone.nhis.common.module.emr.qc.EmrAmendDoc">
+    update EMR_AMEND_DOC
+    <set>
+      <if test="pkAmend != null">
+        PK_AMEND = #{pkAmend,jdbcType=VARCHAR},
+      </if>
+      <if test="remark != null">
+        REMARK = #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="delFlag != null">
+        DEL_FLAG = #{delFlag,jdbcType=CHAR},
+      </if>
+      <if test="creator != null">
+        CREATOR = #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="ts != null">
+        TS = #{ts,jdbcType=TIMESTAMP},
+      </if>
+      <if test="docDataBak != null">
+        DOC_DATA_BAK = #{docDataBak,jdbcType=BLOB},
+      </if>
+      <if test="docXmlBak != null">
+        DOC_XML_BAK = #{docXmlBak,jdbcType=CLOB},
+      </if>
+      <if test="cdaXmlBak != null">
+        CDA_XML_BAK = #{cdaXmlBak,jdbcType=CLOB},
+      </if>
+      <if test="docCaBak != null">
+        DOC_CA_BAK = #{docCaBak,jdbcType=CLOB},
+      </if>
+      <if test="docData != null">
+        DOC_DATA = #{docData,jdbcType=BLOB},
+      </if>
+      <if test="docXml != null">
+        DOC_XML = #{docXml,jdbcType=CLOB},
+      </if>
+      <if test="cdaXml != null">
+        CDA_XML = #{cdaXml,jdbcType=CLOB},
+      </if>
+      <if test="docCa != null">
+        DOC_CA = #{docCa,jdbcType=CLOB},
+      </if>
+    </set>
+    where PK_AMEND_DOC = #{pkAmendDoc,jdbcType=CHAR}
+  </update>
+  <update id="updateEmrAmendDocEmr" parameterType="com.zebone.nhis.common.module.emr.qc.EmrAmendDoc">
+    update ${dbName}EMR_AMEND_DOC
+    <set>
+      <if test="pkAmend != null">
+        PK_AMEND = #{pkAmend,jdbcType=VARCHAR},
+      </if>
+      <if test="remark != null">
+        REMARK = #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="delFlag != null">
+        DEL_FLAG = #{delFlag,jdbcType=CHAR},
+      </if>
+      <if test="creator != null">
+        CREATOR = #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="ts != null">
+        TS = #{ts,jdbcType=TIMESTAMP},
+      </if>
+      <if test="docDataBak != null">
+        DOC_DATA_BAK = #{docDataBak,jdbcType=BLOB},
+      </if>
+      <if test="docXmlBak != null">
+        DOC_XML_BAK = #{docXmlBak,jdbcType=CLOB},
+      </if>
+      <if test="cdaXmlBak != null">
+        CDA_XML_BAK = #{cdaXmlBak,jdbcType=CLOB},
+      </if>
+      <if test="docCaBak != null">
+        DOC_CA_BAK = #{docCaBak,jdbcType=CLOB},
+      </if>
+      <if test="docData != null">
+        DOC_DATA = #{docData,jdbcType=BLOB},
+      </if>
+      <if test="docXml != null">
+        DOC_XML = #{docXml,jdbcType=CLOB},
+      </if>
+      <if test="cdaXml != null">
+        CDA_XML = #{cdaXml,jdbcType=CLOB},
+      </if>
+      <if test="docCa != null">
+        DOC_CA = #{docCa,jdbcType=CLOB},
+      </if>
+    </set>
+    where PK_AMEND_DOC = #{pkAmendDoc,jdbcType=CHAR}
+  </update>
+  <resultMap id="ResultMapAmendRecQry" type="com.zebone.nhis.common.module.emr.qc.EmrAmendRec">
+    <id column="PK_AMEND" jdbcType="CHAR" property="pkAmend" />
+    <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg" />
+    <result column="PK_PV" jdbcType="VARCHAR" property="pkPv" />
+    <result column="PK_GRADEITEM" jdbcType="VARCHAR" property="pkGradeitem" />
+    <result column="PK_REC" jdbcType="VARCHAR" property="pkRec" />
+    <result column="EU_TYPE" jdbcType="VARCHAR" property="euType" />
+    <result column="CONTENT" jdbcType="VARCHAR" property="content" />
+    <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp" />
+    <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept" />
+    <result column="DATE_RECEIVE" jdbcType="TIMESTAMP" property="dateReceive" />
+    <result column="DATE_FINISH" jdbcType="TIMESTAMP" property="dateFinish" />
+    <result column="REC_EU_STATUS" jdbcType="CHAR" property="euStatus" />
+    <result column="PK_EMP_CREATE" jdbcType="VARCHAR" property="pkEmpCreate" />
+    <result column="DATE_CREATE" jdbcType="TIMESTAMP" property="dateCreate" />
+    <result column="REMARK" jdbcType="VARCHAR" property="remark" />
+    <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag" />
+    <result column="CREATOR" jdbcType="VARCHAR" property="creator" />
+    <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="TS" jdbcType="TIMESTAMP" property="ts" />
+    <result column="EMP_NAME_QC" jdbcType="VARCHAR" property="empNameQc" />
+    <result column="EMP_NAME" jdbcType="VARCHAR" property="empName" />
+    <result column="NOTE_BACK" jdbcType="VARCHAR" property="noteBack" />
+	<association property="patList" javaType="com.zebone.nhis.common.module.emr.rec.rec.EmrPatList">
+		<result column="CODE_PI" jdbcType="VARCHAR" property="codePi" />
+		<result column="CODE_OP" jdbcType="VARCHAR" property="codeOp" />
+		<result column="CODE_IP" jdbcType="VARCHAR" property="codeIp" />
+		<result column="PAT_NO" jdbcType="VARCHAR" property="patNo" />
+		<result column="NAME_PI" jdbcType="VARCHAR" property="name" />
+		<result column="NAME_PI" jdbcType="VARCHAR" property="namePi" />
+		<result column="DT_IDTYPE" jdbcType="VARCHAR" property="dtIdtype" />
+		<result column="ID_NO" jdbcType="VARCHAR" property="idNo" />
+		<result column="HIC_NO" jdbcType="VARCHAR" property="hicNo" />
+		<result column="INSUR_NO" jdbcType="VARCHAR" property="insurNo" />
+		<result column="DT_SEX" jdbcType="VARCHAR" property="dtSex" />
+		<result column="SEX_NAME" jdbcType="VARCHAR" property="sexName" />
+		<result column="BIRTH_DATE" jdbcType="DATE" property="birthDate" />
+		<result column="AGE_TXT" jdbcType="VARCHAR" property="ageTxt" />
+		<result column="PLACE_BIRTH" jdbcType="VARCHAR" property="placeBirth" />
+		<result column="DT_MARRY" jdbcType="VARCHAR" property="dtMarry" />
+		<result column="MARRY_NAME" jdbcType="VARCHAR" property="marryName" />
+		<result column="DT_OCCU" jdbcType="VARCHAR" property="dtOccu" />
+		<result column="OCCU_NAME" jdbcType="VARCHAR" property="occuName" />
+		<result column="DT_EDU" jdbcType="VARCHAR" property="dtEdu" />
+		<result column="DT_COUNTRY" jdbcType="VARCHAR" property="dtCountry" />
+		<result column="DT_NATION" jdbcType="VARCHAR" property="dtNation" />
+		<result column="NATION_NAME" jdbcType="VARCHAR" property="nationName" />
+		<result column="TEL_NO" jdbcType="VARCHAR" property="telNo" />
+		<result column="MOBILE" jdbcType="VARCHAR" property="mobile" />
+		<result column="EMAIL" jdbcType="VARCHAR" property="email" />
+		<result column="UNIT_WORK" jdbcType="VARCHAR" property="unitWork" />
+		<result column="TEL_WORK" jdbcType="VARCHAR" property="telWork" />
+		<result column="ADDRESS" jdbcType="VARCHAR" property="address" />
+		<result column="NAME_REL" jdbcType="VARCHAR" property="nameRel" />
+		<result column="TEL_REL" jdbcType="VARCHAR" property="telRel" />
+		<result column="DT_BLOOD_ABO" jdbcType="VARCHAR" property="dtBloodAbo" />
+		<result column="BLOOD_ABO_NAME" jdbcType="VARCHAR" property="bloodAboName" />
+		<result column="DT_BLOOD_RH" jdbcType="VARCHAR" property="dtBloodRh" />
+		<result column="BLOOD_RH_NAME" jdbcType="VARCHAR" property="bloodRhName" />
+		<result column="PK_PV" jdbcType="CHAR" property="pkPv" />
+		<result column="CODE_PV" jdbcType="VARCHAR" property="codePv" />
+		<result column="EU_PVTYPE" jdbcType="VARCHAR" property="euPvtype" />
+		<result column="DATE_BEGIN" jdbcType="DATE" property="dateBegin" />
+		<result column="DATE_END" jdbcType="DATE" property="dateEnd" />
+		<result column="EU_STATUS_PV" jdbcType="VARCHAR" property="euStatusPv" />
+		<result column="FLAG_IN" jdbcType="CHAR" property="flagIn" />
+		<result column="FLAG_SETTLE" jdbcType="CHAR" property="flagSettle" />
+		<result column="NAME_PI_PV" jdbcType="VARCHAR" property="namePiPv" />
+		<result column="DT_SEX_PV" jdbcType="VARCHAR" property="dtSexPv" />
+		<result column="AGE_PV" jdbcType="VARCHAR" property="agePv" />
+		<result column="ADDRESS_PV" jdbcType="VARCHAR" property="addressPv" />
+		<result column="DT_MARRY_PV" jdbcType="VARCHAR" property="dtMarryPv" />
+		<result column="PK_DEPT" jdbcType="CHAR" property="pkDept" />
+		<result column="DEPT_NAME" jdbcType="VARCHAR" property="deptName" />
+		<result column="PK_DEPT_NS" jdbcType="CHAR" property="pkDeptNs" />
+		<result column="DEPT_NS_NAME" jdbcType="VARCHAR" property="deptNsName" />
+		<result column="DATE_CLINIC" jdbcType="DATE" property="dateClinic" />
+		<result column="DATE_ADMIT" jdbcType="DATE" property="dateAdmit" />
+		<result column="PK_WG" jdbcType="CHAR" property="pkWg" />
+		<result column="BED_NO" jdbcType="VARCHAR" property="bedNo" />
+		<result column="PK_EMP_TRE" jdbcType="CHAR" property="pkEmpTre" />
+		<result column="NAME_EMP_TRE" jdbcType="VARCHAR" property="nameEmpTre" />
+		<result column="PK_EMP_PHY" jdbcType="CHAR" property="pkEmpPhy" />
+		<result column="NAME_EMP_PHY" jdbcType="VARCHAR" property="nameEmpPhy" />
+		<result column="PK_EMP_NS" jdbcType="CHAR" property="pkEmpNs" />
+		<result column="NAME_EMP_NS" jdbcType="VARCHAR" property="nameEmpNs" />
+		<result column="PK_PATICATE" jdbcType="VARCHAR" property="pkPaticate" />
+		<result column="PK_EMP_REG" jdbcType="CHAR" property="pkEmpReg" />
+		<result column="NAME_EMP_REG" jdbcType="VARCHAR" property="nameEmpReg" />
+		<result column="DATE_REG" jdbcType="DATE" property="dateReg" />
+		<result column="DATE_CANCEL" jdbcType="DATE" property="dateCancel" />
+		<result column="PK_PVIP" jdbcType="CHAR" property="pkPvip" />
+		<result column="PK_IP_NOTICE" jdbcType="CHAR" property="pkIpNotice" />
+		<result column="IP_TIMES" jdbcType="DECIMAL" property="ipTimes" />
+		<result column="DATE_NOTICE" jdbcType="DATE" property="dateNotice" />
+		<result column="FLAG_OPT" jdbcType="CHAR" property="flagOpt" />
+		<result column="DT_LEVEL_NS" jdbcType="VARCHAR" property="dtLevelNs" />
+		<result column="LEVEL_NS_NAME" jdbcType="VARCHAR" property="levelNsName" />
+		<result column="DT_LEVEL_DISE" jdbcType="VARCHAR" property="dtLevelDise" />
+		<result column="LEVEL_DISE_NAME" jdbcType="VARCHAR" property="levelDiseName" />
+		<result column="DT_LEVEL_NUTR" jdbcType="VARCHAR" property="dtLevelNutr" />
+		<result column="DT_OUTCOMES" jdbcType="VARCHAR" property="dtOutcomes" />
+		<result column="FLAG_INFANT" jdbcType="CHAR" property="flagInfant" />
+		<result column="QUAN_INFANT" jdbcType="DECIMAL" property="quanInfant" />
+		<result column="EU_STATUS_DOC" jdbcType="VARCHAR" property="euStatusDoc" />
+		<result column="DATE_COMMIT_DOC" jdbcType="DATE" property="dateCommitDoc" />
+		<result column="FLAG_GA" jdbcType="CHAR" property="flagGa" />
+		<result column="FLAG_GA_NS" jdbcType="CHAR" property="flagGaNs" />
+		<result column="DT_INTYPE" jdbcType="VARCHAR" property="dtIntype" />
+		<result column="DT_OUTTYPE" jdbcType="VARCHAR" property="dtOuttype" />
+		<result column="PK_DEPT_ADMIT" jdbcType="CHAR" property="pkDeptAdmit" />
+		<result column="PK_DEPT_NS_ADMIT" jdbcType="CHAR" property="pkDeptNsAdmit" />
+		<result column="PK_DEPT_DIS" jdbcType="CHAR" property="pkDeptDis" />
+		<result column="PK_DEPT_NS_DIS" jdbcType="CHAR" property="pkDeptNsDis" />
+		<result column="FLAG_PREST" jdbcType="VARCHAR" property="flagPrest" />
+		<result column="DATE_PREST" jdbcType="DATE" property="datePrest" />
+		<result column="PK_EMP_PREST" jdbcType="CHAR" property="pkEmpPrest" />
+		<result column="NAME_EMP_PREST" jdbcType="VARCHAR" property="nameEmpPrest" />
+		<result column="PK_PATREC" jdbcType="CHAR" property="pkPatrec" />
+		<result column="DIAG_ADMIT_TXT" jdbcType="VARCHAR" property="diagAdmitTxt" />
+		<result column="DIAG_DIS_TXT" jdbcType="VARCHAR" property="diagDisTxt" />
+		<result column="EU_STATUS" jdbcType="CHAR" property="euStatus" />
+		<result column="PK_EMP_REFER" jdbcType="VARCHAR" property="pkEmpRefer" />
+		<result column="REFER_NAME" jdbcType="VARCHAR" property="referName" />
+		<result column="PK_EMP_CONSULT" jdbcType="VARCHAR" property="pkEmpConsult" />
+		<result column="CONSULT_NAME" jdbcType="VARCHAR" property="consultName" />
+		<result column="PK_EMP_DIRECTOR" jdbcType="VARCHAR" property="pkEmpDirector" />
+		<result column="DIRECTOR_NAME" jdbcType="VARCHAR" property="directorName" />
+		<result column="PK_EMP_NS_CHARGE" jdbcType="VARCHAR" property="pkEmpNsCharge" />
+		<result column="NS_CHARGE_NAME" jdbcType="VARCHAR" property="nsChargeName" />
+		<result column="PK_EMP_NS_HEAD" jdbcType="VARCHAR" property="pkEmpNsHead" />
+		<result column="NS_HEAD_NAME" jdbcType="VARCHAR" property="nsHeadName" />
+		<result column="PK_EMP_QC_DIS" jdbcType="VARCHAR" property="pkEmpQcDis" />
+		<result column="QC_DIS_NAME" jdbcType="VARCHAR" property="qcDisName" />
+		<result column="IN_HOS_DAYS" jdbcType="INTEGER" property="inHosDays" />
+		<result column="ADDR_BIRTH" jdbcType="VARCHAR" property="addrBirth"/>
+        <result column="ADDR_ORIGIN" jdbcType="VARCHAR" property="addrOrigin"/>
+        <result column="ADDR_CUR" jdbcType="VARCHAR" property="addrCur"/>
+	</association>
+	<association property="std" javaType="com.zebone.nhis.common.module.emr.qc.EmrGradeStandard">
+		<id column="PK_STAND" jdbcType="CHAR" property="pkStand"/>
+        <result column="STD_CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="STD_NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="SHORT_NAME" jdbcType="VARCHAR" property="shortName"/>
+        <result column="STD_TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+        <result column="EU_STAND_TYPE" jdbcType="VARCHAR" property="euStandType"/>
+        <result column="DOC_TYPE_CODE" jdbcType="VARCHAR" property="docTypeCode"/>
+        <result column="SCORE_STAND" jdbcType="VARCHAR" property="scoreStand"/>
+        <result column="SCORE_TYPE" jdbcType="VARCHAR" property="scoreType"/>
+        <result column="SINGLE_SCORE" jdbcType="DECIMAL" property="singleScore"/>
+        <result column="STAND_MODE" jdbcType="CHAR" property="standMode"/>
+        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+        <result column="FLAG_TIME" jdbcType="CHAR" property="flagTime"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+	</association>
+	<association property="rec" javaType="com.zebone.nhis.common.module.emr.rec.rec.EmrMedRec">
+        <result column="DOC_NAME" jdbcType="VARCHAR" property="name"/>
+	</association>
+	<association property="docType"
+			javaType="com.zebone.nhis.common.module.emr.rec.dict.EmrDocType">
+			<result column="TYPE_NAME" jdbcType="VARCHAR" property="name" />
+			<result column="FLAG_COURSE" jdbcType="CHAR" property="flagCourse" />
+			<result column="FLAG_HOME_PAGE" jdbcType="CHAR" property="flagHomePage" />
+		</association>			
+  </resultMap>  
+  <select id="queryAmendRecList" resultMap="ResultMapAmendRecQry">
+		select rec.pk_amend,
+		       rec.pk_org,
+		       rec.pk_pv,
+		       rec.pk_gradeitem,
+		       rec.pk_rec,
+		       rec.eu_type,
+		       rec.content,
+		       rec.pk_emp,
+		       rec.date_receive,
+		       rec.date_finish,
+		       rec.eu_status rec_eu_status,
+		       rec.pk_emp_create,
+		       rec.date_create,
+		       rec.remark,
+		       rec.del_flag,
+		       rec.creator,
+		       rec.create_time,
+		       rec.ts,
+		       rec.note_back,
+			   emp.name qc_emp_name,
+			   empdoc.name emp_name,
+			   std.type_code std_type_code,
+			   std.doc_type_code,
+			   std.code std_code,
+			   std.name std_name,
+			   std.score_stand,
+			   std.score_type,
+			   std.single_score,
+			   std.flag_time,
+			   typ.name type_name,
+			   typ.flag_course,
+			   typ.flag_home_page,
+			   nvl(mrec.name,typ.name) doc_name,
+			   pat.*
+		  from emr_amend_rec rec inner join 
+		       view_emr_pat_list pat on rec.pk_pv=pat.pk_pv inner join
+			   emr_grade_item gitem on rec.pk_gradeitem=gitem.pk_gradeitem inner join
+			   emr_grade_rec grec on grec.pk_graderec=gitem.pk_graderec inner join
+			   emr_grade_standard std on gitem.stand_code=std.code and std.del_flag='0' inner join
+			   emr_doc_type typ on typ.code=std.doc_type_code left outer join
+		       emr_med_rec mrec on mrec.pk_rec=rec.pk_rec inner join
+			   view_emr_emp_list emp on emp.pk_emp=rec.pk_emp_create left outer join
+			   view_emr_emp_list empdoc on empdoc.pk_emp=rec.pk_emp
+		 where rec.del_flag != '1'
+		   and grec.del_flag != '1' 
+		   <if test="pkPv != null" >
+		    	and rec.pk_pv = #{pkPv,jdbcType=CHAR}
+        	</if>
+		   <if test="pkEmp != null" >
+            	and rec.pk_emp = #{pkEmp,jdbcType=VARCHAR}
+        	</if>
+		   <if test="pkGraderec != null" >
+            	and grec.pk_graderec = #{pkGraderec,jdbcType=VARCHAR}
+        	</if>
+        	<if test="euGradeType != null" >
+            	and grec.eu_grade_type = #{euGradeType,jdbcType=VARCHAR}
+        	</if>
+        	<if test="euStatusAmendNot != null" >
+            	and rec.eu_status != #{euStatusAmendNot,jdbcType=CHAR}
+        	</if>
+        	<if test="beginDate != null and endDate != null" >
+	        	and (rec.eu_status in ('0','1') or (
+	        	    rec.eu_status='2' 
+	        	    and rec.date_create &gt;=	to_date(#{beginDate,jdbcType=VARCHAR},'yyyymmddhh24miss')
+					and rec.date_create &lt; to_date(#{endDate,jdbcType=VARCHAR},'yyyymmddhh24miss')
+				)
+			)
+        	</if>
+		 order by rec.create_time
+	</select>
+	<resultMap id="ResultMapAmendRecDoc" type="com.zebone.nhis.common.module.emr.qc.EmrAmendRec">
+	    <id column="PK_AMEND" jdbcType="CHAR" property="pkAmend" />
+	    <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg" />
+	    <result column="PK_PV" jdbcType="VARCHAR" property="pkPv" />
+	    <result column="PK_GRADEITEM" jdbcType="VARCHAR" property="pkGradeitem" />
+	    <result column="PK_REC" jdbcType="VARCHAR" property="pkRec" />
+	    <result column="EU_TYPE" jdbcType="VARCHAR" property="euType" />
+	    <result column="CONTENT" jdbcType="VARCHAR" property="content" />
+	    <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp" />
+	    <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept" />
+	    <result column="DATE_RECEIVE" jdbcType="TIMESTAMP" property="dateReceive" />
+	    <result column="DATE_FINISH" jdbcType="TIMESTAMP" property="dateFinish" />
+	    <result column="REC_EU_STATUS" jdbcType="CHAR" property="euStatus" />
+	    <result column="PK_EMP_CREATE" jdbcType="VARCHAR" property="pkEmpCreate" />
+	    <result column="DATE_CREATE" jdbcType="TIMESTAMP" property="dateCreate" />
+	    <result column="REMARK" jdbcType="VARCHAR" property="remark" />
+	    <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag" />
+	    <result column="CREATOR" jdbcType="VARCHAR" property="creator" />
+	    <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime" />
+	    <result column="TS" jdbcType="TIMESTAMP" property="ts" />
+		<association property="doc" javaType="com.zebone.nhis.common.module.emr.qc.EmrAmendDoc">
+	        <id column="PK_AMEND_DOC" jdbcType="CHAR" property="pkAmendDoc" />
+		    <result column="PK_AMEND_REC" jdbcType="VARCHAR" property="pkAmend" />
+		    <result column="DOC_DATA_BAK" jdbcType="BINARY" property="docDataBak" />
+		    <result column="DOC_XML_BAK" jdbcType="LONGVARCHAR" property="docXmlBak" />
+		    <result column="CDA_XML_BAK" jdbcType="LONGVARCHAR" property="cdaXmlBak" />
+		    <result column="DOC_CA_BAK" jdbcType="LONGVARCHAR" property="docCaBak" />
+		    <result column="DOC_DATA" jdbcType="BINARY" property="docData" />
+		    <result column="DOC_XML" jdbcType="LONGVARCHAR" property="docXml" />
+		    <result column="CDA_XML" jdbcType="LONGVARCHAR" property="cdaXml" />
+		    <result column="DOC_CA" jdbcType="LONGVARCHAR" property="docCa" />
+		    <result column="REMARK_DOC" jdbcType="VARCHAR" property="remark" />
+		    <result column="DEL_FLAG_DOC" jdbcType="CHAR" property="delFlag" />
+		    <result column="CREATOR_DOC" jdbcType="VARCHAR" property="creator" />
+		    <result column="CREATE_TIME_DOC" jdbcType="TIMESTAMP" property="createTime" />
+		    <result column="TS_DOC" jdbcType="TIMESTAMP" property="ts" />
+		</association>
+		<association property="docType"
+			javaType="com.zebone.nhis.common.module.emr.rec.dict.EmrDocType">
+			<result column="TYPE_NAME" jdbcType="VARCHAR" property="name" />
+			<result column="FLAG_COURSE" jdbcType="CHAR" property="flagCourse" />
+			<result column="FLAG_HOME_PAGE" jdbcType="CHAR" property="flagHomePage" />
+		</association>			
+    </resultMap>  			
+	<select id="getEmrAmendRec" resultMap="ResultMapAmendRecDoc">
+		select rec.pk_amend,
+		       rec.pk_org,
+		       rec.pk_pv,
+		       rec.pk_gradeitem,
+		       rec.pk_rec,
+		       rec.eu_type,
+		       rec.content,
+		       rec.pk_emp,
+		       rec.date_receive,
+		       rec.date_finish,
+		       rec.eu_status rec_eu_status,
+		       rec.pk_emp_create,
+		       rec.date_create,
+		       rec.remark,
+		       rec.del_flag,
+		       rec.creator,
+		       rec.create_time,
+		       rec.ts,
+		       doc.pk_amend_doc,
+		       doc.pk_amend pk_amend_rec,
+			   doc.doc_data_bak,
+			   doc.doc_xml_bak, 
+			   doc.cda_xml_bak, 
+			   doc.doc_ca_bak, 
+			   doc.doc_data, 
+			   doc.doc_xml, 
+			   doc.cda_xml, 
+			   doc.doc_ca,
+			   doc.remark remark_doc,
+		       doc.del_flag del_flag_doc,
+		       doc.creator creator_doc,
+		       doc.create_time create_time_doc,
+		       doc.ts ts_doc,
+		       typ.name type_name,
+			   typ.flag_course,
+			   typ.flag_home_page
+		  from emr_amend_rec rec left outer join
+		       emr_amend_doc doc on rec.pk_amend=doc.pk_amend left outer join
+		       emr_med_rec mrec on rec.pk_rec = mrec.pk_rec left outer join
+		       emr_doc_type typ on mrec.type_code=typ.code 
+		 where rec.pk_amend = #{pkAmend,jdbcType=CHAR}
+	</select>
+	<select id="getEmrAmendRecEmr" resultMap="ResultMapAmendRecDoc">
+		select rec.pk_amend,
+		       rec.pk_org,
+		       rec.pk_pv,
+		       rec.pk_gradeitem,
+		       rec.pk_rec,
+		       rec.eu_type,
+		       rec.content,
+		       rec.pk_emp,
+		       rec.date_receive,
+		       rec.date_finish,
+		       rec.eu_status rec_eu_status,
+		       rec.pk_emp_create,
+		       rec.date_create,
+		       rec.remark,
+		       rec.del_flag,
+		       rec.creator,
+		       rec.create_time,
+		       rec.ts,
+		       doc.pk_amend_doc,
+		       doc.pk_amend pk_amend_rec,
+			   doc.doc_data_bak,
+			   doc.doc_xml_bak, 
+			   doc.cda_xml_bak, 
+			   doc.doc_ca_bak, 
+			   doc.doc_data, 
+			   doc.doc_xml, 
+			   doc.cda_xml, 
+			   doc.doc_ca,
+			   doc.remark remark_doc,
+		       doc.del_flag del_flag_doc,
+		       doc.creator creator_doc,
+		       doc.create_time create_time_doc,
+		       doc.ts ts_doc,
+		       typ.name type_name,
+			   typ.flag_course,
+			   typ.flag_home_page
+		  from emr_amend_rec rec left outer join
+		       ${dbName}emr_amend_doc doc on rec.pk_amend=doc.pk_amend left outer join
+		       emr_med_rec mrec on rec.pk_rec = mrec.pk_rec left outer join
+		       emr_doc_type typ on mrec.type_code=typ.code 
+		 where rec.pk_amend = #{pkAmend,jdbcType=CHAR}
+	</select>
+	<select id="queryEmrAuditRec" resultMap="ResultMapAuditRec">
+        SELECT
+            *
+        FROM
+              emr_audit_rec
+        where pk_pv = #{pkPv,jdbcType=VARCHAR} and del_flag !='1' 
+   	    <if test="pkRec != null" >
+            and pk_rec = #{pkRec,jdbcType=VARCHAR}
+        </if>
+   	    <if test="euLevel != null" >
+            and eu_level = #{euLevel,jdbcType=VARCHAR}
+        </if>
+   	    <if test="euLevelLess != null" >
+            and eu_level &lt;= #{euLevelLess,jdbcType=VARCHAR}
+            order by eu_level desc
+        </if>
+   	    <if test="euLevelGreater != null" >
+            and eu_level &gt;= #{euLevelGreater,jdbcType=VARCHAR}
+            order by eu_level
+        </if>
+   	    <if test="euLevelGreaterDesc != null" >
+            and eu_level &gt;= #{euLevelGreaterDesc,jdbcType=VARCHAR}
+            order by eu_level desc
+        </if>
+    </select>
+	<select id="queryEmrAuditDoc" resultMap="ResultMapAuditDoc">
+		SELECT
+		*
+		FROM
+		emr_audit_doc
+		WHERE
+		pk_audit = #{pkAudit,jdbcType=CHAR}
+	</select>
+	<select id="queryGradeMsgItem" resultType="com.zebone.nhis.emr.qc.vo.EmrGradeMsgItemVo">
+		select pat.name,
+		       pat.bed_no,
+		       pat.code_ip,
+		       pat.pat_no,
+		       pat.pk_pi,
+		       pat.ip_times times,
+		       pat.age_txt,
+		       pat.birth_date,
+		       pat.dt_sex,
+		       pat.sex_name,
+		       rec.pk_pv,
+		       rec.eu_msg_type,
+		       item.*,
+		       gt.name as type_name,
+		       gs.name as stand_name,
+		       gs.flag_time,
+		       dept.name as dept_name,
+		       emp_qc.name as emp_qc_name,
+		       emp_send.name as emp_send_name 
+		  from view_emr_pat_list pat inner join 
+		  	   emr_grade_msg_rec rec on rec.pk_pv=pat.pk_pv inner join
+		       emr_grade_msg_item item on item.pk_grade_msgrec=rec.pk_grade_msgrec left outer join
+		       emr_grade_type gt on item.type_code=gt.code left outer join 
+		       emr_grade_standard gs on item.stand_code=gs.code left outer join
+		       view_emr_dept_list dept on item.pk_dept = dept.pk_dept left outer join
+		       view_emr_emp_list emp_qc on emp_qc.pk_emp=item.pk_emp_qc left outer join
+		       view_emr_emp_list emp_send on emp_send.pk_emp=item.pk_emp_send
+		 where nvl(rec.del_flag,'0')='0' and nvl(item.del_flag,'0')='0'
+		<if test="pkPv != null" >
+        	and rec.pk_pv = #{pkPv,jdbcType=VARCHAR}
+        </if>
+        <if test="euMsgType != null" >
+        	and rec.eu_msg_type = #{euMsgType,jdbcType=VARCHAR}
+        </if>
+        <if test="pkEmp != null" >
+        	and item.pk_emp = #{pkEmp,jdbcType=VARCHAR}
+        </if>
+        <if test="euStatus != null" >
+        	and item.eu_status = #{euStatus,jdbcType=VARCHAR}
+        </if>
+        <if test="dateBegin != null and dateBegin!='' " >
+            and rec.qc_date &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyyMMddhh24miss')
+        </if> 
+   	    <if test="dateEnd != null and dateEnd!='' " >
+            and rec.qc_date &lt; to_date(#{dateEnd,jdbcType=VARCHAR},'yyyyMMddhh24miss')
+        </if> 
+    	order by rec.pk_pv,item.stand_code 
+	</select>      
+	
+	<select id="findHaveDept" resultType="com.zebone.nhis.common.module.emr.qc.EmrGradeDept">  
+		select emr.*,vi.code as dept_code,vi.name as dept_name 
+		from EMR_GRADE_DEPT emr
+  		left outer join view_emr_dept_list vi on emr.PK_DEPT=vi.PK_DEPT
+		where emr.CATE_CODE=#{CateCode,jdbcType=VARCHAR} and emr.del_flag='0'
+	</select>
+	<select id="findGradeHaveDept" resultType="DynaBean">  
+		select pk_dept from emr_grade_dept where del_flag='0'
+	</select>
+	
+	<select id="findElseDept" resultType="com.zebone.nhis.common.module.emr.qc.ViewEmrDeptList">  
+		select * from view_emr_dept_list vi where vi.name like '%'||#{name,jdbcType=VARCHAR}||'%'
+		and vi.PK_ORG=#{pkOrg,jdbcType=VARCHAR}
+		and vi.pk_dept not in (select PK_DEPT from EMR_GRADE_DEPT emr where emr.PK_ORG=#{pkOrg,jdbcType=VARCHAR} and emr.DEL_FLAG='0')
+		and vi.del_flag = '0'
+	</select>
+	
+	<select id="findDefectByParam" resultType="com.zebone.nhis.emr.qc.vo.EmrDefectVo">  
+		select
+  			pv.NAME_PI name,
+  			pv.BED_NO,
+			pv.name_emp_phy,
+			pv.PK_PV,
+			pi.CODE_IP,
+			dept.PK_DEPT,
+			dept.NAME_DEPT deptName,
+			item.SCORE,
+			item.eu_score,
+			sta.NAME standardName,
+			grade.pk_emp_qc
+		from EMR_GRADE_REC grade
+		inner join PV_ENCOUNTER pv on pv.PK_PV=grade.PK_PV
+		inner join bd_ou_dept dept on pv.pk_dept=dept.pk_dept
+		left outer join PI_MASTER pi on pi.PK_PI=pv.PK_PI
+		left outer join emr_grade_item item on item.PK_GRADEREC=grade.PK_GRADEREC
+		left outer join emr_grade_standard sta on item.STAND_CODE=sta.CODE
+		where grade.DEL_FLAG='0'
+		<if test="cateCode != null and cateCode !=''" >
+            and sta.cate_code =#{cateCode,jdbcType=VARCHAR}
+        </if>
+  		<if test="linkType != null and linkType !=''" >
+            and grade.EU_GRADE_TYPE =#{linkType,jdbcType=VARCHAR}
+        </if>
+		<if test="qcBegin != null and qcBegin !=''" >
+            and grade.qc_date &gt;= to_date(#{qcBegin,jdbcType=VARCHAR},'yyyy-mm-dd')
+        </if> 
+        <if test="qcEnd != null and qcEnd != ''" >
+            and grade.qc_date &lt; to_date(#{qcEnd,jdbcType=VARCHAR},'yyyy-mm-dd')
+        </if>
+        <if test="pkDept != null and pkDept !=''" >
+            and dept.pk_dept in 
+            <foreach item="item" index="index" collection="pkDept" open="(" separator="," close=")">
+				 #{item}
+			</foreach>
+        </if>
+        <if test="euScore != null and euScore !=''" >
+            and item.eu_score =#{euScore,jdbcType=VARCHAR}
+        </if>
+        <if test="linkDefect != null and linkDefect !=''" >
+            and sta.name like '%'||#{linkDefect,jdbcType=VARCHAR}||'%'
+        </if>
+        order by pv.PK_PV,item.SCORE
+	</select>
+	<select id="findDefectByPkPv" resultType="com.zebone.nhis.emr.qc.vo.EmrDefectVo">  
+		select
+			sta.NAME standardName,
+      		type.NAME typeName,
+      		item.PK_GRADEITEM
+		from EMR_GRADE_REC grade
+		left outer join emr_grade_item item on item.PK_GRADEREC=grade.PK_GRADEREC
+		left outer join emr_grade_standard sta on item.STAND_CODE=sta.CODE and sta.CATE_CODE='12'
+    	inner join EMR_DOC_TYPE type on sta.DOC_TYPE_CODE=type.CODE
+		where grade.EU_GRADE_TYPE='CenterLink' and grade.DEL_FLAG='0' and nvl(item.eu_status,'0') = '0' and grade.pk_pv=#{pkPv,jdbcType=VARCHAR}
+	</select>
+	
+	
+	<select id="findChangedDefect" resultType="com.zebone.nhis.emr.qc.vo.EmrDefectVo">  
+		select
+		  pi.CODE_IP,
+		  pi.NAME_PI name,
+		  grade.PK_DEPT,
+		  dept.NAME_DEPT deptName,
+		  grade.PK_PV,
+		  sta.NAME  standardName,
+		  type.NAME typeName,
+		  item.PK_GRADEITEM
+		from EMR_GRADE_REC grade left outer join
+		  emr_grade_item item on item.PK_GRADEREC = grade.PK_GRADEREC left outer join
+		  emr_grade_standard sta on item.STAND_CODE = sta.CODE and sta.CATE_CODE = '12' inner join
+		  EMR_DOC_TYPE type on sta.DOC_TYPE_CODE = type.CODE inner join
+		  PV_ENCOUNTER pv on pv.PK_PV=grade.PK_PV inner join
+		  pi_master pi on pv.pk_pi = pi.pk_pi left outer join
+		  bd_ou_dept dept on grade.pk_dept = dept.pk_dept
+		where grade.EU_GRADE_TYPE = 'CenterLink' and grade.DEL_FLAG = '0'
+      		and nvl(item.eu_status,'0') = '1'
+      	<if test="chaBegin != null and chaBegin != '' " >
+            and item.REVISE_DATE &gt;= to_date(#{chaBegin,jdbcType=VARCHAR},'yyyy-mm-dd')
+        </if> 
+   	    <if test="chaEnd != null and chaEnd != '' " >
+            and item.REVISE_DATE &lt; to_date(#{chaEnd,jdbcType=VARCHAR},'yyyy-mm-dd')
+        </if> 
+        <if test="pkDept != null and pkDept != '' " >
+            and item.PK_DEPT = #{pkDept,jdbcType=VARCHAR}
+        </if> 
+	</select>
+	
+	<select id="findDept" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrDeptList">  
+		select 
+			dept.pk_dept,
+      		dept.code code,
+      		dept.name name
+      	from view_emr_dept_list dept
+      	where dept.dt_depttype like '01%' and del_flag='0'
+        <if test="name != null and name != '' " >
+            and dept.name like '%'||#{name,jdbcType=VARCHAR}||'%' 
+        </if> 
+      	order by dept.name
+	</select>
+	
+	<select id="findIsOpByPkPv" parameterType="java.lang.String" resultType="java.lang.Integer">  
+		select count(*)
+        from pv_encounter pv,cn_order ord,cn_op_apply op
+       where pv.pk_pv = ord.pk_pv
+         and ord.eu_status_ord !='0' and  ord.flag_erase !='1'
+         and ord.pk_cnord=op.pk_cnord
+         and op.eu_status ='5'
+         and pv.PK_PV=#{pkPv,jdbcType=VARCHAR}
+        <if test="isFourOp != null and isFourOp != '' " >
+            and op.DT_OPLEVEL=#{isFourOp,jdbcType=VARCHAR}
+        </if> 
+	</select>
+	<update id="updateEmrPatRecList">
+		update emr_pat_rec
+		   set eu_status = '6',
+		       flag_amend_final = '0', 
+		       flag_final_qc = '1',
+		   	   pk_emp_final_qc = #{pkEmp,jdbcType=VARCHAR},
+               final_qc_date = #{qcDate,jdbcType=DATE},
+		   	   pk_emp_final_qc_submit = #{pkEmp,jdbcType=VARCHAR},
+		       final_qc_submit_date = #{qcDate,jdbcType=DATE} 
+		WHERE pk_pv in
+		 <foreach item="item" index="index" collection="pkPvs" open="(" separator="," close=")">
+  		   #{item}
+	     </foreach>
+	</update>
+	<select id="queryPatArchList" parameterType="java.util.Map"  resultType="com.zebone.nhis.emr.qc.vo.EmrPatRecListVo">
+		select pv.pk_pi,
+		       pv.pk_pv,
+		       pv.code_pv,
+		       pi.name_pi name,
+		       pi.code_ip,
+		       pi.code_pi,
+		       pi.code_op,
+		       pi.dt_sex,
+		       zdsex.name name_sex,
+		       pi.birth_date,
+		       pv.age_pv,
+		       zdsex.name sex_name,
+		       pv.bed_no,
+		       pv.date_admit date_begin,
+		       pv.date_end,
+		       bd_hp.name hp_name,
+		       pvip.ip_times,
+		       pv.pk_dept,
+		       dept.name_dept  dept_name,
+		       pv.pk_dept_ns,
+		       ns.name_dept dept_ns_name,
+		       patrec.diag_admit_txt,
+		       patrec.diag_dis_txt,
+		       patrec.pk_emp_refer,
+		       emp_refer.name_emp refer_name,
+		       patrec.pk_emp_consult,
+		       emp_consult.name_emp consult_name,
+		       patrec.pk_emp_director,
+		       emp_director.name_emp director_name,
+		       patrec.eu_status,
+		       patrec.pk_patrec
+		  from pv_encounter pv
+		 inner join pi_master pi
+		    on pv.pk_pi = pi.pk_pi
+		 inner join emr_pat_rec patrec
+		    on patrec.pk_pv = pv.pk_pv
+		 inner join pv_ip pvip
+		    on pv.pk_pv = pvip.pk_pv
+		 inner join bd_ou_dept dept
+		    on pv.pk_dept=dept.pk_dept
+		 left join bd_ou_dept ns
+		    on pv.pk_dept_ns=ns.pk_dept    
+		 left outer join bd_hp
+		    on pv.pk_insu=bd_hp.pk_hp
+		 left outer join bd_defdoc zdsex
+		    on pi.dt_sex=zdsex.code and zdsex.code_defdoclist='000000' 
+		left outer join bd_ou_employee emp_refer
+		    on patrec.pk_emp_refer=emp_refer.pk_emp
+		left outer join bd_ou_employee emp_consult
+    		on patrec.pk_emp_consult=emp_consult.pk_emp
+ 		left outer join bd_ou_employee emp_director
+    		on patrec.pk_emp_director=emp_director.pk_emp		       
+		 where patrec.del_flag = '0'
+		<if test="pkDept != null">
+			and pv.PK_DEPT = #{pkDept,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmpRefer != null">
+			and patrec.pk_emp_refer = #{pkEmpRefer,jdbcType=VARCHAR}
+		</if>
+		<if test="name != null">
+			and pi.name_pi like '%'||#{name,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="codeIp != null">
+			and pi.code_ip like '%'||#{codeIp,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="flagFinalQc != null">
+			and nvl(patrec.flag_final_qc,'0') = #{flagFinalQc,jdbcType=CHAR}
+		</if>
+		<if test="flagEmrArchive != null">
+			and nvl(patrec.flag_emr_archive,'0') = #{flagEmrArchive,jdbcType=CHAR}
+		</if>
+		<if test="beginDate != null">
+			and pv.date_end &gt;= to_date(#{beginDate,jdbcType=VARCHAR},'yyyymmddhh24miss')
+		</if>
+		<if test="endDate != null">
+			and pv.date_end &lt;= to_date(#{endDate,jdbcType=VARCHAR},'yyyymmddhh24miss')
+		</if>
+		 order by pv.date_end, pi.name_pi,pv.pk_pv  
+	</select>
+    <update id="updteEventRecTimeLimit" statementType="CALLABLE" parameterType="java.util.Map">
+	   {call emr_proc_gen_event_rec_timeLimit(#{pkDept,mode=IN,jdbcType=VARCHAR},#{pkEmp,mode=IN,jdbcType=VARCHAR},#{pkOrg,mode=IN,jdbcType=VARCHAR},#{flagIn,mode=IN,jdbcType=VARCHAR},#{dateBegin,mode=IN,jdbcType=TIMESTAMP},#{dateEnd,mode=IN,jdbcType=TIMESTAMP},#{sysDate,mode=IN,jdbcType=TIMESTAMP})}
+	</update>
+</mapper>

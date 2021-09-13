@@ -1,0 +1,543 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.compay.pub.dao.NationalInsuranceMapper">
+
+    <select id="updatePv" parameterType="java.lang.String" >
+		update PV_ENCOUNTER
+		set pk_insu=(
+			select pk_hp
+			from bd_hp
+			where CODE = #{insutype,jdbcType=VARCHAR}
+			and DEL_FLAG = '0'
+		)
+		where pk_pv = #{pkPv,jdbcType=VARCHAR}
+	</select>
+
+	<select id="qryInsRegPre"  resultType="DynaBean">
+		select to_char(pv.DATE_BEGIN, 'yyyy-MM-dd HH:mm:ss') as begntime,
+		pi.CODE_op as ipt_otp_no,
+		case when pv.PK_EMP_PHY is null then empdiag.code_emp else emppv.CODE_EMP
+		end as atddr_no,
+		case when pv.PK_EMP_PHY is null then empdiag.NAME_EMP else emppv.NAME_EMP
+		end as dr_name,
+		dept.CODE_DEPT as dept_code,
+		dept.NAME_DEPT as dept_name,
+		map.CODE_INSUR as caty
+		from PV_ENCOUNTER pv
+		left join PV_DIAG diag on diag.PK_pv = pv.PK_PV and diag.FLAG_MAJ='1'
+		left join BD_OU_EMPLOYEE emppv on emppv.PK_EMP = pv.PK_EMP_PHY
+		left join BD_OU_EMPLOYEE empdiag on empdiag.PK_EMP = diag.PK_EMP_DIAG
+		left join BD_OU_DEPT dept on dept.PK_DEPT = pv.PK_DEPT
+		inner join pi_master pi on pi.PK_PI = pv.PK_PI and pi.DEL_FLAG = '0'
+		left join ins_qgyb_dictmap map on map.pk_his = dept.PK_DEPT and
+		map.CODE_TYPE = 'CATY' and EU_HPDICTTYPE='01'
+		where pv.PK_PV = #{pkPv,jdbcType=VARCHAR}
+	</select>
+
+	<select id="qryVisitInfo" resultType="com.zebone.nhis.common.module.compay.ins.qgyb.InsQgybVisit">
+		select * from ins_qgyb_visit
+			where del_flag = '0'
+				<if test="pkPv!=null and pkPv!=''">
+					and pk_pv = #{pkPv,jdbcType=CHAR}
+				</if>
+				<if test="pkVisit!=null and pkVisit!=''">
+					and pk_Visit = #{pkVisit,jdbcType=CHAR}
+				</if>
+	  	order by CREATE_TIME desc
+	</select>
+
+	<select id="qryVisitDtls" resultType="DynaBean">
+		select
+			pv.pk_pv,pv.pk_pi,pv.NAME_PI,pv.code_pv,pv.DATE_BEGIN,
+			visit.*
+		from INS_QGYB_VISIT visit
+			left join PV_ENCOUNTER pv on visit.pk_pv = pv.pk_pv
+		<where>
+			<if test="pkPv != null and pkPv!=''">
+				and pv.pk_pv = #{pkPv,jdbcType=CHAR}
+			</if>
+			<if test="pkVisit != null and pkVisit!=''">
+				and visit.pk_visit = #{pkVisit,jdbcType=CHAR}
+			</if>
+			<if test="mdtrtId != null and mdtrtId!=''">
+				and visit.MDTRT_ID = #{mdtrtId,jdbcType=CHAR}
+			</if>
+		</where>
+		order by visit.CREATE_TIME desc
+	</select>
+
+	<select id="qryPvDiag" resultType="DynaBean">
+		select distinct diag.CODE_ICD as diag_code, --诊断代码
+		case when
+		BD_CNDIAG.DT_CNDIAGTYPE = '02' then '3'
+		else '1' end diag_type , --诊断类别
+		diag.SORT_NO as diag_srt_no, --诊断排序号
+		diag.DESC_DIAG as diag_name,
+		--诊断名称
+		dept.NAME_DEPT as diag_dept, --诊断科室
+		emp.CODE_EMP as dise_dor_no,
+		--诊断科室
+		emp.NAME_EMP as dise_dor_name, --诊断医生姓名
+		to_char(diag.CREATE_TIME, 'yyyy-MM-dd HH:mm:ss') as diag_time, --诊断时间
+		'1' as vali_flag --有效标志
+		from PV_DIAG diag
+		left join bd_cndiag on
+		bd_cndiag.CODE_ICD = diag.CODE_ICD and
+		bd_cndiag.DEL_FLAG = '0'
+		left
+		join PV_ENCOUNTER pv on pv.PK_PV = diag.PK_PV and pv.DEL_FLAG = '0'
+		left join bd_ou_dept dept on dept.PK_DEPT = pv.PK_DEPT and
+		dept.DEL_FLAG = '0'
+		left join BD_OU_EMPLOYEE emp on emp.PK_EMP =
+		diag.PK_EMP_DIAG and
+		emp.DEL_FLAG = '0'
+		where diag.DEL_FLAG = '0'
+		and
+		diag.FLAG_MAJ = '1'
+		and diag.PK_PV = #{pkPv,jdbcType=VARCHAR}
+	</select>
+
+	<select id="qryChargeDetailNoUpload" resultType="DynaBean">
+		select
+		case when dt.flag_settle='1' then -dt.CODE_CG || dt.SORTNO
+		else dt.CODE_CG || dt.SORTNO end feedetl_sn,
+		visit.MDTRT_ID as mdtrt_id,
+		visit.PSN_NO as psn_no,
+		#{chrgBchno,jdbcType=VARCHAR} as chrg_bchno,
+		inspv.dise_codg,
+		pres.PRES_NO as rxno,
+		'0' as rx_circ_flag,
+		dt.DATE_HAP as fee_ocur_time,
+		map.med_list_codg ,
+		map.CODE_HOSP as medins_list_codg,
+		dt.amount as det_item_fee_sumamt,
+		dt.QUAN as cnt,
+		dt.price as pric,
+		ord.DOSAGE as sin_dos_dscr,
+		freq.NAME as used_frqu_dscr,
+		ord.DAYS as prd_days,
+		'' as medc_way_dscr,
+		deptAp.CODE_DEPT as bilg_dept_codg,
+		deptAp.NAME_DEPT as bilg_dept_name,
+		empAp.CODE_EMP as bilg_dr_codg,
+		empAp.NAME_EMP as bilg_dr_name,
+		deptEx.CODE_DEPT as acord_dept_codg,
+		deptEx.NAME_DEPT as acord_dept_name,
+		'' as orders_dr_code,
+		'' as orders_dr_name,
+		case when ord.desc_fit is not null then ord.desc_fit
+			else
+				case when item.dt_sanitype is not null and item.dt_itemtype like '07%' then
+				 case item.dt_sanitype when '01' then '142' when '02' then '141' end
+				else '1' end
+		end hosp_appr_flag,
+		'' as tcmdrug_used_way,
+		'' as etip_flag,
+		'' as etip_hosp_code,
+		'' as dscg_tkdrug_flag,
+		'' as matn_fee_flag,
+		dt.name_cg,
+		dt.pk_cgop pk_cg
+		from pv_encounter pv
+		inner join BL_OP_DT dt on dt.pk_pv=pv.pk_pv
+		left join bd_item item on item.pk_item = dt.pk_item
+		left join CN_ORDER ord on ord.PK_CNORD=dt.PK_CNORD
+		left join CN_PRESCRIPTION pres on pres.PK_PRES =dt.PK_PRES
+		left join BD_OU_DEPT deptAp on deptAp.PK_DEPT=dt.PK_DEPT_APP
+		left join BD_OU_DEPT deptEx on deptEx.PK_DEPT=dt.PK_DEPT_EX
+		left join BD_OU_EMPLOYEE empAp on empAp.PK_EMP=dt.PK_EMP_APP
+		left join BD_TERM_FREQ freq on freq.code=ord.CODE_FREQ
+		left join (
+			select * from (
+				select * from INS_QGYB_VISIT vs where
+					vs.pk_pv = #{pkPv,jdbcType=CHAR}
+					<if test='pkVisit != null and pkVisit!=""'>
+						and vs.pk_visit = #{pkVisit,jdbcType=CHAR}
+					</if>
+				order by vs.CREATE_TIME desc
+			) where rownum=1
+		) visit on visit.PK_PV=pv.PK_PV
+		left join INS_QGYB_PV inspv on inspv.pk_pv=visit.pk_pv and inspv.MDTRT_ID = visit.MDTRT_ID and inspv.med_type=#{medType,jdbcType=VARCHAR}
+		left join INS_QGYB_ITEMMAP map on map.PK_ITEM=dt.PK_ITEM and map.del_flag='0' and map.state in ('0','1')
+		left join BD_itemcate cate on cate.pk_itemcate=dt.pk_itemcate
+		where pv.EU_PVTYPE in (1,2,4) and cate.code not in ('96')
+		<if test='rePay != null and rePay != "" and rePay.equals("1")'>
+			AND (dt.flag_settle = '0' OR dt.PK_SETTLE IS NULL)
+			AND nvl(dt.flag_insu,'0') = '0'
+		</if>
+		AND dt.del_flag = '0'
+		and pv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+		<if test="pkCgList != null">
+			and dt.pk_cgop IN
+			<foreach collection="pkCgList" item="pk" index="index"
+					 open="(" close=")" separator=",">
+				#{pk,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+		<if test="codePv != null">
+			and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+		</if>
+
+	</select>
+
+	<select id="qryYbStInfo" resultType="com.zebone.nhis.common.module.compay.ins.qgyb.InsQgybSt">
+		select * from ins_qgyb_st
+		 	where DEL_FLAG = '0'
+		 	 <if test="pkPv!=null and pkPv!=''">
+				 and pk_pv = #{pkPv,jdbcType=CHAR}
+			 </if>
+			<if test="setlId!=null and setlId!=''">
+				and setl_id = #{setlId,jdbcType=VARCHAR}
+			</if>
+			<if test="pkSettle!=null and pkSettle!=''">
+				and pk_settle = #{pkSettle,jdbcType=VARCHAR}
+			</if>
+
+	</select>
+
+	<select id="qrySrvResInfo" resultType="DynaBean">
+		 select
+		   case when emp.CODE_EMP is not null then dp.code else res.code end code_dept,
+		   case when emp.CODE_EMP is not null then dp.name else res.name end name_dept,
+		   emp.CODE_EMP,
+		   emp.NAME_EMP
+			from  sch_sch sch
+				inner join sch_resource res on res.pk_schres = sch.pk_schres
+				left join BD_OU_EMPLOYEE emp on emp.pk_emp = res.pk_emp
+				left join  sch_resource dp on res.pk_dept=dp.pk_schres
+			where pk_sch = #{pkSchSrv,jdbcType=CHAR}
+	</select>
+
+	<update id="updateOpdtFlagInsuByPk" parameterType="java.util.Map" >
+		update bl_op_dt set flag_insu= '${flagInsu}'
+			where pk_pv=#{pkPv,jdbcType=CHAR}
+			AND (flag_settle = '0' OR PK_SETTLE IS NULL) AND del_flag = '0'
+			<if test="pkCgList != null and pkCgList.size()>0">
+				and pk_cgop IN
+				<foreach collection="pkCgList" item="pkCgip" index="index" open="(" close=")" separator=",">
+					#{pkCgip,jdbcType=VARCHAR}
+				</foreach>
+			</if>
+	</update>
+
+	<select id="qryIpChargeDetailNoUpload" resultType="DynaBean">
+		select
+		case when dt.flag_settle='1' then -dt.CODE_CG || dt.SORTNO
+		else dt.CODE_CG || dt.SORTNO end  feedetl_sn,
+		visit.MDTRT_ID as mdtrt_id,
+		visit.PSN_NO as psn_no,
+		visit.MED_TYPE as med_type,
+		ord.ordsn drord_No,
+		dt.DATE_HAP as fee_ocur_time,
+		map.med_list_codg ,
+		map.CODE_HOSP as medins_list_codg,
+		round((dt.amount-dt.amount_add)/dt.quan,3)*dt.quan as det_item_fee_sumamt,
+		dt.QUAN as cnt,
+		round((dt.amount-dt.amount_add)/dt.quan,3) as pric,
+		ord.DOSAGE as sin_dos_dscr,
+		freq.NAME as used_frqu_dscr,
+		ord.DAYS as prd_days,
+		'' as medc_way_dscr,
+		deptAp.CODE_DEPT as bilg_dept_codg,
+		deptAp.NAME_DEPT as bilg_dept_name,
+		empAp.CODE_EMP as bilg_dr_codg,
+		empAp.NAME_EMP as bilg_dr_name,
+		deptEx.CODE_DEPT as acord_dept_codg,
+		deptEx.NAME_DEPT as acord_dept_name,
+		'' as orders_dr_code,
+		'' as orders_dr_name,
+		case when ord.desc_fit is not null then ord.desc_fit
+			else
+				case when item.dt_sanitype is not null and item.dt_itemtype like '07%' then
+					case item.dt_sanitype when '01' then '142' when '02' then '141' end
+				else '1' end
+		end hosp_appr_flag,
+		'' as tcmdrug_used_way,
+		'' as etip_flag,
+		'' as etip_hosp_code,
+		'' as dscg_tkdrug_flag,
+		'' as matn_fee_flag,
+		dt.name_cg,
+		dt.pk_cgip pk_cg
+		from pv_encounter pv
+		left join BL_IP_DT dt on dt.pk_pv=pv.pk_pv
+		left join bd_item item on item.pk_item = dt.pk_item
+		left join CN_ORDER ord on ord.PK_CNORD=dt.PK_CNORD
+		left join BD_OU_DEPT deptAp on deptAp.PK_DEPT=dt.PK_DEPT_APP
+		left join BD_OU_DEPT deptEx on deptEx.PK_DEPT=dt.PK_DEPT_EX
+		left join BD_OU_EMPLOYEE empAp on empAp.PK_EMP=dt.PK_EMP_APP
+		left join BD_TERM_FREQ freq on freq.code=ord.CODE_FREQ
+		left join (
+		select * from (
+		select * from INS_QGYB_VISIT vs where vs.pk_pv = #{pkPv,jdbcType=VARCHAR} and vs.del_flag = '0' order by CREATE_TIME desc
+		) where rownum=1
+		) visit on visit.PK_PV=pv.PK_PV
+		left join INS_QGYB_PV inspv on inspv.pk_pv=pv.pk_pv and inspv.del_flag = '0'
+		left join INS_QGYB_ITEMMAP map on map.PK_ITEM=dt.PK_ITEM and map.del_flag='0' and map.state in ('0','1')
+		left join BD_itemcate cate on cate.pk_itemcate=dt.pk_itemcate
+		where pv.EU_PVTYPE in ('3') and cate.code not in ('96')
+		<if test="rePay == null">
+			AND (dt.flag_settle = '0' OR dt.PK_SETTLE IS NULL)
+		</if>
+		AND nvl(dt.flag_insu,'0') = '0'
+		AND dt.del_flag = '0' and dt.flag_insu != '1'
+		and pv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+		<if test="dateEnd!=null and dateEnd!=''">
+			and dt.date_hap <![CDATA[<=]]> to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		</if>
+		<if test="pkCgList != null">
+			and dt.pk_cgip IN
+			<foreach collection="pkCgList" item="pk" index="index"
+					 open="(" close=")" separator=",">
+				#{pk,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+		<if test="codePv != null">
+			and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+		</if>
+		order by dt.quan desc
+	</select>
+
+	<update id="updateIpdtFlagInsuByPk" parameterType="java.util.Map" >
+		update bl_ip_dt set flag_insu= '${flagInsu}'
+		where pk_pv=#{pkPv,jdbcType=CHAR}
+		AND (flag_settle = '0' OR PK_SETTLE IS NULL) AND del_flag = '0'
+		<if test="pkCgList != null and pkCgList.size()>0">
+			and pk_cgip IN
+			<foreach collection="pkCgList" item="pkCgip" index="index" open="(" close=")" separator=",">
+				#{pkCgip,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+	</update>
+
+	<select id="qryIpChargeTotalAmt" resultType="java.lang.Double">
+		select
+			sum(amount) amount
+		from BL_IP_DT dt
+			where (dt.flag_settle = '0' OR dt.PK_SETTLE IS NULL)
+			AND dt.del_flag = '0'
+			and pk_pv=#{pkPv,jdbcType=VARCHAR}
+			<if test="dateEnd!=null and dateEnd!=''">
+				and dt.date_hap <![CDATA[<=]]> to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+			</if>
+			<if test="pkCgList != null">
+				and dt.pk_cgip IN
+				<foreach collection="pkCgList" item="pk" index="index"
+						 open="(" close=")" separator=",">
+					#{pk,jdbcType=VARCHAR}
+				</foreach>
+			</if>
+	</select>
+
+	<select id="qryInsuPvNoStInfo" resultType="com.zebone.nhis.common.module.pi.InsQgybPV">
+		select * from ins_qgyb_pv visit
+		where  del_flag = '0'
+		<if test="pkPv!=null and pkPv!= ''">
+			and visit.pk_pv = #{pkPv,jdbcType=CHAR}
+			and not exists (
+				select 1 from ins_qgyb_st st where st.pk_pv = #{pkPv,jdbcType=CHAR} and st.pk_inspv = visit.pk_inspv
+			)
+		</if>
+		<if test="medType!=null and medType!= '' ">
+			and visit.med_type = #{medType,jdbcType=VARCHAR}
+		</if>
+		order by visit.create_time desc
+	</select>
+
+	<select id="qryInsuStInfo" resultType="com.zebone.nhis.common.module.compay.ins.qgyb.InsQgybSt">
+		select * from INS_QGYB_ST
+		 where del_flag = '0'
+		  <if test='pkInsst!=null and pkInsst!=""'>
+			  and pk_insst = #{pkInsst,jdbcType=CHAR}
+		  </if>
+		<if test='setlId!=null and setlId!=""'>
+			and SETL_ID = #{setlId,jdbcType=CHAR}
+		</if>
+	</select>
+
+	<select id="qryRegChargeDetail" resultType="DynaBean">
+		select
+			item.pk_item,
+			item.code medins_list_codg,
+			item.name name_cg,
+			itemmap.med_list_codg
+		from bd_item item
+			left join ins_qgyb_itemmap itemmap on itemmap.pk_item = item.pk_item and itemmap.del_flag = '0' and itemmap.state in ('0','1')
+		where
+			item.pk_item in
+			<foreach collection="pkList" item="pkList" index="no" open="("
+					 separator="," close=")">
+				#{pkList}
+			</foreach>
+	</select>
+
+	<select id="qryInsuranceSettleDetail" resultType="com.zebone.nhis.compay.pub.vo.InsQgybSetlinfo">
+		SELECT
+		visit.psn_no                                                                               hi_no,
+		st.date_begin                                                                                setl_begn_date,
+		st.date_end                                                                                  setl_end_date,
+		pi.name_rel                                                                                  coner_name,
+		rltsdict.CODE                                                                              patn_rlts,
+		pi.addr_rel                                                                                  coner_addr,
+		pi.tel_rel                                                                                   coner_tel,
+		visit.mdtrt_id                                                                                   mdtrt_Id,
+		qgyb.setl_id                                                                                 setl_id,
+		'3'                                                                               hi_setl_lv,
+		visit.code_org                                                                               fixmedins_code,
+		visit.name_org                                                                               fixmedins_name,
+		h.health_card_no,
+		pi.code_ip                                                                                   medcas_no,
+		st.date_st                                                                                   dcla_time,
+		pi.name_pi                                                                                   psn_name,
+		case pi.dt_sex  when '02' then '1' when '03' then '2' else  '0' end                          gend,
+		pi.birth_date                                                                                brdy,
+		h.age_year                                                                                   age,
+		pi.dt_country                                                                                 ntly,
+		natydict.CODE                                                                                   naty,
+		certtypedict.CODE                                                                                 patn_cert_type,
+		pi.id_no                                                                                     certno,
+		prfsdict.CODE                                                                                   prfs,
+		pi.addr_cur                                                                                  curr_addr,
+		pi.unit_work                                                                                 emp_name,
+		pi.tel_work                                                                                  emp_tel,
+		pi.postcode_work                                                                             poscode,
+		pi.name_rel                                                                                  name_rel,
+		contact_relat_code,
+		contact_relat_name,
+		<!-- 医保类型 hitypedict.CODE   hi_type,-->
+		 '3' hi_type,
+		<!-- visit.code_areayd insuplc,-->
+		'440308' insuplc,
+		psntypedict.CODE                                                                            sp_psn_type,
+		qgyb.psn_part_amt                                                                            psn_selfpay,
+		qgyb.fulamt_ownpay_amt                                                                       psn_ownpay,
+		qgyb.amt_grzhzf                                                                              acct_pay,
+		qgyb.amt_grzf                                                                                psn_cashpay,
+		h.newborn_weight                                                                               nwb_bir_wt,
+		'1'                                                                                         nwb_adm_type,
+		admwaydict.CODE                                                                              adm_way,
+		h.admit_path_name,
+		'1'                                                                             ipt_med_type,
+		h.admit_time                                                                                 adm_time,
+		<!--admitdeptdict.CODE adm_caty, 入院科别-->
+		'A10'  adm_caty,
+		h.trans_dept_names refldept_dept,
+		h.dis_time dscg_time,
+		'A10' dscg_caty,
+		<!--deptdisdict.CODE dscg_caty,出院科别-->
+		h.in_hos_days act_ipt_days,
+		concat(concat(HOURS_BM, '/'), MINUTES_BM)                                                 AS vent_used_dura,
+		concat(concat(concat(concat(coma_day_bef, '/'), coma_hour_bef), '/'), coma_min_bef)       AS pwcry_bfadm_coma_dura,
+		concat(concat(concat(concat(coma_day_after, '/'), coma_hour_after), '/'), coma_min_after) AS pwcry_afadm_coma_dura,
+		h.days_gds                                                                                     spga_nurscare_days,
+		h.days_gdi                                                                                     lv1_nurscare_days,
+		h.days_gdii                                                                                    scd_nurscare_days,
+		h.days_gdiii                                                                                   lv3_nurscare_days,
+		diagdict.CODE                                                                                dscg_way,
+		h.receive_org_code                                                                             acp_optins_code,
+		h.receive_org_name                                                                             acp_medins_name,
+		h.flag_readmit                                                                                 days_rinp_flag_31,
+		h.readmit_purp                                                                                 days_rinp_pup_31,
+		h.consult_name                                                                                 chfpdr_name,
+		h.pk_emp_consult                                                                               chfpdr_code,
+		<!--bl.ebillbatchcode bill_code,票据代码-->
+		CASE  WHEN bl.ebillbatchcode is NULL THEN '0'ELSE bl.ebillbatchcode END                        bill_code,
+		<!--bl.ebillno bill_no,票据号码-->
+		CASE WHEN bl.ebillno   is NULL THEN '0' ELSE bl.ebillbatchcode END                             bill_no,
+		<!--bl.code_sn biz_sn,业务流水号-->
+		CASE  WHEN bl.code_sn is null   THEN '0' ELSE bl.ebillbatchcode END                             biz_sn,
+		'1'                                                                                 hi_paymtd
+		FROM bl_settle st
+		INNER JOIN pv_encounter pv ON st.pk_pv = pv.pk_pv
+		INNER JOIN pv_ip ip ON pv.pk_pv = ip.pk_pv
+		INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+		INNER JOIN bd_ou_dept dept ON pv.pk_dept = dept.pk_dept AND dept.del_flag = '0'
+		LEFT JOIN emr_home_page h ON pv.pk_pv = h.pk_pv AND h.del_flag = '0'
+		INNER JOIN ins_qgyb_st qgyb ON qgyb.pk_settle = st.PK_SETTLE
+		INNER JOIN ins_qgyb_visit visit ON visit.pk_visit = qgyb.pk_visit
+		INNER JOIN bd_hp hp ON st.pk_insurance = hp.pk_hp
+		LEFT JOIN bl_st_inv inv ON st.pk_settle = inv.pk_settle AND inv.DEL_FLAG = '0'
+		LEFT JOIN bl_invoice bl ON inv.pk_invoice = bl.pk_invoice AND bl.DEL_FLAG = '0' AND FLAG_CANC = '0'
+		LEFT JOIN ins_szyb_dict natydict ON natydict.CODE = pi.dt_sex AND natydict.code_type = 'qg_naty'
+		LEFT JOIN ins_szyb_dict certtypedict ON certtypedict.CODE = pi.dt_idtype AND certtypedict.code_type = 'qg_psn_cert_type'
+		LEFT JOIN bd_defdoc occu ON occu.CODE =  pi.dt_occu AND occu.code_defdoclist = '000010'
+		LEFT JOIN ins_szyb_dict prfsdict ON prfsdict.NAME = occu.NAME AND prfsdict.code_type = 'qg_prfs'
+		LEFT JOIN  bd_defdoc rlts on rlts.CODE=pv.dt_ralation and rlts.code_defdoclist='000013'
+		LEFT JOIN ins_szyb_dict rltsdict ON rlts.name = rltsdict.name AND rltsdict.code_type = 'qg_patn_rlts'
+		LEFT JOIN ins_szyb_dict hitypedict ON hitypedict.NAME = hp.NAME AND hitypedict.code_type = 'qg_hi_type'
+		LEFT JOIN ins_szyb_dict psntypedict ON psntypedict.CODE = qgyb.psn_type AND psntypedict.code_type = 'qg_sp_psn_type'
+		LEFT JOIN  bd_defdoc rlts on rlts.CODE=ip.dt_intype and rlts.code_defdoclist='000104'
+		LEFT JOIN ins_szyb_dict admwaydict ON admwaydict.name =rlts.NAME AND admwaydict.code_type = 'qg_adm_way'
+		LEFT JOIN  bd_defdoc rlts on rlts.CODE=ip.dt_outtype and rlts.code_defdoclist='000105'
+		LEFT JOIN ins_szyb_dict diagdict ON diagdict.name = rlts.name AND diagdict.code_type = 'qg_dscg_way'
+		LEFT JOIN ins_szyb_dict admitdeptdict ON admitdeptdict.CODE = ip.pk_dept_admit AND admitdeptdict.code_type = 'qg_dept'
+		LEFT JOIN ins_szyb_dict deptdisdict ON deptdisdict.CODE = ip.pk_dept_dis AND deptdisdict.code_type = 'qg_dept'
+		WHERE 1 = 1
+		<if test='pkSettle!=null and pkSettle!=""'>
+			and st.PK_SETTLE = #{pkSettle,jdbcType=CHAR}
+		</if>
+	</select>
+
+	<select id="qryInsQgybPayInfo" resultType="DynaBean">
+		select iqs.setl_id,iqsd.fund_pay_type,iqsd.fund_payamt
+		from ins_qgyb_st iqs
+		left join ins_qgyb_st_dt iqsd
+		on iqsd.pk_insst = iqs.pk_insst where 1=1
+		<if test='pkSettle!=null and pkSettle!=""'>
+			and iqs.PK_SETTLE = #{pkSettle,jdbcType=CHAR}
+		</if>
+	</select>
+
+	<select id="qryInsQgybItemInfo" resultType="DynaBean">
+		select iqs.setl_id,iqsc.med_chrgitm_type as med_chrgitm,sum(iqsc.det_item_fee_sumamt) as amt,
+		sum(case iqsc.chrgitm_lv when '01' then iqsc.det_item_fee_sumamt else 0 end) as claa_sumfee,
+		sum(case iqsc.chrgitm_lv when '02' then iqsc.det_item_fee_sumamt else 0 end) as clab_amt,
+		sum(case iqsc.chrgitm_lv when '03' then iqsc.det_item_fee_sumamt else 0 end) as fulamt_ownpay_amt
+		from ins_qgyb_st_cg iqsc
+		left join ins_qgyb_st iqs on iqs.pk_insst = iqsc.pk_insst  where 1=1
+		<if test='pkSettle!=null and pkSettle!=""'>
+			and iqs.PK_SETTLE = #{pkSettle,jdbcType=CHAR}
+		</if>
+		group by iqs.setl_id,iqsc.med_chrgitm_type
+	</select>
+	<select id="qryInsQgybOprnInfo" resultType="DynaBean">
+		select '1' as oprn_oprt_type,btd.diagname as oprn_oprt_name,btd.diagcode as oprn_oprt_code,
+		coa.date_plan as oprn_oprt_date, coa.name_emp_phy_op as oper_dr_name,boe.code_emp as oper_dr_code,iqs.setl_id
+		from ins_qgyb_st iqs
+		inner join bl_ip_dt bid on iqs.pk_settle = bid.pk_settle
+		inner join cn_order co on bid.pk_cnord = co.pk_cnord
+		inner join cn_op_apply coa on co.pk_cnord = coa.pk_cnord
+		left join bd_term_diag btd on coa.pk_op = btd.pk_diag
+		left join bd_ou_employee boe on coa.pk_emp_phy_op = boe.pk_emp and boe.del_flag='0'   where 1=1
+		<if test='pkSettle!=null and pkSettle!=""'>
+			and iqs.PK_SETTLE = #{pkSettle,jdbcType=CHAR}
+		</if>
+		union all
+		select '1' as oprn_oprt_type,btd.diagname as oprn_oprt_name,btd.diagcode as oprn_oprt_code,
+		coa.date_plan as oprn_oprt_date, coa.name_emp_phy_op as oper_dr_name ,boe.code_emp as oper_dr_code,iqs.setl_id
+		from ins_qgyb_st iqs
+		inner join bl_op_dt bod on iqs.pk_settle = bod.pk_settle
+		inner join cn_order co on bod.pk_cnord = co.pk_cnord
+		inner join cn_op_apply coa on co.pk_cnord = coa.pk_cnord
+		left join bd_term_diag btd on coa.pk_op = btd.pk_diag
+		left join bd_ou_employee boe on coa.pk_emp_phy_op = boe.pk_emp and boe.del_flag='0'  where 1=1
+		<if test='pkSettle!=null and pkSettle!=""'>
+			and iqs.PK_SETTLE = #{pkSettle,jdbcType=CHAR}
+		</if>
+	</select>
+	<select id="qryInsQgybDiagInfo" resultType="DynaBean">
+		select pd.code_icd as diag_code,pd.name_diag as diag_name,eu_admcon adm_cond_type,flag_maj maindiag_flag,
+		case
+		when pd.dt_diagtype = '0202' and pd.flag_maj_chn = '1' then '3'
+		when pd.dt_diagtype = '0202' and pd.flag_maj_chn = '0' then '4'
+		when pd.flag_maj = '1' then '1'
+		else '2' end as diag_type,
+		iqs.clr_type,iqs.setl_id
+		from ins_qgyb_st iqs
+		left join pv_diag pd on iqs.pk_pv = pd.pk_pv
+		where 1=1
+		<if test='pkSettle!=null and pkSettle!=""'>
+			and iqs.PK_SETTLE = #{pkSettle,jdbcType=CHAR}
+		</if>
+	</select>
+</mapper>

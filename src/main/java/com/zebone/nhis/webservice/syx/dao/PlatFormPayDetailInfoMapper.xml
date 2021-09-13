@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.PlatFormPayDetailInfoMapper">
+    <select id="getPayDetailInfo" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.PayDetailInfoReq"
+            resultType="com.zebone.nhis.webservice.syx.vo.platForm.PayDetailInfoRes">
+        
+        SELECT 
+			pi.name_pi username,
+			pv.code_pv infoseq,
+			0.00 AS payamout,
+			0.00 AS selfpayamout,
+			0.00 AS accountamount,
+			iitem.NAME detailFee,
+			cg.pk_cgop detailID,
+			cg.name_cg detailName,
+			cg.quan detailCount,
+			unit.NAME detailUnit,
+			cg.amount detailAmout 
+		FROM
+			pv_encounter pv
+			INNER JOIN pv_op op ON pv.pk_pv = op.pk_pv
+			INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+			INNER JOIN bl_op_dt cg ON pv.pk_pv = cg.pk_pv
+			INNER JOIN bd_unit unit ON cg.pk_unit = unit.pk_unit
+			INNER JOIN bd_invcate_item iitem ON cg.code_bill = iitem.
+			CODE INNER JOIN bd_invcate icate ON iitem.pk_invcate = icate.pk_invcate 
+		WHERE 
+			icate.eu_type = '0' 
+			AND cg.flag_settle = '0' 
+			<if test="userCardType == 0">
+				AND pi.id_no = #{userCardId,jdbcType=VARCHAR}
+			</if>
+			<if test="userCardType == 1">
+				AND pi.code_op = #{userCardId,jdbcType=VARCHAR}
+			</if>
+			<if test="userCardType == 2">
+				AND pi.citizen_no = #{userCardId,jdbcType=VARCHAR}
+			</if>
+			<if test="userCardType == 3">
+				AND pi.insur_no = #{userCardId,jdbcType=VARCHAR}
+			</if>
+			<if test="userCardType == 4">
+				AND pi.idno_rel = #{userCardId,jdbcType=VARCHAR}
+			</if>
+			<if test="userCardType == 5">
+				AND pi.mobile = #{userCardId,jdbcType=VARCHAR}
+			</if>
+			<if test='infoSeq != null and infoSeq != "" '> 
+		 		AND pv.code_pv = #{infoSeq,jdbcType=VARCHAR}
+			</if>
+    </select>
+</mapper>

@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.compay.ins.zsyb.dao.InsZsybIcdMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybIcd">
+        <id column="PK_INSZSYBICD" jdbcType="CHAR" property="pkInszsybicd"/>
+        <result column="PK_ORG" jdbcType="CHAR" property="pkOrg"/>
+        <result column="PK_PI" jdbcType="CHAR" property="pkPi"/>
+        <result column="PK_PV" jdbcType="CHAR" property="pkPv"/>
+        <result column="PK_SETTLE" jdbcType="CHAR" property="pkSettle"/>
+        <result column="EU_PVTYPE" jdbcType="VARCHAR" property="euPvtype"/>
+        <result column="JZJLH" jdbcType="CHAR" property="jzjlh"/>
+        <result column="JSYWH" jdbcType="CHAR" property="jsywh"/>
+        <result column="XGHCYZD" jdbcType="VARCHAR" property="xghcyzd"/>
+        <result column="XGHICDBM" jdbcType="VARCHAR" property="xghicdbm"/>
+        <result column="XGHZLFF" jdbcType="VARCHAR" property="xghzlff"/>
+        <result column="YYBH" jdbcType="VARCHAR" property="yybh"/>
+        <result column="JBR" jdbcType="VARCHAR" property="jbr"/>
+        <result column="XGHFZ" jdbcType="DECIMAL" property="xghfz"/>
+        <result column="KSRQ" jdbcType="TIMESTAMP" property="ksrq"/>
+        <result column="ZZRQ" jdbcType="TIMESTAMP" property="zzrq"/>
+        <result column="HZYWH" jdbcType="VARCHAR" property="hzywh"/>
+        <result column="FHBZ" jdbcType="VARCHAR" property="fhbz"/>
+        <result column="FHRQ" jdbcType="VARCHAR" property="fhrq"/>
+        <result column="FHZ" jdbcType="INTEGER" property="fhz"/>
+        <result column="MSG" jdbcType="VARCHAR" property="msg"/>
+        <result column="CREATOR" jdbcType="CHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="MODIFIER" jdbcType="CHAR" property="modifier"/>
+        <result column="MODITY_TIME" jdbcType="TIMESTAMP" property="modityTime"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+    </resultMap>
+    <select id="getInsZsybIcdById" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+             ins_zsyb_icd
+        WHERE            
+            PK_INSZSYBICD = #{pkInszsybicd,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllInsZsybIcd" resultMap="BaseResultMap">
+          SELECT * FROM ins_zsyb_icd 
+    </select>
+    
+    <delete id="deleteInsZsybIcd">
+        DELETE
+        FROM
+             ins_zsyb_icd
+        WHERE            
+            PK_INSZSYBICD  = #{pkInszsybicd,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveInsZsybIcd" parameterType="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybIcd" >
+        INSERT INTO ins_zsyb_icd
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkInszsybicd != null" >
+                PK_INSZSYBICD,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="pkPi != null" >
+                PK_PI,
+            </if>
+            <if test="pkPv != null" >
+                PK_PV,
+            </if>
+            <if test="pkSettle != null" >
+                PK_SETTLE,
+            </if>
+            <if test="euPvtype != null" >
+                EU_PVTYPE,
+            </if>
+            <if test="jzjlh != null" >
+                JZJLH,
+            </if>
+            <if test="jsywh != null" >
+                JSYWH,
+            </if>
+            <if test="xghcyzd != null" >
+                XGHCYZD,
+            </if>
+            <if test="xghicdbm != null" >
+                XGHICDBM,
+            </if>
+            <if test="xghzlff != null" >
+                XGHZLFF,
+            </if>
+            <if test="yybh != null" >
+                YYBH,
+            </if>
+            <if test="jbr != null" >
+                JBR,
+            </if>
+            <if test="xghfz != null" >
+                XGHFZ,
+            </if>
+            <if test="ksrq != null" >
+                KSRQ,
+            </if>
+            <if test="zzrq != null" >
+                ZZRQ,
+            </if>
+            <if test="hzywh != null" >
+                HZYWH,
+            </if>
+            <if test="fhbz != null" >
+                FHBZ,
+            </if>
+            <if test="fhrq != null" >
+                FHRQ,
+            </if>
+            <if test="fhz != null" >
+                FHZ,
+            </if>
+            <if test="msg != null" >
+                MSG,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="modifier != null" >
+                MODIFIER,
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkInszsybicd != null" >
+                #{pkInszsybicd,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=CHAR},
+            </if> 
+            <if test="pkPi != null" >
+                #{pkPi,jdbcType=CHAR},
+            </if> 
+            <if test="pkPv != null" >
+                #{pkPv,jdbcType=CHAR},
+            </if> 
+            <if test="pkSettle != null" >
+                #{pkSettle,jdbcType=CHAR},
+            </if> 
+            <if test="euPvtype != null" >
+                #{euPvtype,jdbcType=VARCHAR},
+            </if> 
+            <if test="jzjlh != null" >
+                #{jzjlh,jdbcType=CHAR},
+            </if> 
+            <if test="jsywh != null" >
+                #{jsywh,jdbcType=CHAR},
+            </if> 
+            <if test="xghcyzd != null" >
+                #{xghcyzd,jdbcType=VARCHAR},
+            </if> 
+            <if test="xghicdbm != null" >
+                #{xghicdbm,jdbcType=VARCHAR},
+            </if> 
+            <if test="xghzlff != null" >
+                #{xghzlff,jdbcType=VARCHAR},
+            </if> 
+            <if test="yybh != null" >
+                #{yybh,jdbcType=VARCHAR},
+            </if> 
+            <if test="jbr != null" >
+                #{jbr,jdbcType=VARCHAR},
+            </if> 
+            <if test="xghfz != null" >
+                #{xghfz,jdbcType=DECIMAL},
+            </if> 
+            <if test="ksrq != null" >
+                #{ksrq,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="zzrq != null" >
+                #{zzrq,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="hzywh != null" >
+                #{hzywh,jdbcType=VARCHAR},
+            </if> 
+            <if test="fhbz != null" >
+                #{fhbz,jdbcType=VARCHAR},
+            </if> 
+            <if test="fhrq != null" >
+                #{fhrq,jdbcType=VARCHAR},
+            </if> 
+            <if test="fhz != null" >
+                #{fhz,jdbcType=INTEGER},
+            </if> 
+            <if test="msg != null" >
+                #{msg,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=CHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="modifier != null" >
+                #{modifier,jdbcType=CHAR},
+            </if> 
+            <if test="modityTime != null" >
+                #{modityTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=TIMESTAMP},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateInsZsybIcd" parameterType="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybIcd" >
+        UPDATE ins_zsyb_icd
+        <set>
+            <if test="pkInszsybicd != null" >
+                PK_INSZSYBICD = #{pkInszsybicd,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=CHAR},
+            </if>
+            <if test="pkPi != null" >
+                PK_PI = #{pkPi,jdbcType=CHAR},
+            </if>
+            <if test="pkPv != null" >
+                PK_PV = #{pkPv,jdbcType=CHAR},
+            </if>
+            <if test="pkSettle != null" >
+                PK_SETTLE = #{pkSettle,jdbcType=CHAR},
+            </if>
+            <if test="euPvtype != null" >
+                EU_PVTYPE = #{euPvtype,jdbcType=VARCHAR},
+            </if>
+            <if test="jzjlh != null" >
+                JZJLH = #{jzjlh,jdbcType=CHAR},
+            </if>
+            <if test="jsywh != null" >
+                JSYWH = #{jsywh,jdbcType=CHAR},
+            </if>
+            <if test="xghcyzd != null" >
+                XGHCYZD = #{xghcyzd,jdbcType=VARCHAR},
+            </if>
+            <if test="xghicdbm != null" >
+                XGHICDBM = #{xghicdbm,jdbcType=VARCHAR},
+            </if>
+            <if test="xghzlff != null" >
+                XGHZLFF = #{xghzlff,jdbcType=VARCHAR},
+            </if>
+            <if test="yybh != null" >
+                YYBH = #{yybh,jdbcType=VARCHAR},
+            </if>
+            <if test="jbr != null" >
+                JBR = #{jbr,jdbcType=VARCHAR},
+            </if>
+            <if test="xghfz != null" >
+                XGHFZ = #{xghfz,jdbcType=DECIMAL},
+            </if>
+            <if test="ksrq != null" >
+                KSRQ = #{ksrq,jdbcType=TIMESTAMP},
+            </if>
+            <if test="zzrq != null" >
+                ZZRQ = #{zzrq,jdbcType=TIMESTAMP},
+            </if>
+            <if test="hzywh != null" >
+                HZYWH = #{hzywh,jdbcType=VARCHAR},
+            </if>
+            <if test="fhbz != null" >
+                FHBZ = #{fhbz,jdbcType=VARCHAR},
+            </if>
+            <if test="fhrq != null" >
+                FHRQ = #{fhrq,jdbcType=VARCHAR},
+            </if>
+            <if test="fhz != null" >
+                FHZ = #{fhz,jdbcType=INTEGER},
+            </if>
+            <if test="msg != null" >
+                MSG = #{msg,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=CHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="modifier != null" >
+                MODIFIER = #{modifier,jdbcType=CHAR},
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME = #{modityTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        WHERE 
+            PK_INSZSYBICD = #{pkInszsybicd,jdbcType=CHAR}
+    </update>
+</mapper>

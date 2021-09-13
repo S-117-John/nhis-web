@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.task.reg.dao.SughRegOrderMapper">
+    <select id="qryPvInfoList" resultType="com.zebone.nhis.task.reg.vo.SughRegRequest" parameterType="java.util.Map">
+        select *
+        from (
+                 select deptpv.CODE_DEPT                                 orgDeptUuid,
+                        deptpv.CODE_DEPT                                 poolDeptUuid,
+                        deptpv.NAME_DEPT                                 orgDeptName,
+                        empsch.CODE_EMP                                  poolDeptEmpUuid,
+                        empsch.NAME_EMP                                  orgDeptEmpName,
+                        '1'                                              doctorType,
+                        '99'                                             scheduleType,
+                        case
+                            when resdate.CODE_DATESLOT = '0102' then '2'
+                            when resdate.CODE_DATESLOT = '0101' then '1'
+                            else '9' end                                 timePartType,
+                        '99'                                             orderResType,
+                        to_char(pv.DATE_BEGIN, 'yyyy-MM-dd')             sdate,
+                        nvl(to_char(pv.DATE_BEGIN, 'hh24:mi'), '00:00')  timeBegin,
+                        nvl(to_char(pv.DATE_END, 'hh24:mi'), '23:59')    timeEnd,
+                        pv.CODE_PV                                       orderSerial,
+                        pv.CODE_PV                                       hisOrderId,
+                        to_char(pv.CREATE_TIME, 'yyyy-MM-dd hh24:mi:ss') orderApplyTime,
+                        to_char(pv.TS, 'yyyy-MM-dd hh24:mi:ss')          orderEditTime,
+                        ''                                               orderFormIP,
+                        ''                                               orderLevel,
+                        pv.NAME_PI                                       pname,
+                        case pv.DT_SEX
+                            when '02' then '1'
+                            when '03' then '2'
+                            else '9' end                                 sex,
+                        to_char(pi.BIRTH_DATE, 'yyyy-MM-dd')             birthday,
+                        '1'                                              idcardType,
+                        pi.ID_NO                                         idcard,
+                        pi.INSUR_NO                                      insuranceCard,
+                        '1'                                              medicalCardType,
+                        pv.CODE_PV                                       medicalCard,
+                        pi.CODE_OP                                       patientId,
+                        ''                                               hisOfferPasswd,
+                        pi.MOBILE                                        mobile,
+                        pi.ADDRESS                                       homeAddr,
+                        ''                                               countryCode,
+                        ''                                               nationCode,
+                        ''                                               medicalType,
+                        ''                                               condition,
+                        ''                                               payChargeType,
+                        ''                                               extDataJson,
+                        ''                                               priceJSON,
+                        ''                                               refPersonJSON,
+                        ''                                               payAmount,
+                        ''                                               cashAmount,
+                        ''                                               insurAmount,
+                        ''                                               couponAmount,
+                        ''                                               payTime,
+                        ''                                               payDetailJSON,
+                        ''                                               hisTriageCode,
+                        ''                                               cancelReason,
+                        ''                                               cancelTime,
+                        '2'                                              status,
+                        '1'                                              payStatus,
+                        'NHIS'                                           serviceUuid,
+                        'NHIS'                                           serviceName,
+                        pv.CREATE_TIME
+                 from PV_ENCOUNTER pv
+                          inner join PI_MASTER pi on pi.PK_PI = pv.PK_PI
+                          inner join BD_OU_DEPT deptpv on deptpv.PK_DEPT = pv.PK_DEPT
+                          inner join PV_OP op on op.PK_PV = pv.PK_PV
+                          inner join BD_OU_EMPLOYEE empsch on empsch.PK_EMP = op.PK_EMP_PV
+                          inner join SCH_SCH sch on op.PK_SCH = sch.PK_SCH
+                          inner join BD_CODE_DATESLOT resdate on resdate.PK_DATESLOT = sch.PK_DATESLOT
+                 where pv.DATE_BEGIN &gt;= to_date(#{dateStart,jdbcType=VARCHAR}, 'yyyyMMddhh24miss')
+                   and pv.DATE_BEGIN &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyyMMddhh24miss')
+
+                 UNION
+                 select deptpv.CODE_DEPT                                 orgDeptUuid,
+                        deptpv.CODE_DEPT                                 poolDeptUuid,
+                        deptpv.NAME_DEPT                                 orgDeptName,
+                        empsch.CODE_EMP                                  poolDeptEmpUuid,
+                        empsch.NAME_EMP                                  orgDeptEmpName,
+                        '1'                                              doctorType,
+                        '99'                                             scheduleType,
+                        case
+                            when resdate.CODE_DATESLOT = '0102' then '2'
+                            when resdate.CODE_DATESLOT = '0101' then '1'
+                            else '9' end                                 timePartType,
+                        '99'                                             orderResType,
+                        to_char(pv.DATE_BEGIN, 'yyyy-MM-dd')             sdate,
+                        nvl(to_char(pv.DATE_BEGIN, 'hh24:mi'), '00:00')  timeBegin,
+                        nvl(to_char(pv.DATE_END, 'hh24:mi'), '23:59')    timeEnd,
+                        pv.CODE_PV                                       orderSerial,
+                        pv.CODE_PV                                       hisOrderId,
+                        to_char(pv.CREATE_TIME, 'yyyy-MM-dd hh24:mi:ss') orderApplyTime,
+                        to_char(pv.TS, 'yyyy-MM-dd hh24:mi:ss')          orderEditTime,
+                        ''                                               orderFormIP,
+                        ''                                               orderLevel,
+                        pv.NAME_PI                                       pname,
+                        case pv.DT_SEX
+                            when '02' then '1'
+                            when '03' then '2'
+                            else '9' end                                 sex,
+                        to_char(pi.BIRTH_DATE, 'yyyy-MM-dd')             birthday,
+                        '1'                                              idcardType,
+                        pi.ID_NO                                         idcard,
+                        pi.INSUR_NO                                      insuranceCard,
+                        '1'                                              medicalCardType,
+                        pv.CODE_PV                                       medicalCard,
+                        pi.CODE_OP                                       patientId,
+                        ''                                               hisOfferPasswd,
+                        pi.MOBILE                                        mobile,
+                        pi.ADDRESS                                       homeAddr,
+                        ''                                               countryCode,
+                        ''                                               nationCode,
+                        ''                                               medicalType,
+                        ''                                               condition,
+                        ''                                               payChargeType,
+                        ''                                               extDataJson,
+                        ''                                               priceJSON,
+                        ''                                               refPersonJSON,
+                        ''                                               payAmount,
+                        ''                                               cashAmount,
+                        ''                                               insurAmount,
+                        ''                                               couponAmount,
+                        ''                                               payTime,
+                        ''                                               payDetailJSON,
+                        ''                                               hisTriageCode,
+                        ''                                               cancelReason,
+                        ''                                               cancelTime,
+                        '2'                                              status,
+                        '1'                                              payStatus,
+                        'NHIS'                                           serviceUuid,
+                        'NHIS'                                           serviceName,
+                        pv.CREATE_TIME
+                 from PV_ENCOUNTER pv
+                          inner join PI_MASTER pi on pi.PK_PI = pv.PK_PI
+                          inner join BD_OU_DEPT deptpv on deptpv.PK_DEPT = pv.PK_DEPT
+                          inner join PV_ER er on er.PK_PV = pv.PK_PV
+                          inner join BD_OU_EMPLOYEE empsch on empsch.PK_EMP = er.PK_EMP_PV
+                          inner join SCH_SCH sch on er.PK_SCH = sch.PK_SCH
+                          inner join BD_CODE_DATESLOT resdate on resdate.PK_DATESLOT = sch.PK_DATESLOT
+                 where pv.DATE_BEGIN &gt;= to_date(#{dateStart,jdbcType=VARCHAR}, 'yyyyMMddhh24miss')
+                   and pv.DATE_BEGIN &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyyMMddhh24miss')
+             )
+        order by CREATE_TIME
+    </select>
+
+    <select id="qryPvRetInfoList" resultType="com.zebone.nhis.task.reg.vo.SughRegRequest" parameterType="java.util.Map">
+        select *
+        from (
+                 select deptpv.CODE_DEPT                                 orgDeptUuid,
+                        deptpv.CODE_DEPT                                 poolDeptUuid,
+                        deptpv.NAME_DEPT                                 orgDeptName,
+                        empsch.CODE_EMP                                  poolDeptEmpUuid,
+                        empsch.NAME_EMP                                  orgDeptEmpName,
+                        '1'                                              doctorType,
+                        '99'                                             scheduleType,
+                        case
+                            when resdate.CODE_DATESLOT = '0102' then '2'
+                            when resdate.CODE_DATESLOT = '0101' then '1'
+                            else '9' end                                 timePartType,
+                        '99'                                             orderResType,
+                        to_char(pv.DATE_BEGIN, 'yyyy-MM-dd')             sdate,
+                        nvl(to_char(pv.DATE_BEGIN, 'hh24:mi'), '00:00')  timeBegin,
+                        nvl(to_char(pv.DATE_END, 'hh24:mi'), '23:59')    timeEnd,
+                        pv.CODE_PV                                       orderSerial,
+                        pv.CODE_PV                                       hisOrderId,
+                        to_char(pv.CREATE_TIME, 'yyyy-MM-dd hh24:mi:ss') orderApplyTime,
+                        to_char(pv.TS, 'yyyy-MM-dd hh24:mi:ss')          orderEditTime,
+                        ''                                               orderFormIP,
+                        ''                                               orderLevel,
+                        pv.NAME_PI                                       pname,
+                        case pv.DT_SEX
+                            when '02' then '1'
+                            when '03' then '2'
+                            else '9' end                                 sex,
+                        to_char(pi.BIRTH_DATE, 'yyyy-MM-dd')             birthday,
+                        '1'                                              idcardType,
+                        pi.ID_NO                                         idcard,
+                        pi.INSUR_NO                                      insuranceCard,
+                        '1'                                              medicalCardType,
+                        pv.CODE_PV                                       medicalCard,
+                        pi.CODE_OP                                       patientId,
+                        ''                                               hisOfferPasswd,
+                        pi.MOBILE                                        mobile,
+                        pi.ADDRESS                                       homeAddr,
+                        ''                                               countryCode,
+                        ''                                               nationCode,
+                        ''                                               medicalType,
+                        ''                                               condition,
+                        ''                                               payChargeType,
+                        ''                                               extDataJson,
+                        ''                                               priceJSON,
+                        ''                                               refPersonJSON,
+                        ''                                               payAmount,
+                        ''                                               cashAmount,
+                        ''                                               insurAmount,
+                        ''                                               couponAmount,
+                        ''                                               payTime,
+                        ''                                               payDetailJSON,
+                        ''                                               hisTriageCode,
+                        ''                                               cancelReason,
+                        pv.DATE_CANCEL                                   cancelTime,
+                        '10'                                             status,
+                        pv.FLAG_SETTLE                                   payStatus,
+                        'NHIS'                                           serviceUuid,
+                        'NHIS'                                           serviceName,
+                        pv.CREATE_TIME
+                 from PV_ENCOUNTER pv
+                          inner join PI_MASTER pi on pi.PK_PI = pv.PK_PI
+                          inner join BD_OU_DEPT deptpv on deptpv.PK_DEPT = pv.PK_DEPT
+                          inner join PV_OP op on op.PK_PV = pv.PK_PV
+                          inner join BD_OU_EMPLOYEE empsch on empsch.PK_EMP = op.PK_EMP_PV
+                          inner join SCH_SCH sch on op.PK_SCH = sch.PK_SCH
+                          inner join BD_CODE_DATESLOT resdate on resdate.PK_DATESLOT = sch.PK_DATESLOT
+                 where pv.DATE_BEGIN &gt;= to_date(#{dateStart,jdbcType=VARCHAR}, 'yyyyMMddhh24miss')
+                   and pv.DATE_BEGIN &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyyMMddhh24miss')
+                   and pv.EU_STATUS = '9'
+                 UNION
+                 select deptpv.CODE_DEPT                                 orgDeptUuid,
+                        deptpv.CODE_DEPT                                 poolDeptUuid,
+                        deptpv.NAME_DEPT                                 orgDeptName,
+                        empsch.CODE_EMP                                  poolDeptEmpUuid,
+                        empsch.NAME_EMP                                  orgDeptEmpName,
+                        '1'                                              doctorType,
+                        '99'                                             scheduleType,
+                        case
+                            when resdate.CODE_DATESLOT = '0102' then '2'
+                            when resdate.CODE_DATESLOT = '0101' then '1'
+                            else '9' end                                 timePartType,
+                        '99'                                             orderResType,
+                        to_char(pv.DATE_BEGIN, 'yyyy-MM-dd')             sdate,
+                        nvl(to_char(pv.DATE_BEGIN, 'hh24:mi'), '00:00')  timeBegin,
+                        nvl(to_char(pv.DATE_END, 'hh24:mi'), '23:59')    timeEnd,
+                        pv.CODE_PV                                       orderSerial,
+                        pv.CODE_PV                                       hisOrderId,
+                        to_char(pv.CREATE_TIME, 'yyyy-MM-dd hh24:mi:ss') orderApplyTime,
+                        to_char(pv.TS, 'yyyy-MM-dd hh24:mi:ss')          orderEditTime,
+                        ''                                               orderFormIP,
+                        ''                                               orderLevel,
+                        pv.NAME_PI                                       pname,
+                        case pv.DT_SEX
+                            when '02' then '1'
+                            when '03' then '2'
+                            else '9' end                                 sex,
+                        to_char(pi.BIRTH_DATE, 'yyyy-MM-dd')             birthday,
+                        '1'                                              idcardType,
+                        pi.ID_NO                                         idcard,
+                        pi.INSUR_NO                                      insuranceCard,
+                        '1'                                              medicalCardType,
+                        pv.CODE_PV                                       medicalCard,
+                        pi.CODE_OP                                       patientId,
+                        ''                                               hisOfferPasswd,
+                        pi.MOBILE                                        mobile,
+                        pi.ADDRESS                                       homeAddr,
+                        ''                                               countryCode,
+                        ''                                               nationCode,
+                        ''                                               medicalType,
+                        ''                                               condition,
+                        ''                                               payChargeType,
+                        ''                                               extDataJson,
+                        ''                                               priceJSON,
+                        ''                                               refPersonJSON,
+                        ''                                               payAmount,
+                        ''                                               cashAmount,
+                        ''                                               insurAmount,
+                        ''                                               couponAmount,
+                        ''                                               payTime,
+                        ''                                               payDetailJSON,
+                        ''                                               hisTriageCode,
+                        ''                                               cancelReason,
+                        pv.DATE_CANCEL                                   cancelTime,
+                        '10'                                             status,
+                        pv.FLAG_SETTLE                                   payStatus,
+                        'NHIS'                                           serviceUuid,
+                        'NHIS'                                           serviceName,
+                        pv.CREATE_TIME
+                 from PV_ENCOUNTER pv
+                          inner join PI_MASTER pi on pi.PK_PI = pv.PK_PI
+                          inner join BD_OU_DEPT deptpv on deptpv.PK_DEPT = pv.PK_DEPT
+                          inner join PV_ER er on er.PK_PV = pv.PK_PV
+                          inner join BD_OU_EMPLOYEE empsch on empsch.PK_EMP = er.PK_EMP_PV
+                          inner join SCH_SCH sch on er.PK_SCH = sch.PK_SCH
+                          inner join BD_CODE_DATESLOT resdate on resdate.PK_DATESLOT = sch.PK_DATESLOT
+                 where pv.DATE_BEGIN &gt;= to_date(#{dateStart,jdbcType=VARCHAR}, 'yyyyMMddhh24miss')
+                   and pv.DATE_BEGIN &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyyMMddhh24miss')
+                   and pv.EU_STATUS = '9'
+             )
+        order by CREATE_TIME
+    </select>
+
+    <select id="qryPvIpInfoList" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.task.reg.vo.SughRegIpInputOrderReqVo">
+        select *
+        from (
+                 select ''                                              orgUuid,
+                        '深圳大学总医院'                                       orgName,
+                        pi.CODE_IP                                      inpatientNo,
+                        pvi.IP_TIMES                                    inpatientTimes,
+                        to_char(pv.DATE_BEGIN, 'yyyy-MM-dd hh24:mi:ss') admissionDate,
+                        pv.NAME_pi                                      pname,
+                        case pv.DT_SEX
+                            when '02' then '1'
+                            when '03' then '2'
+                            else '9' end                                sex,
+                        to_char(pi.BIRTH_DATE, 'yyyy-MM-dd')            birthday,
+                        case pi.DT_IDTYPE
+                            when '01' then '1'
+                            when '10' then '3'
+                            when '05' then '6'
+                            when '08' then '7'
+                            when '03' then '8'
+                            else '99' end                               idcardType,
+                        nvl(pi.ID_NO, '无')                              idcard,
+                        pi.MOBILE                                       mobile,
+                        pi.ADDRESS                                      homeAddr,
+                        pv.CREATE_TIME
+                 from PI_MASTER pi
+                          inner join pv_encounter pv on pv.PK_PI = pi.PK_PI
+                          inner join PV_IP pvi on pvi.PK_PV = pv.PK_PV
+                 where pv.DATE_BEGIN &gt;= to_date(#{dateStart,jdbcType=VARCHAR}, 'yyyyMMddhh24miss')
+                   and pv.DATE_BEGIN &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyyMMddhh24miss')
+             )
+        order by CREATE_TIME
+    </select>
+
+    <select id="qryPvIpOutInfoList" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.task.reg.vo.SughRegIpOutputOrderReqVo">
+        select *
+        from (
+                 select ''                                              orgUuid,
+                        '深圳大学总医院'                                       orgName,
+                        pv.DATE_END                                     dischargeDate,
+                        pi.CODE_IP                                      inpatientNo,
+                        pvi.IP_TIMES                                    inpatientTimes,
+                        to_char(pv.DATE_BEGIN, 'yyyy-MM-dd hh24:mi:ss') admissionDate,
+                        pv.NAME_pi                                      pname,
+                        pv.CREATE_TIME
+                 from PI_MASTER pi
+                          inner join pv_encounter pv on pv.PK_PI = pi.PK_PI
+                          inner join PV_IP pvi on pvi.PK_PV = pv.PK_PV
+                 where pv.FLAG_SETTLE = '1'
+                   and pv.FLAG_IN = '0'
+                   and pv.DATE_end &gt;= to_date(#{dateStart,jdbcType=VARCHAR}, 'yyyyMMddhh24miss')
+                   and pv.DATE_end &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyyMMddhh24miss')
+             )
+        order by CREATE_TIME
+    </select>
+</mapper>

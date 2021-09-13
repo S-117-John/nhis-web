@@ -1,0 +1,90 @@
+﻿<html>
+<head>
+    <title>帮助文档</title>
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type" />
+
+    <style type="text/css">
+    html,html body
+    {
+        font-family:宋体;
+        font-size:13px;
+    }
+    h2
+    {
+        font-family: "Trebuchet MS",Arial,sans-serif;
+    }
+    p
+    {
+        line-height:22px;
+    }
+    </style>
+</head>
+<body>
+    <center><h2>帮助文档说明</h2></center>
+    <h2>1.1 SQL类型</h2>
+    <p>1.支持表达式：${XXX}替换符、$!{XXX}参数、$0{ ** [XXX]}为空判断参数,$N{ ** [XXX]}为空判断拼接参数。</p>
+    <p>2.支持分页  ：支持分页参数（pageSize 每页记录数、pageIndex 当前页）</p>
+    <p>3.支持语句类型：select、update、delete</p>
+    <p>4.支持参数：   项目中目前的参数规范、用户属性</p>
+    <h4>具体说明</h4>
+    <h3>1.1.1 参数具体说明</h3>
+    <p>参数主要包含两个范围：请求参数和用户参数（会话参数）。</p>
+   	<h4>请求参数</h4>
+   	<p>主要是请求param中的Json对象，例如：http://IP:port/**/**.zb?param={“id”:”20”,”type”:”2”}</p>
+   	<h4>用户参数（会话参数）</h4>
+   	<p>主要由后台根据系统用户生成该对象，开发人员可见具体的用户对象。NHIS中具体开发类com.zebone.platform.common.support.User. </p>
+   	
+   	<h3>1.1.2 ${XXX} 和 $!{XXX}</h3>
+   	<p>用法：作为SQL语句中条件参数。例如 参数name为 张山 ，type为2的数据， 交易号为000001  Select * from test where name= ‘${name}’ and type = ${type}</p>
+	<h4>${XXX}字符串替换，对于字符类型的参数需要加单引号</h4>
+	<p>或者Select * from test where name=$!{name} and type = $!{type:INT} and pk_org = $!{UpkOrg}</p>
+	<h4>参数支持类型转换【INT，LONG，DOUBLE】 type 类型为整型</h4>
+	<p>请求路径proxy/handle.zb?trancode=000001<a>&</a>a>param={“name”:”张山”,”type”:”2”}备注：${XXX} 比 $!{XXX} 更加的灵活，可以替换 表名，整个条件，甚至是整个SQL语句。但是会带来SQL注入的风险。所以建议使用$!{XXX}。
+用户参数，例如User中pkOrg  统一加上U作为前缀 如条件：pk_org = $!{UpkOrg}</p>
+
+	<h3>1.1.3 $0{** [XXX]} ，  $N{** [XXX]}</h3>
+	<p>作用：判断XXX参数是否为空，如果为空该条件将不生效。其他规则同$!{XXX}</p>
+	<p>例如 ：交易号为000001 ， 数据表为test  </p>
+	<p>Select * from test where 1=1 $0{ and  name=[name]} $0{ and type=[type:INT]}</p>
+	<p>1：proxy/handle.zb?trancode=000001<a>&</a>param={} 查test全表数据</p>
+	<p>2：proxy/handle.zb?trancode=000001<a>&</a>param={“name”：“张三”} 查test表中name为张三的数据。</p>
+	<p>3：proxy/handle.zb?trancode=000001<a>&</a>param={“name”：“张三”，“type”:”2”} 查test表中name为张三的数据并且类型为2的数据。</p>
+    
+    <p>
+     $N{ **** [XXX]} 表达式   作用判断XXX是否存在如果存在把XXX直接拼接到SQL语句中   类似 $0{ *** [XXX]} 区别如下： </p>
+               <p>例如  SQL 语句 select * from  A where 0 = 0 $N{ and type in ([XXX])}  参数XXX值为1   执行SQL为  select * from  A where 0 = and type in （1）  </p>
+        <p> SQL 语句 select * from  A where 0 = 0 $0{ and type in ([XXX])}  参数XXX值为1   执行SQL为  select * from  A where 0 = and type in （?）   1作为 站位符参数处理
+    </p>
+    
+    
+    <h3>1.1.4 分页</h3>
+    <p>参数中只需要传入pageIndex和pageSize参数即可。结果将返回当前页数据和总记录数。</p>
+    <p>例如proxy/handle.zb?trancode=000001<a>&</a>param={“name”：“张三”，“pageSize”：10，“pageIndex”:1}</p>
+    <p>备注：pageIndex从1 开始</p>
+  
+    <h3>1.1.5 存储过程</h3>
+    <p>作用：调用存储，并且返回存储过程结果。</p>
+    <p>编写规则：存储过程名（#in参数…, out参数{类型}）</p>
+    <p>in参数:类型全部为字符串类型。out参数可定义类型，默认为字符串类型。</p>
+    <b>Out 参数明细：</b>
+    <b>string，char，默认：字符串类型</b>
+    <b> int：整型</b>
+    <b> date：日期</b>
+    <b>float：浮点型</b>
+    <b>double：</b>
+    <b> cursor:游标（列表，数据集）</b>
+    <p>例如，存储过程名 get_test  , in参数name ,type  out 参数 age,address</p>
+    <b>编写：</b>
+    <p>get_test(#name,#type,age{int},address)</p>
+    <b>访问：</b>
+    <p>proxy/handle.zb?trancode=000001<a>&</a>param={“name”：“张三”，“type”:”2”}</p>
+    <b>返回结果：</b>
+    <p>{</p>
+    <p>state：0，</p>
+	<p>dtat:{</p>
+	<p>age:20,</p>
+	<p>address:“江苏常州”</p>
+	<p>}</p>
+	<p>}</p>
+</body>
+</html>

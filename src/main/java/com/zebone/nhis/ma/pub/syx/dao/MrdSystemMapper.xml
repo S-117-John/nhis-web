@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.syx.dao.MrdSystemMapper">
+
+	<select id="qrySettlements" statementType="CALLABLE" parameterType="java.util.Map" resultType="DynaBean">
+	exec SP_Disease_score
+		#{beginoutdate, mode=IN,jdbcType=VARCHAR},
+		#{endoutdate, mode=IN,jdbcType=VARCHAR},
+		#{dateflag, mode=IN,jdbcType=VARCHAR}
+		<!-- select *  
+		from SP_DISEASE_SCORE score
+		where 1=1
+		 
+		<if test='dateflag != null and dateflag == "1" and beginoutdate !=null and beginoutdate !="" '>  
+			and to_char(score.JSRQ,'yyyy-MM-DD HH24:MI:SS') <![CDATA[>=]]> #{beginoutdate,jdbcType=VARCHAR}
+		</if>
+		<if test='dateflag != null and dateflag == "1" and endoutdate !=null and endoutdate !="" '>  
+			and to_char(score.JSRQ,'yyyy-MM-DD HH24:MI:SS') <![CDATA[<=]]> #{endoutdate,jdbcType=VARCHAR}
+		</if>
+		
+		<if test='dateflag != null and dateflag == "2" and beginoutdate !=null and beginoutdate !="" '>  
+			and to_char(score.OutDate,'yyyy-MM-DD HH24:MI:SS') <![CDATA[>=]]> #{beginoutdate,jdbcType=VARCHAR}
+		</if>
+		<if test='dateflag != null and dateflag == "2" and endoutdate !=null and endoutdate !="" '>  
+			and to_char(score.OutDate,'yyyy-MM-DD HH24:MI:SS') <![CDATA[<=]]> #{endoutdate,jdbcType=VARCHAR}
+		</if>
+		-->
+		
+	</select>
+	
+</mapper>

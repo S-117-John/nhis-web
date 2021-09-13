@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.PdMapper">
+	
+	<!-- 校验单位是否在药品表中引用 -->
+	<select id="queryUnitIsCite" resultType="int" parameterType="java.lang.String">
+		select count(1) from bd_pd 
+		where pk_unit_wt=#{pk_unit} or pk_unit_vol=#{pk_unit} or pk_unit_min=#{pk_unit} or pk_unit_pack=#{pk_unit}
+	</select>
+	
+</mapper>

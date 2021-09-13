@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pv.hd.dao.HdPvMapper">
+    <!--查询透析档案-->
+    <select id="queryHdPiMasterPkPi" parameterType="java.util.Map" resultType="DynaBean">
+        select pi.pk_pi,
+        hd.date_arch,
+        pi.code_pi,
+        hd.code_hd,
+        pi.name_pi,
+        sex.name DtSex,
+        pi.birth_date,
+        pi.mobile,
+        hd.cnt_week,
+        hdtype.name DtHdType,
+        hd.date_first,
+        hd.eu_status,
+        hd.date_death,
+        pi.create_time
+        from pi_master pi
+        inner join pi_hd hd on pi.pk_pi=hd.pk_pi
+        left outer join bd_defdoc sex
+        on pi.dt_sex = sex.code
+        and sex.code_defdoclist = '000000' and sex.del_flag='0'
+        left outer join bd_defdoc hdtype
+        on hd.dt_hdtype = hdtype.code
+        and hdtype.code_defdoclist = '120110' and hdtype.del_flag='0'
+        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+            <if test="codeHd != null and codeHd != ''">
+                and hd.code_hd=#{codeHd,jdbcType=VARCHAR}
+            </if>
+            <if test="codePi != null and codePi != ''">
+				and pi.code_pi=#{codePi,jdbcType=VARCHAR}
+            </if>
+            <if test="namePi != null and namePi != ''">
+                and pi.name_pi like '%'||#{namePi,jdbcType=VARCHAR}||'%'
+            </if>
+            <if test="dateFirst != null">
+                and  hd.date_first &gt;= to_date(#{dateFirst,jdbcType=VARCHAR},'yyyymmddhh24miss')
+            </if>
+            <if test="dateEnd != null">
+                and  hd.date_first &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyymmddhh24miss')
+            </if>
+            <if test="pkEmp != null and pkEmp != ''">
+                and  hd.pk_emp=#{pkEmp,jdbcType=VARCHAR}
+            </if>
+            <if test="euStatus != null and euStatus != ''">
+                and  hd.eu_status=#{euStatus,jdbcType=VARCHAR}
+            </if>
+        </trim>
+    </select>
+
+	<!--查询患者透析排班信息-->
+	<select id="queryHdSch" parameterType="java.util.Map"  resultType="DynaBean">
+		select sch.pk_schhd,     
+	       sch.pk_pi,       
+	       pi.name_pi,      
+	       sch.pk_hdbed,    
+	       bed.pk_dept_ns,  
+	       dept.name_dept,  
+	       bed.name_bed,
+	       sch.pk_dateslot, 
+	       ds.name_dateslot, 
+	       bed.pk_dept,
+	       sch.date_opt,
+	       pvHd.eu_status_hd,
+	       sch.date_hd
+	  from sch_sch_hd sch
+	       inner join pi_master pi on sch.pk_pi=pi.pk_pi
+	       inner join bd_res_hdbed bed on sch.pk_hdbed=bed.pk_hdbed
+	       inner join bd_ou_dept dept on bed.pk_dept_ns=dept.pk_dept
+	       inner join bd_code_dateslot ds on sch.pk_dateslot=ds.pk_dateslot
+	       left join pv_hd pvHd on sch.pk_schhd=pvHd.pk_schhd
+	 where sch.pk_org=#{pkOrg,jdbcType=CHAR} and sch.flag_canc='0' and sch.flag_confirm='0'
+	</select>
+
+<!--查询治疗记录-->
+    <select id="queryAcographyPkPi" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.pk_insu,
+        hd.pk_dept_ns,
+        hd.pk_hdbed,
+        hd.pk_dateslot,
+        hd.date_begin,
+        hd.dt_hdtype,
+        hd.eu_status_hd,
+        pv.eu_pvtype，
+        hp.NAME as insu_name
+        from pv_encounter pv
+        inner join pv_hd hd on pv.pk_pv=hd.pk_pv
+        inner join bd_hp hp on hp.PK_HP=pv.PK_INSU
+        inner join bd_res_hdbed bed on hd.pk_hdbed=bed.pk_hdbed
+        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+            and pv.pk_pi=#{pkPi,jdbcType=VARCHAR}
+            <if test="dateBegin != null and dateBegin != ''">
+                and  hd.date_begin &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyy-mm-dd')
+            </if>
+            <if test="dateEnd != null and dateEnd != ''">
+            and  hd.date_begin &lt; to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-mm-dd')+1
+            </if>
+        </trim>
+    </select>
+    
+    <!--查询透析患者信息-->
+	<select id="queryHdPiMaster" parameterType="java.util.Map"  resultType="com.zebone.nhis.pv.hd.vo.PiHdVo">
+		select 
+			m.pk_pi,   
+	        hd.code_hd,  
+	        m.name_pi,   
+	        m.dt_idtype, 
+	        m.id_no,     
+	        m.dt_sex,   
+	        m.birth_date,
+	        m.pk_picate, 
+	        m.dt_country,
+	        m.dt_nation, 
+	        m.dt_occu,  
+	        m.dt_marry, 
+	        m.mobile,   
+	        m.addr_birth,
+	        m.addr_origin, 
+	        m.addr_cur,  
+	        m.addr_cur_dt, 
+	        m.postcode_cur,
+	        m.addr_regi, 
+	        m.addr_regi_dt,
+	        m.postcode_regi,
+	        m.unit_work,  
+	        m.tel_work,   
+	        m.postcode_work,
+	        m.name_rel,
+	        m.tel_rel,
+	        m.addrcode_birth,
+	        m.addrcode_cur,
+	        m.addrcode_origin,
+	        m.addrcode_regi,
+      		hd.dt_hdtype,  
+            hd.cnt_week,
+       		birProv.name_div as addr_prov_birth ,
+       		birCity.name_div as addr_city_birth, 
+       		birDist.name_div as addr_dist_birth,
+         	orignProv.name_div as addr_prov_origin ,
+         	orignCity.name_div as addr_city_origin, 
+         	orignDist.name_div as addr_dist_origin,
+         	curProv.name_div as addr_prov_cur ,
+         	curCity.name_div as addr_city_cur, 
+         	curDist.name_div as addr_dist_cur,
+         	curStre.name_div as addr_stre_cur,
+         	rignProv.name_div as addr_prov_regi ,
+         	rignCity.name_div as addr_city_regi, 
+         	rignDist.name_div as addr_dist_regi  
+  		from pi_master m
+       	left outer join pi_hd hd on m.pk_pi=hd.pk_pi
+       	left join bd_admin_division birProv on birProv.code_div = (substr(m.addrcode_birth,0,2) || '0000000000') and birProv.del_flag = '0' 
+        left join bd_admin_division birCity on birCity.code_div = (substr(m.addrcode_birth,0,4) || '00000000') and birCity.del_flag = '0' 
+        left join bd_admin_division birDist on birDist.code_div = (substr(m.addrcode_birth,0,6) || '000000') and birDist.del_flag = '0'
+        left join bd_admin_division orignProv on orignProv.code_div = (substr(m.addrcode_origin,0,2) || '0000000000') and orignProv.del_flag = '0'
+        left join bd_admin_division orignCity on orignCity.code_div = (substr(m.addrcode_origin,0,4) || '00000000') and orignCity.del_flag = '0'
+        left join bd_admin_division orignDist on orignDist.code_div = (substr(m.addrcode_origin,0,6) || '000000')  and orignDist.del_flag = '0'
+        left join bd_admin_division curProv on curProv.code_div = (substr(m.addrcode_cur,0,2) || '0000000000') and curProv.del_flag = '0'
+	    left join bd_admin_division curCity on curCity.code_div = (substr(m.addrcode_cur,0,4) || '00000000') and curCity.del_flag = '0'
+	    left join bd_admin_division curDist on curDist.code_div = (substr(m.addrcode_cur,0,6) || '000000') and curDist.del_flag = '0'
+	    left join bd_admin_division curStre on curStre.code_div = (substr(m.addrcode_cur,0,9) || '000') and curStre.del_flag = '0'
+	    left join bd_admin_division rignProv on rignProv.code_div = (substr(m.addrcode_regi,0,2) || '0000000000') and rignProv.del_flag = '0'
+	    left join bd_admin_division rignCity on rignCity.code_div = (substr(m.addrcode_regi,0,4) || '00000000') and rignCity.del_flag = '0'
+	    left join bd_admin_division rignDist on rignDist.code_div = (substr(m.addrcode_regi,0,6) || '000000') and rignDist.del_flag = '0'
+ 		where m.pk_pi=#{pkPi,jdbcType=CHAR}
+	</select>
+	<select id="queyrPiRecord" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			pi.code_hd,   
+       		pv.name_pi,   
+       		hd.pk_pvhd,  
+       		hd.pk_dept,   
+       		hd.pk_dept_ns, 
+       		hd.pk_hdbed,  
+       		hd.pk_dateslot,
+       		hd.pk_emp_hd,  
+       		hd.name_emp_hd,
+       		hd.pk_dept_ns,
+       		hd.name_emp_ns,
+       		hd.dt_hdtype,  
+       		hd.date_begin  
+  		from pv_hd hd
+       	inner join pv_encounter pv on hd.pk_pv=pv.pk_pv
+       	inner join pi_hd pi on pv.pk_pi=pi.pk_pi
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			1=1
+ 		<if test=" pkPvhd != null and  pkPvhd != '' ">
+  			and hd.pk_pvhd=#{pkPvhd,jdbcType=CHAR} 
+  		</if>
+  		<if test=" pkHdbed != null and  pkHdbed != '' ">
+  			and hd.pk_hdbed=#{pkHdbed,jdbcType=CHAR} 
+  		</if>
+		</trim>	
+	</select>
+		<select id="queryPiVis" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			pi.pk_pi,    
+       		hd.code_hd,  
+       		pi.name_pi,  
+       		pi.dt_idtype,
+       		pi.id_no,     
+       		pi.dt_sex,  
+       		pi.birth_date,
+       		pi.pk_picate, 
+       		pi.dt_country,
+       		pi.dt_nation,
+       		pi.dt_occu,  
+       		pi.dt_marry, 
+       		pi.mobile,   
+       		pi.addr_birth,
+       		pi.addr_origin,
+       		pi.addr_cur,    
+       		pi.addr_cur_dt, 
+       		pi.postcode_cur,
+       		pi.addr_regi,  
+       		pi.addr_regi_dt,
+       		pi.postcode_regi, 
+       		pi.unit_work, 
+       		pi.tel_work,    
+       		pi.postcode_work, 
+       		pi.name_rel,
+			pi.dt_ralation,
+       		pi.tel_rel,
+			pi.addrcode_birth,
+			pi.addrcode_cur,
+			pi.addrcode_origin,
+			pi.addrcode_regi,
+       		hd.dt_hdtype as hd_dt_hdtype,  
+       		hd.cnt_week,   
+       		pv.code_pv,   
+       		pv.pk_insu,    
+       		pv.pk_picate,
+			pvhd.date_begin,
+       		pvhd.pk_dept,  
+       		pvhd.pk_dept_ns, 
+       		pvhd.pk_hdbed,  
+       		pvhd.pk_dateslot,
+       		pvhd.dt_hdtype as pvhd_dt_hdtype, 
+       		pvhd.name_emp_hd,
+       		pvhd.name_emp_ns,
+       		bed.code_bed,
+       		pv.pk_pv,
+       		hp.name as insu_name,
+       		dept.NAME_DEPT as dept_ns_name,
+       		diag.name_diag
+  		from pi_master pi
+       	inner join pi_hd hd on pi.pk_pi=hd.pk_pi
+       	inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+       	inner join pv_hd pvhd on pv.pk_pv=pvhd.pk_pv  
+       	inner join pv_diag diag on diag.pk_pv=pv.pk_pv
+       	inner join bd_res_hdbed bed on pvhd.pk_hdbed=bed.PK_HDBED and pi.pk_pi=bed.pk_pi
+       	inner join bd_hp hp on hp.PK_HP=pv.PK_INSU
+       	inner join BD_OU_DEPT dept on dept.PK_DEPT=pvhd.PK_DEPT_NS
+ 		where 
+ 			1=1
+ 		<if test=" pkPvhd != null and  pkPvhd != '' ">
+  			and pvhd.pk_pvhd=#{pkPvhd,jdbcType=CHAR} 
+  		</if>
+  		<if test=" pkHdbed != null and  pkHdbed != '' ">
+  			and pvhd.pk_hdbed=#{pkHdbed,jdbcType=CHAR} 
+  		</if>			 
+	</select>
+	
+	<select id="queryPiVisOrEnd" parameterType="java.util.Map" resultType="DynaBean">
+		select
+			pi.pk_pi,
+       		hd.code_hd,
+       		pi.name_pi,
+       		pi.dt_idtype,
+       		pi.id_no,
+       		pi.dt_sex,
+       		pi.birth_date,
+       		pi.pk_picate,
+       		pi.dt_country,
+       		pi.dt_nation,
+       		pi.dt_occu,
+       		pi.dt_marry,
+       		pi.mobile,
+       		pi.addr_birth,
+       		pi.addr_origin,
+       		pi.addr_cur,
+       		pi.addr_cur_dt,
+       		pi.postcode_cur,
+       		pi.addr_regi,
+       		pi.addr_regi_dt,
+       		pi.postcode_regi,
+       		pi.unit_work,
+       		pi.tel_work,
+       		pi.postcode_work,
+       		pi.name_rel,
+			pi.dt_ralation,
+       		pi.tel_rel,
+			pi.addrcode_birth,
+			pi.addrcode_cur,
+			pi.addrcode_origin,
+			pi.addrcode_regi,
+       		hd.dt_hdtype as hd_dt_hdtype,
+       		hd.cnt_week,
+       		pv.code_pv,
+       		pv.pk_insu,
+       		pv.pk_picate,
+			pvhd.date_begin,
+       		pvhd.pk_dept,
+       		pvhd.pk_dept_ns,
+       		pvhd.pk_hdbed,
+       		pvhd.pk_dateslot,
+       		pvhd.dt_hdtype as pvhd_dt_hdtype,
+       		pvhd.name_emp_hd,
+       		pvhd.name_emp_ns,
+       		bed.code_bed,
+       		pv.pk_pv,
+       		hp.name as insu_name,
+       		dept.NAME_DEPT as dept_ns_name,
+          indiag.NAME_DIAG
+  		from pi_master pi
+       	inner join pi_hd hd on pi.pk_pi=hd.pk_pi
+       	inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+       	inner join pv_hd pvhd on pv.pk_pv=pvhd.pk_pv
+       	left join bd_res_hdbed bed on pvhd.pk_hdbed=bed.PK_HDBED
+       	inner join bd_hp hp on hp.PK_HP=pv.PK_INSU
+       	inner join BD_OU_DEPT dept on dept.PK_DEPT=pvhd.PK_DEPT_NS
+       	left join (select NAME_DIAG ,pk_pv from (select row_number() 
+       		over(partition by pk_pv order by flag_maj desc) cnt, diag.pk_pv,diag.NAME_DIAG 
+       		from pv_diag diag ) res where res.cnt = 1
+       	) indiag on indiag.PK_PV=pv.PK_PV
+ 		where 
+ 			1=1
+ 		<if test=" pkPvhd != null and  pkPvhd != '' ">
+  			and pvhd.pk_pvhd=#{pkPvhd,jdbcType=CHAR} 
+  		</if>
+  		<if test=" pkHdbed != null and  pkHdbed != '' ">
+  			and pvhd.pk_hdbed=#{pkHdbed,jdbcType=CHAR} 
+  		</if>			 
+	</select>
+	
+	<!--查询最近一次透析治疗记录-->
+    <select id="queryLatelyTreatmentRecord" parameterType="java.util.Map" resultType="DynaBean">
+        select * from (
+			select pv.pk_insu,
+        		hd.pk_dept,
+        		hd.pk_dept_ns,
+		        hd.pk_hdbed,
+		        hd.pk_dateslot,
+		        hd.date_begin,
+		        hd.dt_hdtype,
+		        hd.eu_status_hd,
+		        pv.eu_pvtype，
+		        hp.NAME as insu_name
+	        from pv_encounter pv
+	        inner join pv_hd hd on pv.pk_pv=hd.pk_pv
+	        inner join bd_hp hp on hp.PK_HP=pv.PK_INSU
+	        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+	            and pv.pk_pi=#{pkPi,jdbcType=VARCHAR}
+	        </trim>
+        	order by hd.date_begin desc
+ 		) where  rownum=1
+    </select>
+    
+	<update id="updatePiMaster" parameterType="com.zebone.nhis.common.module.pi.PiMaster" >
+		UPDATE pi_master
+        set
+            addrcode_birth = #{addrcodeBirth,jdbcType=VARCHAR}, 
+            addr_birth = #{addrBirth,jdbcType=VARCHAR},
+            addrcode_origin = #{addrcodeOrigin,jdbcType=VARCHAR}, 
+            addr_origin = #{addrOrigin,jdbcType=VARCHAR},
+            postcode_regi= #{postcodeRegi,jdbcType=VARCHAR}, 
+            postcode_cur=#{postcodeCur,jdbcType=VARCHAR}, 
+            postcode_work=#{postcodeWork,jdbcType=VARCHAR}, 
+            tel_work=#{telWork,jdbcType=VARCHAR},
+            unit_work=#{unitWork,jdbcType=VARCHAR},
+            addrcode_regi=#{addrcodeRegi,jdbcType=VARCHAR}, 
+			addrcode_cur=#{addrcodeCur,jdbcType=VARCHAR},	
+			addr_cur=#{addrCur,jdbcType=VARCHAR},
+			addr_cur_dt=#{addrCurDt,jdbcType=VARCHAR},
+			addr_regi=#{addrRegi,jdbcType=VARCHAR},
+		    addr_regi_dt=#{addrRegiDt,jdbcType=VARCHAR}
+        WHERE 
+            pk_pi = #{pkPi,jdbcType=CHAR}
+	</update>
+	
+</mapper>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.base.dao.ZsbaBlConsultationFreeMapper">
+
+    <select id="qryBlConFreeApplyList" parameterType="java.util.Map" resultType="DynaBean">
+        SELECT
+	       free.*,
+	       case when free.pk_ord is not null then free.pk_ord else free.PK_DIAG end pk_ord_diag,
+	       emp.name_emp as name_creat
+        FROM
+	       bl_consultation_free free
+	    LEFT JOIN BD_OU_EMPLOYEE emp on emp.pk_emp=free.CREATOR
+        where 1=1
+        <if test='euType != null and euType !="" '>
+            and free.eu_type = #{euType,jdbcType=VARCHAR}
+        </if>
+        <if test='euRel != null and euRel !="" and euRel !="3" '>
+            and free.eu_rel = #{euRel,jdbcType=VARCHAR}
+        </if>
+        <if test='delFlag != null and delFlag !="" '>
+            and free.del_flag = #{delFlag,jdbcType=VARCHAR}
+        </if>
+        <if test='pkOrd != null and pkOrd !="" '>
+            and free.pk_ord = #{pkOrd,jdbcType=VARCHAR}
+        </if>
+        <if test='pkDiag != null and pkDiag !="" '>
+            and free.pk_diag = #{pkDiag,jdbcType=VARCHAR}
+        </if>
+        <if test='pkOrds != null and pkDiags !=null '>
+            and 
+            (
+               free.pk_ord in 
+               <foreach collection="pkOrds" item="pkOrd" open="(" separator="," close=")">
+                   #{pkOrd,jdbcType=VARCHAR}
+               </foreach>
+               or
+               and free.pk_diag in 
+               <foreach collection="pkDiags" item="pkDiag" open="(" separator="," close=")">
+                   #{pkDiag,jdbcType=VARCHAR}
+               </foreach>
+            )
+        </if>
+        <if test='pkOrds != null and pkDiags = null '>
+            and free.pk_ord in 
+            <foreach collection="pkOrds" item="pkOrd" open="(" separator="," close=")">
+                #{pkOrd,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test='pkDiags != null and pkOrds = null '>
+            and free.pk_diag in 
+            <foreach collection="pkDiags" item="pkDiag" open="(" separator="," close=")">
+                #{pkDiag,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        
+    </select>
+    
+</mapper>

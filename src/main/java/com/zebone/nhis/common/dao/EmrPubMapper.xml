@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.common.dao.EmrPubMapper">
+    <resultMap id="ResultMapEmrMedRec" type="com.zebone.nhis.common.module.emr.rec.rec.EmrMedRec">
+        <id column="PK_REC" jdbcType="CHAR" property="pkRec"/>
+        <result column="PK_PATREC" jdbcType="VARCHAR" property="pkPatrec"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="SEQ_NO" jdbcType="DECIMAL" property="seqNo"/>
+        <result column="REC_DATE" jdbcType="TIMESTAMP" property="recDate" />
+        <result column="DESCRIBE" jdbcType="VARCHAR" property="describe"/>
+        <result column="PK_PI" jdbcType="VARCHAR" property="pkPi"/>
+        <result column="TIMES" jdbcType="DECIMAL" property="times"/>
+        <result column="PK_PV" jdbcType="VARCHAR" property="pkPv"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="PK_WARD" jdbcType="VARCHAR" property="pkWard"/>
+        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+        <result column="PK_TMP" jdbcType="VARCHAR" property="pkTmp"/>
+        <result column="PK_DOC" jdbcType="VARCHAR" property="pkDoc"/>
+        <result column="FLAG_AUDIT" jdbcType="CHAR" property="flagAudit"/>
+        <result column="EU_AUDIT_LEVEL" jdbcType="DECIMAL" property="euAuditLevel"/>
+        <result column="EU_DOC_STATUS" jdbcType="CHAR" property="euDocStatus"/>
+        <result column="EU_AUDIT_STATUS" jdbcType="CHAR" property="euAuditStatus"/>
+        <result column="PK_EMP_REFER" jdbcType="VARCHAR" property="pkEmpRefer"/>
+        <result column="REFER_SIGN_DATE" jdbcType="DATE" property="referSignDate"/>
+        <result column="PK_EMP_CONSULT_ACT" jdbcType="VARCHAR" property="pkEmpConsultAct"/>
+        <result column="PK_EMP_CONSULT" jdbcType="VARCHAR" property="pkEmpConsult"/>
+        <result column="CONSULT_AUDIT_DATE" jdbcType="DATE" property="consultAuditDate"/>
+        <result column="CONSULT_SIGN_DATE" jdbcType="DATE" property="consultSignDate"/>
+        <result column="PK_EMP_DIRECTOR_ACT" jdbcType="VARCHAR" property="pkEmpDirectorAct"/>
+        <result column="PK_EMP_DIRECTOR" jdbcType="VARCHAR" property="pkEmpDirector"/>
+        <result column="DIRECTOR_AUDIT_DATE" jdbcType="DATE" property="directorAuditDate"/>
+        <result column="DIRECTOR_SIGN_DATE" jdbcType="DATE" property="directorSignDate"/>
+        <result column="DOC_DATA" jdbcType="BLOB" property="docData"/>
+        <result column="DOC_XML" jdbcType="CLOB" property="docXml"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+        <result column="DOC_XML" jdbcType="CLOB" property="docXml"/>
+    </resultMap>
+	<resultMap id="ResultMapMedDoc" type="com.zebone.nhis.common.module.emr.rec.rec.EmrMedDoc">
+        <id column="PK_DOC" jdbcType="CHAR" property="pkDoc"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="DOC_DATA" jdbcType="BLOB" property="docData"/>
+        <result column="DOC_XML" jdbcType="CLOB" property="docXml"/>
+        <result column="DOC_DATA_BAK" jdbcType="BLOB" property="docDataBak"/>
+        <result column="DOC_XML_BAK" jdbcType="CLOB" property="docXmlBak"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    <select id="queryPatMedRecByConds" resultMap="ResultMapEmrMedRec">
+        Select rec.*
+		  From EMR_MED_REC rec
+        WHERE            
+            rec.PK_PV = #{pkPv,jdbcType=CHAR} and nvl(rec.DEL_FLAG,'0')!='1'
+     	   <if test="typeCode != null" >
+              and rec.TYPE_CODE like #{typeCode,jdbcType=VARCHAR}
+           </if>
+   		<if test="orderBy != null" >
+            ${orderBy}
+        </if> 
+    </select>                  
+    <select id="getEmrMedDocById" resultMap="ResultMapMedDoc">
+        SELECT
+            *
+        FROM
+             EMR_MED_DOC
+        WHERE            
+            PK_DOC = #{pkDoc,jdbcType=CHAR}
+    </select>
+	<resultMap id="ResultMapEmrMedRecAll" type="com.zebone.nhis.common.module.emr.rec.rec.EmrMedRec">
+        <id column="PK_REC" jdbcType="CHAR" property="pkRec"/>
+        <result column="PK_PATREC" jdbcType="VARCHAR" property="pkPatrec"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="SEQ_NO" jdbcType="DECIMAL" property="seqNo"/>
+        <result column="REC_DATE" jdbcType="TIMESTAMP" property="recDate" />
+        <result column="DESCRIBE" jdbcType="VARCHAR" property="describe"/>
+        <result column="PK_PI" jdbcType="VARCHAR" property="pkPi"/>
+        <result column="TIMES" jdbcType="DECIMAL" property="times"/>
+        <result column="PK_PV" jdbcType="VARCHAR" property="pkPv"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="PK_WARD" jdbcType="VARCHAR" property="pkWard"/>
+        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+        <result column="PK_TMP" jdbcType="VARCHAR" property="pkTmp"/>
+        <result column="PK_DOC" jdbcType="VARCHAR" property="pkDoc"/>
+        <result column="FLAG_AUDIT" jdbcType="CHAR" property="flagAudit"/>
+        <result column="EU_AUDIT_LEVEL" jdbcType="DECIMAL" property="euAuditLevel"/>
+        <result column="EU_DOC_STATUS" jdbcType="CHAR" property="euDocStatus"/>
+        <result column="EU_AUDIT_STATUS" jdbcType="CHAR" property="euAuditStatus"/>
+        <result column="PK_EMP_REFER" jdbcType="VARCHAR" property="pkEmpRefer"/>
+        <result column="REFER_SIGN_DATE" jdbcType="DATE" property="referSignDate"/>
+        <result column="PK_EMP_CONSULT_ACT" jdbcType="VARCHAR" property="pkEmpConsultAct"/>
+        <result column="PK_EMP_CONSULT" jdbcType="VARCHAR" property="pkEmpConsult"/>
+        <result column="CONSULT_AUDIT_DATE" jdbcType="DATE" property="consultAuditDate"/>
+        <result column="CONSULT_SIGN_DATE" jdbcType="DATE" property="consultSignDate"/>
+        <result column="PK_EMP_DIRECTOR_ACT" jdbcType="VARCHAR" property="pkEmpDirectorAct"/>
+        <result column="PK_EMP_DIRECTOR" jdbcType="VARCHAR" property="pkEmpDirector"/>
+        <result column="DIRECTOR_AUDIT_DATE" jdbcType="DATE" property="directorAuditDate"/>
+        <result column="DIRECTOR_SIGN_DATE" jdbcType="DATE" property="directorSignDate"/>
+        <result column="DOC_DATA" jdbcType="BLOB" property="docData"/>
+        <result column="DOC_XML" jdbcType="CLOB" property="docXml"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+        <association property="template" javaType="com.zebone.nhis.common.module.emr.rec.tmp.EmrTemplate">
+	        <id column="PK_TMP" jdbcType="CHAR" property="pkTmp"/>
+	        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+	        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+	        <result column="DESCRIBE" jdbcType="VARCHAR" property="describe"/>
+	        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+	        <result column="EU_TMP_LEVEL" jdbcType="DECIMAL" property="euTmpLevel"/>
+	        <result column="TMP_TITLE" jdbcType="VARCHAR" property="tmpTitle"/>
+	        <result column="TEXT_TITLE" jdbcType="VARCHAR" property="textTitle"/>
+	        <result column="SORT_CODE" jdbcType="DECIMAL" property="sortCode"/>
+	        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+	        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+	        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+	        <result column="PK_WARD" jdbcType="VARCHAR" property="pkWard"/>
+	        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+	        <result column="FLAG_AUDIT" jdbcType="CHAR" property="flagAudit"/>
+	        <result column="AUDIT_LEVEL" jdbcType="DECIMAL" property="auditLevel"/>
+	        <result column="AUDIT_LEVEL_SET" jdbcType="VARCHAR" property="auditLevelSet"/>
+	        <result column="LIMIT_NUM" jdbcType="DECIMAL" property="limitNum"/>
+	        <result column="FLAG_DEFAULT" jdbcType="CHAR" property="flagDefault"/>
+	        <result column="FLAG_OPEN" jdbcType="CHAR" property="flagOpen"/>
+	        <result column="FLAG_MERGE" jdbcType="CHAR" property="flagMerge"/>
+	        <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp"/>
+	        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+	        <result column="DOC_DATA" jdbcType="BLOB" property="docData"/>
+	        <result column="DOC_XML" jdbcType="CLOB" property="docXml"/>
+	        <result column="ASSOCIATION_RULES" jdbcType="CLOB" property="associationRules"/>
+	        <result column="TMP_PATH" jdbcType="VARCHAR" property="tmpPath"/>
+	        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+	        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+	        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+	        <result column="TS" jdbcType="DATE" property="ts"/>
+        </association>   
+        <association property="docType" javaType="com.zebone.nhis.common.module.emr.rec.dict.EmrDocType">  
+            <id column="PK_DOCTYPE" jdbcType="CHAR" property="pkDoctype"/>
+	        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+	        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+	        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+	        <result column="PARENT_TYPE" jdbcType="VARCHAR" property="parentType"/>
+	        <result column="LEVELS" jdbcType="DECIMAL" property="levels"/>
+	        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+	        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+	        <result column="WS_CODE" jdbcType="VARCHAR" property="wsCode"/>
+	        <result column="EU_VISIT" jdbcType="CHAR" property="euVisit"/>
+	        <result column="EU_USED" jdbcType="CHAR" property="euUsed"/>
+	        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+	        <result column="TITLE" jdbcType="VARCHAR" property="title"/>
+	        <result column="FLAG_COURSE" jdbcType="CHAR" property="flagCourse"/>
+	        <result column="FLAG_FIRST" jdbcType="CHAR" property="flagFirst"/>
+	        <result column="FLAG_NEW_PAGE" jdbcType="CHAR" property="flagNewPage"/>
+	        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+	        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+	        <result column="PK_WARD" jdbcType="VARCHAR" property="pkWard"/>
+	        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+	        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+	        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+	        <result column="TS" jdbcType="DATE" property="ts"/> 
+        </association>                 
+    </resultMap>     
+	<select id="queryPatMedRecDoc" resultMap="ResultMapEmrMedRecAll">
+        select rec.*,tmp.*,typ.*
+		  from emr_med_rec rec
+		  left outer join emr_template tmp
+		    on rec.pk_tmp = tmp.pk_tmp
+		  left outer join emr_doc_type typ
+		    on tmp.type_code = typ.code
+        where rec.PK_PV = #{pkPv,jdbcType=CHAR} and nvl(rec.DEL_FLAG,'0')!='1'
+     	   <if test="typeCode != null" >
+              and rec.TYPE_CODE like #{typeCode,jdbcType=VARCHAR}
+           </if>
+		<if test="orderBy != null" >
+		       ${orderBy}
+		</if>         
+    </select>            
+</mapper>

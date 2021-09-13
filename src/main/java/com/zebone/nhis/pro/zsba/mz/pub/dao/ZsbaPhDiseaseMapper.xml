@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.mz.pub.dao.ZsbaPhDiseaseMapper">
+    <select id="qrySample" resultType="com.zebone.nhis.common.module.pro.lb.PhDiseaseSample">
+        SELECT
+	       c.* 
+        FROM  ph_disease_sample c
+	    LEFT JOIN ph_disease_foodborne b ON b.PK_FOODBORNE= c.PK_FOODBORNE
+        <where>
+            <if test="list !=null and list.size()>0">
+                b.PK_FOODBORNE in
+                <foreach collection="list" item="pk" open="(" separator="," close=")">
+                    #{pk,jdbcType=VARCHAR}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="qryFoodborne" resultType="com.zebone.nhis.pro.zsba.mz.pub.vo.PhDiseaseFoodVo">
+        select b.pk_phdise,c.*
+        from PH_DISEASE_FOODBORNE_DT c left join ph_disease_foodborne b on b.PK_FOODBORNE=c.PK_FOODBORNE
+        <where>
+            <if test="list !=null and list.size()>0">
+                b.pk_phdise in
+                <foreach collection="list" item="pk" open="(" separator="," close=")">
+                    #{pk,jdbcType=VARCHAR}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询食源性列表数据 -->
+    <select id="qrySearchData" resultType="DynaBean">
+        select DISTINCT
+             dis.*,
+             pi.pk_pi,
+             pi.name_pi,
+             pi.code_op,
+             pi.code_ip,
+             pi.dt_sex,
+             pi.mobile,
+             pi.birth_date,
+             pi.id_no,
+             pi.name_rel,
+             pi.unit_work,
+             pv.pk_pv,
+             pv.date_begin,
+             b.pk_foodborne,
+             b.flag_ip,
+             b.pk_phdise,
+             b.eu_occ,
+             b.eu_symptom,
+             b.temperature,
+             b.oth_symptom,
+             b.eu_digestive,
+             b.cnt_emisis,
+             b.cnt_diarrhea,
+             b.eu_diarrhea,
+             b.oth_digestive,
+             b.eu_respiratory,
+             b.oth_respiratory,
+             b.eu_cardio,
+             b.oth_cardio,
+             b.eu_urinary,
+             b.oth_urinary,
+             b.eu_neural,
+             b.eu_pupil,
+             b.oth_neural,
+             b.eu_skin,
+             b.oth_skin,
+             b.eu_firstdiag,
+             b.eu_useanti,
+             b.desc_anti,
+             b.eu_hist,
+             b.eu_unhygienic,
+             b.case_attachment,
+             b.name_emp_phy,
+             div.name_div
+        from ph_disease dis
+        left join ph_disease_foodborne b on dis.pk_phdise=b.pk_phdise
+        left join pv_encounter pv on pv.pk_pv=dis.pk_pv
+        left join pi_master pi on pv.pk_pi=pi.pk_pi
+        LEFT JOIN bd_admin_division div on div.code_div=dis.PROVINCE
+        where dis.del_flag!='1' and dis.dt_disecard = 'BA02'
+        <if test="pkDept !=null and pkDept !=''">
+            and pv.pk_dept = #{pkDept, jdbcType=VARCHAR}
+        </if>
+        <if test="pkPv !=null and pkPv !=''">
+            and pv.pk_pv = #{pkPv, jdbcType=VARCHAR}
+        </if>
+        <if test="codeIp !=null and piData !=''">
+            and pi.code_ip = #{codeIp, jdbcType=VARCHAR}
+        </if>
+        <if test="codeOp !=null and piData !=''">
+            and pi.code_op = #{codeOp, jdbcType=VARCHAR}
+        </if>
+        <if test="codePi !=null and piData !=''">
+            and pi.code_pi = #{codePi, jdbcType=VARCHAR}
+        </if>
+        <if test="namePi !=null and piData !=''">
+            and pi.name_pi = #{namePi, jdbcType=VARCHAR}
+        </if>
+        <if test="dateBegin !=null and dateBegin !=''">
+            and dis.create_time &gt;= #{dateBegin,jdbcType=DATE}
+        </if>
+        <if test="dateEnd !=null and dateEnd !=''">
+            and dis.create_time &lt;= #{dateEnd,jdbcType=DATE}
+        </if>
+        <if test="euStatus !=null and euStatus !=''">
+            and  dis.EU_STATUS = #{euStatus,jdbcType=CHAR}
+        </if>
+        <if test="pkPhdises !=null and pkPddises !=''">
+            and dis.pk_phdise in
+            <foreach collection="pkPhdises" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <!-- 查询食源性列表数据 -->
+    <select id="qrySearchDataPkPv" resultType="DynaBean">
+        select DISTINCT
+        *
+        from pv_encounter pv
+        left join pi_master pi on pv.pk_pi=pi.pk_pi
+        where 1=1
+        <if test="pkDept !=null and pkDept !=''">
+            and pv.pk_dept = #{pkDept, jdbcType=VARCHAR}
+        </if>
+        <if test="pkPv !=null and pkPv !=''">
+            and pv.pk_pv = #{pkPv, jdbcType=VARCHAR}
+        </if>
+        <if test="codeIp !=null and piData !=''">
+            and pi.code_ip = #{codeIp, jdbcType=VARCHAR}
+        </if>
+        <if test="codeOp !=null and piData !=''">
+            and pi.code_op = #{codeOp, jdbcType=VARCHAR}
+        </if>
+        <if test="codePi !=null and piData !=''">
+            and pi.code_pi = #{codePi, jdbcType=VARCHAR}
+        </if>
+        <if test="namePi !=null and piData !=''">
+            and pi.name_pi = #{namePi, jdbcType=VARCHAR}
+        </if>
+    </select>
+
+    <select id="getPhDiseaseHaramList" resultType="com.zebone.nhis.pro.zsba.mz.pub.vo.PhDiseaseHarm">
+        select
+            PDH.*
+        from PH_DISEASE_HARM PDH
+                     where   PDH.DEL_FLAG='0'
+                     and PDH.pk_pv = #{pkPv, jdbcType=VARCHAR}
+    </select>
+
+    <select id="getPhDiseaseList" resultType="com.zebone.nhis.common.module.pro.lb.PhDisease">
+        select
+        PDH.*
+        from PH_DISEASE PDH
+        where  PDH.DEL_FLAG='0' and PDH.dt_disecard='03'
+            and PDH.pk_pv = #{pkPv, jdbcType=VARCHAR}
+    </select>
+
+    <select id="getPhDiseaseHarams" resultType="DynaBean">
+        select harm.* from PH_DISEASE ph inner join PH_DISEASE_HARM harm on ph.PK_PV = harm.PK_PV
+        where ph.PK_PHDISE in
+        <foreach collection="pkPhdises" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+</mapper>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.dao.SystemPubRealizationMapper">
+	<select id="qryAssistOcc" parameterType="java.util.List" resultType="com.zebone.nhis.ma.pub.vo.AssistOccVo">
+		SELECT
+		  ord.ORDSN,
+		  ord.ORDSN_PARENT,
+		  exocc.PK_CNORD,
+		  exocc.PK_EXOCC,
+		  ord.PK_ORD,
+		  ord.PK_PV,
+		  ord.PK_PI,
+		  '3' as EU_PVTYPE,
+		  null as PK_EMP_ORD,
+		  null as NAME_EMP_ORD,
+		  null as PK_DEPT,
+		  '1' as time_occ,
+		  exocc.QUAN_OCC,
+		  '1' as times_total,
+		  exocc.PK_ORG_OCC,
+		  exocc.PK_DEPT_OCC,
+		  '0' as flag_occ,
+		  '0' as flag_canc,
+		  '0' as infant_no,
+		  '0' as eu_status,
+		  '0' as flag_prt,
+		  '0' as flag_refund,
+		  CASE WHEN ord.ORDSN=ord.ORDSN_PARENT THEN '1' ELSE '0' END as flag_maj
+		FROM EX_ORDER_OCC exocc
+		INNER JOIN CN_ORDER ord on ord.PK_CNORD=exocc.PK_CNORD
+		WHERE 1=1
+		  AND not exists(SELECT 1 FROM EX_ASSIST_OCC_DT assdt WHERE assdt.PK_EXOCC=exocc.PK_EXOCC)
+		  AND ord.CODE_APPLY is not null
+		  AND (ord.CODE_ORDTYPE LIKE '02%' or ord.CODE_ORDTYPE LIKE '03%')
+		  AND ord.PK_CNORD in
+		  <foreach item="item" index="index" collection="list" open="(" separator="," close=")">  
+           		#{item}  
+           </foreach>
+	</select>
+
+	<select id="querySendDrugAgainData" parameterType="java.util.Map" resultType="java.util.Map">
+		select distinct
+		de.code_de as codeDe,
+		de.date_de as dateDe,
+		de.pk_dept_ap as pkDeptAp,
+		bod.NAME_DEPT as nameDept,
+		de.name_emp_de as nameEmpDe,
+		de.name_decate as nameDecate,
+		de.pk_dept_de as pkDeptDe,
+		de.PK_PDDECATE as pkPddecate
+		from ex_pd_de de
+		INNER JOIN BD_OU_DEPT bod ON bod.PK_DEPT=de.PK_DEPT_AP
+		where 1=1
+		and de.flag_sendtofa='0'
+		and de.pk_pddecate=#{pkPddecate,jdbcType=VARCHAR}
+		and de.pk_dept_de=#{pkDeptDe,jdbcType=VARCHAR}
+		<!-- and de.code_de=? -->
+		<if test='codeDe!=null and codeDe!=""'>
+			and de.code_de=#{codeDe,jdbcType=VARCHAR}
+		</if>
+		<if test="dateBegin != null and dateBegin !=''">
+			and de.date_de &gt;= to_date(#{dateBegin},'yyyy-MM-dd hh24:mi:ss')
+		</if>
+		<if test="dateEnd != null and dateEnd !=''">
+			and de.date_de &lt;= to_date(#{dateEnd},'yyyy-MM-dd hh24:mi:ss')
+		</if>
+		<if test="pkDeptAp != null and pkDeptAp !=''">
+			and de.pk_dept_ap = #{pkDeptAp,jdbcType=VARCHAR}
+		</if>
+		ORDER BY de.DATE_DE DESC
+	</select>
+
+
+</mapper>

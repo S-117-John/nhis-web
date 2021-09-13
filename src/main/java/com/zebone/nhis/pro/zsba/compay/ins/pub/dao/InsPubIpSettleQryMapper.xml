@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.compay.ins.pub.dao.InsPubIpSettleQryMapper">
+    <select id="QryAmtAndPi" resultType = 'com.zebone.nhis.common.module.bl.BlAmtVo'  >
+
+	select sum(dt.amount) amt_sum,sum(dt.amount_pi) amt_pi  from bl_ip_dt  dt
+	inner join cn_order ord on dt.PK_CNORD=ord.PK_CNORD and dt.DEL_FLAG ='0'
+	where pk_pv = #{pkPv,jdbcType=VARCHAR}
+	and ord.eu_ordtype = '1' 
+	<if test="dateBegin != null  and  dateBegin != ''">
+		and date_cg &gt;=  to_date(substr(#{dateBegin,jdbcType=VARCHAR} ,1,8)||'000000', 'yyyymmddhh24miss')   
+	</if>
+	<if test="dateEnd != null  and  dateEnd != ''">
+		and date_cg &lt;=  to_date( substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'yyyymmddhh24miss')
+	</if> 
+	<if test="pkSettle!=null and pkSettle!=''">
+		and pk_settle = #{pkSettle,jdbcType=CHAR}
+	</if>
+</select>
+
+	 <select id="QryInvItemInfo" resultType="com.zebone.nhis.common.module.bl.InvItemVo">
+		         select invitem.pk_invcateitem,invitem.code,  invitem.name, sum(bl.amount) amount
+		  			from bd_invcate_item invitem
+		      		 inner join bd_invcate cate on invitem.pk_invcate=cate.pk_invcate and cate.del_flag = '0'
+		      		 inner join bd_invcate_itemcate iicate on invitem.pk_invcateitem=iicate.pk_invcateitem and iicate.del_flag = '0'
+		      		 inner join bl_ip_dt bl on iicate.pk_itemcate=bl.pk_itemcate and bl.del_flag = '0'
+				 where cate.eu_type = '1' and invitem.del_flag = '0' 
+			<if test="pkPv != null  and  pkPv != ''">
+			    and    	bl.pk_pv  = #{pkPv,jdbcType=VARCHAR}   
+	      </if>
+	      <if test="pkOrg != null  and  pkOrg != ''">
+			    and    	cate.pk_org  = #{pkOrg,jdbcType=VARCHAR}   
+	      </if>
+	       <if test="dateBegin!= null  and  dateBegin!= ''">
+			    and  bl.date_cg &gt;= to_date(substr(#{dateBegin,jdbcType=VARCHAR}, 1, 8)||'000000', 'YYYYMMDDHH24MISS') 
+	      </if>
+	       <if test="dateEnd != null  and  dateEnd != ''">
+			    and  bl.date_cg&lt;= to_date( substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'yyyymmddhh24miss')
+	      </if>
+	      <if test="pkSettle != null  and  pkSettle != ''">
+	      		and bl.pk_settle = #{pkSettle,jdbcType=CHAR} 
+	      </if>
+    	<if test="pkDepts != null ">
+    	   and bl.pk_dept_app in 
+			   <foreach collection="pkDepts" item="vo" index="index"
+			      open="(" close=")" separator=",">
+			      #{vo.pkDept,jdbcType=VARCHAR} 
+			  </foreach>
+	      </if>
+		group by invitem.pk_invcateitem,
+         invitem.code,
+         invitem.name
+    </select>
+    
+     <select id="qryDtDeptType" parameterType="java.util.Map" resultType="java.util.Map">
+		         select od.dt_depttype from bd_ou_employee emp inner join bd_ou_empjob ej on emp.pk_emp = ej.pk_emp
+				inner join bd_ou_dept od on od.pk_dept = ej.pk_dept
+				where emp.pk_emp = #{pkEmp,jdbcType=VARCHAR}   
+    </select>
+</mapper>

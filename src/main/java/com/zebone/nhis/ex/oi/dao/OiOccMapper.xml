@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.oi.dao.OiOccMapper">
+
+  <!-- 获得输液处方汇总表 -->
+  <select id="getOrderSumList" parameterType="java.util.Map" resultType="DynaBean"> 
+    select 
+      dt.eu_type,
+      count(distinct dt.reg_dt_no) total_count
+    from ex_infusion_reg_dt dt
+    where dt.pk_infureg = #{pkInfureg,jdbcType=VARCHAR} and
+      dt.remain_times > 0 and (
+      1= 1
+      <if test="infuMode.indexOf('0') >= 0 ">
+      	or dt.eu_type = '0' 
+      </if>
+      <if test="infuMode.indexOf('1') >= 0 ">
+        or dt.eu_type = '1' 
+      </if>
+      <if test="infuMode.indexOf('2') >= 0 ">
+        or dt.eu_type = '2'      
+      </if> 
+      <if test="infuMode.indexOf('3') >= 0 ">
+       	or dt.eu_type = '3'     
+      </if>      
+      )
+    group by   
+      dt.eu_type
+    order by dt.eu_type
+  </select>
+  
+  <!-- 获得输液处方列表（按类型获得） -->
+  <select id="getOrderList" parameterType="java.util.Map" resultType="DynaBean"> 
+    select 
+           distinct
+           ord.*,  
+           unit_dos.name unit_dos,--单位名称
+           sup.name supply, --用法名称
+           freq.name freq  --频次名称
+    from ex_infusion_reg_dt ord
+           left outer join bd_unit unit_dos on ord.pk_unit_dos=unit_dos.pk_unit
+           left outer join bd_term_freq freq on ord.code_freq=freq.code
+           left outer join bd_supply sup on ord.code_supply=sup.code
+     where
+          ord.remain_times > 0 and
+          ord.eu_type = #{euType,jdbcType=VARCHAR} and
+          ord.pk_infureg = #{pkInfureg,jdbcType=VARCHAR}        
+  </select>
+  
+  <!-- 获得执行列表 -->
+  <select id="getExecList" parameterType="java.util.Map" resultType="DynaBean"> 
+	select distinct occ.*, dt.eu_type , iv.name bed_name, 
+	  emp1.name_emp receive_name, emp2.name_emp assign_name,
+	  emp3.name_emp check_name, emp4.name_emp exec_name,
+	  emp5.name_emp eyre_name, emp6.name_emp finish_name,
+	  emp7.name_emp watch_name
+	from ex_infusion_occ occ
+	inner join ex_infusion_reg_dt dt on occ.pk_infureg = dt.pk_infureg and occ.reg_dt_no = dt.reg_dt_no 
+	left outer join bd_ou_employee emp1 on occ.emp_receive = emp1.pk_emp 
+	left outer join bd_ou_employee emp2 on occ.emp_assign = emp2.pk_emp 
+	left outer join bd_ou_employee emp3 on occ.emp_check = emp3.pk_emp 
+	left outer join bd_ou_employee emp4 on occ.emp_exec = emp4.pk_emp 
+	left outer join bd_ou_employee emp5 on occ.emp_eyre = emp5.pk_emp 
+	left outer join bd_ou_employee emp6 on occ.emp_finish = emp6.pk_emp 
+	left outer join bd_ou_employee emp7 on occ.emp_watch = emp7.pk_emp 
+	left outer join bd_place_iv iv on occ.pk_bed = iv.pk_placeiv 
+	where occ.pk_infureg = #{pkInfureg,jdbcType=VARCHAR} and occ.reg_dt_no = #{regDtNo,jdbcType=VARCHAR}
+	order by occ.exec_times
+  </select>  
+  
+  <!-- 获得执行明细操作列表 -->
+  <select id="getExecDetailList" parameterType="java.util.Map" resultType="DynaBean"> 
+    select occdt.*, emp.name_emp from ex_infusion_occ_dt occdt
+    left outer join bd_ou_employee emp on occdt.emp_opera = emp.pk_emp
+	where 
+	  <if test ="qryMode == '0'.toString() ">
+          occdt.pk_infureg = #{pkInfureg,jdbcType=VARCHAR}  
+     </if>
+     <if test ="qryMode == '1'.toString() ">
+          occdt.pk_infuocc = #{pkInfuocc,jdbcType=VARCHAR}   
+     </if>
+	order by occdt.pk_infuocc, occdt.date_opera
+  </select>   
+  
+    <!-- 获得不良反应列表 -->
+  <select id="getReactionList" parameterType="java.util.Map" resultType="DynaBean"> 
+	select rea.*, emp.name_emp from ex_infusion_reaction rea
+	left outer join bd_ou_employee emp on rea.emp_record = emp.pk_emp
+	where 
+	  <if test ="qryMode == '0'.toString() ">
+          rea.pk_infureg = #{pkInfureg,jdbcType=VARCHAR}  
+     </if>
+     <if test ="qryMode == '1'.toString() ">
+          rea.pk_infuocc = #{pkInfuocc,jdbcType=VARCHAR}  
+     </if>
+	order by rea.pk_infuocc, rea.date_record
+  </select>   
+  
+    <!-- 获得打印输液卡信息列表 -->
+  <select id="getPrintCardList" parameterType="java.util.Map" resultType="DynaBean"> 
+	  select 
+	    pi.barcode, pi.name_pi, pv.code_pv, sex.name as sex, pv.age_pv, pv.date_begin, dept.name_dept,  
+	    reg.register_no, regdt.reg_dt_no, reg.date_reg, 
+	    regdt.exec_times as total_times, regdt.remain_times, 
+	    regdt.name_ord, regdt.pk_ord, regdt.spec, regdt.pk_cnord,  
+	    regdt.dosage, unit.name unit_dos_name,  
+	    sup.name supply_name, freq.name freq_name, 
+	    regdt.days, regdt.note_supply, pd.barcode as ord_bar_code, regdt.eu_type
+	  from ex_infusion_register reg
+	  inner join pi_master pi on reg.pk_pi = pi.pk_pi
+	  inner join pv_encounter pv on reg.pk_pv = pv.pk_pv
+	  inner join ex_infusion_reg_dt regdt on reg.pk_infureg = regdt.pk_infureg and regdt.eu_type in ('0', '1') 
+	  left outer join bd_defdoc sex on pi.dt_sex = sex.code and sex.code_defdoclist = '000000'
+	  left outer join bd_unit unit on regdt.pk_unit_dos = unit.pk_unit
+	  left outer join bd_supply sup on regdt.code_supply = sup.code
+	  left outer join bd_term_freq freq on regdt.code_freq = freq.code
+	  left outer join bd_pd pd on regdt.pk_ord = pd.pk_pd
+	  left outer join bd_ou_dept dept on pv.pk_dept=dept.pk_dept 
+	  where reg.pk_infureg = #{pkInfureg,jdbcType=VARCHAR}  
+	  order by regdt.reg_dt_no, regdt.ordsn_parent
+  </select>    
+  
+    <!-- 获得打印贴瓶单信息列表 -->
+  <select id="getPrintLabelList" parameterType="java.util.Map" resultType="DynaBean"> 
+	  select 
+	    pi.barcode, pi.name_pi, pv.code_pv, sex.name as sex, pv.age_pv, pv.date_begin, dept.name_dept, 
+	    reg.register_no, regdt.reg_dt_no, 
+	    regdt.exec_times as total_times, regdt.remain_times, 
+	    regdt.name_ord, regdt.pk_ord, regdt.spec, regdt.pk_cnord,  
+	    regdt.dosage, unit.name unit_dos_name,  
+	    sup.name supply_name, freq.name freq_name, 
+	    regdt.days, regdt.note_supply, pd.barcode as ord_barcode,
+	    occ.exec_times, occ.occ_no, occ.date_plan, bed.name as bed_name
+	  from ex_infusion_register reg
+	  inner join pi_master pi on reg.pk_pi = pi.pk_pi
+	  inner join pv_encounter pv on reg.pk_pv = pv.pk_pv
+	  inner join ex_infusion_reg_dt regdt on reg.pk_infureg = regdt.pk_infureg and regdt.eu_type in ('0')  
+	  inner join ex_infusion_occ occ on reg.pk_infureg = occ.pk_infureg and regdt.reg_dt_no = occ.reg_dt_no
+	  left outer join bd_defdoc sex on pi.dt_sex = sex.code and sex.code_defdoclist = '000000'
+	  left outer join bd_unit unit on regdt.pk_unit_dos = unit.pk_unit
+	  left outer join bd_supply sup on regdt.code_supply = sup.code
+	  left outer join bd_term_freq freq on regdt.code_freq = freq.code
+	  left outer join bd_pd pd on regdt.pk_ord = pd.pk_pd
+	  left outer join bd_place_iv bed on occ.pk_bed = bed.pk_placeiv
+	  left outer join bd_ou_dept dept on pv.pk_dept=dept.pk_dept 
+	  where reg.pk_infureg = #{pkInfureg,jdbcType=VARCHAR} and occ.pk_infuocc = #{pkInfuocc,jdbcType=VARCHAR} 
+	  order by regdt.ordsn_parent
+  </select>   
+  
+  <!-- 更新执行表 -->
+  <update id="UpdateOcc" parameterType="java.util.Map"> 
+	update ex_infusion_occ set del_flag = '0' 
+	<if test="sMode == '3'.toString() ">
+		, date_receive = #{opDate,javaType=java.util.Date}, emp_receive = #{pkEmp,jdbcType=VARCHAR} 
+	</if>
+	<if test="sMode == '4'.toString() ">
+		, date_assign = #{opDate,javaType=java.util.Date}, emp_assign = #{pkEmp,jdbcType=VARCHAR} 
+	</if>	
+	<if test="sMode == '5'.toString() ">
+		, eyre_record = #{note,jdbcType=VARCHAR}, emp_eyre = #{pkEmp,jdbcType=VARCHAR} 
+	</if>		
+	<if test="sMode == '6'.toString() ">
+		, date_check = #{opDate,javaType=java.util.Date}, emp_check = #{pkEmp,jdbcType=VARCHAR} 
+	</if>			
+	<if test="sMode == '7'.toString() ">
+		, date_exec = #{opDate,javaType=java.util.Date}, emp_exec = #{pkEmp,jdbcType=VARCHAR}, begin_time = #{opDate,javaType=java.util.Date} 
+		, eu_status = '1'  
+	</if>		
+	<if test="sMode == '8'.toString() ">
+		, date_finish = #{opDate,javaType=java.util.Date}, emp_finish = #{pkEmp,jdbcType=VARCHAR}, end_time = #{opDate,javaType=java.util.Date} 
+		, eu_status = '2' 
+	</if>				
+	where pk_infuocc = #{pkInfuocc,jdbcType=VARCHAR}
+  </update>     
+  </mapper>

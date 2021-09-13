@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.pub.dao.SchOpdsPreMapper">
+	<select id="DispensingPatis" resultType="java.util.HashMap">
+		select pi.pk_pi, pi.code_pi, pi.name_pi from pi_master pi
+		where exists (select 1 from ex_pres_occ pres where pi.pk_pi=pres.pk_pi and
+		pres.flag_cg=1
+		<if test="pkDept!=null and pkDept!=''">
+			and pres.pk_dept_ex = #{pkDept,jdbcType=VARCHAR}
+		</if>
+		<if test="winno!=null and winno!=''">
+			and pres.winno_prep= #{winno,jdbcType=VARCHAR}
+		</if>
+		and pres.flag_prep=0 and pres.flag_conf=0 and pres.flag_canc=0)
+	</select>
+
+
+	<select id="DispensingPresDt" resultType="com.zebone.nhis.scm.pub.vo.OpPreRtnVo">
+		select dt.pk_presoccdt, dt.pk_pd, dt.pack_size, pd.name, fa.name
+		factory,
+		pd.spec, unit.name unit, dt.quan_cg, dt.price,dt.amount_cg, ord.dosage,
+		unit_dos.name unitdos,sup.name supply, freq.name freq, ord.days,
+		pds.posi_no,ord.ordsn,ord.ordsn_parent
+		from bd_pd pd
+		inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+		inner join ex_pres_occ_dt dt on pd.pk_pd=dt.pk_pd
+		inner join bd_unit unit on dt.pk_unit=unit.pk_unit
+		inner join cn_order ord on dt.pk_cnord=ord.pk_cnord
+		left join bd_unit unit_dos on ord.pk_unit_dos=unit_dos.pk_unit
+		left join bd_supply sup on ord.code_supply=sup.code
+		left join bd_term_freq freq on ord.code_freq=freq.code
+		inner join bd_pd_store pds on pd.pk_pd=pds.pk_pd and pds.pk_store=
+		#{pkStore,jdbcType=VARCHAR}
+		where 1=1
+		<if test="pkPresocc!=null and pkPresocc!=''">
+			and dt.pk_presocc= #{pkPresocc,jdbcType=VARCHAR}
+		</if>
+		 order by ord.ordsn_parent,ord.ordsn 
+	</select>
+
+
+	<select id="qryPresRecords" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.scm.pub.vo.ExPresOccPddtVO">
+		select pddt.pk_occpddt,
+		pddt.pk_presoccdt,
+		pddt.pk_pd,
+		pddt.batch_no,
+		pddt.pk_store,
+		pddt.pk_unit,
+		pddt.pack_size,
+		pddt.date_expire,
+		pddt.quan_pack - case when back.quan_pack is null then 0 else back.quan_pack end
+		quan_pack,
+		pddt.quan_min - case when back.quan_min is null then 0 else back.quan_min end
+		quan_min,
+		pddt.price_cost,
+		pddt.price,
+		pddt.amount_cost - case when back.amount_cost is null then 0 else back.amount_cost end
+		amount_cost,
+		pddt.amount - case when back.amount is null then 0 else back.amount end amount,
+		pddt.pk_pdstdt,
+		occ.pk_pv,
+		occdt.pk_cnord,
+		pddt.pres_no
+		from ex_pres_occ_pddt pddt
+		left outer join
+		(select sum(back.quan_pack) quan_pack,
+		sum(back.quan_min) quan_min,
+		sum(amount_cost) amount_cost,
+		sum(amount) amount,
+		back.pk_occpddt_back pk_occpddt_back
+		from ex_pres_occ_pddt back
+		where back.eu_direct=-1 and
+		back.pk_presoccdt=#{pkPresoccdt,jdbcType=VARCHAR}
+		group by back.pk_occpddt_back) back on pddt.pk_occpddt=back.pk_occpddt_back
+		left join ex_pres_occ_dt occdt on occdt.pk_presoccdt =
+		pddt.pk_presoccdt
+		left join ex_pres_occ occ on occ.pk_presocc = occdt.pk_presocc
+		where pddt.eu_direct=1 and
+		pddt.pk_presoccdt=#{pkPresoccdt,jdbcType=VARCHAR}
+	</select>
+
+	<update id='updExPresOcc' parameterType="java.util.Map">
+		update ex_pres_occ
+		set flag_conf = #{flagConf,jdbcType=VARCHAR},
+		date_conf=#{dateConf} ,
+		pk_emp_conf =#{pkEmpConf,jdbcType=VARCHAR},
+		name_emp_conf =#{nameEmpConf,jdbcType=VARCHAR},
+		eu_status =#{euStatus,jdbcType=VARCHAR}
+		<if test="nameEmpPrep!=null and nameEmpPrep!=''">
+			,pk_emp_prep =#{pkEmpPrep,jdbcType=VARCHAR},
+			name_emp_prep =#{nameEmpPrep,jdbcType=VARCHAR}
+		</if>
+		where pk_presocc = #{pkPresocc,jdbcType=VARCHAR}
+	</update>
+	<select id="QryPdStDts" resultType='com.zebone.nhis.common.module.scm.st.PdStDetail'>
+		select
+		dt.BATCH_NO,
+		dt.DATE_EXPIRE,
+		dt.PK_UNIT_PACK,
+		dt.QUAN_PACK,
+		dt.QUAN_MIN,
+		dt.PACK_SIZE,
+		round(dt.PRICE/pd.PACK_SIZE*dt.PACK_SIZE,6) as PRICE,
+		round(dt.PRICE_COST/pd.PACK_SIZE*dt.PACK_SIZE,6) as PRICE_COST,
+		dt.AMOUNT,
+		dt.AMOUNT_COST,
+		dt.PK_PDSTDT
+		from pd_st_detail dt
+		inner join bd_pd pd on dt.pk_pd = pd.pk_pd
+		 where dt.pk_pdstdt in
+		<foreach collection="list" item="pk" index="index" open="("
+			close=")" separator=",">
+			#{pk,jdbcType=VARCHAR}
+		</foreach>
+	</select>
+
+	<!-- 普通门诊处方单 -->
+	<select id="queryOpPresPrints" parameterType="java.util.Map"
+		resultType="DynaBean">
+		
+		SELECT
+dept.NAME_DEPT nameDept,
+  settle.AMOUNT_ST amountSt,
+  settle.DATE_ST dateSt,
+  invoice.CODE_INV codeInv,
+  diag.DIAGNAME,
+  org.NAME_ORG     AS nameOrg,
+  occ.PRES_NO      AS presNo,
+  pv.NAME_PI          name,
+  pv.AGE_PV           age,
+  pi.CODE_OP          codeOp,
+  CASE WHEN pi.DT_SEX = '02'
+    THEN '男'
+  WHEN pi.DT_SEX = '03'
+    THEN '女' END   AS sex,
+  dept.NAME_DEPT   AS nameDept,
+  invoice.CODE_INV AS codeInv,
+  pd.name          AS namePd,
+  pd.spec             specPd,
+  unit.name        AS unit,
+  occdt.quan_cg    AS quan,
+  occdt.price      AS price,
+  occdt.amount_cg  AS amount,
+  ord.dosage       AS dosage,
+  unit_dos.name    AS unitDos,
+  sup.name         AS nameSupply,
+  freq.name        AS freq,
+  ord.days         AS day,
+  ord.ordsn_parent AS flagGroup,
+  ord.ORDSN ordsn,
+  ord.ORDSN_PARENT parent
+FROM EX_PRES_OCC occ
+  INNER JOIN BD_OU_ORG org ON org.PK_ORG = occ.PK_ORG
+  INNER JOIN ex_pres_occ_dt occdt ON occ.PK_PRESOCC = occdt.PK_PRESOCC
+  INNER JOIN bd_pd pd ON occdt.PK_PD = pd.PK_PD
+  INNER JOIN bd_unit unit ON occdt.pk_unit = unit.pk_unit
+  INNER JOIN cn_order ord ON occdt.PK_CNORD = ord.pk_cnord
+  INNER JOIN PV_ENCOUNTER pv ON pv.PK_PV = ord.PK_PV
+  INNER JOIN BD_OU_DEPT dept ON dept.PK_DEPT = ord.PK_DEPT
+  LEFT JOIN bd_unit unit_dos ON ord.pk_unit_dos = unit_dos.pk_unit
+  LEFT JOIN bd_supply sup ON ord.code_supply = sup.code
+  LEFT JOIN bd_term_freq freq ON ord.code_freq = freq.code
+  INNER JOIN BL_OP_DT bl ON bl.PK_CNORD = ord.PK_CNORD
+  INNER JOIN BL_SETTLE settle ON settle.PK_SETTLE = bl.PK_SETTLE
+  INNER JOIN BL_ST_INV inv ON inv.PK_SETTLE = bl.PK_SETTLE
+  INNER JOIN BL_INVOICE invoice ON invoice.PK_INVOICE = inv.PK_INVOICE
+  INNER JOIN PI_MASTER pi ON pi.PK_PI = ord.PK_PI
+  INNER JOIN CN_DIAG cnDiag ON pv.PK_PV = cnDiag.PK_PV
+  INNER JOIN CN_DIAG_DT diagDt ON diagDt.PK_CNDIAG = cnDiag.PK_CNDIAG and diagDt.FLAG_MAJ = '1'
+  INNER JOIN BD_TERM_DIAG diag ON diag.PK_DIAG = diagDt.PK_DIAG
+WHERE occ.PK_PRESOCC = #{pkPresOcc} and occ.FLAG_CG = '1'
+	</select>
+
+
+	<select id="QryPresDtByPk" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.ex.nis.ns.ExPresOccDt">
+		select
+		   dt.pk_presocc,
+		   case when dt.QUAN_MIN_BACK is null  then 0 else dt.quan_min_back end quan_min_back,
+		   sto.pack_size,
+		   round(dt.price/dt.pack_size*sto.PACK_SIZE,6) price,
+		   dt.ORDS_BACK,
+		   dt.pk_presoccdt,
+		   sto.pk_unit
+		from ex_pres_occ_dt dt
+		inner join EX_PRES_OCC occ on occ.PK_PRESOCC=dt.PK_PRESOCC
+		inner join bd_pd_store sto on sto.pk_pd=dt.pk_pd and occ.pk_dept_ex=sto.pk_dept
+		where dt.PK_PRESOCCDT =#{pkPresoccdt,jdbcType=VARCHAR}
+	</select>
+</mapper>

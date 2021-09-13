@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.emr.dao.VtsMapper">
+
+	<select id="queryVtsByPV" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.ex.nis.emr.vo.ExVtsOccVo">
+		select * from ex_vts_occ
+		 where del_flag = '0'
+		   and pk_pv = #{pkPv,jdbcType=CHAR}
+		   and date_vts &lt; #{dateEnd,jdbcType=DATE}
+		   and date_vts &gt;= #{dateBegin,jdbcType=DATE}
+	</select>
+	
+	<select id="queryVtsDetailsByPV" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.common.module.ex.nis.emr.ExVtsOccDt">
+		select * from ex_vts_occ_dt where pk_vtsocc in (${pkVtsoccs})
+	</select>
+	
+	<select id="queryVtsByPvAndDate" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.ex.nis.emr.vo.ExVtsOccVo">
+		select * from ex_vts_occ
+		 where pk_pv = #{pkPv,jdbcType=CHAR}
+		   and to_char(date_vts,'YYYYMMDD') = #{dateCur,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="queryVtsDetailsByPk" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.common.module.ex.nis.emr.ExVtsOccDt">
+		select * from ex_vts_occ_dt 
+		 where pk_vtsocc in (${pkVtsoccs})  
+		<if test="euDateslot != null  and  euDateslot != ''">
+		   and eu_dateslot = #{euDateslot,jdbcType=VARCHAR}
+		</if>
+		<if test="hourVts != null  and  hourVts != ''">
+		   and hour_vts = #{hourVts,jdbcType=INTEGER}
+		</if>
+	</select>
+	
+	<select id="queryVtsByDate" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.ex.nis.emr.vo.ExVtsOccVo">
+		select pv.pk_pv as pk_pv_as, pv.name_pi, pv.code_pv, pv.bed_no,
+			   pv.pk_pi,pi.code_ip, occ.*
+		  from pv_encounter pv
+		 inner join pi_master pi on pi.pk_pi = pv.pk_pi
+		  left join ex_vts_occ occ on occ.pk_pv = pv.pk_pv 
+		   and occ.date_vts = to_date(#{dateCur},'YYYYMMDDHH24MISS') 
+		   and occ.infant_no ='0'
+		 where pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		   and pv.eu_status = '1'
+		<if test=" pkEmp != null and pkEmp != '' ">
+		   and exists (
+			select staff.pk_pv
+			  from pv_staff staff
+			 where staff.pk_pv = pv.pk_pv
+			   and staff.dt_role = '0100'
+			   and staff.pk_emp = #{pkEmp,jdbcType=DATE})
+		</if>
+		order by pv.bed_no
+	</select>
+	
+	<select id="queryLaborVtsByDate" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.ex.nis.emr.vo.ExVtsOccVo">
+		select pv.pk_pv as pk_pv_as, pv.name_pi, pi.code_ip, pv.code_pv, lab.bed_no,
+		       occ.*
+		  from pv_labor lab
+		 inner join pv_encounter pv on pv.pk_pv = lab.pk_pv and lab.eu_status = '1'
+		 inner join pi_master pi on pi.pk_pi = pv.pk_pi
+		  left join ex_vts_occ occ on occ.pk_pv = pv.pk_pv 
+		   and occ.date_vts = to_date(#{dateCur},'YYYYMMDDHH24MISS')
+		 where lab.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		   and pv.eu_status = '1' 
+		   and pv.eu_pvtype = '3'   <!-- 产房产妇体温 -->
+		union
+		select pv.pk_pv as pk_pv_as, pv.name_pi, pi.code_ip, pv.code_pv, '' as bed_no,
+		       occ.*
+		 from pv_encounter pv
+		inner join pi_master pi on pi.pk_pi = pv.pk_pi
+		inner join pv_infant infant on pv.pk_pv = infant.pk_pv_infant
+		inner join pv_labor lab on lab.pk_pv = infant.pk_pv 
+		  and lab.flag_in = '1'
+		  and lab.eu_status = '1'
+		 left join ex_vts_occ occ on occ.pk_pv = pv.pk_pv 
+		  and occ.date_vts = to_date(#{dateCur},'YYYYMMDDHH24MISS')
+		where lab.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		  and pv.eu_pvtype = '3'  <!-- 新生儿体温 -->
+		order by bed_no
+	</select>
+
+	<select id="queryNorNurse" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.ex.nis.emr.vo.NorNurseVo">
+		select pv.pk_pv,pv.pk_pi,pv.name_pi,pv.bed_no,recrow.date_entry,recrow.name_emp,dt.pk_recordrow,
+			   max(case when dt.dt_ndcoltype='03' then dt.val end) tiwen,
+			   max(case when dt.dt_ndcoltype='04' then dt.val end) maibo,
+			   max(case when dt.dt_ndcoltype='06' then dt.val end)||'/'||max(case when
+			   dt.dt_ndcoltype='05' then dt.val end) xy,
+			   max(case when dt.dt_ndcoltype='01' then dt.val end) chul,
+			   max(case when dt.dt_ndcoltype='02' then dt.val end) rul
+		  from nd_record_dt dt
+		 inner join nd_record_row recrow on recrow.pk_recordrow = dt.pk_recordrow
+		 inner join nd_record nd on nd.pk_record = recrow.pk_record
+		 inner join pv_encounter pv on pv.pk_pv = nd.pk_pv
+		 where pv.pk_dept_ns = #{departmentId,jdbcType=CHAR} 
+		   and recrow.date_entry &gt;= to_date(#{minHour},'YYYYMMDDHH24MISS')
+		   and recrow.date_entry &lt;= to_date(#{maxHour},'YYYYMMDDHH24MISS')
+		<if test=" pkPv != null and pkPv != '' ">
+		   and pv.pk_pv = #{pkPv}
+		</if>
+		 group by pv.name_pi,pv.bed_no,dt.PK_recordrow,recrow.date_entry,recrow.name_emp,pv.pk_pv,pv.pk_pi
+	</select>
+
+	<select id="queryVtsByPvAndDateByOne" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.ex.nis.emr.vo.ExVtsOccByPv">
+		select pv.pk_pv as pk_pv_as,
+			   pv.pk_pi as pk_pi_as,
+			   pv.name_pi,
+			   pi.code_ip,
+			   pi.dt_sex,
+			   pv.age_pv,
+			   pv.bed_no,
+			   vts.* 
+		  from pv_encounter pv 
+		 inner join pi_master pi on pi.pk_pi = pv.pk_pi
+		  left join ex_vts_occ vts on vts.pk_pv = pv.pk_pv and vts.date_vts =to_date(#{dateOcc,jdbcType=DATE},'yyyy-mm-dd hh24:mi:ss')
+		 where pv.del_flag = '0'
+		   and pv.pk_pv = #{pkPv,jdbcType=CHAR}
+	</select>
+</mapper>

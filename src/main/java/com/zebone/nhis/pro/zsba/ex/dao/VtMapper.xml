@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.ex.dao.VtMapper">
+
+      <select id="queryVtsByDate" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.pro.zsba.ex.vo.ExVtsOccVo">
+		select
+			   <if test = "flagFilter == 1">
+				   (select count(1) from pv_adt adt where adt.date_begin >= (convert(varchar(20), DateAdd(Day,-3,to_date(#{dateCur},'YYYYMMDDHH24MISS')),120))
+				   				    and adt.pk_pv = pv.pk_pv and adt.del_flag = '0') changein,
+				   (select count(1) from pv_ip ip where ip.dt_level_dise in ( '01','02') and ip.pk_pv = pv.pk_pv and ip.del_flag = '0') critical,
+				   (select count(1) from cn_op_apply op,cn_order ord where ord.eu_status_ord in ('2','3')
+								    and op.date_plan >= (convert(varchar(20), DateAdd(Day,1,to_date(#{dateCur},'YYYYMMDDHH24MISS')),120))
+								    and op.date_plan &lt;= (convert(varchar(10), DateAdd(Day,1,to_date(#{dateCur},'YYYYMMDDHH24MISS')),120)+' 23:59:59')
+				   					and op.pk_cnord = ord.pk_cnord and ord.pk_pv = pv.pk_pv and op.del_flag = '0') operationexd,
+				   (select count(1) from cn_op_apply op,cn_order ord where ord.eu_status_ord in ('2','3')
+				   					and op.date_plan >= (convert(varchar(20), to_date(#{dateCur},'YYYYMMDDHH24MISS'),120))
+				   					and op.date_plan &lt;= (convert(varchar(10), to_date(#{dateCur},'YYYYMMDDHH24MISS'),120)+' 23:59:59')
+				   					and op.pk_cnord = ord.pk_cnord and ord.pk_pv = pv.pk_pv and op.del_flag = '0') operationtod,
+				   (select count(1) from cn_op_apply op,cn_order ord where op.pk_cnord = ord.pk_cnord and ord.eu_status_ord  = '3'
+				   					and op.date_plan >= (convert(varchar(20), DateAdd(Day,-3,to_date(#{dateCur},'YYYYMMDDHH24MISS')),120))
+				   					and ord.pk_pv = pv.pk_pv  and op.del_flag = '0') operationedn,
+				   (select count(1) from ex_vts_occ_dt dt,ex_vts_occ occ where dt.del_flag = '0' and occ.pk_pv = pv.pk_pv and occ.pk_vtsocc = dt.pk_vtsocc
+				   					and dt.date_vts >= (convert(varchar(20), DateAdd(Day,-3,to_date(#{dateCur},'YYYYMMDDHH24MISS')),120))
+				   					and dt.val_temp >= 37.5 and dt.val_temp &lt;= 38.4 ) fever,
+				   (select count(1) from ex_vts_occ_dt dt,ex_vts_occ occ where occ.pk_pv = pv.pk_pv and occ.pk_vtsocc = dt.pk_vtsocc and dt.val_temp >= 38.5
+				   					and dt.date_vts >= (convert(varchar(20), DateAdd(Day,-3,to_date(#{dateCur},'YYYYMMDDHH24MISS')),120))
+				   					and dt.del_flag = '0') heat,
+			   </if>
+			   pv.pk_pv as pk_pv_as, pv.name_pi, pv.code_pv, pv.bed_no,pv.date_begin,pv.date_end,pa.date_begin AS dateInDept,
+			   pv.pk_pi,pi.code_ip,pv.age_pv,occ.*
+		from pv_encounter pv
+		inner join pi_master pi on pi.pk_pi = pv.pk_pi
+		left join ex_vts_occ occ on occ.pk_pv = pv.pk_pv and occ.DEL_FLAG = '0'
+		     and occ.date_vts = to_date(#{dateCur},'YYYYMMDDHH24MISS')
+		     and occ.infant_no ='0'
+		LEFT JOIN (SELECT MAX(date_begin)AS date_begin,pk_pv,pk_dept FROM pv_adt GROUP BY pk_pv,pk_dept) pa ON pa.pk_pv = pv.pk_pv and pa.pk_dept = pv.pk_dept
+		<if test="flagPi == 2">
+		    left join pv_adt adt on adt.pk_pv = pv.pk_pv
+		</if>
+		where 1 = 1
+		<if test="flagPi == 0">
+		    and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		    and pv.eu_status = '1'
+		</if>
+		<if test="flagPi == 4">
+		    and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		    and pv.eu_status = '1'
+		    and pv.DATE_BEGIN > getdate() -1
+		</if>
+		<if test=" pkEmp != null and pkEmp != '' ">
+		and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		   and pv.eu_status = '1'
+		   and exists (
+			select staff.pk_pv
+			  from pv_staff staff
+			 where staff.pk_pv = pv.pk_pv
+			   and staff.pk_emp = #{pkEmp,jdbcType=DATE})
+		</if>
+		<if test="flagPi == 5">
+		   and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		   and pv.eu_status = '1'
+		   AND EXISTS (
+				SELECT
+					occ.PK_VTSOCC 
+				FROM
+					EX_VTS_OCC occ
+					INNER JOIN EX_VTS_OCC_DT dt ON occ.PK_VTSOCC = dt.PK_VTSOCC 
+					AND dt.DEL_FLAG = '0' 
+				WHERE
+					pv.PK_PV = occ.PK_PV 
+					 AND dt.date_vts &gt; getdate ( ) - 0.5  					
+					and dt.val_temp &gt;= 37.5 
+					and dt.val_temp &lt;= 38 
+					) 
+		</if>
+		<if test="flagPi == 6">
+		   and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		   and pv.eu_status = '1'
+		   AND EXISTS (
+			SELECT
+				occ.PK_VTSOCC
+			FROM
+				EX_VTS_OCC occ
+				INNER JOIN EX_VTS_OCC_DT dt ON occ.PK_VTSOCC = dt.PK_VTSOCC
+				AND dt.DEL_FLAG = '0'
+			WHERE
+				pv.PK_PV = occ.PK_PV
+				and dt.date_vts &gt; getdate() -0.5
+				and dt.val_temp &gt; 38
+				)
+		</if>
+		<if test="flagPi == 3">
+		    and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		    and pv.eu_status = '1'
+		    AND EXISTS (
+				SELECT
+					op.PK_CNORD 
+				FROM
+					cn_op_apply op
+					INNER JOIN CN_ORDER cn ON op.PK_CNORD = cn.PK_CNORD 
+				WHERE
+					cn.PK_PV = pv.PK_PV 
+					AND cn.EU_STATUS_ORD = '3' 
+					) 
+		</if>
+		<if test="flagPi == 2">
+		    and ((pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR} and pv.eu_status in ('2','3') AND (case when adt.pk_pv is not null THEN adt.flag_dis ELSE '1' END)='1') 
+		    or (pv.eu_status ='1' and adt.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}))
+		    and adt.date_end is not null 
+		    and adt.DATE_END &gt;= to_date(#{dateBefore},'YYYYMMDDHH24MISS')
+		    and adt.DATE_END &lt; to_date(#{dateAfter},'YYYYMMDDHH24MISS')
+		</if>
+		<if test="codeIp != null  and  codeIp != ''">
+			and pi.code_ip = #{codeIp,jdbcType=VARCHAR}  
+		</if>
+		order by pv.bed_no
+	</select>
+	
+	
+	<select id="queryVtsDetailsByPk" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.pro.zsba.ex.vo.ExVtsoccDtVo">
+		SELECT
+			dt.*,
+			occdt.VAL_TEMP ADD_VAl_TEMP,
+			occdt.PK_VTSOCCDT PK_VTSOCCDT_DT,
+			emp.name_emp 
+		FROM ex_vts_occ_dt dt
+		 LEFT JOIN ex_vts_occ_dt occdt ON occdt.PK_VTSOCCDT = dt.PK_VTSOCCDT_REL 
+		 left join bd_ou_employee 	emp on emp.pk_emp = dt.MODIFIER
+		 where dt.pk_vtsocc in (${pkVtsoccs}) 
+		 and (dt.FLAG_ADD is null or dt.FLAG_ADD='0')
+		<if test="euDateslot != null  and  euDateslot != ''">
+		   and dt.eu_dateslot = #{euDateslot,jdbcType=VARCHAR}
+		</if>
+		<if test="hourVts != null  and  hourVts != ''">
+		   and dt.hour_vts = #{hourVts,jdbcType=INTEGER}
+		</if>
+	</select>
+	
+	<select id="querySkinTestByPkPv"  parameterType="java.lang.String" resultType="com.zebone.nhis.pro.zsba.ex.vo.SkinTestVo">	
+		SELECT
+			ord.NAME_ORD name,
+		CASE
+			occ.result 
+			WHEN '-' THEN
+			'(-)' ELSE '(+)' 
+		END  result,
+			date_begin_st 
+		FROM
+			ex_st_occ occ
+			INNER JOIN CN_ORDER ord ON occ.PK_CNORD = ord.PK_CNORD 
+		WHERE
+			ord.EU_STATUS_ORD = '3' 
+			AND occ.DEL_FLAG= '0' 
+			AND RESULT IS NOT NULL 
+			<if test="pkPv != null  and  pkPv != ''">
+			AND ord.pk_pv = #{pkPv,jdbcType=VARCHAR}
+		    </if>
+	</select>
+	
+	<select id="queryVtsByPvAndDateByOne" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.pro.zsba.ex.vo.ExVtsOccByPv">
+		select pv.pk_pv as pk_pv_as,
+			   pv.pk_pi as pk_pi_as,
+			   pv.name_pi,
+			   pi.code_ip,
+			   pi.dt_sex,
+			   pv.age_pv,
+			   pv.bed_no,
+               pv.DATE_BEGIN,
+			   vts.*
+		  from pv_encounter pv
+		  inner join pi_master pi on pi.pk_pi = pv.pk_pi
+		  left join ex_vts_occ vts on vts.pk_pv = pv.pk_pv
+		  and vts.DEL_FLAG = '0'
+		  and vts.date_vts =to_date(#{dateOcc,jdbcType=DATE},'yyyy-mm-dd hh24:mi:ss')
+		  where pv.del_flag = '0'
+		  and pv.pk_pv = #{pkPv,jdbcType=CHAR}
+	</select>
+	
+	<select id="queryVtsDetailsByPV" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.pro.zsba.ex.vo.ExVtsoccDtVo">	
+		SELECT
+			dt.*,
+			occdt.VAL_TEMP ADD_VAl_TEMP,
+			occdt.PK_VTSOCCDT PK_VTSOCCDT_DT,
+			emp.name_emp	 
+		FROM
+			ex_vts_occ_dt dt
+			LEFT JOIN ex_vts_occ_dt occdt ON occdt.PK_VTSOCCDT = dt.PK_VTSOCCDT_REL
+			left join bd_ou_employee emp on emp.pk_emp = dt.MODIFIER 
+		WHERE
+			dt.pk_vtsocc = #{pkVtsocc,jdbcType=CHAR}
+			and (dt.FLAG_ADD is null or dt.FLAG_ADD='0')
+	</select>
+
+	<select id="queryLaborVtsByDate" parameterType="java.util.Map"
+			resultType="com.zebone.nhis.pro.zsba.ex.vo.ExVtsOccVo">
+		select
+		<if test = "flagFilter == 1">
+			(select count(1) from pv_labor adt where adt.date_in >= (convert(varchar(20), DateAdd(Day,-3,to_date(#{dateCur},'YYYYMMDDHH24MISS')),120))
+			and adt.pk_pv = lab.pk_pv and lab.del_flag = '0') changein,
+			(select count(1) from pv_ip ip where ip.dt_level_dise in ( '01','02') and ip.pk_pv = pv.pk_pv and ip.del_flag = '0') critical,
+			(select count(1) from cn_op_apply op,cn_order ord where ord.eu_status_ord in ('2','3')
+			and op.date_plan >= (convert(varchar(20), DateAdd(Day,1,to_date(#{dateCur},'YYYYMMDDHH24MISS')),120))
+			and op.date_plan &lt;= (convert(varchar(10), DateAdd(Day,1,to_date(#{dateCur},'YYYYMMDDHH24MISS')),120)+' 23:59:59')
+			and op.pk_cnord = ord.pk_cnord and ord.pk_pv = pv.pk_pv and op.del_flag = '0') operationexd,
+			(select count(1) from cn_op_apply op,cn_order ord where ord.eu_status_ord in ('2','3')
+			and op.date_plan >= (convert(varchar(20), to_date(#{dateCur},'YYYYMMDDHH24MISS'),120))
+			and op.date_plan &lt;= (convert(varchar(10), to_date(#{dateCur},'YYYYMMDDHH24MISS'),120)+' 23:59:59')
+			and op.pk_cnord = ord.pk_cnord and ord.pk_pv = pv.pk_pv and op.del_flag = '0') operationtod,
+			(select count(1) from cn_op_apply op,cn_order ord where op.pk_cnord = ord.pk_cnord and ord.eu_status_ord  = '3'
+			and op.date_plan >= (convert(varchar(20), DateAdd(Day,-3,to_date(#{dateCur},'YYYYMMDDHH24MISS')),120))
+			and ord.pk_pv = pv.pk_pv  and op.del_flag = '0') operationedn,
+			(select count(1) from ex_vts_occ_dt dt,ex_vts_occ occ where dt.del_flag = '0' and occ.pk_pv = pv.pk_pv and occ.pk_vtsocc = dt.pk_vtsocc
+			and dt.date_vts >= (convert(varchar(20), DateAdd(Day,-3,to_date(#{dateCur},'YYYYMMDDHH24MISS')),120))
+			and dt.val_temp >= 37.5 and dt.val_temp &lt;= 38.4 ) fever,
+			(select count(1) from ex_vts_occ_dt dt,ex_vts_occ occ where occ.pk_pv = pv.pk_pv and occ.pk_vtsocc = dt.pk_vtsocc and dt.val_temp >= 38.5
+			and dt.date_vts >= (convert(varchar(20), DateAdd(Day,-3,to_date(#{dateCur},'YYYYMMDDHH24MISS')),120))
+			and dt.del_flag = '0') heat,
+		</if>
+		pv.pk_pv as pk_pv_as, pv.name_pi, pi.code_ip, pv.code_pv, lab.bed_no,pv.date_begin,pv.date_end,adt.date_begin AS dateInDept,pv.age_pv,
+		occ.*
+		from pv_labor lab
+		inner join pv_encounter pv on pv.pk_pv = lab.pk_pv
+		inner join pi_master pi on pi.pk_pi = pv.pk_pi
+		left join ex_vts_occ occ on occ.pk_pv = pv.pk_pv and occ.DEL_FLAG = '0' and occ.infant_no ='0'
+				  and occ.date_vts = to_date(#{dateCur},'YYYYMMDDHH24MISS')
+		LEFT JOIN (SELECT MAX(date_begin)AS date_begin,pk_pv,pk_dept FROM pv_adt GROUP BY pk_pv,pk_dept) adt ON adt.pk_pv = pv.pk_pv and adt.pk_dept = pv.pk_dept
+		where 1 = 1
+		and pv.eu_pvtype = '3'
+		<if test="flagPi == 0">
+			and lab.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+			and lab.eu_status = '1'
+		</if>
+		<if test="flagPi == 4">
+			and lab.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+			and lab.eu_status = '1'
+			and lab.DATE_IN > getdate() -1
+		</if>
+		<if test=" pkEmp != null and pkEmp != '' ">
+			and lab.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+			and lab.eu_status = '1'
+			and exists (
+			select staff.pk_pv
+			from pv_staff staff
+			where staff.pk_pv = lab.pk_pv
+			and staff.pk_emp = #{pkEmp,jdbcType=DATE})
+		</if>
+		<if test="flagPi == 5">
+			and lab.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+			and lab.eu_status = '1'
+			AND EXISTS (
+			SELECT
+			occ.PK_VTSOCC
+			FROM
+			EX_VTS_OCC occ
+			INNER JOIN EX_VTS_OCC_DT dt ON occ.PK_VTSOCC = dt.PK_VTSOCC
+			AND dt.DEL_FLAG = '0'
+			WHERE
+			lab.PK_PV = occ.PK_PV
+			AND dt.date_vts &gt; getdate ( ) - 0.5
+			and dt.val_temp &gt;= 37.5
+			and dt.val_temp &lt;= 38
+			)
+		</if>
+		<if test="flagPi == 6">
+			and lab.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+			and lab.eu_status = '1'
+			AND EXISTS (
+			SELECT
+			occ.PK_VTSOCC
+			FROM
+			EX_VTS_OCC occ
+			INNER JOIN EX_VTS_OCC_DT dt ON occ.PK_VTSOCC = dt.PK_VTSOCC
+			AND dt.DEL_FLAG = '0'
+			WHERE
+			lab.PK_PV = occ.PK_PV
+			and dt.date_vts &gt; getdate() -0.5
+			and dt.val_temp &gt; 38
+			)
+		</if>
+		<if test="flagPi == 3">
+			and lab.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+			and lab.eu_status = '1'
+			AND EXISTS (
+			SELECT
+			op.PK_CNORD
+			FROM
+			cn_op_apply op
+			INNER JOIN CN_ORDER cn ON op.PK_CNORD = cn.PK_CNORD
+			WHERE
+			cn.PK_PV = lab.PK_PV
+			AND cn.EU_STATUS_ORD = '3'
+			)
+		</if>
+		<if test="flagPi == 2">
+			and lab.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+			and lab.date_out is not null
+			and lab.date_out &gt;= to_date(#{dateBefore},'YYYYMMDDHH24MISS')
+			and lab.date_out &lt; to_date(#{dateAfter},'YYYYMMDDHH24MISS')
+		</if>
+		<if test="codeIp != null  and  codeIp != ''">
+			and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+		</if>
+		order by bed_no
+	</select>
+	
+	
+
+</mapper>

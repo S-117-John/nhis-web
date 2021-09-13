@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.sd.bl.dao.BankMisAccChkMapper">
+
+	<select id="qryOpDepoInfo" resultType="DynaBean">
+		select * from (
+			select
+			 stdoc.name sttype_name,
+			 st.code_st,
+			 pay.amount,
+			 pv.code_pv,
+			 depo.name_emp_pay,
+			 pay.date_pay,
+			 pay.sysname,
+			 case when pay.trade_no is not null then pay.trade_no else pay.serial_no end trade_no,
+			   '1' as flag_pay,
+			   pay.DESC_PAY,
+				to_char(pv.name_pi) name_pi,
+			   pi.code_op,
+			   paydoc.code as pay_code,
+			   paydoc.name as pay_name
+			from BL_EXT_PAY pay
+			  inner join (
+			    SELECT * FROM (
+			      select row_number() OVER (PARTITION BY de.PAY_INFO ORDER BY de.date_pay asc ) cnt, de.* from BL_DEPOSIT de where
+			        de.pk_cc in (
+			          select cc.pk_cc from bl_cc cc
+			              where cc.EU_CCTYPE!='8'
+			                  <if test='dateBegin!=null and dateBegin!=""'>
+			                    and cc.date_end &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyyMMddHH24miss')
+			                  </if>
+			                  <if test='dateEnd!=null and dateEnd!=""'>
+			                    and cc.date_end &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyyMMddHH24miss')
+			                  </if> 
+			        )and de.amount &gt; 0 and de.dt_paymode in ('3','7')
+			    ) res WHERE cnt = '1'
+			  ) depo On depo.pay_info=pay.serial_no
+			  INNER JOIN bl_settle st ON depo.pk_settle = st.pk_settle
+			  INNER JOIN pv_encounter pv ON st.pk_pv = pv.pk_pv
+			  INNER JOIN bd_defdoc stdoc
+			    ON stdoc.code = st.dt_sttype AND stdoc.CODE_DEFDOCLIST = '110102' AND stdoc.del_flag = '0'
+			  inner join bd_defdoc paydoc
+			    on paydoc.code = depo.dt_paymode and paydoc.CODE_DEFDOCLIST = '110100' AND paydoc.del_flag = '0'
+			  left join pi_master pi on pi.pk_pi = pv.pk_pi
+			where pay.amount &gt; 0 and pay.flag_pay='1' and pay.REFUND_NO is null and pay.AMOUNT = depo.AMOUNT
+			union all
+			select
+			  pay.desc_pay sttype_name,
+			   st.code_st,
+			   pay.amount,
+			   pv.code_pv,
+			   depo.name_emp_pay,
+			   pay.date_pay,
+			   pay.sysname,
+			   case when pay.trade_no is not null then pay.trade_no else pay.serial_no end trade_no,
+			   '1' as flag_pay,
+			   pay.DESC_PAY,
+				to_char(pv.name_pi) name_pi,
+			   pi.code_op,
+			   paydoc.code as pay_code,
+			   paydoc.name as pay_name
+			from BL_EXT_PAY pay
+			  inner join (
+			    SELECT * FROM (
+			      select row_number() OVER ( PARTITION BY de.PAY_INFO ORDER BY de.date_pay asc ) cnt, de.* from BL_DEPOSIT de where
+			        de.pk_cc in (
+			          select cc.pk_cc from bl_cc cc
+			              where cc.EU_CCTYPE!='8'
+			                  <if test='dateBegin!=null and dateBegin!=""'>
+			                    and cc.date_end &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyyMMddHH24miss')
+			                  </if>
+			                  <if test='dateEnd!=null and dateEnd!=""'>
+			                    and cc.date_end &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyyMMddHH24miss')
+			                  </if> 
+			        ) and de.AMOUNT &lt; 0 and de.dt_paymode in ('3','7')
+			    ) res WHERE cnt = '1'
+			  ) depo On depo.pay_info=pay.serial_no or depo.pay_info=pay.REFUND_NO
+			  INNER JOIN bl_settle st ON depo.pk_settle = st.pk_settle
+			  INNER JOIN pv_encounter pv ON st.pk_pv = pv.pk_pv
+			  INNER JOIN bd_defdoc stdoc
+			    ON stdoc.code = st.dt_sttype AND stdoc.CODE_DEFDOCLIST = '110102' AND stdoc.del_flag = '0'
+			  inner join bd_defdoc paydoc
+			    on paydoc.code = depo.dt_paymode and paydoc.CODE_DEFDOCLIST = '110100' AND paydoc.del_flag = '0'
+			  left join pi_master pi on pi.pk_pi = pv.pk_pi
+			where pay.amount &lt; 0 and pay.flag_pay='1' and pay.REFUND_NO is not null
+			union all
+			    select DISTINCT
+				   '门诊退费异常' sttype_name,
+				   st.code_st,
+				   rpay.amount,
+				   pv.code_pv,
+				   st.name_emp_st,
+				   rtndepo.date_pay,
+				   epay.sysname,
+				   case when epay.trade_no is not null then epay.trade_no else epay.serial_no end trade_no,
+				   '0' as flag_pay,
+				       '' as dess_pay,
+				to_char(pv.name_pi) name_pi,
+				 pi.code_op,
+				 paydoc.code as pay_code,
+				 paydoc.name as pay_name
+				  from bl_ext_pay epay
+				    inner join(
+				      select amount,REFUND_NO from bl_ext_pay pay
+				        where pay.REFUND_NO is not null and flag_pay = '0' and amount!=0
+				          and not exists (
+				            select 1 from bl_ext_pay zpay where zpay.REFUND_NO = pay.REFUND_NO and zpay.FLAG_PAY ='1' and zpay.REFUND_NO is null
+				          )
+				        group by REFUND_NO,amount
+				    ) rpay on rpay.REFUND_NO = epay.SERIAL_NO
+				    inner join (
+				      SELECT * FROM (SELECT row_number() OVER ( PARTITION BY depo.PAY_INFO ORDER BY date_pay asc ) cnt, depo.*
+				        FROM bl_deposit depo
+				          where depo.amount &lt; 0 and PK_SETTLE is not null
+				          and depo.pk_cc in (
+				            select cc.pk_cc from bl_cc cc
+				              where cc.EU_CCTYPE!='8'
+				                <if test='dateBegin!=null and dateBegin!=""'>
+				                  and cc.date_end &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyyMMddHH24miss')
+				                </if>
+				                <if test='dateEnd!=null and dateEnd!=""'>
+				                  and cc.date_end &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyyMMddHH24miss')
+				                </if>
+				          ) and depo.dt_paymode in ('3','7')
+				      ) res WHERE cnt = '1' 
+				    ) rtndepo on rtndepo.pay_info = rpay.REFUND_NO
+				    inner join bl_settle st on st.pk_settle = rtndepo.pk_settle
+				    inner join pv_encounter pv on pv.pk_pv = st.pk_pv
+				    inner join bd_defdoc paydoc
+				    on paydoc.code = rtndepo.dt_paymode and paydoc.CODE_DEFDOCLIST = '110100' AND paydoc.del_flag = '0'
+				  left join pi_master pi on pi.pk_pi = pv.pk_pi
+				  where epay.flag_pay = '1' and epay.REFUND_NO is null
+	      union all
+	        select
+	          '手工退货处理' as sttype_name,
+	           null as code_st,
+	           pay.amount,
+	           null as code_pv,
+	           emp.name_emp as name_emp_pay,
+	           pay.date_pay,
+	           pay.sysname,
+	           case when pay.trade_no is not null then pay.trade_no else pay.serial_no end trade_no,
+	             '1' as flag_pay,
+	           pay.DESC_PAY,
+	           '' as name_pi,
+			   '' as code_op,
+			   paydoc.code as pay_code,
+			   paydoc.name as pay_name
+	        from BL_EXT_PAY pay
+	          inner join bd_ou_employee emp on emp.pk_emp = pay.creator
+	          inner join bd_defdoc paydoc
+    			on paydoc.code = pay.eu_paytype and paydoc.CODE_DEFDOCLIST = '110100' AND paydoc.del_flag = '0'
+	        where pay.flag_pay='1' and pay.amount &lt; 0 and REFUND_NO is null
+		      <if test='dateBegin!=null and dateBegin!=""'>
+		        and pay.date_pay &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyyMMddHH24miss')
+		      </if>
+		      <if test='dateEnd!=null and dateEnd!=""'>
+		        and pay.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyyMMddHH24miss')
+		      </if>
+		  union all
+		    select
+			  stdoc.name sttype_name,
+			  st.code_st,
+			   depo.amount,
+			   pv.code_pv,
+			   depo.name_emp_pay,
+			   depo.DATE_PAY,
+			   '' sysname,
+			   '' trade_no,
+			   '1' as flag_pay,
+			   '' DESC_PAY,
+				to_char(pv.name_pi) name_pi,
+			   pi.code_op,
+			   paydoc.code as pay_code,
+			   paydoc.name as pay_name
+			from bl_deposit depo
+			  inner join bl_settle st on st.pk_settle = depo.pk_settle
+			  inner join PV_ENCOUNTER pv on pv.pk_pv = depo.pk_pv
+			  INNER JOIN bd_defdoc stdoc
+			    ON stdoc.code = st.dt_sttype AND stdoc.CODE_DEFDOCLIST = '110102' AND stdoc.del_flag = '0'
+			  inner join bd_defdoc paydoc
+			    on paydoc.code = depo.dt_paymode and paydoc.CODE_DEFDOCLIST = '110100' AND paydoc.del_flag = '0'
+			  left join pi_master pi on pi.pk_pi = pv.pk_pi
+			where pv.EU_PVTYPE in ('1','2','4') and  DT_PAYMODE in ('13','14','21')
+			  and depo.pk_cc in (
+			    select cc.pk_cc from bl_cc cc
+			      where cc.EU_CCTYPE!='8'
+			        <if test='dateBegin!=null and dateBegin!=""'>
+			          and cc.date_end &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyyMMddHH24miss')
+			        </if>
+			        <if test='dateEnd!=null and dateEnd!=""'>
+			          and cc.date_end &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyyMMddHH24miss')
+			        </if>
+			  )
+		) payInfo
+		Order By payInfo.date_pay  Desc
+	</select>
+	
+	<select id="qryExtInfoByCodeInv" resultType="DynaBean">
+		select DISTINCT ext.* from bl_ext_pay ext
+		  inner join bl_deposit depo on depo.pay_info = ext.serial_no
+		  inner join bl_settle st on st.pk_settle = depo.pk_settle
+		  inner join bl_st_inv stinv on stinv.pk_settle = st.pk_settle
+		  inner join bl_invoice inv on inv.pk_invoice = stinv.pk_invoice
+		where ext.flag_pay = '1' and ext.REFUND_NO is null and ext.amount>0
+		  and inv.code_inv = #{codeInv,jdbcType=VARCHAR}
+	</select>
+
+</mapper>

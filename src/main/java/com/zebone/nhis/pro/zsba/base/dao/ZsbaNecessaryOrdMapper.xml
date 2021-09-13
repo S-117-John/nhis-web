@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.base.dao.ZsbaNecessaryOrdMapper">
+
+
+	<select id="getDeptNecOrdGroupInfo" resultType="com.zebone.nhis.pro.zsba.base.vo.DeptNecOrdGroupVo">
+		SELECT
+		       bod.pk_dept,
+		       bod.name_dept,
+		       bon.*
+		from BD_ORD_NEC bon
+		INNER JOIN BD_OU_DEPT bod ON bod.pk_dept = bon.pk_dept
+		where 1=1 and bon.del_flag = '0'
+		<if test="codeGroup != null and codeGroup != ''">
+			and code_group = #{codeGroup}
+		</if>
+		<if test="nameGroup != null and nameGroup != ''">
+			and name_group like "%"#{nameGroup}"%"
+		</if>
+		<if test="nameDept != null and nameDept != ''">
+			and name_dept like "%"#{nameDept}"%"
+		</if>
+
+	</select>
+	<select id="getDeptNecOrdDtInfo" resultType="com.zebone.nhis.pro.zsba.base.vo.DeptNecOrdDtVo">
+		select bond.* ,name,code
+		from BD_ORD_NEC_DT bond
+				 LEFT JOIN BD_ORD ord on ord.pk_ord = bond.pk_ord
+		where pk_ordnec = #{pkOrdNec} and bond.del_flag = '0'
+	</select>
+</mapper>

@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.sch.hd.dao.HdSchMapper">
+	<select id="queryDialysisSchHd" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			sch.pk_schhd,  
+			sch.pk_hdbed, 
+			bed.code_bed,
+			bed.name_bed, 
+			msp.name msp,  
+			bed.dt_hdtype,  
+			sch.pk_dateslot, 
+			ds.name_dateslot,
+			sch.date_hd,  
+			sch.pk_pi,   
+			pi.name_pi,   
+			hd.code_hd,    
+			sch.date_opt,  
+			sch.name_emp_opt, 
+			sch.flag_canc, 
+			sch.date_canc, 
+			sch.name_emp_canc,
+			sch.pk_emp_canc
+		from sch_sch_hd sch
+		inner join bd_res_hdbed bed on sch.pk_hdbed=bed.pk_hdbed
+		inner join bd_res_msp msp on bed.pk_msp=msp.pk_msp
+		inner join bd_code_dateslot ds on sch.pk_dateslot=ds.pk_dateslot
+		inner join pi_master pi on sch.pk_pi=pi.pk_pi
+		inner join pi_hd hd on pi.pk_pi=hd.pk_pi
+		where 
+			sch.pk_org=#{pkOrg,jdbcType=CHAR} 	
+		<if test=" dateBegin != null ">	      
+			and  sch.date_hd &gt;=to_date(#{dateBegin,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss')    
+		</if>
+		<if test=" dateEnd != null "> 
+			and  sch.date_hd &lt;=to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss')    
+		</if>
+		<if test=" pkDept != null and  pkDept != '' ">
+			and  bed.pk_dept=#{pkDept,jdbcType=CHAR}  
+		</if>
+		<if test=" pkDeptNs != null and  pkDeptNs != '' ">
+			and  bed.pk_dept_ns=#{pkDeptNs,jdbcType=CHAR}  
+		</if>
+		<if test=" pkHdbed != null and  pkHdbed != '' ">
+			and  bed.pk_hdbed=#{pkHdbed,jdbcType=CHAR}  
+		</if>
+		<if test=" codeHd != null and  codeHd != '' "> 
+			and  hd.code_hd=#{codeHd,jdbcType=VARCHAR}    
+		</if>
+		<if test=" namePi != null and  namePi != '' ">
+			and  pi.name_pi like '%${namePi}%'
+		</if>
+		<if test=" pkPi != null and  pkPi != '' ">
+			and  pi.pk_pi=#{pkPi,jdbcType=VARCHAR}  
+		</if>
+		<if test=" flagCanc != null and  flagCanc != '' ">
+			and sch.flag_canc='${flagCanc}'
+		</if>
+		order by sch.pk_pi,sch.date_hd 
+	</select>
+	<select id="queryCancleSchHd" parameterType="java.util.Map" resultType="DynaBean">
+		select count(1) ifCancle
+		from sch_sch_hd sch
+		where sch.pk_schhd=#{pkSchhd,jdbcType=CHAR} and (sch.flag_confirm='1' or sch.flag_canc='1')
+	</select>
+	<select id="queryRecoverySchHd" parameterType="java.util.Map" resultType="DynaBean">
+		select count(1) ifRecovery
+		from sch_sch_hd sch
+		where to_char(sch.date_hd,'yyyy-mm-dd')=#{dateHd,jdbcType=VARCHAR}
+		and sch.pk_dateslot=#{pkDateslot,jdbcType=CHAR} 
+		and sch.pk_hdbed=#{pkHdbed,jdbcType=CHAR} 
+		and sch.flag_canc='0'
+	</select>
+	<select id="querySchHd" parameterType="java.util.Map" resultType="com.zebone.nhis.sch.hd.vo.SchBedVo">
+		select
+       		sch.pk_schhd,  
+       		sch.pk_hdbed,  
+       		bed.code_bed, 
+       		bed.name_bed,  
+       		msp.name msp, 
+       		bed.dt_hdtype,  
+       		sch.pk_dateslot, 
+       		ds.name_dateslot,
+       		sch.date_hd,   
+       		sch.pk_pi,
+       		pi.name_pi
+  		from sch_sch_hd sch
+       	inner join bd_res_hdbed bed on sch.pk_hdbed=bed.pk_hdbed
+       	inner join bd_res_msp msp on bed.pk_msp=msp.pk_msp
+       	inner join bd_code_dateslot ds on sch.pk_dateslot=ds.pk_dateslot
+       	inner join pi_master pi on sch.pk_pi=pi.pk_pi
+		INNER JOIN pi_hd hd ON pi.PK_PI=hd.PK_PI
+  		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+  		    sch.PK_ORG=#{pkOrg,jdbcType=CHAR}   
+  		<if test=" pkDeptNs != null and  pkDeptNs != '' ">
+  			and bed.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR} 
+  		</if>		
+  		<if test=" startDate != null ">
+  			and sch.date_hd &gt;= to_date(#{startDate,jdbcType=VARCHAR},'yyyy-mm-dd')  
+  		</if>
+  		<if test=" endDate != null ">
+  			and sch.date_hd &lt;= to_date(#{endDate,jdbcType=VARCHAR},'yyyy-mm-dd')
+  		</if> 
+  		<if test=" code != null and  code != '' ">
+  			and (hd.CODE_HD like '%${code}%'  or pi.name_pi like '%${code}%') 
+  		</if> 
+  		<if test=" codeBed != null and  codeBed != '' ">
+  			and bed.code_bed = #{codeBed,jdbcType=VARCHAR} 
+  		</if>
+  		  	and  sch.flag_canc='0' 
+  		</trim>
+  		order by bed.pk_hdbed,bed.sortno,ds.sortno
+	</select>
+	<select id="queryHdbedIsNull" parameterType="java.util.Map" resultType="com.zebone.nhis.sch.hd.vo.SchBedVo">
+	  	  select
+    		bed.pk_hdbed,
+    		bed.code_bed,
+    		bed.name_bed,  
+    		msp.name msp, 
+    		bed.dt_hdtype, 
+    		ds.name_dateslot,
+    		ds.pk_dateslot
+  		from bd_res_hdbed bed
+  		left join bd_code_dateslot ds on bed.dt_dateslottype=ds.DT_DATESLOTTYPE
+  		inner join bd_res_msp msp on bed.pk_msp=msp.pk_msp
+  		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+  		    bed.PK_ORG=#{pkOrg,jdbcType=CHAR} and flag_open='1'
+  		<if test=" pkDeptNs != null and  pkDeptNs != '' ">
+  			and bed.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR} 
+  		</if>
+  		<if test=" dtHdtype != null and  dtHdtype != '' ">
+  			and bed.dt_hdtype=#{dtHdtype,jdbcType=VARCHAR}   
+  		</if>   		
+  		</trim>
+  		order by bed.pk_hdbed,bed.sortno,ds.sortno
+	</select>
+	<select id="queryPiHdIsNull" parameterType="java.util.Map" resultType="com.zebone.nhis.sch.hd.vo.SchBedVo">
+	  	    SELECT pi.pk_pi,pi.code_pi, pi.name_pi,hd.code_hd,hd.cnt_week
+			FROM PI_HD hd
+  			INNER JOIN PI_MASTER pi ON pi.PK_PI=hd.PK_PI
+  		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+  		    hd.PK_ORG=#{pkOrg,jdbcType=CHAR}
+  		<if test=" namePi != null and  namePi != '' ">
+  			and pi.name_pi like '%${namePi}%'
+  		</if>
+  		<if test=" codeHd != null and  codeHd != '' ">
+  			and hd.CODE_HD like '%${codeHd}%'  
+  		</if> 
+  		<if test=" code != null and  code != '' ">
+  			and (hd.CODE_HD like '%${code}%'  or pi.name_pi like '%${code}%') 
+  		</if>  		
+  		</trim>
+	</select>
+		<select id="querySchHdBusiness" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			sch.date_hd,  
+       		bed.name_bed,  
+       		ds.name_dateslot,
+       		sch.pk_schhd    
+  		from sch_sch_hd sch
+       	inner join bd_res_hdbed bed on sch.pk_hdbed=bed.pk_hdbed
+       	inner join bd_code_dateslot ds on sch.pk_dateslot=ds.pk_dateslot
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			sch.flag_confirm='0' and sch.flag_canc='0'	
+		<if test=" pkPi != null and  pkPi != '' ">
+  			and sch.pk_pi=#{pkPi,jdbcType=CHAR} 
+  		</if>
+  		<if test=" dateHd != null and  dateHd != '' ">
+  			and sch.date_hd &gt;= to_date(#{dateHd,jdbcType=VARCHAR},'yyyy-mm-dd') 
+  		</if>
+		</trim>	
+	</select>
+</mapper>

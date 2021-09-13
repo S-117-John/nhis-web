@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.QcPlatFormMapper">
+
+    <!-- 查询分诊台信息 -->
+    <select id="qryQcPlatFormInfo" resultType="com.zebone.nhis.common.module.base.bd.srv.BdQcPlatform"
+            parameterType="java.lang.String">
+		select plat.pk_qcplatform,
+	       plat.code,
+	       plat.name,
+	       plat.spcode,
+	       plat.screen,
+	       plat.voice,
+	       plat.pk_qcrule_def, 
+	       plat.flag_auto,
+	       plat.note,
+	       plat.flag_active,
+	       plat.pk_orgarea  
+	  from bd_qc_platform plat 
+	 where plat.pk_orgarea=#{pkOrgarea,jdbcType=VARCHAR}
+	</select>
+
+    <!-- 查询分诊台队列 -->
+    <select id="qryQcPlatFormQue" parameterType="java.lang.String" resultType="DynaBean">
+		select que.pk_qcque,
+	       que.sortno,  
+	       que.pk_qcplatform,
+	       que.pk_dept, 
+	       bd.name_dept,
+	       que.pk_qcrule,
+	       que.note,     
+	       que.flag_stop 
+	  from bd_qc_que que 
+	  inner join bd_ou_dept bd on bd.pk_dept=que.pk_dept
+	 where que.pk_qcplatform=#{pkQcplatform,jdbcType=VARCHAR} and 
+	       que.dt_qctype='01'
+	</select>
+
+    <!-- 查询可导入队列 -->
+    <select id="qryCanImpPlatForm" parameterType="java.lang.String" resultType="DynaBean">
+		select dept.code_dept,
+	       dept.name_dept,
+	       dept.py_code,
+	       dept.pk_dept,
+	       area.name_area
+	  from bd_ou_dept dept
+	  inner join BD_OU_ORG_AREA area on area.pk_orgarea=dept.pk_orgarea
+	 where dept.pk_orgarea=#{pkOrgarea,jdbcType=VARCHAR} and
+	       dept.dt_depttype='01' and
+	       (dept.flag_op='1' or dept.flag_er='1') and
+	       dept.del_flag='0' and
+	       not exists (select 1 
+	                     from bd_qc_que que 
+	                    where dept.pk_dept=que.pk_dept)
+	</select>
+
+    <!-- 查询分诊权限信息 -->
+    <select id="qryAuthPlatFormInfo" parameterType="java.lang.String" resultType="DynaBean">
+		select pf.pk_qcplatform,
+	       pf.code,
+	       pf.name,
+	       pm.flag_def,
+	       case when pm.pk_user is null then '0' else '1' end perm
+	  from bd_qc_platform pf
+	       left outer join bd_qc_perm pm on pf.pk_qcplatform=pm.pk_qcplatform and pm.pk_user=#{pkUser,jdbcType=VARCHAR}
+	 where pf.pk_orgarea=#{pkOrgarea,jdbcType=VARCHAR} 
+	</select>
+
+    <!-- 查询院区下的科室信息 -->
+    <select id="qryDeptInfo" resultType="com.zebone.nhis.common.module.base.ou.BdOuDept"
+            parameterType="java.lang.String">
+		select dept.code_dept,
+	       dept.name_dept,
+	       dept.py_code,
+	       dept.pk_dept
+	  from bd_ou_dept dept 
+	 where dept.pk_orgarea=#{pkOrgarea,jdbcType=VARCHAR} and 
+	       dept.dt_depttype='01' and 
+	       dept.del_flag='0'
+	</select>
+
+    <!-- 查询机构下是否有权限的用户 -->
+    <select id="qryUserByArea" parameterType="java.util.Map" resultType="DynaBean">
+        SELECT
+        bu.*
+        FROM BD_OU_USER bu
+        INNER JOIN BD_OU_EMPJOB empjob ON empjob.PK_EMP=bu.PK_EMP AND empjob.IS_MAIN='1' AND empjob.DEL_FLAG='0'
+        INNER JOIN BD_OU_DEPT dept ON dept.PK_DEPT=empjob.PK_DEPT
+        WHERE bu.PK_ORG=#{pkOrg,jdbcType=VARCHAR}
+        <if test="hasPerm == 1">
+            AND exists(SELECT 1 from BD_QC_PERM perm inner join BD_QC_PLATFORM pl on pl.PK_QCPLATFORM=perm.PK_QCPLATFORM and pl.PK_ORGAREA=#{pkOrgarea,jdbcType=VARCHAR} WHERE perm.PK_USER=bu.PK_USER )
+        </if>
+    </select>
+    <!-- 查询分诊队列序号是否重复 -->
+    <select id="isRepeatNo" parameterType="java.util.Map" resultType="java.lang.Integer">
+        select count(1)
+        from BD_QC_QUE
+        where PK_QCPLATFORM=#{pkQcplatform,jdbcType=VARCHAR}
+        and sortno in
+        <foreach item="item" index="index" collection="sortNos" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        <if test="pkQcque != null and pkQcque != ''">
+            and pk_qcque != #{pkQcque,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+</mapper>

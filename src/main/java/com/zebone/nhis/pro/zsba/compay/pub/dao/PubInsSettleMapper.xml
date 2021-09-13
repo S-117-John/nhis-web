@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.compay.pub.dao.PubInsSettleMapper">
+     <!-- 获取住院收费明细  -->
+    <select id="getChargeDetails" parameterType="java.util.Map" resultType="java.util.Map">
+		select * from (select
+			bid.pk_cgip,
+		    ip.JZJLH,
+		    pm.code_ip,
+		    bid.date_cg, 
+		    bid.flag_pd, 
+			bi.code,
+			bid.pk_pd,
+			bp.code code_wp,
+			bid.name_cg, 
+			bp.name name_wp,
+			bid.spec, 
+		    co.code_supply,
+		    co.dosage, 
+		 	co.eu_always,
+			bid.price, 
+			bid.quan + 
+(CASE WHEN back.quan is null THEN 0 ELSE back.quan END) as quan, 
+			bid.amount + 
+(CASE WHEN back.amt is null THEN 0 ELSE back.amt END) as amount,
+		    co.flag_fit,  
+		    co.quan_cg,   
+		    bu.name, 
+		    co.days,
+		    bid.ratio_disc,
+		    bid.ratio_self,
+		    bid.price_org,
+		    bid.amount_pi
+		from 
+			bl_ip_dt bid INNER JOIN bd_item bi ON bid.pk_item = bi.pk_item
+		    LEFT JOIN cn_order co ON bid.pk_cnord = co.pk_cnord and co.eu_status_ord != '9' and co.del_flag = '0'
+		    INNER JOIN pi_master pm ON bid.pk_pi = pm.pk_pi
+		    INNER JOIN ins_pv ip ON bid.pk_pv = ip.pk_pv   
+		    LEFT JOIN bd_unit bu ON co.pk_unit_cg = bu.pk_unit   
+  			LEFT JOIN bd_pd bp ON bid.pk_pd = bp.pk_pd
+  			left outer join  
+				(select sum(quan) quan,sum(amount) amt,pk_cgip_back from bl_ip_dt where flag_settle = 0 and flag_pd = 0 and  quan &lt; 0  and pk_pv = #{pkPv,jdbcType=VARCHAR}  group by pk_cgip_back) 
+				back on bid.pk_cgip=back.pk_cgip_back 
+		where 
+			ip.del_flag = '0' 
+			and  
+			bid.del_flag = '0' 
+			and  bid.flag_settle = '0' 
+			and bid.pk_cgip_back is null
+			and bid.flag_pd = 0
+			and bid.pk_pv = #{pkPv,jdbcType=VARCHAR} 
+			
+			<if test="dateBegin != null  and  dateBegin!= ''">
+				and bid.date_cg>=to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyy/mm/dd hh24:mi:ss')
+				and bid.date_cg &gt;=  to_date(substr(#{dateBegin,jdbcType=VARCHAR} ,1,8)||'000000', 'yyyymmddhh24miss')    
+			</if>
+			<if test="dateEnd != null  and  dateEnd != ''">
+				and bid.date_cg &lt;=  to_date(substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'yyyymmddhh24miss')
+				and bid.date_cg&lt;=to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyy/mm/dd hh24:mi:ss') 
+			</if>  
+			) temp where temp.quan > 0
+	</select>
+</mapper>

@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.StrategySetMapper">
+	
+	<select id="qryDivBed" resultType="com.zebone.nhis.common.module.base.bd.price.InsGzgyDivBed">
+		select beddiv.pk_beditemdiv,
+		       beddiv.dict_psnlevel,
+		       beddiv.name_level,
+		       beddiv.price_max,
+		       beddiv.note
+		  from ins_gzgy_div_bed beddiv
+		 where beddiv.del_flag='0'
+		 <if test='pkList!=null and pkList.size()>0'>
+		 	and beddiv.pk_beditemdiv not in 
+		 	<foreach collection="pkList" item="pkList" index="no" open="("
+				separator="," close=")">
+				#{pkList}
+			</foreach> 
+		 </if>
+	</select>
+	
+	<select id="qryDivHvitem" resultType="com.zebone.nhis.common.module.base.bd.price.InsGzgyDivHvitem">
+		select hv.pk_hvitemdiv,
+		       hv.price_min,
+		       hv.price_max,
+		       hv.ratio_init,
+		       hv.eu_calcmode,
+		       hv.ratio,
+		       hv.note
+		  from ins_gzgy_div_hvitem hv
+		 where hv.del_flag='0'
+		 	<if test='pkList!=null and pkList.size()>0'>
+		 		and hv.pk_hvitemdiv not in 
+		 		<foreach collection="pkList" item="pkList" index="no" open="("
+					separator="," close=")">
+					#{pkList}
+				</foreach> 
+		 	</if>
+	</select>
+	
+	<select id="qryDivSpitem" resultType="com.zebone.nhis.common.module.base.bd.price.InsGzgyDivSpitem">
+		select sp.pk_spitemdiv,
+		       sp.pk_item,
+		       item.code codeItem,
+		       item.name nameItem,
+		       sp.amount_max,
+		       sp.ratio_init,
+		       sp.eu_calcmode,
+		       sp.ratio,
+		       sp.ratio_unit,
+		       sp.note
+		  from ins_gzgy_div_spitem sp
+		       inner join bd_item item on sp.pk_item=item.pk_item
+		 where sp.del_flag='0'
+		 <if test='pkList!=null and pkList.size()>0'>
+		 	and sp.pk_spitemdiv not in 
+		 	<foreach collection="pkList" item="pkList" index="no" open="("
+				separator="," close=")">
+				#{pkList}
+			</foreach> 
+		 </if>
+	</select>
+	
+	<select id="qryDivHpByPkdiv" resultType="com.zebone.nhis.common.module.base.bd.code.InsGzgyHpDiv">
+		select div.pk_hpdiv,
+		       hp.pk_hp ,
+		       div.eu_divtype,
+		       div.pk_div,
+		       hp.code codeHp,
+		       hp.name nameHp
+		  from ins_gzgy_hp_div div
+		       inner join bd_hp hp on div.pk_hp=hp.pk_hp
+		 where div.eu_divtype=#{euDivtype,jdbcType=VARCHAR}
+		 	   and div.del_flag = '0'
+		       and div.pk_div=#{pkDiv,jdbcType=CHAR}
+	</select>
+	
+	<select id="qryWaitChooseHp" resultType="com.zebone.nhis.common.module.base.bd.code.InsGzgyHpDiv">
+		select hp.pk_hp,
+		       hp.code codeHp,
+		       hp.name nameHp,
+		       hp.spcode
+		  from bd_hp hp
+		 where hp.eu_hptype='3' 
+		       and hp.del_flag='0' 
+		       and not exists (select 1 
+                     from ins_gzgy_hp_div hpdiv 
+                    where hp.pk_hp=hpdiv.pk_hp and 
+                          hpdiv.eu_divtype=#{euDivtype} and 
+                          hpdiv.pk_div=#{pkDiv})
+		       
+	</select>
+	
+	<select id="qrySelectedHp" resultType="com.zebone.nhis.common.module.base.bd.code.InsGzgyHpDiv">
+		select hpdiv.pk_hpdiv,
+			   hpdiv.eu_divtype,
+		       hpdiv.pk_div,
+		       hp.pk_hp,      
+		       hp.code codeHp,       
+		       hp.name nameHp,       
+		       hp.spcode      
+		  from ins_gzgy_hp_div hpdiv
+		       inner join bd_hp hp on hpdiv.pk_hp=hp.pk_hp
+		 where hpdiv.del_flag = '0' 
+		 		and hpdiv.eu_divtype= #{euDivType,jdbcType=VARCHAR}
+	       		and hpdiv.pk_div=#{pkDiv,jdbcType=CHAR}
+	</select>
+	
+	<update id="batchDelDivBed">
+		update ins_gzgy_div_bed set del_flag='1' where pk_beditemdiv in  
+		<foreach collection="list" item="delPks" index="no" open="("
+			separator="," close=")">
+			#{delPks}
+		</foreach> 
+		and del_flag='0'
+	</update>
+	
+	<update id="batchDelDivSpitem">
+		update ins_gzgy_div_spitem set del_flag='1' where pk_spitemdiv in 
+		<foreach collection="list" item="delPks" index="no" open="("
+			separator="," close=")">
+			#{delPks}
+		</foreach> 
+		and del_flag='0'
+	</update>
+	
+	<update id="batchDelDivHvitem">
+		update ins_gzgy_div_hvitem set del_flag='1' where pk_hvitemdiv in 
+		<foreach collection="list" item="delPks" index="no" open="("
+			separator="," close=")">
+			#{delPks}
+		</foreach> 
+		and del_flag='0'
+	</update>
+	
+	<delete id="batchDelDivHp">
+		delete from ins_gzgy_hp_div where pk_div in
+		<foreach collection="list" item="delPks" index="no" open="("
+			separator="," close=")">
+			#{delPks}
+		</foreach> 
+	</delete>
+	
+</mapper>

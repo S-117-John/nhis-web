@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.lb.dao.InvLbMapper">	
+	
+	<select id="queryInv" resultType="com.zebone.nhis.ma.lb.vo.InvLbVo">
+		select ei.*,i.eu_type,i.name as name_invcate,emp.name_emp as modifier_name from bl_emp_invoice ei
+			left join bd_invcate i on i.pk_invcate = ei.pk_invcate
+			left join BD_OU_EMPLOYEE emp on emp.PK_EMP = ei.MODIFIER
+		where ei.del_flag = '0' and ei.pk_org=#{pkOrg,jdbcType=VARCHAR} 
+		<if test="pkEmpinv!=null and pkEmpinv !=''">
+			and ei.pk_empinv = #{pkEmpinv,jdbcType=VARCHAR} 
+		</if>
+		<if test="pkInvcate!=null and pkInvcate !=''">
+			and ei.pk_invcate = #{pkInvcate,jdbcType=VARCHAR} 
+		</if>
+		<if test="pkEmpOpera!=null and pkEmpOpera !=''">
+			and ei.pk_emp_opera = #{pkEmpOpera,jdbcType=VARCHAR} 
+		</if>
+		<if test="flagUse!=null and flagUse !=''">
+			and ei.flag_use = #{flagUse,jdbcType=VARCHAR} 
+		</if>
+		<if test="flagActive!=null and flagActive !=''">
+			and ei.flag_active = #{flagActive,jdbcType=VARCHAR} 
+		</if>
+		<if test="cntUse!=null">
+			and ei.cnt_use &lt;= #{cntUse} 
+		</if>
+		<if test="dateBegin != null  and  dateBegin != ''">
+		 	and ei.date_opera &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+		 </if>
+		 <if test="dateEnd != null  and  dateEnd != ''">
+		 	and ei.date_opera &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+		 </if>
+	</select>
+	
+	
+	<select id="queryInvHistory" resultType="DynaBean">
+		select inv.code_inv,
+	       st.code_st,
+	       inv.date_inv,
+	       pv.name_pi,
+	       st.amount_st,
+	       inv.amount_inv,
+	       inv.date_cancel,
+	       inv.name_emp_cancel,
+		   inv.FLAG_CANCEL,
+	       inv.note
+	  from bl_invoice inv
+	       inner join bl_st_inv si on inv.pk_invoice=si.pk_invoice
+	       inner join bl_settle st on si.pk_settle=st.pk_settle
+	       inner join pv_encounter pv on st.pk_pv=pv.pk_pv
+	 where inv.pk_empinvoice=#{pkEmpinv,jdbcType=VARCHAR} 
+		<if test="cond !=null and cond !=''">
+			and (
+				(inv.code_inv like #{cond,jdbcType=VARCHAR} || '%')
+				or (pv.name_pi like '%' || #{cond,jdbcType=VARCHAR} || '%')
+			)
+		</if>
+	</select>
+	
+	<select id="queryInvHistoryByDeposit" resultType="DynaBean">
+		select depo.rept_no code_inv,
+	       depo.code_depo code_st,
+	       depo.date_pay date_inv,
+	       pv.name_pi,
+	       depo.amount amount_st,
+	       depo.amount amount_inv,
+	       depo.note
+	  from bl_deposit depo
+	       inner join pv_encounter pv on depo.pk_pv=pv.pk_pv
+	 where depo.pk_empinvoice=#{pkEmpinv,jdbcType=VARCHAR} and
+	       depo.eu_dptype='9' and
+	       depo.eu_direct='1'
+		<if test="cond !=null and cond !=''">
+			and (
+				(depo.rept_no like #{cond,jdbcType=VARCHAR} || '%')
+				or (pv.name_pi like '%' || #{cond,jdbcType=VARCHAR} || '%')
+			)
+		</if>	
+	</select>
+</mapper>

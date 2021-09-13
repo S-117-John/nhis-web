@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.CnSpecialDrugApplyMapper">
+	<select id="querySpecialDrugApply" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT
+			ord.pk_cnord,
+			pi.code_ip,
+			pi.name_pi,
+			ord.ordsn,
+			ord.eu_always,
+			ord.date_start,
+			ord.name_ord,
+			ord.eu_status_ord,
+			ord.pk_emp_ord,
+			aly.*,
+			dept.name_dept,
+			ord.name_emp_ord,
+			doc.name dt_empsrvtype,
+			emp.code_emp,        
+		  	sex.name dt_sex,           
+		  	pv.age_pv,
+			pv.bed_no,
+			pv.pk_pv      
+		 from cn_order ord
+	     inner join cn_ord_anti_apply aly on ord.pk_cnord=aly.pk_cnord
+	     inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+	     inner join pi_master pi on pv.pk_pi=pi.pk_pi 
+	     left join bd_ou_dept dept on ord.pk_dept = dept.pk_dept 
+		 left join bd_ou_employee emp on ord.pk_emp_ord = emp.pk_emp 
+		 left join bd_defdoc doc on doc.code = emp.dt_empsrvtype and doc.code_defdoclist = '010305' 
+		 left join bd_defdoc sex on sex.code = pi.dt_sex and sex.code_defdoclist = '000000'
+	     where ord.pk_emp_ord is not null and ord.pk_dept = #{pkDept}
+	     <if test="codeIp !=null and codeIp != ''">
+	     	and pi.code_ip = #{codeIp}
+	     </if>
+	     <if test="dateBegin !=null and dateBegin != ''">
+	     	and ord.date_start &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+	     </if>
+	     <if test="dateEnd !=null and dateEnd != ''">
+	     	and ord.date_start &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	     </if>
+	     <if test="euAlways !=null and euAlways != ''">
+	     	and ord.eu_always = #{euAlways}
+	     </if>
+	     
+	</select>
+</mapper>

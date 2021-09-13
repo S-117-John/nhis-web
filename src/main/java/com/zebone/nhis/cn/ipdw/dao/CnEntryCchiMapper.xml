@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.CnEntryCchiMapper">
+
+
+
+    <select id="queryPvCchi" parameterType="java.util.Map" resultType="DynaBean">
+        select
+        pc.pk_cncchi,
+        pc.pk_pv,
+        pc.sortno,
+        pc.pk_cchi,
+        pc.code_cchi,
+        pc.FLAG_MAJ,
+        pc.name_cchi,
+        pc.desc_bodypart,
+        pc.desc_drgprop,
+        pc.note,
+        pc.desc_cchi,
+        pc.pk_item,
+        item.name itemname,
+        ic.SPCODE,
+        pc.pk_emp,
+        pc.name_emp,
+        pc.pk_dept,
+        pc.pk_emp_entry,
+        pc.name_emp_entry,
+        case ic.eu_maj 
+          when '0' then '可选主要操作'
+          when '1' then '可选主要内科治疗'
+          when '9' then '非主要操作'
+        end eu_maj,
+        pc.date_entry
+        from cn_cchi pc
+        left outer join bd_item item on pc.pk_item=item.pk_item
+        left outer join bd_term_cchi ic on pc.pk_cchi=ic.pk_cchi
+        where pc.FLAG_DEL='0'
+        <if test="pkPv != null and pkPv != ''">
+            and pc.pk_pv  = #{pkPv}
+        </if>
+        <if test="codeOrName !=null and codeOrName != ''">
+            and (pc.name_cchi like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'
+            or pc.code_cchi like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'
+            or ic.spcode like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'
+            )
+        </if>
+        Order by pc.sortno
+
+    </select>
+
+    <select id="getSortno" resultType="java.lang.Integer" parameterType="java.lang.String">
+
+        select Sortno,
+        PK_PV
+        from CN_CCHI
+        where FLAG_DEL = '0'
+        <if test="pkPv != null and pkPv != ''">
+            and pk_pv = #{pkPv}
+        </if>
+
+
+    </select>
+
+    <select id="searchDefdoc" parameterType="java.util.Map" resultType="DynaBean">
+        select
+        dict.code,
+        dict.name,
+        dict.spcode,
+        dict.CODE_DEFDOCLIST,
+        dict.val_attr,
+        dict.del_flag,
+        dict.py_code
+        from bd_defdoc dict
+        where
+        dict.del_flag='0'
+        <if test="codeDefdoclist != null and codeDefdoclist != ''">
+        and dict.code_defdoclist  = #{codeDefdoclist}
+    </if>
+    <if test="codeOrName !=null and codeOrName != ''">
+        and (dict.name like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'
+        or dict.code like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'
+        or dict.spcode like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'
+        )
+    </if>
+
+    </select>
+
+    <select id="searchTemp" parameterType="java.util.Map" resultType="DynaBean">
+        select cchi.pk_cchi,
+        cchi.code_cchi,
+        cchi.name_cchi,
+        cchi.risk,
+        cchi.diff,
+        cchi.SPCODE,
+        CASE cchi.eu_maj  WHEN '9' THEN '0' ELSE '1' END eu_maj,
+        cate.name itemcate,
+        cd.pk_item,
+        item.code itemcode,
+        item.name itemname,
+        item.SPCODE,
+        cd.flag_del,
+        case cchi.eu_maj 
+          when '0' then '可选主要操作'
+          when '1' then '可选主要内科治疗'
+          when '9' then '非主要操作'
+        end eu_maj_name
+        from bd_term_cchi_dept cd
+        inner join bd_term_cchi cchi on cd.pk_cchi=cchi.pk_cchi
+        inner join bd_item item on cd.pk_item=item.pk_item
+        inner join bd_itemcate cate on item.pk_itemcate=cate.pk_itemcate
+        where cd.flag_del='0'
+        and cchi.flag_stop = '0'
+        <if test="pkDept != null and pkDept != ''">
+            and cd.pk_dept  = #{pkDept}
+        </if>
+        <if test="codeOrName !=null and codeOrName != ''">
+            and (cchi.code_cchi like #{codeOrName,jdbcType=VARCHAR} || '%'
+            or cchi.name_cchi like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'
+            or cchi.SPCODE like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'
+            )
+        </if>
+        <if test="itemCodeOrName !=null and itemCodeOrName != ''">
+            and (item.code like #{itemCodeOrName,jdbcType=VARCHAR} || '%'
+            or item.name like '%' || #{itemCodeOrName,jdbcType=VARCHAR} || '%'
+            or item.SPCODE like '%' || #{itemCodeOrName,jdbcType=VARCHAR} || '%'
+            )
+        </if>
+		<if test="sortno != null and sortno != ''">
+            and cd.sortno=#{sortno}
+        </if>
+    </select>
+
+    <select id="searchOrd" parameterType="java.util.Map" resultType="DynaBean">
+        select cchi.pk_cchi,
+        cchi.code_cchi,
+        cchi.name_cchi,
+        cchi.SPCODE,
+        cchi.risk,
+        cchi.diff,
+        CASE cchi.eu_maj  WHEN '9' THEN '0' ELSE '1' END eu_maj,
+        cate.name itemcate,
+        cg.pk_item,
+        ci.code_item,
+        cg.name_cg,
+        cate.spcode,
+        sum(cg.quan) quan,
+        sum(cg.amount) amount,
+        cg.DEL_FLAG,
+        case cchi.eu_maj 
+          when '0' then '可选主要操作'
+          when '1' then '可选主要内科治疗'
+          when '9' then '非主要操作'
+        end eu_maj_name
+        from bl_ip_dt cg
+        inner join bd_cchi_item ci on cg.pk_item=ci.pk_item
+        inner join bd_term_cchi cchi on ci.pk_cchi=cchi.pk_cchi
+        inner join bd_itemcate cate on cg.pk_itemcate=cate.pk_itemcate
+        where
+        cg.DEL_FLAG = '0'
+        and cchi.flag_stop = '0'
+        <if test="pkPv != null and pkPv != ''">
+            and  cg.pk_pv  = #{pkPv}
+        </if>
+        <if test="codeOrName !=null and codeOrName != ''">
+            and (cchi.name_cchi like #{codeOrName,jdbcType=VARCHAR} || '%'
+            or cchi.code_cchi like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'
+            or cchi.spcode like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'
+            )
+        </if>
+        <if test="itemCodeOrName !=null and itemCodeOrName != ''">
+            and (cg.name_cg like #{itemCodeOrName,jdbcType=VARCHAR} || '%'
+            or ci.code_item like '%' || #{itemCodeOrName,jdbcType=VARCHAR} || '%'
+            or cate.spcode like '%' || #{itemCodeOrName,jdbcType=VARCHAR} || '%'
+            )
+        </if>
+        group by
+        cchi.pk_cchi,
+        cchi.code_cchi,
+        cchi.name_cchi,
+        cchi.SPCODE,
+        cchi.risk,
+        cchi.diff,
+        cchi.eu_maj,
+        cate.NAME,
+        cg.pk_item,
+        ci.code_item,
+        cg.name_cg,
+        cate.spcode,
+        cg.DEL_FLAG
+        having sum(cg.quan)>0
+
+    </select>
+    <select id="check" parameterType="java.util.Map" resultType="DynaBean">
+        select
+        pc.pk_cncchi,
+        pc.pk_pv,
+        pc.pk_cchi,
+        pc.code_cchi,
+        pc.name_cchi,
+        pc.pk_item,
+        item.name itemname,
+        cchi.AGE_MAX,
+        cchi.AGE_MIN,
+        cchi.EU_SEX
+        from cn_cchi pc
+        left outer join bd_item item on pc.pk_item=item.pk_item
+        left outer join BD_TERM_CCHI cchi on pc.pk_cchi=cchi.pk_cchi
+        where cchi.FLAG_DEL='0'
+        and pc.FLAG_DEL = '0'
+        and item.DEL_FLAG = '0'
+        <if test="pkCchi != null and pkCchi != ''">
+            and cchi.PK_CCHI  = #{pkCchi}
+        </if>
+        <if test="pkPv != null and pkPv != ''">
+            and pc.pk_pv  = #{pkPv}
+        </if>
+
+    </select>
+    <select id="sex" parameterType="java.util.Map" resultType="DynaBean">
+        select
+        cchi.EU_MAJ,
+        cchi.AGE_MAX,
+        cchi.AGE_MIN,
+        cchi.EU_SEX
+        from BD_TERM_CCHI cchi
+        where cchi.FLAG_DEL='0'
+        <if test="pkCchi != null and pkCchi != ''">
+            and cchi.PK_CCHI  = #{pkCchi}
+        </if>
+    </select>
+    <select id="emp" parameterType="java.util.Map" resultType="DynaBean">
+        select
+        pk_emp,
+        name_user
+        from BD_OU_USER
+        where 1=1
+        <if test="pkEmp != null and pkEmp != ''">
+            and PK_USER  = #{pkEmp}
+        </if>
+    </select>
+
+</mapper>

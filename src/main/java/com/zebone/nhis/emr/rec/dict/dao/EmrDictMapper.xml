@@ -1,0 +1,4629 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.emr.rec.dict.dao.EmrDictMapper">
+
+    <resultMap id="ResultMapEmrDocType" type="com.zebone.nhis.common.module.emr.rec.dict.EmrDocType">
+        <id column="PK_DOCTYPE" jdbcType="CHAR" property="pkDoctype"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="PARENT_TYPE" jdbcType="VARCHAR" property="parentType"/>
+        <result column="LEVELS" jdbcType="DECIMAL" property="levels"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="WS_CODE" jdbcType="VARCHAR" property="wsCode"/>
+        <result column="EU_VISIT" jdbcType="CHAR" property="euVisit"/>
+        <result column="EU_USED" jdbcType="CHAR" property="euUsed"/>
+        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+        <result column="TITLE" jdbcType="VARCHAR" property="title"/>
+        <result column="FLAG_COURSE" jdbcType="CHAR" property="flagCourse"/>
+        <result column="FLAG_FIRST" jdbcType="CHAR" property="flagFirst"/>
+        <result column="FLAG_NEW_PAGE" jdbcType="CHAR" property="flagNewPage"/>
+        <result column="FLAG_HOME_PAGE" jdbcType="CHAR" property="flagHomePage"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="PK_WARD" jdbcType="VARCHAR" property="pkWard"/>
+        <result column="RESERVE" jdbcType="VARCHAR" property="reserve"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    <select id="getEmrDocTypeById" resultMap="ResultMapEmrDocType">
+        SELECT
+            *
+        FROM
+             EMR_DOC_TYPE
+        WHERE            
+            PK_DOCTYPE = #{pkDoctype,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllEmrDocType" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDocType" resultMap="ResultMapEmrDocType">
+          SELECT * FROM EMR_DOC_TYPE where nvl(py_code,'%') like '%${pyCode}%' or nvl(d_code,'%') like '%${dCode}%' order by code
+    </select>
+    
+    <select id="queryDocTypeListVstUsFlg" resultMap="ResultMapEmrDocType" parameterType="java.util.Map">
+          SELECT * FROM EMR_DOC_TYPE 
+         WHERE del_flag!='1' 
+	   	    <if test="euVisit != null" >
+         		and (eu_visit='0' or eu_visit=#{euVisit,jdbcType=CHAR}) 
+	        </if>
+	   	    <if test="euUsed != null" >
+	           and (eu_used='0' or eu_used=#{euUsed,jdbcType=CHAR})
+	        </if>
+	   	    <if test="wmTcmType != null" >
+	           and (nvl(flag_home_page,'0')=0 or (flag_home_page='1' and reserve like '%${wmTcmType}%'))
+	        </if>
+	   	    <if test="levels != null" >
+	           and (levels=#{levels,jdbcType=DECIMAL})
+	        </if>
+          ORDER BY sort_num,code,name
+    </select>
+    <select id="queryDocTypeLTDoc" resultMap="ResultMapEmrDocType">
+          SELECT * FROM EMR_DOC_TYPE 
+         WHERE levels='2' and del_flag!='1' and eu_visit in (0,'2') and eu_used in ('0','1') 
+          ORDER BY sort_num,code,name
+    </select>    
+    <delete id="deleteEmrDocType">
+        DELETE
+        FROM
+             EMR_DOC_TYPE
+        WHERE            
+            PK_DOCTYPE = #{pkDoctype,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrDocType" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDocType" >
+        INSERT INTO EMR_DOC_TYPE
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkDoctype != null" >
+                PK_DOCTYPE,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="parentType != null" >
+                PARENT_TYPE,
+            </if>
+            <if test="levels != null" >
+                LEVELS,
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE,
+            </if>
+            <if test="dCode != null" >
+                D_CODE,
+            </if>
+            <if test="wsCode != null" >
+                WS_CODE,
+            </if>
+            <if test="euVisit != null" >
+                EU_VISIT,
+            </if>
+            <if test="euUsed != null" >
+                EU_USED,
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM,
+            </if>
+            <if test="title != null" >
+                TITLE,
+            </if>
+            <if test="flagCourse != null" >
+                FLAG_COURSE,
+            </if>
+            <if test="flagFirst != null" >
+                FLAG_FIRST,
+            </if>        
+            <if test="flagNewPage != null" >
+                FLAG_NEW_PAGE,
+            </if>
+            <if test="flagHomePage != null" >
+                FLAG_HOME_PAGE,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT,
+            </if>
+            <if test="pkWard != null" >
+                PK_WARD,
+            </if>
+            <if test="reserve != null" >
+                RESERVE,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkDoctype != null" >
+                #{pkDoctype,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="parentType != null" >
+                #{parentType,jdbcType=VARCHAR},
+            </if> 
+            <if test="levels != null" >
+                #{levels,jdbcType=DECIMAL},
+            </if> 
+            <if test="pyCode != null" >
+                #{pyCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="dCode != null" >
+                #{dCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="wsCode != null" >
+                #{wsCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="euVisit != null" >
+                #{euVisit,jdbcType=CHAR},
+            </if> 
+            <if test="euUsed != null" >
+                #{euUsed,jdbcType=CHAR},
+            </if> 
+            <if test="sortNum != null" >
+                #{sortNum,jdbcType=DECIMAL},
+            </if> 
+            <if test="title != null" >
+                #{title,jdbcType=VARCHAR},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="pkDept != null" >
+                #{pkDept,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkWard != null" >
+                #{pkWard,jdbcType=VARCHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrDocType" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDocType" >
+        UPDATE EMR_DOC_TYPE
+        <set>
+            <if test="pkDoctype != null" >
+                PK_DOCTYPE = #{pkDoctype,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="parentType != null" >
+                PARENT_TYPE = #{parentType,jdbcType=VARCHAR},
+            </if>
+            <if test="levels != null" >
+                LEVELS = #{levels,jdbcType=DECIMAL},
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE = #{pyCode,jdbcType=VARCHAR},
+            </if>
+            <if test="dCode != null" >
+                D_CODE = #{dCode,jdbcType=VARCHAR},
+            </if>
+            <if test="wsCode != null" >
+                WS_CODE = #{wsCode,jdbcType=VARCHAR},
+            </if>
+            <if test="euVisit != null" >
+                EU_VISIT = #{euVisit,jdbcType=CHAR},
+            </if>
+            <if test="euUsed != null" >
+                EU_USED = #{euUsed,jdbcType=CHAR},
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM = #{sortNum,jdbcType=DECIMAL},
+            </if>
+            <if test="title != null" >
+                TITLE = #{title,jdbcType=VARCHAR},
+            </if>
+            <if test="flagCourse != null" >
+                FLAG_COURSE = #{flagCourse,jdbcType=VARCHAR},
+            </if>
+            <if test="flagFirst != null" >
+                FLAG_FIRST = #{flagFirst,jdbcType=VARCHAR},
+            </if>            
+            <if test="flagNewPage != null" >
+                FLAG_NEW_PAGE = #{flagNewPage,jdbcType=VARCHAR},
+            </if>
+            <if test="flagHomePage != null" >
+                FLAG_HOME_PAGE = #{flagHomePage,jdbcType=VARCHAR},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT = #{pkDept,jdbcType=VARCHAR},
+            </if>
+            <if test="pkWard != null" >
+                PK_WARD = #{pkWard,jdbcType=VARCHAR},
+            </if>
+            <if test="reserve != null" >
+                RESERVE = #{reserve,jdbcType=VARCHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_DOCTYPE = #{pkDoctype,jdbcType=CHAR}
+    </update>
+    
+    <resultMap id="ResultMapEmrParagraph" type="com.zebone.nhis.common.module.emr.rec.dict.EmrParagraph">
+        <id column="PK_PARA" jdbcType="CHAR" property="pkPara"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="WS_CODE" jdbcType="VARCHAR" property="wsCode"/>
+        <result column="EU_PARA_TYPE" jdbcType="CHAR" property="euParaType"/>
+        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+        <result column="SHORT_NAME" jdbcType="VARCHAR" property="shortName"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="FLAG_EDIT_PROTECT" jdbcType="CHAR" property="flagEditProtect"/>
+        <result column="FLAG_DELETE_PROTECT" jdbcType="CHAR" property="flagDeleteProtect"/>
+        <result column="FLAG_VISIBLE" jdbcType="CHAR" property="flagVisible"/>
+        <result column="FLAG_EDIT_IN_READ_ONLY" jdbcType="CHAR" property="flagEditInReadOnly"/>
+        <result column="FLAG_TITLE_VISIBLE" jdbcType="CHAR" property="flagTitleVisible"/>
+        <result column="TITLE" jdbcType="VARCHAR" property="title"/>
+        <result column="EU_TITLE_POSITION" jdbcType="CHAR" property="euTitlePosition"/>
+        <result column="EU_CAN_EDIT_TITLE_PROP" jdbcType="CHAR" property="euCanEditTitleProp"/>
+        <result column="EU_PARA_VISIBLE" jdbcType="CHAR" property="euParaVisible"/>
+        <result column="DOC_DATA" jdbcType="BLOB" property="docData"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    <select id="getEmrParagraphById" resultMap="ResultMapEmrParagraph">
+        SELECT
+            *
+        FROM
+             EMR_PARAGRAPH
+        WHERE            
+            PK_PARA = #{pkPara,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllEmrParagraph" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrParagraph" resultMap="ResultMapEmrParagraph">
+          SELECT * FROM EMR_PARAGRAPH where py_code like '%${pyCode}%' or d_code like '%${dCode}%' order by code
+    </select>
+    
+    <select id="queryParaList" resultMap="ResultMapEmrParagraph">
+          SELECT * FROM EMR_PARAGRAPH where del_flag !='1' OR del_flag is null order by code 
+    </select>
+    
+    
+    <delete id="deleteEmrParagraph">
+        DELETE
+        FROM
+             EMR_PARAGRAPH
+        WHERE            
+            PK_PARA = #{pkPara,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrParagraph" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrParagraph" >
+        INSERT INTO EMR_PARAGRAPH
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkPara != null" >
+                PK_PARA,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE,
+            </if>
+            <if test="dCode != null" >
+                D_CODE,
+            </if>
+            <if test="wsCode != null" >
+                WS_CODE,
+            </if>
+            <if test="euParaType != null" >
+                EU_PARA_TYPE,
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM,
+            </if>
+            <if test="shortName != null" >
+                SHORT_NAME,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="flagEditProtect != null" >
+                FLAG_EDIT_PROTECT,
+            </if>
+            <if test="flagDeleteProtect != null" >
+                FLAG_DELETE_PROTECT,
+            </if>
+            <if test="flagVisible != null" >
+                FLAG_VISIBLE,
+            </if>
+            <if test="flagEditInReadOnly != null" >
+                FLAG_EDIT_IN_READ_ONLY,
+            </if>
+            <if test="flagTitleVisible != null" >
+                FLAG_TITLE_VISIBLE,
+            </if>
+            <if test="title != null" >
+                TITLE,
+            </if>
+            <if test="euTitlePosition != null" >
+                EU_TITLE_POSITION,
+            </if>
+            <if test="euCanEditTitleProp != null" >
+                EU_CAN_EDIT_TITLE_PROP,
+            </if>
+            <if test="euParaVisible != null" >
+                EU_PARA_VISIBLE,
+            </if>
+            <if test="docData != null" >
+                DOC_DATA,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkPara != null" >
+                #{pkPara,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="pyCode != null" >
+                #{pyCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="dCode != null" >
+                #{dCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="wsCode != null" >
+                #{wsCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="euParaType != null" >
+                #{euParaType,jdbcType=CHAR},
+            </if> 
+            <if test="sortNum != null" >
+                #{sortNum,jdbcType=DECIMAL},
+            </if> 
+            <if test="shortName != null" >
+                #{shortName,jdbcType=VARCHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="flagEditProtect != null" >
+                #{flagEditProtect,jdbcType=CHAR},
+            </if> 
+            <if test="flagDeleteProtect != null" >
+                #{flagDeleteProtect,jdbcType=CHAR},
+            </if> 
+            <if test="flagVisible != null" >
+                #{flagVisible,jdbcType=CHAR},
+            </if> 
+            <if test="flagEditInReadOnly != null" >
+                #{flagEditInReadOnly,jdbcType=CHAR},
+            </if> 
+            <if test="flagTitleVisible != null" >
+                #{flagTitleVisible,jdbcType=CHAR},
+            </if> 
+            <if test="title != null" >
+                #{title,jdbcType=VARCHAR},
+            </if> 
+            <if test="euTitlePosition != null" >
+                #{euTitlePosition,jdbcType=CHAR},
+            </if> 
+            <if test="euCanEditTitleProp != null" >
+                #{euCanEditTitleProp,jdbcType=CHAR},
+            </if> 
+            <if test="euParaVisible != null" >
+                #{euParaVisible,jdbcType=CHAR},
+            </if> 
+            <if test="docData != null" >
+                #{docData,jdbcType=BLOB},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrParagraph" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrParagraph" >
+        UPDATE EMR_PARAGRAPH
+        <set>
+            <if test="pkPara != null" >
+                PK_PARA = #{pkPara,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE = #{pyCode,jdbcType=VARCHAR},
+            </if>
+            <if test="dCode != null" >
+                D_CODE = #{dCode,jdbcType=VARCHAR},
+            </if>
+            <if test="wsCode != null" >
+                WS_CODE = #{wsCode,jdbcType=VARCHAR},
+            </if>
+            <if test="euParaType != null" >
+                EU_PARA_TYPE = #{euParaType,jdbcType=CHAR},
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM = #{sortNum,jdbcType=DECIMAL},
+            </if>
+            <if test="shortName != null" >
+                SHORT_NAME = #{shortName,jdbcType=VARCHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="flagEditProtect != null" >
+                FLAG_EDIT_PROTECT = #{flagEditProtect,jdbcType=CHAR},
+            </if>
+            <if test="flagDeleteProtect != null" >
+                FLAG_DELETE_PROTECT = #{flagDeleteProtect,jdbcType=CHAR},
+            </if>
+            <if test="flagVisible != null" >
+                FLAG_VISIBLE = #{flagVisible,jdbcType=CHAR},
+            </if>
+            <if test="flagEditInReadOnly != null" >
+                FLAG_EDIT_IN_READ_ONLY = #{flagEditInReadOnly,jdbcType=CHAR},
+            </if>
+            <if test="flagTitleVisible != null" >
+                FLAG_TITLE_VISIBLE = #{flagTitleVisible,jdbcType=CHAR},
+            </if>
+            <if test="title != null" >
+                TITLE = #{title,jdbcType=VARCHAR},
+            </if>
+            <if test="euTitlePosition != null" >
+                EU_TITLE_POSITION = #{euTitlePosition,jdbcType=CHAR},
+            </if>
+            <if test="euCanEditTitleProp != null" >
+                EU_CAN_EDIT_TITLE_PROP = #{euCanEditTitleProp,jdbcType=CHAR},
+            </if>
+            <if test="euParaVisible != null" >
+                EU_PARA_VISIBLE = #{euParaVisible,jdbcType=CHAR},
+            </if>
+            <if test="docData != null" >
+                DOC_DATA = #{docData,jdbcType=BLOB},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_PARA = #{pkPara,jdbcType=CHAR}
+    </update>
+        
+    <resultMap id="ResultMapEmrDataElement" type="com.zebone.nhis.common.module.emr.rec.dict.EmrDataElement">
+        <id column="PK_ELEMENT" jdbcType="CHAR" property="pkElement"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="EU_DATA_TYPE" jdbcType="VARCHAR" property="euDataType"/>
+        <result column="EU_PRE_FORMAT" jdbcType="VARCHAR" property="euPreFormat"/>
+        <result column="EU_CTRL_TYPE" jdbcType="DECIMAL" property="euCtrlType"/>
+        <result column="WS_CODE" jdbcType="VARCHAR" property="wsCode"/>
+        <result column="EU_CODE_TYPE" jdbcType="CHAR" property="euCodeType"/>
+        <result column="CODE_VALUE" jdbcType="VARCHAR" property="codeValue"/>
+        <result column="EU_DICT_TYPE" jdbcType="CHAR" property="euDictType"/>
+        <result column="DICT_CODE" jdbcType="VARCHAR" property="dictCode"/>
+        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+        <result column="DE_VALUE_LIST" jdbcType="VARCHAR" property="deValueList"/>
+        <result column="EDGE_STYLE" jdbcType="VARCHAR" property="edgeStyle"/>
+        <result column="EDGE_STYLE2" jdbcType="VARCHAR" property="edgeStyle2"/>
+        <result column="FLAG_EDGE" jdbcType="CHAR" property="flagEdge"/>
+        <result column="FLAG_DEL_PROTECT" jdbcType="CHAR" property="flagDelProtect"/>
+        <result column="FLAG_EDIT_PROTECT" jdbcType="CHAR" property="flagEditProtect"/>
+        <result column="HELP_TIP" jdbcType="VARCHAR" property="helpTip"/>
+        <result column="TITLE" jdbcType="VARCHAR" property="title"/>
+        <result column="SHORT_NAME" jdbcType="VARCHAR" property="shortName"/>
+        <result column="FLAG_IS_CTRL_HIDDEN" jdbcType="CHAR" property="flagIsCtrlHidden"/>
+        <result column="PLACE_HOLDER" jdbcType="VARCHAR" property="placeHolder"/>
+        <result column="TEXT" jdbcType="VARCHAR" property="text"/>
+        <result column="FLAG_MUST_FILL_CONTENT" jdbcType="CHAR" property="flagMustFillContent"/>
+        <result column="FLAG_PRINT_ABLE" jdbcType="CHAR" property="flagPrintAble"/>
+        <result column="FLAG_IS_NOT_IN_XML" jdbcType="CHAR" property="flagIsNotInXml"/>
+        <result column="FLAG_VIEW_SECRET" jdbcType="CHAR" property="flagViewSecret"/>
+        <result column="MAX_LEN" jdbcType="DECIMAL" property="maxLen"/>
+        <result column="MAX_VALUE" jdbcType="DECIMAL" property="maxValue"/>
+        <result column="MIN_VALUE" jdbcType="DECIMAL" property="minValue"/>
+        <result column="PRECI" jdbcType="DECIMAL" property="preci"/>
+        <result column="NUM_UNIT" jdbcType="VARCHAR" property="numUnit"/>
+        <result column="NUM_ERR_INPUT_INFO" jdbcType="VARCHAR" property="numErrInputInfo"/>
+        <result column="NUM_OUT_RANGE_INFO" jdbcType="VARCHAR" property="numOutRangeInfo"/>
+        <result column="CHECK_BOX_STATUS" jdbcType="CHAR" property="checkBoxStatus"/>
+        <result column="CHECK_POS" jdbcType="VARCHAR" property="checkPos"/>
+        <result column="EU_DATE_FORMAT" jdbcType="DECIMAL" property="euDateFormat"/>
+        <result column="DEFINITION" jdbcType="VARCHAR" property="definition"/>
+        <result column="FONT_NAME" jdbcType="VARCHAR" property="fontName"/>
+        <result column="EU_FONT_SIZE" jdbcType="DECIMAL" property="euFontSize"/>
+        <result column="EU_FONT_TYPE" jdbcType="DECIMAL" property="euFontType"/>
+        <result column="EU_ALIGN_TYPE" jdbcType="DECIMAL" property="euAlignType"/>
+        <result column="MUTEX_STR" jdbcType="VARCHAR" property="mutexStr"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="DE_DATA" jdbcType="BLOB" property="deData"/>
+        <result column="IMG_INDEX" jdbcType="DECIMAL" property="imgIndex"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+        <result column="DE_CODE_VALUE" jdbcType="VARCHAR" property="deCodeValue"/>
+    </resultMap>
+    <select id="getEmrDataElementById" resultMap="ResultMapEmrDataElement">
+        SELECT
+            *
+        FROM
+             EMR_DATA_ELEMENT
+        WHERE            
+            PK_ELEMENT = #{pkElement,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllEmrDataElement" resultMap="ResultMapEmrDataElement">
+          SELECT * FROM EMR_DATA_ELEMENT 
+    </select>
+    
+    <select id="queryDataEleList" resultMap="ResultMapEmrDataElement">
+          SELECT PK_ELEMENT,
+		       PK_ORG,
+		       CODE,
+		       NAME,
+		       PY_CODE,
+		       D_CODE,
+		       EU_DATA_TYPE,
+		       EU_PRE_FORMAT,
+		       EU_CTRL_TYPE,
+		       WS_CODE,
+		       EU_CODE_TYPE,
+		       CODE_VALUE,
+		       EU_DICT_TYPE,
+		       DICT_CODE,
+		       SORT_NUM,
+		       DE_VALUE_LIST,
+		       EDGE_STYLE,
+		       EDGE_STYLE2,
+		       FLAG_EDGE,
+		       FLAG_DEL_PROTECT,
+		       FLAG_EDIT_PROTECT,
+		       HELP_TIP,
+		       TITLE,
+		       SHORT_NAME,
+		       FLAG_IS_CTRL_HIDDEN,
+		       PLACE_HOLDER,
+		       TEXT,
+		       FLAG_MUST_FILL_CONTENT,
+		       FLAG_PRINT_ABLE,
+		       FLAG_IS_NOT_IN_XML,
+		       FLAG_VIEW_SECRET,
+		       MAX_LEN,
+		       MAX_VALUE,
+		       MIN_VALUE,
+		       PRECI,
+		       NUM_UNIT,
+		       NUM_ERR_INPUT_INFO,
+		       NUM_OUT_RANGE_INFO,
+		       CHECK_BOX_STATUS,
+		       CHECK_POS,
+		       EU_DATE_FORMAT,
+		       DEFINITION,
+		       FONT_NAME,
+		       EU_FONT_SIZE,
+		       EU_FONT_TYPE,
+		       EU_ALIGN_TYPE,
+		       MUTEX_STR,
+		       REMARK,
+		       /*DE_DATA,*/
+		       IMG_INDEX,
+		       DEL_FLAG,
+		       CREATOR,
+		       CREATE_TIME,
+		       TS,
+		       DE_CODE_VALUE
+		 FROM EMR_DATA_ELEMENT where del_flag!='1' order by code
+    </select>
+        
+    <select id="queryDataElementByConds" resultMap="ResultMapEmrDataElement" parameterType="java.util.Map">
+          SELECT * FROM EMR_DATA_ELEMENT 
+           where del_flag!='1' 
+			<if test="code != null" >
+               and code = #{code,jdbcType=VARCHAR}
+            </if>
+			<if test="name != null" >
+               and name = #{name,jdbcType=VARCHAR}
+            </if>
+			<if test="codeTypes != null" >
+               and ${codeTypes}
+            </if>              
+    </select>
+            
+     <select id="queryDataElementByCond" resultMap="ResultMapEmrDataElement" parameterType="java.util.Map">
+          SELECT * FROM EMR_DATA_ELEMENT 
+           where del_flag!='1' 
+			<if test="code != null" >
+               and code = #{code,jdbcType=VARCHAR}
+            </if>
+			<if test="name != null" >
+               and name = #{name,jdbcType=VARCHAR}
+            </if>
+			and eu_code_type in ('1','2','3','4')              
+    </select>
+            
+            
+    <delete id="deleteEmrDataElement">
+        DELETE
+        FROM
+             EMR_DATA_ELEMENT
+        WHERE            
+            PK_ELEMENT = #{pkElement,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrDataElement" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDataElement" >
+        INSERT INTO EMR_DATA_ELEMENT
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkElement != null" >
+                PK_ELEMENT,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE,
+            </if>
+            <if test="dCode != null" >
+                D_CODE,
+            </if>
+            <if test="euDataType != null" >
+                EU_DATA_TYPE,
+            </if>
+            <if test="euPreFormat != null" >
+                EU_PRE_FORMAT,
+            </if>
+            <if test="euCtrlType != null" >
+                EU_CTRL_TYPE,
+            </if>
+            <if test="wsCode != null" >
+                WS_CODE,
+            </if>
+            <if test="euCodeType != null" >
+                EU_CODE_TYPE,
+            </if>
+            <if test="codeValue != null" >
+                CODE_VALUE,
+            </if>
+            <if test="euDictType != null" >
+                EU_DICT_TYPE,
+            </if>
+            <if test="dictCode != null" >
+                DICT_CODE,
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM,
+            </if>
+            <if test="deValueList != null" >
+                DE_VALUE_LIST,
+            </if>
+            <if test="edgeStyle != null" >
+                EDGE_STYLE,
+            </if>
+            <if test="edgeStyle2 != null" >
+                EDGE_STYLE2,
+            </if>
+            <if test="flagEdge != null" >
+                FLAG_EDGE,
+            </if>
+            <if test="flagDelProtect != null" >
+                FLAG_DEL_PROTECT,
+            </if>
+            <if test="flagEditProtect != null" >
+                FLAG_EDIT_PROTECT,
+            </if>
+            <if test="helpTip != null" >
+                HELP_TIP,
+            </if>
+            <if test="title != null" >
+                TITLE,
+            </if>
+            <if test="shortName != null" >
+                SHORT_NAME,
+            </if>
+            <if test="flagIsCtrlHidden != null" >
+                FLAG_IS_CTRL_HIDDEN,
+            </if>
+            <if test="placeHolder != null" >
+                PLACE_HOLDER,
+            </if>
+            <if test="text != null" >
+                TEXT,
+            </if>
+            <if test="flagMustFillContent != null" >
+                FLAG_MUST_FILL_CONTENT,
+            </if>
+            <if test="flagPrintAble != null" >
+                FLAG_PRINT_ABLE,
+            </if>
+            <if test="flagIsNotInXml != null" >
+                FLAG_IS_NOT_IN_XML,
+            </if>
+            <if test="flagViewSecret != null" >
+                FLAG_VIEW_SECRET,
+            </if>
+            <if test="maxLen != null" >
+                MAX_LEN,
+            </if>
+            <if test="maxValue != null" >
+                MAX_VALUE,
+            </if>
+            <if test="minValue != null" >
+                MIN_VALUE,
+            </if>
+            <if test="preci != null" >
+                PRECI,
+            </if>
+            <if test="numUnit != null" >
+                NUM_UNIT,
+            </if>
+            <if test="numErrInputInfo != null" >
+                NUM_ERR_INPUT_INFO,
+            </if>
+            <if test="numOutRangeInfo != null" >
+                NUM_OUT_RANGE_INFO,
+            </if>
+            <if test="checkBoxStatus != null" >
+                CHECK_BOX_STATUS,
+            </if>
+            <if test="checkPos != null" >
+                CHECK_POS,
+            </if>
+            <if test="euDateFormat != null" >
+                EU_DATE_FORMAT,
+            </if>
+            <if test="definition != null" >
+                DEFINITION,
+            </if>
+            <if test="fontName != null" >
+                FONT_NAME,
+            </if>
+            <if test="euFontSize != null" >
+                EU_FONT_SIZE,
+            </if>
+            <if test="euFontType != null" >
+                EU_FONT_TYPE,
+            </if>
+            <if test="euAlignType != null" >
+                EU_ALIGN_TYPE,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="deData != null" >
+                DE_DATA,
+            </if>
+            <if test="imgIndex != null" >
+                IMG_INDEX,
+            </if>
+            <if test="deCodeValue != null" >
+                DE_CODE_VALUE,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkElement != null" >
+                #{pkElement,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="pyCode != null" >
+                #{pyCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="dCode != null" >
+                #{dCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="euDataType != null" >
+                #{euDataType,jdbcType=VARCHAR},
+            </if> 
+            <if test="euPreFormat != null" >
+                #{euPreFormat,jdbcType=VARCHAR},
+            </if> 
+            <if test="euCtrlType != null" >
+                #{euCtrlType,jdbcType=DECIMAL},
+            </if> 
+            <if test="wsCode != null" >
+                #{wsCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="euCodeType != null" >
+                #{euCodeType,jdbcType=CHAR},
+            </if> 
+            <if test="codeValue != null" >
+                #{codeValue,jdbcType=VARCHAR},
+            </if> 
+            <if test="euDictType != null" >
+                #{euDictType,jdbcType=CHAR},
+            </if> 
+            <if test="dictCode != null" >
+                #{dictCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="sortNum != null" >
+                #{sortNum,jdbcType=DECIMAL},
+            </if> 
+            <if test="deValueList != null" >
+                #{deValueList,jdbcType=VARCHAR},
+            </if> 
+            <if test="edgeStyle != null" >
+                #{edgeStyle,jdbcType=VARCHAR},
+            </if> 
+            <if test="edgeStyle2 != null" >
+                #{edgeStyle2,jdbcType=VARCHAR},
+            </if> 
+            <if test="flagEdge != null" >
+                #{flagEdge,jdbcType=CHAR},
+            </if> 
+            <if test="flagDelProtect != null" >
+                #{flagDelProtect,jdbcType=CHAR},
+            </if> 
+            <if test="flagEditProtect != null" >
+                #{flagEditProtect,jdbcType=CHAR},
+            </if> 
+            <if test="helpTip != null" >
+                #{helpTip,jdbcType=VARCHAR},
+            </if> 
+            <if test="title != null" >
+                #{title,jdbcType=VARCHAR},
+            </if> 
+            <if test="shortName != null" >
+                #{shortName,jdbcType=VARCHAR},
+            </if> 
+            <if test="flagIsCtrlHidden != null" >
+                #{flagIsCtrlHidden,jdbcType=CHAR},
+            </if> 
+            <if test="placeHolder != null" >
+                #{placeHolder,jdbcType=VARCHAR},
+            </if> 
+            <if test="text != null" >
+                #{text,jdbcType=VARCHAR},
+            </if> 
+            <if test="flagMustFillContent != null" >
+                #{flagMustFillContent,jdbcType=CHAR},
+            </if> 
+            <if test="flagPrintAble != null" >
+                #{flagPrintAble,jdbcType=CHAR},
+            </if> 
+            <if test="flagIsNotInXml != null" >
+                #{flagIsNotInXml,jdbcType=CHAR},
+            </if> 
+            <if test="flagViewSecret != null" >
+                #{flagViewSecret,jdbcType=CHAR},
+            </if> 
+            <if test="maxLen != null" >
+                #{maxLen,jdbcType=DECIMAL},
+            </if> 
+            <if test="maxValue != null" >
+                #{maxValue,jdbcType=DECIMAL},
+            </if> 
+            <if test="minValue != null" >
+                #{minValue,jdbcType=DECIMAL},
+            </if> 
+            <if test="preci != null" >
+                #{preci,jdbcType=DECIMAL},
+            </if> 
+            <if test="numUnit != null" >
+                #{numUnit,jdbcType=VARCHAR},
+            </if> 
+            <if test="numErrInputInfo != null" >
+                #{numErrInputInfo,jdbcType=VARCHAR},
+            </if> 
+            <if test="numOutRangeInfo != null" >
+                #{numOutRangeInfo,jdbcType=VARCHAR},
+            </if> 
+            <if test="checkBoxStatus != null" >
+                #{checkBoxStatus,jdbcType=CHAR},
+            </if> 
+            <if test="checkPos != null" >
+                #{checkPos,jdbcType=VARCHAR},
+            </if> 
+            <if test="euDateFormat != null" >
+                #{euDateFormat,jdbcType=DECIMAL},
+            </if> 
+            <if test="definition != null" >
+                #{definition,jdbcType=VARCHAR},
+            </if> 
+            <if test="fontName != null" >
+                #{fontName,jdbcType=VARCHAR},
+            </if> 
+            <if test="euFontSize != null" >
+                #{euFontSize,jdbcType=DECIMAL},
+            </if> 
+            <if test="euFontType != null" >
+                #{euFontType,jdbcType=DECIMAL},
+            </if> 
+            <if test="euAlignType != null" >
+                #{euAlignType,jdbcType=DECIMAL},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="deData != null" >
+                #{deData,jdbcType=BLOB},
+            </if> 
+            <if test="imgIndex != null" >
+                #{imgIndex,jdbcType=DECIMAL},
+            </if> 
+            <if test="deCodeValue != null" >
+                #{deCodeValue,jdbcType=VARCHAR},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrDataElement" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDataElement" >
+        UPDATE EMR_DATA_ELEMENT
+        <set>
+            <if test="pkElement != null" >
+                PK_ELEMENT = #{pkElement,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE = #{pyCode,jdbcType=VARCHAR},
+            </if>
+            <if test="dCode != null" >
+                D_CODE = #{dCode,jdbcType=VARCHAR},
+            </if>
+            <if test="euDataType != null" >
+                EU_DATA_TYPE = #{euDataType,jdbcType=VARCHAR},
+            </if>
+            <if test="euPreFormat != null" >
+                EU_PRE_FORMAT = #{euPreFormat,jdbcType=VARCHAR},
+            </if>
+            <if test="euCtrlType != null" >
+                EU_CTRL_TYPE = #{euCtrlType,jdbcType=DECIMAL},
+            </if>
+            <if test="wsCode != null" >
+                WS_CODE = #{wsCode,jdbcType=VARCHAR},
+            </if>
+            <if test="euCodeType != null" >
+                EU_CODE_TYPE = #{euCodeType,jdbcType=CHAR},
+            </if>
+            <if test="codeValue != null" >
+                CODE_VALUE = #{codeValue,jdbcType=VARCHAR},
+            </if>
+            <if test="euDictType != null" >
+                EU_DICT_TYPE = #{euDictType,jdbcType=CHAR},
+            </if>
+            <if test="dictCode != null" >
+                DICT_CODE = #{dictCode,jdbcType=VARCHAR},
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM = #{sortNum,jdbcType=DECIMAL},
+            </if>
+            <if test="deValueList != null" >
+                DE_VALUE_LIST = #{deValueList,jdbcType=VARCHAR},
+            </if>
+            <if test="edgeStyle != null" >
+                EDGE_STYLE = #{edgeStyle,jdbcType=VARCHAR},
+            </if>
+            <if test="edgeStyle2 != null" >
+                EDGE_STYLE2 = #{edgeStyle2,jdbcType=VARCHAR},
+            </if>
+            <if test="flagEdge != null" >
+                FLAG_EDGE = #{flagEdge,jdbcType=CHAR},
+            </if>
+            <if test="flagDelProtect != null" >
+                FLAG_DEL_PROTECT = #{flagDelProtect,jdbcType=CHAR},
+            </if>
+            <if test="flagEditProtect != null" >
+                FLAG_EDIT_PROTECT = #{flagEditProtect,jdbcType=CHAR},
+            </if>
+            <if test="helpTip != null" >
+                HELP_TIP = #{helpTip,jdbcType=VARCHAR},
+            </if>
+            <if test="title != null" >
+                TITLE = #{title,jdbcType=VARCHAR},
+            </if>
+            <if test="shortName != null" >
+                SHORT_NAME = #{shortName,jdbcType=VARCHAR},
+            </if>
+            <if test="flagIsCtrlHidden != null" >
+                FLAG_IS_CTRL_HIDDEN = #{flagIsCtrlHidden,jdbcType=CHAR},
+            </if>
+            <if test="placeHolder != null" >
+                PLACE_HOLDER = #{placeHolder,jdbcType=VARCHAR},
+            </if>
+            <if test="text != null" >
+                TEXT = #{text,jdbcType=VARCHAR},
+            </if>
+            <if test="flagMustFillContent != null" >
+                FLAG_MUST_FILL_CONTENT = #{flagMustFillContent,jdbcType=CHAR},
+            </if>
+            <if test="flagPrintAble != null" >
+                FLAG_PRINT_ABLE = #{flagPrintAble,jdbcType=CHAR},
+            </if>
+            <if test="flagIsNotInXml != null" >
+                FLAG_IS_NOT_IN_XML = #{flagIsNotInXml,jdbcType=CHAR},
+            </if>
+            <if test="flagViewSecret != null" >
+                FLAG_VIEW_SECRET = #{flagViewSecret,jdbcType=CHAR},
+            </if>
+            <if test="maxLen != null" >
+                MAX_LEN = #{maxLen,jdbcType=DECIMAL},
+            </if>
+            <if test="maxValue != null" >
+                MAX_VALUE = #{maxValue,jdbcType=DECIMAL},
+            </if>
+            <if test="minValue != null" >
+                MIN_VALUE = #{minValue,jdbcType=DECIMAL},
+            </if>
+            <if test="preci != null" >
+                PRECI = #{preci,jdbcType=DECIMAL},
+            </if>
+            <if test="numUnit != null" >
+                NUM_UNIT = #{numUnit,jdbcType=VARCHAR},
+            </if>
+            <if test="numErrInputInfo != null" >
+                NUM_ERR_INPUT_INFO = #{numErrInputInfo,jdbcType=VARCHAR},
+            </if>
+            <if test="numOutRangeInfo != null" >
+                NUM_OUT_RANGE_INFO = #{numOutRangeInfo,jdbcType=VARCHAR},
+            </if>
+            <if test="checkBoxStatus != null" >
+                CHECK_BOX_STATUS = #{checkBoxStatus,jdbcType=CHAR},
+            </if>
+            <if test="checkPos != null" >
+                CHECK_POS = #{checkPos,jdbcType=VARCHAR},
+            </if>
+            <if test="euDateFormat != null" >
+                EU_DATE_FORMAT = #{euDateFormat,jdbcType=DECIMAL},
+            </if>
+            <if test="definition != null" >
+                DEFINITION = #{definition,jdbcType=VARCHAR},
+            </if>
+            <if test="fontName != null" >
+                FONT_NAME = #{fontName,jdbcType=VARCHAR},
+            </if>
+            <if test="euFontSize != null" >
+                EU_FONT_SIZE = #{euFontSize,jdbcType=DECIMAL},
+            </if>
+            <if test="euFontType != null" >
+                EU_FONT_TYPE = #{euFontType,jdbcType=DECIMAL},
+            </if>
+            <if test="euAlignType != null" >
+                EU_ALIGN_TYPE = #{euAlignType,jdbcType=DECIMAL},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="deData != null" >
+                DE_DATA = #{deData,jdbcType=BLOB},
+            </if>
+            <if test="imgIndex != null" >
+                IMG_INDEX = #{imgIndex,jdbcType=DECIMAL},
+            </if>
+            <if test="deCodeValue != null" >
+                DE_CODE_VALUE = #{deCodeValue,jdbcType=VARCHAR},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_ELEMENT = #{pkElement,jdbcType=CHAR}
+    </update>
+     
+        
+    <resultMap id="ResultMapEmrDictClass" type="com.zebone.nhis.common.module.emr.rec.dict.EmrDictClass">
+        <id column="PK_DICTCLS" jdbcType="CHAR" property="pkDictcls"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="GB_CODE" jdbcType="VARCHAR" property="gbCode"/>
+        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    <select id="getEmrDictClassById" resultMap="ResultMapEmrDictClass">
+        SELECT
+            *
+        FROM
+             EMR_DICT_CLASS
+        WHERE            
+            PK_DICTCLS = #{pkDictcls,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllEmrDictClass" resultMap="ResultMapEmrDictClass">
+          SELECT * FROM EMR_DICT_CLASS 
+    </select>
+    <select id="queryDictClassList" resultMap="ResultMapEmrDictClass">
+          SELECT * FROM EMR_DICT_CLASS where del_flag!='1' order by sort_num,code 
+    </select>    
+    <delete id="deleteEmrDictClass">
+        DELETE
+        FROM
+             EMR_DICT_CLASS
+        WHERE            
+            PK_DICTCLS = #{pkDictcls,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrDictClass" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDictClass" >
+        INSERT INTO EMR_DICT_CLASS
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkDictcls != null" >
+                PK_DICTCLS,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE,
+            </if>
+            <if test="dCode != null" >
+                D_CODE,
+            </if>
+            <if test="gbCode != null" >
+                GB_CODE,
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkDictcls != null" >
+                #{pkDictcls,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="pyCode != null" >
+                #{pyCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="dCode != null" >
+                #{dCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="gbCode != null" >
+                #{gbCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="sortNum != null" >
+                #{sortNum,jdbcType=DECIMAL},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrDictClass" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDictClass" >
+        UPDATE EMR_DICT_CLASS
+        <set>
+            <if test="pkDictcls != null" >
+                PK_DICTCLS = #{pkDictcls,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE = #{pyCode,jdbcType=VARCHAR},
+            </if>
+            <if test="dCode != null" >
+                D_CODE = #{dCode,jdbcType=VARCHAR},
+            </if>
+            <if test="gbCode != null" >
+                GB_CODE = #{gbCode,jdbcType=VARCHAR},
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM = #{sortNum,jdbcType=DECIMAL},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_DICTCLS = #{pkDictcls,jdbcType=CHAR}
+    </update>
+    
+    <resultMap id="ResultMapEmrDictCode" type="com.zebone.nhis.common.module.emr.rec.dict.EmrDictCode">
+        <id column="PK_DICTCODE" jdbcType="CHAR" property="pkDictcode"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="PK_DICTCLS" jdbcType="VARCHAR" property="pkDictcls"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="GB_CODE" jdbcType="VARCHAR" property="gbCode"/>
+        <result column="VALUE" jdbcType="VARCHAR" property="value"/>
+        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    <select id="getEmrDictCodeById" resultMap="ResultMapEmrDictCode">
+        SELECT
+            *
+        FROM
+             EMR_DICT_CODE
+        WHERE            
+            PK_DICTCODE = #{pkDictcode,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllEmrDictCode" resultMap="ResultMapEmrDictCode">
+          SELECT * FROM EMR_DICT_CODE 
+    </select>
+
+    <select id="queryDictCodeList" resultMap="ResultMapEmrDictCode">
+          SELECT bd.pk_defdoc pk_dictcode,bd.pk_org,bd.code_defdoclist pk_dictcls,bd.code,bd.name,bd.py_code,bd.d_code,
+          		 bd.memo remark,bd.shortname as value,bd.creator,bd.create_time,bd.del_flag,bd.ts,
+          		 bd.ba_code,bd.ba_code sort_num,bd.ba_code gb_code
+            FROM bd_defdoc bd
+           where bd.code_defdoclist=#{classCode,jdbcType=VARCHAR} and
+                 bd.del_flag !='1' order by bd.ba_code,bd.code 
+    </select>
+    <select id="queryDictCodeListEmr" resultMap="ResultMapEmrDictCode">
+          SELECT cd.* FROM EMR_DICT_CODE cd,EMR_DICT_CLASS cls
+           where cd.PK_DICTCLS=cls.PK_DICTCLS and
+           		 cls.code=#{classCode,jdbcType=VARCHAR} and
+                 cd.del_flag!='1' order by cd.sort_num,cd.code 
+    </select>    
+    <delete id="deleteEmrDictCode">
+        DELETE
+        FROM
+             EMR_DICT_CODE
+        WHERE            
+            PK_DICTCODE = #{pkDictcode,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrDictCode" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDictCode" >
+        INSERT INTO EMR_DICT_CODE
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkDictcode != null" >
+                PK_DICTCODE,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="pkDictcls != null" >
+                PK_DICTCLS,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE,
+            </if>
+            <if test="dCode != null" >
+                D_CODE,
+            </if>
+            <if test="gbCode != null" >
+                GB_CODE,
+            </if>
+            <if test="value != null" >
+                VALUE,
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkDictcode != null" >
+                #{pkDictcode,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkDictcls != null" >
+                #{pkDictcls,jdbcType=VARCHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="pyCode != null" >
+                #{pyCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="dCode != null" >
+                #{dCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="gbCode != null" >
+                #{gbCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="value != null" >
+                #{value,jdbcType=VARCHAR},
+            </if> 
+            <if test="sortNum != null" >
+                #{sortNum,jdbcType=DECIMAL},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrDictCode" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDictCode" >
+        UPDATE EMR_DICT_CODE
+        <set>
+            <if test="pkDictcode != null" >
+                PK_DICTCODE = #{pkDictcode,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="pkDictcls != null" >
+                PK_DICTCLS = #{pkDictcls,jdbcType=VARCHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE = #{pyCode,jdbcType=VARCHAR},
+            </if>
+            <if test="dCode != null" >
+                D_CODE = #{dCode,jdbcType=VARCHAR},
+            </if>
+            <if test="gbCode != null" >
+                GB_CODE = #{gbCode,jdbcType=VARCHAR},
+            </if>
+            <if test="value != null" >
+                VALUE = #{value,jdbcType=VARCHAR},
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM = #{sortNum,jdbcType=DECIMAL},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_DICTCODE = #{pkDictcode,jdbcType=CHAR}
+    </update>
+    
+       <resultMap id="ResultMapEmrDictOpt" type="com.zebone.nhis.common.module.emr.rec.dict.EmrDictOpt">
+        <id column="PK_DICTOPT" jdbcType="CHAR" property="pkDictopt"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+        <result column="CODE_COLUMN" jdbcType="VARCHAR" property="codeColumn"/>
+        <result column="NAME_COLUMN" jdbcType="VARCHAR" property="nameColumn"/>
+        <result column="PY_COLUMN" jdbcType="VARCHAR" property="pyColumn"/>
+        <result column="D_COLUMN" jdbcType="VARCHAR" property="dColumn"/>
+        <result column="DELETED_COLUMN" jdbcType="VARCHAR" property="deletedColumn"/>
+        <result column="VALUE_COLUMN" jdbcType="VARCHAR" property="valueColumn"/>
+        <result column="WHERE_SQL" jdbcType="VARCHAR" property="whereSql"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    <select id="getEmrDictOptById" resultMap="ResultMapEmrDictOpt">
+        SELECT
+            *
+        FROM
+             EMR_DICT_OPT
+        WHERE            
+            PK_DICTOPT = #{pkDictopt,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllEmrDictOpt" resultMap="ResultMapEmrDictOpt">
+          SELECT * FROM EMR_DICT_OPT 
+    </select>
+    
+    
+    <select id="getDictOptByCode" resultMap="ResultMapEmrDictOpt">
+          SELECT * FROM EMR_DICT_OPT where code=#{code,jdbcType=VARCHAR}
+    </select>
+    
+    <delete id="deleteEmrDictOpt">
+        DELETE
+        FROM
+             EMR_DICT_OPT
+        WHERE            
+            PK_DICTOPT = #{pkDictopt,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrDictOpt" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDictOpt" >
+        INSERT INTO EMR_DICT_OPT
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkDictopt != null" >
+                PK_DICTOPT,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE,
+            </if>
+            <if test="dCode != null" >
+                D_CODE,
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM,
+            </if>
+            <if test="codeColumn != null" >
+                CODE_COLUMN,
+            </if>
+            <if test="nameColumn != null" >
+                NAME_COLUMN,
+            </if>
+            <if test="pyColumn != null" >
+                PY_COLUMN,
+            </if>
+            <if test="dColumn != null" >
+                D_COLUMN,
+            </if>
+            <if test="deletedColumn != null" >
+                DELETED_COLUMN,
+            </if>
+            <if test="valueColumn != null" >
+                VALUE_COLUMN,
+            </if>
+            <if test="whereSql != null" >
+                WHERE_SQL,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkDictopt != null" >
+                #{pkDictopt,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="pyCode != null" >
+                #{pyCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="dCode != null" >
+                #{dCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="sortNum != null" >
+                #{sortNum,jdbcType=DECIMAL},
+            </if> 
+            <if test="codeColumn != null" >
+                #{codeColumn,jdbcType=VARCHAR},
+            </if> 
+            <if test="nameColumn != null" >
+                #{nameColumn,jdbcType=VARCHAR},
+            </if> 
+            <if test="pyColumn != null" >
+                #{pyColumn,jdbcType=VARCHAR},
+            </if> 
+            <if test="dColumn != null" >
+                #{dColumn,jdbcType=VARCHAR},
+            </if> 
+            <if test="deletedColumn != null" >
+                #{deletedColumn,jdbcType=VARCHAR},
+            </if> 
+            <if test="valueColumn != null" >
+                #{valueColumn,jdbcType=VARCHAR},
+            </if> 
+            <if test="whereSql != null" >
+                #{whereSql,jdbcType=VARCHAR},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrDictOpt" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDictOpt" >
+        UPDATE EMR_DICT_OPT
+        <set>
+            <if test="pkDictopt != null" >
+                PK_DICTOPT = #{pkDictopt,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE = #{pyCode,jdbcType=VARCHAR},
+            </if>
+            <if test="dCode != null" >
+                D_CODE = #{dCode,jdbcType=VARCHAR},
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM = #{sortNum,jdbcType=DECIMAL},
+            </if>
+            <if test="codeColumn != null" >
+                CODE_COLUMN = #{codeColumn,jdbcType=VARCHAR},
+            </if>
+            <if test="nameColumn != null" >
+                NAME_COLUMN = #{nameColumn,jdbcType=VARCHAR},
+            </if>
+            <if test="pyColumn != null" >
+                PY_COLUMN = #{pyColumn,jdbcType=VARCHAR},
+            </if>
+            <if test="dColumn != null" >
+                D_COLUMN = #{dColumn,jdbcType=VARCHAR},
+            </if>
+            <if test="deletedColumn != null" >
+                DELETED_COLUMN = #{deletedColumn,jdbcType=VARCHAR},
+            </if>
+            <if test="valueColumn != null" >
+                VALUE_COLUMN = #{valueColumn,jdbcType=VARCHAR},
+            </if>
+            <if test="whereSql != null" >
+                WHERE_SQL = #{whereSql,jdbcType=VARCHAR},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_DICTOPT = #{pkDictopt,jdbcType=CHAR}
+    </update>
+    
+    <resultMap id="ResultMapEmrDictRange" type="com.zebone.nhis.common.module.emr.rec.dict.EmrDictRange">
+        <id column="PK_RANGE" jdbcType="CHAR" property="pkRange"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="GB_CODE" jdbcType="VARCHAR" property="gbCode"/>
+        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    <select id="getEmrDictRangeById" resultMap="ResultMapEmrDictRange">
+        SELECT
+            *
+        FROM
+             EMR_DICT_RANGE
+        WHERE            
+            PK_RANGE = #{pkRange,jdbcType=CHAR}
+    </select>
+    <select id="queryDictRangeList" resultMap="ResultMapEmrDictRange">
+        SELECT
+            *
+        FROM
+             EMR_DICT_RANGE
+        WHERE            
+            del_flag!='1' order by sort_num,code
+    </select>    
+    <select id="queryDictRangeByConds" resultMap="ResultMapEmrDictRange">
+        SELECT
+            *
+        FROM
+             EMR_DICT_RANGE
+        WHERE            
+            del_flag!='1' and 
+            (code like #{code,jdbcType=VARCHAR} or 
+             name like #{code,jdbcType=VARCHAR} or 
+             py_code like #{code,jdbcType=VARCHAR}  or 
+             d_code like #{code,jdbcType=VARCHAR}) 
+            order by sort_num,code 
+    </select>    
+    <select id="queryDictRangeByName" resultMap="ResultMapEmrDictRange" parameterType="java.util.Map">
+        SELECT
+            *
+        FROM
+             EMR_DICT_RANGE
+        WHERE            
+            del_flag!='1'  
+			<if test="code != null" >
+               and code = #{code,jdbcType=VARCHAR}
+            </if>
+			<if test="code_un != null" >
+               and code != #{code_un,jdbcType=VARCHAR}
+            </if>
+			<if test="name != null" >
+               and name = #{name,jdbcType=VARCHAR}
+            </if>             
+			<if test="pkRange != null" >
+               and pk_range != #{pkRange,jdbcType=VARCHAR}
+            </if>             
+            order by sort_num,code 
+    </select>  
+    <select id="queryDictRangeCodeByConds" resultMap="ResultMapEmrDictRangeCode" parameterType="java.util.Map">
+        SELECT
+            *
+        FROM
+             EMR_DICT_RANGE_CODE
+        WHERE            
+            del_flag!='1'  
+			<if test="code != null" >
+               and code = #{code,jdbcType=VARCHAR}
+            </if>
+			<if test="name != null" >
+               and name = #{name,jdbcType=VARCHAR}
+            </if>             
+			<if test="pkRangeCode != null" >
+               and pk_range_code != #{pkRangeCode,jdbcType=VARCHAR}
+            </if>             
+			<if test="pkRange != null" >
+               and pk_range = #{pkRange,jdbcType=VARCHAR}
+            </if>             
+            order by sort_num,code 
+    </select>       
+    <select id="findAllEmrDictRange" resultMap="ResultMapEmrDictRange">
+          SELECT * FROM EMR_DICT_RANGE 
+    </select>
+    
+    <delete id="deleteEmrDictRange">
+        DELETE
+        FROM
+             EMR_DICT_RANGE
+        WHERE            
+            PK_RANGE = #{pkRange,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrDictRange" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDictRange" >
+        INSERT INTO EMR_DICT_RANGE
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkRange != null" >
+                PK_RANGE,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE,
+            </if>
+            <if test="dCode != null" >
+                D_CODE,
+            </if>
+            <if test="gbCode != null" >
+                GB_CODE,
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkRange != null" >
+                #{pkRange,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="pyCode != null" >
+                #{pyCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="dCode != null" >
+                #{dCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="gbCode != null" >
+                #{gbCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="sortNum != null" >
+                #{sortNum,jdbcType=DECIMAL},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrDictRange" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDictRange" >
+        UPDATE EMR_DICT_RANGE
+        <set>
+            <if test="pkRange != null" >
+                PK_RANGE = #{pkRange,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE = #{pyCode,jdbcType=VARCHAR},
+            </if>
+            <if test="dCode != null" >
+                D_CODE = #{dCode,jdbcType=VARCHAR},
+            </if>
+            <if test="gbCode != null" >
+                GB_CODE = #{gbCode,jdbcType=VARCHAR},
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM = #{sortNum,jdbcType=DECIMAL},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_RANGE = #{pkRange,jdbcType=CHAR}
+    </update>    
+    
+    <resultMap id="ResultMapEmrDictRangeCode" type="com.zebone.nhis.common.module.emr.rec.dict.EmrDictRangeCode">
+        <id column="PK_RANGE_CODE" jdbcType="CHAR" property="pkRangeCode"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="PK_RANGE" jdbcType="VARCHAR" property="pkRange"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="GB_CODE" jdbcType="VARCHAR" property="gbCode"/>
+        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    <select id="getEmrDictRangeCodeById" resultMap="ResultMapEmrDictRangeCode">
+        SELECT
+            *
+        FROM
+             EMR_DICT_RANGE_CODE
+        WHERE            
+            PK_RANGE_CODE = #{pkRangeCode,jdbcType=CHAR}
+    </select>
+    <select id="queryDictRangeCodeList" resultMap="ResultMapEmrDictRangeCode">
+        SELECT
+            code.* 
+        FROM
+             EMR_DICT_RANGE_CODE code,EMR_DICT_RANGE class
+        WHERE code.pk_range=class.pk_range and 
+        	 (class.pk_range= #{pkRange,jdbcType=VARCHAR} or class.code= #{pkRange,jdbcType=VARCHAR}) and        
+            code.del_flag!='1' order by code.sort_num,code.code
+    </select>        
+    <select id="findAllEmrDictRangeCode" resultMap="ResultMapEmrDictRangeCode">
+          SELECT * FROM EMR_DICT_RANGE_CODE 
+    </select>
+    
+    <delete id="deleteEmrDictRangeCode">
+        DELETE
+        FROM
+             EMR_DICT_RANGE_CODE
+        WHERE            
+            PK_RANGE_CODE = #{pkRangeCode,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrDictRangeCode" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDictRangeCode" >
+        INSERT INTO EMR_DICT_RANGE_CODE
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkRangeCode != null" >
+                PK_RANGE_CODE,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="pkRange != null" >
+                PK_RANGE,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE,
+            </if>
+            <if test="dCode != null" >
+                D_CODE,
+            </if>
+            <if test="gbCode != null" >
+                GB_CODE,
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkRangeCode != null" >
+                #{pkRangeCode,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkRange != null" >
+                #{pkRange,jdbcType=VARCHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="pyCode != null" >
+                #{pyCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="dCode != null" >
+                #{dCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="gbCode != null" >
+                #{gbCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="sortNum != null" >
+                #{sortNum,jdbcType=DECIMAL},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrDictRangeCode" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDictRangeCode" >
+        UPDATE EMR_DICT_RANGE_CODE
+        <set>
+            <if test="pkRangeCode != null" >
+                PK_RANGE_CODE = #{pkRangeCode,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="pkRange != null" >
+                PK_RANGE = #{pkRange,jdbcType=VARCHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE = #{pyCode,jdbcType=VARCHAR},
+            </if>
+            <if test="dCode != null" >
+                D_CODE = #{dCode,jdbcType=VARCHAR},
+            </if>
+            <if test="gbCode != null" >
+                GB_CODE = #{gbCode,jdbcType=VARCHAR},
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM = #{sortNum,jdbcType=DECIMAL},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_RANGE_CODE = #{pkRangeCode,jdbcType=CHAR}
+    </update> 
+    
+    <resultMap id="ResultMapEmrParameter" type="com.zebone.nhis.common.module.emr.rec.dict.EmrParameter">
+        <id column="PK_PARAM" jdbcType="CHAR" property="pkParam"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="VALUE" jdbcType="VARCHAR" property="value"/>
+        <result column="SHORT_NAME" jdbcType="VARCHAR" property="shortName"/>
+        <result column="P_VALUE" jdbcType="VARCHAR" property="pValue"/>
+        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="FLAG_SHOW" jdbcType="CHAR" property="flagShow"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    <select id="getEmrParameterById" resultMap="ResultMapEmrParameter">
+        SELECT
+            *
+        FROM
+             EMR_PARAMETER
+        WHERE            
+            PK_PARAM = #{pkParam,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllEmrParameter" resultMap="ResultMapEmrParameter">
+          SELECT * FROM EMR_PARAMETER 
+    </select>
+    <select id="queryParameterList" resultMap="ResultMapEmrParameter">
+          SELECT pk_sysparam pk_param,pk_org,code,name,null py_code,null d_code,val as value,null short_name,desc_param p_value,0 sort_num,note remark,'0' flag_show,del_flag,creator,create_time,ts
+          FROM bd_sysparam where del_flag !='1' 
+			<if test="pkOrg != null" >
+               and (pk_org like #{pkOrg,jdbcType=VARCHAR} or pk_org like '~%')
+            </if>
+          and exists  (select 1 from bd_sysparam_temp  where bd_sysparam_temp.dt_pacate ='07' and bd_sysparam.pk_paramtemp=bd_sysparam_temp.pk_paramtemp)             
+          order by pk_org,code 
+    </select>    
+        <select id="queryParameterByCode" resultMap="ResultMapEmrParameter">
+          SELECT pk_sysparam pk_param,pk_org,code,name,null py_code,null d_code,val as  value,null short_name,desc_param p_value,0 sort_num,note remark,'0' flag_show,del_flag,creator,create_time,ts
+            FROM bd_sysparam where del_flag !='1' and code = #{code,jdbcType=VARCHAR}
+           <if test="pkOrg != null" >
+               and (pk_org like #{pkOrg,jdbcType=VARCHAR} or pk_org like '~%')
+           </if>
+           and exists  (select 1 from bd_sysparam_temp where bd_sysparam_temp.dt_pacate ='07' and bd_sysparam.pk_paramtemp=bd_sysparam_temp.pk_paramtemp)             
+           order by pk_org
+    </select>    
+        <select id="queryParameterByCodeLike" resultMap="ResultMapEmrParameter">
+          SELECT pk_sysparam pk_param,pk_org,code,name,null py_code,null d_code,val as value,null short_name,desc_param p_value,0 sort_num,note remark,'0' flag_show,del_flag,creator,create_time,ts
+            FROM bd_sysparam where del_flag !='1' and code like '${code}%' 
+           <if test="pkOrg != null" >
+               and (pk_org like #{pkOrg,jdbcType=VARCHAR} or pk_org like '~%')
+           </if>
+           and exists  (select 1 from bd_sysparam_temp  where bd_sysparam_temp.dt_pacate ='07' and bd_sysparam.pk_paramtemp=bd_sysparam_temp.pk_paramtemp)             
+           order by pk_org,code
+    </select>    
+    <select id="queryParameterListEmr" resultMap="ResultMapEmrParameter">
+          SELECT * FROM EMR_PARAMETER where del_flag!='1' 
+			<if test="pkOrg != null" >
+               and pk_org like #{pkOrg,jdbcType=VARCHAR} /*or pk_org like '~%'*/
+            </if>            
+          order by pk_org,sort_num,code 
+    </select>    
+        <select id="queryParameterByCodeEmr" resultMap="ResultMapEmrParameter">
+          SELECT * FROM EMR_PARAMETER where del_flag!='1' and code = #{code,jdbcType=VARCHAR}
+           <if test="pkOrg != null" >
+               and pk_org like #{pkOrg,jdbcType=VARCHAR} /*or pk_org like '~%'*/
+           </if>            
+           order by pk_org
+    </select>    
+    <delete id="deleteEmrParameter">
+        DELETE
+        FROM
+             EMR_PARAMETER
+        WHERE            
+            PK_PARAM = #{pkParam,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrParameter" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrParameter" >
+        INSERT INTO EMR_PARAMETER
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkParam != null" >
+                PK_PARAM,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="value != null" >
+                VALUE,
+            </if>
+            <if test="shortName != null" >
+                SHORT_NAME,
+            </if>
+            <if test="pValue != null" >
+                P_VALUE,
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="flagShow != null" >
+                FLAG_SHOW,
+            </if>
+            <if test="deFlag != null" >
+                DE_FLAG,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkParam != null" >
+                #{pkParam,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="value != null" >
+                #{value,jdbcType=VARCHAR},
+            </if> 
+            <if test="shortName != null" >
+                #{shortName,jdbcType=VARCHAR},
+            </if> 
+            <if test="pValue != null" >
+                #{pValue,jdbcType=VARCHAR},
+            </if> 
+            <if test="sortNum != null" >
+                #{sortNum,jdbcType=DECIMAL},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="flagShow != null" >
+                #{flagShow,jdbcType=CHAR},
+            </if> 
+            <if test="deFlag != null" >
+                #{deFlag,jdbcType=CHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrParameter" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrParameter" >
+        UPDATE EMR_PARAMETER
+        <set>
+            <if test="pkParam != null" >
+                PK_PARAM = #{pkParam,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="value != null" >
+                VALUE = #{value,jdbcType=VARCHAR},
+            </if>
+            <if test="shortName != null" >
+                SHORT_NAME = #{shortName,jdbcType=VARCHAR},
+            </if>
+            <if test="pValue != null" >
+                P_VALUE = #{pValue,jdbcType=VARCHAR},
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM = #{sortNum,jdbcType=DECIMAL},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="flagShow != null" >
+                FLAG_SHOW = #{flagShow,jdbcType=CHAR},
+            </if>
+            <if test="deFlag != null" >
+                DE_FLAG = #{deFlag,jdbcType=CHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_PARAM = #{pkParam,jdbcType=CHAR}
+    </update>
+    
+    <resultMap id="ResultMapEmrSwitch" type="com.zebone.nhis.common.module.emr.rec.dict.EmrSwitch">
+        <id column="PK_SWITCH" jdbcType="CHAR" property="pkSwitch"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="VALUE" jdbcType="CHAR" property="value"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    <select id="getEmrSwitchById" resultMap="ResultMapEmrSwitch">
+        SELECT
+            *
+        FROM
+             EMR_SWITCH
+        WHERE            
+            PK_SWITCH = #{pkSwitch,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllEmrSwitch" resultMap="ResultMapEmrSwitch">
+          SELECT * FROM EMR_SWITCH 
+    </select>
+    <select id="querySwitchList" resultMap="ResultMapEmrSwitch">
+          SELECT pk_sysparam pk_switch,pk_org,code,name,val as value,note remark,del_flag,creator,create_time,ts
+            FROM bd_sysparam 
+           where del_flag!='1' 
+			<if test="pkOrg != null" >
+              and (pk_org like #{pkOrg,jdbcType=VARCHAR} or pk_org like '~%')
+            </if>
+           and desc_param='0~1'            
+           and exists  (select 1 from bd_sysparam_temp  where bd_sysparam_temp.dt_pacate ='07' and bd_sysparam.pk_paramtemp=bd_sysparam_temp.pk_paramtemp)            
+          order by pk_org,code 
+    </select>    
+    <select id="querySwitchByCode" resultMap="ResultMapEmrSwitch">
+          SELECT pk_sysparam pk_switch,pk_org,code,name,val as value,note remark,del_flag,creator,create_time,ts
+            FROM bd_sysparam 
+           where del_flag!='1' 
+             and code = #{code,jdbcType=VARCHAR}
+           <if test="pkOrg != null" >
+               and (pk_org like #{pkOrg,jdbcType=VARCHAR} or pk_org like '~%')
+           </if>
+    </select>    
+
+    <select id="querySwitchListEmr" resultMap="ResultMapEmrSwitch">
+          SELECT * FROM EMR_SWITCH where del_flag!='1' 
+			<if test="pkOrg != null" >
+               and pk_org like #{pkOrg,jdbcType=VARCHAR} /*or pk_org like '~%'*/
+            </if>            
+          order by pk_org,code 
+    </select>    
+    <select id="querySwitchByCodeEmr" resultMap="ResultMapEmrSwitch">
+          SELECT * FROM EMR_SWITCH where del_flag!='1' 
+          and code = #{code,jdbcType=VARCHAR}
+           <if test="pkOrg != null" >
+               and pk_org like #{pkOrg,jdbcType=VARCHAR} /* or pk_org like '~%'*/
+           </if>            
+    </select>    
+     
+    <delete id="deleteEmrSwitch">
+        DELETE
+        FROM
+             EMR_SWITCH
+        WHERE            
+            PK_SWITCH = #{pkSwitch,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrSwitch" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrSwitch" >
+        INSERT INTO EMR_SWITCH
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkSwitch != null" >
+                PK_SWITCH,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="value != null" >
+                VALUE,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkSwitch != null" >
+                #{pkSwitch,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="value != null" >
+                #{value,jdbcType=CHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrSwitch" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrSwitch" >
+        UPDATE EMR_SWITCH
+        <set>
+            <if test="pkSwitch != null" >
+                PK_SWITCH = #{pkSwitch,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="value != null" >
+                VALUE = #{value,jdbcType=CHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_SWITCH = #{pkSwitch,jdbcType=CHAR}
+    </update>    
+    
+    <resultMap id="ResultMapEmrCommonWords" type="com.zebone.nhis.common.module.emr.rec.dict.EmrCommonWords">
+        <id column="PK_CWORD" jdbcType="CHAR" property="pkCword"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="EU_LEVEL" jdbcType="DECIMAL" property="euLevel"/>
+        <result column="EU_USED" jdbcType="VARCHAR" property="euUsed"/>
+        <result column="DT_TYPE" jdbcType="VARCHAR" property="dtType"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="GB_CODE" jdbcType="VARCHAR" property="gbCode"/>
+        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="WORD_TEXT" jdbcType="CLOB" property="wordText"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    <select id="getEmrCommonWordsById" resultMap="ResultMapEmrCommonWords">
+        SELECT
+            *
+        FROM
+             EMR_COMMON_WORDS
+        WHERE            
+            PK_CWORD = #{pkCword,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllEmrCommonWords" resultMap="ResultMapEmrCommonWords">
+          SELECT * FROM EMR_COMMON_WORDS 
+    </select>
+    
+    <delete id="deleteEmrCommonWords">
+        DELETE
+        FROM
+             EMR_COMMON_WORDS
+        WHERE            
+            PK_CWORD = #{pkCword,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrCommonWords" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrCommonWords" >
+        INSERT INTO EMR_COMMON_WORDS
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkCword != null" >
+                PK_CWORD,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="euLevel != null" >
+                EU_LEVEL,
+            </if>
+            <if test="euUsed != null" >
+                EU_USED,
+            </if>
+            <if test="dtType != null" >
+                DT_TYPE,
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE,
+            </if>
+            <if test="dCode != null" >
+                D_CODE,
+            </if>
+            <if test="gbCode != null" >
+                GB_CODE,
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM,
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT,
+            </if>
+            <if test="wordText != null" >
+                WORD_TEXT,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkCword != null" >
+                #{pkCword,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="euLevel != null" >
+                #{euLevel,jdbcType=DECIMAL},
+            </if>
+            <if test="euUsed != null" >
+                #{euUsed,jdbcType=VARCHAR},
+            </if> 
+            <if test="dtType != null" >
+                #{dtType,jdbcType=VARCHAR},
+            </if>  
+            <if test="pyCode != null" >
+                #{pyCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="dCode != null" >
+                #{dCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="gbCode != null" >
+                #{gbCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="sortNum != null" >
+                #{sortNum,jdbcType=DECIMAL},
+            </if> 
+            <if test="pkDept != null" >
+                #{pkDept,jdbcType=VARCHAR},
+            </if> 
+            <if test="wordText != null" >
+                #{wordText,jdbcType=CLOB},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrCommonWords" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrCommonWords" >
+        UPDATE EMR_COMMON_WORDS
+        <set>
+            <if test="pkCword != null" >
+                PK_CWORD = #{pkCword,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="euLevel != null" >
+                EU_LEVEL = #{euLevel,jdbcType=DECIMAL},
+            </if>
+            <if test="euUsed != null" >
+                EU_USED = #{euUsed,jdbcType=VARCHAR},
+            </if>
+            <if test="dtType != null" >
+                DT_TYPE = #{dtType,jdbcType=VARCHAR},
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE = #{pyCode,jdbcType=VARCHAR},
+            </if>
+            <if test="dCode != null" >
+                D_CODE = #{dCode,jdbcType=VARCHAR},
+            </if>
+            <if test="gbCode != null" >
+                GB_CODE = #{gbCode,jdbcType=VARCHAR},
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM = #{sortNum,jdbcType=DECIMAL},
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT = #{pkDept,jdbcType=VARCHAR},
+            </if>
+            <if test="wordText != null" >
+                WORD_TEXT = #{wordText,jdbcType=CLOB},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_CWORD = #{pkCword,jdbcType=CHAR}
+    </update>    
+    
+    <resultMap id="ResultMapEmrKnowledgeBase" type="com.zebone.nhis.common.module.emr.rec.dict.EmrKnowledgeBase">
+        <id column="PK_KNOW_BASE" jdbcType="CHAR" property="pkKnowBase"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="GB_CODE" jdbcType="VARCHAR" property="gbCode"/>
+        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+        <result column="KB_TEXT" jdbcType="CLOB" property="kbText"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    <select id="getEmrKnowledgeBaseById" resultMap="ResultMapEmrKnowledgeBase">
+        SELECT
+            *
+        FROM
+             EMR_KNOWLEDGE_BASE
+        WHERE            
+            PK_KNOW_BASE = #{pkKnowBase,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllEmrKnowledgeBase" resultMap="ResultMapEmrKnowledgeBase">
+          SELECT * FROM EMR_KNOWLEDGE_BASE 
+    </select>
+    
+    <delete id="deleteEmrKnowledgeBase">
+        DELETE
+        FROM
+             EMR_KNOWLEDGE_BASE
+        WHERE            
+            PK_KNOW_BASE = #{pkKnowBase,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrKnowledgeBase" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrKnowledgeBase" >
+        INSERT INTO EMR_KNOWLEDGE_BASE
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkKnowBase != null" >
+                PK_KNOW_BASE,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="typeCode != null" >
+                TYPE_CODE,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE,
+            </if>
+            <if test="dCode != null" >
+                D_CODE,
+            </if>
+            <if test="gbCode != null" >
+                GB_CODE,
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM,
+            </if>
+            <if test="kbText != null" >
+                KB_TEXT,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkKnowBase != null" >
+                #{pkKnowBase,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="typeCode != null" >
+                #{typeCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="pyCode != null" >
+                #{pyCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="dCode != null" >
+                #{dCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="gbCode != null" >
+                #{gbCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="sortNum != null" >
+                #{sortNum,jdbcType=DECIMAL},
+            </if> 
+            <if test="kbText != null" >
+                #{kbText,jdbcType=CLOB},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrKnowledgeBase" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrKnowledgeBase" >
+        UPDATE EMR_KNOWLEDGE_BASE
+        <set>
+            <if test="pkKnowBase != null" >
+                PK_KNOW_BASE = #{pkKnowBase,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="typeCode != null" >
+                TYPE_CODE = #{typeCode,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE = #{pyCode,jdbcType=VARCHAR},
+            </if>
+            <if test="dCode != null" >
+                D_CODE = #{dCode,jdbcType=VARCHAR},
+            </if>
+            <if test="gbCode != null" >
+                GB_CODE = #{gbCode,jdbcType=VARCHAR},
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM = #{sortNum,jdbcType=DECIMAL},
+            </if>
+            <if test="kbText != null" >
+                KB_TEXT = #{kbText,jdbcType=CLOB},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_KNOW_BASE = #{pkKnowBase,jdbcType=CHAR}
+    </update>   
+    
+    <select id="getSysSnByCode" resultType="java.lang.Integer">
+        SELECT
+            nvl(value,0) as sys_sn
+        FROM
+             EMR_SN_GENERATOR
+        WHERE            
+            CODE = #{code,jdbcType=VARCHAR}
+    </select>
+    <update id="updateSysSn" >
+        UPDATE EMR_SN_GENERATOR set value= nvl(value,0) +1
+        WHERE 
+            CODE = #{code,jdbcType=VARCHAR}
+    </update>
+     <insert id="saveSysSn" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrSnGenerator" >
+        INSERT INTO EMR_SN_GENERATOR
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="value != null" >
+                VALUE,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=CHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="value != null" >
+                #{value,jdbcType=DECIMAL},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>    
+    <resultMap id="ResultMapBdTermDiagBase" type="com.zebone.nhis.common.module.base.bd.mk.BdTermDiag">
+        <id column="PK_DIAG" jdbcType="CHAR" property="pkDiag"/>
+        <result column="DT_SYSTEM" jdbcType="VARCHAR" property="dtSystem"/>
+        <result column="DT_CODE_EHR" jdbcType="VARCHAR" property="dtCodeEhr"/>
+        <result column="DIAGCODE" jdbcType="VARCHAR" property="diagcode"/>
+        <result column="DIAGNAME" jdbcType="VARCHAR" property="diagname"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="PK_FATHER" jdbcType="VARCHAR" property="pkFather"/>
+        <result column="DT_CODE_PH" jdbcType="VARCHAR" property="dtCodePh"/>
+        <result column="FLAG_PI" jdbcType="CHAR" property="flagPi"/>
+    </resultMap>
+    
+    <select id="queryTermDiagList" parameterType="com.zebone.nhis.common.module.base.bd.mk.BdTermDiag"  resultMap="ResultMapBdTermDiagBase" >
+    	select * from bd_term_diag d 
+    	where d.diagcode not in (select kb.code from emr_knowledge_base kb where kb.del_flag='0') 
+    	and d.dt_system in ('00','10')
+    	and d.del_flag='0' and 
+    	(d.diagcode like '%${diagcode}%' or d.diagname like '%${diagname}%' or d.py_code like '%${pyCode}%' or d.d_code like '%${dCode}%')
+    </select>
+    
+    <select id="queryTermDiagTextList" parameterType="com.zebone.nhis.common.module.base.bd.mk.BdTermDiag" resultMap="ResultMapBdTermDiagBase">
+    	select d.pk_diag,d.diagcode,d.diagname 
+    	 from bd_term_diag d,emr_knowledge_base kb 
+      	where d.del_flag='0' and kb.code = d.diagcode and kb.kb_text is not null 
+    	and (kb.py_code like '%${pyCode}%' or kb.d_code like '%${dCode}%') 
+      	group by  d.pk_diag,d.diagcode,d.diagname   
+      	order by d.diagcode
+    </select>
+    
+    <select id="queryDictCodeAllList" resultMap="ResultMapEmrDictCode">
+    	select bd.pk_defdoc pk_dictcode,bd.pk_org,bd.code_defdoclist pk_dictcls,bd.code,bd.name,bd.py_code,bd.d_code,
+          		 bd.memo remark,bd.shortname as value,bd.creator,bd.create_time,bd.del_flag,bd.ts,
+          		 bd.ba_code,bd.ba_code sort_num,bd.ba_code gb_code
+            FROM bd_defdoc bd
+           where bd.code_defdoclist='060517'
+    	<if test="pkOrg != null ">
+    		and bd.pk_org = #{pkOrg,jdbcType=VARCHAR}
+    	</if>
+    	order by bd.ba_code,cast(bd.code as int)
+    </select>
+    <select id="queryDictCodeAllListEmr" resultMap="ResultMapEmrDictCode">
+    	select cd.* from emr_dict_class cla ,emr_dict_code cd where 
+    	<if test="pkOrg != null ">
+    	cd.pk_org = #{pkOrg,jdbcType=VARCHAR}
+    	</if>
+    	cla.pk_dictcls=cd.pk_dictcls and cla.code='KnowledgeBaseType' 
+    	order by cd.sort_num
+    </select>    
+    <select id="queryKnowledgeBase" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrKnowledgeBase" resultMap="ResultMapEmrKnowledgeBase">
+    	select * from emr_knowledge_base kb where 
+    	<if test="pkOrg != null ">
+    	kb.pk_org = #{pkOrg,jdbcType=VARCHAR}
+    	</if>
+    	kb.code = #{code,jdbcType=VARCHAR} and 
+    	kb.type_code = #{typeCode,jdbcType=VARCHAR}
+    </select>
+    <select id="queryKnowledgeBasePro" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrKnowledgeBasePro" 
+    		resultType="com.zebone.nhis.common.module.emr.rec.dict.EmrKnowledgeBasePro">
+    	select * from emr_knowledge_base_pro kb 
+    	 where kb.pk_kb_pro is not null 
+    	<if test="pkOrg != null ">
+    		and kb.pk_org = #{pkOrg,jdbcType=VARCHAR}
+    	</if>
+    	<if test="typeCode != null ">
+    		and kb.type_code = #{typeCode,jdbcType=VARCHAR}
+    	</if>
+    	<if test="code != null ">
+    		and kb.code = #{code,jdbcType=VARCHAR}
+    	</if>
+    	<if test="delFlag != null ">
+    		and kb.del_flag = #{delFlag,jdbcType=CHAR}
+    	</if>
+    </select>
+    <select id="findAllEmrDataElementBase" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDataElement" resultMap="ResultMapEmrDataElement">
+    	select * from emr_data_element el where (el.py_code like '%${pyCode}%' or el.d_code like '%${dCode}%') and instr('${euCtrlType}',el.eu_ctrl_type)>0 
+    	order by el.code
+    </select>
+    <select id="findAllEmrDataElementBaseSql" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDataElement" resultMap="ResultMapEmrDataElement">
+    	select * from emr_data_element el where (el.py_code like '%${pyCode}%' or el.d_code like '%${dCode}%') and charindex('${euCtrlType}',el.eu_ctrl_type)>=0 
+    	order by el.code
+    </select>    
+    <select id="findAllEmrParameterBase" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrParameter" resultMap="ResultMapEmrParameter">
+    	select * from emr_parameter where pk_org like #{pkOrg,jdbcType=VARCHAR} order by code
+    </select>
+    <select id="findAllEmrSwitchBase" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrSwitch" resultMap="ResultMapEmrSwitch">
+    	select * from emr_switch where pk_org like #{pkOrg,jdbcType=VARCHAR} order by code
+    </select>
+    <select id="findAllEmrDictClassBase" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDictClass" resultMap="ResultMapEmrDictClass">
+        SELECT * FROM EMR_DICT_CLASS cl where (cl.py_code like '%${pyCode}%' or cl.d_code like '%${dCode}%') order by cl.sort_num
+    </select>
+    <select id="findAllEmrDictCodeByCls" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDictCode" resultMap="ResultMapEmrDictCode">
+    	select co.pk_dictcode,  co.pk_org,  co.pk_dictcls,  co.code,  co.name,  co.py_code,  
+    	co.d_code,  co.gb_code,  co.value,  co.sort_num,  co.del_flag, (case co.remark when null then '' end) as remark 
+    	from emr_dict_code co where co.pk_dictcls=#{pkDictcls,jdbcType=VARCHAR} order by co.sort_num
+    </select>
+    <select id="findAllEmrDictRangeBase" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDictRange" resultMap="ResultMapEmrDictRange">
+    	select * 
+          from emr_dict_range r 
+    	 where (r.py_code like '%${pyCode}%'  
+    	     or r.d_code like '%${dCode}%' 
+    	     or r.code like '%${code}%' 
+    	     or r.name like '%${name}%' ) 
+    	 order by r.sort_num
+    </select>
+    <select id="findAllEmrDictRangeCodeByRa" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDictRangeCode" resultMap="ResultMapEmrDictRangeCode">
+    	select co.pk_range_code, co.pk_org, co.pk_range, co.code, co.name, co.py_code, 
+    	co.d_code, gb_code, co.sort_num, co.del_flag, (case co.remark when null then '' end) as remark 
+    	from emr_dict_range_code co where co.pk_range=#{pkRange,jdbcType=VARCHAR} 
+    	order by co.sort_num
+    </select>
+    <resultMap id="ResultMapEmrDoctor" type="com.zebone.nhis.common.module.emr.rec.dict.EmrDoctor">
+        <id column="PK_EMP" jdbcType="CHAR" property="pkEmp"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="GB_CODE" jdbcType="VARCHAR" property="gbCode"/>
+        <result column="CONSULT" jdbcType="VARCHAR" property="consult"/>
+        <result column="DIRECTOR" jdbcType="VARCHAR" property="director"/>
+        <result column="SIGN_PWD" jdbcType="VARCHAR" property="signPwd"/>
+        <result column="SIGN_IMAGE" jdbcType="BLOB" property="signImage"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="PK_WG" jdbcType="VARCHAR" property="pkWg"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+        <result column="CONSULT_NAME" jdbcType="VARCHAR" property="consultName"/>
+        <result column="DIRECTOR_NAME" jdbcType="VARCHAR" property="directorName"/>
+        <result column="EU_AUDIT_LEVEL" jdbcType="VARCHAR" property="euAuditLevel"/>
+    </resultMap>
+    <select id="getEmrDoctorById" resultMap="ResultMapEmrDoctor">
+        SELECT
+            *
+        FROM
+             EMR_DOCTOR
+        WHERE            
+            PK_EMP = #{pkEmp,jdbcType=CHAR}
+    </select>
+    <select id="queryEmrDoctorById" resultMap="ResultMapEmrDoctor">
+        select doc.*,c.name consult_name,d.name director_name
+		  from emr_doctor doc
+		  left outer join view_emr_emp_list c
+		    on c.pk_emp = doc.consult
+		  left outer join view_emr_emp_list d
+		    on d.pk_emp = doc.director
+        WHERE            
+            doc.PK_EMP = #{pkEmp,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllEmrDoctor" resultMap="ResultMapEmrDoctor">
+          SELECT * FROM EMR_DOCTOR 
+    </select>
+    
+    <delete id="deleteEmrDoctor">
+        DELETE
+        FROM
+             EMR_DOCTOR
+        WHERE            
+            PK_EMP = #{pkEmp,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrDoctor" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDoctor" >
+        INSERT INTO EMR_DOCTOR
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkEmp != null" >
+                PK_EMP,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE,
+            </if>
+            <if test="dCode != null" >
+                D_CODE,
+            </if>
+            <if test="gbCode != null" >
+                GB_CODE,
+            </if>
+            <if test="consult != null" >
+                CONSULT,
+            </if>
+            <if test="director != null" >
+                DIRECTOR,
+            </if>
+            <if test="signPwd != null" >
+                SIGN_PWD,
+            </if>
+            <if test="signImage != null" >
+                SIGN_IMAGE,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+             <if test="pkDept != null" >
+                PK_DEPT,
+            </if>
+             <if test="pkWg != null" >
+                PK_WG,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkEmp != null" >
+                #{pkEmp,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=CHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="pyCode != null" >
+                #{pyCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="dCode != null" >
+                #{dCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="gbCode != null" >
+                #{gbCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="consult != null" >
+                #{consult,jdbcType=VARCHAR},
+            </if> 
+            <if test="director != null" >
+                #{director,jdbcType=VARCHAR},
+            </if> 
+            <if test="signPwd != null" >
+                #{signPwd,jdbcType=VARCHAR},
+            </if> 
+            <if test="signImage != null" >
+                #{signImage,jdbcType=BLOB},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if>
+             <if test="pkDept != null" >
+                #{pkDept,jdbcType=VARCHAR},
+            </if> 
+             <if test="pkWg != null" >
+                #{pkWg,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrDoctor" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDoctor" >
+        UPDATE EMR_DOCTOR
+        <set>
+            <if test="pkEmp != null" >
+                PK_EMP = #{pkEmp,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=CHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE = #{pyCode,jdbcType=VARCHAR},
+            </if>
+            <if test="dCode != null" >
+                D_CODE = #{dCode,jdbcType=VARCHAR},
+            </if>
+            <if test="gbCode != null" >
+                GB_CODE = #{gbCode,jdbcType=VARCHAR},
+            </if>
+            <if test="consult != null" >
+                CONSULT = #{consult,jdbcType=VARCHAR},
+            </if>
+            <if test="director != null" >
+                DIRECTOR = #{director,jdbcType=VARCHAR},
+            </if>
+            <if test="signPwd != null" >
+                SIGN_PWD = #{signPwd,jdbcType=VARCHAR},
+            </if>
+            <if test="signImage != null" >
+                SIGN_IMAGE = #{signImage,jdbcType=BLOB},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT = #{pkDept,jdbcType=VARCHAR},
+            </if>
+            <if test="pkWg != null" >
+                PK_WG = #{pkWg,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_EMP = #{pkEmp,jdbcType=CHAR}
+    </update>
+    <select id="findAllEmrDoctorBase" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDoctor" resultMap="ResultMapEmrDoctor">
+    	select * from emr_doctor d 
+    	 where (d.py_code like '%${pyCode}%' or d.d_code like '%${dCode}%' or d.name like '%${pyCode}%' or d.code like '%${pyCode}%') 
+    	  and d.del_flag='0' 
+		   <if test="pkOrg != null" >
+              and d.PK_ORG like #{pkOrg,jdbcType=VARCHAR}
+           </if>    	  
+    	  order by d.code
+    </select>
+    <update id="updateEmrDoctorByPwd" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDoctor">
+    	update emr_doctor 
+    	<set> 
+    		sign_pwd='000000' 
+    	</set> 
+    	where pk_emp=#{pkEmp,jdbcType=CHAR}
+    </update>
+    <delete id="deleteEmrDoctorBase" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrDoctor">
+        DELETE FROM EMR_DOCTOR WHERE PK_EMP = #{pkEmp,jdbcType=CHAR}
+    </delete>
+    
+     <resultMap id="ResultMapEmrGradeRule" type="com.zebone.nhis.common.module.emr.rec.dict.EmrGradeRule">
+        <id column="PK_RULE" jdbcType="CHAR" property="pkRule"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="SHORT_NAME" jdbcType="VARCHAR" property="shortName"/>
+        <result column="DT_RULE_TYPE" jdbcType="VARCHAR" property="dtRuleType"/>
+        <result column="DOC_TYPE_CODE" jdbcType="VARCHAR" property="docTypeCode"/>
+        <result column="RULE_XML" jdbcType="CLOB" property="ruleXml"/>
+        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+        <result column="FLAG_TIME" jdbcType="CHAR" property="flagTime"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    <select id="getEmrGradeRuleById" resultMap="ResultMapEmrGradeRule">
+        SELECT
+            *
+        FROM
+             EMR_GRADE_RULE
+        WHERE            
+            PK_RULE = #{pkRule,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllEmrGradeRule" resultMap="ResultMapEmrGradeRule">
+          SELECT * FROM EMR_GRADE_RULE 
+    </select>
+    
+    <delete id="deleteEmrGradeRule">
+        DELETE
+        FROM
+             EMR_GRADE_RULE
+        WHERE            
+            PK_RULE = #{pkRule,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrGradeRule" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrGradeRule" >
+        INSERT INTO EMR_GRADE_RULE
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkRule != null" >
+                PK_RULE,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE,
+            </if>
+            <if test="dCode != null" >
+                D_CODE,
+            </if>
+            <if test="shortName != null" >
+                SHORT_NAME,
+            </if>
+            <if test="dtRuleType != null" >
+                DT_RULE_TYPE,
+            </if>
+            <if test="docTypeCode != null" >
+                DOC_TYPE_CODE,
+            </if>
+            <if test="ruleXml != null" >
+                RULE_XML,
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM,
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT,
+            </if>
+            <if test="euStatus != null" >
+                EU_STATUS,
+            </if>
+            <if test="flagTime != null" >
+                FLAG_TIME,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkRule != null" >
+                #{pkRule,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="pyCode != null" >
+                #{pyCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="dCode != null" >
+                #{dCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="shortName != null" >
+                #{shortName,jdbcType=VARCHAR},
+            </if> 
+            <if test="dtRuleType != null" >
+                #{dtRuleType,jdbcType=VARCHAR},
+            </if> 
+            <if test="docTypeCode != null" >
+                #{docTypeCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="ruleXml != null" >
+                #{ruleXml,jdbcType=CLOB},
+            </if> 
+            <if test="sortNum != null" >
+                #{sortNum,jdbcType=DECIMAL},
+            </if> 
+            <if test="pkDept != null" >
+                #{pkDept,jdbcType=VARCHAR},
+            </if> 
+            <if test="euStatus != null" >
+                #{euStatus,jdbcType=CHAR},
+            </if>
+            <if test="flagTime != null" >
+                #{flagTime,jdbcType=CHAR},
+            </if>  
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrGradeRule" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrGradeRule" >
+        UPDATE EMR_GRADE_RULE
+        <set>
+            <if test="pkRule != null" >
+                PK_RULE = #{pkRule,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE = #{pyCode,jdbcType=VARCHAR},
+            </if>
+            <if test="dCode != null" >
+                D_CODE = #{dCode,jdbcType=VARCHAR},
+            </if>
+            <if test="shortName != null" >
+                SHORT_NAME = #{shortName,jdbcType=VARCHAR},
+            </if>
+            <if test="dtRuleType != null" >
+                DT_RULE_TYPE = #{dtRuleType,jdbcType=VARCHAR},
+            </if>
+            <if test="docTypeCode != null" >
+                DOC_TYPE_CODE = #{docTypeCode,jdbcType=VARCHAR},
+            </if>
+            <if test="ruleXml != null" >
+                RULE_XML = #{ruleXml,jdbcType=CLOB},
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM = #{sortNum,jdbcType=DECIMAL},
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT = #{pkDept,jdbcType=VARCHAR},
+            </if>
+            <if test="euStatus != null" >
+                EU_STATUS = #{euStatus,jdbcType=CHAR},
+            </if>
+            <if test="flagTime != null" >
+                FLAG_TIME = #{flagTime,jdbcType=CHAR},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_RULE = #{pkRule,jdbcType=CHAR}
+    </update>
+    <select id="findAllEmrGradeRuleBase" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrGradeRule" resultMap="ResultMapEmrGradeRule">
+    	select * from emr_grade_rule r where (r.py_code like '%${pyCode}%' or r.d_code like '%${dCode}%' or r.name like '%${dCode}%')  order by r.code
+    </select>
+    <resultMap id="ResultMapEmrKnowledgeBaseIcd" type="com.zebone.nhis.common.module.emr.rec.dict.EmrKnowledgeBase">
+        <id column="PK_KNOW_BASE" jdbcType="CHAR" property="pkKnowBase"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+    </resultMap>
+    <select id="queryKBIcdList" resultMap="ResultMapEmrKnowledgeBaseIcd">
+        select distinct code,name,max(py_code) py_code,max(d_code) d_code
+		  from emr_knowledge_base
+		where del_flag!='1'
+		group by code,name
+		order by code,name
+    </select>
+    <select id="queryKnowledgeBaseByConds" resultMap="ResultMapEmrKnowledgeBase">
+        select *
+		  from emr_knowledge_base
+		where del_flag !='1' 
+			<if test="typeCode != null" >
+               and type_code = #{typeCode,jdbcType=VARCHAR}
+            </if>
+			<if test="code != null" >
+               and code = #{code,jdbcType=VARCHAR}
+            </if>
+		order by code,name
+    </select>
+    <select id="queryCommonWordsList" resultMap="ResultMapEmrCommonWords">
+    	select * from emr_common_words
+		where del_flag !='1'
+		<if test="euLevel != null" >
+               and eu_level=#{euLevel,jdbcType=VARCHAR}
+        </if>
+        <if test="euUsed != null" >
+               and (eu_used=#{euUsed,jdbcType=VARCHAR} or eu_used is null)
+        </if>
+        <if test="dtType != null" >
+               and dt_type=#{dtType,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDept != null" >
+               and pk_dept=#{pkDept,jdbcType=VARCHAR}
+        </if>
+        <if test="pkEmp != null" >
+               and creator=#{pkEmp,jdbcType=VARCHAR}
+        </if>
+		order by sort_num,name
+    </select>
+    <select id="queryCommonWordsListUsed" resultMap="ResultMapEmrCommonWords">
+    	select * from emr_common_words
+		where nvl(del_flag,'0') !='1' 
+		  and ((eu_level='0') or
+		       (eu_level = '1'  and pk_dept=#{pkDept,jdbcType=VARCHAR}) or
+		       (eu_level = '2'  and creator=#{pkEmp,jdbcType=VARCHAR})
+		      )
+        <if test="euUsed != null" >
+               and (eu_used=#{euUsed,jdbcType=VARCHAR} or eu_used is null) 
+        </if>
+        <if test="dtType != null" >
+               and dt_type=#{dtType,jdbcType=VARCHAR}
+        </if>
+		order by sort_num,name
+    </select>
+    
+    <resultMap id="ResultMapEmrGradeStandard" type="com.zebone.nhis.common.module.emr.rec.dict.EmrGradeStandard">
+        <id column="PK_STAND" jdbcType="CHAR" property="pkStand"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="SHORT_NAME" jdbcType="VARCHAR" property="shortName"/>
+        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+        <result column="EU_STAND_TYPE" jdbcType="VARCHAR" property="euStandType"/>
+        <result column="DOC_TYPE_CODE" jdbcType="VARCHAR" property="docTypeCode"/>
+        <result column="SCORE_STAND" jdbcType="VARCHAR" property="scoreStand"/>
+        <result column="SCORE_TYPE" jdbcType="VARCHAR" property="scoreType"/>
+        <result column="SINGLE_SCORE" jdbcType="DECIMAL" property="singleScore"/>
+        <result column="SCORE_XML" jdbcType="CLOB" property="scoreXml"/>
+        <result column="STAND_MODE" jdbcType="CHAR" property="standMode"/>
+        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+        <result column="FLAG_TIME" jdbcType="CHAR" property="flagTime"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    <select id="getEmrGradeStandardById" resultMap="ResultMapEmrGradeStandard">
+        SELECT
+            *
+        FROM
+             EMR_GRADE_STANDARD
+        WHERE            
+            PK_STAND = #{pkStand,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllEmrGradeStandard" resultMap="ResultMapEmrGradeStandard">
+          SELECT * FROM EMR_GRADE_STANDARD 
+    </select>
+    
+    <delete id="deleteEmrGradeStandard">
+        DELETE
+        FROM
+             EMR_GRADE_STANDARD
+        WHERE            
+            PK_STAND = #{pkStand,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrGradeStandard" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrGradeStandard" >
+        INSERT INTO EMR_GRADE_STANDARD
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkStand != null" >
+                PK_STAND,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE,
+            </if>
+            <if test="dCode != null" >
+                D_CODE,
+            </if>
+            <if test="shortName != null" >
+                SHORT_NAME,
+            </if>
+            <if test="typeCode != null" >
+                TYPE_CODE,
+            </if>
+            <if test="euStandType != null" >
+                EU_STAND_TYPE,
+            </if>
+            <if test="docTypeCode != null" >
+                DOC_TYPE_CODE,
+            </if>
+            <if test="scoreStand != null" >
+                SCORE_STAND,
+            </if>
+            <if test="scoreType != null" >
+                SCORE_TYPE,
+            </if>
+            <if test="singleScore != null" >
+                SINGLE_SCORE,
+            </if>
+            <if test="scoreXml != null" >
+                SCORE_XML,
+            </if>
+            <if test="standMode != null" >
+                STAND_MODE,
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM,
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT,
+            </if>
+            <if test="euStatus != null" >
+                EU_STATUS,
+            </if>
+            <if test="flagTime != null" >
+                FLAG_TIME,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkStand != null" >
+                #{pkStand,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="pyCode != null" >
+                #{pyCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="dCode != null" >
+                #{dCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="shortName != null" >
+                #{shortName,jdbcType=VARCHAR},
+            </if> 
+            <if test="typeCode != null" >
+                #{typeCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="euStandType != null" >
+                #{euStandType,jdbcType=VARCHAR},
+            </if> 
+            <if test="docTypeCode != null" >
+                #{docTypeCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="scoreStand != null" >
+                #{scoreStand,jdbcType=VARCHAR},
+            </if> 
+            <if test="scoreType != null" >
+                #{scoreType,jdbcType=VARCHAR},
+            </if> 
+            <if test="singleScore != null" >
+                #{singleScore,jdbcType=DECIMAL},
+            </if> 
+            <if test="scoreXml != null" >
+                #{scoreXml,jdbcType=CLOB},
+            </if> 
+            <if test="standMode != null" >
+                #{standMode,jdbcType=CHAR},
+            </if> 
+            <if test="sortNum != null" >
+                #{sortNum,jdbcType=DECIMAL},
+            </if> 
+            <if test="pkDept != null" >
+                #{pkDept,jdbcType=VARCHAR},
+            </if> 
+            <if test="euStatus != null" >
+                #{euStatus,jdbcType=CHAR},
+            </if> 
+             <if test="flagTime != null" >
+                #{flagTime,jdbcType=CHAR},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrGradeStandard" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrGradeStandard" >
+        UPDATE EMR_GRADE_STANDARD
+        <set>
+            <if test="pkStand != null" >
+                PK_STAND = #{pkStand,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE = #{pyCode,jdbcType=VARCHAR},
+            </if>
+            <if test="dCode != null" >
+                D_CODE = #{dCode,jdbcType=VARCHAR},
+            </if>
+            <if test="shortName != null" >
+                SHORT_NAME = #{shortName,jdbcType=VARCHAR},
+            </if>
+            <if test="typeCode != null" >
+                TYPE_CODE = #{typeCode,jdbcType=VARCHAR},
+            </if>
+            <if test="euStandType != null" >
+                EU_STAND_TYPE = #{euStandType,jdbcType=VARCHAR},
+            </if>
+            <if test="docTypeCode != null" >
+                DOC_TYPE_CODE = #{docTypeCode,jdbcType=VARCHAR},
+            </if>
+            <if test="scoreStand != null" >
+                SCORE_STAND = #{scoreStand,jdbcType=VARCHAR},
+            </if>
+            <if test="scoreType != null" >
+                SCORE_TYPE = #{scoreType,jdbcType=VARCHAR},
+            </if>
+            <if test="singleScore != null" >
+                SINGLE_SCORE = #{singleScore,jdbcType=DECIMAL},
+            </if>
+            <if test="scoreXml != null" >
+                SCORE_XML = #{scoreXml,jdbcType=CLOB},
+            </if>
+            <if test="standMode != null" >
+                STAND_MODE = #{standMode,jdbcType=CHAR},
+            </if>
+            <if test="sortNum != null" >
+                SORT_NUM = #{sortNum,jdbcType=DECIMAL},
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT = #{pkDept,jdbcType=VARCHAR},
+            </if>
+            <if test="euStatus != null" >
+                EU_STATUS = #{euStatus,jdbcType=CHAR},
+            </if>
+            <if test="flagTime != null" >
+                FLAG_TIME = #{flagTime,jdbcType=CHAR},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_STAND = #{pkStand,jdbcType=CHAR}
+    </update>
+    
+    <select id="findAllEmrGradeStandardBase" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrGradeStandard" resultMap="ResultMapEmrGradeStandard">
+        select * from emr_grade_standard s where (s.py_code like '%${pyCode}%' or s.d_code like '%${dCode}%') 
+        <if test="xmlFlag != null">
+        	and s.SCORE_XML IS NOT NULL AND length(nvl(s.SCORE_XML,'')) &gt; 0   
+        </if>
+        <if test="euStandType != null">
+        	and s.eu_stand_type like #{euStandType,jdbcType=VARCHAR}
+        </if>
+        <if test="cateCode != null">
+        	and s.cate_code like #{cateCode,jdbcType=VARCHAR}
+        </if>
+        <if test="excludeCodes != null">
+            and s.code not in 
+        	 <foreach item="item" index="index" collection="excludeCodes" open="("
+				separator="," close=")">
+				#{item}
+			</foreach>
+        </if>
+        order by s.code
+    </select>
+    
+    <select id="queryEmrDoctorSyncList" resultMap="ResultMapEmrDoctor">
+        select pk_emp,pk_org,code_emp code,name_emp name,py_code,d_code,dt_empsrvtype,dt_emptype,'0' del_flag
+    from bd_ou_employee emp
+        WHERE emp.del_flag='0'
+          and emp.dt_emptype='01'
+          and not exists  
+           (select 1 from emr_doctor  where  emr_doctor.pk_emp=emp.pk_emp)           
+    </select>
+    <resultMap id="ResultMapEmrNurse" type="com.zebone.nhis.common.module.emr.rec.dict.EmrNurse" >
+    <id column="PK_NURSE" property="pkNurse" jdbcType="CHAR" />
+    <result column="PK_ORG" property="pkOrg" jdbcType="VARCHAR" />
+    <result column="PK_EMP" property="pkEmp" jdbcType="VARCHAR" />
+    <result column="CODE" property="code" jdbcType="VARCHAR" />
+    <result column="NAME" property="name" jdbcType="VARCHAR" />
+    <result column="EU_QC_LEVEL" property="euQcLevel" jdbcType="CHAR" />
+    <result column="SIGN_PWD" property="signPwd" jdbcType="VARCHAR" />
+    <result column="SIGN_IMAGE" property="signImage" jdbcType="BLOB" />
+    <result column="PY_CODE" property="pyCode" jdbcType="VARCHAR" />
+    <result column="D_CODE" property="dCode" jdbcType="VARCHAR" />
+    <result column="PK_DEPT" property="pkDept" jdbcType="VARCHAR" />
+    <result column="PK_DEPT_NS" property="pkDeptNs" jdbcType="VARCHAR" />
+    <result column="DEF1" property="def1" jdbcType="VARCHAR" />
+    <result column="DEF2" property="def2" jdbcType="VARCHAR" />
+    <result column="DEF3" property="def3" jdbcType="VARCHAR" />
+    <result column="DEF4" property="def4" jdbcType="VARCHAR" />
+    <result column="DEF5" property="def5" jdbcType="VARCHAR" />
+    <result column="DEL_FLAG" property="delFlag" jdbcType="CHAR" />
+    <result column="REMARK" property="remark" jdbcType="VARCHAR" />
+    <result column="CREATOR" property="creator" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="DATE" />
+    <result column="TS" property="ts" jdbcType="DATE" />
+    <result column="DEPT_NS_NAME" property="deptNsName" jdbcType="VARCHAR" />
+  </resultMap>
+  <select id="getEmrNurseById" resultMap="ResultMapEmrNurse" parameterType="java.lang.String" >
+    select 
+    PK_NURSE, PK_ORG, PK_EMP, CODE, NAME, EU_QC_LEVEL, SIGN_PWD, PY_CODE, D_CODE, PK_DEPT, 
+    PK_DEPT_NS, DEF1, DEF2, DEF3, DEF4, DEF5, DEL_FLAG, REMARK, CREATOR, CREATE_TIME, 
+    TS
+    from EMR_NURSE
+    where PK_NURSE = #{pkNurse,jdbcType=CHAR}
+  </select>
+  <select id="queryEmrNurse" resultMap="ResultMapEmrNurse" parameterType="java.util.Map" >
+    select 
+    PK_NURSE, PK_ORG, PK_EMP, CODE, NAME, EU_QC_LEVEL, SIGN_PWD, PY_CODE, D_CODE, PK_DEPT, 
+    PK_DEPT_NS, DEF1, DEF2, DEF3, DEF4, DEF5, DEL_FLAG, REMARK, CREATOR, CREATE_TIME, 
+    TS
+    from EMR_NURSE
+    where del_flag='0'
+    <if test="pkEmp != null" >
+         and pk_emp=#{pkEmp,jdbcType=VARCHAR}
+	</if>
+	<if test="pkEmpChk != null" >
+         and pk_emp_chk=#{pkEmpChk,jdbcType=VARCHAR}
+	</if>
+	<if test="pkNurse != null" >
+         and pk_nurse=#{pkNurse,jdbcType=VARCHAR}
+	</if>
+  </select>
+  <delete id="deleteEmrNurse" parameterType="java.lang.String" >
+    delete from EMR_NURSE
+    where PK_NURSE = #{pkNurse,jdbcType=CHAR}
+  </delete>
+<select id="queryEmrNurseList" resultMap="ResultMapEmrNurse" parameterType="java.util.Map">
+          SELECT n.*,d.name_dept dept_ns_name
+            FROM EMR_NURSE n left outer join
+                 bd_ou_dept d on n.pk_dept_ns=d.pk_dept
+         WHERE n.pk_nurse is not null 
+	   	    <if test="pkDeptNs != null" >
+         		and n.pk_dept_ns=#{pkDeptNs,jdbcType=VARCHAR}
+	        </if>
+	   	    <if test="pkDept != null" >
+         		and n.pk_dept=#{pkDept,jdbcType=VARCHAR}
+	        </if>
+          ORDER BY d.name_dept,n.name,n.code
+    </select>
+  <insert id="saveEmrNurse" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrNurse" >
+    insert into EMR_NURSE
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="pkNurse != null" >
+        PK_NURSE,
+      </if>
+      <if test="pkOrg != null" >
+        PK_ORG,
+      </if>
+      <if test="pkEmp != null" >
+        PK_EMP,
+      </if>
+      <if test="code != null" >
+        CODE,
+      </if>
+      <if test="name != null" >
+        NAME,
+      </if>
+      <if test="euQcLevel != null" >
+        EU_QC_LEVEL,
+      </if>
+      <if test="signPwd != null" >
+        SIGN_PWD,
+      </if>
+      <if test="signPwd != null" >
+        SIGN_PWD,
+      </if>
+      <if test="pyCode != null" >
+        PY_CODE,
+      </if>
+      <if test="dCode != null" >
+        D_CODE,
+      </if>
+      <if test="pkDept != null" >
+        PK_DEPT,
+      </if>
+      <if test="pkDeptNs != null" >
+        PK_DEPT_NS,
+      </if>
+      <if test="def1 != null" >
+        DEF1,
+      </if>
+      <if test="def2 != null" >
+        DEF2,
+      </if>
+      <if test="def3 != null" >
+        DEF3,
+      </if>
+      <if test="def4 != null" >
+        DEF4,
+      </if>
+      <if test="def5 != null" >
+        DEF5,
+      </if>
+      <if test="delFlag != null" >
+        DEL_FLAG,
+      </if>
+      <if test="remark != null" >
+        REMARK,
+      </if>
+      <if test="creator != null" >
+        CREATOR,
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME,
+      </if>
+      <if test="ts != null" >
+        TS,
+      </if>
+      <if test="signImage != null" >
+        SIGN_IMAGE,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="pkNurse != null" >
+        #{pkNurse,jdbcType=CHAR},
+      </if>
+      <if test="pkOrg != null" >
+        #{pkOrg,jdbcType=VARCHAR},
+      </if>
+      <if test="pkEmp != null" >
+        #{pkEmp,jdbcType=VARCHAR},
+      </if>
+      <if test="code != null" >
+        #{code,jdbcType=VARCHAR},
+      </if>
+      <if test="name != null" >
+        #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="euQcLevel != null" >
+        #{euQcLevel,jdbcType=CHAR},
+      </if>
+      <if test="signPwd != null" >
+        #{signPwd,jdbcType=VARCHAR},
+      </if>
+      <if test="pyCode != null" >
+        #{pyCode,jdbcType=VARCHAR},
+      </if>
+      <if test="dCode != null" >
+        #{dCode,jdbcType=VARCHAR},
+      </if>
+      <if test="pkDept != null" >
+        #{pkDept,jdbcType=VARCHAR},
+      </if>
+      <if test="pkDeptNs != null" >
+        #{pkDeptNs,jdbcType=VARCHAR},
+      </if>
+      <if test="def1 != null" >
+        #{def1,jdbcType=VARCHAR},
+      </if>
+      <if test="def2 != null" >
+        #{def2,jdbcType=VARCHAR},
+      </if>
+      <if test="def3 != null" >
+        #{def3,jdbcType=VARCHAR},
+      </if>
+      <if test="def4 != null" >
+        #{def4,jdbcType=VARCHAR},
+      </if>
+      <if test="def5 != null" >
+        #{def5,jdbcType=VARCHAR},
+      </if>
+      <if test="delFlag != null" >
+        #{delFlag,jdbcType=CHAR},
+      </if>
+      <if test="remark != null" >
+        #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="creator != null" >
+        #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        #{createTime,jdbcType=DATE},
+      </if>
+      <if test="ts != null" >
+        #{ts,jdbcType=DATE},
+      </if>
+      <if test="signImage != null" >
+        #{signImage,jdbcType=BLOB},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateEmrNurse" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrNurse" >
+    update EMR_NURSE
+    <set >
+      <if test="pkOrg != null" >
+        PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+      </if>
+      <if test="pkEmp != null" >
+        PK_EMP = #{pkEmp,jdbcType=VARCHAR},
+      </if>
+      <if test="code != null" >
+        CODE = #{code,jdbcType=VARCHAR},
+      </if>
+      <if test="name != null" >
+        NAME = #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="euQcLevel != null" >
+        EU_QC_LEVEL = #{euQcLevel,jdbcType=CHAR},
+      </if>
+      <if test="signPwd != null" >
+        SIGN_PWD = #{signPwd,jdbcType=VARCHAR},
+      </if>
+      <if test="pyCode != null" >
+        PY_CODE = #{pyCode,jdbcType=VARCHAR},
+      </if>
+      <if test="dCode != null" >
+        D_CODE = #{dCode,jdbcType=VARCHAR},
+      </if>
+      <if test="pkDept != null" >
+        PK_DEPT = #{pkDept,jdbcType=VARCHAR},
+      </if>
+      <if test="pkDeptNs != null" >
+        PK_DEPT_NS = #{pkDeptNs,jdbcType=VARCHAR},
+      </if>
+      <if test="def1 != null" >
+        DEF1 = #{def1,jdbcType=VARCHAR},
+      </if>
+      <if test="def2 != null" >
+        DEF2 = #{def2,jdbcType=VARCHAR},
+      </if>
+      <if test="def3 != null" >
+        DEF3 = #{def3,jdbcType=VARCHAR},
+      </if>
+      <if test="def4 != null" >
+        DEF4 = #{def4,jdbcType=VARCHAR},
+      </if>
+      <if test="def5 != null" >
+        DEF5 = #{def5,jdbcType=VARCHAR},
+      </if>
+      <if test="delFlag != null" >
+        DEL_FLAG = #{delFlag,jdbcType=CHAR},
+      </if>
+      <if test="remark != null" >
+        REMARK = #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="creator != null" >
+        CREATOR = #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME = #{createTime,jdbcType=DATE},
+      </if>
+      <if test="ts != null" >
+        TS = #{ts,jdbcType=DATE},
+      </if>
+      <if test="signImage != null" >
+        SIGN_IMAGE = #{signImage,jdbcType=BLOB},
+      </if>
+    </set>
+    where PK_NURSE = #{pkNurse,jdbcType=CHAR}
+  </update>
+  <resultMap id="ResultMapEmrEmpSet" type="com.zebone.nhis.common.module.emr.rec.dict.EmrEmpSet" >
+    <id column="PK_EMP_SET" property="pkEmpSet" jdbcType="CHAR" />
+    <result column="PK_ORG" property="pkOrg" jdbcType="VARCHAR" />
+    <result column="PK_EMP" property="pkEmp" jdbcType="VARCHAR" />
+    <result column="CODE" property="code" jdbcType="VARCHAR" />
+    <result column="NAME" property="name" jdbcType="VARCHAR" />
+    <result column="EU_EMP_TYPE" property="euEmpType" jdbcType="CHAR" />
+    <result column="PY_CODE" property="pyCode" jdbcType="VARCHAR" />
+    <result column="D_CODE" property="dCode" jdbcType="VARCHAR" />
+    <result column="PK_DEPT" property="pkDept" jdbcType="VARCHAR" />
+    <result column="FLAG_AUTOSAVE" property="flagAutosave" jdbcType="CHAR" />
+    <result column="DEF1" property="def1" jdbcType="VARCHAR" />
+    <result column="DEF2" property="def2" jdbcType="VARCHAR" />
+    <result column="DEF3" property="def3" jdbcType="VARCHAR" />
+    <result column="DEF4" property="def4" jdbcType="VARCHAR" />
+    <result column="DEF5" property="def5" jdbcType="VARCHAR" />
+    <result column="DEL_FLAG" property="delFlag" jdbcType="CHAR" />
+    <result column="REMARK" property="remark" jdbcType="VARCHAR" />
+    <result column="CREATOR" property="creator" jdbcType="VARCHAR" />
+    <result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="TS" property="ts" jdbcType="TIMESTAMP" />
+    <result column="DEPT_NAME" property="deptName" jdbcType="VARCHAR" />
+   </resultMap>
+   <select id="getEmrEmpSetById" resultMap="ResultMapEmrEmpSet" parameterType="java.lang.String" >
+    select PK_EMP_SET, PK_ORG, PK_EMP, CODE, NAME, EU_EMP_TYPE, PY_CODE, D_CODE, PK_DEPT, FLAG_AUTOSAVE, 
+    	   DEF1, DEF2, DEF3, DEF4, DEF5, DEL_FLAG, REMARK, CREATOR, CREATE_TIME, TS
+    from EMR_EMP_SET
+    where PK_EMP_SET = #{pkEmpSet,jdbcType=CHAR}
+  </select>
+  <delete id="deleteEmrEmpSet" parameterType="java.lang.String" >
+    delete from EMR_EMP_SET
+    where PK_EMP_SET = #{pkEmpSet,jdbcType=CHAR}
+  </delete>
+   <select id="queryEmrEmpSetList" resultMap="ResultMapEmrEmpSet" parameterType="java.util.Map">
+          SELECT s.*,d.name_dept dept_name
+            FROM EMR_EMP_SET s left outer join
+                 bd_ou_dept d on s.pk_dept=d.pk_dept
+         WHERE s.pk_emp_set is not null
+         	<if test="pkEmp != null" >
+	            and s.pk_emp=#{pkEmp,jdbcType=VARCHAR}
+		    </if>
+	   	    <if test="pkDept != null" >
+         		and s.pk_dept=#{pkDept,jdbcType=VARCHAR}
+	        </if>
+          ORDER BY d.name_dept,s.name,s.code
+    </select>
+  <insert id="saveEmrEmpSet" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrEmpSet" >
+    insert into EMR_EMP_SET
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="pkEmpSet != null" >
+        PK_EMP_SET,
+      </if>
+      <if test="pkOrg != null" >
+        PK_ORG,
+      </if>
+      <if test="pkEmp != null" >
+        PK_EMP,
+      </if>
+      <if test="code != null" >
+        CODE,
+      </if>
+      <if test="name != null" >
+        NAME,
+      </if>
+      <if test="euEmpType != null" >
+        EU_EMP_TYPE,
+      </if>
+      <if test="pyCode != null" >
+        PY_CODE,
+      </if>
+      <if test="dCode != null" >
+        D_CODE,
+      </if>
+      <if test="pkDept != null" >
+        PK_DEPT,
+      </if>
+      <if test="flagAutosave != null" >
+        FLAG_AUTOSAVE,
+      </if>
+      <if test="def1 != null" >
+        DEF1,
+      </if>
+      <if test="def2 != null" >
+        DEF2,
+      </if>
+      <if test="def3 != null" >
+        DEF3,
+      </if>
+      <if test="def4 != null" >
+        DEF4,
+      </if>
+      <if test="def5 != null" >
+        DEF5,
+      </if>
+      <if test="delFlag != null" >
+        DEL_FLAG,
+      </if>
+      <if test="remark != null" >
+        REMARK,
+      </if>
+      <if test="creator != null" >
+        CREATOR,
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME,
+      </if>
+      <if test="ts != null" >
+        TS,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="pkEmpSet != null" >
+        #{pkEmpSet,jdbcType=CHAR},
+      </if>
+      <if test="pkOrg != null" >
+        #{pkOrg,jdbcType=VARCHAR},
+      </if>
+      <if test="pkEmp != null" >
+        #{pkEmp,jdbcType=VARCHAR},
+      </if>
+      <if test="code != null" >
+        #{code,jdbcType=VARCHAR},
+      </if>
+      <if test="name != null" >
+        #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="euEmpType != null" >
+        #{euEmpType,jdbcType=CHAR},
+      </if>
+      <if test="pyCode != null" >
+        #{pyCode,jdbcType=VARCHAR},
+      </if>
+      <if test="dCode != null" >
+        #{dCode,jdbcType=VARCHAR},
+      </if>
+      <if test="pkDept != null" >
+        #{pkDept,jdbcType=VARCHAR},
+      </if>
+      <if test="flagAutosave != null" >
+        #{flagAutosave,jdbcType=CHAR},
+      </if>
+      <if test="def1 != null" >
+        #{def1,jdbcType=VARCHAR},
+      </if>
+      <if test="def2 != null" >
+        #{def2,jdbcType=VARCHAR},
+      </if>
+      <if test="def3 != null" >
+        #{def3,jdbcType=VARCHAR},
+      </if>
+      <if test="def4 != null" >
+        #{def4,jdbcType=VARCHAR},
+      </if>
+      <if test="def5 != null" >
+        #{def5,jdbcType=VARCHAR},
+      </if>
+      <if test="delFlag != null" >
+        #{delFlag,jdbcType=CHAR},
+      </if>
+      <if test="remark != null" >
+        #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="creator != null" >
+        #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="ts != null" >
+        #{ts,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateEmrEmpSet" parameterType="com.zebone.nhis.common.module.emr.rec.dict.EmrEmpSet" >
+    update EMR_EMP_SET
+    <set >
+      <if test="pkOrg != null" >
+        PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+      </if>
+      <if test="pkEmp != null" >
+        PK_EMP = #{pkEmp,jdbcType=VARCHAR},
+      </if>
+      <if test="code != null" >
+        CODE = #{code,jdbcType=VARCHAR},
+      </if>
+      <if test="name != null" >
+        NAME = #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="euEmpType != null" >
+        EU_EMP_TYPE = #{euEmpType,jdbcType=CHAR},
+      </if>
+      <if test="pyCode != null" >
+        PY_CODE = #{pyCode,jdbcType=VARCHAR},
+      </if>
+      <if test="dCode != null" >
+        D_CODE = #{dCode,jdbcType=VARCHAR},
+      </if>
+      <if test="pkDept != null" >
+        PK_DEPT = #{pkDept,jdbcType=VARCHAR},
+      </if>
+      <if test="flagAutosave != null" >
+        FLAG_AUTOSAVE = #{flagAutosave,jdbcType=CHAR},
+      </if>
+      <if test="def1 != null" >
+        DEF1 = #{def1,jdbcType=VARCHAR},
+      </if>
+      <if test="def2 != null" >
+        DEF2 = #{def2,jdbcType=VARCHAR},
+      </if>
+      <if test="def3 != null" >
+        DEF3 = #{def3,jdbcType=VARCHAR},
+      </if>
+      <if test="def4 != null" >
+        DEF4 = #{def4,jdbcType=VARCHAR},
+      </if>
+      <if test="def5 != null" >
+        DEF5 = #{def5,jdbcType=VARCHAR},
+      </if>
+      <if test="delFlag != null" >
+        DEL_FLAG = #{delFlag,jdbcType=CHAR},
+      </if>
+      <if test="remark != null" >
+        REMARK = #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="creator != null" >
+        CREATOR = #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="ts != null" >
+        TS = #{ts,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where PK_EMP_SET = #{pkEmpSet,jdbcType=CHAR}
+  </update>
+
+</mapper>

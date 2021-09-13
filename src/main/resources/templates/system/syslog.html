@@ -1,0 +1,228 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>syslog</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+   <link href="${ctx}/ui/css/main.css" rel="stylesheet" type="text/css" />
+   <link href="${ctx}/ui/css/custom_icons.css" rel="stylesheet" type="text/css" />
+    <script src="${ctx}/ui/boot.js" type="text/javascript"></script>
+    
+    <style type="text/css">
+          html, body{
+	        margin:0;padding:0;border:0;width:100%;height:100%;overflow:hidden;
+	    }  
+	       
+    </style>        
+</head>
+<body>
+<div class="zbui-splitter" style="width:100%;height:100%;" borderStyle="border:0;">
+		<!-- splitter左侧 -->
+		<div size="240" showCollapseButton="true" style="border:1px solid #909aa6;">
+			<div class="zbui-toolbar" style="padding:2px;border-top:0;border-left:0;border-right:0;">
+			        <span style="padding-left:5px;">模块：</span>
+		            <input id="modulesearch" class="zbui-textbox" name="id" width="120"/>
+		            <a class="zbui-button" iconCls="icon-find" plain="true" id="module_search">查找</a> 
+	    	</div>
+	    	
+	    	<div class="zbui-fit"  >
+	            <ul id="mtree" class="zbui-tree" url="${ctx}/transcode/gettranscodeSetToShow" style="width:100%;"
+	                showTreeIcon="true" expandOnLoad="0" textField="textshow" idField="id" parentField="pid" resultAsTree="false">        
+	            </ul>
+	            
+	        </div>
+	        
+		</div>
+		<!-- splitter右侧-->
+		<div>
+	    <div class="zbui-toolbar" style="padding:2px;border-left:0;">
+			       <a class="zbui-button" iconCls="icon-search" plain="true" id="button_load">查询</a>
+			       <span class="separator"></span>
+			       <a class="zbui-button" iconCls="icon-look" plain="true" id="button_look">查看</a>
+	    </div>
+	
+	     <div id="queryform" style="border-right:1px solid #909aa6;height:30px;padding:5px;">
+	        <table >
+	            <tr>
+	                <td  width="50">交易号：</td>
+	                <td  width="100">
+	                		<input id="codesearch" class="zbui-textbox" name="transcode" emptyText="请输入交易号" style="width:100px;"/>
+	                </td>
+	                <td  width="50">分&nbsp;&nbsp;&nbsp;类：</td>
+	                <td>
+			                <input id="type" name="type" class="zbui-combobox" style="width:60px;"
+		                    textField="typedesc" valueField="syslogtypename" allowInput="true" value="9"
+		                     url="${ctx}/transdict/getAllSysLogTypes"/>
+	                </td>
+	                <td  width="50">开始时间</td>
+	                <td  width="130">
+	                	<input id="begintime"  name="begintime" class="zbui-datepicker" style="width:150px;" nullValue="null"
+        				format="yyyy-MM-dd H:mm:ss" timeFormat="H:mm:ss" showTime="true" showOkButton="true" showClearButton="false"/>
+	                </td>
+	                <td  width="50">结束时间</td>
+	                <td  width="130">
+	                	<input id="endtime"  name="endtime" class="zbui-datepicker" style="width:150px;" nullValue="null"
+        				format="yyyy-MM-dd H:mm:ss" timeFormat="H:mm:ss" showTime="true" showOkButton="true" showClearButton="false"/>
+	                </td>
+	            </tr>
+	        </table>
+	    </div>
+	    
+	    <!--撑满页面-->
+	    <div class="zbui-fit" >
+	        
+	        <div id="datagrid1" class="zbui-datagrid" style="width:100%;height:100%;" 
+	            url="${ctx}/transcode/getSysLogPage"  idField="id" borderStyle="border-left:0;"
+	            sizeList="[5,10,20,50]" pageSize="10"
+	        >
+	        <!-- url="${ctx}/transcode/getSysLogPage" -->
+	            <div property="columns">
+	                <div type="indexcolumn" ></div>
+	                <div type="checkcolumn" ></div>    
+	                <div field="transcode" headerAlign="center" width="100px">交易号
+			        </div>    
+			        <div field="transname" headerAlign="center" width="140px">功能内容
+			        </div>
+			        <div field="type" headerAlign="center" width="60px">处理结果
+			        </div> 
+			        <div field="exectime" headerAlign="center" width="100px">执行时长(ms)
+			        </div> 
+			        <div field="creator" headerAlign="center" width="100px">操作人
+			        </div>
+			        <div field="createtime" headerAlign="center" width="100px" renderer="onCreateTimeRenderer">操作时间
+			        </div> 
+	            </div>
+	        </div> 
+	
+	    </div>
+	</div>
+</div>
+    
+    
+    <script type="text/javascript">
+        zbui.parse();
+        
+        var transcodeToQuery='' ;//定一个全局变量，指示当前模糊查询所关联的transcode
+        
+        var grid = zbui.get("datagrid1");
+        var tree = zbui.get("mtree");
+        
+        /*================设置状态颜色================*/
+        grid.on("drawcell", function (e) {
+            var field = e.field;
+            var value = e.value;
+
+            //处理结果栏，根据不同值设置颜色
+            if (field == "type" ) {
+				if(value =="1"){//执行成功
+					 e.cellHtml ="执行成功";
+					 e.rowStyle = "background:#90EE90;";
+					 e.cellStyle = "color:#8B008B;font-weight:bold;";
+				}else if(value =="2"){//业务异常
+					 e.cellHtml ="业务异常";
+					 e.rowStyle = "background:#FFC0CB;";
+					 e.cellStyle = "color:red;font-weight:bold;";
+				}else if(value =="3"){//其他异常
+					e.cellHtml ="其他异常";
+					e.cellStyle = "color:#006400;font-weight:bold;";
+					e.rowStyle = "background:#FFC0CB;";
+				}
+            }
+            
+            //执行时长栏
+            if(field == "exectime"){
+            	e.cellHtml =value + " ms";
+            }
+        }); 
+
+        
+        /*================splitter左侧================*/
+        zbui.get('module_search').on('click',function(){
+        	var search=zbui.get('modulesearch').getValue();
+     		var json=zbui.encode(search);
+     		$.ajax({
+     			url:"${ctx}/transcode/gettranscodeSetToShowByText",
+     			type:"post",
+     			data:{data:json},
+     			success: function (text) {
+     				var re=zbui.decode(text);
+     				tree.loadList(re, "id", "pid");
+                }
+     		});
+        });
+        
+        
+		/*点击节点加载右侧*/
+        tree.on("nodeselect", function (e) {
+        	var form = new zbui.Form("#queryform");
+      	  	var fdata = form.getData();
+        	transcodeToQuery = e.node.id;
+        	 fdata.transcode = transcodeToQuery;
+        	var json = zbui.encode(fdata);
+            grid.load({queryform : json});
+        }); 
+		
+        /*================splitter右侧================*/
+        zbui.get('codesearch').on('focus',function(){
+        	transcodeToQuery='';
+        });
+        
+        /*查询*/
+        zbui.get('codesearch').on('enter',function(){
+        	var form = new zbui.Form("#queryform");
+      	  	var fdata = form.getData();
+	      	  if(transcodeToQuery!=''){
+	    		  fdata.transcode = transcodeToQuery;
+	    	  }
+      	  	var json = zbui.encode(fdata);
+            grid.load({queryform : json});
+        });
+        
+        zbui.get('button_load').on('click',function(){
+        	  var form = new zbui.Form("#queryform");
+        	  var fdata = form.getData();
+        	  if(transcodeToQuery!=''){
+        		  fdata.transcode = transcodeToQuery;
+        	  }
+        	  var json = zbui.encode(fdata);
+              grid.load({queryform : json});
+        });
+        
+        /*查看*/
+        zbui.get('button_look').on('click',function(){
+        	var row = grid.getSelected();
+        	if(row){
+        		zbui.open({
+	                url: "${ctx}/view?page=system/looksyslog",
+	                title: "系统日志", width: 800, height:600,
+	                onload: function () {
+	                    var iframe = this.getIFrameEl();
+	                    var data = { action: "look", row: row };
+	                    iframe.contentWindow.SetData(data);
+	                    
+	                },
+	                ondestroy: function (action) {
+	                    //grid.reload();
+	                    
+	                }
+	            });
+        	}else{
+        		alert("请选中一条记录");
+        		grid.reload();
+        	}
+        });
+        
+        function onCreateTimeRenderer(e) {
+            var value = e.value;
+           if (value){
+        	    var cdate = value.substring(0,4)+'-'+value.substring(4,6)+'-'+value.substring(6,8)+' '+value.substring(8,10)+':'+value.substring(10,12)+':'+value.substring(12,14);
+        	    return zbui.formatDate(zbui.parseDate(cdate), 'yyyy-MM-dd HH:mm:ss');
+            }else{
+            	return "";
+            }
+        }
+        
+    </script>
+</body>
+</html>

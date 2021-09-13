@@ -1,0 +1,625 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.CnReqMapper" >
+
+  <select id="queryCnOrderRisByPv" parameterType="java.lang.String"  resultType="DynaBean" >
+   select 
+		<!-- ris.*,有CLOB字段form_app如此查询报错-->
+		 ris.pk_ordris,
+		 ris.pk_org,
+		 ris.pk_cnord,
+		 ris.dt_ristype,
+		 ris.desc_body,
+		 ris.purpose,
+		 ris.pk_msp,
+		 ris.date_appo,
+		 ris.date_exam,
+		 ris.ris_notice,
+		 ris.ticketno,
+		 ris.eu_status,
+		 ris.flag_bed,
+		 ris.note,
+		 ris.pk_diag,
+		 ris.name_diag,
+		 ris.pk_emp_appo,
+		 ris.name_emp_appo,
+		 ris.flag_print,
+		 ris.creator,
+		 ris.create_time,
+		 ris.modifier,
+		 ris.modity_time,
+		 ris.del_flag,
+		 ris.note_dise,
+		 ord.ts,
+		 ris.flag_fasting,
+		 ris.dt_patitrans,
+		ord.pk_pv,
+		ord.pk_ord,
+		ord.price_cg,
+		ord.eu_status_ord,
+		ord.code_apply,
+		ord.date_start,
+		ord.code_ord,
+		ord.name_ord,
+		ord.quan,
+		ord.flag_emer,
+		ord.pk_dept,
+		ord.pk_org_exec,
+		ord.pk_dept_exec,
+		ord.note_ord,
+		ord.code_ordtype,
+		ord.infant_no,
+		ord.flag_cp,
+	    ord.eu_intern,
+		ord.name_emp_input,
+		ord.name_emp_ord,
+		ord.groupno,  
+		ord.ordsn, 
+		ord.ordsn_parent,
+		ord.flag_print as flag_print_ord,
+		case when ris.form_app is null then '0' else '1' end as has_form,
+		dept.name_dept as NameDeptExec,
+		<!--  price.price  as priceCg,-->
+		tempCount.tempCount,
+		bord.flag_noc,
+	  	ordris.desc_att,
+	  	ordris.report_footer,
+	    ordris.report_header,
+	    bord.flag_hm as flag_emer_def
+	from cn_order ord  
+	    inner join bd_ord bord on ord.pk_ord=bord.pk_ord and bord.del_flag='0'
+	  	inner join cn_ris_apply ris on ord.pk_cnord = ris.pk_cnord  and ris.del_flag='0'
+		inner join pv_encounter pv on ord.pk_pv=pv.pk_pv and pv.del_flag='0'
+	  	INNER JOIN BD_ORD_RIS ordris on ORD.PK_ORD=ordris.PK_ORD and ordris.del_flag='0'
+	    left join bd_ou_dept dept on ord.pk_dept_exec=dept.pk_dept and dept.del_flag='0'
+		left outer join 
+			(
+			SELECT
+			      emr.pk_ord,
+			      emr.eu_pvtype,
+						count(1) tempCount
+					FROM
+						bd_ord_emr emr
+					INNER JOIN emr_template tmp ON emr.pk_emrtemp=tmp.pk_tmp
+					WHERE
+			        emr.flag_active = '1'
+					AND emr.del_flag = '0'
+					AND tmp.eu_type = '4'
+					AND tmp.flag_open = '1'
+					AND tmp.del_flag = '0'
+			group by emr.pk_ord,emr.eu_pvtype
+			) tempCount on tempCount.pk_ord = ord.pk_ord and tempCount.eu_pvtype=pv.eu_pvtype 
+			
+		where ord.pk_pv= #{pk_pv,jdbcType=CHAR} 
+		and ord.del_flag='0'  
+		order by ord.date_start  
+  </select>
+  
+  <select id="queryCnOrderLisByPv" parameterType="java.lang.String"  resultType="DynaBean" >
+  select 
+		lis.pk_ordlis,
+		lis.pk_org,
+		lis.pk_cnord,
+		lis.desc_diag,
+		lis.purpose,
+		lis.dt_samptype,
+		lis.dt_tubetype,
+		lis.dt_coltype,
+		lis.samp_no,
+		lis.pk_dept_col,
+		lis.eu_status,
+		lis.date_col,
+		lis.date_acpt,
+		lis.date_rpt,
+		lis.note,
+		lis.flag_prt,
+		lis.creator,
+		lis.create_time,
+		lis.modifier,
+		lis.modity_time,
+		lis.del_flag,
+	    lis.pk_emp_col,
+	    lis.name_emp_col,
+	    lis.form_app,
+	    ord.ts,
+		ord.pk_ord,
+		ord.price_cg,
+		ord.eu_status_ord,
+		ord.code_apply,
+		ord.date_start,
+		ord.code_ord,
+		ord.name_ord,
+		ord.quan,
+		ord.flag_emer,
+		ord.pk_dept,
+		ord.pk_org_exec,
+		ord.pk_dept_exec,
+		ord.note_ord,
+		ord.code_ordtype,
+		ord.infant_no,
+		ord.flag_cp,
+		ord.eu_intern,
+	    ord.name_emp_input,
+		ord.name_emp_ord,
+		ord.groupno,  
+		ord.ordsn, 
+		ord.ordsn_parent,
+		ord.flag_print as flag_print_ord,
+		dept.name_dept as NameDeptExec,
+		bord.flag_noc,
+		bord.flag_hm as flag_emer_def
+	from cn_order ord 
+	    inner join bd_ord bord on ord.pk_ord=bord.pk_ord and bord.del_flag='0'
+		inner join cn_lab_apply lis 
+		on ord.pk_cnord = lis.pk_cnord 
+		and lis.del_flag='0' 
+	left join bd_ou_dept dept on ord.pk_dept_exec=dept.pk_dept and dept.del_flag='0'
+		where ord.pk_pv = #{pk_pv,jdbcType=CHAR} 
+		and ord.del_flag='0'  
+		order by ord.date_start,ord.ordsn
+		
+  </select>
+  <select id="queryItemBySrv"  resultType="DynaBean" >
+  select * 
+	from(
+	  	select si.sortno,
+	  		   item.code,
+		       item.name,
+		       si.quan,
+		       item.price,
+		       '0' flag_pd,
+		       si.flag_union 
+		  from bd_ord_org srv 
+		  inner join bd_ord_item si on srv.pk_ord = si.pk_ord  and si.del_flag='0' 
+		  inner join bd_item item  on si.pk_item = item.pk_item   and item.del_flag='0' 
+		 where srv.pk_org= #{pk_org,jdbcType=CHAR}  
+		   and srv.pk_ord= #{pk_ord,jdbcType=CHAR}  
+		   and srv.del_flag='0' 
+		   
+	union all 
+	
+		select 
+           si.sortno,
+           pd.code,
+	       pd.name,
+	       si.quan,
+	       pd.price/pd.pack_size as price,
+	       '1' flag_pd,
+		   si.flag_union 
+		  from bd_ord_org srv 
+		  inner join bd_ord_item si on srv.pk_ord = si.pk_ord  and si.del_flag='0' 
+		  inner join bd_pd pd  on si.pk_item = pd.pk_pd   and pd.del_flag='0' 
+		 where srv.pk_org= #{pk_org,jdbcType=CHAR}  
+		   and srv.pk_ord= #{pk_ord,jdbcType=CHAR}  
+		   and srv.del_flag='0' 
+	) item
+	order by item.sortno,item.code,item.name  
+
+  </select>
+  <select id="queryRisUhSrvtype"  parameterType="java.util.Map" resultType="DynaBean" >
+        select t.*
+         from (select  p.price,
+                      srv.code,
+                      srv.name,
+                      ristype.code as pcode,
+                      srv.name as caption,
+                      srv.pk_ord,
+                      srv.code_ordtype,
+                      typ.name as name_ordtype,
+                      srv.flag_cg,
+                      dept.pk_org_exec,
+                      dept.pk_dept as pk_dept_exec,
+                      doc.name as  desc_body,
+                      ris.dt_type,
+                      ris.desc_att,
+                      srv.eu_sex,   
+                      srv.age_min,  
+                      srv.age_max,
+                      srv.flag_noc,
+                      srv.flag_hm as flag_emer
+                 from bd_ord srv  
+                inner JOIN bd_defdoc ristype ON ristype.CODE = srv.DT_ORDCATE  AND  ristype.code_defdoclist='030000' and ristype.ba_code='02' and ristype.del_flag='0'     
+                inner join bd_ordtype typ 
+                   on srv.code_ordtype = typ.code  and typ.del_flag='0' 
+                inner join bd_ord_org org  
+                   on srv.pk_ord = org.pk_ord 
+                   and org.del_flag = '0'  
+                   and org.pk_org = #{pkOrg,jdbcType=CHAR}  
+			    left outer join bd_ord_dept dept 
+			        on org.pk_ordorg = dept.pk_ordorg 
+			       and dept.flag_def = '1' 
+			       and dept.del_flag='0' 
+                 left outer join bd_ord_ris ris 
+                   on srv.pk_ord = ris.pk_ord  and ris.del_flag='0' 
+                 left outer join (select busi.pk_ord,
+                                        sum((case when busi.quan=null then 0 else busi.quan end) *
+                                            (case when item.price=null then 0 else item.price end)) as price 
+                                   from bd_ord_item busi, bd_item item 
+                                  where busi.pk_item = item.pk_item 
+                                  and busi.del_flag='0' and item.del_flag='0' 
+                                  group by busi.pk_ord) p 
+                   on org.pk_ord = p.pk_ord  
+                left join bd_defdoc doc on doc.code = ris.dt_body and doc.code_defdoclist = '030101' and doc.del_flag='0' 
+                left outer join bd_ord_atd atd on srv.pk_ord=atd.pk_ord and atd.pk_org=#{pkOrg,jdbcType=VARCHAR} 
+                where srv.flag_pd = '0' 
+                  and srv.del_flag='0' 
+                  and srv.flag_dr = '1' 
+                  and srv.flag_ip = '1' 
+                  and srv.flag_active = '1' 
+                  and substr(srv.code_ordtype, 1, 2) = '02'
+                  and typ.eu_cpoetype='1'
+                  and (
+			  		(atd.eu_type is null ) or  
+		            (atd.eu_type='0' and atd.pk_orgarea=#{pkOrgarea,jdbcType=VARCHAR} ) or  
+		            (atd.eu_type='1' and atd.pk_dept=#{pkDept,jdbcType=VARCHAR} )
+		          ) 
+               union all 
+               select  0,
+	                  code,
+	                  name,
+	                  code_parent AS pcode,
+	                  name AS caption, 
+                      '',
+                      '',
+                      '',
+                      '',
+                      '',
+                      '',
+                      '',
+                      '',
+                      '',
+                      '0',
+                      0,
+                      999,
+                      '0' as flag_noc,
+                      '0' as flag_emer
+               FROM BD_DEFDOC  WHERE code_defdoclist = '030000'  AND ba_code = '02' and del_flag='0' ) t 
+        order by t.name 
+  </select>
+  <select id="queryLisUhSrvType"  parameterType="java.util.Map" resultType="DynaBean" >
+         select t.*
+    from (select  p.price,
+                 srv.code,
+                 srv.name,
+                 ristype.code as pcode,
+                 srv.name as caption,
+                 srv.pk_ord,
+                 srv.code_ordtype,
+                 typ.name as name_ordtype,
+                 srv.flag_cg,
+                 lis.dt_samptype,
+                 lis.dt_contype as dt_tubetype,
+                 lis.dt_contype,
+                 lis.dt_colltype,
+                 dept.pk_org_exec,
+                 dept.pk_dept as pk_dept_exec,
+                 srv.eu_sex,   
+                 srv.age_min,  
+                 srv.age_max,
+                 srv.flag_noc,
+                 srv.flag_hm as flag_emer        
+            from bd_ord srv  
+           inner JOIN bd_defdoc ristype ON ristype.CODE = srv.DT_ORDCATE  AND  ristype.code_defdoclist='030000' and ristype.ba_code='03'   and ristype.del_flag='0'   
+           inner join bd_ordtype typ 
+              on srv.code_ordtype = typ.code  and typ.del_flag='0' 
+           inner join bd_ord_org org 
+              on srv.pk_ord = org.pk_ord 
+              and org.del_flag = '0'  
+              and org.pk_org = #{pkOrg,jdbcType=CHAR}   
+			 left outer join bd_ord_dept dept 
+			        on org.pk_ordorg = dept.pk_ordorg 
+			       and dept.flag_def = '1' 
+			       and dept.del_flag='0' 
+            left outer join bd_ord_lab lis 
+              on srv.pk_ord = lis.pk_ord  and lis.del_flag='0' 
+            left outer join (select busi.pk_ord,
+                                   sum((case when busi.quan=null then 0 else busi.quan end) *
+                                       (case when item.price=null then 0 else item.price end)) as price 
+                              from bd_ord_item busi, bd_item item 
+                             where busi.pk_item = item.pk_item 
+                               and busi.del_flag='0' and item.del_flag='0'  
+                             group by busi.pk_ord) p 
+              on org.pk_ord = p.pk_ord  
+           left outer join bd_ord_atd atd on srv.pk_ord=atd.pk_ord and atd.pk_org=#{pkOrg,jdbcType=VARCHAR} 
+           where  srv.flag_pd = '0' 
+                  and srv.del_flag='0' 
+                  and srv.flag_dr = '1' 
+                  and srv.flag_ip = '1' 
+                  and srv.flag_active = '1' 
+                  and substr(srv.code_ordtype, 1, 2) = '03'
+                  and typ.eu_cpoetype = '2'
+                  and (
+			  		(atd.eu_type is null ) or  
+		            (atd.eu_type='0' and atd.pk_orgarea=#{pkOrgarea,jdbcType=VARCHAR} ) or  
+		            (atd.eu_type='1' and atd.pk_dept=#{pkDept,jdbcType=VARCHAR} )
+		          ) 
+          union all 
+          select  0,
+                 code,
+                 name,
+                 code_parent as pcode,
+                 name as caption,
+                 '',
+                 '',
+                 '',
+                 '',
+                 '',
+                 '',
+                 '',
+                 '',
+                 '',
+                 '' ,
+                 '0',
+                  0,
+                  999,
+                  '0' as flag_noc,
+                  '0' as flag_emer      
+           FROM BD_DEFDOC WHERE code_defdoclist = '030000'  AND ba_code = '03' and del_flag='0' 
+          ) t
+   order by t.name  
+  </select>
+  <select id="queryRisBdUhSrvPsn" resultType="DynaBean">
+		   select comm.*,
+		       p.price,
+		       ord.code,
+		       ord.name,
+		       ord.code_ordtype,
+		       ord.flag_cg,
+		       ord.quan_def ,
+		       dept.pk_org_exec,
+               dept.pk_dept as pk_dept_exec ,
+               doc.name as  desc_body,
+               ris.dt_type,
+               ris.desc_att,
+               ord.eu_sex,   
+               ord.age_min,  
+               ord.age_max,
+               ord.flag_noc,
+               ord.flag_hm as flag_emer
+		  from bd_ord_comm comm 
+		 inner join bd_ord ord 
+		    on comm.pk_ord = ord.pk_ord 
+		   and ord.del_flag = '0' 
+		 inner join bd_ord_org ordorg 
+		    on ord.pk_ord = ordorg.pk_ord 
+		   and ordorg.del_flag = '0' 
+		   and ordorg.pk_org = #{pk_org,jdbcType=CHAR}
+		 inner join bd_ordtype typ
+              on ord.code_ordtype = typ.code  and typ.del_flag='0'
+		 left outer join bd_ord_dept dept 
+	        on ordorg.pk_ordorg = dept.pk_ordorg 
+	       and dept.flag_def = '1' 
+	       and dept.del_flag='0' 
+	     left outer join bd_ord_ris ris 
+            on ord.pk_ord = ris.pk_ord  and ris.del_flag='0'  
+         left outer join (select busi.pk_ord,
+                             sum((case when busi.quan=null then 0 else busi.quan end) *
+                                 (case when item.price=null then 0 else item.price end)) as price 
+                        from bd_ord_item busi, bd_item item 
+                       where busi.pk_item = item.pk_item 
+                         and busi.del_flag='0' and item.del_flag='0'  
+                       group by busi.pk_ord) p 
+         on ordorg.pk_ord = p.pk_ord     
+         left join bd_defdoc doc on doc.code = ris.dt_body and doc.code_defdoclist = '030101' and doc.del_flag='0' 
+		 where comm.del_flag = '0' 
+		   and comm.pk_emp = #{pk_emp,jdbcType=CHAR} 
+		   and substr(comm.code_ordtype, 1, 2) = '02'
+		   and typ.eu_cpoetype='1'
+  </select>
+    <select id="queryLisBdUhSrvPsn" resultType="DynaBean">
+		   select comm.*,
+		       p.price,
+		       ord.code,
+		       ord.name,
+		       ord.code_ordtype,
+		       ord.flag_cg,
+		       ord.quan_def,
+		       dept.pk_org_exec,
+               dept.pk_dept as pk_dept_exec,
+               lis.dt_samptype,
+               lis.dt_contype as dt_tubetype,
+               lis.dt_colltype,
+               ord.eu_sex,   
+               ord.age_min,  
+               ord.age_max,
+               ord.flag_noc,
+               ord.flag_hm as flag_emer     
+		  from bd_ord_comm comm 
+		 inner join bd_ord ord 
+		    on comm.pk_ord = ord.pk_ord 
+		   and ord.del_flag = '0' 
+		 inner join bd_ord_org ordorg 
+		    on ord.pk_ord = ordorg.pk_ord 
+		   and ordorg.del_flag = '0' 
+		   and ordorg.pk_org = #{pk_org,jdbcType=CHAR}
+		 inner join bd_ordtype typ
+              on ord.code_ordtype = typ.code  and typ.del_flag='0'
+		 left outer join bd_ord_dept dept 
+	        on ordorg.pk_ordorg = dept.pk_ordorg 
+	       and dept.flag_def = '1' 
+	       and dept.del_flag='0'  
+	     left outer join bd_ord_lab lis  
+            on ord.pk_ord = lis.pk_ord  and lis.del_flag='0'  
+         left outer join (select busi.pk_ord,
+                             sum((case when busi.quan=null then 0 else busi.quan end) *
+                                 (case when item.price=null then 0 else item.price end)) as price 
+                        from bd_ord_item busi, bd_item item 
+                       where busi.pk_item = item.pk_item 
+                         and busi.del_flag='0' and item.del_flag='0'  
+                       group by busi.pk_ord) p 
+         on ordorg.pk_ord = p.pk_ord     
+		 where comm.del_flag = '0' 
+		   and comm.pk_emp = #{pk_emp,jdbcType=CHAR} 
+		   and substr(comm.code_ordtype, 1, 2) = '03'
+		   and typ.eu_cpoetype='2'
+  </select>
+  
+  <select id="qryDtBody" resultType="DynaBean">
+	     select * from bd_defdoc where code_defdoclist='030101'  order by code  
+  </select>
+ 
+  <select id="qryRisLisTopUseOrd" parameterType="java.util.Map"  resultType="DynaBean">
+	  SELECT
+		ord.pk_ord,
+		ord.code,
+		ord. NAME,
+		ord.spec,
+		ord.Code_OrdType,
+		ord.Flag_Cg,
+		ord.Quan_Def,
+		ord.eu_sex,
+		ord.age_min,
+		ord.age_max,
+		ord.flag_noc,
+		ris.Desc_Att,
+		ris.dt_type,
+	  	lis.dt_samptype,
+	  	lis.dt_contype as dt_tubetype,
+	  	lis.dt_colltype,  
+		doc. NAME AS desc_body,
+		<!--  dept.pk_org_exec,
+		dept.pk_dept AS pk_dept_exec,
+		-->
+		price.price,
+	    count(1) useFre,
+	    max(ord.flag_hm) as flag_emer 
+	FROM
+		cn_order cnord
+	INNER JOIN bd_ord ord ON cnord.pk_ord = ord.pk_ord
+	INNER JOIN bd_ord_org oo ON ord.pk_ord = oo.pk_ord and oo.pk_org= #{pkOrg,jdbcType=VARCHAR} 
+	INNER JOIN bd_ordtype ot ON ord.code_ordtype = ot.code AND ot.eu_cpoetype = #{euCpoetype,jdbcType=VARCHAR} 
+	<!--  LEFT OUTER JOIN bd_ord_dept dept ON oo.pk_ordorg = dept.pk_ordorg AND dept.flag_def = '1' AND dept.del_flag = '0' -->
+	LEFT JOIN bd_ord_ris ris ON Ord.pk_ord = ris.pk_ord AND #{euCpoetype,jdbcType=VARCHAR}  = '1'
+	LEFT JOIN bd_ord_lab lis ON Ord.pk_ord = lis.pk_ord AND #{euCpoetype,jdbcType=VARCHAR}  = '2'
+	LEFT JOIN bd_defdoc doc ON doc.code = ris.dt_body AND doc.code_defdoclist = '030101' AND doc.del_flag = '0'
+	LEFT OUTER JOIN (
+		SELECT  busi.pk_ord,SUM ((CASE WHEN busi.quan = NULL THEN 0 ELSE busi.quan END) * (CASE WHEN item.price = NULL THEN 0 ELSE item.price END)) AS price
+		  FROM
+			bd_ord_item busi,bd_item item
+		 where busi.pk_item = item.pk_item AND busi.del_flag = '0' AND item.del_flag = '0' GROUP BY busi.pk_ord
+		) price ON oo.pk_ord = price.pk_ord
+		left outer join bd_ord_atd atd on ord.pk_ord=atd.pk_ord and atd.pk_org=#{pkOrg,jdbcType=VARCHAR} 
+	WHERE cnord.date_start <![CDATA[>=]]> to_date(#{dateBegin,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+	  and cnord.date_start <![CDATA[<=]]> to_date(#{dateEnd,jdbcType=VARCHAR},'YYYYMMDDHH24MISS') 
+	  and cnord.pk_emp_ord = #{pkEmpOrd,jdbcType=VARCHAR} 
+	  and (
+	  		(atd.eu_type is null ) or  
+            (atd.eu_type='0' and atd.pk_orgarea=#{pkOrgarea,jdbcType=VARCHAR} ) or  
+            (atd.eu_type='1' and atd.pk_dept=#{pkDept,jdbcType=VARCHAR} )
+          )     
+	  
+	group by ord.pk_ord,
+	ord.pk_ord,
+		ord.code,
+		ord. NAME,
+		ord.spec,
+		ord.Code_OrdType,
+		ord.Flag_Cg,
+		ord.Quan_Def,
+		ord.eu_sex,
+		ord.age_min,
+		ord.age_max,
+		ord.flag_noc,
+		ris.Desc_Att,
+		ris.dt_type,
+	  	lis.dt_samptype,
+	  	lis.dt_contype,
+	  	lis.dt_colltype,
+		doc. NAME,
+		<!--  
+		dept.pk_org_exec,
+		dept.pk_dept,
+		-->
+		price.price
+	order by count(1) desc
+  </select>
+  
+  <select id="qryRisInfo" parameterType="java.util.Map" resultType="DynaBean">
+  	SELECT distinct
+  		co.code_ordtype, co.code_apply,co.ordsn,co.ordsn_parent,co.flag_emer ,co.pk_emp_input,
+  		co.pk_emp_ord,co.name_emp_ord ,co.date_start,co.code_ord , co.pk_dept, co.name_emp_input,
+ 		co.name_ord, co.note_ord,co.pk_dept_exec,pd.sort_no,pd.pk_diag,pd.dt_diagtype,pd.desc_diag,
+  		pd.flag_maj,pd.PK_EMP_DIAG,pd.name_emp_diag,pd.date_diag ,cra.note_dise,cra.dt_ristype,
+  		cra.desc_body,cra.purpose,ris_notice,cra.eu_status,cra.name_diag,bic.code item_type
+ 	from CN_RIS_APPLY cra
+ 		left join CN_ORDER co on cra.PK_CNORD=co.PK_CNORD
+ 		left join cn_diag cd on cd.pk_pv=co.pk_pv
+ 		left join PV_DIAG pd on pd.PK_PV=co.PK_PV
+ 		left join bd_item bi on bi.code=co.code_ord
+		left join bd_itemcate bic on bi.pk_itemcate=bic.pk_itemcate
+  	where co.pk_pv=#{pkPv,jdbcType=VARCHAR} 
+  		and co.code_ordtype in ('0201','0205','0207','0203','0202')<!--取分超声，放射，内镜  -->
+  	<if test="'out'.equals(type) and type!=null">
+  		 AND co.FLAG_SIGN = '0' and cra.eu_status='1' and co.flag_bl='0'<!-- 已经记费的项目，不在重复发送 -->
+  	</if>
+  	<if test="type==null">
+  		AND co.EU_STATUS_ORD = '1'
+  		and cra.eu_status='0'
+  	</if>
+  </select>
+  
+  <select id="qryLisInfo" parameterType="java.util.Map" resultType="DynaBean">
+  	SELECT distinct
+  		co.code_apply,co.ordsn,co.ordsn_parent,co.flag_emer ,co.pk_emp_input,co.name_emp_input,
+ 		co.pk_emp_ord,co.name_emp_ord ,co.date_start,co.code_ord , co.pk_dept,co.name_ord,
+  		co.note_ord,co.pk_dept_exec,cd.pk_emp_diag CNEMP,
+  		pd.sort_no,pd.pk_diag,pd.dt_diagtype,pd.desc_diag,pd.flag_maj,
+  		pd.PK_EMP_DIAG CNEMP,pd.name_emp_diag,pd.date_diag,bic.code item_type
+	from CN_lab_APPLY cra
+		inner join CN_ORDER co on cra.PK_CNORD=co.PK_CNORD
+		inner join cn_diag cd on cd.pk_pv=co.pk_pv
+		inner join PV_DIAG pd on pd.PK_PV=co.PK_PV
+		inner join bd_item bi on bi.code=co.code_ord
+		inner join bd_itemcate bic on bic.pk_itemcate =bi.pk_itemcate
+ 	where co.pk_pv=#{pkPv,jdbcType=VARCHAR}  
+ 	<if test="'out'.equals(type) and type!=null">
+ 		AND co.FLAG_SIGN = '0'
+ 		and co.flag_bl='0'<!-- 已经记费的项目，不在重复发送 -->
+ 		and cra.eu_status='1'
+ 	</if>
+ 	<if test="type==null">
+ 		AND co.EU_STATUS_ORD = '1'
+ 		and cra.eu_status='0'
+ 	</if>
+  </select>
+  
+    <select id="qryRisForm" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.emr.rec.tmp.EmrTemplateVo">
+	  	SELECT
+			emr.pk_emrtemp,
+			emr.code_emrtemp,
+			emr.name_emrtemp,
+			tmp.*
+		FROM
+			bd_ord_emr emr
+		INNER JOIN emr_template tmp ON emr.pk_emrtemp=tmp.pk_tmp
+		WHERE
+			emr.pk_ord =#{pkOrd,jdbcType=VARCHAR}  
+		and emr.eu_pvtype=#{euPvtype,jdbcType=VARCHAR}  
+		AND emr.flag_active = '1'
+		AND emr.del_flag = '0'
+		AND tmp.eu_type = '4'
+		AND tmp.flag_open = '1'
+		AND tmp.del_flag = '0'
+  </select>
+  
+  <update id="modifyRisForm" parameterType="com.zebone.nhis.common.module.cn.ipdw.CnRisApply" >
+        UPDATE cn_ris_apply
+        set
+            flag_print = #{flagPrint,jdbcType=VARCHAR}, 
+            form_app = #{formApp,jdbcType=CLOB}
+        WHERE 
+            pk_cnord = #{pkCnord,jdbcType=CHAR}
+    </update>
+    
+    <select id="qryOrdCaByPkcnord" resultType="com.zebone.nhis.cn.ipdw.vo.OrdCaVo">
+    	select emp.IMG_SIGN as img_sign from CN_ORDER ord
+		  inner join BD_OU_EMPLOYEE emp on emp.pk_emp = ord.pk_emp_ord
+		where ord.PK_CNORD = #{pkCnord,jdbcType=CHAR}
+    </select>
+    
+    <select id="qryImgCaByPkEmp" resultType="com.zebone.nhis.cn.ipdw.vo.OrdCaVo">
+    	select emp.IMG_SIGN as img_sign from BD_OU_EMPLOYEE emp 
+    	where emp.pk_emp = #{pkEmp,jdbcType=CHAR}
+    </select>
+  
+</mapper>

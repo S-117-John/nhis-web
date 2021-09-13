@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ma.pub.platform.zb.dao.MsgRecBlMapper">
+	<select id="queryZMRDataByPkPv" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT  CODE, name, SUM(AMOUNT) as amount FROM 
+		(
+              SELECT der.code AS CODE,der.name, SUM (bid.price * bid.quan) AS AMOUNT
+                FROM bl_ip_dt bid
+              INNER join bd_item bi on bid.pk_item =bi.pk_item
+              INNER JOIN bd_defdoc der on der.code=bi.dt_chcate AND der.code_defdoclist='030800'
+                WHERE bid.pk_pv=#{pkPv,jdbcType=VARCHAR}
+	          group by der.code,der.name
+        union ALL
+              SELECT der.code AS CODE,der.name,SUM (bid.price * bid.quan) AS AMOUNT
+                 FROM bl_ip_dt bid
+              INNER JOIN bd_pd bdpd on bdpd.pk_pd=bid.pk_item
+              INNER JOIN bd_defdoc der on der.code=bdpd.dt_chcate AND der.code_defdoclist='030800'
+                 WHERE bid.pk_pv=#{pkPv,jdbcType=VARCHAR}
+	          group by der.code,der.name
+       )
+          GROUP BY CODE,name
+	</select>
+	
+	<select id="queryOpBlInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select
+  			co.pk_pi,co.pk_pv,co.code_apply,co.eu_pvtype,pm.code_pi,bid.code_bill,co.code_ord,co.name_ord,bid.pk_emp_cg,
+  			bid.name_emp_cg,bid.pk_emp_app,bid.name_emp_app,bi.code,bi.name,bid.date_hap,co.code_ordtype,
+  			co.desc_ord,bid.amount,bid.pk_dept_ex,bid.pk_cgop,bic.code itemType
+		from cn_order co
+	 		left join bl_op_dt bid on co.pk_cnord=bid.pk_cnord
+			left join pi_master pm on pm.pk_pi=co.pk_pi
+	 	    left join bd_item bi on bi.pk_item=bid.pk_item
+	 	    left join bd_itemcate bic on bic.pk_itemcate=bid.pk_itemcate
+		where co.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="queryIpBlInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select
+  			co.pk_pi,co.pk_pv,co.code_apply,co.eu_pvtype,co.ordsn,pm.code_pi,bid.code_bill,co.code_ord,co.name_ord,co.price_cg,bid.pk_emp_cg,
+  			bid.name_emp_cg,bid.pk_emp_app,bid.name_emp_app,bi.code,bi.name,bid.date_hap,co.code_ordtype,
+  			co.desc_ord,bid.amount,bid.pk_dept_ex,bid.pk_cgip,bic.code itemType
+		from cn_order co
+	 		left join bl_ip_dt bid on co.pk_cnord=bid.pk_cnord
+			left join pi_master pm on pm.pk_pi=co.pk_pi
+	 	    left join bd_item bi on bi.pk_item=bid.pk_item
+	 	    left join bd_itemcate bic on bic.pk_itemcate=bid.pk_itemcate
+		where co.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+	</select>
+</mapper>

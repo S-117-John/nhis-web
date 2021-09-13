@@ -1,0 +1,381 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.lb.dao.SmsMapper">
+	<!-- 获取短信模板 -->
+	<select id="QrySmsTemp" parameterType="java.util.Map"  resultType="com.zebone.nhis.ma.lb.vo.SmsTempVo">
+		select
+		tmp.pk_smstemp,
+		tmp.code_temp,
+		tmp.name_temp,
+		tmp.eu_type,
+		tmp.sortno,
+		tmp.content,
+		tmp.pk_dept_op,
+		tmp.pk_dept_ip,
+		tmp.pk_dept_ns,
+		tmp.mobile,
+		tmp.eu_chktype,
+		tmp.time_send,
+		tmp.del_flag
+		from sms_temp tmp
+		where tmp.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		<if test="delFlag != null and delFlag != ''">
+			and tmp.del_flag = #{delFlag,jdbcType=VARCHAR}
+		</if>
+		order by tmp.sortno
+	</select>
+	<!-- 获取人员及手机号 -->
+	<select id="SearchMobile" parameterType="java.util.Map"  resultType="DynaBean">
+		select  emp.code_emp,
+       			emp.name_emp,
+       			emp.dt_sex,
+       			emp.mobile,
+				emp.PY_CODE,
+				emp.workphone,
+       			dept.name_dept,
+				dept.PK_DEPT
+  		from bd_ou_employee emp
+       inner join bd_ou_empjob job on emp.pk_emp=job.pk_emp
+       inner join bd_ou_dept dept on job.pk_dept=dept.pk_dept
+ 		where
+ 		 emp.flag_active='1'
+		<if test="pkOrg != null and pkOrg != ''">
+			and emp.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkDept != null and pkDept != ''">
+			and dept.PK_DEPT = #{pkDept,jdbcType=VARCHAR}
+		</if>
+		<if test="codeOrName != null and pkOrg != ''">
+			and (emp.code_emp like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'
+			or emp.name_emp like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'
+			or emp.PY_CODE like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'
+			or emp.mobile like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'
+			)
+		</if>
+
+	</select>
+	<!-- 获取患者及手机号 -->
+	<select id="SearchMaster" parameterType="java.util.Map"  resultType="DynaBean">
+		select pi.name_pi,
+			   pi.dt_sex,
+			   pi.mobile,
+			   pv.pk_dept,
+			   pv.pk_dept_ns,
+			   pi.code_op,
+			   pi.code_ip,
+			   pv.eu_pvtype
+  		from pv_encounter pv
+       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+ 		where
+		<if test="euPvtype != null and euPvtype != ''">
+ 			pv.eu_pvtype=#{euPvtype,jdbcType=VARCHAR}
+		</if>
+		<if test="flagIn != null and flagIn != ''">
+       		and pv.flag_in=#{flagIn,jdbcType=VARCHAR}
+		</if>
+		<if test="pkDept != null and pkDept != ''">
+			and pv.pk_dept=#{pkDept,jdbcType=VARCHAR}
+		</if>
+		<if test="pkDeptNs != null and pkDeptNs != ''">
+       		and pv.pk_dept_ns=#{pkDeptNs,jdbcType=VARCHAR}
+		</if>
+		<if test="codeOp != null and codeOp != ''">
+       		and pi.code_op like '%' || #{codeOp,jdbcType=VARCHAR}
+		</if>
+		<if test="codeIp != null and codeIp != ''">
+       		and pi.code_ip like '%'|| #{codeIp,jdbcType=VARCHAR}
+		</if>
+		<if test="namePi != null and namePi != ''">
+       		and pi.name_pi like '%' || #{namePi,jdbcType=VARCHAR} || '%'
+		</if>
+	</select>
+	<!-- 查询发送短信记录 -->
+	<select id="SearchSmsSend" parameterType="java.util.Map"  resultType="DynaBean">
+		select
+		send.pk_smssend,
+		send.code_temp,
+		send.name_temp,
+		send.eu_status_chk,
+		send.date_send,
+		send.cnt_send,
+		send.cnt_failure,
+		send.mobile,
+		send.content
+		from sms_send send
+		where
+		1=1
+		<if test="nameTemp != null and nameTemp != ''">
+		and send.name_temp like '%' || #{nameTemp,jdbcType=VARCHAR} || '%'
+		</if>
+		<if test="euStatusChk != null and euStatusChk != ''">
+		and send.eu_status_chk=#{euStatusChk,jdbcType=VARCHAR}
+		</if>
+		<if test="dateSend != null and dateSend != ''">
+		and  send.date_send >= to_date(#{dateSend,jdbcType=TIMESTAMP},'yyyy/mm/dd HH24:MI:SS')
+		</if>
+		<if test="dateSend != null and dateSend != ''">
+		Or  send.date_send &lt;= to_date(#{dateSend,jdbcType=TIMESTAMP},'yyyy/mm/dd HH24:MI:SS')
+		</if>
+	</select>
+
+
+	<!-- 查询在院患者 -->
+	<select id="querySumIpMessage" resultType="DynaBean">
+		select un.unInComoe,se.setleAmount ,new.newAdmNum ,lea.leaveNum ,inP.inAum
+		from (
+		select nvl(sum(AMOUNT_PI), 0) unInComoe, 1 as code
+		from BL_IP_DT bl
+		inner join bd_ou_dept bd on bl.pk_dept_app = bd.PK_DEPT
+		where
+		<choose>
+			<when test="euType==1">
+				to_char(bl.DATE_HAP, 'yyyy-MM')
+			</when>
+			<when test="euType==0">
+				to_char(bl.DATE_HAP, 'yyyy-MM-dd')
+			</when>
+			<otherwise>
+				to_char(bl.DATE_HAP, 'yyyy-MM-dd')
+			</otherwise>
+		</choose>
+		= #{date,jdbcType=VARCHAR}
+		<choose>
+			<when test="ipDepts!=null and ipDepts.size()>0">
+				and bl.pk_dept_app in
+				<foreach collection="ipDepts" item="item" open="(" separator=","  close=")">
+					#{item}
+				</foreach>
+			</when>
+			<otherwise>
+				and bd.DT_DEPTTYPE = '01' and bd.FLAG_IP = '1' and bd.DEL_FLAG = '0'
+			</otherwise>
+		</choose>
+
+		<if test="pkDeptNs!=null and pkDeptNs.size()>0">
+			and bl.pk_dept_ns_app in
+			<foreach collection="pkDeptNs" item="item" open="(" separator=","  close=")">
+				#{item}
+			</foreach>
+		</if>
+		) un
+		inner join
+		( select nvl(sum(bl.AMOUNT_PI), 0) setleAmount, 1 as code
+		from BL_IP_DT bl
+		inner join bd_ou_dept bd on bl.pk_dept_app = bd.PK_DEPT
+		inner join bl_settle bls on bl.PK_SETTLE=bls.PK_SETTLE
+		where bl.FLAG_SETTLE = '1'
+		and
+		<choose>
+			<when test="euType==1">
+				to_char(bls.DATE_ST, 'yyyy-MM')
+			</when>
+			<when test="euType==0">
+				to_char(bls.DATE_ST, 'yyyy-MM-dd')
+			</when>
+			<otherwise>
+				to_char(bls.DATE_ST, 'yyyy-MM-dd')
+			</otherwise>
+		</choose>
+		= #{date,jdbcType=VARCHAR}
+		<choose>
+			<when test="ipDepts!=null and ipDepts.size()>0">
+				and bl.pk_dept_app in
+				<foreach collection="ipDepts" item="item" open="(" separator=","  close=")">
+					#{item}
+				</foreach>
+			</when>
+			<otherwise>
+				and bd.DT_DEPTTYPE = '01' and bd.FLAG_IP = '1' and bd.DEL_FLAG = '0'
+			</otherwise>
+		</choose>
+
+		<if test="pkDeptNs!=null and pkDeptNs.size()>0">
+			and bl.pk_dept_ns_app in
+			<foreach collection="pkDeptNs" item="item" open="(" separator=","  close=")">
+				#{item}
+			</foreach>
+		</if>
+		) se on un.code = se.code
+		inner join
+		(select count(1) newAdmNum, 1 as code
+		from PV_ENCOUNTER pv
+		inner join BD_OU_DEPT bd on pv.PK_DEPT = bd.PK_DEPT
+		where EU_PVTYPE = '3'
+		and EU_STATUS != '9'
+		and
+		<choose>
+			<when test="euType==1">
+				to_char(DATE_BEGIN, 'yyyy-MM')
+			</when>
+			<when test="euType==0">
+				to_char(DATE_BEGIN, 'yyyy-MM-dd')
+			</when>
+			<otherwise>
+				to_char(DATE_BEGIN, 'yyyy-MM-dd')
+			</otherwise>
+		</choose>
+		=#{date,jdbcType=VARCHAR}
+		<choose>
+			<when test="ipDepts!=null and ipDepts.size()>0">
+				and pv.PK_DEPT in
+				<foreach collection="ipDepts" item="item" open="(" separator=","  close=")">
+					#{item}
+				</foreach>
+			</when>
+			<otherwise>
+				and bd.DT_DEPTTYPE = '01' and bd.FLAG_IP = '1' and bd.DEL_FLAG = '0'
+			</otherwise>
+		</choose>
+
+		<if test="pkDeptNs!=null and pkDeptNs.size()>0">
+			and pv.pk_dept_ns in
+			<foreach collection="pkDeptNs" item="item" open="(" separator=","  close=")">
+				#{item}
+			</foreach>
+		</if>
+		) new on un.code = new.code
+		inner join
+		(select count(1) leaveNum, 1 as code
+		from PV_ENCOUNTER pv
+		inner join BD_OU_DEPT bd on pv.PK_DEPT = bd.PK_DEPT
+		where EU_PVTYPE = '3'
+		and EU_STATUS != '9'
+		and FLAG_IN = '0'
+		and
+		<choose>
+			<when test="euType==1">
+				to_char(DATE_END, 'yyyy-MM')
+			</when>
+			<when test="euType==0">
+				to_char(DATE_END, 'yyyy-MM-dd')
+			</when>
+			<otherwise>
+				to_char(DATE_END, 'yyyy-MM-dd')
+			</otherwise>
+		</choose>
+		= #{date,jdbcType=VARCHAR}
+		<choose>
+			<when test="ipDepts!=null and ipDepts.size()>0">
+				and pv.PK_DEPT in
+				<foreach collection="ipDepts" item="item" open="(" separator=","  close=")">
+					#{item}
+				</foreach>
+			</when>
+			<otherwise>
+				and bd.DT_DEPTTYPE = '01' and bd.FLAG_IP = '1' and bd.DEL_FLAG = '0'
+			</otherwise>
+		</choose>
+
+		<if test="pkDeptNs!=null and pkDeptNs.size()>0">
+			and pv.pk_dept_ns in
+			<foreach collection="pkDeptNs" item="item" open="(" separator=","  close=")">
+				#{item}
+			</foreach>
+		</if>
+		) lea on un.code = lea.code
+		inner join (
+		select count(1) inAum, 1 as code
+		from PV_ENCOUNTER pv
+		inner join BD_OU_DEPT bd on pv.PK_DEPT = bd.PK_DEPT
+		where EU_PVTYPE = '3'
+		and EU_STATUS != '9'
+		and FLAG_IN = '1'
+		<choose>
+			<when test="ipDepts!=null and ipDepts.size()>0">
+				and pv.PK_DEPT in
+				<foreach collection="ipDepts" item="item" open="(" separator=","  close=")">
+					#{item}
+				</foreach>
+			</when>
+			<otherwise>
+				and bd.DT_DEPTTYPE = '01' and bd.FLAG_IP = '1' and bd.DEL_FLAG = '0'
+			</otherwise>
+		</choose>
+
+		<if test="pkDeptNs!=null and pkDeptNs.size()>0">
+			and pv.pk_dept_ns in
+			<foreach collection="pkDeptNs" item="item" open="(" separator=","  close=")">
+				#{item}
+			</foreach>
+		</if>
+		) inP on un.code = inP.code
+	</select>
+	<select id="querySumOpMessage" resultType="DynaBean">
+		select op.opSetleAmount , opS.opSumNum
+		from (
+		select nvl(sum(dt.AMOUNT), 0) opSetleAmount, 1 as code
+		from bl_op_dt dt
+		inner join BL_SETTLE bls on bls.PK_SETTLE = dt.PK_SETTLE
+		inner join BD_OU_DEPT bd on dt.PK_DEPT_APP = bd.PK_DEPT
+		where dt.FLAG_SETTLE = '1'
+		and dt.PK_SETTLE is not null
+		and
+		<choose>
+			<when test="euType==1">
+				to_char(bls.DATE_ST, 'yyyy-MM')
+			</when>
+			<when test="euType==0">
+				to_char(bls.DATE_ST, 'yyyy-MM-dd')
+			</when>
+			<otherwise>
+				to_char(bls.DATE_ST, 'yyyy-MM-dd')
+			</otherwise>
+		</choose>
+		 = #{date,jdbcType=VARCHAR}
+		<choose>
+			<when test="opDepts!=null and opDepts.size()>0">
+				and bd.PK_DEPT in
+				<foreach collection="opDepts" item="item" open="(" separator=","  close=")">
+					#{item}
+				</foreach>
+			</when>
+			<otherwise>
+				and bd.FLAG_ACTIVE = '1' AND (bd.FLAG_ER = '1' or bd.FLAG_OP = '1') AND bd.DT_DEPTTYPE = '01' and bd.DEL_FLAG = '0'
+			</otherwise>
+		</choose>
+		) op
+		inner join (
+		select count(1) opSumNum, 1 as code
+		from PV_ENCOUNTER pv
+		inner join BD_OU_DEPT bd on pv.PK_DEPT = bd.PK_DEPT
+		where EU_PVTYPE &lt;3
+		and
+		<choose>
+			<when test="euType==1">
+				to_char(DATE_BEGIN, 'yyyy-MM')
+			</when>
+			<when test="euType==0">
+				to_char(DATE_BEGIN, 'yyyy-MM-dd')
+			</when>
+			<otherwise>
+				to_char(DATE_BEGIN, 'yyyy-MM-dd')
+			</otherwise>
+		</choose>
+		= #{date,jdbcType=VARCHAR}
+		<choose>
+			<when test="opDepts!=null and opDepts.size()>0">
+				and bd.PK_DEPT in
+				<foreach collection="opDepts" item="item" open="(" separator=","  close=")">
+					#{item}
+				</foreach>
+			</when>
+			<otherwise>
+				and bd.FLAG_ACTIVE = '1' AND (bd.FLAG_ER = '1' or bd.FLAG_OP = '1') AND bd.DT_DEPTTYPE = '01' and bd.DEL_FLAG = '0'
+			</otherwise>
+		</choose>
+
+		) opS on op.code = ops.code
+	</select>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+

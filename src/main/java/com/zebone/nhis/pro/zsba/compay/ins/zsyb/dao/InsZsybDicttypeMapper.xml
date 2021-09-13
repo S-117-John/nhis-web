@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.compay.ins.zsyb.dao.InsZsybDicttypeMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybDicttype">
+        <id column="PK_INSDICTTYPE" jdbcType="CHAR" property="pkInsdicttype"/>
+        <result column="PK_ORG" jdbcType="CHAR" property="pkOrg"/>
+        <result column="PK_HP" jdbcType="CHAR" property="pkHp"/>
+        <result column="CODE_TYPE" jdbcType="VARCHAR" property="codeType"/>
+        <result column="NAME_TYPE" jdbcType="VARCHAR" property="nameType"/>
+        <result column="SPCODE" jdbcType="VARCHAR" property="spcode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="NOTE" jdbcType="VARCHAR" property="note"/>
+        <result column="CREATOR" jdbcType="CHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="MODIFIER" jdbcType="CHAR" property="modifier"/>
+        <result column="MODITY_TIME" jdbcType="TIMESTAMP" property="modityTime"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+    </resultMap>
+    <select id="getInsDicttypeById" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+             ins_dicttype
+        WHERE            
+            PK_INSDICTTYPE = #{pkInsdicttype,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllInsDicttype" resultMap="BaseResultMap">
+          SELECT * FROM ins_dicttype 
+    </select>
+    
+    <delete id="deleteInsDicttype">
+        DELETE
+        FROM
+             ins_dicttype
+        WHERE            
+            PK_INSDICTTYPE = #{pkInsdicttype,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveInsDicttype" parameterType="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybDicttype" >
+        INSERT INTO ins_dicttype
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkInsdicttype != null" >
+                PK_INSDICTTYPE,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="pkHp != null" >
+                PK_HP,
+            </if>
+            <if test="codeType != null" >
+                CODE_TYPE,
+            </if>
+            <if test="nameType != null" >
+                NAME_TYPE,
+            </if>
+            <if test="spcode != null" >
+                SPCODE,
+            </if>
+            <if test="dCode != null" >
+                D_CODE,
+            </if>
+            <if test="note != null" >
+                NOTE,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="modifier != null" >
+                MODIFIER,
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkInsdicttype != null" >
+                #{pkInsdicttype,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=CHAR},
+            </if> 
+            <if test="pkHp != null" >
+                #{pkHp,jdbcType=CHAR},
+            </if> 
+            <if test="codeType != null" >
+                #{codeType,jdbcType=VARCHAR},
+            </if> 
+            <if test="nameType != null" >
+                #{nameType,jdbcType=VARCHAR},
+            </if> 
+            <if test="spcode != null" >
+                #{spcode,jdbcType=VARCHAR},
+            </if> 
+            <if test="dCode != null" >
+                #{dCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="note != null" >
+                #{note,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=CHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="modifier != null" >
+                #{modifier,jdbcType=CHAR},
+            </if> 
+            <if test="modityTime != null" >
+                #{modityTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=TIMESTAMP},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateInsDicttype" parameterType="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybDicttype" >
+        UPDATE ins_dicttype
+        <set>
+            <if test="pkInsdicttype != null" >
+                PK_INSDICTTYPE = #{pkInsdicttype,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=CHAR},
+            </if>
+            <if test="pkHp != null" >
+                PK_HP = #{pkHp,jdbcType=CHAR},
+            </if>
+            <if test="codeType != null" >
+                CODE_TYPE = #{codeType,jdbcType=VARCHAR},
+            </if>
+            <if test="nameType != null" >
+                NAME_TYPE = #{nameType,jdbcType=VARCHAR},
+            </if>
+            <if test="spcode != null" >
+                SPCODE = #{spcode,jdbcType=VARCHAR},
+            </if>
+            <if test="dCode != null" >
+                D_CODE = #{dCode,jdbcType=VARCHAR},
+            </if>
+            <if test="note != null" >
+                NOTE = #{note,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=CHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="modifier != null" >
+                MODIFIER = #{modifier,jdbcType=CHAR},
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME = #{modityTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        WHERE 
+            PK_INSDICTTYPE = #{pkInsdicttype,jdbcType=CHAR}
+    </update>
+</mapper>

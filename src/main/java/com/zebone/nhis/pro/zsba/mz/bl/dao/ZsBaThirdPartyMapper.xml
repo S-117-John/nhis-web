@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.mz.bl.dao.ZsBaThirdPartyMapper">
+
+    <select id="getHisTripartite" parameterType="java.util.Map" resultType="com.zebone.nhis.pro.zsba.mz.bl.vo.PaymentCheckVo">
+  		select * from (
+  		SELECT
+        	pv.EU_PVTYPE,
+        	pi.CODE_OP,
+        	pi.NAME_PI,
+        	pv.DATE_BEGIN date_pv,
+        	pay.pk_extpay,
+        	pay.pk_depo,
+        	pay.eu_paytype pay_type,
+        	st.DT_STTYPE,
+        	st.DATE_ST,
+        	pay.TRADE_NO trade_no,
+            pay.SERIAL_NO order_no,
+            pay.body_pay,
+            pay.sysname,
+            pay.amount,
+            pay.DATE_PAY,
+  		    pay.DT_BANK,
+            emp.name_emp,
+        	st.AMOUNT_PI,
+        	st.AMOUNT_INSU,
+        	st.AMOUNT_ST
+        FROM
+        	BL_EXT_PAY pay
+        	left join bl_deposit depo on depo.pk_depo=pay.pk_depo
+        	left JOIN BL_SETTLE st ON st.PK_SETTLE =depo.pk_settle AND st.AMOUNT_st &gt;= 0
+        	left JOIN PV_ENCOUNTER pv ON pv.PK_PV = pay.PK_PV
+        	left JOIN PI_MASTER pi ON pi.PK_PI = pv.PK_PI
+        	left JOIN bd_ou_employee emp on emp.pk_emp=pay.creator
+        WHERE
+        	pay.AMOUNT &gt;= 0 and pay.FLAG_PAY='1' and pay.SERIAL_NO is not null
+            <!-- AND to_char( pay.DATE_PAY, 'yyyyMMdd' ) = #{datePay,jdbcType=VARCHAR} -->
+            AND CONVERT(VARCHAR(8), pay.DATE_PAY, 112) = #{datePay,jdbcType=VARCHAR}
+            <if test="euOrdertype != null and euOrdertype != '' and euOrdertype == 'Seabird' ">
+               and (pay.eu_paytype = '23' or pay.eu_paytype = '24')
+            </if>
+            <if test="euOrdertype != null and euOrdertype != '' and euOrdertype == 'UnionPay' ">
+               and (pay.eu_paytype = '15' or pay.eu_paytype = '16' or pay.eu_paytype = '13' or pay.eu_paytype = '14' or pay.eu_paytype = '17')
+            </if>
+            <if test="euOrdertype != null and euOrdertype != '' and euOrdertype == 'Sande' ">
+               and (pay.eu_paytype = '22' or pay.eu_paytype = '21' or pay.eu_paytype = '20' or pay.eu_paytype = '19' or pay.eu_paytype = '18')
+            </if>
+            <if test="euOrdertype != null and euOrdertype != '' and euOrdertype == 'GenerationPOS' ">
+               and pay.eu_paytype = '12'
+            </if>
+
+      UNION
+        SELECT
+        	pv.EU_PVTYPE,
+        	pi.CODE_OP,
+        	pi.NAME_PI,
+        	pv.DATE_BEGIN date_pv,
+        	pay.pk_extpay,
+        	pay.pk_depo,
+        	pay.eu_paytype pay_type,
+        	st.DT_STTYPE freeType,
+        	st.DATE_ST,
+        	pay.TRADE_NO trade_no,
+            pay.SERIAL_NO order_no,
+            pay.body_pay,
+            pay.sysname,
+            pay.amount,
+            pay.DATE_PAY,
+            pay.DT_BANK,
+            emp.name_emp,
+        	st.AMOUNT_PI,
+        	st.AMOUNT_INSU,
+        	st.AMOUNT_ST
+        FROM
+        	BL_EXT_PAY pay
+        	left join bl_deposit depo on depo.pk_depo=pay.pk_depo
+        	left JOIN BL_SETTLE st ON st.PK_SETTLE =depo.pk_settle AND st.AMOUNT_st &lt; 0
+        	left JOIN PV_ENCOUNTER pv ON pv.PK_PV = pay.PK_PV
+        	left JOIN PI_MASTER pi ON pi.PK_PI = pv.PK_PI
+        	left JOIN bd_ou_employee emp on emp.pk_emp=pay.creator
+        WHERE
+        	pay.AMOUNT &lt; 0 and pay.FLAG_PAY='1' and pay.SERIAL_NO is not null
+            <!-- AND to_char( pay.DATE_PAY, 'yyyyMMdd' ) = #{datePay,jdbcType=VARCHAR} -->
+            AND CONVERT(VARCHAR(8), pay.DATE_PAY, 112) = #{datePay,jdbcType=VARCHAR}
+            <if test="euOrdertype != null and euOrdertype != '' and euOrdertype == 'Seabird' ">
+               and (pay.eu_paytype = '23' or pay.eu_paytype = '24')
+            </if>
+            <if test="euOrdertype != null and euOrdertype != '' and euOrdertype == 'UnionPay' ">
+               and (pay.eu_paytype = '15' or pay.eu_paytype = '16' or pay.eu_paytype = '13' or pay.eu_paytype = '14' or pay.eu_paytype = '17')
+            </if>
+            <if test="euOrdertype != null and euOrdertype != '' and euOrdertype == 'Sande' ">
+               and (pay.eu_paytype = '22' or pay.eu_paytype = '21' or pay.eu_paytype = '20' or pay.eu_paytype = '19' or pay.eu_paytype = '18')
+            </if>
+            <if test="euOrdertype != null and euOrdertype != '' and euOrdertype == 'GenerationPOS' ">
+               and pay.eu_paytype = '12'
+            </if>
+
+             )
+             ORDER BY DATE_PAY
+  	</select>
+
+</mapper>

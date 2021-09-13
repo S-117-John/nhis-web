@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.dao.ZsrmOpSchMapper" >
+    <select id="getSchApptInfoList" parameterType="java.util.List" resultType="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.vo.sch.ShortMsgSchApptInfoVo">
+        select distinct pi.NAME_PI,pi.CODE_PI,pi.CODE_OP,appt.BEGIN_TIME,appt.END_TIME,pi.MOBILE, pi.TEL_NO, dept.NAME_DEPT, emp.NAME_EMP,to_char(sch.DATE_WORK,'yyyyMMdd') date_work,sch.flag_stop,org.NAME_ORG,resou.NAME resou_name
+        from SCH_APPT appt
+        inner join pi_master pi on pi.PK_PI = appt.PK_PI
+        inner join sch_resource res on res.PK_SCHRES = appt.PK_SCHRES
+        left join SCH_RESOURCE resou on resou.PK_SCHRES = res.PK_DEPT
+        inner join sch_sch sch on sch.pk_sch=appt.pk_sch
+        inner join bd_ou_dept dept on dept.PK_DEPT = appt.PK_DEPT_EX
+        inner join BD_OU_EMPLOYEE emp on emp.PK_EMP = res.PK_EMP
+        left  join bd_ou_org org on appt.PK_ORG = org.PK_ORG
+        where appt.FLAG_CANCEL = '1'
+        and appt.EU_STATUS = '9' and sch.FLAG_STOP = '1'
+        and appt.PK_SCH in
+        <foreach collection="list" close=")" index="index" item="item" open="(" separator=",">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+    <select id="getSchApptStopList" parameterType="java.util.List" resultType="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.model.SchApptVo">
+        select appt.PK_SCHAPPT,appt.EU_STATUS,appt.FLAG_CANCEL,appt.PK_DATESLOT
+        ,bd.CODE_DATESLOT,bd.NAME_DATESLOT,appt.BEGIN_TIME,appt.END_TIME,appt.CREATE_TIME
+        ,appt.PK_SCH,appt.DATE_APPT,appt.dt_apptype,doc.NAME name_apptype
+        ,dept.CODE_DEPT,dept.NAME_DEPT,emp.CODE_EMP,emp.NAME_EMP,srv.eu_srvtype
+        ,pi.CODE_PI,pi.CODE_OP,pi.ID_NO,pi.NAME_PI,pi.mobile,pi.BIRTH_DATE
+        from SCH_APPT appt
+        inner join SCH_APPT_PV appv on appt.PK_SCHAPPT = appv.PK_SCHAPPT
+        inner join SCH_SCH sch on appt.PK_SCH = sch.PK_SCH
+        inner join PI_MASTER pi on appt.PK_PI = pi.PK_PI
+        left join sch_srv srv on appt.PK_SCHSRV = srv.PK_SCHSRV
+        left join BD_OU_DEPT dept on appt.PK_DEPT_EX = dept.PK_DEPT
+        LEFT JOIN bd_code_dateslot bd ON appt.pk_dateslot = bd.pk_dateslot
+        left join BD_OU_EMPLOYEE emp on appv.PK_EMP_PHY = emp.PK_EMP
+        left join BD_DEFDOC doc on appt.dt_apptype = doc.CODE and doc.CODE_DEFDOCLIST='020100'
+        where appt.FLAG_CANCEL = '1'
+        and appt.EU_STATUS = '9' and sch.FLAG_STOP='1'
+        and appt.PK_SCH in
+        <foreach collection="list" close=")" index="index" item="item" open="(" separator=",">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+</mapper>

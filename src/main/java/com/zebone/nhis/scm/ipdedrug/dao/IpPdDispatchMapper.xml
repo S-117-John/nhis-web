@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.ipdedrug.dao.IpPdDispatchMapper">
+
+<!-- 查询物品发退表 -->
+<select id="QueryDispatchList" parameterType="java.util.Map"
+resultType="com.zebone.nhis.scm.ipdedrug.vo.DispatchVo">
+select de.code_de,
+		de.pk_pdde,     
+       pd.name pdname, 
+       pd.spec,        
+       unit.name unit, 
+       sum(de.quan_pack) quan, 
+       de.eu_status,   
+       de.date_de,     
+       de.pk_emp_dist, 
+       de.name_emp_dist,  
+       de.date_dist,    
+       de.flag_dist      
+  from ex_pd_de de 
+       inner join bd_pd pd on de.pk_pd=pd.pk_pd and de.eu_status is not null and de.eu_direct = 1
+       inner join bd_unit unit on de.pk_unit=unit.pk_unit
+       inner join pv_encounter pv on de.pk_pv = pv.pk_pv
+       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+  where de.pk_store_de = #{pkStoreDe,jdbcType=CHAR}
+   	<if test="codeDe != null and codeDe != ''">
+ 		and de.code_de=#{codeDe}
+ 	</if> 
+   	<if test="dateS != null and dateS != ''">
+		and de.date_de &gt;= to_date(#{dateS},'YYYYMMDDHH24MISS')
+ 	</if> 
+   	<if test="dateE != null and dateE != ''">
+   		and de.date_de &lt;= to_date(#{dateE},'YYYYMMDDHH24MISS')
+ 	</if> 
+ 	<if test="state != null and state != '' and state!=9">
+   		 and  de.eu_status=#{state} 
+ 	</if> 
+ 	<if test="pkDeptNs != null and pkDeptNs != ''">
+   	     and  de.pk_dept_ap=#{pkDeptNs}    
+ 	</if> 
+
+group by de.code_de, 
+		de.pk_pdde,
+       pd.name, 
+       pd.spec, 
+       unit.name,
+       de.eu_status, 
+       de.date_de,
+       de.pk_emp_dist,
+       de.name_emp_dist,
+       de.date_dist,
+       de.flag_dist
+       order by date_de desc
+</select>
+
+<!-- 更新状态 -->
+	<update id="UpdateState" parameterType="java.util.Map">
+	update ex_pd_de
+   set eu_status='1',
+       flag_dist='1',
+       flag_sign='0',
+       date_dist=to_date(#{date},'YYYYMMDDHH24MISS'),    
+       pk_emp_dist=#{pkemp},  
+       name_emp_dist=#{nameemp}
+ where pk_pdde in 			
+ 		<foreach item="list" index="index" collection="list" open="("
+				separator="," close=")">
+				#{list}
+		</foreach> 
+	and   eu_status='0'
+	</update>
+</mapper>

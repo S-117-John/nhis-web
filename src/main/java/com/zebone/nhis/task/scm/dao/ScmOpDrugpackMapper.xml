@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.task.scm.dao.ScmOpDrugpackMapper">
+<select id="queryPresInfoUpload" parameterType="java.util.Map" resultType="com.zebone.nhis.task.scm.vo.OpDrugDispensePresInfo">
+		select
+		  occ.PRES_NO ,
+		  '' windowno,
+		  sett.CODE_ST FPNO,
+		  '' medid,
+		  pd.CODE med_only_code,
+		  pd.NAME med_name,
+		  dt.QUAN_CG med_amt,
+		  unit.NAME med_pack,
+		  pack.NAME med_unit_pack,
+		  pd.SPEC med_unit,
+		  pd.pack_size/dt.PACK_SIZE med_convercof,
+		  fa.CODE med_factory,
+		  '' med_type,
+		  dt.PRICE med_unit_price,
+		  dt.AMOUNT_CG med_total_price,
+		  sett.DATE_ST med_out_time,
+		  pi.CODE_OP patient_id,
+		  pi.NAME_PI patient_name,
+		  case when pv.DT_SEX='02' then 'M' when pv.DT_SEX='03' then 'F' else '' end  patient_sex,
+		  pv.AGE_PV patient_age,
+		  pi.BIRTH_DATE patient_birth,
+		  indiag.NAME_DIAG diagnosis,
+		  dept.CODE_DEPT ward_no,
+		  dept.NAME_DEPT ward_name,
+		  to_char(ord.DOSAGE,'FM99999999990.0000')||dos.NAME  med_per_dos,
+		  supply.NAME med_usage,
+		  freq.note med_per_day,
+		  occ.NAME_EMP_PRES doctor_name,
+		  presdoc.NAME pres_type,
+		  occ.NOTE remark,
+		  pds.POSI_NO med_shelf,
+		  de.CODE_DEPT yfcode,
+		  pd.eu_labeltype,
+		  pd.weight,                                                    
+		  pd.pk_unit_wt,
+		  pd.vol,
+		  pd.pk_unit_vol,
+		  pd.pk_unit_min,
+		  ord.dosage,
+		  ord.pk_unit_dos,
+		  dos.name as name_unit_dos, 
+		  vol.name as name_unit_vol,
+		  min.name as name_unit_min,
+		  wt.name as name_unit_wt
+		FROM bd_pd pd
+			  inner join ex_pres_occ_dt dt on pd.pk_pd = dt.pk_pd
+		      inner join EX_PRES_OCC occ on occ.PK_PRESOCC=dt.PK_PRESOCC
+		      inner join pv_encounter pv on occ.pk_pv = pv.pk_pv
+			  inner join pi_master pi on pi.pk_pi=pv.pk_pi
+			  inner join cn_order ord on dt.pk_cnord = ord.pk_cnord
+			  inner join bd_pd_store pds on pd.pk_pd = pds.pk_pd and pds.pk_dept = ord.pk_dept_exec
+			  inner join BD_OU_DEPT dept on dept.PK_DEPT=pv.PK_DEPT
+		      inner join CN_PRESCRIPTION pres on pres.PK_PRES=occ.PK_PRES
+		      inner join BD_OU_DEPT de on de.PK_DEPT=occ.PK_DEPT_EX
+		      inner join BL_SETTLE sett on sett.PK_SETTLE=occ.PK_SETTLE
+		      left join bd_factory fa on fa.pk_factory = pd.pk_factory
+			  left join bd_unit unit on unit.pk_unit = dt.pk_unit
+			  left join bd_unit pack on pack.pk_unit = pd.PK_UNIT_PACK
+		      left join BD_UNIT dos on dos.PK_UNIT=ord.PK_UNIT_DOS
+		      left join BD_UNIT vol on vol.PK_UNIT=pd.pk_unit_vol
+		      left join BD_UNIT min on min.PK_UNIT=pd.pk_unit_min
+		      left join BD_UNIT wt on wt.PK_UNIT=pd.pk_unit_wt
+			  left join bd_supply supply on supply.code = ord.code_supply
+			  left join bd_term_freq freq on freq.code = ord.code_freq
+		      left join (select NAME_DIAG ,pk_pv,PK_DIAG from (select row_number() over(partition by pk_pv order by flag_maj desc) cnt, diag.pk_pv,diag.NAME_DIAG ,diag.pk_diag from pv_diag diag ) res where res.cnt = 1) indiag on indiag.PK_PV=occ.PK_PV
+		      left join BD_DEFDOC presdoc on presdoc.CODE_DEFDOCLIST='060101' and presdoc.CODE=pres.DT_PRESTYPE
+		     where pres.DT_PRESTYPE !='02' 
+		          and occ.FLAG_REG='1' 
+		          and occ.FLAG_PREP='1' 
+		          and occ.FLAG_CONF='0' 
+		          and occ.date_reg &gt;=to_date(#{dateStart},'yyyyMMddhh24miss')
+		          and occ.date_reg &lt;=to_date(#{dateEnd},'yyyyMMddhh24miss')
+				  and occ.NOTE is null 
+				  and pds.PK_STORE='c23d472cf0884b119e4d718af0fb7f45'
+				   and  (dt.quan_ret='0' or dt.quan_ret is null) 
+			order by occ.pres_no
+		  </select>
+</mapper>

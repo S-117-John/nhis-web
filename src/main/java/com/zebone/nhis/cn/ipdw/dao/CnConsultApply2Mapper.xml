@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.CnConsultApply2Mapper">
+	<select id="qryOrderConsultList2" parameterType="java.lang.String" resultType="DynaBean">
+		select ord.pk_cnord,  
+       		ord.name_ord,      
+       		ord.date_start,    
+       		ord.eu_status_ord,
+       		ord.groupno,
+			ord.ordsn,
+			ord.ordsn_parent   
+  		from cn_order ord
+ 		where ord.pk_pv=#{pkPv,jdbcType=VARCHAR} and
+       		ord.code_ordtype like '0903%' and
+       		ord.code_apply is not null 
+	</select>
+	
+	<select id="qryOrderConsultList" parameterType="java.lang.String" resultType="DynaBean">
+		select cs.*,
+       		ord.code_ord,
+       		ord.pk_cnord,  
+       		ord.name_ord,      
+       		ord.date_start,    
+       		ord.eu_status_ord,
+       		ord.groupno,
+			ord.ordsn,
+			ord.ordsn_parent,   
+       		ord.flag_emer, 
+       		ord.pk_org_exec, 
+       		ord.pk_dept_exec, 
+       		ord.code_ordtype,
+       		ord.code_apply,
+       		ord.flag_print as flag_print_ord,
+       		ord.FLAG_CP
+  		from cn_consult_apply cs
+       		inner join cn_order ord on cs.pk_cnord=ord.pk_cnord 
+	       		and ord.pk_pv=#{pkPv,jdbcType=VARCHAR} 
+	       		and ord.code_ordtype like '0903%' 
+	       		and ord.code_apply is not null 
+	       		order by ord.date_start desc
+
+	</select>
+	
+	<select id="qryConsultApplyInfo" parameterType="java.lang.String" resultType="DynaBean">
+		select cs.*,
+       ord.name_ord,
+       ord.code_ord,
+       ord.pk_org_exec,
+       ord.pk_dept_exec,
+       ord.code_apply,
+       ord.flag_emer,
+       ord.code_ordtype
+  		from cn_consult_apply cs
+       		inner join cn_order ord on cs.pk_cnord=ord.pk_cnord
+ 		where cs.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="qryConsultResList" parameterType="java.lang.String" resultType="DynaBean">
+		select rsp.* ,
+		       dept.name_dept name_dept_rep
+		  from cn_consult_response rsp
+		  inner join bd_ou_dept dept on dept.pk_dept=rsp.pk_dept_rep
+		 where rsp.pk_cons=#{pkCons,jdbcType=VARCHAR}
+	</select>
+	
+	<update id="updateConsultInfo" parameterType="java.util.Map">
+		update cn_order
+		set eu_status_ord = '9',
+		  flag_erase = '1',
+		  date_erase = to_date(#{dateErasse,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss'),
+		  pk_emp_erase =#{pkEmpErase,jdbcType=VARCHAR},
+		  name_emp_erase =#{nameEmpErase,jdbcType=VARCHAR} 
+		WHERE 1=1
+		    and ordsn_parent in (select ordsn_parent from cn_order where pk_cnord = #{pkCnord,jdbcType=VARCHAR}  ) 
+			AND flag_erase = '0' 
+	</update>
+    <select id="qryConRespEmp" resultType="com.zebone.nhis.cn.ipdw.vo.OrdCaVo">
+		select emp.IMG_SIGN as img_sign_resp
+		from CN_CONSULT_RESPONSE resp
+				 inner join BD_OU_EMPLOYEE emp on emp.pk_emp = resp.PK_EMP_REP
+		where  resp.PK_CONSREP = #{pkConsrep,jdbcType=CHAR}
+		  and exists(
+				select 1 from CN_SIGN_CA ca where ca.pk_bu = resp.PK_CONSREP and ca.EU_BUTYPE = '0' and EU_OPTYPE = '0'
+			)
+	</select>
+
+	<select id="queryItemBySrv" parameterType="java.util.Map" resultType="DynaBean" >
+  select *
+	from(
+	  	select
+	  	       item.pk_item,
+	  	       si.sortno,
+	  		   item.code,
+		       item.name,
+		       si.quan,
+		       item.price,
+		       '0' flag_pd,
+		       si.flag_union
+		  from bd_ord_org srv
+		  inner join bd_ord_item si on srv.pk_ord = si.pk_ord  and si.del_flag='0'
+		  inner join bd_item item  on si.pk_item = item.pk_item   and item.del_flag='0'
+		 where srv.pk_org= #{pkOrg,jdbcType=CHAR}
+		   and srv.pk_ord= #{pkOrd,jdbcType=CHAR}
+		   and srv.del_flag='0'
+
+	union all
+
+		select
+		   pd.pk_pd  as pk_item,
+           si.sortno,
+           pd.code,
+	       pd.name,
+	       si.quan,
+	       pd.price/pd.pack_size*si.quan,
+	       '1' flag_pd,
+		   si.flag_union
+		  from bd_ord_org srv
+		  inner join bd_ord_item si on srv.pk_ord = si.pk_ord  and si.del_flag='0'
+		  inner join bd_pd pd  on si.pk_item = pd.pk_pd   and pd.del_flag='0'
+		 where srv.pk_org= #{pkOrg,jdbcType=CHAR}
+		   and srv.pk_ord= #{pkOrd,jdbcType=CHAR}
+		   and srv.del_flag='0'
+	) item
+	order by item.sortno,item.code,item.name
+
+  </select>
+
+	<select id="qryConsultApplyAndPiInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select consult.*,
+			pv.pk_pv,
+			pi.code_op,
+			pi.name_pi,
+			dept.name_dept,
+			ord.code_apply,
+			ord.CODE_ORD,
+			ord.flag_emer,
+			resp.flag_finish
+		from pv_encounter pv
+		inner join PI_MASTER pi on pv.PK_PI = pi.PK_PI
+		inner join cn_order ord on pv.pk_pv = ord.pk_pv and ord.flag_erase = '0' and ord.del_flag='0'
+		inner join cn_consult_apply consult on ord.pk_cnord = consult.pk_cnord and consult.del_flag='0'
+		inner join cn_consult_response resp on resp.pk_cons = consult.pk_cons and resp.del_flag='0'
+		left join bd_ou_dept dept on consult.pk_dept=dept.pk_dept and dept.del_flag='0'
+		where pv.flag_cancel != '1'
+		and pv.eu_pvtype In ('1','2','4')
+		and pv.eu_status > 0
+		and ((resp.pk_dept_rep = #{pkDept,jdbcType=CHAR} and resp.pk_emp_rep is null) or resp.pk_emp_rep=#{pkEmp,jdbcType=CHAR})
+		<if test="dateBegin != null and dateBegin !=''">
+			and to_char(consult.date_apply,'yyyyMMdd') &gt;=#{dateBegin,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd !=''">
+			and to_char(consult.date_apply,'yyyyMMdd') &lt;=#{dateEnd,jdbcType=VARCHAR}
+		</if>
+		<if test="euStatus != null and euStatus !=''">
+			and consult.EU_STATUS=#{euStatus,jdbcType=VARCHAR}
+		</if>
+		<if test="codeOp != null and codeOp !=''">
+			and pi.CODE_OP =#{codeOp,jdbcType=VARCHAR}
+		</if>
+		and pv.del_flag='0'
+		order by consult.date_apply
+	</select>
+</mapper>

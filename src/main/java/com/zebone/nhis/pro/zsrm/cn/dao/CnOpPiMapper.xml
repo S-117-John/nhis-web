@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsrm.cn.dao.CnOpPiMapper">
+    <update id="updatePiMaster" parameterType="com.zebone.nhis.pro.zsrm.cn.vo.PiZsVo">
+        update pi_master
+        <set>
+            <if test="spcaNo != null">
+                spca_no = #{spcaNo,jdbcType=VARCHAR},
+            </if>
+            <if test="senNo != null">
+                sen_no = #{senNo,jdbcType=VARCHAR},
+            </if>
+            <if test="citizenNo != null">
+                citizen_no = #{citizenNo,jdbcType=VARCHAR},
+            </if>
+            <if test="dtSpecunit != null">
+                dt_specunit = #{dtSpecunit,jdbcType=VARCHAR},
+            </if>
+            <if test="dtSource != null">
+                dt_source = #{dtSource,jdbcType=VARCHAR},
+            </if>
+            <if test="hicNo != null">
+                hic_no = #{hicNo,jdbcType=VARCHAR},
+            </if>
+            <if test="mobile != null">
+                mobile = #{mobile,jdbcType=VARCHAR},
+            </if>
+            <if test="dtSex != null">
+                dt_sex = #{dtSex,jdbcType=VARCHAR},
+            </if>
+            <if test="birthDate != null">
+                birth_date = #{birthDate,jdbcType=DATE},
+            </if>
+            <if test="modifier != null">
+                modifier = #{modifier,jdbcType=VARCHAR},
+            </if>
+            <if test="ts != null">
+                ts = #{ts,jdbcType=DATE},
+            </if>
+            <if test="dtIdtypeRel != null">
+                dt_idtype_rel = #{dtIdtypeRel,jdbcType=VARCHAR},
+            </if>
+            <if test="idnoRel != null">
+                idno_rel = #{idnoRel,jdbcType=VARCHAR},
+            </if>
+            <if test="telRel != null">
+                tel_rel = #{telRel,jdbcType=VARCHAR},
+            </if>
+            <if test="addrCur != null">
+                addr_cur = #{addrCur,jdbcType=VARCHAR},
+            </if>
+            <if test="mcno != null">
+                mcno = #{mcno,jdbcType=VARCHAR},
+            </if>
+            <if test="insurNo != null">
+                insur_no = #{insurNo,jdbcType=VARCHAR},
+            </if>
+            <if test="addrCurDt != null">
+                addr_cur_dt = #{addrCurDt,jdbcType=VARCHAR},
+            </if>
+            <if test="nameRel != null">
+                name_rel = #{nameRel,jdbcType=VARCHAR},
+            </if>
+            <if test="note != null">
+                note = #{note,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmp != null">
+                pk_emp = #{pkEmp,jdbcType=VARCHAR},
+            </if>
+            <if test="address != null">
+                address = #{address,jdbcType=VARCHAR},
+            </if>
+            <if test="flagRealname != null">
+                flag_realname = #{flagRealname,jdbcType=VARCHAR},
+            </if>
+            <if test="idNo != null and idNo!=''">
+                id_no = #{idNo,jdbcType=VARCHAR},
+            </if>
+            <if test="dtIdtype != null and dtIdtype !=''">
+                dt_idtype = #{dtIdtype,jdbcType=VARCHAR},
+            </if>
+            <if test="namePi != null and namePi !=''">
+                name_pi = #{namePi,jdbcType=VARCHAR},
+            </if>
+            <if test="pkPicate != null and pkPicate !=''">
+                pk_picate = #{pkPicate,jdbcType=VARCHAR},
+            </if>
+        </set>
+        WHERE
+        pk_pi = #{pkPi,jdbcType=CHAR}
+    </update>
+    <select id="searchPv" parameterType="java.util.Map" resultType="DynaBean" >
+        select
+        pv.date_begin,
+        dept.name_dept,
+        pv.eu_pvtype,
+        pv.pk_pv,
+        pv.code_pv,
+        pi.code_op,
+        pi.code_ip,
+        pv.NAME_PI as name,
+        sexdoc.name as sex,
+        pv.AGE_PV as age,
+        hp.name as medical_Insurance,
+        diag.NAME_DIAG as diagnosis,
+        pi.code_pi,
+        pv.pk_pi,
+        pv.NAME_EMP_PHY,
+        pi.birth_date,
+               pv.bed_no,
+               pi.MOBILE,
+               pv.PK_INSU,
+               pi.MCNO,
+               pi.ID_NO,pi.INSUR_NO,pv.ADDRESS,pv.DATE_CLINIC,pv.DT_SEX, pv.eu_pvmode, pv.eu_disetype,
+        pv.EU_STATUS,pi.TEL_NO
+        from
+        pv_encounter pv
+        inner join bd_ou_dept dept on pv.pk_dept = dept.pk_dept
+        inner join PI_MASTER pi on pi.pk_pi = pv.pk_pi
+        inner join bd_defdoc sexdoc on sexdoc.code = pv.dt_sex and sexdoc.CODE_DEFDOCLIST = '000000' and sexdoc.DEL_FLAG = '0'
+        inner join bd_hp hp on hp.pk_hp = pv.pk_insu
+        left join pv_diag diag on diag.pk_pv = pv.pk_pv and diag.flag_maj = '1'
+
+        where pv.EU_STATUS!='9' and pv.eu_status!='0' and pv.del_flag = '0' 
+        <if test="euPvtype!=null and euPvtype!=''">
+            and pv.eu_pvtype != #{euPvtype,jdbcType=VARCHAR}
+        </if>
+        <if test="pkPi!=null and pkPi!=''">
+            and pv.pk_pi=#{pkPi,jdbcType=VARCHAR}
+        </if>
+        <if test="codeOp!=null and codeOp!=''">
+            and pi.code_op=#{codeOp,jdbcType=VARCHAR}
+        </if>
+        <if test="codePi!=null and codePi!=''">
+            and pi.code_Pi=#{codePi,jdbcType=VARCHAR}
+        </if>
+        <if test="codeIp!=null and codeIp!=''">
+            and pi.code_ip=#{codeIp,jdbcType=VARCHAR}
+        </if>
+        <if test="idNo!=null and idNo!=''">
+            and pi.id_no=#{idNo,jdbcType=VARCHAR}
+        </if>
+        <if test="namePi!=null and namePi!=''">
+            and pi.name_pi=#{namePi,jdbcType=VARCHAR}
+        </if>
+        <if test="codePv!=null and codePv!=''">
+            and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+        </if>
+        <if test="dateStartS != null">
+            and  pv.date_begin &gt;= to_date(#{dateStartS,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateEndS != null">
+            and  pv.date_begin &lt;= to_date(#{dateEndS,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        </if>
+        <if test="insurNo != null and insurNo != ''">
+            and pi.insur_no = #{insurNo,jdbcType=VARCHAR}
+        </if>
+        <if test="cardNo != null and cardNo != ''">
+            AND EXISTS(
+            SELECT 1 FROM PI_CARD PC WHERE PI.PK_PI=PC.PK_PI AND    PC.DEL_FLAG = '0'
+            AND PC.EU_STATUS = '0'
+            AND PC.FLAG_ACTIVE = '1'
+            and PC.card_no =#{cardNo,jdbcType=VARCHAR}
+            )
+        </if>
+        <if test="type!=null">
+            <if test="type==0 and pkEmpId != null and pkEmpId!=''">
+                and pv.PK_EMP_PHY = #{pkEmpId,jdbcType=CHAR}
+            </if>
+            <if test="type==1 and pkDepId != null and pkDepId!=''">
+                and pv.pk_dept = #{pkDepId,jdbcType=CHAR}
+            </if>
+        </if>
+        order by pv.date_begin desc
+    </select>
+
+    <select id="searchPvCount" parameterType="java.util.Map" resultType="DynaBean" >
+        select
+        sum(1) as pv_count,
+        sum(case when eu_pvtype='3' then 1 else 0 end) as ip_count,
+        sum(case when eu_pvtype='1' then 1 else 0 end) as op_count,
+        sum(case when eu_pvtype='2' then 1 else 0 end) as er_count
+        from
+        pv_encounter pv
+        inner join bd_ou_dept dept on pv.pk_dept = dept.pk_dept
+        inner join PI_MASTER pi on pi.pk_pi = pv.pk_pi
+        inner join bd_defdoc sexdoc on sexdoc.code = pv.dt_sex and sexdoc.CODE_DEFDOCLIST = '000000' and sexdoc.DEL_FLAG = '0'
+        inner join bd_hp hp on hp.pk_hp = pv.pk_insu
+        left join pv_diag diag on diag.pk_pv = pv.pk_pv and diag.flag_maj = '1'
+        where pv.EU_STATUS!='9' and pv.eu_status!='0' and pv.del_flag = '0'
+        <if test="euPvtype!=null and euPvtype!=''">
+            and pv.eu_pvtype != #{euPvtype,jdbcType=VARCHAR}
+        </if>
+        <if test="pkPi!=null and pkPi!=''">
+            and pv.pk_pi=#{pkPi,jdbcType=VARCHAR}
+        </if>
+        <if test="codeOp!=null and codeOp!=''">
+            and pi.code_op=#{codeOp,jdbcType=VARCHAR}
+        </if>
+        <if test="codePi!=null and codePi!=''">
+            and pi.code_Pi=#{codePi,jdbcType=VARCHAR}
+        </if>
+        <if test="codeIp!=null and codeIp!=''">
+            and pi.code_ip=#{codeIp,jdbcType=VARCHAR}
+        </if>
+        <if test="idNo!=null and idNo!=''">
+            and pi.id_no=#{idNo,jdbcType=VARCHAR}
+        </if>
+        <if test="namePi!=null and namePi!=''">
+            and pi.name_pi=#{namePi,jdbcType=VARCHAR}
+        </if>
+        <if test="codePv!=null and codePv!=''">
+            and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+        </if>
+        <if test="dateStartS != null">
+            and  pv.date_begin &gt;= to_date(#{dateStartS,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateEndS != null">
+            and  pv.date_begin &lt;= to_date(#{dateEndS,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        </if>
+        <if test="insurNo != null and insurNo != ''">
+            and pi.insur_no = #{insurNo,jdbcType=VARCHAR}
+        </if>
+        <if test="cardNo != null and cardNo != ''">
+            AND EXISTS(
+            SELECT 1 FROM PI_CARD PC WHERE PI.PK_PI=PC.PK_PI AND    PC.DEL_FLAG = '0'
+            AND PC.EU_STATUS = '0'
+            AND PC.FLAG_ACTIVE = '1'
+            and PC.card_no =#{cardNo,jdbcType=VARCHAR}
+            )
+        </if>
+        <if test="type!=null">
+            <if test="type==0 and pkEmpId != null and pkEmpId!=''">
+                and pv.PK_EMP_PHY = #{pkEmpId,jdbcType=CHAR}
+            </if>
+            <if test="type==1 and pkDepId != null and pkDepId!=''">
+                and pv.pk_dept = #{pkDepId,jdbcType=CHAR}
+            </if>
+        </if>
+        order by pv.date_begin desc
+    </select>
+
+    <select id="searchPvDeti" parameterType="java.util.Map" resultType="DynaBean" >
+        select pv.pk_inspv,pv.pk_pv,pv.med_type,dict.name as med_name,pv.dise_codg,pv.dise_name,
+        pv.birctrl_type,dict1.name as birctrl_name,pv.birctrl_matn_date,pv.matn_type,
+        dict2.name as matn_name,pv.geso_val
+        from ins_qgyb_pv pv
+        left join ins_qgyb_dict dict on pv.med_type=dict.code and dict.code_type='med_type'
+        left join ins_qgyb_dict dict1 on pv.birctrl_type=dict1.code and dict1.code_type='birctrl_type'
+        left join ins_qgyb_dict dict2 on pv.matn_type=dict2.code and dict2.code_type='matn_type'
+        where pv.pk_pv = #{pkPv,jdbcType=VARCHAR}
+    </select>
+
+    <select id="searchPvSettle" parameterType="java.util.Map" resultType="DynaBean" >
+        select *
+        from BL_SETTLE
+        WHERE PK_PI=#{pkPi,jdbcType=VARCHAR}
+        ORDER BY DATE_ST desc
+    </select>
+</mapper>

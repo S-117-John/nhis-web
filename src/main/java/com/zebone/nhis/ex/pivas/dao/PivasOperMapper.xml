@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.pivas.dao.PivasOperMapper">
+
+
+<select id="queryPdapDt" resultType="com.zebone.nhis.ex.pivas.vo.ExPdApplyDetailVo">
+SELECT
+	pv.pk_pi,
+	pv.bed_no,
+	pv.name_pi,
+	pdapdt.pk_pdapdt,
+	pdapdt.pk_pv,
+	pdapdt.pk_pd,
+	pdapdt.pk_unit,
+	pdapdt.pack_size,
+	occ.quan_occ as quan_pack,
+	pdapdt.pack_size*occ.quan_occ as quan_min,
+	pdap.pk_dept_ap,
+	ord.eu_status_ord,
+	ord.date_stop,
+	ord.drip_speed,
+	ord.sort_iv,
+	ord.code_supply,
+	ord.dosage,
+	ord.pk_unit_dos,
+	ord.code_freq,
+	ord.pk_cnord,
+	ord.eu_always,
+	ord.name_ord,
+	ord.spec,
+	ord.ordsn,
+	ord.ordsn_parent,
+	occ.quan_occ,
+	occ.pk_exocc,
+	occ.date_plan,
+	unit. NAME unit,
+	freq. NAME freq,
+	unit_dos. NAME unit_dos,
+	ppd.pk_pivascate,
+	CASE
+	WHEN chk.pk_pdchk IS NULL THEN
+		'-1'
+	ELSE
+		chk.eu_result_manu
+	END flag_chk
+FROM
+	ex_pd_apply_detail pdapdt
+INNER JOIN cn_order ord ON pdapdt.pk_cnord = ord.pk_cnord and ord.code_supply != '01'
+INNER JOIN pv_encounter pv ON pdapdt.pk_pv = pv.pk_pv
+INNER JOIN ex_order_occ occ ON pdapdt.pk_pdapdt = occ.pk_pdapdt
+INNER JOIN bd_unit unit ON pdapdt.pk_unit = unit.pk_unit AND unit. NAME != '片'
+INNER JOIN bd_term_freq freq ON ord.code_freq = freq.code
+INNER JOIN bd_unit unit_dos ON ord.pk_unit_dos = unit_dos.pk_unit
+LEFT OUTER JOIN ex_pd_check chk ON pdapdt.pk_cnord = chk.pk_cnord
+LEFT OUTER JOIN bd_pivas_pd ppd ON pdapdt.pk_pd = ppd.pk_pd AND pdapdt.pk_org = ppd.pk_org
+LEFT OUTER JOIN EX_PD_APPLY pdap ON pdapdt.pk_pdap = pdap.pk_pdap
+INNER JOIN BD_PD pd ON pd.pk_pd = pdapdt.pk_pd
+<trim prefix="WHERE" prefixOverrides="AND |OR ">
+	AND pdapdt.flag_stop = '0'
+	AND pdapdt.flag_de = '0'
+	AND NOT EXISTS (
+	SELECT
+		1
+	FROM
+		ex_pd_pivas pivas
+	WHERE
+		pivas.pk_exocc = occ.pk_exocc
+	)
+	<if test="pkPdaps != null">
+	AND pdapdt.pk_pdap in
+		<foreach item="item" index="index" collection="pkPdaps" open="("  
+				           separator="," close=")">  
+		   #{item}  
+		</foreach>
+	</if>
+	<if test="euDetype != null">
+	AND pdapdt.eu_detype = #{euDetype,jdbcType=VARCHAR}
+	</if>
+	<if test="codePv != null">
+	AND pv.code_pv = #{codePv,jdbcType=VARCHAR}
+	</if>
+	<if test="wheresql != null">
+	AND ${wheresql}
+	</if>
+</trim>
+order by ord.sort_iv
+</select>
+
+
+<update id="updatePivas" parameterType="java.util.Map">
+  update ex_pd_pivas
+  <set >
+      <if test="codeBatch != null" >
+      code_batch = #{codeBatch,jdbcType=VARCHAR},
+      </if>
+      <if test="flagPrt != null">
+	  flag_prt = #{flagPrt,jdbcType=VARCHAR},
+  	  </if>
+  	  <if test="euStatus != null">
+	  eu_status = #{euStatus,jdbcType=VARCHAR},
+  	  </if>
+  	  <if test="datePrt != null">
+	  date_prt = to_date(#{datePrt},'YYYYMMDDHH24MISS'),
+  	  </if>
+  	  <if test="pkEmpPrt != null">
+	  pk_emp_prt = #{pkEmpPrt,jdbcType=VARCHAR},
+  	  </if>
+  	  <if test="nameEmpPrt != null">
+	  name_emp_prt = #{nameEmpPrt,jdbcType=VARCHAR},
+  	  </if>
+  </set>
+  where pk_pdpivas in 
+  <foreach item="item" index="index" collection="pkPdpivas" open="("  
+				           separator="," close=")">  
+	 #{item}  
+  </foreach>
+</update>
+
+<select id="queryPivas" resultType="DynaBean" parameterType="java.util.Map">
+SELECT
+	PV.CODE_PV,
+	pv.bed_no,
+	pi.name_pi,
+	pivas.pk_pdpivas,
+	pivas.pk_pivascate,
+	pivas.pk_cnord,
+	pivas.ordsn,
+	pivas.ordsn_parent,
+	pivas.eu_always,
+	pivas.name_ord,
+	pivas.spec,
+	unit. NAME unit,
+	pivas.quan_pack,
+	pivas.quan_min,
+	freq. NAME freq,
+	pivas.dosage,
+	unit_dos. NAME unit_dos,
+	pivas.drip_speed,
+	pivas.time_occ,
+	pivas.time_plan,
+	pivas.code_batch,
+	bat.pk_pivasbatch,
+	pivas.barcode,
+	ord.eu_status_ord,
+	ord.date_stop,
+	pivas.flag_prt,
+	pivas.code_supply,
+	pivas.pk_pdapdt,
+	pivas.pk_dept_apply
+FROM
+	pv_encounter pv
+INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+INNER JOIN ex_pd_pivas pivas ON pv.pk_pv = pivas.pk_pv
+INNER JOIN bd_unit unit ON pivas.pk_unit = unit.pk_unit
+INNER JOIN bd_unit unit_dos ON pivas.pk_unit_dos = unit_dos.pk_unit
+INNER JOIN bd_term_freq freq ON pivas.code_freq = freq.code
+INNER JOIN cn_order ord ON pivas.pk_cnord = ord.pk_cnord
+LEFT OUTER JOIN bd_pivas_cate pcate ON pivas.pk_pivascate = pcate.pk_pivascate
+LEFT OUTER JOIN bd_pivas_batch bat ON bat.code = pivas.code_batch and bat.del_flag = '0'
+and bat.pk_dept = #{pkDeptAdmix,jdbcType=VARCHAR}
+<trim prefix="WHERE" prefixOverrides="AND |OR ">
+    and pivas.flag_stop = '0'
+	<if test="pkDeptAdmix != null">
+	AND pivas.pk_dept_admix = #{pkDeptAdmix,jdbcType=VARCHAR}
+	</if>
+	<if test="pkDeptApply != null">
+	AND pivas.pk_dept_apply = #{pkDeptApply,jdbcType=VARCHAR}
+	</if>
+	<if test="codeBatch != null">
+	AND pivas.code_batch = #{codeBatch,jdbcType=VARCHAR}
+	</if>
+	<if test="pkPivascate != null">
+	AND pivas.pk_pivascate = #{pkPivascate,jdbcType=VARCHAR}
+	</if>
+	<if test="euAlways != null">
+	AND pivas.eu_always = #{euAlways,jdbcType=VARCHAR}
+	</if>
+	<if test="euTimeDo == '1'.toString()">
+	AND to_char(pivas.time_occ,'YYYYMMDD') = #{curDate,jdbcType=VARCHAR}
+	</if>
+	<if test="euTimeDo == '2'.toString()">
+	AND to_char(pivas.time_occ,'YYYYMMDD') = #{nextDate,jdbcType=VARCHAR}
+	</if>
+	<if test="codePv != null">
+	AND pv.code_pv = #{codePv,jdbcType=VARCHAR}
+	</if>
+	<if test="namePi != null">
+	AND pi.name_pi LIKE '%${namePi}%'
+	</if>
+	<if test="euStatus == '0'.toString()">
+	AND pivas.eu_status = '0'
+	</if>
+	<if test="euStatus == '1'.toString()">
+	AND pivas.eu_status != '0'
+	</if>
+</trim>
+</select>
+
+
+<select id="queryWaitToBeAudittedPdInfos" resultType="DynaBean">
+select pv.bed_no,       
+       pi.name_pi,      
+       sex.name sex,    
+       pv.code_pv,      
+       dept.name_dept,  
+       pivas.ordsn,     
+       pivas.ordsn_parent,
+       pivas.name_ord,  
+       pivas.spec,      
+       unit.name unit,   
+       freq.name freq,  
+       pivas.dosage,    
+       unit_dos.name unit_dos, 
+       pivas.time_occ,  
+       pivas.barcode,   
+       pivas.code_batch,
+       pivas.pk_pdpivas, 
+       pivas.eu_status,
+       pivas.pk_unit_dos
+  from pi_master pi
+       inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+       inner join ex_pd_pivas pivas on pivas.pk_pv=pv.pk_pv
+       left join bd_defdoc sex on pi.dt_sex=sex.code and sex.code_defdoclist='000000'
+       left join bd_unit unit on pivas.pk_unit=unit.pk_unit
+       left join bd_unit unit_dos on pivas.pk_unit_dos=unit_dos.pk_unit
+       left join bd_term_freq freq on pivas.code_freq=freq.code
+       left join bd_ou_dept dept on pv.pk_dept=dept.pk_dept
+ where pivas.del_flag='0'
+ 	<if test="pkDeptAdmix != null and pkDeptAdmix != ''">
+ 	   and pivas.pk_dept_admix=#{pkDeptAdmix,jdbcType=CHAR}
+ 	</if>
+       and pivas.flag_stop=0
+ 	<if test="pkDeptApply != null and pkDeptApply != ''">
+       and pivas.pk_dept_apply=#{pkDeptApply,jdbcType=CHAR}
+    </if>
+    <if test="codeBatch != null and codeBatch != ''">
+       and pivas.code_batch=#{codeBatch,jdbcType=VARCHAR}
+    </if>
+    <if test="timeoccbegin != null and timeoccbegin != ''">
+       and pivas.time_occ>=#{timeoccbegin,jdbcType=DATE}
+    </if>
+    <if test="timeoccend != null and timeoccend != ''">
+       and pivas.time_occ&lt;#{timeoccend,jdbcType=DATE}
+    </if>
+       and pivas.eu_status>3
+       and pivas.eu_status&lt;9
+    <if test="euStatus != null and euStatus != ''">
+       and pivas.eu_status=#{euStatus,jdbcType=VARCHAR}
+    </if>
+    <if test="codePv != null and codePv != ''">
+       and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+    </if>
+    <if test="bedNo != null and bedNo != ''">
+       and pv.bed_no=#{bedNo,jdbcType=VARCHAR}
+    </if>
+    <if test="namePi != null and namePi != ''">
+       and pi.name_pi like '%'||#{namePi,jdbcType=VARCHAR}||'%'
+    </if>
+</select>
+
+<select id="queryToBeConfirmedPdInfos" resultType="DynaBean">
+select pv.bed_no,       
+       pi.name_pi,      
+       sex.name sex,    
+       pv.code_pv,     
+       dept.name_dept,  
+       pivas.ordsn,     
+       pivas.ordsn_parent,
+       pivas.name_ord,  
+       pivas.spec,      
+       freq.name freq,  
+       sup.name sup,    
+       pivas.time_occ,  
+       pivas.date_sign, 
+       pivas.pk_emp_sign,
+       pivas.name_emp_sign,
+       de.name_dept emp_dept,
+       pivas.barcode,   
+       pivas.code_batch,
+       pivas.pk_pdpivas,
+       pivas.pk_dept_admix,
+       pivas.date_chk,
+       pivas.dosage,
+       pivas.flag_sign,
+       pivas.pk_unit_dos
+  from pi_master pi
+       inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+       inner join ex_pd_pivas pivas on pivas.pk_pv=pv.pk_pv
+       left join bd_defdoc sex on pi.dt_sex=sex.code and sex.code_defdoclist='000000'
+       left join bd_ou_dept de on de.pk_dept=pivas.pk_dept_apply
+       left join bd_supply sup on pivas.code_supply=sup.code
+       left join bd_term_freq freq on pivas.code_freq=freq.code
+       left join bd_ou_dept dept on pv.pk_dept=dept.pk_dept
+ where pivas.del_flag='0'
+ 	<if test="pkDeptApply != null and pkDeptApply != ''">
+       and pivas.pk_dept_apply=#{pkDeptApply,jdbcType=CHAR}
+    </if>
+       and pivas.flag_stop=0
+       and pivas.flag_chk=1
+    <if test="pkDeptAdmix != null and pkDeptAdmix != ''">
+       and pivas.pk_dept_admix=#{pkDeptAdmix,jdbcType=CHAR}
+    </if>
+    <if test="codeBatch != null and codeBatch != ''">
+       and pivas.code_batch=#{codeBatch,jdbcType=VARCHAR}
+    </if>
+    <if test="timeoccbegin != null and timeoccbegin != ''">
+       and pivas.time_occ>=#{timeoccbegin,jdbcType=DATE}
+    </if>
+    <if test="timeoccend != null and timeoccend != ''">
+       and pivas.time_occ&lt;#{timeoccend,jdbcType=DATE}
+    </if>
+    <if test="datesignbegin != null and datesignbegin != ''">
+       and pivas.date_sign>=#{datesignbegin,jdbcType=DATE}
+    </if>
+    <if test="datesignend != null and datesignend != ''">
+       and pivas.date_sign&lt;#{datesignend,jdbcType=DATE}
+    </if>
+    <if test="flagSign != null and flagSign != ''">
+       and pivas.flag_sign=#{flagSign,jdbcType=CHAR}
+    </if>
+    <if test="codePv != null and codePv != ''">
+       and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+    </if>
+    <if test="bedNo != null and bedNo != ''">
+       and pv.bed_no=#{bedNo,jdbcType=VARCHAR}
+    </if>
+    <if test="namePi != null and namePi != ''">
+       and pi.name_pi like '%'||#{namePi,jdbcType=VARCHAR}||'%'
+    </if>
+</select>
+</mapper>

@@ -1,0 +1,710 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.pub.dao.ScmPubMapper">
+
+    <select id="findAllStores" resultType="com.zebone.nhis.common.module.scm.pub.BdStore">
+select * from bd_store where del_flag = '0' and pk_org = #{pkOrg,jdbcType=VARCHAR}
+</select>
+
+    <select id="getStoreByDept" resultType="com.zebone.nhis.common.module.scm.pub.BdStore">
+select * from bd_store where del_flag = '0' and pk_dept = #{pkDept,jdbcType=VARCHAR}
+</select>
+
+    <select id="quePdStores" parameterType="java.util.Map" resultType="DynaBean">
+        select pdsto.pk_pdstore,
+        pdsto.pk_pd,
+        pd.code pdcode,
+        pd.name pdname,
+        con.spec,
+        con.pk_unit,
+        con.pk_pdconvert,
+        pd.PK_UNIT_PACK,
+        unit.name unit,
+        pdsto.stock_max,
+        pdsto.stock_min,
+        pdsto.posi_no,
+        pdsto.flag_stop,
+        pdsto.last_date,
+        pdsto.count_per,
+        factory.name factory_name ,
+        pd.spcode,
+        pd.name_chem,
+        pd.price/pd.pack_size*pdsto.pack_size price,
+        con.pack_size,
+        case when pss.quanSum is null then 0 else pss.quanSum end storeQuan,
+        pdsto.num_limit
+        from bd_pd_store pdsto
+        inner join bd_pd pd on pdsto.pk_pd=pd.pk_pd and pd.del_flag='0'
+        inner join bd_pd_convert con on pdsto.pk_pdconvert=con.pk_pdconvert and con.del_flag='0'
+        inner join bd_unit unit on con.pk_unit=unit.pk_unit and unit.del_flag='0'
+        inner join bd_factory factory on pd.PK_FACTORY=factory.PK_FACTORY and factory.del_flag='0'
+        left join (
+                select sum(QUAN_MIN) quanSum, PK_PD, PK_STORE
+                from PD_STOCK
+                where DEL_FLAG = '0'
+                group by PK_PD, PK_STORE
+                ) pss on pss.PK_PD = pdsto.pk_pd
+                and pss.PK_STORE = pdsto.PK_STORE
+        where pdsto.del_flag = '0'
+        and pdsto.pk_store = #{pkStore,jdbcType=VARCHAR}
+        and pd.dt_pdtype like '0%'
+        <if test="code!=null and code!=''">
+            and pd.code like '${code}%'
+        </if>
+        <if test="name!=null and name!=''">
+            and pd.name like '%${name}%'
+        </if>
+        <if test="posiNo!=null and posiNo!=''">
+            and ( ${posiSql} )
+        </if>
+        <if test="flagStop!=null and flagStop!=''">
+            and pdsto.flag_stop = #{flagStop,jdbcType=VARCHAR}
+        </if>
+        <if test="pycode!=null and pycode!=''">
+            and pd.spcode like '%${pycode}%'
+        </if>
+        <if test="euUsecate!=null and euUsecate!=''">
+            and pd.EU_USECATE = #{euUsecate,jdbcType=VARCHAR}
+        </if>
+        <if test="euDrugtype!=null and euDrugtype!=''">
+            and pd.EU_DRUGTYPE = #{euDrugtype,jdbcType=VARCHAR}
+        </if>
+        <if test="dtAnti!=null and dtAnti!=''">
+            and pd.DT_ANTI = #{dtAnti,jdbcType=VARCHAR}
+        </if>
+        <if test='searchTxt!=null and searchTxt!=""'>
+        	and exists(
+        		select 1
+		from bd_pd_as bpa
+		  where
+		  pd.pk_pd=bpa.pk_pd and
+		  pd.del_flag='0' and bpa.del_flag='0' and (
+		   upper(pd.code) like '%'||#{searchTxt,jdbcType=VARCHAR}||'%'
+		  or pd.name like  '%'|| #{searchTxt,jdbcType=VARCHAR}||'%'
+		  or upper(pd.spcode) like '%'|| #{searchTxt,jdbcType=VARCHAR}||'%'
+		  or upper(bpa.spcode) like  '%'||#{searchTxt,jdbcType=VARCHAR}||'%'
+		  or upper(bpa.d_code) like '%'||#{searchTxt,jdbcType=VARCHAR}||'%'
+		  or bpa.alias like '%'||#{searchTxt,jdbcType=VARCHAR}||'%')
+        	)
+
+        </if>
+        order by pdsto.ts desc
+    </select>
+    
+    <select id="quePdStoresSpecial" parameterType="java.util.Map" resultType="DynaBean">
+        select pdsto.pk_pdstore,
+        pdsto.pk_pd,
+        pd.code pdcode,
+        pd.name pdname,
+        con.spec,
+        con.pk_unit,
+        con.pk_pdconvert,
+        pd.PK_UNIT_PACK,
+        unit.name unit,
+        pdsto.stock_max,
+        pdsto.stock_min,
+        pdsto.posi_no,
+        pdsto.flag_stop,
+        pdsto.last_date,
+        pdsto.count_per,
+        factory.name factory_name ,
+        pd.spcode,
+        pd.name_chem,
+        pd.price/pd.pack_size*pdsto.pack_size price,
+        con.pack_size,
+        case when pss.quanSum is null then 0 else pss.quanSum end storeQuan,
+        pdsto.num_limit
+        from bd_pd_store pdsto
+        inner join bd_pd pd on pdsto.pk_pd=pd.pk_pd and pd.del_flag='0'
+        left join bd_pd_convert con on pdsto.pk_pdconvert=con.pk_pdconvert and con.del_flag='0'
+        left join bd_unit unit on con.pk_unit=unit.pk_unit and unit.del_flag='0'
+        inner join bd_factory factory on pd.PK_FACTORY=factory.PK_FACTORY and factory.del_flag='0'
+        left join (
+                select sum(QUAN_MIN) quanSum, PK_PD, PK_STORE
+                from PD_STOCK
+                where DEL_FLAG = '0'
+                group by PK_PD, PK_STORE
+                ) pss on pss.PK_PD = pdsto.pk_pd
+                and pss.PK_STORE = pdsto.PK_STORE
+        where pdsto.del_flag = '0'
+        and pdsto.pk_store = #{pkStore,jdbcType=VARCHAR}
+        and pd.dt_pdtype like '0%'
+        <if test="code!=null and code!=''">
+            and pd.code like '${code}%'
+        </if>
+        <if test="name!=null and name!=''">
+            and pd.name like '%${name}%'
+        </if>
+        <if test="posiNo!=null and posiNo!=''">
+            and ( ${posiSql} )
+        </if>
+        <if test="flagStop!=null and flagStop!=''">
+            and pdsto.flag_stop = #{flagStop,jdbcType=VARCHAR}
+        </if>
+        <if test="pycode!=null and pycode!=''">
+            and pd.spcode like '%${pycode}%'
+        </if>
+        <if test="euUsecate!=null and euUsecate!=''">
+            and pd.EU_USECATE = #{euUsecate,jdbcType=VARCHAR}
+        </if>
+        <if test="euDrugtype!=null and euDrugtype!=''">
+            and pd.EU_DRUGTYPE = #{euDrugtype,jdbcType=VARCHAR}
+        </if>
+        <if test="dtAnti!=null and dtAnti!=''">
+            and pd.DT_ANTI = #{dtAnti,jdbcType=VARCHAR}
+        </if>
+        <if test='searchTxt!=null and searchTxt!=""'>
+        	and exists(
+        		select 1
+		from bd_pd_as bpa
+		  where
+		  pd.pk_pd=bpa.pk_pd and
+		  pd.del_flag='0' and bpa.del_flag='0' and (
+		   upper(pd.code) like '%'||#{searchTxt,jdbcType=VARCHAR}||'%'
+		  or pd.name like  '%'|| #{searchTxt,jdbcType=VARCHAR}||'%'
+		  or upper(pd.spcode) like '%'|| #{searchTxt,jdbcType=VARCHAR}||'%'
+		  or upper(bpa.spcode) like  '%'||#{searchTxt,jdbcType=VARCHAR}||'%'
+		  or upper(bpa.d_code) like '%'||#{searchTxt,jdbcType=VARCHAR}||'%'
+		  or bpa.alias like '%'||#{searchTxt,jdbcType=VARCHAR}||'%')
+        	)
+
+        </if>
+        order by pdsto.ts desc
+    </select>
+
+    <update id="updatePdStore" parameterType="com.zebone.nhis.common.module.scm.pub.BdPdStore">
+        UPDATE BD_PD_STORE
+        <set>
+            <if test="pkPdstore != null">
+                PK_PDSTORE = #{pkPdstore,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null">
+                PK_ORG = #{pkOrg,jdbcType=CHAR},
+            </if>
+            <if test="pkDept != null">
+                PK_DEPT = #{pkDept,jdbcType=CHAR},
+            </if>
+            <if test="pkStore != null">
+                PK_STORE = #{pkStore,jdbcType=CHAR},
+            </if>
+            <if test="pkPd != null">
+                PK_PD = #{pkPd,jdbcType=CHAR},
+            </if>
+            <if test="pkPdconvert != null">
+                PK_PDCONVERT = #{pkPdconvert,jdbcType=CHAR},
+            </if>
+            <if test="flagStop != null">
+                FLAG_STOP = #{flagStop,jdbcType=CHAR},
+            </if>
+            <if test="posiNo != null">
+                POSI_NO = #{posiNo,jdbcType=VARCHAR},
+            </if>
+            <if test="stockMax != null">
+                STOCK_MAX = #{stockMax,jdbcType=DECIMAL},
+            </if>
+            <if test="stockMin != null">
+                STOCK_MIN = #{stockMin,jdbcType=DECIMAL},
+            </if>
+            <if test="countPer != null">
+                COUNT_PER = #{countPer,jdbcType=DECIMAL},
+            </if>
+            <if test="lastDate != null">
+                LAST_DATE = #{lastDate,jdbcType=DATE},
+            </if>
+            <if test="creator != null">
+                CREATOR = #{creator,jdbcType=CHAR},
+            </if>
+            <if test="createTime != null">
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="modifier != null">
+                MODIFIER = #{modifier,jdbcType=CHAR},
+            </if>
+            <if test="delFlag != null">
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="ts != null">
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE
+        PK_PDSTORE = #{pkPdstore,jdbcType=CHAR}
+    </update>
+
+
+    <select id="queNewPds" resultType="DynaBean">
+        select pd.pk_pd,
+        pd.code,
+        pd.name,
+        pd.spec,
+        pd.spcode,
+        fa.name factory,
+        cvt.pk_pdconvert
+        from bd_pd pd
+        inner join bd_pd_convert cvt on cvt.pk_pd = pd.pk_pd and cvt.del_flag='0'
+        left join bd_factory fa on pd.pk_factory=fa.pk_factory and fa.del_flag='0'
+        where pd.del_flag = '0' and pd.flag_stop='0' and
+        not exists (select 1
+        from bd_pd_store pds
+        where pd.pk_pd=pds.pk_pd and pds.del_flag='0'
+        and pd.dt_pdtype like '0%'
+        and pds.pk_store=#{pkStore,jdbcType=VARCHAR})
+        <if test="spcode!=null and spcode!=''">
+            and upper(pd.spcode) like '${spcode}%'
+        </if>
+        <if test="euPdtype!=null and euPdtype!=''">
+            and pd.eu_pdtype=#{euPdtype,jdbcType=VARCHAR}
+        </if>
+        <if test="euDrugtype!=null and euDrugtype!=''">
+            and pd.eu_drugtype=#{euDrugtype,jdbcType=VARCHAR}
+        </if>
+        <if test="dtDosage!=null and dtDosage!=''">
+            and pd.dt_dosage=#{dtDosage,jdbcType=VARCHAR}
+        </if>
+        <if test="euUsecate!=null and euUsecate!=''">
+            and pd.eu_usecate=#{euUsecate,jdbcType=VARCHAR}
+        </if>
+        <if test="name!=null and name!=''">
+            and pd.name like '%${name}%'
+        </if>
+        <if test='packType=="0"'><!-- 门诊包装 -->
+            and cvt.flag_op ='1'
+        </if>
+        <if test='packType=="1"'><!-- 住院包装 -->
+            and cvt.flag_ip ='1'
+        </if>
+    </select>
+
+    <select id="findAllFactories" resultType="com.zebone.nhis.common.module.scm.pub.BdFactory">
+select * from bd_factory where del_flag = '0'
+</select>
+
+    <select id="findAllAttDefines" resultType="com.zebone.nhis.common.module.scm.pub.BdPdAttDefine">
+select * from bd_pd_att_define where del_flag = '0' and eu_pdtype = #{euPdtype,jdbcType=VARCHAR}
+</select>
+
+    <!-- 供应商协议 - 查询 -->
+    <select id="quePdSupplyers" parameterType="java.util.Map" resultType="DynaBean">
+        select pds.code_agree,
+        sp.name supplyer,
+        sp.pk_supplyer,
+        pd.code pdcode,
+        pd.name pdname,
+        fa.name factory,
+        pds.price,
+        pds.date_begin,
+        pds.date_end,
+        pds.pk_pdsupplyer,
+        pds.flag_active ,
+        pds.pk_org,
+        org.name_org
+        from bd_pd_supplyer pds
+        inner join bd_supplyer sp on pds.pk_supplyer=sp.pk_supplyer and sp.del_flag='0'
+        inner join bd_pd pd on pds.pk_pd=pd.pk_pd and pd.del_flag='0' and pd.dt_pdtype like '0%'
+        inner join bd_factory fa on pd.pk_factory=fa.pk_factory and fa.del_flag='0'
+        left join bd_ou_org org on org.pk_org = pds.pk_org and org.del_flag = '0'
+        where pds.del_flag='0'
+        and pds.pk_org in
+        <foreach collection="jglist" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        <if test="codeAgree!=null and codeAgree!=''">
+            and pds.code_agree = #{codeAgree,jdbcType=VARCHAR}
+        </if>
+        <if test="supplyer!=null and supplyer!=''">
+            and (sp.name like '%'||#{supplyer,jdbcType=VARCHAR}||'%' or sp.SPCODE like '%'||#{supplyer,jdbcType=VARCHAR}||'%')
+        </if>
+        <if test="pdcode!=null and pdcode!=''">
+            and pd.code = #{pdcode,jdbcType=VARCHAR}
+        </if>
+        <if test="pdname!=null and pdname!=''">
+            and pd.name like '%${pdname}%'
+        </if>
+        <if test="pkFactory!=null and pkFactory!=''">
+            and pd.pk_factory=#{pkFactory,jdbcType=VARCHAR}
+        </if>
+        <if test="dateBegin!=null and dateBegin!=''">
+            and pds.date_begin &gt;= to_date(#{dateBegin},'yyyyMMddHH24MISS')
+        </if>
+        <if test="dateEnd!=null and dateEnd!=''">
+            and pds.date_end &lt;= to_date(#{dateEnd},'yyyyMMddHH24MISS')
+        </if>
+        order by pds.code_agree,pds.pk_org
+    </select>
+
+    <!-- 供应商协议 - 编辑界面查询 -->
+    <select id="queEditPdSupplyers" parameterType="java.util.Map" resultType="DynaBean">
+        select pds.code_agree,
+        pds.price,
+        pds.date_begin,
+        pds.date_end,
+        pds.flag_def,
+        pds.flag_active,
+        pds.pk_pdsupplyer,
+        sp.name supplyer,
+        pd.pk_pd,
+        pd.code pdcode,
+        pd.name pdname,
+        pd.spcode,
+        pd.spec,
+        pd.pk_unit_pack,
+        unit.name unit,
+        pd.pk_factory,
+        fa.name factory,
+        pds.pk_org,
+        org.name_org
+        from bd_pd_supplyer pds
+        inner join bd_supplyer sp on pds.pk_supplyer=sp.pk_supplyer and sp.del_flag='0'
+        inner join bd_pd pd on pds.pk_pd=pd.pk_pd and pd.del_flag='0'
+        left join bd_factory fa on pd.pk_factory=fa.pk_factory and fa.del_flag='0'
+        left join bd_unit unit on pd.pk_unit_pack=unit.pk_unit and unit.del_flag='0'
+        left join bd_ou_org org on org.pk_org = pds.pk_org and org.del_flag = '0'
+        where pds.del_flag='0'
+        and pds.pk_org in
+        <foreach collection="jglist" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        <if test="codeAgree!=null and codeAgree!=''">
+            and pds.code_agree=#{codeAgree,jdbcType=VARCHAR}
+        </if>
+        <if test="pkSupplyer!=null and pkSupplyer!=''">
+            and pds.pk_supplyer=#{pkSupplyer,jdbcType=VARCHAR}
+        </if>
+        <if test="pkPd!=null and pkPd!=''">
+            and pds.pk_pd=#{pkPd,jdbcType=VARCHAR}
+        </if>
+        order by pds.pk_org, pd.code
+    </select>
+
+    <select id="queMtlPdSupplyers" parameterType="java.util.Map" resultType="DynaBean">
+        select pds.code_agree,
+        sp.name supplyer,
+        sp.pk_supplyer,
+        pd.code pdcode,
+        pd.name pdname,
+        fa.name factory,
+        pds.price,
+        pds.date_begin,
+        pds.date_end,
+        pds.pk_pdsupplyer,
+        pds.flag_active ,
+        pds.pk_org,
+        org.name_org
+        from bd_pd_supplyer pds
+        inner join bd_supplyer sp on pds.pk_supplyer=sp.pk_supplyer and sp.del_flag='0'
+        inner join bd_pd pd on pds.pk_pd=pd.pk_pd and pd.del_flag='0'
+        inner join bd_factory fa on pd.pk_factory=fa.pk_factory and fa.del_flag='0'
+        left join bd_ou_org org on org.pk_org = pds.pk_org and org.del_flag = '0'
+        where pds.del_flag='0' and pd.dt_pdtype like '1%'
+        and pds.pk_org in
+        <foreach collection="jglist" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        <if test="codeAgree!=null and codeAgree!=''">
+            and pds.code_agree like '%${codeAgree}%'
+        </if>
+        <if test="supplyer!=null and supplyer!=''">
+            and sp.name like '%${supplyer}%'
+        </if>
+        <if test="pdcode!=null and pdcode!=''">
+            and pd.code like '%${pdcode}%'
+        </if>
+        <if test="pdname!=null and pdname!=''">
+            and pd.name like '%${pdname}%'
+        </if>
+        <if test="pkFactory!=null and pkFactory!=''">
+            and pd.pk_factory=#{pkFactory,jdbcType=VARCHAR}
+        </if>
+        <if test="dateBegin!=null and dateBegin!=''">
+            and pds.date_begin &gt;= to_date(#{dateBegin},'yyyyMMddHH24MISS')
+        </if>
+        <if test="dateEnd!=null and dateEnd!=''">
+            and pds.date_end &lt;= to_date(#{dateEnd},'yyyyMMddHH24MISS')
+        </if>
+        order by pds.code_agree,pds.pk_org
+    </select>
+
+    <select id="qryPdStoreByPd" parameterType="java.util.Map" resultType="DynaBean">
+	select sto.pk_org,
+       org.name_org,
+       sto.pk_dept,
+       dept.name_dept,
+       sto.pk_store,
+       sto.code,
+       sto.name,
+       sto.eu_packtype,
+       pds.pk_pdstore,
+       pds.flag   ,
+       pds.posi_no
+  from bd_store sto
+       inner join bd_ou_org org on sto.pk_org=org.pk_org
+       inner join bd_ou_dept dept on sto.pk_dept=dept.pk_dept
+       left outer join (select pk_pdstore,pk_store,1 flag,posi_no from bd_pd_store where pk_pd =#{pkPd,jdbcType=VARCHAR}) pds on sto.pk_store=pds.pk_store
+ where sto.del_flag = 0 and dept.dt_depttype like '04%'
+</select>
+
+    <select id="qryCgDiv" resultType="com.zebone.nhis.base.pub.vo.CgdivItemVo">
+	select div.pk_hpcgdiv pkHpcgdiv,
+	       div.code_div codeDiv,
+	       div.name_div nameDiv,
+	       item.pk_hpcgdivitem pkHpcgdivitem,
+	       item.pk_item pkItem,
+	       item.pk_itemcate pkItemcate,
+	       item.eu_divide euDivide,
+	       item.rate rate ,
+	       item.amount amount
+	  from bd_hp_cgdiv div
+	       left outer join bd_hp_cgdiv_item item on div.pk_hpcgdiv=item.pk_hpcgdiv
+				 and item.flag_pd='1' and item.pk_item=#{pkItem,jdbcType=CHAR}
+	 where div.del_flag='0'
+	</select>
+
+    <select id="qryBdPdDicList" parameterType="java.util.Map" resultType="DynaBean">
+        select  unit.name name_unit, fa.name factory,pdgn.name  name_pdgn,pd.*,
+	  		b.NAME dt_dosageName,
+	  		c.NAME dt_pdtypeName,
+	  		pharm.NAME dt_pharmName,
+	  		f.NAME pk_unit_volName,
+	  		g.NAME dt_antiName,
+	  		h.NAME DT_MADEName,
+	  		i.NAME dt_baseName,
+	  		j.NAME DT_POISName,
+	  		k.NAME DT_STORETYPEName,
+	  		l.NAME Dt_AbrdName,
+	  		m.NAME EuSourceName,
+	  		n.NAME PkOrdtypeName,
+	  		o.NAME PkUnitDefName,
+	  		supply.NAME name_supply,
+	  		freq.NAME name_freq,
+	  		r.NAME DT_USAGENOTEName,
+	  		s.NAME PK_ITEMCATEName,
+	  		t.NAME DtChcateName,
+	  		u.NAME DT_INJTYPEName,
+	  		v.NAME DT_DRUGEFFECTName,
+	  		w.NAME PkUnitIp,
+	  		x.NAME PkUnitOp,
+	  		e.NAME PK_UNIT_MINName
+    		 from bd_pd pd
+	  		left join bd_unit  unit  on pd.pk_unit_pack=unit.pk_unit and unit.del_flag='0'
+	  		left join bd_factory  fa on pd.pk_factory=fa.pk_factory and fa.del_flag='0'
+    			left join bd_pd_gn pdgn on pdgn.pk_pdgn = pd.pk_pdgn
+	  		left join (SELECT name,CODE from BD_DEFDOC a where a.CODE_DEFDOCLIST='030400' ) b on b.CODE = pd.DT_DOSAGE
+	  		left join (SELECT name,CODE from BD_DEFDOC a where a.CODE_DEFDOCLIST='080001' ) c on c.CODE = pd.DT_PDTYPE
+	  		left join (SELECT name,CODE from BD_DEFDOC a where a.CODE_DEFDOCLIST='030402' ) pharm on pharm.CODE = pd.DT_PHARM
+	  		left join bd_unit  e  on pd.PK_UNIT_MIN=e.pk_unit and e.del_flag='0'
+	  		left join bd_unit  f  on pd.PK_UNIT_VOL=f.pk_unit and f.del_flag='0'
+	  		left join (SELECT name,CODE from BD_DEFDOC a where a.CODE_DEFDOCLIST='030406' ) g on g.CODE = pd.DT_ANTI
+ 	  		left join (SELECT name,CODE from BD_DEFDOC a where a.CODE_DEFDOCLIST='080004' ) h on h.CODE = pd.DT_MADE
+	  		left join (SELECT name,CODE from BD_DEFDOC a where a.CODE_DEFDOCLIST='080011' ) i on i.CODE = pd.DT_BASE
+	  		left join (SELECT name,CODE from BD_DEFDOC a where a.CODE_DEFDOCLIST='030403' ) j on j.CODE = pd.DT_POIS
+	  		left join (SELECT name,CODE from BD_DEFDOC a where a.CODE_DEFDOCLIST='080012' ) k on k.CODE = pd.DT_STORETYPE
+	  		left join (SELECT name,CODE from BD_DEFDOC a where a.CODE_DEFDOCLIST='030404' ) l on l.CODE = pd.DT_ABRD
+	  		left join (SELECT name,CODE from BD_DEFDOC a where a.CODE_DEFDOCLIST='080015' ) m on m.CODE = pd.EU_SOURCE
+	  		left join bd_ordtype n on pd.PK_ORDTYPE = n.PK_ORDTYPE
+	  		left join bd_unit  o  on pd.PK_UNIT_DEF=o.pk_unit and o.del_flag='0'
+	  		left join BD_SUPPLY supply on pd.CODE_SUPPLY = supply.CODE
+	  		left join BD_TERM_FREQ freq on pd.CODE_FREQ = freq.CODE
+	  		left join (SELECT name,CODE from BD_DEFDOC a where a.CODE_DEFDOCLIST='030408' ) r on r.CODE = pd.DT_USAGENOTE
+	  		left join bd_itemcate s on pd.PK_ITEMCATE = s.PK_ITEMCATE
+	  		left join (SELECT name,CODE from BD_DEFDOC a where a.CODE_DEFDOCLIST='030800' ) t on t.CODE = pd.DT_CHCATE
+	  		left join (SELECT name,CODE from BD_DEFDOC a where a.CODE_DEFDOCLIST='080013' ) u on u.CODE = pd.DT_INJTYPE
+	  		left join (SELECT name,CODE from BD_DEFDOC a where a.CODE_DEFDOCLIST='030413' ) v on v.CODE = pd.DT_DRUGEFFECT
+	  		left join (select
+	  				FLAG_IP,cvtunit.NAME,cvt.PK_PD
+	  				from bd_pd_convert cvt
+	  				left join bd_unit  cvtunit  on cvt.pk_unit=cvtunit.pk_unit and cvtunit.del_flag='0'
+	  				where cvt.del_flag = '0' and cvt.FLAG_IP= '1') w on w.PK_PD = pd.PK_PD
+	  		left join (select
+	  						FLAG_IP,cvtunit.NAME,cvt.PK_PD
+	  						from bd_pd_convert cvt
+	  						left join bd_unit  cvtunit  on cvt.pk_unit=cvtunit.pk_unit and cvtunit.del_flag='0'
+	  						where cvt.del_flag = '0' and cvt.FLAG_OP= '1') x on x.PK_PD = pd.PK_PD
+        where pd.del_flag = '0'
+        and pd.eu_pdtype = '0'
+        <if test='euDrugtype!=null and euDrugtype!=""'>
+            and pd.eu_drugtype = #{euDrugtype,jdbcType=VARCHAR}
+        </if>
+        <if test='code!=null and code!=""'>
+            and pd.code like '${code}%'
+        </if>
+        <if test='name !=null and name !=""'>
+            and (exists (select 1
+            from bd_pd_as als
+            where pd.pk_pd=als.pk_pd and
+            UPPER(als.alias) like '%${name}%'
+            ) or UPPER(pd.name) like '%${name}%')
+        </if>
+        <if test='spcode!=null and spcode!=""'>
+            and pd.spcode like '%${spcode}%'
+        </if>
+        <if test='dtPois!=null and dtPois!=""'>
+            and pd.dt_pois = #{dtPois,jdbcType=VARCHAR}
+        </if>
+        <if test='euUsecate!=null and euUsecate!=""'>
+            and pd.eu_usecate = #{euUsecate,jdbcType=VARCHAR}
+        </if>
+        <if test='dtAbrd!=null and dtAbrd!=""'>
+            and pd.dt_abrd = #{dtAbrd,jdbcType=VARCHAR}
+        </if>
+        <if test='dtAnti!=null and dtAnti!=""'>
+            and pd.dt_anti = #{dtAnti,jdbcType=VARCHAR}
+        </if>
+        <if test='flagChrt !=null and flagChrt !=""'>
+            and pd.flag_chrt = #{flagChrt,jdbcType=VARCHAR}
+        </if>
+        <if test='flagPed!=null and flagPed!=""'>
+            and pd.flag_ped = #{flagPed,jdbcType=VARCHAR}
+        </if>
+        <if test='flagPrecious!=null and flagPrecious!=""'>
+            and pd.flag_precious = #{flagPrecious,jdbcType=VARCHAR}
+        </if>
+        <if test='dtDosage!=null and dtDosage!=""'>
+            and pd.dt_dosage = #{dtDosage,jdbcType=VARCHAR}
+        </if>
+        <!-- <if test='dtPharm!=null and dtPharm!=""'>
+            and pd.dt_pharm = #{dtPharm,jdbcType=VARCHAR}
+        </if> -->
+
+        <if test="codePharms!=null">
+            and pharm.code in
+        	<foreach collection="codePharms" item="item" index="index" close=")" open="(" separator=",">
+        		#{item,jdbcType=VARCHAR}
+        	</foreach>
+        </if>
+        <if test='dtPdtype!=null and dtPdtype!=""'>
+            and pd.dt_pdtype = #{dtPdtype,jdbcType=VARCHAR}
+        </if>
+        <if test='flagStop!=null and flagStop=="1"'>
+            and pd.flag_stop='0'
+        </if>
+        <if test='flagStop!=null and flagStop=="2"'>
+            and pd.flag_stop='1'
+        </if>
+        <if test='pkPdgn!=null and pkPdgn!=""'>
+            and pd.PK_PDGN=#{pkPdgn,jdbcType=VARCHAR}
+        </if>
+        <if test='spec!=null and spec!=""'>
+            and UPPER(pd.SPEC) like '%' || '%${spec}'|| '%'
+        </if>
+        <if test='price!=null and price!=""'>
+            and pd.PRICE =#{price,jdbcType=VARCHAR}
+        </if>
+        <if test='pkFactory!=null and pkFactory!=""'>
+            and pd.PK_FACTORY= #{pkFactory,jdbcType=VARCHAR}
+        </if>
+        <if test='codeExt!=null and codeExt!=""'>
+            and pd.code_ext like '%' || '${codeExt}' || '%'
+        </if>
+        <if test='codeStd!=null and codeStd!=""'>
+            and pd.code_std like '%' || '${codeStd}' || '%'
+        </if>
+        order by pd.code
+    </select>
+
+    <select id="qryStorePosiList" parameterType="java.lang.String"
+            resultType="com.zebone.nhis.common.module.scm.pub.BdStorePosi">
+		select pos.pk_posi,
+	       pos.pk_store,
+	       pos.code_pos,
+	       pos.sortno,
+	       pos.note
+	    from bd_store_posi pos
+	       where pos.pk_store=#{pkStore,jdbcType=VARCHAR}
+	</select>
+
+    <select id="checkUnitOut" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(1)
+		  from pd_st_detail dt
+		       inner join pd_st st on dt.pk_pdst=st.pk_pdst
+		 where st.pk_store_st=#{pkStore,jdbcType=VARCHAR} and
+		       st.eu_direct='1' and
+		       dt.pk_pd=#{pkPd,jdbcType=VARCHAR} and
+		       dt.quan_min>dt.quan_outstore
+
+	</select>
+
+    <select id="qryCgdivTmp" resultType="com.zebone.nhis.common.module.scm.pub.BdHpCgdivTmp">
+		select distinct code_tmp, name_tmp, eu_type from bd_hp_cgdiv_tmp where eu_type='1' and del_flag='0'
+	</select>
+
+    <select id="qryCgDivTmpDt" parameterType="java.lang.String" resultType="DynaBean">
+		select
+		     tmp.pk_hpcgdiv,
+		     div.name_div,
+       		 tmp.eu_divide,
+             tmp.rate
+  		from bd_hp_cgdiv_tmp tmp
+  		inner join bd_hp_cgdiv div on div.pk_hpcgdiv=tmp.pk_hpcgdiv
+        where tmp.code_tmp=#{codeTmp,jdbcType=VARCHAR}
+             and tmp.del_flag='0'
+	</select>
+
+    <select id="qryCodeHpFromPd" resultType="java.lang.String">
+	   select max(code_hp) code_hp from bd_pd where code_hp is not null and del_flag='0'
+	</select>
+
+    <select id="qryPdSearch" parameterType="java.lang.String" resultType="java.lang.String">
+		select bpa.pk_pd
+		from bd_pd pd
+		  inner join bd_pd_as bpa on bpa.pk_pd = pd.pk_pd
+		  where
+		  pd.del_flag='0' and bpa.del_flag='0' and (
+		   upper(pd.code) like '%'||#{searchTxt,jdbcType=VARCHAR}||'%'
+		  or pd.name like  '%'|| #{searchTxt,jdbcType=VARCHAR}||'%'
+		  or upper(pd.spcode) like '%'|| #{searchTxt,jdbcType=VARCHAR}||'%'
+		  or upper(bpa.spcode) like  '%'||#{searchTxt,jdbcType=VARCHAR}||'%'
+		  or upper(bpa.d_code) like '%'||#{searchTxt,jdbcType=VARCHAR}||'%'
+		  or bpa.alias like '%'||#{searchTxt,jdbcType=VARCHAR}||'%')
+		group by bpa.pk_pd
+	</select>
+
+    <select id="selectUniversalName" resultType="DynaBean" parameterType="java.util.Map">
+        SELECT gn.*
+        FROM BD_PD_GN gn
+        WHERE gn.PK_ORG = #{pkOrg,jdbcType=VARCHAR}
+        <if test='name!=null and name!=""'>
+            and gn.NAME LIKE '%' || #{name,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test='code!=null and code!=""'>
+            AND gn.CODE LIKE '%' || #{code,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test='dtPharm!=null and dtPharm !=""'>
+            AND gn.DT_PHARM=#{dtPharm,jdbcType=VARCHAR}
+        </if>
+        <if test='flagStop!=null and flagStop!=""'>
+            AND gn.DEL_FLAG =#{flagStop,jdbcType=VARCHAR}
+        </if>
+        <if test='euDrugType!=null and euDrugType!=""'>
+            and gn.EU_DRUG_TYPE = #{euDrugType,jdbcType=VARCHAR}
+        </if>
+        <if test='spcode!=null and spcode!=""'>
+            AND gn.spcode LIKE '%' || #{spcode,jdbcType=VARCHAR} || '%'
+        </if>
+    </select>
+
+    <select id="quePdattdef" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.scm.pub.BdPdAttDefine">
+        select * from BD_PD_ATT_DEFINE where 1=1
+        and PK_PDATTDEF in
+        <foreach collection="pkPdattdefs" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryForPdStockInfo" resultType="DynaBean" parameterType="java.lang.String">
+             select
+                 stk.PK_PD,
+                 stk.PK_STORE,
+                 sto.NAME name_store,
+                 round(sum(stk.QUAN_MIN)/pd.PACK_SIZE,2) quan,
+                 un.NAME unit_name
+             from PD_STOCK stk
+             inner join BD_STORE sto on sto.PK_STORE=stk.PK_STORE
+             inner join bd_pd  pd on pd.PK_PD=stk.PK_PD
+             inner join bd_unit un on un.PK_UNIT=pd.PK_UNIT_PACK
+             where stk.PK_PD in (${pkPds}) 
+             group by stk.PK_PD, stk.PK_STORE,sto.NAME,pd.PACK_SIZE,un.NAME
+             order by sto.NAME
+
+    </select>
+    
+</mapper>

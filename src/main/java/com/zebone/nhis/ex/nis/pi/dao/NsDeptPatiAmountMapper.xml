@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ex.nis.pi.dao.NsDeptPatiAmountMapper">
+	<select id="getBzAmount"  parameterType="java.util.Map" resultType="java.lang.Integer">
+		   select count(pv.pk_pv) as bzcount
+ 			from pv_encounter pv
+ 			inner join pv_ip ip on pv.pk_pv = ip.pk_pv 
+ 			where ip.dt_level_dise = '02' and pv.flag_in = '1' and pv.date_admit is not null 
+ 			and  pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	</select>
+	<select id="getBwAmount"  parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(pv.pk_pv) as bwcount
+ 		from pv_encounter pv
+ 		inner join pv_ip ip on pv.pk_pv = ip.pk_pv 
+ 		where ip.dt_level_dise = '03'  and pv.flag_in = '1'  and pv.date_admit is not null   
+		and  pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	</select>
+	<select id="getTotal"  parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(pv.pk_pv) as totalnum
+ 		from pv_encounter pv where pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR} and  pv.date_admit is not null and pv.flag_in = '1' 
+	</select>
+	<select id="getMen"  parameterType="java.util.Map" resultType="java.lang.Integer">
+		 select count(pv.pk_pv) as mencount 
+		 from pv_encounter pv 
+ 		 where pv.dt_sex = '02' and  pv.date_admit is not null and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}  and pv.flag_in = '1' 
+	</select>
+	<select id="getWomen"  parameterType="java.util.Map" resultType="java.lang.Integer">
+		select  count(pv.pk_pv) as womencount 
+ 		from pv_encounter pv
+ 		where pv.dt_sex = '03' and  pv.date_admit is not null and pv.pk_dept_ns =  #{pkDeptNs,jdbcType=CHAR} and pv.flag_in = '1' 
+	</select>
+	<select id="getNewborn"  parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(pv.pk_pv) as newborn
+ 		from pv_encounter pv
+ 		inner join pv_infant inf on pv.pk_pv = inf.pk_pv  and  pv.date_admit is not null and pv.pk_dept_ns =  #{pkDeptNs,jdbcType=CHAR}
+ 		and pv.flag_in = '1' and pv.eu_pvtype = '3'
+ 		inner join bd_res_bed bed on pv.bed_no = bed.code and bed.pk_ward = pv.pk_dept_ns and bed.del_flag = '0'
+	</select>
+	<select id="getDeptNsPatiNum"  parameterType="java.util.Map" resultType="com.zebone.nhis.ex.nis.pi.vo.NsDeptPatiAmountVo">
+		select  count(1) total,
+        sum(case when ip.flag_infant='1' and nvl(ip.QUAN_INFANT,0)=0 then 1 else 0 end) yr,
+        SUM(case ip.dt_level_dise when '02' then 1 else 0 end) bz,
+        SUM(case ip.dt_level_dise when '03' then 1 else 0 end) bw,
+        SUM(case ip.dt_level_ns when #{oneLevelNum,jdbcType=CHAR} then 1 else 0 end ) one_level_num,
+        SUM(case pv.dt_sex when '02' then 1 else 0 end) men,
+        SUM(case pv.dt_sex when '03' then 1 else 0 end) women 
+		from pv_encounter pv
+		left join pv_ip ip on pv.pk_pv = ip.pk_pv and ip.del_flag='0'  <!-- and nvl(ip.QUAN_INFANT,0)=0 -->
+		where pv.flag_in = '1' and pv.date_admit is not null  
+		and pv.date_end is null 
+		and  pv.pk_dept_ns =  #{pkDeptNs,jdbcType=CHAR}
+	</select>
+	<select id="getDeptInAndOutNum"  parameterType="java.util.Map" resultType="com.zebone.nhis.ex.nis.pi.vo.NsDeptPatiAmountVo">
+		 select count(1) deptin 
+		  from pv_encounter pv 
+		       inner join pv_adt adts on pv.pk_pv=adts.pk_pv
+		       inner join pv_adt adtd on adts.pk_adt=adtd.pk_adt_source 
+		 where pv.flag_cancel = '0' 
+       <if test='flagIn == "1"'>
+           and adtd.flag_admit != '1' and adtd.eu_status = '1' 
+		   and adtd.date_begin &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')  
+		   and adtd.date_begin &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS') 
+		   and adtd.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR} 
+       </if>
+       <if test='flagIn == "0"'>
+          and adts.date_end &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')  
+		  and adts.date_end &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')  
+		  and adts.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR} 
+       </if>
+	</select>
+	<select id="getHospInAndOutNum"  parameterType="java.util.Map" resultType="com.zebone.nhis.ex.nis.pi.vo.NsDeptPatiAmountVo">
+	   select 
+	   sum(case adtd.flag_admit when '1' then 1 else 0 end) hospin,
+	   sum(case adtd.flag_dis when '1' then 1 else 0 end) hospout
+       from pv_encounter pv
+       INNER JOIN pv_adt adtd ON pv.pk_pv = adtd.pk_pv
+       where pv.eu_pvtype='3'  and adtd.pk_dept_ns=#{pkDeptNs,jdbcType=CHAR}
+       <if test='flagIn == "1"'>
+          and adtd.flag_admit = '1'
+          and  pv.date_admit &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') and
+          pv.date_admit &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+       </if>
+        <if test='flagIn == "0"'>
+        and adtd.flag_dis = '1'
+          and  pv.date_end &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') and
+          pv.date_end &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+       </if>
+	</select>
+	
+	<select id="getDeptOutNotSettleNum"  parameterType="java.util.Map" resultType="com.zebone.nhis.ex.nis.pi.vo.NsDeptPatiAmountVo">
+	   select count(1) out_st_num
+         from pv_encounter pv
+        where pv.eu_pvtype='3' 
+          and pv.pk_dept_ns=#{pkDeptNs,jdbcType=CHAR}  
+          and pv.eu_status = '2' 
+          and pv.del_flag = '0'
+	</select>
+
+	<select id="getYJPaint" resultType="DynaBean">
+		SELECT pv.pk_pv,pv.bed_no,pv.name_pi,pv.date_begin,pi.code_ip,sex.name dt_sex,GETPVAGE(pi.birth_date,pv.date_begin) age,diag.desc_diag,hp.NAME name_hp
+		FROM pv_encounter pv
+		INNER JOIN bd_hp hp ON pv.pk_insu = hp.pk_hp
+		INNER JOIN pi_master pi ON pi.pk_pi = pv.pk_pi
+		INNER JOIN (select * from BD_DEFDOC where code_defdoclist = '000000') sex ON sex.code = pv.dt_sex
+		INNER JOIN pv_diag diag ON diag.pk_pv = pv.pk_pv AND diag.flag_Maj = '1'
+		INNER JOIN pv_ip ip ON pv.pk_pv = ip.pk_pv AND ip.del_flag= '0'
+		WHERE pv.flag_in = '1' AND pv.date_admit IS NOT NULL AND pv.date_end IS NULL
+		AND pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR} AND ip.dt_level_ns = #{oneLevelNum,jdbcType=CHAR}
+	</select>
+
+	<select id="getBZPaint" resultType="DynaBean">
+		SELECT pv.pk_pv,pv.bed_no,pv.name_pi,pv.date_begin,pi.code_ip,sex.name dt_sex,GETPVAGE(pi.birth_date,pv.date_begin) age,diag.desc_diag,hp.NAME name_hp
+		FROM pv_encounter pv
+		INNER JOIN bd_hp hp ON pv.pk_insu = hp.pk_hp
+		INNER JOIN pi_master pi ON pi.pk_pi = pv.pk_pi
+		INNER JOIN (select * from BD_DEFDOC where code_defdoclist = '000000') sex ON sex.code = pv.dt_sex
+		INNER JOIN pv_diag diag ON diag.pk_pv = pv.pk_pv AND diag.flag_Maj = '1'
+		INNER JOIN pv_ip ip ON pv.pk_pv = ip.pk_pv AND ip.del_flag= '0'
+		WHERE pv.flag_in = '1' AND pv.date_admit IS NOT NULL AND pv.date_end IS NULL
+		AND pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR} AND ip.dt_level_dise = '02'
+	</select>
+
+	<select id="getBWPaint" resultType="DynaBean">
+		SELECT pv.pk_pv,pv.bed_no,pv.name_pi,pv.date_begin,pi.code_ip,sex.name dt_sex,GETPVAGE(pi.birth_date,pv.date_begin) age,diag.desc_diag,hp.NAME name_hp
+		FROM pv_encounter pv
+		INNER JOIN bd_hp hp ON pv.pk_insu = hp.pk_hp
+		INNER JOIN pi_master pi ON pi.pk_pi = pv.pk_pi
+		INNER JOIN (select * from BD_DEFDOC where code_defdoclist = '000000') sex ON sex.code = pv.dt_sex
+		INNER JOIN pv_diag diag ON diag.pk_pv = pv.pk_pv AND diag.flag_Maj = '1'
+		INNER JOIN pv_ip ip ON pv.pk_pv = ip.pk_pv AND ip.del_flag= '0'
+		WHERE pv.flag_in = '1' AND pv.date_admit IS NOT NULL AND pv.date_end IS NULL
+		AND pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR} AND ip.dt_level_dise = '03'
+	</select>
+
+	<select id="getRYPaint" resultType="DynaBean">
+		SELECT pv.pk_pv,pv.bed_no,pv.name_pi,pv.date_begin,pi.code_ip,sex.name dt_sex,GETPVAGE(pi.birth_date,pv.date_begin) age,diag.desc_diag,hp.NAME name_hp
+		FROM pv_encounter pv
+		INNER JOIN bd_hp hp ON pv.pk_insu = hp.pk_hp
+		INNER JOIN pi_master pi ON pi.pk_pi = pv.pk_pi
+		INNER JOIN (select * from BD_DEFDOC where code_defdoclist = '000000') sex ON sex.code = pv.dt_sex
+		INNER JOIN pv_diag diag ON diag.pk_pv = pv.pk_pv AND diag.flag_Maj = '1'
+		INNER JOIN pv_ip ip ON pv.pk_pv = ip.pk_pv AND ip.del_flag= '0'
+		INNER JOIN pv_adt adtd ON pv.pk_pv = adtd.pk_pv
+		WHERE pv.eu_pvtype= '3' AND adtd.flag_admit = '1' AND adtd.pk_dept_ns=#{pkDeptNs,jdbcType=CHAR}
+		AND pv.date_admit &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') AND pv.date_admit &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	</select>
+
+	<select id="getZRPaint" resultType="DynaBean">
+		SELECT pv.pk_pv,pv.bed_no,pv.name_pi,pv.date_begin,pi.code_ip,sex.name dt_sex,GETPVAGE(pi.birth_date,pv.date_begin) age,diag.desc_diag,hp.NAME name_hp
+		FROM pv_encounter pv
+		INNER JOIN bd_hp hp ON pv.pk_insu = hp.pk_hp
+		INNER JOIN pi_master pi ON pi.pk_pi = pv.pk_pi
+		INNER JOIN (select * from BD_DEFDOC where code_defdoclist = '000000') sex ON sex.code = pv.dt_sex
+		INNER JOIN pv_diag diag ON diag.pk_pv = pv.pk_pv AND diag.flag_Maj = '1'
+		INNER JOIN pv_ip ip ON pv.pk_pv = ip.pk_pv AND ip.del_flag= '0'
+		INNER JOIN pv_adt adts ON pv.pk_pv= adts.pk_pv
+		INNER JOIN pv_adt adtd ON adts.pk_adt= adtd.pk_adt_source
+		WHERE pv.flag_cancel = '0' AND adtd.flag_admit != '1' AND adtd.eu_status = '1' AND adtd.date_begin >= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+		AND adtd.date_begin &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') AND adtd.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	</select>
+
+	<select id="getZCPaint" resultType="DynaBean">
+		SELECT pv.pk_pv,pv.bed_no,pv.name_pi,pv.date_begin,pi.code_ip,sex.name dt_sex,GETPVAGE(pi.birth_date,pv.date_begin) age,diag.desc_diag,hp.NAME name_hp
+		FROM pv_encounter pv
+		INNER JOIN bd_hp hp ON pv.pk_insu = hp.pk_hp
+		INNER JOIN pi_master pi ON pi.pk_pi = pv.pk_pi
+		INNER JOIN (select * from BD_DEFDOC where code_defdoclist = '000000') sex ON sex.code = pv.dt_sex
+		INNER JOIN pv_diag diag ON diag.pk_pv = pv.pk_pv AND diag.flag_Maj = '1'
+		INNER JOIN pv_ip ip ON pv.pk_pv = ip.pk_pv AND ip.del_flag= '0'
+		INNER JOIN pv_adt adts ON pv.pk_pv= adts.pk_pv
+		INNER JOIN pv_adt adtd ON adts.pk_adt= adtd.pk_adt_source
+		WHERE pv.flag_cancel = '0' AND adts.date_end >= to_date(#{dateBegin},'YYYYMMDDHH24MISS') AND adts.date_end &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		AND adts.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	</select>
+
+	<select id="getCYPaint" resultType="DynaBean">
+		SELECT pv.pk_pv,pv.bed_no,pv.name_pi,pv.date_begin,pi.code_ip,sex.name dt_sex,GETPVAGE(pi.birth_date,pv.date_begin) age,diag.desc_diag,hp.NAME name_hp
+		FROM pv_encounter pv
+		INNER JOIN bd_hp hp ON pv.pk_insu = hp.pk_hp
+		INNER JOIN pi_master pi ON pi.pk_pi = pv.pk_pi
+		INNER JOIN (select * from BD_DEFDOC where code_defdoclist = '000000') sex ON sex.code = pv.dt_sex
+		INNER JOIN pv_diag diag ON diag.pk_pv = pv.pk_pv AND diag.flag_Maj = '1'
+		INNER JOIN pv_ip ip ON pv.pk_pv = ip.pk_pv AND ip.del_flag= '0'
+		INNER JOIN pv_adt adtd ON pv.pk_pv = adtd.pk_pv
+		WHERE pv.eu_pvtype= '3' AND adtd.pk_dept_ns= #{pkDeptNs,jdbcType=CHAR} AND adtd.flag_dis = '1'
+		AND pv.date_end >= to_date(#{dateBegin},'YYYYMMDDHH24MISS') AND pv.date_end &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	</select>
+
+	<select id="getSWPaint" resultType="DynaBean">
+		SELECT pv.pk_pv,pv.bed_no,pv.name_pi,pv.date_begin,pi.code_ip,sex.name dt_sex,GETPVAGE(pi.birth_date,pv.date_begin) age,diag.desc_diag,hp.NAME name_hp
+		FROM pv_encounter pv
+		INNER JOIN bd_hp hp ON pv.pk_insu = hp.pk_hp
+		INNER JOIN pi_master pi ON pi.pk_pi = pv.pk_pi
+		INNER JOIN (select * from BD_DEFDOC where code_defdoclist = '000000') sex ON sex.code = pv.dt_sex
+		INNER JOIN pv_diag diag ON diag.pk_pv = pv.pk_pv AND diag.flag_Maj = '1'
+		INNER JOIN cn_order ord ON ord.pk_pv = pv.pk_pv
+		INNER JOIN bd_ord bdord ON bdord.pk_ord = ord.pk_ord
+		WHERE ord.flag_durg= '0' AND bdord.name LIKE '%死亡%' AND ord.eu_status_ord > '1' AND ord.eu_status_ord &lt; '9' AND ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		AND ord.date_chk >= to_date(#{dateBegin},'YYYYMMDDHH24MISS') AND ord.date_chk &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	</select>
+
+	<select id="getSSPaint" resultType="DynaBean">
+		SELECT pv.pk_pv,pv.bed_no,pv.name_pi,pv.date_begin,pi.code_ip,sex.name dt_sex,GETPVAGE(pi.birth_date,pv.date_begin) age,diag.desc_diag,hp.NAME name_hp
+		FROM pv_encounter pv
+		INNER JOIN bd_hp hp ON pv.pk_insu = hp.pk_hp
+		INNER JOIN pi_master pi ON pi.pk_pi = pv.pk_pi
+		INNER JOIN (select * from BD_DEFDOC where code_defdoclist = '000000') sex ON sex.code = pv.dt_sex
+		INNER JOIN pv_diag diag ON diag.pk_pv = pv.pk_pv AND diag.flag_Maj = '1'
+		INNER JOIN cn_order ord ON pv.pk_pv = ord.pk_pv
+		INNER JOIN cn_op_apply apply ON ord.pk_cnord = apply.pk_cnord
+		WHERE pv.eu_status = '1' AND ord.eu_status_ord > '1' AND ord.eu_status_ord &lt; '9' AND pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		AND apply.date_plan >= to_date(#{dateBegin},'YYYYMMDDHH24MISS') AND apply.date_plan &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	</select>
+
+	<select id="getJSPaint" resultType="DynaBean">
+		SELECT pv.pk_pv,pv.bed_no,pv.name_pi,pv.date_begin,pi.code_ip,sex.name dt_sex,GETPVAGE(pi.birth_date,pv.date_begin) age,diag.desc_diag,hp.NAME name_hp
+		FROM pv_encounter pv
+		INNER JOIN bd_hp hp ON pv.pk_insu = hp.pk_hp
+		INNER JOIN pi_master pi ON pi.pk_pi = pv.pk_pi
+		INNER JOIN (select * from BD_DEFDOC where code_defdoclist = '000000') sex ON sex.code = pv.dt_sex
+		INNER JOIN pv_diag diag ON diag.pk_pv = pv.pk_pv AND diag.flag_Maj = '1'
+		WHERE pv.eu_pvtype= '3' AND pv.pk_dept_ns= #{pkDeptNs,jdbcType=CHAR} AND pv.eu_status = '2' AND pv.del_flag = '0'
+	</select>
+
+	<select id="getDeptMedicalInsuranceNum"  parameterType="java.util.Map" resultType="com.zebone.nhis.ex.nis.pi.vo.NsDeptPatiAmountVo">
+		select  count(1) total,
+		sum(case when hp.eu_hptype!='0'  then 1 else 0 end) medical_insurance,
+		sum(case when hp.eu_hptype='0'   then 1 else 0 end) own_expense
+		from pv_encounter pv
+		inner join bd_hp hp on pv.pk_insu = hp.pk_hp
+		where pv.flag_in = '1' and pv.date_admit is not null
+		and pv.date_end is null
+		and not exists(select 1 from PV_INFANT inf where pv.pk_pv=inf.pk_pv_infant)
+		and  pv.pk_dept_ns =  #{pkDeptNs,jdbcType=CHAR}
+	</select>
+</mapper>

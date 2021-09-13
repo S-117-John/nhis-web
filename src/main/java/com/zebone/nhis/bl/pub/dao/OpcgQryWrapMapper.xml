@@ -1,0 +1,832 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.bl.pub.dao.OpcgQryWrapMapper">
+    <!-- 根据日期查询患者已结算的结算记录 DT_STTYPE= '01'代表门诊结算-->
+    <select id="querySettleRecords" parameterType="com.zebone.nhis.bl.pub.vo.OprbFeesDto" resultType="DynaBean">
+        select st.pk_settle,
+        st.date_st,
+        case when inv.code_inv is not null then inv.code_inv else inv.ebillno end code_inv,
+        st.code_st,
+        st.pk_insurance,
+        hp.dt_exthp
+        from bl_settle st
+        left outer join bl_st_inv stinv on st.pk_settle=stinv.pk_settle
+        left outer join bl_invoice inv on stinv.pk_invoice=inv.pk_invoice
+        left join bd_hp hp on hp.pk_hp = st.pk_insurance
+        where st.DT_STTYPE= '01'
+        and st.pk_pi=#{pkPi,jdbcType=VARCHAR}
+        and not exists (select 1 from bl_settle back
+        where st.pk_settle=back.pk_settle_canc
+        and st.pk_pi=back.pk_pi)
+        and st.date_st &gt;=to_date(#{dateStart},'YYYYMMDDHH24MISS')
+        and st.date_st &lt;=to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+        <if test="codeInv != null and codeInv != ''">
+            and (inv.code_inv=#{codeInv,jdbcType=VARCHAR} or st.code_st=#{codeInv,jdbcType=VARCHAR})
+        </if>
+        <if test="pkPv != null and pkPv != ''">
+            and st.pk_Pv=#{pkPv,jdbcType=CHAR}
+        </if>
+        order by st.date_st
+    </select>
+
+    <!-- 查询结算下的处方 -->
+    <select id="querySettlePressRecord" parameterType="com.zebone.nhis.bl.pub.vo.OprbFeesDto" resultType="DynaBean">
+        select occ.pk_pres    as pk,
+               dept.name_dept,
+               occ.date_pres  as dateOpen,
+               occ.name_emp_pres,
+               exdp.name_dept as nameDeptExec,
+               1                 isPres,
+                <if test='flagPrepReback!=null and flagPrepReback!="" and "0".equals(flagPrepReback)'>
+                   case
+                   when occ.FLAG_CONF = '1' then
+                   case when sum(dt.quan_cg - dt.quan_ret - dt.quan_de + dt.quan_back) > 0 then '可退'else '不可退' end
+                   when occ.FLAG_CONF = '0' and (occ.flag_prep = '1' and ord.CODE_ORDTYPE = '0103') then '不可退'
+                   else '可退'
+                   end       state,
+                </if>
+                <if test='flagPrepReback==null or flagPrepReback=="" or "1".equals(flagPrepReback)'>
+                    case when sum(dt.quan_cg-dt.quan_ret-dt.quan_de+dt.quan_back)>0 then '可退' else '不可退' end state,
+                </if>
+               cg.pk_settle
+        from ex_pres_occ occ
+                     inner join ex_pres_occ_dt dt on occ.pk_presocc = dt.pk_presocc
+                     inner join bl_op_dt cg on dt.pk_cnord = cg.pk_cnord and cg.flag_pd = '1'
+                     inner join bd_ou_dept dept on occ.pk_dept_pres = dept.pk_dept
+                     inner join bd_ou_dept exdp on occ.pk_dept_ex = exdp.pk_dept
+                     left join cn_order ord on ord.pk_cnord = dt.pk_cnord
+        where cg.pk_settle = #{pkSettle,jdbcType=VARCHAR}
+        group by occ.pk_pres,
+                 dept.name_dept,
+                 occ.date_pres,
+                 occ.name_emp_pres,
+                 exdp.name_dept,
+                 cg.pk_settle,
+                 occ.FLAG_CONF,
+                 occ.FLAG_PREP,
+                 ord.CODE_ORDTYPE
+    </select>
+
+    <!-- 查询已结算的处方明细 -->
+    <select id="querySettlePressItem" parameterType="com.zebone.nhis.bl.pub.vo.OprbFeesDto" resultType="DynaBean">
+        select occ.pk_pres                                          as pk,
+               cg.pk_cgop,
+               cg.name_cg,
+               cg.spec,
+               cg.pk_unit,
+               cg.pk_settle,
+               cg.pk_pv,
+               unit.name                                               unit,
+               cg.price                                             as priceOrg,
+               cg.flag_pd,
+               cg.quan                                              as quan_cg,
+               cg.amount_pi,
+               dt.quan_cg - dt.quan_ret - dt.quan_de + dt.quan_back as canBack
+        from ex_pres_occ occ
+                     inner join ex_pres_occ_dt dt on occ.pk_presocc = dt.pk_presocc
+                     inner join bl_op_dt cg on dt.pk_pd = cg.pk_pd and cg.flag_pd = '1' and dt.pk_cnord = cg.pk_cnord
+                     inner join bd_unit unit on cg.pk_unit = unit.pk_unit
+        where occ.pk_pres in (${pkPress})
+          and cg.pk_settle = #{pkSettle,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 查询结算下的检查检验 -->
+    <select id="querySettleAssistRecord" parameterType="com.zebone.nhis.bl.pub.vo.OprbFeesDto" resultType="DynaBean">
+        select distinct cg.pk_cnord    as                                           pk,
+                        case when cg.pk_cnord is null then cg.pk_cgop else null end pk_cgop,
+                        dept.name_dept,
+                        cg.date_hap    as                                           dateOpen,
+                        cg.name_emp_app,
+                        exdp.name_dept as                                           nameDeptExec,
+                        cg.pk_settle,
+                        0                                                           isPres,
+                        case
+                                when
+                                        ((select sum(occ.quan_occ)
+                                          from ex_assist_occ occ
+                                          where occ.pk_cnord = cg.pk_cnord
+                                            and occ.eu_status &lt;&gt; 1
+                                            and nvl(occ.flag_refund, '0') = '0') &gt; 0 and st.pk_settle_canc is null)
+                                        then '可退'
+                                when cg.pk_cnord is null then '可退'
+                                when ord.code_ordtype = '04' and cg.eu_additem = '1' then '可退'
+                                else '不可退' end                                      state,
+                        case
+                                when ord.code_ordtype = '04' and cg.eu_additem = '1' then '1'
+                                else '0' end                                        FlagEtce
+        from bl_op_dt cg
+                     inner join bd_ou_dept dept on cg.pk_dept_app = dept.pk_dept
+                     inner join bd_ou_dept exdp on cg.pk_dept_ex = exdp.pk_dept
+                     inner join bl_settle st on cg.pk_settle = st.pk_settle
+                     left join cn_order ord on ord.pk_cnord = cg.pk_cnord
+        where cg.pk_settle = #{pkSettle,jdbcType=VARCHAR}
+          and cg.pk_pres is null
+    </select>
+
+    <!-- 查询已结算的检查检验明细 -->
+    <select id="querySettleAssistItem" parameterType="com.zebone.nhis.bl.pub.vo.OprbFeesDto" resultType="DynaBean">
+        select cg.pk_cgop,
+               cg.name_cg,
+               cg.spec,
+               cg.pk_unit,
+               cg.pk_settle,
+               cg.pk_pv,
+               unit.name                                                                              unit,
+               cg.flag_pd,
+               cg.price                                                                            as priceOrg,
+               cg.quan                                                                             as quan_cg,
+               ((select sum(occ.quan_occ)
+                 from ex_assist_occ occ
+                 where occ.pk_cnord = cg.pk_cnord
+                   and occ.eu_status &lt;&gt; 1
+                   and (occ.flag_refund = '0' or occ.flag_refund is null)) * (cg.quan / ord.quan)) as canBack
+        from bl_op_dt cg
+                     inner join cn_order ord on cg.pk_cnord = ord.pk_cnord
+                     left join bd_unit unit on cg.pk_unit = unit.pk_unit
+        where cg.pk_cnord in (${pkCnords})
+          and cg.pk_settle = #{pkSettle,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 查询已经结算的费用执行单 -->
+    <select id="queryPatiCgInfoSettled" parameterType="com.zebone.nhis.bl.pub.vo.OprbFeesDto" resultType="DynaBean">
+        select
+        bs.date_st,
+        cg.pk_settle,
+        cg.pk_pres pk,
+        dept.name_dept,
+        occ.date_pres DateOpen,
+        deptexec.name_dept name_dept_exec,
+        <!--  bi.code_inv,-->
+        case when
+        sum(dt.quan_cg-dt.quan_ret-dt.quan_de+dt.quan_back)&gt;0 then '可退' else '不可退' end state,
+        '1' ispres
+        from ex_pres_occ occ
+        inner join ex_pres_occ_dt dt on occ.pk_presocc=dt.pk_presocc
+        inner join bl_op_dt cg on occ.pk_pres=cg.pk_pres and cg.flag_pd = '1'
+        inner join bl_settle bs on bs.pk_settle=cg.pk_settle and nvl(bs.flag_canc,'0')&lt;&gt;'1' and bs.dt_sttype='00'
+        <!--
+        left outer join bl_st_inv bsi on bsi.pk_settle=bs.pk_settle
+        left outer join bl_invoice bi on bi.pk_invoice=bsi.pk_invoice -->
+        inner join bd_ou_dept dept on occ.pk_dept_pres=dept.pk_dept
+        inner join bd_ou_dept deptexec on cg.pk_dept_ex=deptexec.pk_dept
+        where 1=1
+        and bs.date_st &gt;=#{dateStart,javaType=java.util.Date}
+        and bs.date_st &lt;=#{dateEnd,javaType=java.util.Date}
+        <!-- and to_timestamp(to_char(bs.date_st,'yyyy-MM-dd hh24:mi:ss'),'yyyy-MM-dd hh24:mi:ss') &gt;=#{dateStart,javaType=java.util.Date}
+        and to_timestamp(to_char(bs.date_st,'yyyy-MM-dd hh24:mi:ss'),'yyyy-MM-dd hh24:mi:ss') &lt;= #{dateEnd,javaType=java.util.Date}
+        <if test="codeInv!=null and codeInv!='' ">
+            and bi.code_inv=#{codeInv,jdbcType=VARCHAR}
+        </if> -->
+        <if test="pkOrg!=null and pkOrg!='' ">
+            and bs.pk_org=#{pkOrg,jdbcType=VARCHAR}
+        </if>
+        <if test="pkPi!=null and pkPi!='' ">
+            and cg.pk_pi=#{pkPi,jdbcType=VARCHAR}
+        </if>
+        group by cg.pk_settle,
+        dept.name_dept,
+        occ.date_pres,
+        bs.date_st,
+        <!-- bi.code_inv, -->
+        cg.pk_pres,
+        occ.name_emp_pres,
+        deptexec.name_dept
+        union all
+        select
+        bs.date_st,
+        cg.pk_settle,
+        cg.pk_cnord pk,
+        dept.name_dept,
+        cg.date_hap DateOpen,
+        deptexec.name_dept name_dept_exec,
+        <!-- bi.code_inv, -->
+        case when (select sum(occ.quan_occ) from ex_assist_occ occ
+        where occ.pk_cnord=cg.pk_cnord
+        and occ.eu_status &lt;&gt;1 and (occ.flag_refund='0' or occ.flag_refund is null))&gt;0 then '可退' else '不可退' end
+        state,
+        '0' ispres
+        from bl_op_dt cg
+        inner join bd_ou_dept dept on cg.pk_dept_app=dept.pk_dept
+        inner join bd_ou_dept deptexec on cg.pk_dept_ex=deptexec.pk_dept
+        inner join bl_settle bs on bs.pk_settle=cg.pk_settle and nvl(bs.flag_canc,'0')&lt;&gt;'1' and bs.dt_sttype='00'
+        <!--
+        left outer join bl_st_inv bsi on bsi.pk_settle=bs.pk_settle
+        left outer join bl_invoice bi on bi.pk_invoice=bsi.pk_invoice -->
+        where 1=1
+        and cg.flag_pd='0'
+        and bs.date_st &gt;=#{dateStart,javaType=java.util.Date}
+        and bs.date_st &lt;=#{dateEnd,javaType=java.util.Date}
+        <!-- and to_timestamp(to_char(bs.date_st,'yyyy-MM-dd hh24:mi:ss'),'yyyy-MM-dd hh24:mi:ss') &gt;=#{dateStart,javaType=java.util.Date}
+        and	to_timestamp(to_char(bs.date_st,'yyyy-MM-dd hh24:mi:ss'),'yyyy-MM-dd hh24:mi:ss') &lt;= #{dateEnd,javaType=java.util.Date}
+        <if test="codeInv!=null and codeInv!='' ">
+            and bi.code_inv=#{codeInv,jdbcType=VARCHAR}
+        </if>-->
+        <if test="pkPi!=null and pkPi!='' ">
+            and cg.pk_pi=#{pkPi,jdbcType=VARCHAR}
+        </if>
+        <if test="pkOrg!=null and pkOrg!='' ">
+            and bs.pk_org=#{pkOrg,jdbcType=VARCHAR}
+        </if>
+        group by cg.pk_cnord,
+        bs.date_st,
+        cg.pk_settle,
+        dept.name_dept,
+        cg.date_hap,
+        deptexec.name_dept <!-- bi.code_inv -->
+        order by date_st desc
+    </select>
+
+    <select id="queryBlExtPayRefund" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.BlExtPayVo">
+        select
+        temp.flag flagRefType,temp.pk_extpay pkExtpay,temp.amount,temp.eu_paytype euPaytypeCode,
+        temp.dt_bank dtBank,temp.name_bank nameBank,temp.flag_pay flagPay,temp.date_pay datePay,
+        temp.trade_no tradeNo,temp.serial_no serialNo,temp.pk_pi pkPi,temp.pk_pv pkPv,
+        temp.pk_depo pkDepo,temp.pk_depopi pkDepopi,temp.result_pay resultPay,temp.refund_no refundNo,
+        temp.eu_bill euBill,temp.pk_bill pkBill,temp.serial_num serialNum,temp.sysname,temp.creator_name creator
+        from (
+        select bl.*,bo.name_user creator_name,'0' as flag
+        from bl_ext_pay bl
+        left join bd_ou_user bo on bo.pk_emp=bl.creator
+        where bl.pk_depo is null
+        and bl.pk_pi = #{pkPi,jdbcType=VARCHAR}
+        and bl.create_time &gt;=to_date(substr(#{dateSt ,jdbcType=VARCHAR},1,8)||'000000', 'yyyymmddhh24miss')
+        and bl.create_time &lt;=to_date(substr(#{dateEnd ,jdbcType=VARCHAR},1,8)||'000000', 'yyyymmddhh24miss')
+        and bl.flag_pay = '1'
+        and not exists (select 1
+        from temp_bl_settle tbs
+        where tbs.pk_temp_settle = bl.pk_bus)
+        and bl.del_flag ='0'
+        union all
+        select bl.*,bo.name_user creator_name, '1' as flag
+        from bl_ext_pay bl
+        left join bd_ou_user bo on bo.pk_emp=bl.creator
+        inner join temp_bl_settle b
+        on bl.pk_bus = b.pk_temp_settle
+        where 1 = 1
+        and bl.pk_pi = #{pkPi,jdbcType=VARCHAR}
+        and bl.create_time &gt;=to_date(substr(#{dateSt ,jdbcType=VARCHAR},1,8)||'000000', 'yyyymmddhh24miss')
+        and bl.create_time &lt;=to_date(substr(#{dateEnd ,jdbcType=VARCHAR},1,8)||'235959', 'yyyymmddhh24miss')
+        and bl.flag_pay = '0' and bl.del_flag ='0'
+        ) temp
+        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+            <if test="flagRefType != null and flagRefType != ''">
+                and temp.flag = #{flagRefType ,jdbcType=VARCHAR}
+            </if>
+        </trim>
+        order by temp.date_pay desc
+    </select>
+
+    <select id="qryBlOpdtByPkPvs" parameterType="java.util.List"
+            resultType="com.zebone.nhis.common.module.bl.opcg.BlOpDt">
+        select
+        dt.*,(case when temp.del_flag='0' then 1 else 0 end ) as isPrintQrCode,
+        (case when dt.flag_pd='0' then bi.code else bp.code end) as itemCode
+        from bl_op_dt dt
+        LEFT JOIN TEMP_BL_OP_DT temp on dt.PK_CGOP = temp.PK_TEMP_CGOP
+        left join bd_item bi on bi.pk_item=dt.pk_item
+        left join bd_pd bp on bp.pk_pd=dt.pk_pd
+        where dt.flag_settle = '0' and dt.flag_acc = '0'
+        and dt.pk_pv in
+        <foreach collection="list" item="pkPv" open="(" separator="," close=")">
+            #{pkPv,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+    <select id="queryNoSettleInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.ItemPriceVo">
+        select dt.*
+        from bl_op_dt dt
+        inner join pv_encounter pv on pv.pk_pv = dt.pk_pv
+        where dt.flag_settle = '0' and dt.flag_acc = '0'
+        <if test="pkPv!=null and pkPv!='' ">
+            and dt.pk_pv=#{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="codePv!=null and codePv!='' ">
+            and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+        </if>
+    </select>
+    <select id="queryNoSettleInfoForCg" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.bl.pub.vo.BlPatiCgInfoNotSettleVO">
+        select * from (
+        select
+        pres.pres_no,
+        pres.dt_prestype,
+        dt.name_cg,
+        dt.spec,
+        unit.name unit,
+        dt.quan,
+        dt.quan as quan_cg,
+        dt.amount_pi,
+        dt.pk_cnord,
+        dt.flag_pv,
+        pd.eu_drugtype,
+        case dt.flag_pd when '0' then item.code when '1' then pd.code else '' end as item_code,
+        pd.code_hp,
+        dt.pk_pi,
+        dt.pk_pv,
+        dt.flag_pd,
+        dt.pk_cgop,
+        dt.price_org,
+        dt.price,
+        dt.pk_disc,
+        dt.ratio_disc,
+        dt.ratio_self,
+        dt.amount,
+        dt.amount_hppi,
+        dt.ratio_add,
+        dt.amount_add,
+        dt.flag_insu,
+        dt.eu_additem,
+        dt.ts,
+        dt.pk_pres,
+        dt.pk_dept_app,
+        dt.pk_emp_app,
+        dt.pk_dept_ex,
+        dt.pk_item,
+        dt.pk_pd,
+        dt.flag_recharge,
+        dt.code_bill,
+        dt.date_hap,
+        dt.date_cg,
+        invcate.name as name_bill,
+        invcate.pk_invcate,
+        ord.pk_dept,
+        ord.name_ord,
+        ord.ordsn,
+        ord.ordsn_parent,
+        dept.name_dept,
+        dept.code_dept,
+        ord.pk_emp_ord,
+        ord.name_emp_ord,
+        ord.date_start,
+        CASE WHEN ord.date_enter is null THEN dt.DATE_CG ELSE ord.date_enter END as date_enter,
+        ord.pk_emp_input,
+        ord.name_emp_input,
+        ord.days,
+        ord.code_freq as freq,
+        freq.name as freq_name,
+        ord.dosage,
+        ord.pk_unit_dos,
+        ord.code_ordtype,
+        ord.ords,
+        ord.flag_fit,
+        ord.flag_occ,
+        diag.name_diag as diagname,
+        catepi.name as picate,
+        unitdos.name as unit_dos,
+        deptex.name_dept as name_dept_ex,
+        pv.pk_insu,
+        sup.name as supply,
+        dostype.name DostypeName,
+        case when ord.dt_hpprop is null then '普通门诊' else hpprop.name end as hpprop_Name,
+        case when ord.dt_hpprop is null then '11' else ord.dt_hpprop end as dt_hpprop,
+        emp.CODE_EMP creat_docter_no,
+        pv.NAME_EMP_PHY,
+        dt.pk_dept_areaapp,ord.pk_unit_cg
+        from bl_op_dt dt
+        inner join pv_encounter pv on pv.pk_pv = dt.pk_pv
+        left join cn_order ord on ord.pk_cnord = dt.pk_cnord
+        left join bd_ou_employee emp on emp.PK_EMP= pv.pk_EMP_PHY
+        left join bd_term_freq freq on freq.code = ord.code_freq and freq.del_flag = '0'
+        left join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+        left join bd_ou_dept deptex on deptex.pk_dept = dt.pk_dept_ex
+        left join bd_unit unitdos on unitdos.pk_unit = ord.pk_unit_dos
+        left join bd_supply sup on sup.code = ord.code_supply
+        left join bd_unit unit on dt.pk_unit = unit.pk_unit
+        left outer join cn_prescription pres on dt.pk_pres = pres.pk_pres
+        left outer join bd_pd pd on dt.pk_pd = pd.pk_pd
+        left join (select *
+        from bd_defdoc
+        where code_defdoclist = '030400') dostype ON dostype.code = pd.dt_dosage
+        left outer join bd_item item on dt.pk_item = item.pk_item
+        left join pv_diag diag on diag.pk_pv = dt.pk_pv and diag.flag_maj='1' and diag.del_flag='0'
+        left join pi_cate catepi on catepi.pk_picate = pv.pk_picate
+        left join bd_invcate_item invcate on invcate.code = dt.code_bill and invcate.DEL_FLAG != '1'
+        left join bd_invcate cate on cate.pk_invcate = invcate.pk_invcate and cate.DEL_FLAG != '1'
+        left join bd_defdoc hpprop on hpprop.code = ord.dt_hpprop and hpprop.CODE_DEFDOCLIST = '060107' and
+        hpprop.del_flag != '1'
+        where dt.flag_settle='0' and dt.del_flag='0' and dt.flag_acc='0' and cate.eu_type='0' and cate.flag_active='1'
+        and dt.flag_pv='0' and dt.pk_pv=#{pkPv,jdbcType=CHAR}
+        and invcate.pk_org = #{pkOrg,jdbcType=CHAR}
+        <if test="termOfValidity!=null and termOfValidity!='' ">
+        and (ord.code_ordtype In('0101','0102') And ord.date_effe>Sysdate Or ord.code_ordtype Not In('0101','0102'))
+        </if>
+        <if test="pkDeptEx!=null and pkDeptEx!='' ">
+            and dt.pk_dept_ex =#{pkDeptEx, jdbcType=CHAR}
+        </if>
+        <if test="pkPi!=null and pkPi!='' ">
+            and dt.pk_pi =#{pkPi, jdbcType=CHAR}
+        </if>
+        <if test="curDate!=null and curDate!='' ">
+            and ord.date_effe &gt;=to_date(#{curDate},'YYYYMMDDHH24MISS')
+        </if>
+        UNION
+        select
+        pres.pres_no,
+        pres.dt_prestype,
+        dt.name_cg,
+        dt.spec,
+        unit.name unit,
+        dt.quan,
+        dt.quan as quan_cg,
+        dt.amount_pi,
+        dt.pk_cnord,
+        dt.flag_pv,
+        pd.eu_drugtype,
+        case dt.flag_pd when '0' then item.code when '1' then pd.code else '' end as item_code,
+        pd.code_hp,
+        dt.pk_pi,
+        dt.pk_pv,
+        dt.flag_pd,
+        dt.pk_cgop,
+        dt.price_org,
+        dt.price,
+        dt.pk_disc,
+        dt.ratio_disc,
+        dt.ratio_self,
+        dt.amount,
+        dt.amount_hppi,
+        dt.ratio_add,
+        dt.amount_add,
+        dt.flag_insu,
+        dt.eu_additem,
+        dt.ts,
+        dt.pk_pres,
+        dt.pk_dept_app,
+        dt.pk_emp_app,
+        dt.pk_dept_ex,
+        dt.pk_item,
+        dt.pk_pd,
+        dt.flag_recharge,
+        dt.code_bill,
+        dt.date_hap,
+        dt.date_cg,
+        invcate.name as name_bill,
+        invcate.pk_invcate,
+        ord.pk_dept,
+        ord.name_ord,
+        ord.ordsn,
+        ord.ordsn_parent,
+        dept.name_dept,
+        dept.code_dept,
+        ord.pk_emp_ord,
+        ord.name_emp_ord,
+        ord.date_start,
+        CASE WHEN ord.date_enter is null THEN dt.DATE_CG ELSE ord.date_enter END as date_enter,
+        ord.pk_emp_input,
+        ord.name_emp_input,
+        ord.days,
+        ord.code_freq as freq,
+        freq.name as freq_name,
+        ord.dosage,
+        ord.pk_unit_dos,
+        ord.code_ordtype,
+        ord.ords,
+        ord.flag_fit,
+        ord.flag_occ,
+        diag.name_diag as diagname,
+        catepi.name as picate,
+        unitdos.name as unit_dos,
+        deptex.name_dept as name_dept_ex,
+        pv.pk_insu,
+        sup.name as supply,
+        dostype.name DostypeName,
+        case when ord.dt_hpprop is null then '普通门诊' else hpprop.name end as hpprop_Name,
+        case when ord.dt_hpprop is null then '11' else ord.dt_hpprop end as dt_hpprop,
+        emp.CODE_EMP creat_docter_no,
+        pv.NAME_EMP_PHY,
+        dt.pk_dept_areaapp,ord.pk_unit_cg
+        from bl_op_dt dt
+        inner join pv_encounter pv on pv.pk_pv = dt.pk_pv
+        left join cn_order ord on ord.pk_cnord = dt.pk_cnord
+        left join bd_ou_employee emp on emp.PK_EMP= pv.pk_EMP_PHY
+        left join bd_term_freq freq on freq.code = ord.code_freq and freq.del_flag = '0'
+        left join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+        left join bd_ou_dept deptex on deptex.pk_dept = dt.pk_dept_ex
+        left join bd_unit unitdos on unitdos.pk_unit = ord.pk_unit_dos
+        left join bd_supply sup on sup.code = ord.code_supply
+        left join bd_unit unit on dt.pk_unit = unit.pk_unit
+        left outer join cn_prescription pres on dt.pk_pres = pres.pk_pres
+        left outer join bd_pd pd on dt.pk_pd = pd.pk_pd
+        left join (select * from bd_defdoc where code_defdoclist = '030400') dostype ON dostype.code = pd.dt_dosage
+        left outer join bd_item item on dt.pk_item = item.pk_item
+        left join pv_diag diag on diag.pk_pv = dt.pk_pv and diag.flag_maj='1' and diag.del_flag='0'
+        left join pi_cate catepi on catepi.pk_picate = pv.pk_picate
+        left join bd_invcate_item invcate on invcate.code = dt.code_bill and invcate.DEL_FLAG != '1'
+        left join bd_invcate cate on cate.pk_invcate = invcate.pk_invcate and cate.DEL_FLAG != '1'
+        left join bd_defdoc hpprop on hpprop.code = ord.dt_hpprop and hpprop.CODE_DEFDOCLIST = '060107' and
+        hpprop.del_flag != '1'
+        where dt.flag_settle='0' and dt.del_flag='0' and dt.flag_acc='0' and cate.eu_type='0' and cate.flag_active='1' and (dt.pk_cnord is
+        null or dt.pk_cnord='')
+        and dt.flag_pv='0' and dt.pk_pv=#{pkPv,jdbcType=CHAR}
+        and invcate.pk_org = #{pkOrg,jdbcType=CHAR}
+        <if test="termOfValidity!=null and termOfValidity!='' ">
+        and (ord.code_ordtype In('0101','0102') And ord.date_effe>Sysdate Or ord.code_ordtype Not In('0101','0102'))
+        </if>
+        <if test="pkDeptEx!=null and pkDeptEx!='' ">
+            and dt.pk_dept_ex =#{pkDeptEx, jdbcType=CHAR}
+        </if>
+        <if test="pkPi!=null and pkPi!='' ">
+            and dt.pk_pi =#{pkPi, jdbcType=CHAR}
+        </if>
+        <if test=' "1"==flagPv '>
+            <!-- 判断是否追加查询挂号费用条件 -->
+            UNION SELECT
+            pres.pres_no,
+            pres.dt_prestype,
+            dt.name_cg,
+            dt.spec,
+            unit.name unit,
+            dt.quan,
+            dt.quan as quan_cg,
+            dt.amount_pi,
+            dt.pk_cnord,
+            dt.flag_pv,
+            pd.eu_drugtype,
+            case dt.flag_pd when '0' then item.code when '1' then pd.code else '' end as item_code,
+            pd.code_hp,
+            dt.pk_pi,
+            dt.pk_pv,
+            dt.flag_pd,
+            dt.pk_cgop,
+            dt.price_org,
+            dt.price,
+            dt.pk_disc,
+            dt.ratio_disc,
+            dt.ratio_self,
+            dt.amount,
+            dt.amount_hppi,
+            dt.ratio_add,
+            dt.amount_add,
+            dt.flag_insu,
+            dt.eu_additem,
+            dt.ts,
+            dt.pk_pres,
+            dt.pk_dept_app,
+            dt.pk_emp_app,
+            dt.pk_dept_ex,
+            dt.pk_item,
+            dt.pk_pd,
+            dt.flag_recharge,
+            dt.code_bill,
+            dt.date_hap,
+            dt.date_cg,
+            invcate.name AS name_bill,
+            invcate.pk_invcate,
+            ord.pk_dept,
+            ord.name_ord,
+            ord.ordsn,
+            ord.ordsn_parent,
+            dept.name_dept,
+            dept.code_dept,
+            ord.pk_emp_ord,
+            ord.name_emp_ord,
+            ord.date_start,
+            CASE WHEN ord.date_enter is null THEN dt.DATE_CG ELSE ord.date_enter END as date_enter,
+            ord.pk_emp_input,
+            ord.name_emp_input,
+            ord.days,
+            ord.code_freq AS freq,
+            freq.name as freq_name,
+            ord.dosage,
+            ord.pk_unit_dos,
+            ord.code_ordtype,
+            ord.ords,
+            ord.flag_fit,
+            ord.flag_occ,
+            diag.name_diag AS diagname,
+            catepi.name AS picate,
+            unitdos.name AS unit_dos,
+            deptex.name_dept AS name_dept_ex,
+            pv.pk_insu,
+            sup.name AS supply,
+            dostype.name DostypeName,
+            case when ord.dt_hpprop is null then '普通门诊' else hpprop.name end as hpprop_Name,
+            case when ord.dt_hpprop is null then '11' else ord.dt_hpprop end as dt_hpprop,
+            emp.CODE_EMP creat_docter_no,
+            pv.NAME_EMP_PHY,
+            dt.pk_dept_areaapp,ord.pk_unit_cg
+            FROM bl_op_dt dt INNER JOIN pv_encounter pv ON pv.pk_pv = dt.pk_pv
+            LEFT JOIN cn_order ord ON ord.pk_cnord = dt.pk_cnord
+            left join bd_ou_employee emp on emp.PK_EMP= pv.pk_EMP_PHY
+            left join bd_term_freq freq on freq.code = ord.code_freq and freq.del_flag = '0'
+            LEFT JOIN bd_ou_dept dept ON dept.pk_dept = pv.pk_dept
+            LEFT JOIN bd_ou_dept deptex ON deptex.pk_dept = dt.pk_dept_ex
+            LEFT JOIN bd_unit unitdos ON unitdos.pk_unit = ord.pk_unit_dos
+            LEFT JOIN bd_supply sup ON sup.code = ord.code_supply
+            LEFT JOIN bd_unit unit ON dt.pk_unit = unit.pk_unit
+            LEFT OUTER JOIN cn_prescription pres ON dt.pk_pres = pres.pk_pres
+            LEFT OUTER JOIN bd_pd pd ON dt.pk_pd = pd.pk_pd
+            left join (select * from bd_defdoc where code_defdoclist = '030400') dostype ON dostype.code = pd.dt_dosage
+            left outer join bd_item item on dt.pk_item = item.pk_item
+            LEFT JOIN pv_diag diag ON diag.pk_pv = dt.pk_pv AND diag.flag_maj = '1' AND diag.del_flag = '0'
+            LEFT JOIN pi_cate catepi ON catepi.pk_picate = pv.pk_picate
+            LEFT JOIN bd_invcate_item invcate ON invcate.code = dt.code_bill
+            LEFT JOIN bd_invcate cate ON cate.pk_invcate = invcate.pk_invcate
+            left join bd_defdoc hpprop on hpprop.code = ord.dt_hpprop and hpprop.CODE_DEFDOCLIST = '060107' and
+            hpprop.del_flag != '1'
+            WHERE
+            dt.flag_settle = '0' and dt.del_flag='0' AND dt.flag_acc = '0' AND cate.eu_type = '0' AND cate.flag_active = '1'
+            and dt.flag_pv = '1' and dt.pk_pv=#{pkPv,jdbcType=CHAR}
+            and invcate.pk_org = #{pkOrg,jdbcType=CHAR}
+            <if test="pkDeptEx!=null and pkDeptEx!='' ">
+                and dt.pk_dept_ex =#{pkDeptEx, jdbcType=CHAR}
+            </if>
+            <if test="pkPi!=null and pkPi!='' ">
+                and dt.pk_pi =#{pkPi, jdbcType=CHAR}
+            </if>
+        </if>
+        ) bl_st_info
+        order by bl_st_info.ordsn asc
+    </select>
+    <select id="querySettlePvInfo" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.bl.pub.vo.BlPatiCgInfoNotSettleVO">
+        select
+        pres.pres_no,
+        pres.dt_prestype,
+        dt.name_cg,
+        dt.spec,
+        unit.name unit,
+        dt.quan,
+        dt.amount,
+        dt.amount_pi,
+        dt.pk_cnord,
+        dt.flag_pv,
+        dt.pk_dept_ex,
+        pd.eu_drugtype,
+        pd.code as item_code,
+        dt.pk_pi,
+        dt.pk_pv,
+        dt.flag_pd,
+        dt.pk_cgop,
+        dt.price_org,
+        dt.price,
+        dt.pk_disc,
+        dt.ratio_disc,
+        dt.ratio_self,
+        dt.amount,
+        dt.amount_hppi,
+        dt.ratio_add,
+        dt.amount_add,
+        dt.flag_insu,
+        dt.eu_additem,
+        dt.ts,
+        dt.pk_pres,
+        dt.pk_dept_app,
+        dt.pk_emp_app,
+        dt.pk_dept_ex,
+        dt.pk_item,
+        dt.pk_pd,
+        dt.flag_settle,
+        dt.pk_settle,
+        dt.code_bill,
+        invcate.name as name_bill,
+        invcate.pk_invcate,
+        ord.pk_dept,
+        ord.name_ord,
+        ord.ordsn,
+        ord.ordsn_parent,
+        dept.name_dept,
+        dept.code_dept,
+        ord.pk_emp_ord,
+        ord.name_emp_ord,
+        ord.date_start,
+        ord.date_enter,
+        ord.pk_emp_input,
+        ord.name_emp_input,
+        ord.days,
+        ord.code_freq as freq,
+        ord.dosage,
+        ord.pk_unit_dos,
+        ord.code_ordtype,
+        ord.ords,
+        diag.name_diag as diagname,
+        catepi.name as picate,
+        unitdos.name as unit_dos,
+        deptex.name_dept as name_dept_ex,
+        pv.pk_insu,
+        sup.name as supply
+        from bl_op_dt dt
+        inner join pv_encounter pv on pv.pk_pv = dt.pk_pv
+        left join cn_order ord on ord.pk_cnord = dt.pk_cnord
+        left join bd_ou_dept dept on dept.pk_dept = ord.pk_dept
+        left join bd_ou_dept deptex on deptex.pk_dept = dt.pk_dept_ex
+        left join bd_unit unitdos on unitdos.pk_unit = ord.pk_unit_dos
+        left join bd_supply sup on sup.code = ord.code_supply
+        inner join bd_unit unit on dt.pk_unit = unit.pk_unit
+        left outer join cn_prescription pres on dt.pk_pres = pres.pk_pres
+        left outer join bd_pd pd on dt.pk_pd = pd.pk_pd
+        left join pv_diag diag on diag.pk_pv = dt.pk_pv and diag.flag_maj='1' and diag.del_flag='0'
+        left join pi_cate catepi on catepi.pk_picate = pv.pk_picate
+        left join bd_invcate_item invcate on invcate.code = dt.code_bill
+        left join bd_invcate cate on cate.pk_invcate = invcate.pk_invcate
+        where dt.flag_settle='1' and dt.flag_acc='0' and cate.eu_type='0' and cate.flag_active='1'
+        and dt.flag_pv='1' and not exists (select 1
+        from bl_op_dt back
+        where back.pk_cgop_back=dt.pk_cgop
+        )
+        <if test="pkPv!=null and pkPv!='' ">
+            and dt.pk_pv=#{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="pkDeptEx!=null and pkDeptEx!='' ">
+            and dt.pk_dept_ex =#{pkDeptEx, jdbcType=CHAR}
+        </if>
+        <if test="pkPi!=null and pkPi!='' ">
+            and dt.pk_pi =#{pkPi, jdbcType=CHAR}
+        </if>
+    </select>
+
+    <select id="qryStIpcFeeByPv" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.common.module.bl.opcg.BlOpDt">
+        select *
+        from BL_OP_DT opdt
+        where opdt.PK_CGOP in (
+                Select pk_cgop
+                From bl_op_dt dt
+                             inner join bl_settle st on st.PK_SETTLE = dt.PK_SETTLE
+                Where dt.pk_pv = #{pkPv,jdbcType=CHAR}
+                  And dt.flag_pv = '1'
+                  And dt.flag_settle = '1'
+                  And dt.quan > 0
+                  and st.DT_STTYPE = '00'
+                group by st.PK_SETTLE, PK_CGOP
+                having count(pk_cgop) = 1
+                )
+    </select>
+
+    <select id="qryInvDtByCg" resultType="com.zebone.nhis.common.module.bl.BlInvoiceDt">
+        select invitem.pk_invcateitem as pk_bill,invitem.code as code_bill, invitem.name as name_bill, sum(bl.amount)
+        amount
+        from bd_invcate_item invitem
+        inner join bd_invcate cate on invitem.pk_invcate=cate.pk_invcate and cate.del_flag = '0'
+        inner join bd_invcate_itemcate iicate on invitem.pk_invcateitem=iicate.pk_invcateitem and iicate.del_flag = '0'
+        inner join bl_op_dt bl on iicate.pk_itemcate=bl.pk_itemcate and bl.del_flag = '0'
+        where cate.eu_type = '0' and invitem.del_flag = '0' and cate.pk_org = #{pkOrg,jdbcType=CHAR}
+        and bl.PK_CGOP in
+        <foreach collection="pkList" item="pkList" index="no" open="("
+                 separator="," close=")">
+            #{pkList}
+        </foreach>
+        group by invitem.pk_invcateitem,
+        invitem.code,
+        invitem.name
+    </select>
+
+    <select id="qryEtceterasList" parameterType="com.zebone.nhis.bl.pub.vo.OprbFeesDto" resultType="DynaBean">
+        select distinct cg.pk_cnord as         pk,
+                        dept.name_dept,
+                        cg.date_hap            dateOpen,
+                        cg.name_emp_app,
+                        exdp.name_dept         nameDeptExec,
+                        cg.pk_settle,
+                        0                      isPres,
+                        case
+                                when inf.eu_status is null then '可退'
+                                when inf.eu_status &lt; '9' then '可退'
+                                else '不可退' end state,
+                        '1'         as         FlagEtce
+        from bl_op_dt cg
+                     inner join cn_order ord on cg.pk_cnord = ord.pk_cnord
+                     inner join bd_ou_dept dept on cg.pk_dept_app = dept.pk_dept
+                     inner join bd_ou_dept exdp on cg.pk_dept_ex = exdp.pk_dept
+                     left outer join ex_infusion_occ inf on ord.ordsn_parent = inf.ordsn_parent
+        where cg.pk_settle = #{pkSettle,jdbcType=CHAR}
+          and cg.pk_pres = ord.pk_pres
+          and cg.flag_pd = '0'
+    </select>
+
+    <select id="qryEtceterasItem" resultType="DynaBean">
+        select cg.pk_cgop,
+               cg.name_cg,
+               cg.spec,
+               cg.pk_unit,
+               cg.pk_settle,
+               cg.pk_pv,
+               unit.name   unit,
+               cg.flag_pd,
+               cg.price as priceOrg,
+               cg.quan  as quan_cg,
+               cg.quan  as canBack
+        from bl_op_dt cg
+                     left join bd_unit unit on cg.pk_unit = unit.pk_unit
+        where cg.pk_settle = #{pkSettle,jdbcType=CHAR}
+          and cg.pk_cnord in (${pkCnords})
+          and cg.flag_pd = '0'
+    </select>
+
+    <select id="qryCgItemByPkCgop" resultType="DynaBean">
+        select cg.pk_cgop,
+               cg.name_cg,
+               cg.spec,
+               cg.pk_unit,
+               cg.pk_settle,
+               cg.pk_pv,
+               unit.name   unit,
+               cg.flag_pd,
+               cg.price as priceOrg,
+               cg.quan  as quan_cg,
+               cg.quan  as canBack
+        from bl_op_dt cg
+                     left join bd_unit unit on cg.pk_unit = unit.pk_unit
+        where cg.pk_settle = #{pkSettle,jdbcType=CHAR}
+          and cg.pk_cgop in (${pkCgops})
+    </select>
+</mapper>

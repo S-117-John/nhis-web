@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.dao.OpSendMapper" >
+
+    <select id="getPvEncounter" resultType="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.model.PvEncounterVo">
+        select pv.pk_pv,
+               pi.CODE_OP,
+               pv.EU_STATUS,
+               pi.PK_PI,
+               pv.EU_PVTYPE,
+               pi.CODE_PI,
+               pi.NAME_PI,
+               pi.TEL_NO,
+               srv.eu_srvtype,
+               pi.BIRTH_DATE,
+               pi.dt_ralation,
+               pi.mobile,
+               pi.ID_NO,
+               nvl(op.PK_EMP_PV, er.PK_EMP_PV) pk_emp_pv,
+               emp.CODE_EMP,
+               emp.NAME_EMP,
+               pv.DATE_BEGIN,
+               pv.DATE_END,
+               pv.PK_DEPT,
+               pv.pk_emp_phy,pv.name_emp_phy,pv.CODE_PV,
+               empphy.code_emp code_emp_phy,
+               dept.CODE_DEPT,
+               dept.NAME_DEPT,
+               pi.DT_SEX
+        from PV_ENCOUNTER pv
+                 inner join PI_MASTER pi on pv.PK_PI = pi.PK_PI
+                 left join PV_OP op on pv.PK_PV = op.PK_PV and pv.EU_PVTYPE in ('1', '4')
+                 left join PV_ER er on pv.PK_PV = er.PK_PV and pv.EU_PVTYPE = '2'
+                 left join sch_srv srv on op.PK_SCHSRV = srv.PK_SCHSRV or er.PK_SCHSRV = srv.PK_SCHSRV
+                 left join BD_OU_EMPLOYEE emp on emp.PK_EMP in (op.PK_EMP_PV, er.PK_EMP_PV)
+                 left join BD_OU_DEPT dept on pv.PK_DEPT = dept.PK_DEPT
+                 left join bd_ou_employee empphy on empphy.pk_emp=pv.pk_emp_phy
+        where pv.PK_PV = #{pkPv,jdbcType=VARCHAR}
+    </select>
+
+    <select id="getSchAppt" resultType="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.model.SchApptVo">
+        select appt.PK_SCHAPPT,appt.EU_STATUS,appt.FLAG_CANCEL,appt.PK_DATESLOT
+             ,bd.CODE_DATESLOT,bd.NAME_DATESLOT,appt.BEGIN_TIME,appt.END_TIME,appt.CREATE_TIME
+             ,appt.PK_SCH,appt.DATE_APPT,appt.dt_apptype,doc.NAME name_apptype
+             ,dept.CODE_DEPT,dept.NAME_DEPT,dept.name_place,emp.CODE_EMP,emp.NAME_EMP,srv.eu_srvtype
+             ,bdou.NAME_DEPT NAME_DEPT_AREA
+             ,bdou.CODE_DEPT CODE_DEPT_AREA
+             ,bdou.NAME_PLACE NAME_PLACE_AREA,resou.NAME resou_name,resou.code resou_code,appt.note_appt
+             ,pi.CODE_PI,pi.CODE_OP,pi.ID_NO,pi.NAME_PI,pi.mobile,pi.BIRTH_DATE,c.card_no,org.NAME_ORG,res.CODE res_code,res.NAME res_name,appt.NOTE note,appt.orderid_ext,pi.DT_SEX
+        from SCH_APPT appt
+                 inner join SCH_APPT_PV appv on appt.PK_SCHAPPT = appv.PK_SCHAPPT
+                 inner join PI_MASTER pi on appt.PK_PI = pi.PK_PI
+                 left join SCH_RESOURCE res on res.PK_SCHRES = appt.PK_SCHRES
+                 left join SCH_RESOURCE resou on resou.PK_SCHRES = res.PK_DEPT
+                 left  join bd_ou_org org on appt.PK_ORG = org.PK_ORG
+                 left join sch_srv srv on appt.PK_SCHSRV = srv.PK_SCHSRV
+                 left join BD_OU_DEPT dept on appt.PK_DEPT_EX = dept.PK_DEPT
+                 LEFT JOIN bd_code_dateslot bd ON appt.pk_dateslot = bd.pk_dateslot
+                 left join BD_OU_EMPLOYEE emp on appv.PK_EMP_PHY = emp.PK_EMP
+                 left join BD_DEFDOC doc on appt.dt_apptype = doc.CODE and doc.CODE_DEFDOCLIST='020100'
+                 left join pi_card c on c.del_flag = '0' and c.pk_pi = pi.pk_pi and c.eu_status = '0'
+                 left join BD_OU_DEPT bdou on res.PK_DEPT_AREA=bdou.PK_DEPT
+        <where>
+            <choose>
+                <when test="_parameter!=null and _parameter.size()>0">
+                    <if test="pkSchappt!=null and pkSchappt!=''">
+                        and appv.PK_SCHAPPT=#{pkSchappt,jdbcType=VARCHAR}
+                    </if>
+                    <if test="idno!=null and idno!=''">
+                        and pi.id_no=#{idno,jdbcType=VARCHAR}
+                    </if>
+                    <if test="phone!=null and phone!=''">
+                        and pi.mobile=#{phone,jdbcType=VARCHAR}
+                    </if>
+                    <if test="name!=null and name!=''">
+                        and pi.NAME_PI=#{name,jdbcType=VARCHAR}
+                    </if>
+                    <if test="patientId!=null and patientId!=''">
+                        and pi.CODE_OP=#{patientId,jdbcType=VARCHAR}
+                    </if>
+                    <if test="limitDate!=null and limitDate!=''">
+                        and appt.create_time &gt;= to_date(#{limitDate},'yyyyMMddHH24miss')
+                    </if>
+                    <if test="apptStatus!=null and apptStatus!=''">
+                        and nvl(appt.flag_cancel,'0') = #{apptStatus,jdbcType=VARCHAR}
+                    </if>
+                    <if test="begindata!=null and begindata!=''">
+                        and appt.begin_time &gt;= to_date(#{begindata},'yyyy-mm-dd HH24:mi:ss')
+                    </if>
+                    <if test="enddata!=null and enddata!=''">
+                        and appt.begin_time &lt;= to_date(#{enddata},'yyyy-mm-dd HH24:mi:ss')
+                    </if>
+                    <if test="deptCode!=null and deptCode!=''">
+                        and dept.CODE_DEPT = #{deptCode,jdbcType=VARCHAR}
+                    </if>
+                    <if test="doctorCode!=null and doctorCode!=''">
+                        and emp.CODE_EMP = #{doctorCode,jdbcType=VARCHAR}
+                    </if>
+                </when>
+                <otherwise>
+                    1!=1
+                </otherwise>
+            </choose>
+        </where>
+    </select>
+
+    <select id="getDisposeInfo" resultType="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.vo.scm.QueCallVo">
+        select occ.PK_PRESOCC queueid
+        ,occ.PRES_NO patientinfoid
+        ,occ.winno_conf queuetypeid
+        ,pv.NAME_PI patientinfoname
+        ,solt.NAME_DATESLOT timeinterval
+        ,emp.CODE_EMP doctorloginid
+        ,to_char(occ.DATE_PREP,'yyyy-MM-dd HH24:mi:ss') reservetime
+        ,#{opType,jdbcType=VARCHAR} isdeleted
+        from ex_pres_occ occ
+        inner join PV_ENCOUNTER pv on occ.PK_PV = pv.PK_PV
+        left join PV_OP op on pv.EU_PVTYPE in('1','4') and pv.PK_PV=op.PK_PV
+        left join PV_ER er on pv.EU_PVTYPE in('2') and pv.PK_PV=er.PK_PV
+        left join BD_CODE_DATESLOT solt on solt.PK_DATESLOT in(op.PK_DATESLOT,er.PK_DATESLOT) and nvl(solt.FLAG_ACTIVE,'1')='1'
+        left join bd_ou_employee emp on occ.pk_emp_prep = emp.PK_EMP
+        <where>
+            pk_presocc in
+            <foreach collection="pkPresoccs" item="pkPresocc" open="(" separator="," close=")">
+                #{pkPresocc,jdbcType=VARCHAR}
+            </foreach>
+        </where>
+
+    </select>
+
+    <select id = 'qryPatiOpInfo' parameterType="java.lang.String" resultType="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.vo.pv.OpPatiInfo">
+		  select
+               pv.pk_pi,
+               pv.pk_pv,
+               pv.CODE_PV,
+               pi.code_pi,
+               pi.code_op,
+               pi.name_pi,
+               pi.addr_cur_dt,
+               deptOp.CODE_DEPT code_dept_op,
+               deptOp.NAME_DEPT name_dept_op,
+               ipno.PK_EMP_OP,
+               ipno.ts,
+               diag.code_icd,
+		       diag.name_diag,
+		       pi.name_rel,
+		       org.CODE_ORG,
+		       pv.age_pv,
+		       pi.birth_date,
+		       pi.id_no,
+		       cate.CODE code_cate,
+		       sex.BA_CODE sex_code,
+		       pi.mobile,
+		       ipno.dt_level_dise dtLevelDise,
+		       ipno.note note,
+		       ipno.BED_NO,
+		       ipno.pk_dept_ns_ip pkDeptNsIp,
+		       ipno.dt_way_ip,
+		       ipno.date_admit dateAdmit,
+		       dept.name_dept,
+		       dept.CODE_DEPT,
+		       ipno.FLAG_COVID_CHECK,
+		       ipno.DATE_COVID,
+		       ipno.EU_RESULT_COVID,
+		       ipno.PK_DIAG_MAJ,
+		       ipno.flag_isolate,
+		       ipno.flag_spec,
+		       ipno.flag_chg_dept,
+		       ipno.flag_icu,
+		       ipno.dt_pat_cls,
+		       ipno.name_rel,
+		       ipno.tel_rel,
+		       ward.code_dept ward_code,
+		       ward.name_dept ward_name
+		  from pi_master pi
+		       inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+		       left join pv_ip_notice ipno on pi.pk_pi=ipno.pk_pi and pv.pk_pv = ipno.PK_PV_OP
+		       left join bd_ou_dept ward on ward.pk_dept=ipno.PK_DEPT_NS_IP
+		       left outer join pv_diag diag on pv.pk_pv=diag.pk_pv and diag.flag_maj=1 and diag.del_flag='0'
+		       left join bd_ou_dept dept on ipno.pk_dept_ip=dept.pk_dept
+		       left join bd_ou_dept deptOp on ipno.PK_DEPT_OP=deptOp.pk_dept
+		       left join bd_defdoc sex on pi.dt_sex=sex.code and sex.code_defdoclist='000000' and sex.del_flag='0'
+		       LEFT JOIN BD_OU_ORG org on pv.PK_ORG = org.PK_ORG
+		       left outer join pi_cate cate on pi.pk_picate=cate.pk_picate and cate.del_flag='0'
+		 where pv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+	</select>
+    <select id = "qryDaigByPk"  parameterType="java.lang.String" resultType="DynaBean" >
+		 select * from
+		(
+			select
+				b.pk_cndiag as PK_DIAG,
+				icd.diagcode as code,
+				b.name_cd as name,
+				als.spcode as py_code,
+				als.d_code
+			from bd_cndiag b
+			inner join bd_cndiag_comp comp on b.pk_cndiag=comp.pk_cndiag_comp
+			inner join bd_cndiag_as als on b.pk_cndiag=als.pk_cndiag
+			left outer join bd_term_diag icd on b.pk_diag=icd.pk_diag
+			where  1=1  and b.del_flag='0'
+			AND b.pk_cndiag = #{pkDiag,jdbcType=VARCHAR}
+			UNION  all
+			select
+                b.pk_cndiag  as PK_DIAG,
+                icd.diagcode as code,
+                b.name_cd    as name,
+                als.spcode   as py_code,
+                als.d_code
+            from bd_cndiag b
+                     inner join bd_cndiag_as als on b.pk_cndiag = als.pk_cndiag
+                     left outer join bd_term_diag icd on b.pk_diag = icd.pk_diag
+            where 1 = 1
+              and b.del_flag = '0'
+              AND b.pk_cndiag = #{pkDiag,jdbcType=VARCHAR}
+        )
+         order by length(name)
+    </select>
+    <select id="getSumAmount" resultType="DynaBean">
+        select pv.CODE_PV, pi.CODE_OP, pi.NAME_PI, dept.name_dept, sum(dt.AMOUNT) amount
+        from PV_ENCOUNTER pv
+                 inner join bl_op_dt dt on dt.PK_PV = pv.PK_PV
+                 inner join pi_master pi on pi.PK_PI = pv.PK_PI
+                 inner join BD_OU_DEPT dept on dept.pk_dept = pv.PK_DEPT
+        where to_char(pv.DATE_BEGIN, 'yyyy-mm-dd') = to_char(sysdate - ${day}, 'yyyy-mm-dd')
+          and dt.FLAG_SETTLE = '0'
+        group by pi.CODE_OP, pi.NAME_PI, dept.name_dept, pv.CODE_PV
+        having sum(dt.AMOUNT) > 0
+    </select>
+</mapper>

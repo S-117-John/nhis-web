@@ -1,0 +1,862 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.ns.dao.ExecListPrintMapper">
+
+<!-- 变动医嘱 -->
+<select id="queryChangedOrderList" parameterType="java.util.Map" resultType="DynaBean">
+select pv.name_pi,
+       pv.bed_no,
+       pv.pk_pv,
+       ord.pk_cnord,
+       ord.name_ord,
+       ord.eu_always,
+       ord.eu_status_ord,
+       ord.dosage,
+       ord.ordsn_parent,
+       ord.ordsn,
+       '' as sign,
+       unit.name as name_dosage_unit,
+       sup.name_print as name_supply,
+       freq.name as name_freq,
+       freq.eu_always as eu_always_freq,
+       ord.name_emp_ord,
+       ord.date_start,
+       ord.date_stop,
+       case when to_char(ord.date_start,'YYYYMMDD')=#{date} then '新' else '停或废' end,
+       newborn.name as infant_name 
+  from cn_order ord
+  left join bd_supply sup on sup.code = ord.code_supply
+  left join bd_unit unit on unit.pk_unit = ord.pk_unit_dos
+  left join bd_term_freq freq on freq.code = ord.code_freq
+ inner join pv_encounter pv on pv.pk_pv=ord.pk_pv
+  left join pv_infant newborn on pv.pk_pv=newborn.pk_pv and ord.infant_no=newborn.sort_no
+ where (ord.date_start &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+       and ord.date_start &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')  
+       or ord.date_stop  &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+       and ord.date_stop &lt;=to_date(#{dateEnd},'YYYYMMDDHH24MISS') ) 
+       <if test="euAlways != null  and  euAlways != ''">
+          and ord.eu_always = #{euAlways,jdbcType=CHAR} 
+       </if>
+       <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		  and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	   </if>
+       and (ord.eu_status_ord in('1','2','3','4') ) 
+       and pv.pk_pv in 
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            #{pkpv}    
+        </foreach>
+       order by pv.bed_no,ord.ordsn_parent,ord.ordsn,ord.date_start,ord.date_stop
+</select>
+
+<!-- 护理执行单 -->
+<select id="queryNsExlistList" parameterType="java.util.Map" resultType="DynaBean">
+select pv.bed_no,
+	   pv.pk_pv,
+       pv.name_pi,
+	   pi.code_ip,
+       org.name_org,
+       dept.name_dept,
+       deptNs.name_dept as name_dept_ns,
+       ord.name_ord,
+       ord.quan,
+       ord.ordsn_parent,
+       ord.ordsn,
+       ord.spec,
+       '' as sign,
+       ord.note_ord,
+       freq.name name_freq,
+       freq.eu_always as eu_always_freq,
+       sup.name_print name_supply,
+       unit.name name_unit,
+       newborn.name name_infant,
+       exlist.pk_exocc,
+       exlist.date_plan date_plan_dis,
+       exlist.pk_pdde,
+       to_char(exlist.date_plan, 'HH24:MI:SS') date_plan,
+       case  when prt.pk_exoccprt is null then  '0' else '1' end as flag_print
+  from cn_order ord
+ inner join pv_encounter pv on pv.pk_pv = ord.pk_pv
+ inner join pi_master pi on pi.pk_pi = pv.pk_pi
+ inner join ex_order_occ exlist on exlist.pk_cnord = ord.pk_cnord
+  left join bd_term_freq freq on freq.code = ord.code_freq
+  left join bd_unit unit on unit.pk_unit = ord.pk_unit
+  left join bd_supply sup on sup.code = ord.code_supply
+ inner join bd_ou_org org on org.pk_org = ord.pk_org
+ inner join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+ inner join bd_ou_dept deptNs on deptNs.pk_dept = pv.pk_dept_ns
+  left outer join pv_infant newborn on pv.pk_pv = newborn.pk_pv and ord.infant_no = newborn.sort_no
+  left join ex_order_occ_prt prt on prt.pk_exocc = exlist.pk_exocc
+ where exlist.date_plan &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+   and exlist.date_plan &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+   and exlist.eu_status &lt; 9
+   <if test="euAlways != null  and  euAlways != ''">
+       and ord.eu_always = #{euAlways,jdbcType=CHAR} 
+   </if>
+    <if test=' "0"==flagPrint '>
+       and (prt.pk_exoccprt is null or prt.pk_exoccprt = '') 
+   </if>
+   <if test=' "1"==flagPrint '>
+       and (prt.pk_exoccprt is not null or prt.pk_exoccprt != '') 
+   </if>
+   and pv.pk_pv in 
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            	#{pkpv}    
+         </foreach>
+   and pv.flag_in = '1'
+   and exlist.pk_dept_occ = #{pkDeptNs,jdbcType=CHAR}
+   and ord.code_ordtype like '06%'
+order by pv.bed_no,exlist.date_plan,ord.ordsn_parent,ord.ordsn
+</select>
+
+<!-- 口服执行单 -->
+<select id="queryKFExlistList" parameterType="java.util.Map" resultType="DynaBean">
+select pv.pk_pv,
+       pv.bed_no,
+       pv.name_pi,
+       pi.code_ip,
+       org.name_org,
+       dept.name_dept,
+       deptNs.name_dept as name_dept_ns,
+       ord.ordsn,
+       ord.ordsn_parent,
+       ord.name_ord,
+       ord.spec,
+       ord.note_ord,
+       ord.flag_self,
+       ord.flag_first,
+       ord.dosage,
+       '' as sign,
+       newborn.name name_infant,
+       unit.name name_dosage_unit,
+       sup.name_print name_supply,
+       freq.name name_freq,
+       freq.eu_always as eu_always_freq,
+       exlist.pk_exocc,
+       exlist.date_plan date_plan_dis,
+       exlist.pk_pdde,
+       to_char(exlist.date_plan, 'HH24:MI:SS') date_plan,
+       case when prt.pk_exoccprt is null then '0' else '1' end as flag_print
+  from cn_order ord
+ inner join pv_encounter pv on pv.pk_pv = ord.pk_pv
+ inner join pi_master pi on pi.pk_pi = pv.pk_pi
+ inner join ex_order_occ exlist on exlist.pk_cnord = ord.pk_cnord
+  left join bd_unit unit on unit.pk_unit = ord.pk_unit_dos
+  left join bd_supply sup on sup.code = ord.code_supply
+ inner join bd_term_freq freq on freq.code = ord.code_freq
+ inner join bd_ou_org org on org.pk_org = ord.pk_org
+ inner join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+ inner join bd_ou_dept deptNs on deptNs.pk_dept = pv.pk_dept_ns
+  left join pv_infant newborn on pv.pk_pv = newborn.pk_pv and ord.infant_no = newborn.sort_no
+  left join ex_order_occ_prt prt on prt.pk_exocc = exlist.pk_exocc
+ where exlist.date_plan &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+   and exlist.date_plan &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+   and exlist.eu_status &lt; 9
+   <if test="euAlways != null  and  euAlways != ''">
+       and ord.eu_always = #{euAlways,jdbcType=CHAR} 
+   </if>
+   <if test=' "0"==flagPrint '>
+       and (prt.pk_exoccprt is null or prt.pk_exoccprt = '') 
+   </if>
+   <if test=' "1"==flagPrint '>
+       and (prt.pk_exoccprt is not null or prt.pk_exoccprt != '') 
+   </if>
+    <if test="pkDeptNs != null  and  pkDeptNs != ''">
+	   and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+   </if>
+   and pv.pk_pv in 
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            	#{pkpv}    
+         </foreach>
+   and pv.flag_in = '1'
+   and sup.dt_excardtype = '2' 
+   order by pv.bed_no,exlist.date_plan,ord.ordsn_parent,ord.ordsn  
+</select>
+
+<!-- 注射执行单 -->
+<select id="queryZSExlistList" parameterType="java.util.Map" resultType="DynaBean">
+select pv.pk_pv,
+	   pv.bed_no,
+       pv.name_pi,
+       pi.code_ip,
+       org.name_org,
+       dept.name_dept,
+       deptNs.name_dept as name_dept_ns,
+       ord.ordsn,
+       ord.ordsn_parent,
+       ord.name_ord,
+       ord.spec,
+       ord.note_ord,
+       ord.flag_self,
+       ord.flag_first,
+       ord.dosage,
+       '' as sign,
+       newborn.name name_infant,
+       unit.name name_dosage_unit,
+       sup.name_print name_supply,
+       freq.name name_freq,
+       freq.eu_always as eu_always_freq,
+       exlist.pk_exocc,
+       exlist.date_plan date_plan_dis,
+       exlist.pk_pdde,
+       to_char(exlist.date_plan, 'HH24:MI:SS') date_plan,
+       case when prt.pk_exoccprt is null then '0' else '1' end as flag_print
+  from cn_order ord
+ inner join pv_encounter pv on pv.pk_pv = ord.pk_pv
+ inner join pi_master pi on pi.pk_pi = pv.pk_pi
+ inner join ex_order_occ exlist on exlist.pk_cnord = ord.pk_cnord
+  left join bd_unit unit on unit.pk_unit = ord.pk_unit_dos
+  left join bd_supply sup on sup.code = ord.code_supply
+ inner join bd_term_freq freq on freq.code = ord.code_freq
+ inner join bd_ou_org org on org.pk_org = ord.pk_org
+ inner join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+ inner join bd_ou_dept deptNs on deptNs.pk_dept = pv.pk_dept_ns
+  left join pv_infant newborn on pv.pk_pv = newborn.pk_pv and ord.infant_no = newborn.sort_no
+  left join ex_order_occ_prt prt on prt.pk_exocc = exlist.pk_exocc
+ where exlist.date_plan &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+   and exlist.date_plan &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+   and exlist.eu_status &lt; 9
+   <if test="euAlways != null  and  euAlways != ''">
+       and ord.eu_always = #{euAlways,jdbcType=CHAR} 
+   </if>
+   <if test=' "0"==flagPrint '>
+       and (prt.pk_exoccprt is null or prt.pk_exoccprt = '') 
+   </if>
+   <if test=' "1"==flagPrint '>
+       and (prt.pk_exoccprt is not null or prt.pk_exoccprt != '') 
+   </if>
+    <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		  and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	</if>
+   and pv.pk_pv in 
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            	#{pkpv}    
+         </foreach> 
+   and pv.flag_in = '1'
+   and sup.dt_excardtype = '3'
+   order by pv.bed_no,exlist.date_plan,ord.ordsn_parent,ord.ordsn
+</select>
+
+<!-- 输液执行单 -->
+<select id="querySYExlistList" parameterType="java.util.Map" resultType="DynaBean">
+select pv.pk_pv,
+       pv.bed_no,
+       pv.name_pi,
+       pi.code_ip,<!-- 住院号 -->
+       org.name_org,
+       dept.name_dept,
+       deptns.name_dept as name_dept_ns,<!-- 就诊病区 -->
+       defdoc.name as sex,<!-- 性别 -->
+       pv.weight,<!-- 体重 -->
+       ord.ordsn,
+       ord.ordsn_parent,
+       ord.name_ord,
+       ord.spec,
+       ord.note_ord,
+       case ord.eu_always when '0' then '长期' when '1' then '临时' else '' end  eu_always,
+       ord.flag_self,
+       ord.flag_first,
+       ord.dosage,
+       ord.drip_speed,
+       ord.note_ord,
+       '' as sign,
+       newborn.name name_infant,
+       unit.name name_dosage_unit,
+       sup.name_print name_supply,
+       freq.name name_freq,
+       freq.eu_always as eu_always_freq,
+       exlist.pk_exocc,
+       exlist.date_plan date_plan_dis,
+       exlist.pk_pdde,
+       to_char(exlist.date_plan, 'HH24:MI:SS') date_plan,
+       case when prt.pk_exoccprt is null then '0' else '1' end as flag_print
+  from cn_order ord
+ inner join pv_encounter pv on pv.pk_pv = ord.pk_pv
+ inner join pi_master pi on pi.pk_pi = pv.pk_pi 
+ inner join ex_order_occ exlist on exlist.pk_cnord = ord.pk_cnord
+  left join bd_defdoc defdoc on defdoc.code = pv.dt_sex and defdoc.code_defdoclist = '000000'
+  left join bd_unit unit on unit.pk_unit = ord.pk_unit_dos
+  left join bd_supply sup on sup.code = ord.code_supply
+ inner join bd_term_freq freq on freq.code = ord.code_freq
+ inner join bd_ou_org org on org.pk_org = ord.pk_org
+ inner join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+ inner join bd_ou_dept deptns on deptns.pk_dept = pv.pk_dept_ns 
+  left join pv_infant newborn on pv.pk_pv = newborn.pk_pv and ord.infant_no = newborn.sort_no
+  left join ex_order_occ_prt prt on prt.pk_exocc = exlist.pk_exocc
+ where exlist.date_plan &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+   and exlist.date_plan &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+   and exlist.eu_status &lt; 9
+   <if test="euAlways != null  and  euAlways != ''">
+       and ord.eu_always = #{euAlways,jdbcType=CHAR} 
+   </if>
+   <if test=' "0"==flagPrint '>
+       and (prt.pk_exoccprt is null or prt.pk_exoccprt = '') 
+   </if>
+   <if test=' "1"==flagPrint '>
+       and (prt.pk_exoccprt is not null or prt.pk_exoccprt != '') 
+   </if>
+   <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		  and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+    </if>
+   and pv.pk_pv in 
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            	#{pkpv}    
+         </foreach> 
+   and pv.flag_in = '1'
+   and sup.dt_excardtype = '4'
+   order by pv.bed_no,exlist.date_plan,ord.ordsn_parent,ord.ordsn
+</select>
+
+<!-- 饮食执行单 -->
+<select id="queryYSExlistList" parameterType="java.util.Map" resultType="DynaBean">
+select pv.pk_pv,
+       pv.bed_no,
+       pv.name_pi,
+       pi.code_ip,
+       org.name_org,
+       dept.name_dept,
+       deptNs.name_dept as name_dept_ns,
+       ord.ordsn,
+       ord.ordsn_parent,
+       ord.name_ord,
+       ord.spec,
+       ord.note_ord,
+       ord.dosage,
+       ord.flag_first,
+       '' as sign,
+       freq.name name_freq,
+       freq.eu_always as eu_always_freq,
+       newborn.name name_infant,
+       unit.name name_dosage_unit,
+       exlist.pk_exocc,
+       exlist.date_plan date_plan_dis,
+       exlist.pk_pdde,
+       to_char(exlist.date_plan, 'HH24:MI:SS') date_plan,
+       case when prt.pk_exoccprt is null then '0'  else '1' end as flag_print
+  from cn_order ord
+ inner join pv_encounter pv on pv.pk_pv = ord.pk_pv
+ inner join pi_master pi on pi.pk_pi = pv.pk_pi
+ inner join ex_order_occ exlist on exlist.pk_cnord = ord.pk_cnord
+ inner join bd_ou_org org on org.pk_org = ord.pk_org
+ inner join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+ inner join bd_ou_dept deptNs on deptNs.pk_dept = pv.pk_dept_ns
+ inner join bd_term_freq freq on freq.code = ord.code_freq
+  left join bd_unit unit on unit.pk_unit = ord.pk_unit_dos
+  left join pv_infant newborn on pv.pk_pv = newborn.pk_pv and ord.infant_no = newborn.sort_no
+  left join ex_order_occ_prt prt on prt.pk_exocc = exlist.pk_exocc
+ where exlist.date_plan &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+   and exlist.date_plan &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+   and exlist.eu_status &lt; 9
+   <if test="euAlways != null  and  euAlways != ''">
+       and ord.eu_always = #{euAlways,jdbcType=CHAR} 
+   </if>
+   <if test=' "0"==flagPrint '>
+       and (prt.pk_exoccprt is null or prt.pk_exoccprt = '') 
+   </if>
+   <if test=' "1"==flagPrint '>
+       and (prt.pk_exoccprt is not null or prt.pk_exoccprt != '') 
+   </if>
+    <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	</if>
+   and pv.pk_pv in 
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            	#{pkpv}    
+         </foreach> 
+   and pv.flag_in = '1' 
+   and exlist.pk_dept_occ = #{pkDeptNs,jdbcType=CHAR}
+   and ord.code_ordtype like '13%'
+   order by pv.bed_no,exlist.date_plan,ord.ordsn_parent,ord.ordsn
+</select>
+
+<!-- 治疗执行单 -->
+<select id="queryZLExlistList" parameterType="java.util.Map" resultType="DynaBean">
+select pv.bed_no,
+       pv.pk_pv,
+       pv.name_pi,
+       pi.code_ip,
+       org.name_org,
+       dept.name_dept,
+       deptNs.name_dept as name_dept_ns,
+       ord.ordsn_parent,
+       ord.ordsn,
+       ord.spec,
+       ord.note_ord,
+       ord.dosage,
+       ord.quan,
+       '' as sign,
+       ord.name_ord,
+       ord.flag_first,
+       freq.name name_freq,
+       freq.eu_always as eu_always_freq,
+       newborn.name name_infant,
+       unitdos.name name_dosage_unit,
+       unit.name name_unit,
+       exlist.pk_exocc,
+       exlist.date_plan date_plan_dis,
+       exlist.pk_pdde,
+       to_char(exlist.date_plan, 'HH24:MI:SS') date_plan,
+       case when prt.pk_exoccprt is null then '0' else '1' end as flag_print
+  from cn_order ord
+ inner join pv_encounter pv on pv.pk_pv = ord.pk_pv
+ inner join pi_master pi on pi.pk_pi = pv.pk_pi
+ inner join ex_order_occ exlist on exlist.pk_cnord = ord.pk_cnord
+ inner join bd_ou_org org on org.pk_org = ord.pk_org
+ inner join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+ inner join bd_ou_dept deptNs on deptNs.pk_dept = pv.pk_dept_ns
+  left join bd_unit unitdos on unitdos.pk_unit = ord.pk_unit_dos
+  left join bd_unit unit on unit.pk_unit = ord.pk_unit
+ inner join bd_term_freq freq on freq.code = ord.code_freq
+  left join pv_infant newborn on pv.pk_pv = newborn.pk_pv and ord.infant_no = newborn.sort_no
+  left join ex_order_occ_prt prt on prt.pk_exocc = exlist.pk_exocc
+ where exlist.date_plan &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+   and exlist.date_plan &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+   and exlist.eu_status &lt; 9
+   <if test="euAlways != null  and  euAlways != ''">
+       and ord.eu_always = #{euAlways,jdbcType=CHAR} 
+   </if>
+   <if test=' "0"==flagPrint '>
+       and (prt.pk_exoccprt is null or prt.pk_exoccprt = '') 
+   </if>
+   <if test=' "1"==flagPrint '>
+       and (prt.pk_exoccprt is not null or prt.pk_exoccprt != '') 
+   </if>
+   and pv.pk_pv in 
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            	#{pkpv}    
+         </foreach>  
+   and pv.flag_in = '1'
+   and exlist.pk_dept_occ = #{pkDeptNs,jdbcType=CHAR}
+   and ord.code_ordtype like '05%'
+   order by pv.bed_no,exlist.date_plan,ord.ordsn_parent,ord.ordsn
+</select>
+
+<!-- 其他医嘱执行单 -->
+<select id="queryQTExlistList" parameterType="java.util.Map" resultType="DynaBean">
+select pv.bed_no,
+       pv.pk_pv,
+       org.name_org,
+       dept.name_dept,
+       pv.name_pi,
+       ord.name_ord,
+       ord.flag_self,
+       ord.dosage,
+       ord.ordsn_parent,
+       ord.ordsn,
+       ord.spec,
+       '' as sign,
+       ord.note_ord,
+       newborn.name name_infant,
+       unit.name name_dosage_unit,
+       sup.name_print name_supply,
+       freq.name name_freq,
+       freq.eu_always as eu_always_freq,
+       exlist.pk_exocc,
+       exlist.date_plan date_plan_dis,
+       to_char(exlist.date_plan, 'HH24:MI:SS') date_plan,
+       case when prt.pk_exoccprt is null then '0' else '1' end as flag_print
+  from cn_order ord
+ inner join pv_encounter pv on pv.pk_pv = ord.pk_pv
+ inner join ex_order_occ exlist on exlist.pk_cnord = ord.pk_cnord
+  left join bd_unit unit on unit.pk_unit = ord.pk_unit_dos
+  left join bd_supply sup on sup.code = ord.code_supply
+ inner join bd_term_freq freq on freq.code = ord.code_freq
+ inner join bd_ou_org org on org.pk_org = ord.pk_org
+ inner join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+  left join pv_infant newborn on pv.pk_pv = newborn.pk_pv and ord.infant_no = newborn.sort_no
+  left join ex_order_occ_prt prt on prt.pk_exocc = exlist.pk_exocc
+ where exlist.date_plan &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+   and exlist.date_plan &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+   and exlist.eu_status &lt; 9
+   <if test="euAlways != null  and  euAlways != ''">
+       and ord.eu_always = #{euAlways,jdbcType=CHAR} 
+   </if>
+   <if test=' "0"==flagPrint '>
+       and (prt.pk_exoccprt is null or prt.pk_exoccprt = '') 
+   </if>
+   <if test=' "1"==flagPrint '>
+       and (prt.pk_exoccprt is not null or prt.pk_exoccprt != '') 
+   </if>
+   <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		  and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	</if>
+   and pv.pk_pv in 
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            	#{pkpv}    
+         </foreach>  
+   and pv.flag_in = '1'
+  <!--   and exlist.pk_dept_occ = #{pkDeptNs,jdbcType=CHAR} -->
+   and ((sup.dt_excardtype = '99') or (nvl(ord.code_supply,'~') ='~' and substr(ord.code_ordtype,1,2) not in ('06','13','05'))) 
+   order by pv.bed_no,exlist.date_plan,ord.ordsn_parent,ord.ordsn
+</select>
+
+<!-- 检验申请单 -->
+<select id="queryJYExlistList" parameterType="java.util.Map" resultType="DynaBean">
+select pi.code_pi,
+       pi.code_ip,
+       pi.name_pi,
+       pv.bed_no,
+       dept.name_dept, 
+       ward.name_dept ward, 
+       ord.date_start,
+       ord.code_apply,
+       ord.name_ord,
+       ord.name_emp_chk,
+       ord.spec,
+       '' as sign,
+       ord.note_ord,
+       samp.name samp,
+       ord.quan as quan,
+       occ.pk_exocc,
+       prt.pk_dept_ns_prt,
+       def.name as dt_sex,
+       exe.name_place,
+       ordlab.note as note
+  from ex_order_occ occ
+       inner join cn_order ord on occ.pk_cnord=ord.pk_cnord
+       inner join cn_lab_apply lab on ord.pk_cnord=lab.pk_cnord
+       inner join bd_defdoc samp on lab.dt_samptype=samp.code and samp.code_defdoclist='030200'
+       inner join bd_ou_dept dept on ord.pk_dept=dept.pk_dept
+       inner join bd_ou_dept ward on ord.pk_dept_ns=ward.pk_dept
+       inner join bd_ou_dept exe on ord.pk_dept_exec=exe.pk_dept
+       inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+       left outer join ex_order_occ_prt prt on occ.pk_exocc = prt.pk_exocc
+       left join bd_defdoc def on def.code_defdoclist='000000' and def.code=pv.dt_sex
+       left join bd_ord_lab ordlab on ordlab.pk_ord=ord.pk_ord
+ where ord.code_ordtype like '03%' and occ.eu_status='0' and occ.flag_canc='0' 
+    <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	</if>
+	<if test=' "0"==flagPrint '>
+        and (prt.pk_exoccprt is null or prt.pk_exoccprt = '') 
+    </if>
+    <if test=' "1"==flagPrint '>
+        and (prt.pk_exoccprt is not null or prt.pk_exoccprt != '') 
+    </if>
+        and occ.pk_pv in 
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            	#{pkpv}
+         </foreach>  
+      and ord.date_start &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')  
+      and ord.date_start &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+    order by pv.bed_no,occ.date_plan,ord.ordsn_parent,ord.ordsn
+</select>
+
+<!-- 检查申请单 -->
+<select id="queryJCExlistList" parameterType="java.util.Map" resultType="DynaBean">
+select pi.code_pi,
+       pi.code_ip,
+       pi.name_pi,
+       pv.bed_no,
+       dept.name_dept,
+       ward.name_dept ward, 
+       ex.name_dept ex,
+       ord.code_apply,
+       ord.name_ord,
+       ord.price_cg*ord.quan amount,
+       ord.note_ord,
+       occ.pk_exocc,
+       '' as sign,
+       prt.pk_dept_ns_prt,
+       def.name as dt_sex,
+       ex.name_place,
+       ris.desc_att as note,
+       app.date_exam
+  from ex_order_occ occ
+       inner join cn_order ord on occ.pk_cnord=ord.pk_cnord
+       inner join cn_ris_apply app on ord.pk_cnord=app.pk_cnord
+       inner join bd_ou_dept dept on ord.pk_dept=dept.pk_dept
+       inner join bd_ou_dept ward on ord.pk_dept_ns=ward.pk_dept
+       inner join bd_ou_dept ex on ord.pk_dept_exec=ex.pk_dept
+       inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+       left outer join ex_order_occ_prt prt on occ.pk_exocc = prt.pk_exocc
+       left join bd_defdoc def on def.code_defdoclist='000000' and def.code=pv.dt_sex
+       left join bd_ord_ris ris on ris.pk_ord=ord.pk_ord
+  where ord.code_ordtype like '02%' and occ.eu_status='0' and occ.flag_canc='0' 
+    <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	</if>
+	<if test=' "0"==flagPrint '>
+        and (prt.pk_exoccprt is null or prt.pk_exoccprt = '') 
+    </if>
+    <if test=' "1"==flagPrint '>
+        and (prt.pk_exoccprt is not null or prt.pk_exoccprt != '') 
+    </if>
+        and occ.pk_pv in
+       <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+          	#{pkpv}
+       </foreach>  
+        and ord.date_start &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+        and ord.date_start  &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+      order by pv.bed_no,occ.date_plan,ord.ordsn_parent,ord.ordsn
+</select>
+
+<!-- 皮试执行单 -->
+<select id="queryPSExlistList" parameterType="java.util.Map" resultType="DynaBean">
+select cn.name_ord,
+	dept.name_dept,
+	pv.bed_no,
+	ex.date_plan,
+	pv.name_pi,
+	cn.spec,
+	sp.name_print as namesupply,
+	cn.dosage,
+	'' as sign,
+	unit.name  as namedosageunit, 
+	freq.name as namefreq,
+	freq.eu_always as eu_always_freq   
+from cn_order cn 
+	inner join pv_encounter pv on pv.pk_pv=cn.pk_pv 
+	inner join ex_order_occ ex on cn.pk_cnord=ex.pk_cnord
+    inner join bd_ou_dept dept on dept.pk_dept=pv.pk_dept_ns
+	inner join bd_supply sp on sp.code=cn.code_supply
+	inner join bd_term_freq  freq on freq.code=cn.code_freq
+	inner join bd_unit unit on cn.pk_unit_dos=unit.pk_unit
+    where sp.code='0499' and pv.flag_in='1'
+    <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	</if>
+	        and ex.pk_pv in
+       <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+          	#{pkpv}
+       </foreach>  
+       	   and ex.eu_status &lt; '9' and
+       ex.flag_canc='0' and
+       cn.date_start &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') and
+       cn.date_start  &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+</select>
+
+<!-- 自定义注射执行单 -->
+<select id="queryZSZExlistList" parameterType="java.util.Map" resultType="DynaBean">
+select cn.name_ord,
+	dept.name_dept,
+	pv.bed_no,
+	ex.date_plan,
+	pv.name_pi,
+	cn.spec,
+	pi.code_ip,
+	cn.flag_first,
+	'' as sign,
+	sp.name_print as namesupply,
+	cn.dosage,
+	unit.name  as namedosageunit, 
+	freq.name as namefreq,
+	freq.eu_always as eu_always_freq  
+from cn_order cn 
+	inner join pv_encounter pv on pv.pk_pv=cn.pk_pv 
+	inner join ex_order_occ ex on cn.pk_cnord=ex.pk_cnord
+	inner join pi_master pi on pi.pk_pi=cn.pk_pi 
+    inner join bd_ou_dept dept on dept.pk_dept=pv.pk_dept_ns
+	inner join bd_supply sp on sp.code=cn.code_supply
+	inner join bd_term_freq  freq on freq.code=cn.code_freq
+	inner join bd_unit unit on cn.pk_unit_dos=unit.pk_unit
+	where  ex.eu_status  &lt; '9'  and pv.flag_in = '1'
+   and sp.code like '04%'
+       <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	</if>
+	        and ex.pk_pv in
+       <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+          	#{pkpv}
+       </foreach>  
+       and ex.flag_canc='0' and
+       cn.date_start &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') and
+       cn.date_start  &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+   order by pv.bed_no,ex.date_plan,cn.ordsn_parent,cn.ordsn
+</select>
+<!-- 临时药品执行单 -->
+<select id="queryLSYPExlistList" parameterType="java.util.Map" resultType="DynaBean">
+select ord.name_ord,
+	dept.name_dept,
+	pv.bed_no,
+	occ.date_plan,
+	pv.name_pi,
+	ord.spec,
+	sp.name_print as namesupply,
+	ord.dosage,
+	unit.name  as namedosageunit, 
+	ord.flag_self,
+	'' as sign,
+	occ.quan_occ as quan,
+	freq.name as namefreq,
+	freq.eu_always as eu_always_freq  
+from cn_order ord 
+	inner join pv_encounter pv on pv.pk_pv=ord.pk_pv 
+	inner join ex_order_occ occ on ord.pk_cnord=occ.pk_cnord
+    inner join bd_ou_dept dept on dept.pk_dept=pv.pk_dept_ns
+	inner join bd_supply sp on sp.code=ord.code_supply
+	inner join bd_term_freq  freq on freq.code=ord.code_freq
+	inner join bd_unit unit on ord.pk_unit_dos=unit.pk_unit
+	where  occ.eu_status  &lt; '9'  and pv.flag_in = '1' and ord.eu_always = '1'
+	and ord.flag_durg = '1'
+       <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	</if>
+	        and occ.pk_pv in
+       <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+          	#{pkpv}
+       </foreach>  
+ and  occ.flag_canc='0' and
+       ord.date_start &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') and
+       ord.date_start  &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+   order by pv.bed_no,occ.date_plan,ord.ordsn_parent,ord.ordsn
+</select>
+
+<!-- 雾化执行单 -->
+<select id="queryWHExlistList" parameterType="java.util.Map" resultType="DynaBean">
+select ord.name_ord,
+	dept.name_dept,
+	pv.bed_no,
+	occ.date_plan,
+	pv.name_pi,
+	ord.spec,
+	sp.name_print as namesupply,
+	ord.flag_first,
+	'' as sign,
+	SUM(ord.dosage ) as dosage,
+    unit.name  as namedosageunit,
+	freq.name as namefreq,
+	freq.eu_always as eu_always_freq  
+from cn_order ord 
+	inner join pv_encounter pv on pv.pk_pv=ord.pk_pv 
+	inner join ex_order_occ occ on ord.pk_cnord=occ.pk_cnord
+    inner join bd_ou_dept dept on dept.pk_dept=pv.pk_dept_ns
+	inner join bd_supply sp on sp.code=ord.code_supply
+	inner join bd_term_freq  freq on freq.code=ord.code_freq
+	inner join bd_unit unit on ord.pk_unit_dos=unit.pk_unit
+	where  occ.eu_status  &lt; '9'  and pv.flag_in = '1'
+	and sp.code = '0201'
+       <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	</if>
+	        and occ.pk_pv in
+       <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+          	#{pkpv}
+       </foreach>  
+ and  occ.flag_canc='0' and
+       ord.date_start &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') and
+       ord.date_start  &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+       group by ord.name_ord,
+	dept.name_dept,
+	pv.bed_no,
+	occ.date_plan,
+	pv.name_pi,
+	ord.spec,
+	sp.name_print,
+	ord.flag_first,
+	unit.name , freq.name
+	   order by pv.bed_no,occ.date_plan
+</select>
+
+<!-- 长期药品执行单 -->
+<select id="queryCQYPExlistList" parameterType="java.util.Map" resultType="DynaBean">
+select distinct substring(CONVERT(varchar(100),to_date(#{dateBegin},'YYYYMMDDHH24MISS'),20),1,10) as dateplandis,ord.name_ord,
+	dept.name_dept as name_dept_ns,
+	pv.bed_no,exdateplan=
+stuff((select ''+ substring(CONVERT(varchar(100),date_plan,0),13,7) from ex_order_occ occ
+where  ord.pk_cnord=occ.pk_cnord   and
+       date_plan &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') and
+       date_plan  &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')  for xml path('')),1,0,'') ,
+	pv.name_pi,
+	ord.spec,
+    sp.code as codesupply,
+	sp.name_print as namesupply,
+	ord.dosage,
+	'' as sign,
+	unit.name  as namedosageunit, 
+	ord.flag_self,
+	occ.quan_occ,
+	freq.name as namefreq,
+	freq.eu_always as eu_always_freq  
+from cn_order ord 
+	inner join pv_encounter pv on pv.pk_pv=ord.pk_pv 
+	inner join ex_order_occ occ on ord.pk_cnord=occ.pk_cnord
+    inner join bd_ou_dept dept on dept.pk_dept=pv.pk_dept_ns
+	inner join bd_supply sp on sp.code=ord.code_supply
+	inner join bd_term_freq  freq on freq.code=ord.code_freq
+	inner join bd_unit unit on ord.pk_unit_dos=unit.pk_unit
+	where  occ.eu_status  = '0'  and pv.flag_in = '1' and ord.eu_always = '0'
+	and ord.flag_durg = '1' and sp.code not like '04%' 
+              <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	</if>
+	        and occ.pk_pv in
+       <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+          	#{pkpv}
+       </foreach>  
+ and  occ.flag_canc='0' and
+       occ.date_plan &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') and
+       occ.date_plan  &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+       group by ord.name_ord,
+           occ.date_plan,
+	dept.name_dept,
+	pv.bed_no,pv.name_pi,
+	ord.spec,
+    sp.code ,
+	sp.name_print,
+	ord.dosage,
+	unit.name, 
+	ord.flag_self,
+	occ.quan_occ,
+    ord.pk_cnord,
+	freq.name  
+</select>
+
+<select id="queryHZExlistList" parameterType="java.util.Map" resultType="DynaBean">
+select ord.name_ord,
+	dept.name_dept,
+	pv.bed_no,
+	pv.name_pi,
+	ord.spec,
+	'' as sign,
+	sp.name_print as namesupply,
+	ord.flag_first,
+ sum(case ord.flag_durg when '1' then ord.dosage else ord.quan end ) as dosage,
+    unit.name  as namedosageunit,
+	freq.name as namefreq , 
+	freq.eu_always as eu_always_freq 
+from cn_order ord 
+	inner join pv_encounter pv on pv.pk_pv=ord.pk_pv 
+	inner join ex_order_occ occ on ord.pk_cnord=occ.pk_cnord
+    inner join bd_ou_dept dept on dept.pk_dept=pv.pk_dept_ns
+	inner join bd_supply sp on sp.code=ord.code_supply
+	inner join bd_term_freq  freq on freq.code=ord.code_freq
+	inner join bd_unit unit on ord.pk_unit_dos=unit.pk_unit
+	where  occ.eu_status ='1' and pv.flag_in = '1'
+	 and  occ.flag_canc='0'
+            <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	</if>
+	        and occ.pk_pv in
+       <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+          	#{pkpv}
+       </foreach>  
+       and
+       occ.date_plan &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') and
+       occ.date_plan  &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+       group by ord.name_ord,
+	dept.name_dept,
+	pv.bed_no,
+	pv.name_pi,
+	ord.spec,
+	sp.name_print,
+	ord.flag_first,
+	unit.name , freq.name
+</select>
+
+	<update id="updateOrdList" parameterType="com.zebone.nhis.ex.nis.ns.vo.OrdListVo">
+		update ex_order_occ set pk_pdde=#{pkPdDe} where pk_exocc=#{pkExocc}
+	</update>
+
+    <select id="queryPrintTemplate" parameterType="java.util.Map" resultType="DynaBean">
+        SELECT
+            btp.*
+        FROM
+            BD_TEMP_PRT btp
+            INNER JOIN BD_TEMP_PRT_DEPT btpd ON btp.PK_TEMPPRT = btpd.PK_TEMPPRT and btpd.DEL_FLAG = '0'
+        where btp.DEL_FLAG = '0'
+        and btpd.dt_ordextype = #{ordexType,jdbcType=CHAR}
+        and btpd.pk_dept= #{pkDept,jdbcType=CHAR}
+    </select>
+</mapper>

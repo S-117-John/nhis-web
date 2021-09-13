@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.compay.ins.zsyb.dao.InsZsybSegmentMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybSegment">
+        <id column="PK_INSSEGMENT" jdbcType="CHAR" property="pkInssegment"/>
+        <result column="PK_ORG" jdbcType="CHAR" property="pkOrg"/>
+        <result column="PK_HP" jdbcType="CHAR" property="pkHp"/>
+        <result column="EU_PVTYPE" jdbcType="VARCHAR" property="euPvtype"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="NOTE" jdbcType="VARCHAR" property="note"/>
+        <result column="FLAG_SHOW" jdbcType="CHAR" property="flagShow"/>
+        <result column="CREATOR" jdbcType="CHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="MODIFIER" jdbcType="CHAR" property="modifier"/>
+        <result column="MODITY_TIME" jdbcType="TIMESTAMP" property="modityTime"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+    </resultMap>
+    <select id="getInsSegmentById" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+             ins_segment
+        WHERE            
+            PK_INSSEGMENT = #{pkInssegment,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllInsSegment" resultMap="BaseResultMap">
+          SELECT * FROM ins_segment 
+    </select>
+    
+    <delete id="deleteInsSegment">
+        DELETE
+        FROM
+             ins_segment
+        WHERE            
+            PK_INSSEGMENT = #{pkInssegment,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveInsSegment" parameterType="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybSegment" >
+        INSERT INTO ins_segment
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkInssegment != null" >
+                PK_INSSEGMENT,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="pkHp != null" >
+                PK_HP,
+            </if>
+            <if test="euPvtype != null" >
+                EU_PVTYPE,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="note != null" >
+                NOTE,
+            </if>
+            <if test="flagShow != null" >
+                FLAG_SHOW,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="modifier != null" >
+                MODIFIER,
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkInssegment != null" >
+                #{pkInssegment,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=CHAR},
+            </if> 
+            <if test="pkHp != null" >
+                #{pkHp,jdbcType=CHAR},
+            </if> 
+            <if test="euPvtype != null" >
+                #{euPvtype,jdbcType=VARCHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="note != null" >
+                #{note,jdbcType=VARCHAR},
+            </if> 
+            <if test="flagShow != null" >
+                #{flagShow,jdbcType=CHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=CHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="modifier != null" >
+                #{modifier,jdbcType=CHAR},
+            </if> 
+            <if test="modityTime != null" >
+                #{modityTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=TIMESTAMP},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateInsSegment" parameterType="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybSegment" >
+        UPDATE ins_segment
+        <set>
+            <if test="pkInssegment != null" >
+                PK_INSSEGMENT = #{pkInssegment,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=CHAR},
+            </if>
+            <if test="pkHp != null" >
+                PK_HP = #{pkHp,jdbcType=CHAR},
+            </if>
+            <if test="euPvtype != null" >
+                EU_PVTYPE = #{euPvtype,jdbcType=VARCHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="note != null" >
+                NOTE = #{note,jdbcType=VARCHAR},
+            </if>
+            <if test="flagShow != null" >
+                FLAG_SHOW = #{flagShow,jdbcType=CHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=CHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="modifier != null" >
+                MODIFIER = #{modifier,jdbcType=CHAR},
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME = #{modityTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        WHERE 
+            PK_INSSEGMENT = #{pkInssegment,jdbcType=CHAR}
+    </update>
+</mapper>

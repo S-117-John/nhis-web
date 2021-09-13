@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsrm.cn.dao.CnOpDiagMapper" >
+    <select id = "qryDaigByPk"  parameterType="java.util.Map" resultType="DynaBean" >
+		 select * from
+		(
+			select
+				b.pk_cndiag as PK_DIAG,
+				icd.diagcode as code,
+				b.name_cd as name,
+				als.spcode as py_code,
+				als.d_code
+			from bd_cndiag b
+			inner join bd_cndiag_comp comp on b.pk_cndiag=comp.pk_cndiag_comp
+			inner join bd_cndiag_as als on b.pk_cndiag=als.pk_cndiag
+			left outer join bd_term_diag icd on b.pk_diag=icd.pk_diag
+			where  1=1  and b.del_flag='0'
+			AND b.pk_cndiag = #{pkDiag,jdbcType=VARCHAR}
+			UNION  all
+			select
+				b.pk_cndiag as PK_DIAG,
+				icd.diagcode as code,
+				b.name_cd as name,
+				als.spcode as py_code,
+				als.d_code
+			from bd_cndiag b
+		       inner join bd_cndiag_as als on b.pk_cndiag=als.pk_cndiag
+		       left outer join bd_term_diag icd on b.pk_diag=icd.pk_diag
+			where  1=1 and b.del_flag='0'
+			AND b.pk_cndiag = #{pkDiag,jdbcType=VARCHAR}
+		) tmp
+		order by length(name)
+    </select>
+    <select id = "qryDaigAtt"  parameterType="java.util.Map" resultType="DynaBean" >
+        select diag.*
+        from bd_term_diag diag
+        inner join bd_dictattr att on diag.pk_diag = att.pk_dict
+        inner join bd_dictattr_temp tmp on att.pk_dictattrtemp = tmp.pk_dictattrtemp
+        where tmp.code_attr='0403' and att.val_attr='1'
+        and diag.diagcode=#{codeIcd,jdbcType=VARCHAR}
+    </select>
+</mapper>

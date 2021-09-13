@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.common.dao.CnNoticeMapper">
+    <select id="queryCnNoticeCnt" resultType="DynaBean" parameterType="java.util.Map">
+	    select '1' as notice_type, '急' as name_notice, sum(cnt_emer) as cnt_notice,'050201' as code_oper from cn_notice 
+	    where  pk_dept_recp=#{pkDept,jdbcType=VARCHAR}  and   eu_status&lt;='1'
+		 union all 
+		select '2' as notice_type, '新' as name_notice, count(*)  as cnt_notice,'050201' as code_oper from cn_notice
+		where  pk_dept_recp=#{pkDept,jdbcType=VARCHAR}  and  eu_status&lt;='1' and eu_type = '1' and  cnt_emer is null
+		 union all
+		select '3' as notice_type, '停' as name_notice, count(*)  as cnt_notice,'050201' as code_oper from cn_notice
+		where  pk_dept_recp=#{pkDept,jdbcType=VARCHAR}  and  eu_status&lt;='1' and eu_type = '2'
+        union all
+        select '4' as notice_type, '废' as name_notice, count(*)  as cnt_notice,'050201' as code_oper from cn_notice
+        where pk_dept_recp=#{pkDept,jdbcType=VARCHAR}  and  eu_status&lt;='1' and eu_type = '3'
+       union all
+        select '5' as notice_type, '撤' as name_notice, count(*)  as cnt_notice,'050201' as code_oper from cn_notice
+        where pk_dept_recp=#{pkDept,jdbcType=VARCHAR}  and  eu_status&lt;='1' and eu_type = '4'
+    </select>
+    <update id="updateCnNotice" parameterType="com.zebone.nhis.ex.nis.ns.vo.OrderCheckVo">
+        update cn_notice
+        set eu_status=#{euStatus,jdbcType=VARCHAR}
+        <if test="dateChk != null and  dateChk != '' ">
+            ,date_chk=to_date(${dateChk},'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateChk == null">
+            ,date_recp=to_date(${curDate},'YYYYMMDDHH24MISS')
+            ,emp_recp=#{nameEmp,jdbcType=VARCHAR}
+        </if>
+        where del_flag='0'
+        <if test='flagRead == "1" '>
+            and eu_status='0'
+        </if>
+        <if test='flagRead == "0" '>
+            and eu_status&lt;='1'
+        </if>
+        <if test="pkDept!= null and  pkDept!= '' ">
+            and pk_dept_recp=#{pkDept,jdbcType=VARCHAR}
+        </if>
+        <if test="pkCnorder!= null and  pkCnorder!=''">
+            and pk_cnorder=#{pkCnorder,jdbcType=VARCHAR}
+        </if>
+    </update>
+    <select id="queryCnNotice" resultType="com.zebone.nhis.common.module.cn.ipdw.CnNotice"
+            parameterType="java.util.Map">
+	    select * from cn_notice 
+	    where  eu_status&lt;='1' and pk_dept_recp=#{pkDept,jdbcType=VARCHAR}   
+    </select>
+
+    <select id="queryHintCnNotice" resultType="com.zebone.nhis.common.module.cn.ipdw.CnNotice"
+            parameterType="java.util.Map">
+        select EU_STATUS,PK_DEPT_RECP,PK_CNNOTICE,CNT_EMER,CNT_END,CNT_NEW,CNT_VOID from cn_notice
+        <where>
+            <choose>
+                <when test="pkDept != null and pkDept!=''">
+                    and pk_dept_recp=#{pkDept,jdbcType=VARCHAR}
+                </when>
+                <otherwise>
+                    and pk_dept_recp is not null
+                </otherwise>
+            </choose>
+            <if test="dateBegin != null and dateBegin !=''">
+                and DATE_CHK &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'YYYYMMDDHH24MISS')
+            </if>
+            <if test="dateEnd != null and dateEnd !=''">
+                and DATE_CHK &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'YYYYMMDDHH24MISS')
+            </if>
+        </where>
+
+        and eu_status &lt;= '1'
+        and pk_org = #{pkOrg,jdbcType=VARCHAR}
+    </select>
+    <select id="noticeDetail" resultType="DynaBean">
+        select o.NAME_ORD,n.EMP_SEND,n.CREATE_TIME,e.BED_NO,m.NAME_PI
+        from CN_NOTICE n,CN_ORDER o,PV_ENCOUNTER e,PI_MASTER m
+        where n.PK_DEPT_RECP = #{pkDept,jdbcType=CHAR}
+        and n.eu_type = '4'
+        and n.pk_cnorder = o.PK_CNORD
+        and o.PK_PV = e.PK_PV
+        and o.PK_PI = m.PK_PI
+    </select>
+
+
+</mapper>

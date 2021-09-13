@@ -1,0 +1,551 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.compay.ins.qgyb.dao.InsQgybPvMapper">
+	
+	 <!-- 获取住院收费明细-项目  数量为正-->
+    <select id="getChargeDetails" parameterType="java.util.Map" resultType="java.util.Map">
+    	select 
+    		a.feedetl_sn,
+      		'' as init_feedetl_sn,
+			b.mdtrt_id,
+			c.ordsn,
+			b.PSN_NO,
+			b.med_type,
+			case when a.date_hap &lt; b.begntime then b.begntime when a.date_hap > b.endtime then b.endtime else a.date_hap end as date_hap,
+			h.NATION_CODE as med_list_codg,
+			f.code,
+			f.name as yymlName,
+			cast(round(a.price,3)   as   numeric(10,3)) as price,
+			<!-- cast((a.amount) / (a.quan) as decimal(18, 3)) price,  -->
+			a.quan, 
+			cast(round(a.price,3)   as   numeric(10,3)) * a.quan as amount,
+			a.amount as amountBd,
+			d.code_dept,
+			d.name_dept,
+			d.code_dept_nation_ins,
+			e.code_emp as code_doc_emp, 
+			e.name_emp as name_doc_emp,
+			a.ratio_disc,
+			c.flag_fit, 
+			i.code_ip
+			
+			from bl_ip_dt a left join INS_PV_QG b on a.pk_pv = b.pk_pv
+			left join cn_order c on a.pk_cnord = c.pk_cnord
+			left join BD_OU_DEPT d on a.pk_dept_app = d.pk_dept
+			LEFT JOIN bd_ou_employee e ON a.pk_emp_app = e.pk_emp
+			inner join bd_item f ON a.pk_item = f.pk_item
+			left join INS_ITEM_MAP g on g.pk_item = f.pk_item and g.del_flag = '0'
+			left join INS_ITEM h on g.PK_INSITEM = h.PK_INSITEM
+			left join PI_MASTER i on a.pk_pi = i.pk_pi
+			where a.pk_pv = #{pkPv,jdbcType=VARCHAR}
+			and a.flag_settle = 0
+			and b.status != '9' and b.del_flag = '0'
+			and a.date_hap&lt;=to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+			and a.quan>0
+	</select>
+	
+	<!-- 获取住院收费明细-项目  数量为负-->
+    <select id="getChargeDetailsRefund" parameterType="java.util.Map" resultType="java.util.Map">
+    	select 
+    		a.feedetl_sn,
+      		t9.feedetl_sn as init_feedetl_sn,
+			b.mdtrt_id,
+			c.ordsn,
+			b.PSN_NO,
+			b.med_type,
+			case when a.date_hap &lt; b.begntime then b.begntime when a.date_hap > b.endtime then b.endtime else a.date_hap end as date_hap,
+			h.NATION_CODE as med_list_codg,
+			f.code,
+			f.name as yymlName,
+			cast(round(a.price,3)   as   numeric(10,3)) as price,
+			<!-- cast((a.amount) / (a.quan) as decimal(18, 3)) price,  -->
+			a.quan, 
+		    cast(round(a.price,3)   as   numeric(10,3)) * a.quan as amount,
+		    a.amount as amountBd,
+			d.code_dept,
+			d.name_dept,
+			d.code_dept_nation_ins,
+			e.code_emp as code_doc_emp, 
+			e.name_emp as name_doc_emp,
+			a.ratio_disc,
+			c.flag_fit, 
+			i.code_ip 
+			from bl_ip_dt a left join INS_PV_QG b on a.pk_pv = b.pk_pv
+			left join cn_order c on a.pk_cnord = c.pk_cnord
+			left join BD_OU_DEPT d on a.pk_dept_app = d.pk_dept
+			LEFT JOIN bd_ou_employee e ON a.pk_emp_app = e.pk_emp
+			inner join bd_item f ON a.pk_item = f.pk_item
+			left join INS_ITEM_MAP g on g.pk_item = f.pk_item and g.del_flag = '0'
+			left join INS_ITEM h on g.PK_INSITEM = h.PK_INSITEM
+			left join PI_MASTER i on a.pk_pi = i.pk_pi
+			left outer join  
+				(select pk_cgip, feedetl_sn from bl_ip_dt where flag_settle = 0 and flag_pd = 0 and  quan > 0  
+				and pk_pv = #{pkPv,jdbcType=VARCHAR} ) 
+				t9 on a.pk_cgip_back =t9.pk_cgip
+			where a.pk_pv = #{pkPv,jdbcType=VARCHAR}
+			and a.flag_settle = 0
+			and b.status != '9' and b.del_flag = '0'
+			and a.date_hap&lt;=to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+			and a.quan&lt;0
+	</select>
+	
+	<!-- 获取住院收费明细-药品  数量为正-->
+    <select id="getChargeDetailsToYp" parameterType="java.util.Map" resultType="java.util.Map">
+    	select 
+    		a.feedetl_sn,
+      		'' as init_feedetl_sn,
+			b.mdtrt_id,
+			c.ordsn,
+			b.PSN_NO,
+			b.med_type,
+			case when a.date_hap &lt; b.begntime then b.begntime when a.date_hap > b.endtime then b.endtime else a.date_hap end as date_hap,
+			h.NATION_CODE as med_list_codg,
+			f.code,
+			f.name as yymlName,
+			cast(round( 
+				case a.pack_size when 1 then a.price else a.price/a.pack_size END
+				,3) as   numeric(10,3)) as price,
+			
+				case a.pack_size when 1 then a.quan else a.quan*a.pack_size END
+				as quan,
+		  cast(round( 
+				case a.pack_size when 1 then a.price else a.price/a.pack_size END
+				 ,3) as   numeric(10,3)) 
+				* 
+				
+				case a.pack_size when 1 then a.quan else a.quan*a.pack_size END
+				as amount,
+		    a.amount as amountBd,
+			d.code_dept,
+			d.name_dept,
+			d.code_dept_nation_ins,
+			e.code_emp as code_doc_emp, 
+			e.name_emp as name_doc_emp,
+			a.ratio_disc,
+			c.flag_fit, 
+			i.code_ip 
+			from bl_ip_dt a left join INS_PV_QG b on a.pk_pv = b.pk_pv
+			left join cn_order c on a.pk_cnord = c.pk_cnord
+			left join BD_OU_DEPT d on a.pk_dept_app = d.pk_dept
+			LEFT JOIN bd_ou_employee e ON a.pk_emp_app = e.pk_emp
+			inner join bd_pd f ON a.pk_item = f.pk_pd
+			left join INS_ITEM_MAP g on g.CODE = f.code and g.del_flag = '0'
+			left join INS_ITEM h on g.PK_INSITEM = h.PK_INSITEM
+			left join PI_MASTER i on a.pk_pi = i.pk_pi
+			where a.pk_pv = #{pkPv,jdbcType=VARCHAR}
+			and a.flag_settle = 0
+			and b.status != '9' and b.del_flag = '0'
+			and a.date_hap&lt;=to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+			and a.quan>0
+	</select>
+	<!-- 获取住院收费明细-药品  数量为负-->
+    <select id="getChargeDetailsToYpRefund" parameterType="java.util.Map" resultType="java.util.Map">
+    	select 
+    		a.feedetl_sn,
+      		t9.feedetl_sn as init_feedetl_sn,
+			b.mdtrt_id,
+			c.ordsn,
+			b.PSN_NO,
+			b.med_type,
+			case when a.date_hap &lt; b.begntime then b.begntime when a.date_hap > b.endtime then b.endtime else a.date_hap end as date_hap,
+			h.NATION_CODE as med_list_codg,
+			f.code,
+			f.name as yymlName,
+			cast(round( 
+				case a.pack_size when 1 then a.price else a.price/a.pack_size END
+				,3) as   numeric(10,3)) as price,
+			
+				case a.pack_size when 1 then a.quan else a.quan*a.pack_size END
+				as quan,
+		  cast(round( 
+				case a.pack_size when 1 then a.price else a.price/a.pack_size END
+				,3) as   numeric(10,3)) 
+				* 
+				
+				case a.pack_size when 1 then a.quan else a.quan*a.pack_size END
+				as amount,
+		    a.amount as amountBd,
+			d.code_dept,
+			d.name_dept,
+			d.code_dept_nation_ins,
+			e.code_emp as code_doc_emp, 
+			e.name_emp as name_doc_emp,
+			a.ratio_disc,
+			c.flag_fit, 
+			i.code_ip 
+			from bl_ip_dt a left join INS_PV_QG b on a.pk_pv = b.pk_pv
+			left join cn_order c on a.pk_cnord = c.pk_cnord
+			left join BD_OU_DEPT d on a.pk_dept_app = d.pk_dept
+			LEFT JOIN bd_ou_employee e ON a.pk_emp_app = e.pk_emp
+			inner join bd_pd f ON a.pk_item = f.pk_pd
+			left join INS_ITEM_MAP g on g.CODE = f.code and g.del_flag = '0'
+			left join INS_ITEM h on g.PK_INSITEM = h.PK_INSITEM
+			left join PI_MASTER i on a.pk_pi = i.pk_pi
+			left outer join  
+				(select pk_cgip, feedetl_sn from bl_ip_dt where flag_settle = 0 
+				and flag_pd = 1
+				and  quan > 0  
+				and pk_pv = #{pkPv,jdbcType=VARCHAR}) 
+				t9 on a.pk_cgip_back =t9.pk_cgip
+			where a.pk_pv = #{pkPv,jdbcType=VARCHAR}
+			and a.flag_settle = 0
+			and b.status != '9' and b.del_flag = '0'
+			and a.date_hap&lt;=to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+			and a.quan&lt;0
+	</select>
+    <!-- 获取日间诊断信息  -->
+        <select id="getRjzd" parameterType="java.util.Map" resultType="java.util.Map">
+        	SELECT top 1
+        		a.icd10 as diagcode,
+        		a.jbmc as diagname
+        	FROM 
+        	INS_OPT_DAY_ICD_QG a
+        	WHERE
+        	a.icd10 = #{rjCode,jdbcType=VARCHAR} 
+	</select>
+	
+	<!-- 获取医保结算清单上传的Setlinfo的数据 -->
+	<select id="get4101Setlinfo" parameterType="java.util.Map" resultType="java.util.Map">
+		select a.mdtrt_id, b.setl_id, '中山市博爱医院' as fixmedins_name, 'H44200100009' as fixmedins_code, '三级' as hi_setl_lv, a.psn_no as hi_no, c.code_ip as medcasno, 
+		CONVERT(varchar,GETDATE(),120) as dcla_time, b.psn_name, b.gend, b.brdy, b.age, 
+		h.country_code as ntly, DATEDIFF(DAY, h.birth_date, d.date_begin) as nwb_age, 
+		h.nation_code as naty, b.psn_cert_type as patn_cert_type, b.certno as certno, 
+		h.occup_code as prfs,
+		h.curr_addr as curr_addr, h.work_unit as emp_name, h.work_unit as emp_addr, h.work_unit_phone as emp_tel, h.work_unit_zip_code as poscode, 
+		h.contact_name as coner_name, h.contact_relat_code as patn_rlts,
+		h.contact_addr as coner_addr, h.contact_phone as coner_tel, a.insutype as hi_type, a.insuplc_admdvs as insuplc,
+		'' as sp_psn_type,<!-- 特殊人员类型,  -->
+		'' as nwb_adm_type,<!--  新生儿入院类型,  -->
+		h.newborn_weight as nwb_bir_wt,<!--  新生儿出生体重,  -->
+		h.newborn_in_weight as nwb_adm_wt,<!--  新生儿入院体重, -->
+		'' as opsp_diag_caty,<!-- 门诊慢特病诊断科别, -->
+		'' as opsp_mdtrt_date,<!--  门诊慢特病就诊日期, -->
+		case a.med_type when '2101' then '2' else '1' end as ipt_med_type,
+		h.admit_path_code as adm_way,
+		'' as trt_type, <!-- 治疗类别, -->
+		a.begntime as adm_time, f.CODE_DEPT_NATION_INS as adm_caty,
+		h.trans_dept_names as refldept_dept, <!-- 转科科别 数据库存的是名字，得单独查 -->
+		a.endtime as dscg_time, g.CODE_DEPT_NATION_INS as dscg_caty,
+		case DATEDIFF(day, a.begntime, a.endtime) when '0' then '1' else DATEDIFF(day, a.begntime, a.endtime) end as act_ipt_days,
+		case n.dt_system when '02' then '' else h.diag_name_clinic end as otp_wm_dise,
+		case n.dt_system when '02' then '' else h.diag_code_clinic end as wm_dise_code,
+		case n.dt_system when '02' then h.diag_name_clinic else '' end as otp_tcm_dise,
+		case n.dt_system when '02' then h.diag_code_clinic else '' end as tcm_dise_code,
+		'' as diag_code_cnt, <!-- 诊断代码计数  需要单独查 -->
+		'' as oprn_oprt_code_cnt, <!-- 手术操作代码计数 -->
+		'' as vent_used_dura, <!-- 呼吸机使用时长  博爱没存这个字段 -->
+		h.coma_day_bef,coma_hour_bef,h.coma_min_bef,
+		h.coma_day_after,h.coma_hour_after,h.coma_min_after,
+		h.leave_hos_code as dscg_way,
+		h.receive_org_code as acp_optins_code,
+		h.receive_org_name as acp_medins_name,
+		l.CODE_INV as bill_code, l.CODE_INV as bill_no, 'IP'+j.code_st as biz_sn, 
+		case when m.ybysdm is null or m.ybysdm = '' then o.code_emp else m.ybysdm end chfpdr_code,
+ 		h.consult_name AS chfpdr_name,
+		CONVERT(varchar,b.setl_time,120) as setl_begn_date,
+		CONVERT(varchar,b.setl_time,120) as setl_end_date,
+		b.medfee_sumamt - b.fund_pay_sumamt - b.fulamt_ownpay_amt - b.overlmt_selfpay - b.preselfpay_amt - b.hosp_part_amt as psn_selfpay,
+		b.fulamt_ownpay_amt + b.overlmt_selfpay + preselfpay_amt as psn_ownpay,
+		0.00 as acct_pay, b.psn_part_amt as psn_cashpay, 
+		'3' as hi_paymtd,
+		'中山医保局' as hsorg,
+		'医保局经办人' as hsorg_opter
+		from ins_pv_qg a inner join ins_st_qg b on a.pk_inspvqg = b.pk_inspvqg
+		inner join PI_MASTER c on a.pk_pi = c.pk_pi 
+		inner join PV_ENCOUNTER d on  b.pk_pv = d.pk_pv
+		inner join pv_ip e on a.pk_pv = e.pk_pv
+		inner join BD_OU_DEPT f on e.pk_dept_admit = f.pk_dept
+		inner join BD_OU_DEPT g on e.pk_dept_dis = g.pk_dept
+		inner join emr_home_page h on a.pk_pv = h.pk_pv and h.del_flag = '0'
+		left join bd_cndiag i on h.pk_diag_clinic = i.pk_cndiag
+		inner join BL_SETTLE j on b.pk_settle = j.pk_settle
+		inner join BL_ST_INV k on j.PK_SETTLE = k.PK_SETTLE
+		inner join BL_INVOICE l on k.PK_INVOICE = l.PK_INVOICE and l.flag_cancel = '0'
+		LEFT JOIN lsb_ybys m on m.pk_emp =  h.pk_emp_consult
+		LEFT JOIN bd_term_diag n ON h.pk_diag_clinic = n.pk_diag
+		LEFt join bd_ou_employee o on o.pk_emp =  h.pk_emp_consult
+		where b.pk_insstqg = #{pkInsstqg,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 获取医保结算清单上传的payinfo的数据 -->
+	<select id="get4101Payinfo" parameterType="java.util.Map" resultType="java.util.Map">
+		select b.fund_pay_type, b.fund_payamt from ins_st_qg a inner join ins_st_setldetail_qg b on a.pk_insstqg = b.pk_insstqg
+		where a.pk_insstqg = #{pkInsstqg,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 获取医保结算清单上传的diseinfo的数据 -->
+	<select id="get4101Diseinfo" parameterType="java.util.Map" resultType="java.util.Map">
+		select diag_code_icd as diag_code, diag_name_icd as diag_name, admit_cond_code as adm_cond_type, flag_primary  as maindiag_flag
+		from EMR_HOME_PAGE_DIAGS_ICD 
+		where pk_pv = #{pkPv,jdbcType=VARCHAR}  
+		and DIAG_CODE_icd is not null 
+		and DIAG_CODE_icd !=''
+		and DEL_FLAG = '0'
+		order by seq_no asc, flag_primary desc  
+	</select>
+	
+		<!-- 获取医保结算清单上传的iteminfo的数据,数据来源2301接口 -->
+	<select id="get4101Iteminfo2301" parameterType="java.util.Map" resultType="java.util.Map">
+		select c.med_chrgitm_type, 
+		sum(c.det_item_fee_sumamt) as det_item_fee_sumamt,
+		sum(case when chrgitm_lv='1' or chrgitm_lv='01' then c.det_item_fee_sumamt else 0 end) as det_item_fee_sumamt1,
+		sum(case when chrgitm_lv='2' or chrgitm_lv='02' then c.det_item_fee_sumamt else 0 end) as det_item_fee_sumamt2,
+		sum(case when chrgitm_lv='3' or chrgitm_lv='03' then c.det_item_fee_sumamt else 0 end) as det_item_fee_sumamt3
+		from ins_st_qg a inner join ins_pv_qg b on a.pk_inspvqg = b.pk_inspvqg
+		inner join INS_FEEDETAIL2301_QG c on b.pk_inspvqg = c.pk_inspvqg and c.DEL_FLAG = '0'
+		where a.pk_insstqg = #{pkInsstqg,jdbcType=VARCHAR}
+		group by c.med_chrgitm_type;
+	</select>
+	
+			<!-- 获取医保结算清单上传的iteminfo的数据 ，数据来源5204接口-->
+	<select id="get4101Iteminfo5204" parameterType="java.util.Map" resultType="java.util.Map">
+		select c.med_chrgitm_type, r.name, 
+		sum(c.det_item_fee_sumamt) as det_item_fee_sumamt,
+		sum(case when chrgitm_lv='1' or chrgitm_lv='01' then c.det_item_fee_sumamt else 0 end) as det_item_fee_sumamt1,
+		sum(case when chrgitm_lv='2' or chrgitm_lv='02' then c.det_item_fee_sumamt else 0 end) as det_item_fee_sumamt2,
+		sum(case when chrgitm_lv='3' or chrgitm_lv='03' then c.det_item_fee_sumamt else 0 end) as det_item_fee_sumamt3
+		from ins_st_qg a inner join ins_pv_qg b on a.pk_inspvqg = b.pk_inspvqg
+		inner join INS_FEEDETAIL_QG c on b.pk_inspvqg = c.pk_inspvqg and c.DEL_FLAG = '0'
+		left join (select p.* from ins_dict p
+		inner join ins_dicttype q on p.pk_insdicttype = q.pk_insdicttype and q.pk_hp = '26696e2409604b3c87b6cfc17acf0e8c' and q.name_type = '医疗收费项目类别') as  r on c.med_chrgitm_type = r.code
+		where a.pk_insstqg = #{pkInsstqg,jdbcType=VARCHAR}
+		group by c.med_chrgitm_type, r.name
+		
+	</select>
+	
+				<!-- 获取医保结算清单上传的oprninfo的数据 -->
+	<select id="get4101Oprninfo" parameterType="java.util.Map" resultType="java.util.Map">
+		select 	
+			a.op_name_icd AS oprn_oprt_name,
+			a.op_code_icd AS oprn_oprt_code,
+			CONVERT (VARCHAR(100), a.op_date, 23) AS oprn_oprt_date,
+			a.anes_type_code AS anst_way,
+			case when d.ybysdm is null then c.CODE_EMP when d.ybysdm = '' then c.CODE_EMP else d.ybysdm end AS oper_dr_code,
+			a.op_doc_name AS oper_dr_name,
+			f.ybysdm AS anst_dr_code,
+			a.anes_doc_name AS anst_dr_name,
+			b.labor_op_upload,
+			a.seq_no,
+			a.seq_no_sub,
+			a.anes_type_name
+		from EMR_HOME_PAGE_OPS_ICD a inner join EMR_HOME_PAGE b on a.pk_page = b.pk_page and b.del_flag = '0'
+		left join BD_OU_EMPLOYEE c on a.op_doc_name = c.name_emp
+		left join lsb_ybys d on c.pk_emp = d.pk_emp
+		left join BD_OU_EMPLOYEE e on a.anes_doc_name = e.name_emp
+		left join lsb_ybys f on e.pk_emp = f.pk_emp
+		where a.pk_pv = #{pkPv,jdbcType=VARCHAR}
+		and a.op_name_icd is not null
+		and a.op_doc_name is not null
+		and a.DEL_FLAG = '0'
+		and c.CODE_EMP is not null 
+		and a.op_code_icd != ''
+		order by a.seq_no, seq_no_sub
+	</select>
+	
+	<select id="getEmrHomePage" parameterType="java.util.Map" resultType="java.util.Map">
+		select * from EMR_HOME_PAGE where del_flag = '0' and pk_pv = #{pkPv,jdbcType=VARCHAR}
+	</select>
+	
+		<!-- 获取医保结算清单上传的西医诊断信息，用于打印 -->
+	<select id="get4101DiseinfoXy" parameterType="java.util.Map" resultType="java.util.Map">
+		select diag_code, diag_name, admit_cond_code as adm_cond_type, flag_primary  as maindiag_flag
+		from EMR_HOME_PAGE_DIAGS_ICD 
+		where pk_pv = #{pkPv,jdbcType=VARCHAR}  and DIAG_CODE is not null order by seq_no asc, flag_primary desc  
+	</select>
+	
+	<!-- 获取医保结算清单上传的中医诊断信息，用于打印 -->
+	<select id="get4101DiseinfoZy" parameterType="java.util.Map" resultType="java.util.Map">
+<!-- 		SELECT
+			td.diagcode AS diag_code,
+			pd.name_diag AS diag_name,
+		      td.dt_system,
+		      pd.flag_maj as maindiag_flag,
+		      '' as adm_cond_type
+		FROM
+			pv_diag pd
+			LEFT JOIN BD_CNDIAG diag ON diag.PK_CNDIAG = pd.PK_DIAG 
+			LEFT JOIN bd_ou_employee emp ON emp.PK_EMP = pd.pk_emp_diag
+			LEFT JOIN BD_TERM_DIAG td on diag.pk_diag = td.pk_diag
+		WHERE
+			pd.pk_pv=#{pkPv,jdbcType=VARCHAR} 
+			and dt_system = '02'
+		ORDER BY
+			pd.flag_maj DESC,
+			sort_no -->
+	</select>
+	
+	<!-- 获取医保结算清单上传的Setlinfo的数据 ，用于打印-->
+	<select id="get4101SetlinfoPrint" parameterType="java.util.Map" resultType="java.util.Map">
+		select a.mdtrt_id, b.setl_id, '中山市博爱医院' as fixmedins_name, 'H44200100009' as fixmedins_code, '三级' as hi_setl_lv, a.psn_no as hi_no, c.code_ip as medcasno, 
+		b.dcla_time as dcla_time, b.psn_name, b.gend, b.brdy, b.age, 
+		h.country_name as ntly, DATEDIFF(DAY, h.birth_date, d.date_begin) as nwb_age, 
+		h.nation_name as natye, r.name as patn_cert_type, b.certno as certno, 
+		h.occup_name as prfs, h.curr_addr_prov, h.curr_addr_city, h.curr_addr_county,
+		h.curr_addr as curr_addr, h.work_unit as emp_name, h.work_unit as emp_addr, h.work_unit_phone as emp_tel, h.work_unit_zip_code as poscode, 
+		h.contact_name as coner_name, h.contact_relat_name as patn_rlts,
+		h.contact_addr as coner_addr, h.contact_phone as coner_tel, u.name as hi_type, a.insuplc_admdvs as insuplc,
+		'' as sp_psn_type,<!-- 特殊人员类型,  -->
+		'' as nwb_adm_type,<!--  新生儿入院类型,  -->
+		h.newborn_weight as nwb_bir_wt,<!--  新生儿出生体重,  -->
+		h.newborn_in_weight as nwb_adm_wt,<!--  新生儿入院体重, -->
+		'' as opsp_diag_caty,<!-- 门诊慢特病诊断科别, -->
+		'' as opsp_mdtrt_date,<!--  门诊慢特病就诊日期, -->
+		case a.med_type when '2101' then '2' else '1' end as ipt_med_type,
+		h.admit_path_code as adm_way,
+		'' as trt_type, <!-- 治疗类别, -->
+		d.date_begin as adm_time, f.name_dept as adm_caty,
+		h.trans_dept_names as refldept_dept, <!-- 转科科别 数据库存的是名字，得单独查 -->
+		d.date_end as dscg_time, g.name_dept as dscg_caty,
+		h.in_hos_days as act_ipt_days,
+		case n.dt_system when '02' then '' else h.diag_name_clinic end as otp_wm_dise,
+		case n.dt_system when '02' then '' else h.diag_code_clinic end as wm_dise_code,
+		case n.dt_system when '02' then h.diag_name_clinic else '' end as otp_tcm_dise,
+		case n.dt_system when '02' then h.diag_code_clinic else '' end as tcm_dise_code,
+		'' as diag_code_cnt, <!-- 诊断代码计数  需要单独查 -->
+		'' as oprn_oprt_code_cnt, <!-- 手术操作代码计数 -->
+		'' as vent_used_dura, <!-- 呼吸机使用时长  博爱没存这个字段 -->
+		h.coma_day_bef,coma_hour_bef,h.coma_min_bef,
+		h.coma_day_after,h.coma_hour_after,h.coma_min_after,
+		h.leave_hos_code as dscg_way,
+		h.receive_org_code as acp_optins_code,
+		h.receive_org_name as acp_medins_name,
+		l.CODE_INV as bill_code, l.CODE_INV as bill_no, 'IP'+j.code_st as biz_sn, 
+		case when m.ybysdm is null or m.ybysdm = '' then o.code_emp else m.ybysdm end chfpdr_code,
+ 		h.consult_name AS chfpdr_name,
+		CONVERT(varchar,b.setl_time,120) as setl_begn_date,
+		CONVERT(varchar,b.setl_time,120) as setl_end_date,
+		b.medfee_sumamt - b.fund_pay_sumamt - b.fulamt_ownpay_amt - b.overlmt_selfpay - b.preselfpay_amt - b.hosp_part_amt as psn_selfpay,
+		b.fulamt_ownpay_amt + b.overlmt_selfpay + preselfpay_amt as psn_ownpay,
+		0.00 as acct_pay, b.psn_part_amt as psn_cashpay, 
+		'3' as hi_paymtd,
+		'中山医保局' as hsorg,
+		'医保局经办人' as hsorg_opter,
+		b.hifp_pay, b.oth_pay, b.hifmi_pay, b.maf_pay, b.cvlserv_pay, b.hifob_pay, b.hifes_pay 
+		from ins_pv_qg a inner join ins_st_qg b on a.pk_inspvqg = b.pk_inspvqg
+		inner join PI_MASTER c on a.pk_pi = c.pk_pi 
+		inner join PV_ENCOUNTER d on  b.pk_pv = d.pk_pv
+		inner join pv_ip e on a.pk_pv = e.pk_pv
+		inner join BD_OU_DEPT f on e.pk_dept_admit = f.pk_dept
+		inner join BD_OU_DEPT g on e.pk_dept_dis = g.pk_dept
+		inner join emr_home_page h on a.pk_pv = h.pk_pv and h.del_flag = '0'
+		left join bd_cndiag i on h.pk_diag_clinic = i.pk_cndiag
+		inner join BL_SETTLE j on b.pk_settle = j.pk_settle
+		inner join BL_ST_INV k on j.PK_SETTLE = k.PK_SETTLE
+		inner join BL_INVOICE l on k.PK_INVOICE = l.PK_INVOICE and l.flag_cancel = '0'
+		LEFT JOIN lsb_ybys m on m.pk_emp =  h.pk_emp_consult
+		LEFT JOIN bd_term_diag n ON h.pk_diag_clinic = n.pk_diag
+		LEFt join bd_ou_employee o on o.pk_emp =  h.pk_emp_consult
+		left join (select p.* from ins_dict p 
+		inner join ins_dicttype q on p.pk_insdicttype = q.pk_insdicttype and q.pk_hp = '26696e2409604b3c87b6cfc17acf0e8c' and q.name_type = '人员证件类型') as  r on b.psn_cert_type = r.code
+		left join (select s.* from ins_dict s 
+		inner join ins_dicttype t on s.pk_insdicttype = t.pk_insdicttype and t.pk_hp = '26696e2409604b3c87b6cfc17acf0e8c' and t.name_type = '险种类型') as  u on a.insutype = u.code
+		where b.pk_insstqg = #{pkInsstqg,jdbcType=VARCHAR}
+	</select>
+	
+		<!-- 获取医保结算清单上传的Setlinfo的数据（旧系统） -->
+	<select id="get4101SetlinfoJxt" parameterType="java.util.Map" resultType="java.util.Map">
+		select a.mdtrt_id, b.setl_id, '中山市博爱医院' as fixmedins_name, 'H44200100009' as fixmedins_code, '三级' as hi_setl_lv, a.psn_no as hi_no, c.code_ip as medcasno, 
+		CONVERT(varchar,GETDATE(),120) as dcla_time, b.psn_name, b.gend, b.brdy, b.age, 
+		h.fcountrybh as ntly, DATEDIFF(DAY, h.FBIRTHDAY, d.date_begin) as nwb_age, 
+		h.fnationalitybh as naty, b.psn_cert_type as patn_cert_type, b.certno as certno, 
+		h.FJOBBH as prfs,
+		h.FCURRADDR as curr_addr, h.FDWNAME as emp_name, h.FDWADDR as emp_addr, h.FDWTELE as emp_tel, h.FDWPOST as poscode, 
+		h.FLXNAME as coner_name, h.FRELATE as patn_rlts,
+		h.FLXADDR as coner_addr, h.FLXTELE as coner_tel, a.insutype as hi_type, a.insuplc_admdvs as insuplc,
+		'' as sp_psn_type,-- 特殊人员类型, 
+		'' as nwb_adm_type, --新生儿入院类型, 
+		h.FCSTZ as nwb_bir_wt, --新生儿出生体重, 
+		'' as nwb_adm_wt, --新生儿入院体重,
+		'' as opsp_diag_caty,--门诊慢特病诊断科别,
+		'' as opsp_mdtrt_date,-- 门诊慢特病就诊日期,
+		case a.med_type when '2101' then '2' else '1' end as ipt_med_type,
+		'' as adm_way,
+		'' as trt_type, --治疗类别,
+		a.begntime as adm_time, f.CODE_DEPT_NATION_INS as adm_caty,
+		'' as refldept_dept, --转科科别 
+		a.endtime as dscg_time, g.CODE_DEPT_NATION_INS as dscg_caty,
+		case DATEDIFF(day, a.begntime, a.endtime) when '0' then '1' else DATEDIFF(day, a.begntime, a.endtime) end as act_ipt_days,
+		h.FMZZD as otp_wm_dise,
+		h.FMZZDBH as wm_dise_code,
+		'' as otp_tcm_dise,
+		'' as tcm_dise_code,
+		'' as diag_code_cnt, --诊断代码计数  需要单独查
+		'' as oprn_oprt_code_cnt, --手术操作代码计数
+		'' as vent_used_dura, --呼吸机使用时长  博爱没存这个字段
+		h.FRYQHMDAYS as coma_day_bef, h.FRYQHMHOURS as coma_hour_bef,h.FRYQHMMINS as coma_min_bef,
+		h.FRYHMDAYS as coma_day_after,h.FRYHMHOURS as coma_hour_after,h.FRYHMMINS as coma_min_after,
+		h.FLYFSBH as dscg_way,
+		'' as acp_optins_code,
+		'' as acp_medins_name,
+		l.CODE_INV as bill_code, l.CODE_INV as bill_no, 'IP'+j.code_st as biz_sn, 
+		case when m.ybysdm is null or m.ybysdm = '' then o.code_emp else m.ybysdm end as chfpdr_code,
+		h.FZZDOCT AS chfpdr_name,
+		CONVERT(varchar,b.setl_time,120) as setl_begn_date,
+		CONVERT(varchar,b.setl_time,120) as setl_end_date,
+		b.medfee_sumamt - b.fund_pay_sumamt - b.fulamt_ownpay_amt - b.overlmt_selfpay - b.preselfpay_amt - b.hosp_part_amt as psn_selfpay,
+		b.fulamt_ownpay_amt + b.overlmt_selfpay + preselfpay_amt as psn_ownpay,
+		0.00 as acct_pay, b.psn_part_amt as psn_cashpay, 
+		'3' as hi_paymtd,
+		'中山医保局' as hsorg,
+		'医保局经办人' as hsorg_opter
+		from ins_pv_qg a inner join ins_st_qg b on a.pk_inspvqg = b.pk_inspvqg
+		inner join PI_MASTER c on a.pk_pi = c.pk_pi 
+		inner join PV_ENCOUNTER d on  b.pk_pv = d.pk_pv
+		inner join pv_ip e on a.pk_pv = e.pk_pv
+		inner join BD_OU_DEPT f on e.pk_dept_admit = f.pk_dept
+		inner join BD_OU_DEPT g on e.pk_dept_dis = g.pk_dept
+		inner join [192.168.19.1].[bagl_java].[dbo].[tPatientVisit] h on c.code_ip = h.fprn and h.FTIMES = e.ip_times
+		--left join bd_cndiag i on h.pk_diag_clinic = i.pk_cndiag
+		inner join BL_SETTLE j on b.pk_settle = j.pk_settle
+		inner join BL_ST_INV k on j.PK_SETTLE = k.PK_SETTLE
+		inner join BL_INVOICE l on k.PK_INVOICE = l.PK_INVOICE and l.flag_cancel = '0'
+		LEFT JOIN lsb_ybys m on m.xm =  h.FZZDOCT
+		LEFt join bd_ou_employee o on o.name_emp =  h.FZZDOCT
+		where b.pk_insstqg = #{pkInsstqg,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 获取医保结算清单上传的diseinfo的数据 -->
+	<select id="get4101DiseinfoJxt" parameterType="java.util.Map" resultType="java.util.Map">
+		select top 1 d.FICDM as diag_code, d.FJBNAME as diag_name, d.FRYBQBH  as adm_cond_type, d.FRYBQ, d.fpx from PV_ENCOUNTER a inner join PI_MASTER b on a.pk_pi = b.pk_pi
+		inner join PV_IP c on a.pk_pv = c.pk_pv
+		inner join [192.168.19.1].[bagl_java].[dbo].[tDiagnose] d on d.FPRN = b.code_ip and d.FTIMES = c.ip_times
+		where d.fpx is not null  
+		and d.fpx = '1' and d.fzdlx = '1'
+		and a.pk_pv = #{pkPv,jdbcType=VARCHAR}  
+		order by d.fzdlx, d.fpx
+	</select>
+	
+					<!-- 获取医保结算清单上传的oprninfo的数据（旧系统） -->
+	<select id="get4101OprninfoJxt" parameterType="java.util.Map" resultType="java.util.Map">
+		select top 1 d.FOP as oprn_oprt_name, d.FOPCODE as oprn_oprt_code, d.FOPDATE as oprn_oprt_date, d.FMAZUIBH as anst_way,
+		d.FDOCNAME as oper_dr_name, d.FDOCBH as oper_dr_code, d.FMZDOCT as anst_dr_name, d.FMZDOCTBH as anst_dr_code
+		 from PV_ENCOUNTER a inner join PI_MASTER b on a.pk_pi = b.pk_pi
+		inner join PV_IP c on a.pk_pv = c.pk_pv
+		inner join [192.168.19.1].[bagl_java].[dbo].[tOperation] d on d.FPRN = b.code_ip and d.FTIMES = c.ip_times
+		where d.fpx is not null  
+		and d.fpx = '1'
+		and a.pk_pv = #{pkPv,jdbcType=VARCHAR}  
+		order by d.fpx
+	</select>
+	
+	<!-- 获取医保结算清单上传的diseinfo的数据 (从病案系统取值)-->
+	<select id="get4101DiseinfoBaxt" parameterType="java.util.Map" resultType="java.util.Map">
+		select a.FICDM as diag_code, a.FJBNAME as diag_name, a.FRYBQBH  as adm_cond_type, a.FRYBQ, a.fpx, a.fzdlx as maindiag_flag 
+		from tDiagnose a 
+		where a.fpx is not null  
+		and a.FPRN = #{codeIp,jdbcType=VARCHAR}  
+		and a.FTIMES = #{ipTimes,jdbcType=VARCHAR}  
+		order by a.fzdlx, a.fpx
+	</select>
+	
+	<!-- 获取医保结算清单上传的oprninfo的数据(从病案系统取值) -->
+	<select id="get4101OprninfoBaxt" parameterType="java.util.Map" resultType="java.util.Map">
+		select a.FOP as oprn_oprt_name, a.FOPCODE as oprn_oprt_code, a.FOPDATE as oprn_oprt_date, a.FMAZUIBH as anst_way,
+		a.FDOCNAME as oper_dr_name, a.FDOCBH as oper_dr_code, a.FMZDOCT as anst_dr_name, a.FMZDOCTBH as anst_dr_code
+		 from tOperation a 
+		where a.fpx is not null  
+		and a.FPRN = #{codeIp,jdbcType=VARCHAR}  
+		and a.FTIMES = #{ipTimes,jdbcType=VARCHAR}  
+		order by a.fpx
+	</select>
+</mapper>

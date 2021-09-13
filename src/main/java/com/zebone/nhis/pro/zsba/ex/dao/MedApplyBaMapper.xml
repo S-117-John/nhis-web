@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.ex.dao.MedApplyBaMapper">
+    <select id="queryBaAppList" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.pro.zsba.ex.vo.MedAppBaVo">
+        select ord.pk_cnord,
+               pv.bed_no,
+               pv.name_pi,
+               pi.code_ip,
+               pv.pk_pv,
+               ordtype.name as  apptype,
+               ordtype.code as  code_apptype,
+               ord.code_apply,
+               ord.name_ord,
+               ord.ordsn,
+               ord.eu_always,
+               ord.ordsn_parent,
+               ord.flag_durg,
+               ord.flag_base,
+               ord.flag_bl,
+               ord.date_enter,
+               ord.pk_ord,
+               ord.pk_dept_exec,
+               ord.date_start,
+               ord.note_ord,
+               ord.eu_status_ord,
+               lis.form_app,
+               lis.samp_no,
+               ris.flag_print2,
+               ris.date_exam,
+               exlist.date_plan,
+               exlist.date_occ,
+               exlist.pk_exocc,
+               exlist.eu_status eu_status,
+               deptOrd.name_dept,
+               deptNs.name_dept name_dept_ns,
+               dept.name_dept   name_dept_ex,
+               op.pk_ordop,
+               op.pk_op,
+               op.desc_op,
+               deptOrd.dt_depttype
+              ,case when ord.code_ordtype like '02%' then riso.code_rpt 
+                    when ord.code_ordtype like '03%' then liso.code_rpt 
+                    else ''
+                    end code_rpt
+              ,case when ord.code_ordtype like '03%' then lis.eu_status
+					when ord.code_ordtype like '02%' then ris.eu_status
+					when ord.code_ordtype like '04%' then op.eu_status
+					when ord.code_ordtype like '12%' then trans.eu_status
+					end eu_status_app
+        from cn_order ord
+       inner join pv_encounter pv on pv.pk_pv = ord.pk_pv
+       inner join pi_master pi on pi.pk_pi = pv.pk_pi
+       inner join ex_order_occ exlist on ord.pk_cnord = exlist.pk_cnord
+        left join cn_lab_apply lis on ord.pk_cnord = lis.pk_cnord
+        left join cn_ris_apply ris on ord.pk_cnord = ris.pk_cnord
+        left join cn_op_apply op on ord.pk_cnord = op.pk_cnord
+        left join cn_trans_apply trans on ord.pk_cnord = trans.pk_cnord
+        left join bd_ordtype ordtype on ord.code_ordtype = ordtype.code
+        left join bd_ou_dept dept on ord.pk_dept_exec = dept.pk_dept
+        left join bd_ou_dept deptOrd on ord.pk_dept = deptOrd.pk_dept
+        left join bd_ou_dept deptNs on ord.pk_dept_ns = deptNs.pk_dept
+        left join ex_lab_occ liso on liso.pk_cnord = ord.pk_cnord
+        left join ex_ris_occ riso on riso.pk_cnord = ord.pk_cnord
+       where ord.flag_durg = '0'
+        <if test='apptype == "0"'>
+            and (ordtype.code like '02%' and ord.code_ordtype != '0204')
+        </if>
+        <if test='apptype == "1"'>
+            and (ordtype.code like '03%')
+        </if>
+        <if test='apptype == "3"'>
+            <!-- 全部 -->
+            and (ordtype.code like '02%' 
+              or ordtype.code like '03%' 
+              or ordtype.code like '04%' 
+              or ordtype.code like '12%'
+			  or (ord.pk_dept_exec &lt;&gt; pv.pk_dept_ns
+                    and ordtype.code not like '02%'
+                    and ordtype.code not like '03%'
+                    and ordtype.code not like '04%'
+                    and ordtype.code not like '12%'
+                    and exlist.eu_status = '0'
+                    ))
+        </if>
+        <if test='apptype == "4"'>
+            <!-- 手术 -->
+            and (ordtype.code like '04%')
+        </if>
+        <if test='apptype == "9"'>
+            <!-- 输血 -->
+            and (ordtype.code like '12%')
+        </if>
+        <if test='apptype == "10"'>
+            <!-- [未执行]其他[非检查、非检验、非手术、非输血] -->
+            and (ord.pk_dept_exec &lt;&gt; pv.pk_dept_ns
+                    and ordtype.code not like '02%'
+                    and ordtype.code not like '03%'
+                    and ordtype.code not like '04%'
+                    and ordtype.code not like '12%'
+                    and exlist.eu_status = '0'
+                    )
+        </if>
+        <if test="codeApply != null  and codeApply != ''">
+            and ord.code_apply like '%${codeApply}%'
+        </if>
+        <if test="euStatus != null  and euStatus != ''">
+            and exlist.eu_status = #{euStatus,jdbcType=CHAR}
+        </if>
+        <if test="dateBegin != null  and dateBegin != ''">
+            and ord.date_start &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateEnd != null  and dateEnd != ''">
+            and ord.date_start &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="pkPvs != null  and pkPvs != ''">
+            and pv.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvs" open="("
+                     separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        <if test="pkDept != null  and pkDept != ''">
+            and ord.pk_dept = #{pkDept,jdbcType=CHAR}
+        </if>
+        <if test="pkDeptNs != null  and pkDeptNs != ''">
+            and exists(select 1 from BD_DEPT_BUS bus
+                        inner join BD_DEPT_BU bu on bu.PK_DEPTBU = bus.PK_DEPTBU and bu.DT_BUTYPE = '01'
+                        inner join BD_DEPT_BUS bus2 on bus2.PK_DEPTBU = bu.PK_DEPTBU and bus2.DT_DEPTTYPE &lt;&gt; bus.DT_DEPTTYPE 
+                               and bus2.pk_dept = #{pkDeptNs,jdbcType=CHAR}
+                       where bus.PK_DEPT = ord.PK_DEPT)
+        </if>
+        order by ord.date_enter
+    </select>
+
+    <select id="queryBaAppExList" parameterType="java.util.Map"
+            resultType="java.lang.String">
+        select count(1)
+        from ex_order_occ exlist where exlist.eu_status = '1'
+                                   and
+                exlist.pk_cnord in
+        <foreach item="pkOrd" index="index" collection="pkOrds" open="("
+                 separator="," close=")">
+            #{pkOrd}
+        </foreach>
+    </select>
+
+    <select id="queryBaLabAppList" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.pro.zsba.ex.vo.MedAppBaVo">
+        select ord.pk_cnord,
+               pv.bed_no,
+               pv.name_pi,
+               pi.code_ip,
+               pv.pk_pv,
+               ordtype.name as  apptype,
+               ordtype.code as  code_apptype,
+               ord.code_apply,
+               ord.name_ord,
+               ord.ordsn,
+               ord.eu_always,
+               ord.ordsn_parent,
+               ord.flag_durg,
+               ord.flag_base,
+               ord.flag_bl,
+               ord.date_enter,
+               ord.pk_ord,
+               ord.pk_dept_exec,
+               ord.date_start,
+               ord.note_ord,
+               ord.eu_status_ord,
+               lis.form_app,
+               lis.samp_no,
+               ris.flag_print2,
+               ris.date_exam,
+               exlist.date_plan,
+               exlist.date_occ,
+               exlist.pk_exocc,
+               exlist.eu_status eu_status,
+               deptOrd.name_dept,
+               deptNs.name_dept name_dept_ns,
+               dept.name_dept   name_dept_ex,
+               op.pk_ordop,
+               op.pk_op,
+               op.desc_op,
+               case
+                       when ord.code_ordtype like '03%' then lis.eu_status
+                       when ord.code_ordtype like '02%' then ris.eu_status
+                       when ord.code_ordtype like '04%' then op.eu_status
+                       when ord.code_ordtype like '12%' then trans.eu_status
+                       end      eu_status_app
+        from cn_order ord
+                     inner join pv_encounter pv on pv.pk_pv = ord.pk_pv
+                     inner join pi_master pi on pi.pk_pi = pv.pk_pi
+                     inner join ex_order_occ exlist on ord.pk_cnord = exlist.pk_cnord
+                     left join cn_lab_apply lis on ord.pk_cnord = lis.pk_cnord
+                     left join cn_ris_apply ris on ord.pk_cnord = ris.pk_cnord
+                     left join cn_op_apply op on ord.pk_cnord = op.pk_cnord
+                     left join cn_trans_apply trans on ord.pk_cnord = trans.pk_cnord
+                     left join bd_ordtype ordtype on ord.code_ordtype = ordtype.code
+                     left join bd_ou_dept dept on ord.pk_dept_exec = dept.pk_dept
+                     left join bd_ou_dept deptOrd on ord.pk_dept = deptOrd.pk_dept
+                     left join bd_ou_dept deptNs on ord.pk_dept_ns = deptNs.pk_dept
+                where ord.flag_durg = '0'
+        <if test='apptype == "0"'>
+            and (ordtype.code like '02%' and ord.code_ordtype != '0204')
+        </if>
+        <if test='apptype == "1"'>
+            and (ordtype.code like '03%')
+        </if>
+        <if test='apptype == "3"'>
+            <!-- 全部 -->
+            and (ordtype.code like '02%'
+                    or ordtype.code like '03%'
+                    or ordtype.code like '04%'
+                    or ordtype.code like '12%'
+                    or (ord.pk_dept_exec &lt;&gt; pv.pk_dept_ns
+                    and ord.pk_dept_exec &lt;&gt; ord.pk_dept
+                    and ordtype.code not like '02%'
+                    and ordtype.code not like '03%'
+                    and ordtype.code not like '04%'
+                    and ordtype.code not like '12%'
+                    and exlist.eu_status = '0')
+                    )
+        </if>
+        <if test='apptype == "4"'>
+            and (ordtype.code like '04%')
+        </if>
+        <if test='apptype == "9"'>
+            <!-- 输血 -->
+            and (ordtype.code like '12%')
+        </if>
+        <if test='apptype == "10"'>
+            <!-- [未执行]其他[非检查、非检验、非手术、非输血] -->
+            and (ord.pk_dept_exec &lt;&gt; pv.pk_dept_ns
+                    and ord.pk_dept_exec &lt;&gt; ord.pk_dept
+                    and ordtype.code not like '02%'
+                    and ordtype.code not like '03%'
+                    and ordtype.code not like '04%'
+                    and ordtype.code not like '12%'
+                    and exlist.eu_status = '0')
+        </if>
+        <if test="codeApply != null  and codeApply != ''">
+            and ord.code_apply like '%${codeApply}%'
+        </if>
+        <if test="euStatus != null  and euStatus != ''">
+            and exlist.eu_status = #{euStatus,jdbcType=CHAR}
+        </if>
+        <if test="dateBegin != null  and dateBegin != ''">
+            and ord.date_start &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateEnd != null  and dateEnd != ''">
+            and ord.date_start &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="pkPvs != null  and pkPvs != ''">
+            and pv.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvs" open="("
+                     separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        <if test="pkDept != null  and pkDept != ''">
+            and ord.pk_dept = #{pkDept,jdbcType=CHAR}
+        </if>
+        <if test="pkDeptNs != null  and pkDeptNs != ''">
+            and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        order by ord.date_enter
+    </select>
+
+    <!-- 查询自动执行设置列表-->
+    <select id="queryAutoExec" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.common.module.base.bd.wf.BdOrdAutoexec">
+        select *
+        from bd_ord_autoexec
+        where pk_org = #{pkOrg,jdbcType=CHAR}
+          and flag_active = '1'
+    </select>
+    <select id="getApplyBlItem" resultType="com.zebone.nhis.bl.pub.vo.BlPubParamVo">
+    select oi.pk_item,
+        case when oi.flag_pd='0' then item.code else pd.code end code,
+        case when oi.flag_pd='0' then item.name else pd.name end yjName,
+        case when oi.flag_pd='0' then item.spec else pd.spec end spec,
+        oi.quan,
+        case when oi.flag_pd='0' then item.price*oi.quan else pd.price/pd.pack_size*oi.quan end amount,
+        ord.name_ord,
+        ord.spec,
+        ord.quan*oi.quan as quancg,
+        oi.flag_pd as flag_pd,
+        ord.name_emp_ord as name_emp_app,
+        ord.pk_cnord,
+        ord.pk_dept as pk_dept_app,
+        ord.pk_dept_exec as pk_dept_ex,
+        item.pk_item as pk_item,
+        ord.pk_org,
+        ord.pk_org_exec as pk_org_ex,
+        ord.pk_pi,
+        ord.pk_pres,
+        ord.pk_pv,
+        CASE WHEN ord.eu_ordtype='1' THEN ord.pk_ord ELSE null END as pk_ord,<!-- 科研医嘱查询医嘱项目主键，非科研医嘱不查询 -->
+        ord.eu_ordtype,
+        CASE WHEN oi.flag_pd='1' THEN pd.PRICE/pd.PACK_SIZE ELSE item.PRICE END as price,
+        CASE WHEN oi.flag_pd='1' THEN pd.PRICE ELSE NULL END as price_cost,
+        CASE WHEN oi.flag_pd='1' THEN pd.PK_UNIT_MIN ELSE '' END as pk_unit_pd,
+        CASE WHEN oi.flag_pd='1' THEN '~' ELSE '' END as batch_no,
+        1 as pack_size,
+        ord.pk_cnord
+        from cn_order ord
+        inner join bd_ord_item oi on ord.pk_ord=oi.pk_ord AND oi.DEL_FLAG='0'
+        left outer join bd_item item on oi.pk_item=item.pk_item and oi.flag_pd='0' and item.flag_active='1'
+        left outer join bd_pd pd on oi.pk_item=pd.pk_pd and oi.flag_pd='1' and pd.flag_stop!='1'
+        where  ord.pk_cnord in
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item.pkCnord,jdbcType=VARCHAR}
+        </foreach>
+
+    </select>
+    
+     <select id="queryProBaOrderDept" parameterType="java.util.Map" resultType="DynaBean">
+      select
+        dept.CODE_DEPT code_dept_exec,
+        oudept.CODE_DEPT,
+        emp.CODE_EMP 
+      from 
+         cn_order cn 
+      left join bd_ou_dept dept on dept.PK_DEPT = cn.pk_dept_exec
+      left join bd_ou_dept oudept on oudept.PK_DEPT = cn.pk_dept
+      left join BD_OU_EMPLOYEE emp on emp.PK_EMP = cn.pk_emp_ord 
+          where 1=1
+          <if test="pkCnord != null  and  pkCnord != ''">
+            and cn.PK_CNORD=#{pkCnord,jdbcType=VARCHAR}
+          </if>
+    </select>
+    
+    <select id="wzQuery" statementType="CALLABLE" parameterType="java.util.Map" resultType="java.util.Map" >
+		{call wz_query(#{bar_code,mode=IN,jdbcType=VARCHAR},
+	   #{sRetString,mode=OUT,jdbcType=NVARCHAR}, #{iRetValue,mode=OUT,jdbcType=VARCHAR})}
+	</select>
+    <select id="wzConsume" statementType="CALLABLE" parameterType="java.util.Map"  resultType="java.util.Map">
+		{call  wz_consume(#{bar_code,mode=IN,jdbcType=VARCHAR},#{patient_id,mode=IN,jdbcType=VARCHAR},#{times,mode=IN,jdbcType=VARCHAR},
+        #{ledger_sn,mode=IN,jdbcType=VARCHAR},#{mz_zy_flag,mode=IN,jdbcType=VARCHAR},#{dept_sn,mode=IN,jdbcType=VARCHAR},
+        #{ward_sn,mode=IN,jdbcType=VARCHAR},#{exec_unit,mode=IN,jdbcType=VARCHAR},#{doctor_code,mode=IN,jdbcType=VARCHAR},
+        #{input_opera,mode=IN,jdbcType=VARCHAR},
+        #{sRetString,mode=OUT,jdbcType=NVARCHAR}, #{iRetValue,mode=OUT,jdbcType=VARCHAR})}
+	</select>
+    <select id="wzCancelconsume" statementType="CALLABLE" parameterType="java.util.Map" >
+		{call wz_cancelconsume(#{bar_code,mode=IN,jdbcType=VARCHAR},
+	   #{sRetString,mode=OUT,jdbcType=NVARCHAR}, #{iRetValue,mode=OUT,jdbcType=VARCHAR})}
+	</select>
+
+</mapper>

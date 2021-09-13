@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.DictattrMapper">
+<select id="qirDictattrTemp" parameterType="java.lang.String" resultType="DynaBean">
+select tmp.pk_dictattrtemp,
+       tmp.code_attr,      
+       tmp.name_attr,      
+       tmp.val_attr,       
+       tmp.desc_attr       
+  from bd_dictattr_temp tmp 
+ where tmp.dt_dicttype=#{dicttype}
+ and tmp.del_flag = 0
+
+</select>
+
+<select id="qirDictattr" parameterType="java.lang.String" resultType="DynaBean">
+
+ 
+ select pk_dictattr,pk_org,pk_dictattrtemp,pk_dict,code_attr,name_attr,val_attr,creator,create_time,del_flag,ts,code,name,spec,decode,py_code,D_CODE from (
+select *
+from (
+select attr.*,
+ hp.code,
+ hp.name,
+ spec,
+ 
+ '01'  decode,
+ 
+ hp.SPCODE py_code,
+ hp.D_CODE
+ from bd_dictattr attr
+ inner join bd_item hp on attr.pk_dict = hp.PK_ITEM
+ union all
+ select attr.*,
+ hp.code,
+ hp.name,
+ spec,
+ 
+ '02'  decode,
+ 
+ hp.SPCODE py_code,
+ hp.D_CODE
+ from bd_dictattr attr
+  inner join bd_ord hp on attr.pk_dict = hp.PK_ORD
+  union all
+  select attr.*,
+  hp.code,
+  hp.name,
+  '' as spec,
+ 
+   '03'  decode,
+ 
+   hp.SPCODE py_code,
+  hp.D_CODE
+  from bd_dictattr attr
+  inner join bd_hp hp on attr.pk_dict = hp.pk_hp
+  union all
+  select attr.*,
+  hp.DIAGCODE code,
+  hp.DIAGNAME name,
+  '' as       spec,
+  
+  '04'        decode,
+  
+  hp.PY_CODE py_code,
+  hp.D_CODE
+  from bd_dictattr attr
+  inner join bd_term_diag hp on attr.pk_dict = hp.PK_DIAG
+  union all
+  select attr.*,
+  hp.CODE_DEPT code,
+  hp.NAME_DEPT name,
+  '' as        spec,
+  
+  '06'         decode,
+  
+  hp.PY_CODE py_code,
+  hp.D_CODE
+  from bd_dictattr attr
+  inner join bd_ou_dept hp on attr.pk_dict = hp.PK_DEPT
+  union all
+  select attr.*,
+  hp.CODE_EMP code,
+  hp.NAME_EMP name,
+  '' as       spec,
+  
+  '07'        decode,
+  
+   hp.PY_CODE py_code,
+  hp.D_CODE
+  from bd_dictattr attr
+  inner join bd_ou_employee hp on attr.pk_dict = hp.PK_EMP
+  ) table1
+  where table1.code_attr =#{codeAttr}
+  ) table2
+</select>
+
+<update id="updateDictattr" parameterType="com.zebone.nhis.base.bd.vo.DictattrVo">
+update bd_dictattr set pk_org = #{PkOrg,jdbcType=CHAR},pk_dict=#{PkDict,jdbcType=CHAR},code_attr=#{CodeAttr,jdbcType=VARCHAR},name_attr=#{NameAttr,jdbcType=VARCHAR},val_attr=#{ValAttr},MODIFIER=#{Modifier,jdbcType=CHAR},MODITY_TIME=#{ModityTime,jdbcType=DATE} where pk_dictattr=#{PkDictattr,jdbcType=CHAR}
+</update>
+
+<insert id="insertDictattr" parameterType="com.zebone.nhis.base.bd.vo.DictattrVo">
+insert into bd_dictattr (pk_dictattr,pk_org,pk_dictattrtemp,pk_dict,code_attr,name_attr,val_attr) 
+ values(#{PkDictattr},#{PkOrg},#{PkDictattrtemp},#{PkDict},#{CodeAttr},#{NameAttr},#{ValAttr})
+</insert>
+
+<delete id="delDictattr" parameterType="com.zebone.nhis.base.bd.vo.DictattrVo">
+delete from bd_dictattr where pk_dictattr=#{PkDictattr}
+</delete>
+
+<select id="qryLeadDictattr" parameterType="com.zebone.nhis.base.bd.vo.DictattrVo" resultType="DynaBean">
+select pkDict,code,name,py_code,d_code,decode,spec,pk_org from (
+                  select hp.PK_ITEM pkDict,
+                         hp.code,
+                         hp.name,
+                         hp.SPCODE  py_code,
+                         hp.D_CODE,
+                         '01'       decode,
+hp.spec,
+'~' pk_org
+                  from bd_item hp
+                  where hp.DEL_FLAG ='0' and not exists(
+                          select 1
+                          from bd_dictattr attr
+                          where hp.PK_ITEM = attr.pk_dict
+                            and attr.code_attr = #{codeAttr} )
+                  union all
+                  select hp.PK_ORD pkDict,
+                         hp.code,
+                         hp.name,
+                         hp.SPCODE py_code,
+                         hp.D_CODE,
+                         '02'      decode,
+hp.spec,
+'~' pk_org
+                  from bd_ord hp
+                  where hp.DEL_FLAG ='0' and not exists(
+                          select 1
+                          from bd_dictattr attr
+                          where hp.PK_ORD = attr.pk_dict
+                            and attr.code_attr = #{codeAttr} )
+                  union all
+                  select hp.pk_hp  pkDict,
+                         hp.code,
+                         hp.name,
+                         hp.SPCODE py_code,
+                         hp.D_CODE,
+                         '03'      decode,
+'' spec,
+hp.pk_org
+                  from bd_hp hp
+                  where hp.DEL_FLAG ='0'  and not exists(
+                          select 1
+                          from bd_dictattr attr
+                          where hp.pk_hp = attr.pk_dict
+                            and attr.code_attr = #{codeAttr} )
+                  union all
+                  select hp.PK_DIAG  pkDict,
+                         hp.DIAGCODE code,
+                         hp.DIAGNAME name,
+                         hp.PY_CODE  py_code,
+                         hp.D_CODE,
+                         '04'        decode,
+'' spec,
+hp.pk_org
+                  from bd_term_diag hp
+                  where hp.DEL_FLAG ='0' and not exists(
+                          select 1
+                          from bd_dictattr attr
+                          where hp.PK_DIAG = attr.pk_dict
+                            and attr.code_attr = #{codeAttr} )
+                  union all
+                  select hp.PK_DEPT   pkDict,
+                         hp.CODE_DEPT code,
+                         hp.NAME_DEPT name,
+                         hp.PY_CODE   py_code,
+                         hp.D_CODE,
+                         '06'         decode,
+'' spec,
+hp.pk_org
+                  from bd_ou_dept hp
+                  where hp.DEL_FLAG ='0' and not exists(
+                          select 1
+                          from bd_dictattr attr
+                          where hp.PK_DEPT = attr.pk_dict
+                            and attr.code_attr = #{codeAttr} )
+                  union all
+                  select hp.PK_EMP   pkDict,
+                         hp.CODE_EMP code,
+                         hp.NAME_EMP name,
+                         hp.PY_CODE  py_code,
+                         hp.D_CODE,
+                         '07'        decode,
+'' spec,
+hp.pk_org
+                  from bd_ou_employee hp
+                  where hp.DEL_FLAG ='0'  and not exists(
+                          select 1
+                          from bd_dictattr attr
+                          where hp.PK_EMP = attr.pk_dict
+ and attr.code_attr = #{codeAttr}
+                            )
+              ) table1
+ where decode = #{decode} 
+
+</select>
+
+</mapper>

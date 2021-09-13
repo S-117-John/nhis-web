@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.drg.dao.CcdtExcluMapper">
+
+    <select id="qryCcdtExclu" resultType="com.zebone.nhis.base.drg.vo.BdTermCcdtSaveParam" parameterType="java.lang.String">
+        select pk_ccdtexclu,
+        pk_org,
+        name_rule,
+        '['|| groupno || ']' || name_rule AS pk_father,
+        eu_child,
+        eu_exclutype,
+        groupno,
+        groupno_exclu,
+        spcode,
+        code_ccdt,
+        pk_ccdt,
+        flag_del,
+        note,
+        ts,
+        modifier,
+        creator,
+        create_time
+        from bd_term_ccdt_exclu
+        where flag_del='0'
+        and eu_child='0'
+        <if test="nameRule != null and nameRule != ''">
+            and name_rule like '%${nameRule}%'
+        </if>
+        <if test="spcode != null and spcode != ''">
+            and spcode like '%${spcode}%'
+        </if>
+        order by groupno
+    </select>
+
+
+    <select id="getGroupno" resultType="java.lang.Integer" parameterType="java.lang.String">
+        select Max(groupno)
+        from bd_term_ccdt_exclu
+    </select>
+
+
+    <select id="getReleaseListByCcdtExclu" parameterType="java.util.Map" resultType="DynaBean">
+        select exc.pk_ccdtexclu,
+           exc.pk_ccdt,
+           exc.GROUPNO,
+           exc.code_ccdt,
+           ccdt.pk_ccdt,
+           ccdt.name_ccdt,
+           ccdt.spcode,
+           exc.flag_del,
+           ccdt.CREATE_TIME,
+           ccdt.CREATOR,
+           ccdt.NOTE,
+           ccdt.ts
+        from bd_term_ccdt_exclu exc
+           inner join bd_term_ccdt ccdt on exc.pk_ccdt=ccdt.pk_ccdt
+        where exc.flag_del='0'
+            and exc.eu_child='1'
+        <if test="groupno != null and groupno != ''">
+            and exc.groupno  = #{groupno}
+        </if>
+        <if test="codeOrName !=null and codeOrName != ''">
+            and (ccdt.name_ccdt like #{codeOrName,jdbcType=VARCHAR} || '%'
+            or exc.code_ccdt like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'
+            or ccdt.spcode like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'
+            )
+        </if>
+
+    </select>
+
+
+</mapper>

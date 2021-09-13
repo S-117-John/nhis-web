@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.tpserv.dao.TpServUnionpayDataBillMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.pro.zsba.tpserv.vo.TpServUnionpayDataBill">
+        <id column="PK_DATA_BILL" jdbcType="CHAR" property="pkDataBill"/>
+        <result column="PK_DATA_BILL_P" jdbcType="CHAR" property="pkDataBillP"/>
+        <result column="TERMINAL_ID" jdbcType="VARCHAR" property="terminalId"/>
+        <result column="MERCHANT_NAME" jdbcType="VARCHAR" property="merchantName"/>
+        <result column="NET_ADDRNAME" jdbcType="VARCHAR" property="netAddrname"/>
+        <result column="CARD_NO" jdbcType="VARCHAR" property="cardNo"/>
+        <result column="BANK_NAME" jdbcType="VARCHAR" property="bankName"/>
+        <result column="TRANS_DATE" jdbcType="VARCHAR" property="transDate"/>
+        <result column="TRANS_TIME" jdbcType="VARCHAR" property="transTime"/>
+        <result column="AMOUNT" jdbcType="VARCHAR" property="amount"/>
+        <result column="AMOUNT_TOTAL" jdbcType="DECIMAL" property="amountTotal"/>
+        <result column="TRANS_FEE" jdbcType="VARCHAR" property="transFee"/>
+        <result column="TRANS_FEE_TOTAL" jdbcType="DECIMAL" property="transFeeTotal"/>
+        <result column="B_FEE" jdbcType="VARCHAR" property="bFee"/>
+        <result column="B_FEE_TOTAL" jdbcType="DECIMAL" property="bFeeTotal"/>
+        <result column="TRANS_TYPE" jdbcType="VARCHAR" property="transType"/>
+        <result column="END_TIME" jdbcType="VARCHAR" property="endTime"/>
+        <result column="SYSREFNO" jdbcType="VARCHAR" property="sysrefno"/>
+        <result column="BILL_STATUS" jdbcType="INTEGER" property="billStatus"/>
+        <result column="BILL_TIME" jdbcType="TIMESTAMP" property="billTime"/>
+        <result column="BILL_DESC" jdbcType="VARCHAR" property="billDesc"/>
+        <result column="MERCHANT_ID" jdbcType="VARCHAR" property="merchantId"/>
+        <result column="SYSREFNO1" jdbcType="VARCHAR" property="sysrefno1"/>
+    </resultMap>
+    <select id="getTpServUnionpayDataBillById" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+             tp_serv_unionpay_data_bill
+        WHERE            
+            PK_DATA_BILL = #{pkDataBill,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllTpServUnionpayDataBill" resultMap="BaseResultMap">
+          SELECT * FROM tp_serv_unionpay_data_bill 
+    </select>
+    
+    <delete id="deleteTpServUnionpayDataBill">
+        DELETE
+        FROM
+             tp_serv_unionpay_data_bill
+        WHERE            
+            PK_DATA_BILL = #{pkDataBill,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveTpServUnionpayDataBill" parameterType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServUnionpayDataBill" >
+        INSERT INTO tp_serv_unionpay_data_bill
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkDataBill != null" >
+                PK_DATA_BILL,
+            </if>
+            <if test="pkDataBillP != null" >
+                PK_DATA_BILL_P,
+            </if>
+            <if test="terminalId != null" >
+                TERMINAL_ID,
+            </if>
+            <if test="merchantName != null" >
+                MERCHANT_NAME,
+            </if>
+            <if test="netAddrname != null" >
+                NET_ADDRNAME,
+            </if>
+            <if test="cardNo != null" >
+                CARD_NO,
+            </if>
+            <if test="bankName != null" >
+                BANK_NAME,
+            </if>
+            <if test="transDate != null" >
+                TRANS_DATE,
+            </if>
+            <if test="transTime != null" >
+                TRANS_TIME,
+            </if>
+            <if test="amount != null" >
+                AMOUNT,
+            </if>
+            <if test="amountTotal != null" >
+                AMOUNT_TOTAL,
+            </if>
+            <if test="transFee != null" >
+                TRANS_FEE,
+            </if>
+            <if test="transFeeTotal != null" >
+                TRANS_FEE_TOTAL,
+            </if>
+            <if test="bFee != null" >
+                B_FEE,
+            </if>
+            <if test="bFeeTotal != null" >
+                B_FEE_TOTAL,
+            </if>
+            <if test="transType != null" >
+                TRANS_TYPE,
+            </if>
+            <if test="endTime != null" >
+                END_TIME,
+            </if>
+            <if test="sysrefno != null" >
+                SYSREFNO,
+            </if>
+            <if test="billStatus != null" >
+                BILL_STATUS,
+            </if>
+            <if test="billTime != null" >
+                BILL_TIME,
+            </if>
+            <if test="billDesc != null" >
+                BILL_DESC,
+            </if>
+            <if test="merchantId != null" >
+                MERCHANT_ID,
+            </if>
+            <if test="sysrefno1 != null" >
+                SYSREFNO1,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkDataBill != null" >
+                #{pkDataBill,jdbcType=CHAR},
+            </if> 
+            <if test="pkDataBillP != null" >
+                #{pkDataBillP,jdbcType=CHAR},
+            </if> 
+            <if test="terminalId != null" >
+                #{terminalId,jdbcType=VARCHAR},
+            </if> 
+            <if test="merchantName != null" >
+                #{merchantName,jdbcType=VARCHAR},
+            </if> 
+            <if test="netAddrname != null" >
+                #{netAddrname,jdbcType=VARCHAR},
+            </if> 
+            <if test="cardNo != null" >
+                #{cardNo,jdbcType=VARCHAR},
+            </if> 
+            <if test="bankName != null" >
+                #{bankName,jdbcType=VARCHAR},
+            </if> 
+            <if test="transDate != null" >
+                #{transDate,jdbcType=VARCHAR},
+            </if> 
+            <if test="transTime != null" >
+                #{transTime,jdbcType=VARCHAR},
+            </if> 
+            <if test="amount != null" >
+                #{amount,jdbcType=VARCHAR},
+            </if> 
+            <if test="amountTotal != null" >
+                #{amountTotal,jdbcType=DECIMAL},
+            </if> 
+            <if test="transFee != null" >
+                #{transFee,jdbcType=VARCHAR},
+            </if> 
+            <if test="transFeeTotal != null" >
+                #{transFeeTotal,jdbcType=DECIMAL},
+            </if> 
+            <if test="bFee != null" >
+                #{bFee,jdbcType=VARCHAR},
+            </if> 
+            <if test="bFeeTotal != null" >
+                #{bFeeTotal,jdbcType=DECIMAL},
+            </if> 
+            <if test="transType != null" >
+                #{transType,jdbcType=VARCHAR},
+            </if> 
+            <if test="endTime != null" >
+                #{endTime,jdbcType=VARCHAR},
+            </if> 
+            <if test="sysrefno != null" >
+                #{sysrefno,jdbcType=VARCHAR},
+            </if> 
+            <if test="billStatus != null" >
+                #{billStatus,jdbcType=INTEGER},
+            </if> 
+            <if test="billTime != null" >
+                #{billTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="billDesc != null" >
+                #{billDesc,jdbcType=VARCHAR},
+            </if> 
+            <if test="merchantId != null" >
+                #{merchantId,jdbcType=VARCHAR},
+            </if> 
+            <if test="sysrefno1 != null" >
+                #{sysrefno1,jdbcType=VARCHAR},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateTpServUnionpayDataBill" parameterType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServUnionpayDataBill" >
+        UPDATE tp_serv_unionpay_data_bill
+        <set>
+            <if test="pkDataBill != null" >
+                PK_DATA_BILL = #{pkDataBill,jdbcType=CHAR},
+            </if>
+            <if test="pkDataBillP != null" >
+                PK_DATA_BILL_P = #{pkDataBillP,jdbcType=CHAR},
+            </if>
+            <if test="terminalId != null" >
+                TERMINAL_ID = #{terminalId,jdbcType=VARCHAR},
+            </if>
+            <if test="merchantName != null" >
+                MERCHANT_NAME = #{merchantName,jdbcType=VARCHAR},
+            </if>
+            <if test="netAddrname != null" >
+                NET_ADDRNAME = #{netAddrname,jdbcType=VARCHAR},
+            </if>
+            <if test="cardNo != null" >
+                CARD_NO = #{cardNo,jdbcType=VARCHAR},
+            </if>
+            <if test="bankName != null" >
+                BANK_NAME = #{bankName,jdbcType=VARCHAR},
+            </if>
+            <if test="transDate != null" >
+                TRANS_DATE = #{transDate,jdbcType=VARCHAR},
+            </if>
+            <if test="transTime != null" >
+                TRANS_TIME = #{transTime,jdbcType=VARCHAR},
+            </if>
+            <if test="amount != null" >
+                AMOUNT = #{amount,jdbcType=VARCHAR},
+            </if>
+            <if test="amountTotal != null" >
+                AMOUNT_TOTAL = #{amountTotal,jdbcType=DECIMAL},
+            </if>
+            <if test="transFee != null" >
+                TRANS_FEE = #{transFee,jdbcType=VARCHAR},
+            </if>
+            <if test="transFeeTotal != null" >
+                TRANS_FEE_TOTAL = #{transFeeTotal,jdbcType=DECIMAL},
+            </if>
+            <if test="bFee != null" >
+                B_FEE = #{bFee,jdbcType=VARCHAR},
+            </if>
+            <if test="bFeeTotal != null" >
+                B_FEE_TOTAL = #{bFeeTotal,jdbcType=DECIMAL},
+            </if>
+            <if test="transType != null" >
+                TRANS_TYPE = #{transType,jdbcType=VARCHAR},
+            </if>
+            <if test="endTime != null" >
+                END_TIME = #{endTime,jdbcType=VARCHAR},
+            </if>
+            <if test="sysrefno != null" >
+                SYSREFNO = #{sysrefno,jdbcType=VARCHAR},
+            </if>
+            <if test="billStatus != null" >
+                BILL_STATUS = #{billStatus,jdbcType=INTEGER},
+            </if>
+            <if test="billTime != null" >
+                BILL_TIME = #{billTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="billDesc != null" >
+                BILL_DESC = #{billDesc,jdbcType=VARCHAR},
+            </if>
+            <if test="merchantId != null" >
+                MERCHANT_ID = #{merchantId,jdbcType=VARCHAR},
+            </if>
+            <if test="sysrefno1 != null" >
+                SYSREFNO1 = #{sysrefno1,jdbcType=VARCHAR},
+            </if>
+        </set>
+        WHERE 
+            PK_DATA_BILL = #{pkDataBill,jdbcType=CHAR}
+    </update>
+</mapper>

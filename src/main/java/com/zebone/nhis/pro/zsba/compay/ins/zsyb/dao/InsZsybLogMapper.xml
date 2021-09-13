@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.compay.ins.zsyb.dao.InsZsybLogMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybLog">
+        <id column="PK_INSLOG" jdbcType="CHAR" property="pkInslog"/>
+        <result column="PK_ORG" jdbcType="CHAR" property="pkOrg"/>
+        <result column="EU_TYPE" jdbcType="VARCHAR" property="euType"/>
+        <result column="DATE_HAP" jdbcType="TIMESTAMP" property="dateHap"/>
+        <result column="CODE_PI" jdbcType="VARCHAR" property="codePi"/>
+        <result column="NAME_PI" jdbcType="VARCHAR" property="namePi"/>
+        <result column="MEMO" jdbcType="VARCHAR" property="memo"/>
+        <result column="CREATOR" jdbcType="CHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="MODIFIER" jdbcType="CHAR" property="modifier"/>
+        <result column="MODITY_TIME" jdbcType="TIMESTAMP" property="modityTime"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+    </resultMap>
+    <select id="getInsLogById" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+             ins_log
+        WHERE            
+            PK_INSLOG = #{pkInslog,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllInsLog" resultMap="BaseResultMap">
+          SELECT * FROM ins_log 
+    </select>
+    
+    <delete id="deleteInsLog">
+        DELETE
+        FROM
+             ins_log
+        WHERE            
+            PK_INSLOG = #{pkInslog,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveInsLog" parameterType="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybLog" >
+        INSERT INTO ins_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkInslog != null" >
+                PK_INSLOG,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="euType != null" >
+                EU_TYPE,
+            </if>
+            <if test="dateHap != null" >
+                DATE_HAP,
+            </if>
+            <if test="codePi != null" >
+                CODE_PI,
+            </if>
+            <if test="namePi != null" >
+                NAME_PI,
+            </if>
+            <if test="memo != null" >
+                MEMO,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="modifier != null" >
+                MODIFIER,
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkInslog != null" >
+                #{pkInslog,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=CHAR},
+            </if> 
+            <if test="euType != null" >
+                #{euType,jdbcType=VARCHAR},
+            </if> 
+            <if test="dateHap != null" >
+                #{dateHap,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="codePi != null" >
+                #{codePi,jdbcType=VARCHAR},
+            </if> 
+            <if test="namePi != null" >
+                #{namePi,jdbcType=VARCHAR},
+            </if> 
+            <if test="memo != null" >
+                #{memo,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=CHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="modifier != null" >
+                #{modifier,jdbcType=CHAR},
+            </if> 
+            <if test="modityTime != null" >
+                #{modityTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=TIMESTAMP},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateInsLog" parameterType="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybLog" >
+        UPDATE ins_log
+        <set>
+            <if test="pkInslog != null" >
+                PK_INSLOG = #{pkInslog,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=CHAR},
+            </if>
+            <if test="euType != null" >
+                EU_TYPE = #{euType,jdbcType=VARCHAR},
+            </if>
+            <if test="dateHap != null" >
+                DATE_HAP = #{dateHap,jdbcType=TIMESTAMP},
+            </if>
+            <if test="codePi != null" >
+                CODE_PI = #{codePi,jdbcType=VARCHAR},
+            </if>
+            <if test="namePi != null" >
+                NAME_PI = #{namePi,jdbcType=VARCHAR},
+            </if>
+            <if test="memo != null" >
+                MEMO = #{memo,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=CHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="modifier != null" >
+                MODIFIER = #{modifier,jdbcType=CHAR},
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME = #{modityTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        WHERE 
+            PK_INSLOG = #{pkInslog,jdbcType=CHAR}
+    </update>
+</mapper>

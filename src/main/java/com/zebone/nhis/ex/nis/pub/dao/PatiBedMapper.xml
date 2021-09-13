@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.pub.dao.PatiBedMapper">
+   <select id="getBedInfo"  parameterType="java.util.Map" resultType="com.zebone.nhis.ex.pub.vo.PatiCardVo">
+		 select pvBed.eu_hold,
+				pvBed.flag_maj,
+				bed.pk_bed,
+		        bed.code as bedno,
+		        bed.name,
+		        bed.flag_active,
+		        bed.flag_temp,
+		        bed.flag_ocupy,
+		        bed.houseno,
+		        bed.eu_status,
+		        bed.dt_bedtype,
+		        bed.name_place as patient_memo,
+		        item.price,
+		        pv.pk_pi,
+		        pv.name_pi,
+		        pv.dt_sex,
+		        pv.age_pv as age,
+		        pv.pk_dept_ns,
+		        pv.pk_picate,
+		        pv.cadre_level,
+		        cate.name picate,
+		        pv.pk_dept,
+		        dept.name_dept,
+		        dept.code_dept,
+		        pv.name_emp_phy,
+		        pv.name_emp_ns,
+		        pv.pk_emp_ns,
+		        pv.pk_pv,
+		        pv.code_pv,
+		        pv.eu_pvmode,
+		        pi.code_ip,
+		        pi.code_pi,
+		        pi.id_no,
+		        pv.date_admit,
+	   			adt.date_begin AS inDeptTime,
+		        hp.name as hpname,
+		        hp.eu_hptype,
+		        diag.desc_diag,
+		        ip.ip_times,
+		        ip.dt_level_ns,
+		        ip.dt_level_dise,
+		        ip.dt_level_nutr,
+		        ip.dt_dietary,
+		        ip.flag_infant,
+		        pv.date_begin ,
+		        def_dise.name level_dise_hint,
+		        ord_ns.name level_ns_hint,
+		        ord_nutr.name level_nutr_hint,
+		        infant.name infantname,
+  				infant.dt_sex infantsex,
+  				infant.code infantcode,
+  				infant.pk_pv pk_pv_infant,
+  				infant.sort_no,
+	            CASE WHEN  infant.date_birth is null THEN pi.birth_date else infant.date_birth END date_birth,
+  				lab.pk_pvlabor,
+  				lab.eu_status eu_status_infant ,
+  				pv.weight,
+			   	pv.height,
+			   	GETPVAGE(pi.BIRTH_DATE,pv.DATE_BEGIN) as age_format,
+	            pvs.code_emp as  codeempphy,
+  				<if test='dbType == "oracle"'>
+	 				(select wm_concat(name_al) from pi_allergic where  
+	 				pk_pi=bed.pk_pi and del_flag='0') as name_al, 
+  				</if>
+          		<if test='dbType == "sqlserver"'>
+	 				( SELECT LEFT(allergic.name_al,LEN(name_al)-1) as name_al  
+						FROM (SELECT pk_pi,
+						(SELECT name_al+',' FROM pi_allergic 
+							 WHERE pk_pi=A.pk_pi and  del_flag='0' 
+							  FOR XML PATH('')) AS name_al
+						FROM pi_allergic a   where  a.del_flag='0'
+						GROUP BY pk_pi
+						) allergic where allergic.pk_pi=bed.pk_pi
+					) as name_al, 
+  				</if>
+  				pi.mobile,
+	            case when t.allergicCount>0 then 1  else 0 end is_allergic
+<!--	            <if test=' "4"==operation '>-->
+<!--	           		,case when e.operation>0 then 1  else 0 end is_operation-->
+<!--				</if>-->
+<!--			    <if test=' "5"==drain '>-->
+<!--					,case when f.drain>0 then 1  else 0 end is_drain-->
+<!--				</if> -->
+		   from bd_res_bed bed
+		   left join bd_item item on item.pk_item = bed.pk_item 
+		   left join pv_encounter pv on pv.pk_pi = bed.pk_pi and pv.eu_status = '1' and pv.eu_pvtype = '3'
+	      left join bd_ou_employee pvs on pv.pk_emp_tre=pvs.pk_emp
+		   left join pi_master pi on pi.pk_pi = pv.pk_pi
+		   left join pi_cate cate on cate.pk_picate = pv.pk_picate
+		   left join pv_ip ip on ip.pk_pv = pv.pk_pv
+		   left join bd_ou_dept dept on pv.pk_dept = dept.pk_dept 
+		   left join bd_hp hp on pv.pk_insu = hp.pk_hp 
+		   left join pv_diag diag on diag.pk_pv = pv.pk_pv and diag.flag_maj = '1' and diag.del_flag = '0'
+		   left join bd_defdoc def_dise on ip.dt_level_dise = def_dise.code and def_dise.code_defdoclist = '000202'
+		   left join bd_ord ord_ns on ip.dt_level_ns = ord_ns.code and ord_ns.code_ordtype like '06%' 
+		   left join bd_ord ord_nutr on ip.dt_level_nutr = ord_nutr.code and ord_nutr.code_ordtype = '13'
+		   left join pv_bed pvBed on bed.code = pvBed.Bedno   and pv.pk_pv = pvBed.pk_pv  and pvBed.Date_End is null  
+		   left join pv_infant infant on pv.pk_pv = infant.pk_pv_infant   
+		   left join pv_labor lab on pv.pk_pv = lab.pk_pv and (lab.eu_status='1' or lab.eu_status='0')
+	   	   LEFT JOIN (SELECT MAX(date_begin)AS date_begin,pk_pv,pk_dept FROM pv_adt GROUP BY pk_pv,pk_dept) adt ON adt.pk_pv = pv.pk_pv and adt.pk_dept = pv.pk_dept
+	   left join (select count(*) allergicCount,al.pk_pi  from pi_allergic al where al.del_flag = '0' GROUP BY al.pk_pi  )  t on t.PK_PI =pi.pk_pi
+<!--	   <if test=' "4"==operation '>-->
+<!--			left join (select count(1) as operation,ord.pk_pv from cn_order ord inner join cn_op_apply op on ord.pk_cnord=op.pk_cnord-->
+<!-- 			where ord.flag_erase='0' and op.eu_status &lt; '5' GROUP BY ord.pk_pv ) e on e.pk_pv=pv.pk_pv-->
+<!--		</if>-->
+<!--		 <if test=' "5"==drain '>-->
+<!--			left join (select count(1) as drain,ord.pk_pv from cn_order ord where ord.code_ordtype='0503' -->
+<!--			and ord.flag_erase='0' and ord.eu_always='0' and  (ord.flag_stop_chk='0' -->
+<!--				or ord.date_stop &lt; to_date(#{nowDate},'YYYYMMDDHH24MISS') ) group by ord.pk_pv-->
+<!--			) f on f.pk_pv=pv.pk_pv-->
+<!--		</if>-->
+	   where (bed.flag_ocupy = '0' or bed.flag_ocupy = '1' and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR})
+			and bed.pk_org = #{pkOrg,jdbcType=CHAR}  
+			and bed.pk_ward = #{pkDeptNs,jdbcType=CHAR} 
+			and bed.del_flag = '0' and bed.flag_active = '1'
+		<if test=' babyBed!="0" '>
+			and (bed.dt_bedtype ='09'and (bed.pk_pi !=' ' and bed.pk_pi is not null) or bed.dt_bedtype!='09')
+		</if>
+		<if test="pkPv != null  and  pkPv != ''">
+		    and pv.pk_pv = #{pkPv,jdbcType=CHAR}
+	    </if>
+	    <if test=" bednoDes != null  and  bednoDes != ''">
+		    and bed.code = #{bednoDes,jdbcType=VARCHAR}
+	    </if>
+	      order by bed.code 
+	</select>
+	
+	<select id="getPiStafInfoByBed"  parameterType="java.util.Map" resultType="com.zebone.nhis.ex.pub.vo.PatiCardVo">
+		 select pv.name_emp_ns,
+		        pv.pk_emp_ns,
+		        sta.pk_staff pk_staff_emp_ns   
+		   from pv_encounter pv  
+		   left join PV_STAFF sta on sta.PK_PV = pv.PK_PV and sta.PK_EMP = pv.PK_EMP_NS and sta.DATE_END is NULL and sta.DT_ROLE = '0100'
+		  where pv.eu_status = '1' 
+		    and pv.eu_pvtype = '3' 
+		    and pv.pk_pv = #{pkPv,jdbcType=CHAR}
+	</select>
+  
+	 <select id="getZtFeeDetailByPv"  parameterType="java.util.Map" resultType="DynaBean">
+				select item.name name, 
+       			exlist.quan_occ * orditem.quan quan,
+       			item.price price,
+       			exlist.quan_occ * item.price * orditem.quan amt,
+       			exlist.date_plan date_plan
+  				from cn_order ord 
+       			inner join ex_order_occ exlist on ord.pk_cnord=exlist.pk_cnord
+       			inner join bd_ord_item orditem on ord.pk_ord = orditem.pk_ord 
+       			inner join bd_item item on orditem.pk_item=item.pk_item
+ 				where exlist.eu_status='0' and ord.flag_self='0' and ord.pk_pv = #{pkPv,jdbcType=CHAR} 
+				union all
+				select pd.name name, 
+       			dt.quan_pack quan,
+       			dt.price price,
+       			dt.amount amt,
+       			ap.date_ap date_plan
+  				from ex_pd_apply_detail dt
+       			inner join ex_pd_apply ap on ap.pk_pdap=dt.pk_pdap
+       			inner join bd_pd pd on dt.pk_pd = pd.pk_pd 
+ 				where dt.flag_finish = '0' and dt.flag_self='0'  
+       			and dt.flag_stop = '0' and
+      			 ap.eu_status != '9' and
+       			dt.pk_pv = #{pkPv,jdbcType=CHAR}
+       			order by date_plan desc
+	</select>
+	<select id="getGdFeeDetailByPv"  parameterType="java.util.Map" resultType="DynaBean">
+		select item.code,
+        item.name,
+        item.price,
+        dt.eu_cgmode
+  		from pv_daycg dc 
+        inner join pv_daycg_detail dt on dc.pk_daycg=dt.pk_daycg
+        inner join bd_item item on dt.pk_item=item.pk_item
+ 		where dt.flag_active='1'  and dc.pk_pv = #{pkPv,jdbcType=CHAR} 
+	</select>
+	
+	<!-- 包床/退包床查询 -->
+	<select id="queryPvPackBed" parameterType="java.util.Map" resultType="DynaBean">
+	select bed.code, bed.pk_bed, bed.name, item.price, bed.dt_bedtype, bed.houseno,bed.pk_org,bed.pk_ward
+	  from bd_res_bed bed
+ 	inner join bd_item item
+    on item.pk_item = bed.pk_item
+    where  1=1 
+        <if test=' type =="1" '><!-- 包床列表 -->
+		    and bed.flag_ocupy='0' and bed.eu_status='01' and bed.del_flag = '0' and bed.flag_active = '1' and bed.pk_ward=#{pkDeptNs,jdbcType=CHAR}
+        </if>
+        <if test=' type =="2" '><!-- 退包床列表 -->
+		    and bed.pk_pi = #{pkPi,jdbcType=CHAR} and bed.del_flag = '0' and bed.flag_active = '1' and not exists  
+		   (select 1 from pv_bed pv where pv.bedno = bed.code  and pv.pk_pv = #{pkPv,jdbcType=CHAR} and pv.flag_maj='1' and pv.date_end is null)
+        </if>
+        order by bed.code
+	</select>
+	
+	<!-- 床位责任护士查询 -->
+	<select id="getEmpNsByBed" parameterType="java.util.Map" resultType="DynaBean">
+	select emp.*  
+	  from bd_res_bed bed
+ 	inner join bd_ou_employee emp on emp.pk_emp = bed.pk_ns_emp and emp.del_flag = '0' and emp.flag_active = '1'
+    where bed.del_flag ='0' 
+      and bed.flag_active = '1' 
+      and bed.pk_bed = #{pkBed,jdbcType=CHAR} 
+	</select>
+	<select id="queryBedContainsAdditem" parameterType="java.util.Map" resultType="DynaBean">
+	 select bed.code,bed.pk_item_add  
+	   from bd_res_bed bed 
+      where bed.del_flag ='0' 
+      and bed.flag_active = '1' 
+      and bed.pk_item_add is not null 
+      and bed.pk_ward = #{pkWard,jdbcType=CHAR}   
+      and bed.code in 
+      <foreach item="bedno" index="index" collection="bednos" open="(" separator="," close=")">
+            	   #{bedno}    
+      </foreach>
+     </select> 
+      <select id="queryItemBedContainsAdditem" parameterType="java.util.Map" resultType="DynaBean">
+		  select bed.code,item.pk_item as pk_item_add
+       		from bd_res_bed bed 
+       		left join bd_item_bed item on item.pk_bed = bed.pk_bed
+        	where bed.del_flag ='0' 
+        	and bed.flag_active = '1'
+        	and item.flag_add = '1' 
+        	and item.del_flag = '0'
+        	and bed.pk_ward = #{pkWard,jdbcType=CHAR}   
+        	and bed.code in 
+        	<foreach item="bedno" index="index" collection="bednos" open="(" separator="," close=")">
+                 #{bedno}    
+        	</foreach>
+	</select>
+
+	<select id = "getPrintList" resultType="DynaBean">
+		select pk_tempprt, code, name,cnt_print from bd_temp_prt where dt_prttemp='0303' and del_flag = '0'
+	</select>
+
+	<select id="getBedInfoChildSearch" resultType="java.util.Map">
+		select ord.pk_pv, ord.code_ordtype, ord.eu_always, ord.flag_stop_chk, op.eu_status
+		from cn_order ord
+				 left join cn_op_apply op on ord.pk_cnord = op.pk_cnord
+		where ord.flag_erase = '0'
+		  and ord.PK_PV in
+		<foreach collection="list" item="pkpv" open="(" separator="," close=")">
+			#{pkpv,jdbcType=CHAR}
+		</foreach>
+	</select>
+</mapper>

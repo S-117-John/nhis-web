@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.PlatFormCreateACardMapper">
+    <select id="createACard" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.CreateACardReq"
+            resultType="java.util.Map">
+        
+        SELECT
+			pi.code_pi,
+			pi.code_op 
+		FROM
+			pi_master pi 
+		WHERE 
+		 	pi.id_no = #{userCardId,jdbcType=VARCHAR} 
+		 	AND pi.name_pi = #{userName,jdbcType=VARCHAR} 
+		    <!-- AND to_char(pi.birth_date,"yyyy-MM-dd") = #{userBirthday,jdbcType=VARCHAR} --> 
+		    AND pi.birth_date = to_date(#{userBirthday}, 'yyyy-MM-dd')
+		    AND pi.dt_sex = #{userGender,jdbcType=VARCHAR} 			
+    </select>
+</mapper>

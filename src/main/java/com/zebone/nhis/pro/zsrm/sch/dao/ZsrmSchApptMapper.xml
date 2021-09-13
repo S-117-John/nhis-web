@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsrm.sch.dao.ZsrmSchApptMapper">
+
+    <sql id="SchOfApptGroupFun">
+        <if test="isSqlServer=='true'">group_concat(t1.PK_SCH)</if>
+        <if test="isSqlServer=='false'">wm_concat(t1.PK_SCH)</if>
+        as pk_schs
+    </sql>
+    <select id="getSchOfApptGroup" resultType="java.lang.String">
+        select
+        <include refid="SchOfApptGroupFun"/>
+        from sch_sch t1
+        left join sch_resource t2 on t1.pk_schres = t2.pk_schres
+        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+            and t1.del_flag = '0'
+            and t1.pk_org = #{pkOrg,jdbcType=VARCHAR}
+            <if test="flagStop != null and flagStop != ''">
+                and t1.FLAG_STOP = #{flagStop,jdbcType=VARCHAR}
+            </if>
+            <if test="euStatus != null and euStatus != ''">
+                and t1.EU_STATUS = #{euStatus,jdbcType=VARCHAR}
+            </if>
+            <if test="pkSchsrv != null and pkSchsrv != ''">
+                and t1.pk_schsrv = #{pkSchsrv,jdbcType=VARCHAR}
+            </if>
+            <if test="euSchclass != null and euSchclass != ''">
+                and t1.eu_schclass = #{euSchclass,jdbcType=VARCHAR}
+            </if>
+            <if test="pkSchres != null and pkSchres != ''">
+                and t1.pk_schres = #{pkSchres,jdbcType=VARCHAR}
+            </if>
+            <if test="pkDept != null and pkDept != ''">
+                and t2.pk_dept = #{pkDept,jdbcType=VARCHAR}
+            </if>
+            <if test="pkEmp != null and pkEmp != ''">
+                and t2.pk_emp = #{pkEmp,jdbcType=VARCHAR}
+            </if>
+            <if test="dateWork != null and dateWork != ''">
+                and t1.date_work - to_date(#{dateWork,jdbcType=VARCHAR},'yyyy-mm-dd') &gt;= 0
+                and t1.date_work - to_date(#{dateWork,jdbcType=VARCHAR},'yyyy-mm-dd') &lt; 7
+            </if>
+            <if test="dateBegin != null">
+                and t1.date_work &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyy-mm-dd')
+            </if>
+            <if test="dateEnd != null">
+                and t1.date_work &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-mm-dd')
+            </if>
+            <if test="disease != null and disease != ''">
+                and t2.spec like '%'||#{disease,jdbcType=VARCHAR}||'%'
+            </if>
+            <if test="pkDeptArea !=null and pkDeptArea !=''">
+                and t2.pk_dept in
+                (select pk_schres from sch_resource
+                where pk_father = #{pkDeptArea,jdbcType=VARCHAR}
+                <if test="euSchclass != null and euSchclass != ''">
+                    and eu_schclass = #{euSchclass,jdbcType=VARCHAR}
+                </if>
+                <if test="pkEmp != null and pkEmp != ''">
+                    and pk_emp = #{pkEmp,jdbcType=VARCHAR}
+                </if>
+                <if test="ftByUser !=null and ftByUser==3"><!--参数SCH0018=3的情况 根据业务线类型【12】诊区权限判断，通过人员登陆的科室，拿到科室对应的诊区进行过滤信息-->
+                    and pk_dept_area in (
+                    select busa.pk_dept
+                    from bd_dept_bus bus
+                    inner join bd_dept_bu bu on bus.pk_deptbu=bu.pk_deptbu
+                    inner join bd_dept_bus busa on bus.pk_deptbu=busa.pk_deptbu
+                    where busa.dt_depttype='16'
+                    And bu.dt_butype='12'
+                    And busa.del_flag='0'
+                    and bus.pk_dept=#{pkDeptbus,jdbcType=VARCHAR}
+                    )
+                </if>
+                )
+            </if>
+        </trim>
+        group by t1.PK_SCHRES,t1.PK_SCHSRV,t2.PK_EMP
+    </select>
+
+    <select id="getSchOfApptInfo" resultType="com.zebone.nhis.pro.zsrm.sch.vo.SchSchVo">
+        select t1.*,t2.name schresName,t3.name schsrvName,t1.pk_planweek pkPlanweekCheck, t1.pk_schplan pkSchplanCheck,
+        t2.pk_ticketrules pkTicketrules
+        ,t2.PK_EMP,emp.NAME_EMP doctor_name
+        from sch_sch t1
+        left join sch_resource t2 on t1.pk_schres = t2.pk_schres
+        left join sch_srv t3 on t1.pk_schsrv = t3.pk_schsrv
+        left join bd_ou_employee emp on t2.PK_EMP=emp.PK_EMP
+        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+            <if test="pkSchs != null and pkSchs.size > 0">
+                AND (t1.pk_sch IN
+                <trim suffixOverrides=" OR t1.pk_sch IN()">    <!-- 表示删除最后一个条件 -->
+                    <foreach collection="pkSchs" item="pkSch" index="index" open="(" close=")">
+                        <if test="index != 0">
+                            <choose>
+                                <when test="index % 1000 == 999">) OR t1.pk_sch IN (</when>
+                                <otherwise>,</otherwise>
+                            </choose>
+                        </if>
+                        #{pkSch,jdbcType=VARCHAR}
+                    </foreach>
+                </trim>
+                )
+            </if>
+
+        </trim>
+    </select>
+
+    <select id="getSchInfoData" resultType="com.zebone.nhis.pro.zsrm.sch.vo.SchSchVo">
+        select srv.NAME schsrv_name,
+        res.NAME schres_name,
+        emp.NAME_EMP doctor_name,
+        emp.PK_EMP,
+        lot.NAME_DATESLOT,
+        sch.*
+        from sch_sch sch
+        inner join sch_resource res on sch.pk_schres = res.pk_schres
+        inner join SCH_SRV srv on srv.PK_SCHSRV = sch.PK_SCHSRV
+        inner join BD_CODE_DATESLOT lot on lot.PK_DATESLOT=sch.PK_DATESLOT
+        left join BD_OU_EMPLOYEE emp on emp.PK_EMP = res.PK_EMP
+        WHERE sch.del_flag = '0'
+        and sch.pk_org = #{pkOrg,jdbcType=VARCHAR}
+        and sch.FLAG_STOP = '0'
+        and sch.EU_STATUS = '8'
+        and sch.eu_schclass = '0'
+        <if test="pkDept != null and pkDept != ''">
+            <choose>
+                <when test="flagRole == 1">
+                    and res.pk_dept = #{pkDept,jdbcType=VARCHAR}
+                </when>
+                <otherwise>
+                    and sch.pk_dept = #{pkDept,jdbcType=VARCHAR}
+                </otherwise>
+            </choose>
+
+        </if>
+        <if test="nameDateslot != null and nameDateslot != 'all'.toString() and nameDateslot!= '' ">
+            and lot.NAME_DATESLOT =#{nameDateslot,jdbcType=VARCHAR}
+        </if>
+        <if test="pkEmp != null and pkEmp != ''">
+            <choose>
+                <when test="flagRole == 2">
+                    and ( res.pk_emp = #{pkEmp,jdbcType=VARCHAR}
+                    or res.eu_restype = '0')
+                </when>
+                <otherwise>
+                    and res.pk_emp = #{pkEmp,jdbcType=VARCHAR}
+                </otherwise>
+            </choose>
+        </if>
+        and sch.date_work = to_date(#{dateWork,jdbcType=VARCHAR},'yyyy-mm-dd')
+        <if test="pkDeptArea !=null and pkDeptArea !=''">
+            and res.pk_dept in
+            (select pk_schres from sch_resource
+            where eu_schclass = '0'
+            <if test="pkDeptArea != '_RootDept_'.toString() ">
+                and pk_father = #{pkDeptArea,jdbcType=VARCHAR}
+            </if>
+            <if test="ftByUser !=null and ftByUser==3">
+                <!--参数SCH0018=3的情况 根据业务线类型【12】诊区权限判断，通过人员登陆的科室，拿到科室对应的诊区进行过滤信息-->
+                and pk_dept_area in (
+                select busa.pk_dept
+                from bd_dept_bus bus
+                inner join bd_dept_bu bu on bus.pk_deptbu=bu.pk_deptbu
+                inner join bd_dept_bus busa on bus.pk_deptbu=busa.pk_deptbu
+                where busa.dt_depttype='16'
+                And bu.dt_butype='12'
+                And busa.del_flag='0'
+                and bus.pk_dept=#{pkDeptbus,jdbcType=VARCHAR}
+                )
+            </if>
+            )
+        </if>
+        order by res.sortno,res.code,lot.sortno
+    </select>
+
+    <select id="getApptStatCount" resultType="com.zebone.nhis.pro.zsrm.sch.vo.SchApptCntVo">
+        select tick.pk_sch
+        ,count(1) cnt_appt
+        ,sum(case when tick.DT_APPTYPE > '1' then 1 else 0 end) cnt_appt_out
+        ,sum(case when tick.DT_APPTYPE &lt;= '1' then 1 else 0 end) cnt_appt_in
+        from SCH_TICKET tick
+        where tick.FLAG_STOP='0' and tick.FLAG_APPT='1' and tick.FLAG_USED='0'
+        <if test="pkSchs !=null and pkSchs.size()>0">
+            and tick.pk_sch in
+            <foreach collection="pkSchs" item="pkSch" open="(" separator="," close=")">
+                #{pkSch,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        group by tick.PK_SCH
+    </select>
+
+    <select id="getSimpleSchResource" resultType="DynaBean" parameterType="java.util.Map">
+        select
+        PK_SCHRES as id,
+        name as name,
+        pk_father as fatherid,
+        SPCODE as pyCode
+        from sch_resource where EU_SCHCLASS='0' and del_flag='0' and pk_father is not null
+        and pk_dept is null
+        <if test="pkOrg != null and pkOrg != ''">
+            and pk_org=#{pkOrg,jdbcType=VARCHAR}
+        </if>
+        <if test="ftByUser !=null and ftByUser==1"><!--参数SCH0018=1的情况 根据人员科室权限过滤信息-->
+            and pk_dept_belong in (select pk_dept from bd_ou_empjob where pk_emp=#{pkEmp,jdbcType=VARCHAR} and
+            del_flag='0' )
+        </if>
+        <if test="ftByUser !=null and ftByUser==2"><!--参数SCH0018=2的情况 根据分诊台权限过滤信息-->
+            and pk_dept_belong in (select que.pk_dept from bd_qc_platform platform
+            inner join bd_qc_que que on platform.pk_qcplatform=que.pk_qcplatform
+            inner join bd_qc_perm perm on perm.pk_qcplatform = que.pk_qcplatform
+            where perm.pk_user = #{pkUser,jdbcType=VARCHAR}
+            )
+        </if>
+        <if test="ftByUser !=null and ftByUser==3"><!--参数SCH0018=3的情况 根据业务线类型【12】诊区权限判断，通过人员登陆的科室，拿到科室对应的诊区进行过滤信息-->
+            and pk_dept_area in (
+            select busa.pk_dept
+            from bd_dept_bus bus
+            inner join bd_dept_bu bu on bus.pk_deptbu=bu.pk_deptbu
+            inner join bd_dept_bus busa on bus.pk_deptbu=busa.pk_deptbu
+            where busa.dt_depttype='16'
+            And bu.dt_butype='12'
+            And busa.del_flag='0'
+            and bus.pk_dept=#{pkDept,jdbcType=VARCHAR}
+            )
+        </if>
+    </select>
+
+    <select id="getSimpleSchResourceFather" resultType="DynaBean" parameterType="java.util.Map">
+        select
+        pk_schres as id,
+        name as name,
+        pk_father as fatherid,
+        SPCODE as pyCode
+        from sch_resource where EU_SCHCLASS='0' and del_flag='0' and pk_father is null
+        and pk_dept is null
+        and pk_schres in (${pkFathers})
+        <if test="pkOrg != null and pkOrg != ''">
+            and pk_org=#{pkOrg,jdbcType=VARCHAR}
+        </if>
+        union
+        select
+        pk_schres as id,
+        name as name,
+        pk_father as fatherid,
+        SPCODE as pyCode
+        from sch_resource where EU_SCHCLASS='0' and del_flag='0' and pk_father is null
+        and pk_dept is null
+        <if test="pkFatherList != null and pkFatherList.size > 0">
+            AND (pk_schres IN
+            <trim suffixOverrides=" OR pk_schres IN()">    <!-- 表示删除最后一个条件 -->
+                <foreach collection="pkFatherList" item="pkSchres" index="index" open="(" close=")">
+                    <if test="index != 0">
+                        <choose>
+                            <when test="index % 1000 == 999">) OR pk_schres IN (</when>
+                            <otherwise>,</otherwise>
+                        </choose>
+                    </if>
+                    #{pkSchres}
+                </foreach>
+            </trim>
+            )
+        </if>
+        <if test="pkOrg != null and pkOrg != ''">
+            and pk_org=#{pkOrg,jdbcType=VARCHAR}
+        </if>
+        <if test="ftByUser !=null and ftByUser==1"><!--参数SCH0018=1的情况 根据人员科室权限过滤信息-->
+            and pk_dept_belong in (select pk_dept from bd_ou_empjob where pk_emp=#{pkEmp,jdbcType=VARCHAR} and
+            del_flag='0' )
+        </if>
+        <if test="ftByUser !=null and ftByUser==2"><!--参数SCH0018=2的情况 根据分诊台权限过滤信息-->
+            and pk_dept_belong in (select que.pk_dept from bd_qc_platform platform
+            inner join bd_qc_que que on platform.pk_qcplatform=que.pk_qcplatform
+            inner join bd_qc_perm perm on perm.pk_qcplatform = que.pk_qcplatform
+            where perm.pk_user = #{pkUser,jdbcType=VARCHAR}
+            )
+        </if>
+        <if test="ftByUser !=null and ftByUser==3"><!--参数SCH0018=3的情况 根据业务线类型【12】诊区权限判断，通过人员登陆的科室，拿到科室对应的诊区进行过滤信息-->
+            and pk_dept_area in (
+            select busa.pk_dept
+            from bd_dept_bus bus
+            inner join bd_dept_bu bu on bus.pk_deptbu=bu.pk_deptbu
+            inner join bd_dept_bus busa on bus.pk_deptbu=busa.pk_deptbu
+            where busa.dt_depttype='16'
+            And bu.dt_butype='12'
+            And busa.del_flag='0'
+            and bus.pk_dept=#{pkDept,jdbcType=VARCHAR}
+            )
+        </if>
+    </select>
+
+    <select id="getDeptTree" resultType="DynaBean" parameterType="java.util.Map">
+        select DISTINCT org.pk_org as id, org.name_org as name,null as fatherid,org.py_code as pyCode
+        from BD_OU_ORG org
+        inner join bd_ou_dept dept on ORG.pk_org = DEPT.PK_ORG
+        where dept.flag_active=1
+        and dept.dt_depttype='01'
+        and dept.flag_op=1
+        and dept.del_flag=0
+        <if test="pkOrg != null and pkOrg != ''">
+            and org.pk_org=#{pkOrg,jdbcType=VARCHAR}
+        </if>
+        union
+        select DISTINCT dept.pk_dept as id,dept.name_dept as name,org.pk_org as fatherid,dept.py_code as pyCode
+        from BD_OU_ORG org
+        RIGHT JOIN bd_ou_dept dept on ORG.pk_org = DEPT.PK_ORG
+        where dept.flag_active=1
+        and dt_depttype='01'
+        and flag_op=1
+        and dept.del_flag=0
+        <if test="pkOrg != null and pkOrg != ''">
+            and org.pk_org=#{pkOrg,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+    <select id="getTicketInfo" parameterType="java.util.Set" resultType="DynaBean">
+        select PK_SCH,
+        count(1) cnt_total,
+        sum(case when FLAG_STOP = '0' and FLAG_APPT = '1' and FLAG_USED = '0' then 1 else 0 end) cnt_appt,
+        sum(case
+        when DT_APPTYPE &gt; '1' and FLAG_STOP = '0' and FLAG_APPT = '1' and FLAG_USED = '0' then 1
+        else 0 end) cnt_appt_out,
+        sum(case
+        when DT_APPTYPE &lt;= '1' and FLAG_STOP = '0' and FLAG_APPT = '1' and FLAG_USED = '0' then 1
+        else 0 end) cnt_appt_in,
+        sum(case
+        when DT_APPTYPE = '0' and FLAG_USED = '1' and FLAG_APPT = '1' then 1
+        else 0 end) cnt_Appt_Cliniced,
+        sum(case
+        when DT_APPTYPE = '1' and FLAG_USED = '1' and FLAG_APPT = '1' then 1
+        else 0 end) Cnt_Appt_Localed,
+        sum(case when DT_APPTYPE = '2' and FLAG_USED = '1' and FLAG_APPT = '1' then 1 else 0 end) Cnt_Appt_Outed
+        from SCH_TICKET
+        <if test="pkSchSet !=null and pkSchSet.size()>0">
+            where pk_sch in
+            <foreach collection="pkSchSet" item="item" index="index" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        group by PK_SCH
+    </select>
+
+
+</mapper>

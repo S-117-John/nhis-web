@@ -1,0 +1,660 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.compay.ins.pub.dao.InsPubPvOutMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.common.module.compay.ins.zsba.pub.InsPubPvOut">
+        <id column="PK_INSPVOUT" jdbcType="CHAR" property="pkInspvout"/>
+        <result column="PK_ORG" jdbcType="CHAR" property="pkOrg"/>
+        <result column="SIGN" jdbcType="VARCHAR" property="sign"/>
+        <result column="TRANSID" jdbcType="VARCHAR" property="transid"/>
+        <result column="AAB301" jdbcType="VARCHAR" property="aab301"/>
+        <result column="YAB060" jdbcType="VARCHAR" property="yab060"/>
+        <result column="YKC021" jdbcType="VARCHAR" property="ykc021"/>
+        <result column="YKC300" jdbcType="VARCHAR" property="ykc300"/>
+        <result column="AKC026" jdbcType="CHAR" property="akc026"/>
+        <result column="AKC023" jdbcType="DECIMAL" property="akc023"/>
+        <result column="AAB001" jdbcType="VARCHAR" property="aab001"/>
+        <result column="AAB003" jdbcType="VARCHAR" property="aab003"/>
+        <result column="AAB004" jdbcType="VARCHAR" property="aab004"/>
+        <result column="AAB020" jdbcType="VARCHAR" property="aab020"/>
+        <result column="AAB019" jdbcType="VARCHAR" property="aab019"/>
+        <result column="AAB021" jdbcType="VARCHAR" property="aab021"/>
+        <result column="AAE379" jdbcType="DECIMAL" property="aae379"/>
+        <result column="AKC252" jdbcType="DECIMAL" property="akc252"/>
+        <result column="YKA116" jdbcType="DECIMAL" property="yka116"/>
+        <result column="YKA119" jdbcType="DECIMAL" property="yka119"/>
+        <result column="YKA121" jdbcType="DECIMAL" property="yka121"/>
+        <result column="YKA123" jdbcType="DECIMAL" property="yka123"/>
+        <result column="AKE092" jdbcType="DECIMAL" property="ake092"/>
+        <result column="YKA437" jdbcType="DECIMAL" property="yka437"/>
+        <result column="AKC200" jdbcType="DECIMAL" property="akc200"/>
+        <result column="YKC023" jdbcType="VARCHAR" property="ykc023"/>
+        <result column="YKC667" jdbcType="VARCHAR" property="ykc667"/>
+        <result column="YZZ014" jdbcType="VARCHAR" property="yzz014"/>
+        <result column="AKE132" jdbcType="VARCHAR" property="ake132"/>
+        <result column="YKC669" jdbcType="VARCHAR" property="ykc669"/>
+        <result column="YKC678" jdbcType="VARCHAR" property="ykc678"/>
+        <result column="YKC670" jdbcType="VARCHAR" property="ykc670"/>
+        <result column="YKC682" jdbcType="VARCHAR" property="ykc682"/>
+        <result column="AKE014" jdbcType="TIMESTAMP" property="ake014"/>
+        <result column="YKC672" jdbcType="VARCHAR" property="ykc672"/>
+        <result column="YKC673" jdbcType="VARCHAR" property="ykc673"/>
+        <result column="YKC674" jdbcType="VARCHAR" property="ykc674"/>
+        <result column="DEF10" jdbcType="VARCHAR" property="def10"/>
+        <result column="DEF9" jdbcType="VARCHAR" property="def9"/>
+        <result column="DEF8" jdbcType="VARCHAR" property="def8"/>
+        <result column="DEF7" jdbcType="VARCHAR" property="def7"/>
+        <result column="DEF6" jdbcType="VARCHAR" property="def6"/>
+        <result column="DEF5" jdbcType="VARCHAR" property="def5"/>
+        <result column="DEF4" jdbcType="VARCHAR" property="def4"/>
+        <result column="DEF3" jdbcType="VARCHAR" property="def3"/>
+        <result column="DEF2" jdbcType="VARCHAR" property="def2"/>
+        <result column="DEF1" jdbcType="VARCHAR" property="def1"/>
+        <result column="CREATOR" jdbcType="CHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="MODIFIER" jdbcType="CHAR" property="modifier"/>
+        <result column="MODITY_TIME" jdbcType="TIMESTAMP" property="modityTime"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+    </resultMap>
+    <select id="getInsPvOutById" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+             ins_pv_out
+        WHERE            
+            PK_INSPVOUT = #{pkInspvout,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllInsPvOut" resultMap="BaseResultMap">
+          SELECT * FROM ins_pv_out 
+    </select>
+    
+    <delete id="deleteInsPvOut">
+        DELETE
+        FROM
+             ins_pv_out
+        WHERE            
+            PK_INSPVOUT = #{pkInspvout,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveInsPvOut" parameterType="com.zebone.nhis.common.module.compay.ins.zsba.pub.InsPubPvOut" >
+        INSERT INTO ins_pv_out
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkInspvout != null" >
+                PK_INSPVOUT,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="sign != null" >
+                SIGN,
+            </if>
+            <if test="transid != null" >
+                TRANSID,
+            </if>
+            <if test="aab301 != null" >
+                AAB301,
+            </if>
+            <if test="yab060 != null" >
+                YAB060,
+            </if>
+            <if test="ykc021 != null" >
+                YKC021,
+            </if>
+            <if test="ykc300 != null" >
+                YKC300,
+            </if>
+            <if test="akc026 != null" >
+                AKC026,
+            </if>
+            <if test="akc023 != null" >
+                AKC023,
+            </if>
+            <if test="aab001 != null" >
+                AAB001,
+            </if>
+            <if test="aab003 != null" >
+                AAB003,
+            </if>
+            <if test="aab004 != null" >
+                AAB004,
+            </if>
+            <if test="aab020 != null" >
+                AAB020,
+            </if>
+            <if test="aab019 != null" >
+                AAB019,
+            </if>
+            <if test="aab021 != null" >
+                AAB021,
+            </if>
+            <if test="aae379 != null" >
+                AAE379,
+            </if>
+            <if test="akc252 != null" >
+                AKC252,
+            </if>
+            <if test="yka116 != null" >
+                YKA116,
+            </if>
+            <if test="yka119 != null" >
+                YKA119,
+            </if>
+            <if test="yka121 != null" >
+                YKA121,
+            </if>
+            <if test="yka123 != null" >
+                YKA123,
+            </if>
+            <if test="ake092 != null" >
+                AKE092,
+            </if>
+            <if test="yka437 != null" >
+                YKA437,
+            </if>
+            <if test="akc200 != null" >
+                AKC200,
+            </if>
+            <if test="ykc023 != null" >
+                YKC023,
+            </if>
+            <if test="ykc667 != null" >
+                YKC667,
+            </if>
+            <if test="yzz014 != null" >
+                YZZ014,
+            </if>
+            <if test="ake132 != null" >
+                AKE132,
+            </if>
+            <if test="ykc669 != null" >
+                YKC669,
+            </if>
+            <if test="ykc678 != null" >
+                YKC678,
+            </if>
+            <if test="ykc670 != null" >
+                YKC670,
+            </if>
+            <if test="ykc682 != null" >
+                YKC682,
+            </if>
+            <if test="ake014 != null" >
+                AKE014,
+            </if>
+            <if test="ykc672 != null" >
+                YKC672,
+            </if>
+            <if test="ykc673 != null" >
+                YKC673,
+            </if>
+            <if test="ykc674 != null" >
+                YKC674,
+            </if>
+            <if test="def10 != null" >
+                DEF10,
+            </if>
+            <if test="def9 != null" >
+                DEF9,
+            </if>
+            <if test="def8 != null" >
+                DEF8,
+            </if>
+            <if test="def7 != null" >
+                DEF7,
+            </if>
+            <if test="def6 != null" >
+                DEF6,
+            </if>
+            <if test="def5 != null" >
+                DEF5,
+            </if>
+            <if test="def4 != null" >
+                DEF4,
+            </if>
+            <if test="def3 != null" >
+                DEF3,
+            </if>
+            <if test="def2 != null" >
+                DEF2,
+            </if>
+            <if test="def1 != null" >
+                DEF1,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="modifier != null" >
+                MODIFIER,
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkInspvout != null" >
+                #{pkInspvout,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=CHAR},
+            </if> 
+            <if test="sign != null" >
+                #{sign,jdbcType=VARCHAR},
+            </if> 
+            <if test="transid != null" >
+                #{transid,jdbcType=VARCHAR},
+            </if> 
+            <if test="aab301 != null" >
+                #{aab301,jdbcType=VARCHAR},
+            </if> 
+            <if test="yab060 != null" >
+                #{yab060,jdbcType=VARCHAR},
+            </if> 
+            <if test="ykc021 != null" >
+                #{ykc021,jdbcType=VARCHAR},
+            </if> 
+            <if test="ykc300 != null" >
+                #{ykc300,jdbcType=VARCHAR},
+            </if> 
+            <if test="akc026 != null" >
+                #{akc026,jdbcType=CHAR},
+            </if> 
+            <if test="akc023 != null" >
+                #{akc023,jdbcType=DECIMAL},
+            </if> 
+            <if test="aab001 != null" >
+                #{aab001,jdbcType=VARCHAR},
+            </if> 
+            <if test="aab003 != null" >
+                #{aab003,jdbcType=VARCHAR},
+            </if> 
+            <if test="aab004 != null" >
+                #{aab004,jdbcType=VARCHAR},
+            </if> 
+            <if test="aab020 != null" >
+                #{aab020,jdbcType=VARCHAR},
+            </if> 
+            <if test="aab019 != null" >
+                #{aab019,jdbcType=VARCHAR},
+            </if> 
+            <if test="aab021 != null" >
+                #{aab021,jdbcType=VARCHAR},
+            </if> 
+            <if test="aae379 != null" >
+                #{aae379,jdbcType=DECIMAL},
+            </if> 
+            <if test="akc252 != null" >
+                #{akc252,jdbcType=DECIMAL},
+            </if> 
+            <if test="yka116 != null" >
+                #{yka116,jdbcType=DECIMAL},
+            </if> 
+            <if test="yka119 != null" >
+                #{yka119,jdbcType=DECIMAL},
+            </if> 
+            <if test="yka121 != null" >
+                #{yka121,jdbcType=DECIMAL},
+            </if> 
+            <if test="yka123 != null" >
+                #{yka123,jdbcType=DECIMAL},
+            </if> 
+            <if test="ake092 != null" >
+                #{ake092,jdbcType=DECIMAL},
+            </if> 
+            <if test="yka437 != null" >
+                #{yka437,jdbcType=DECIMAL},
+            </if> 
+            <if test="akc200 != null" >
+                #{akc200,jdbcType=DECIMAL},
+            </if> 
+            <if test="ykc023 != null" >
+                #{ykc023,jdbcType=VARCHAR},
+            </if> 
+            <if test="ykc667 != null" >
+                #{ykc667,jdbcType=VARCHAR},
+            </if> 
+            <if test="yzz014 != null" >
+                #{yzz014,jdbcType=VARCHAR},
+            </if> 
+            <if test="ake132 != null" >
+                #{ake132,jdbcType=VARCHAR},
+            </if> 
+            <if test="ykc669 != null" >
+                #{ykc669,jdbcType=VARCHAR},
+            </if> 
+            <if test="ykc678 != null" >
+                #{ykc678,jdbcType=VARCHAR},
+            </if> 
+            <if test="ykc670 != null" >
+                #{ykc670,jdbcType=VARCHAR},
+            </if> 
+            <if test="ykc682 != null" >
+                #{ykc682,jdbcType=VARCHAR},
+            </if> 
+            <if test="ake014 != null" >
+                #{ake014,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="ykc672 != null" >
+                #{ykc672,jdbcType=VARCHAR},
+            </if> 
+            <if test="ykc673 != null" >
+                #{ykc673,jdbcType=VARCHAR},
+            </if> 
+            <if test="ykc674 != null" >
+                #{ykc674,jdbcType=VARCHAR},
+            </if> 
+            <if test="def10 != null" >
+                #{def10,jdbcType=VARCHAR},
+            </if> 
+            <if test="def9 != null" >
+                #{def9,jdbcType=VARCHAR},
+            </if> 
+            <if test="def8 != null" >
+                #{def8,jdbcType=VARCHAR},
+            </if> 
+            <if test="def7 != null" >
+                #{def7,jdbcType=VARCHAR},
+            </if> 
+            <if test="def6 != null" >
+                #{def6,jdbcType=VARCHAR},
+            </if> 
+            <if test="def5 != null" >
+                #{def5,jdbcType=VARCHAR},
+            </if> 
+            <if test="def4 != null" >
+                #{def4,jdbcType=VARCHAR},
+            </if> 
+            <if test="def3 != null" >
+                #{def3,jdbcType=VARCHAR},
+            </if> 
+            <if test="def2 != null" >
+                #{def2,jdbcType=VARCHAR},
+            </if> 
+            <if test="def1 != null" >
+                #{def1,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=CHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="modifier != null" >
+                #{modifier,jdbcType=CHAR},
+            </if> 
+            <if test="modityTime != null" >
+                #{modityTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=TIMESTAMP},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateInsPvOut" parameterType="com.zebone.nhis.common.module.compay.ins.zsba.pub.InsPubPvOut" >
+        UPDATE ins_pv_out
+        <set>
+            <if test="pkInspvout != null" >
+                PK_INSPVOUT = #{pkInspvout,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=CHAR},
+            </if>
+            <if test="sign != null" >
+                SIGN = #{sign,jdbcType=VARCHAR},
+            </if>
+            <if test="transid != null" >
+                TRANSID = #{transid,jdbcType=VARCHAR},
+            </if>
+            <if test="aab301 != null" >
+                AAB301 = #{aab301,jdbcType=VARCHAR},
+            </if>
+            <if test="yab060 != null" >
+                YAB060 = #{yab060,jdbcType=VARCHAR},
+            </if>
+            <if test="ykc021 != null" >
+                YKC021 = #{ykc021,jdbcType=VARCHAR},
+            </if>
+            <if test="ykc300 != null" >
+                YKC300 = #{ykc300,jdbcType=VARCHAR},
+            </if>
+            <if test="akc026 != null" >
+                AKC026 = #{akc026,jdbcType=CHAR},
+            </if>
+            <if test="akc023 != null" >
+                AKC023 = #{akc023,jdbcType=DECIMAL},
+            </if>
+            <if test="aab001 != null" >
+                AAB001 = #{aab001,jdbcType=VARCHAR},
+            </if>
+            <if test="aab003 != null" >
+                AAB003 = #{aab003,jdbcType=VARCHAR},
+            </if>
+            <if test="aab004 != null" >
+                AAB004 = #{aab004,jdbcType=VARCHAR},
+            </if>
+            <if test="aab020 != null" >
+                AAB020 = #{aab020,jdbcType=VARCHAR},
+            </if>
+            <if test="aab019 != null" >
+                AAB019 = #{aab019,jdbcType=VARCHAR},
+            </if>
+            <if test="aab021 != null" >
+                AAB021 = #{aab021,jdbcType=VARCHAR},
+            </if>
+            <if test="aae379 != null" >
+                AAE379 = #{aae379,jdbcType=DECIMAL},
+            </if>
+            <if test="akc252 != null" >
+                AKC252 = #{akc252,jdbcType=DECIMAL},
+            </if>
+            <if test="yka116 != null" >
+                YKA116 = #{yka116,jdbcType=DECIMAL},
+            </if>
+            <if test="yka119 != null" >
+                YKA119 = #{yka119,jdbcType=DECIMAL},
+            </if>
+            <if test="yka121 != null" >
+                YKA121 = #{yka121,jdbcType=DECIMAL},
+            </if>
+            <if test="yka123 != null" >
+                YKA123 = #{yka123,jdbcType=DECIMAL},
+            </if>
+            <if test="ake092 != null" >
+                AKE092 = #{ake092,jdbcType=DECIMAL},
+            </if>
+            <if test="yka437 != null" >
+                YKA437 = #{yka437,jdbcType=DECIMAL},
+            </if>
+            <if test="akc200 != null" >
+                AKC200 = #{akc200,jdbcType=DECIMAL},
+            </if>
+            <if test="ykc023 != null" >
+                YKC023 = #{ykc023,jdbcType=VARCHAR},
+            </if>
+            <if test="ykc667 != null" >
+                YKC667 = #{ykc667,jdbcType=VARCHAR},
+            </if>
+            <if test="yzz014 != null" >
+                YZZ014 = #{yzz014,jdbcType=VARCHAR},
+            </if>
+            <if test="ake132 != null" >
+                AKE132 = #{ake132,jdbcType=VARCHAR},
+            </if>
+            <if test="ykc669 != null" >
+                YKC669 = #{ykc669,jdbcType=VARCHAR},
+            </if>
+            <if test="ykc678 != null" >
+                YKC678 = #{ykc678,jdbcType=VARCHAR},
+            </if>
+            <if test="ykc670 != null" >
+                YKC670 = #{ykc670,jdbcType=VARCHAR},
+            </if>
+            <if test="ykc682 != null" >
+                YKC682 = #{ykc682,jdbcType=VARCHAR},
+            </if>
+            <if test="ake014 != null" >
+                AKE014 = #{ake014,jdbcType=TIMESTAMP},
+            </if>
+            <if test="ykc672 != null" >
+                YKC672 = #{ykc672,jdbcType=VARCHAR},
+            </if>
+            <if test="ykc673 != null" >
+                YKC673 = #{ykc673,jdbcType=VARCHAR},
+            </if>
+            <if test="ykc674 != null" >
+                YKC674 = #{ykc674,jdbcType=VARCHAR},
+            </if>
+            <if test="def10 != null" >
+                DEF10 = #{def10,jdbcType=VARCHAR},
+            </if>
+            <if test="def9 != null" >
+                DEF9 = #{def9,jdbcType=VARCHAR},
+            </if>
+            <if test="def8 != null" >
+                DEF8 = #{def8,jdbcType=VARCHAR},
+            </if>
+            <if test="def7 != null" >
+                DEF7 = #{def7,jdbcType=VARCHAR},
+            </if>
+            <if test="def6 != null" >
+                DEF6 = #{def6,jdbcType=VARCHAR},
+            </if>
+            <if test="def5 != null" >
+                DEF5 = #{def5,jdbcType=VARCHAR},
+            </if>
+            <if test="def4 != null" >
+                DEF4 = #{def4,jdbcType=VARCHAR},
+            </if>
+            <if test="def3 != null" >
+                DEF3 = #{def3,jdbcType=VARCHAR},
+            </if>
+            <if test="def2 != null" >
+                DEF2 = #{def2,jdbcType=VARCHAR},
+            </if>
+            <if test="def1 != null" >
+                DEF1 = #{def1,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=CHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="modifier != null" >
+                MODIFIER = #{modifier,jdbcType=CHAR},
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME = #{modityTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        WHERE 
+            PK_INSPVOUT = #{pkInspvout,jdbcType=CHAR}
+    </update>
+    
+    <!-- 获取住院收费明细-项目  -->
+    <select id="getChargeDetails" parameterType="java.util.Map" resultType="java.util.Map">
+    	select 
+    	 pres_no, code_insclass, name_insclass, xmbh, zwmc, yjjypbm, flag_fit, code, name, price, date_hap, date_pres, sum(quan) as quan, sum(amount) as amount,ratio_disc
+    	 from (
+			select 
+				t1.pk_cgip,
+			  	t8.pres_no,
+			  	t5.code_insclass,
+				t5.name_insclass,
+				t2.xmbh,
+				t2.zwmc,
+				t2.yjjypbm,
+				t6.flag_fit, 
+				t7.code,
+			  	t7.name,
+				cast((t1.amount + (CASE WHEN t9.amt is null THEN 0 ELSE t9.amt END)) / (t1.quan+(CASE WHEN t9.quan is null THEN 0 ELSE t9.quan END)) as decimal(18, 6)) price, 
+				t1.quan+(CASE WHEN t9.quan is null THEN 0 ELSE t9.quan END) as quan, 
+			    t1.amount + (CASE WHEN t9.amt is null THEN 0 ELSE t9.amt END) as amount,
+			  	t1.ratio_disc,
+			  	t1.date_hap,
+			  	t8.date_pres
+			from bl_ip_dt t1 left join ins_item_map t2 on t1.pk_item=t2.pk_item
+				inner join pv_ip t3 on t3.pk_pv = t1.pk_pv
+				inner join bd_invcate_item t4 on t4.code = t1.code_bill and t4.del_flag = '0'
+				inner join bd_invcate bdInv on t4.pk_invcate = bdInv.pk_invcate and bdInv.code = '02'
+				left join ins_item_ification t5 on t4.pk_invcateitem = t5.pk_invcateitem
+				LEFT JOIN cn_order t6 ON t1.pk_cnord = t6.pk_cnord and t6.eu_status_ord != '9' and t6.del_flag = '0'	
+			  	inner join bd_item t7 ON t1.pk_item = t7.pk_item
+			  	left join cn_prescription t8 on t1.pk_pres = t8.pk_pres
+			  	left outer join  
+				(select sum(quan) quan,sum(amount) amt,pk_cgip_back from bl_ip_dt where flag_settle = 0 and flag_pd = 0 and  quan &lt; 0  
+				and pk_pv = #{pkPv,jdbcType=VARCHAR}  group by pk_cgip_back) 
+				t9 on t1.pk_cgip=t9.pk_cgip_back 
+			where 
+				t1.flag_settle = 0 and  t1.pk_pv = #{pkPv,jdbcType=VARCHAR}
+				<!-- and t1.date_cg>=to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyy/mm/dd hh24:mi:ss') -->
+				and t1.date_hap&lt;=to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyy/mm/dd hh24:mi:ss')
+			) temp where temp.quan > 0 
+			group by pres_no, code_insclass, name_insclass, xmbh, zwmc, yjjypbm, flag_fit, code, name, price, date_hap, date_pres, date_pres,ratio_disc
+			order by temp.date_hap asc
+	</select>
+	
+	
+	<!-- 获取住院收费明细-药品  -->
+    <select id="getChargeDetailsToYp" parameterType="java.util.Map" resultType="java.util.Map">
+    	select 
+    	pres_no, code_insclass, name_insclass, xmbh, zwmc, yjjypbm, flag_fit, code, name, price, date_hap, date_pres, sum(quan) as quan, sum(amount) as amount,ratio_disc
+    	 from (
+			select 
+				t1.pk_cgip,
+			  	t8.pres_no,
+			  	t5.code_insclass,
+				t5.name_insclass,
+				t2.xmbh,
+				t2.zwmc,
+				t2.yjjypbm,
+				t6.flag_fit, 
+				t7.code,
+			  	t7.name,
+				cast((t1.amount + (CASE WHEN t9.amt is null THEN 0 ELSE t9.amt END)) / (t1.quan+(CASE WHEN t9.quan is null THEN 0 ELSE t9.quan END)) as decimal(18, 6)) price, 
+				t1.quan+(CASE WHEN t9.quan is null THEN 0 ELSE t9.quan END) as quan, 
+			    t1.amount + (CASE WHEN t9.amt is null THEN 0 ELSE t9.amt END) as amount,
+			  	t1.ratio_disc,
+			  	t1.date_hap,
+			  	t8.date_pres
+			from bl_ip_dt t1 left join ins_item_map t2 on t1.pk_item=t2.pk_item
+				inner join pv_ip t3 on t3.pk_pv = t1.pk_pv
+				inner join bd_invcate_item t4 on t4.code = t1.code_bill and t4.del_flag = '0'
+				inner join bd_invcate bdInv on t4.pk_invcate = bdInv.pk_invcate and bdInv.code = '02'
+				left join ins_item_ification t5 on t4.pk_invcateitem = t5.pk_invcateitem
+				LEFT JOIN cn_order t6 ON t1.pk_cnord = t6.pk_cnord and t6.eu_status_ord != '9' and t6.del_flag = '0'	
+			  	inner join bd_pd t7 ON t1.pk_item = t7.pk_pd
+			  	left join cn_prescription t8 on t1.pk_pres = t8.pk_pres
+			  	left outer join  
+				(select sum(quan) quan,sum(amount) amt,pk_cgip_back from bl_ip_dt where flag_settle = 0 and flag_pd = 1 and  quan &lt; 0  
+				and pk_pv = #{pkPv,jdbcType=VARCHAR}  group by pk_cgip_back) 
+				t9 on t1.pk_cgip=t9.pk_cgip_back 
+			where 
+				t1.flag_settle = 0 and  t1.pk_pv = #{pkPv,jdbcType=VARCHAR}
+				<!-- and t1.date_cg>=to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyy/mm/dd hh24:mi:ss') -->
+				and t1.date_hap&lt;=to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyy/mm/dd hh24:mi:ss')
+			) temp where temp.quan > 0 
+			group by pres_no, code_insclass, name_insclass, xmbh, zwmc, yjjypbm, flag_fit, code, name, price, date_hap, date_pres, date_pres,ratio_disc
+			order by temp.date_hap asc
+	</select>
+    
+</mapper>

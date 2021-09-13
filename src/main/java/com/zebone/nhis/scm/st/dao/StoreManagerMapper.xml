@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.st.dao.StoreManagerMapper">
+<select id="queryPdStoreInfoList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.st.vo.PdStoreInfoVo">
+select stk.pk_pdstock,
+       pd.pk_pd,
+       pd.code,
+       pd.name,
+       pd.spec,
+       pd.pack_size as pack_size_pd,
+       pds.pack_size,
+       unit.name unit,
+       stk.quan_min/pds.pack_size quan,  
+       stk.quan_prep/pds.pack_size quan_prep, 
+       (stk.quan_min-stk.quan_prep)/pds.pack_size quan_use,
+       pds.posi_no, 
+       stk.batch_no,
+       stk.date_expire,
+        case when stk.pk_pdstock is null then pd.PRICE
+        when  pd.pack_size is null then stk.price_cost
+        else stk.price_cost / pd.pack_size * pds.pack_size end as price_cost,
+        case when stk.pk_pdstock is null then pd.PRICE
+        when pd.pack_size is null then stk.price
+        else stk.price / pd.pack_size * pds.pack_size end      as price,
+       stk.amount_cost,
+       stk.amount,
+       stk.flag_stop,
+       stk.flag_stop_op,
+       stk.flag_stop_er,
+       fa.name factory,
+       pd.spcode,
+       pd.name_chem,
+       pd.flag_stop pd_flag_stop,
+       pds.FLAG_STOP store_flag_stop,
+       pd.code_std
+  from bd_pd_store pds
+       inner join bd_pd pd on pds.pk_pd=pd.pk_pd
+       inner join bd_unit unit on pds.pk_unit=unit.pk_unit
+       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+       left outer join pd_stock stk on pds.pk_pd=stk.pk_pd and pds.pk_store=stk.pk_store
+ where pds.pk_store = #{pkStore,jdbcType=CHAR}
+       and pd.dt_pdtype like '0%'
+       <if test="code != null  and  code != ''">
+         and pd.code = #{code,jdbcType=VARCHAR}
+       </if>  
+       <if test="name != null  and  name != ''">
+         and pd.name like '%${name}%'
+       </if>  
+      <if test="dtDosage != null  and  dtDosage != ''">
+         and pd.dt_dosage = #{dtDosage,jdbcType=VARCHAR}
+       </if>  
+       <if test="dtAnti != null  and  dtAnti != ''">
+         and pd.dt_anti = #{dtAnti,jdbcType=VARCHAR}
+       </if>  
+       <if test="dtPois != null  and  dtPois != ''">
+         and pd.dt_pois = #{dtPois,jdbcType=VARCHAR}
+       </if>  
+       <if test="dateBegin != null  and  dateBegin != ''">
+         and stk.date_expire &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+       </if>
+       <if test="dateEnd != null  and  dateEnd != ''">
+         and stk.date_expire &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+       </if>
+      <if test="price != null  and  price != ''">
+         and stk.price &gt; #{price,jdbcType=DECIMAL}
+       </if>
+       <if test='flagUp == "1" '>
+           and (select sum(stktemp.quan_min ) from PD_STOCK stktemp where stktemp.PK_STORE=stk.PK_STORE and stktemp.PK_PD=stk.PK_PD)/pds.pack_size &gt;= pds.stock_max
+       </if>
+       <if test='flagDown == "1" '>
+           and (select sum(stktemp.quan_min ) from PD_STOCK stktemp where stktemp.PK_STORE=stk.PK_STORE and stktemp.PK_PD=stk.PK_PD)/pds.pack_size &lt;= pds.stock_min
+       </if>
+       <if test='storeAllPd!="1"'>
+         and stk.pk_pdstock is not null
+       </if>
+       <if test="pdFlagStop != null  and  pdFlagStop != ''">
+           and pd.flag_stop=#{pdFlagStop,jdbcType=VARCHAR}
+       </if>
+       <if test="storeFlagStop != null  and  storeFlagStop != ''">
+            and pds.flag_stop=#{storeFlagStop,jdbcType=VARCHAR}
+        </if>
+       order by pd.code 
+</select>
+<select id="queryStDtList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdStDtVo">
+	SELECT
+	  sum(dt.quan_min / dt.pack_size)                              quan_pack,
+	  sum((dt.quan_min - nvl(dt.quan_outstore, 0))/ dt.pack_size) quan_stk,
+	  unit.name                                               unit,
+	  dt.price_cost,
+	  dt.price,
+	  dt.batch_no,
+	  dt.date_fac,
+	  dt.date_expire,
+	  dt.pack_size,
+	  bp.pack_size AS                                         pack_size_pd,
+	  bps.PACK_SIZE                                           pack_size_store,
+	  bpsunit.NAME                                            unit_name_store,
+	  sup.name  as supplyer
+	FROM pd_st st INNER JOIN pd_st_detail dt ON st.pk_pdst = dt.pk_pdst
+	  INNER JOIN bd_pd_store bps ON bps.PK_STORE = st.PK_STORE_ST AND dt.PK_PD = bps.PK_PD
+	  INNER JOIN bd_unit unit ON dt.pk_unit_pack = unit.pk_unit
+	  INNER JOIN bd_unit bpsunit ON bpsunit.pk_unit = bps.PK_UNIT
+	  INNER JOIN bd_pd bp ON bp.pk_pd = dt.pk_pd
+	  LEFT JOIN bd_supplyer sup ON sup.pk_supplyer = st.pk_supplyer
+	WHERE st.pk_store_st = #{pkStore,jdbcType=VARCHAR} 
+	    and bp.dt_pdtype like '0%'
+		AND dt.pk_pd = #{pkPd,jdbcType=VARCHAR}
+		AND st.eu_direct = 1 
+		AND st.flag_chk = '1' 
+		AND dt.flag_finish = '0'
+	GROUP BY
+	  unit.name ,
+	  dt.price_cost,
+	  dt.price,
+	  dt.batch_no,
+	  dt.date_fac,
+	  dt.date_expire,
+	  dt.pack_size,
+	  bp.pack_size,
+	  bps.PACK_SIZE ,
+	  bpsunit.NAME,
+	  sup.name
+</select>
+<select id="queryHistList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdRepriceHistVo">
+select rep.date_reprice,
+       reptype.name reptype,
+       rep.quan_rep/rep.pack_size quan_rep,
+       rep.price_org,
+       rep.price,
+       rep.amount_org,
+       rep.amount,
+       rep.amount_rep
+  from pd_reprice_hist rep
+       inner join bd_defdoc reptype on rep.dt_reptype=reptype.code and reptype.code_defdoclist='080010' 
+       inner join bd_pd pd on pd.pk_pd = rep.pk_pd 
+ where rep.pk_store = #{pkStore,jdbcType=CHAR} 
+ 	   <if test="pkPd != null  and  pkPd != ''">
+         and rep.pk_pd = #{pkPd,jdbcType=CHAR} 
+       </if>
+       <if test="dateBegin != null  and  dateBegin != ''">
+         and rep.date_reprice &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+       </if>
+	   <if test="dateEnd != null  and  dateEnd != ''">
+         and rep.date_reprice &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+       </if>
+       order by rep.date_reprice 
+</select>
+
+<select id="qryStockAll" parameterType="java.lang.String" resultType="DynaBean">
+	select org.name_org,
+       dept.name_dept,
+       store.name name_store,
+       unit.name name_unit ,
+       sum(stk.quan_min/pds.pack_size) quan
+  from pd_stock stk
+       inner join bd_pd_store pds on stk.pk_pd=pds.pk_pd and stk.pk_store=pds.pk_store
+       inner join bd_ou_org org on org.pk_org=stk.pk_org
+       inner join bd_ou_dept dept on dept.pk_dept=stk.pk_dept
+       inner join bd_store store on store.pk_store=stk.pk_store
+       inner join bd_unit unit on unit.pk_unit=pds.pk_unit
+  where stk.pk_pd=#{pkPd,jdbcType=VARCHAR}
+  group by org.name_org,dept.name_dept,store.name, unit.name
+</select>
+<select id="qryPdStockSum" parameterType="java.util.Map" resultType="DynaBean">
+	select
+       pd.pk_pd,
+       pd.code code_pd,
+       pd.name name_pd,
+       pd.spec,
+       unit.name unit,
+       sum(stk.quan_min/pds.pack_size) quan_pack,
+       sum(stk.quan_prep/pds.pack_size) quan_prep,
+       sum((stk.quan_min-stk.quan_prep)/pds.pack_size) quan_stk,
+       pds.posi_no,
+       case when pd.pack_size is null  then stk.price else stk.price/pd.pack_size*pds.pack_size end as price,
+       sum(stk.amount) amount
+  from bd_pd_store pds
+       inner join bd_pd pd on pds.pk_pd=pd.pk_pd
+       inner join bd_unit unit on pds.pk_unit=unit.pk_unit
+       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+       LEFT join pd_stock stk on pds.pk_pd=stk.pk_pd and pds.pk_store=stk.pk_store
+    where pds.pk_store = #{pkStore,jdbcType=CHAR}
+       and pd.dt_pdtype like '0%'
+       <if test="code != null  and  code != ''">
+         and pd.code = #{code,jdbcType=VARCHAR}
+       </if>  
+       <if test="name != null  and  name != ''">
+         and pd.name like '%${name}%'
+       </if>  
+      <if test="dtDosage != null  and  dtDosage != ''">
+         and pd.dt_dosage = #{dtDosage,jdbcType=VARCHAR}
+       </if>  
+       <if test="dtAnti != null  and  dtAnti != ''">
+         and pd.dt_anti = #{dtAnti,jdbcType=VARCHAR}
+       </if>  
+       <if test="dtPois != null  and  dtPois != ''">
+         and pd.dt_pois = #{dtPois,jdbcType=VARCHAR}
+       </if>  
+       <if test="dateBegin != null  and  dateBegin != ''">
+         and stk.date_expire &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+       </if>
+       <if test="dateEnd != null  and  dateEnd != ''">
+         and stk.date_expire &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+       </if>
+      <if test="price != null  and  price != ''">
+         and stk.price &gt; #{price,jdbcType=DECIMAL}
+       </if>
+       <if test='flagUp == "1" '>
+         and stk.quan_min/pds.pack_size &gt;= pds.stock_max
+       </if>
+       <if test='flagDown == "1" '>
+         and stk.quan_min/pds.pack_size &lt;= pds.stock_min 
+       </if>
+       <if test='storeAllPd!="1"'>
+         and stk.pk_pdstock is not null
+       </if>
+        <if test="pdFlagStop != null  and  pdFlagStop != ''">
+            and pd.flag_stop=#{pdFlagStop,jdbcType=VARCHAR}
+        </if>
+        <if test="storeFlagStop != null  and  storeFlagStop != ''">
+            and pds.flag_stop=#{storeFlagStop,jdbcType=VARCHAR}
+        </if>
+    GROUP BY  pd.PK_PD,pd.CODE,pd.NAME,pd.SPEC,unit.NAME,pds.pack_size,pds.posi_no,pd.pack_size ,stk.price
+       order by pd.code 
+</select>
+</mapper>

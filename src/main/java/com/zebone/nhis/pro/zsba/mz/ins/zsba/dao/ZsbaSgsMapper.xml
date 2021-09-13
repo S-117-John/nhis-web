@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.mz.ins.zsba.dao.ZsbaSgsMapper">
+
+	<select id="qryPvHp" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.base.bd.price.BdHp">
+		select
+		hp.*
+		from PV_ENCOUNTER pv
+		left join bd_hp hp on hp.pk_hp=pv.pk_insu and hp.del_flag='0'
+		where
+		pv.del_flag='0' and
+		pv.PK_PV=#{pkPv,jdbcType=VARCHAR}
+	</select>
+
+	<select id="qryInsBasePre" parameterType="java.lang.String" resultType="DynaBean">
+		select
+		'aac002' as bka895,
+		pi.ID_NO as
+		bka896
+
+		from
+		PV_ENCOUNTER pv
+		left join pi_master pi on pi.pk_pi=pv.PK_PI and pi.del_flag='0'
+		where pv.del_flag='0' and
+		pv.PK_PV=#{pkPv,jdbcType=VARCHAR}
+
+	</select>
+	<select id="qryInsRegPre" parameterType="java.lang.String" resultType="DynaBean">
+		select
+		'akc002' as bka895,
+		pi.ID_NO as
+		bka896,
+		emp.CODE_EMP as
+		bka014,
+		emp.NAME_EMP as bka015,
+		dept.CODE_DEPT as bka021,
+		dept.NAME_DEPT
+		as bka022,
+		dept.CODE_DEPT as
+		bka019,
+		dept.NAME_DEPT as bka020,
+		diag.CODE_ICD as bka026,
+		pv.CODE_PV as bka025,
+		<!-- to_char(pv.DATE_BEGIN,'yyyyMMdd' ) as bka017 -->
+		CONVERT(VARCHAR(8), pv.DATE_BEGIN, 112) as bka017
+
+		from PV_ENCOUNTER pv
+		left join pi_master pi on pi.pk_pi = pv.PK_PI and pi.del_flag = '0'
+		left join BD_OU_EMPLOYEE emp on emp.PK_EMP=pv.PK_EMP_PHY and emp.DEL_FLAG='0'
+		left join bd_ou_dept dept on dept.PK_DEPT=pv.PK_DEPT and dept.DEL_FLAG='0'
+		left join pv_diag diag on diag.PK_PV=pv.pk_pv and diag.FLAG_MAJ='1' and diag.DEL_FLAG='0'
+		where
+		pv.del_flag = '0'
+		and
+		pv.PK_PV = #{pkPv,jdbcType=VARCHAR}
+
+	</select>
+
+	<select id="qryInsVisit" parameterType="java.lang.String" resultType="DynaBean">
+
+	</select>
+	<select id="qryPvDiag" parameterType="java.lang.String" resultType="DynaBean">
+
+	</select>
+
+
+	<select id="qryChargeDetailNoUpload" parameterType="java.lang.String" resultType="DynaBean">
+		select 
+			case when dt.FLAG_PD='1' then pd.CODE
+				else item.CODE end as
+			ake005,
+			case when dt.FLAG_PD='1' then pd.name
+			else
+			item.name end as
+			ake006,
+			doc.NAME as bka052,<!--剂型 -->
+			bd_factory.NAME as bka053,<!--厂家 -->
+			dt.spec as bka054,<!--规格 -->
+			<!-- to_char(dt.DATE_CG, 'yyyyMMdd') as bka051, --><!--费用发生时间 -->
+			CONVERT(VARCHAR(8), dt.DATE_CG, 112) as bka051,<!--费用发生时间 -->
+			unit.NAME as bka055,<!--计量单位 -->
+			dt.PRICE as bka056, <!--单价 -->
+			dt.QUAN as bka057, <!--用量 -->
+			<!-- dt.amount as bka058, 原始金额 -->
+			cast(round((dt.amount-dt.amount_add)/dt.quan*dt.quan,2) as numeric(12,2)) as bka058,<!--去掉加收金额 -->
+			'' as aaz213,<!--费用序列号 -->
+			pres.PRES_NO as bka070,<!--处方号 -->
+			empPres.CODE_EMP as bka074,<!--处方医生编号 -->
+			empPres.NAME_EMP as bka075,<!--处方医生姓名 -->
+			'' as bka071,<!--医院费用的唯一标识 -->
+			case when ord.flag_fit is null then '0' else ord.flag_fit end as aka036, <!--限制用药使用标识 -->
+			case when ord.flag_fit is null then '0' else ord.flag_fit end as aaz267, <!--限制用药使用标识 -->
+			'0' as bka061 <!--伤病分离使用标志(1因病/0因伤)    说明：工伤医保默认传因伤、因病的费用医生则增加就诊开新的处方走普通医保 -->
+		from pv_encounter pv
+		left join BL_OP_DT dt on dt.pk_pv=pv.pk_pv
+		left join CN_ORDER ord on ord.PK_CNORD=dt.PK_CNORD
+		left join CN_PRESCRIPTION pres on pres.PK_PRES =dt.PK_PRES
+		left join BD_OU_EMPLOYEE empPres on empPres.PK_EMP=pres.PK_EMP_ORD
+		left join bd_pd pd on pd.pk_pd=dt.PK_ITEM and dt.FLAG_PD='1'
+		left join BD_DEFDOC doc on doc.CODE_PARENT='030400' and doc.CODE=pd.DT_DOSAGE
+		left join bd_factory on bd_factory.PK_FACTORY=pd.PK_FACTORY
+		left join BD_UNIT unit on unit.PK_UNIT=dt.PK_UNIT
+		left join bd_item item on item.pk_item=dt.pk_item and item.del_flag='0'
+		left join BD_itemcate cate on cate.pk_itemcate=dt.pk_itemcate
+		where pv.EU_PVTYPE in (1,2,4) and cate.code not in ('96')
+		and (dt.pk_payer is null or RTRIM(LTRIM(dt.pk_payer))='') <!--没有院内优惠付款方 -->
+		<!-- AND (dt.PK_CNORD is null or ord.DATE_EFFE>=GETDATE()) --> <!--取医嘱有效时间大于当前时间 -主要用于自助机之类过滤，NHIS前台待缴费列表已过滤 -->
+		AND (pres.DT_PRESTYPE!='07' OR pres.DT_PRESTYPE is NULL) <!--过滤外流处方 -主要用于自助机之类过滤，NHIS前台待缴费列表已过滤 -->
+		and dt.amount_pi=dt.amount <!--总金额和患者自费金额一致(无优惠) -->
+			<if test="rePay == null">
+				AND (dt.flag_settle = '0' OR dt.PK_SETTLE IS NULL)
+			</if>
+			AND nvl(dt.flag_insu,'0') = '0'
+			AND dt.del_flag = '0'
+			AND pv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+			<if test="pkCgops != null">
+				and dt.pk_cgop IN
+				<foreach collection="pkCgops" item="pkCgop" index="index" open="(" close=")" separator=",">
+					#{pkCgop,jdbcType=VARCHAR}
+				</foreach>
+			</if>
+			<if test="codePv != null">
+				and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+			</if>
+
+	</select>
+	<select id="qryChargeDetailNoUploadSpec" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.bl.opcg.BlOpDt">
+	select dt.*
+	from pv_encounter pv
+    left join BL_OP_DT dt on dt.pk_pv = pv.pk_pv
+    left join BD_itemcate cate on cate.pk_itemcate = dt.pk_itemcate
+	where pv.EU_PVTYPE in (1,2,4) and cate.code in ('96')
+	<if test="rePay == null">
+		AND (dt.flag_settle = '0' OR dt.PK_SETTLE IS NULL)
+	</if>
+	AND nvl(dt.flag_insu,'0') = '0'
+	AND dt.del_flag = '0'
+	and pv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+	<if test="pkCgops != null">
+		and dt.pk_cgop IN
+		<foreach collection="pkCgops" item="pkCgop" index="index" open="(" close=")" separator=",">
+			#{pkCgop,jdbcType=VARCHAR}
+		</foreach>
+	</if>
+	<if test="codePv != null">
+		and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+	</if>
+
+	</select>
+
+	<select id="qryChargeDts" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.bl.opcg.BlOpDt">
+	select dt.*
+	from pv_encounter pv
+    left join BL_OP_DT dt on dt.pk_pv = pv.pk_pv
+    left join BD_itemcate cate on cate.pk_itemcate = dt.pk_itemcate
+	where pv.EU_PVTYPE in (1,2,4) 
+	<if test="rePay == null">
+		AND (dt.flag_settle = '0' OR dt.PK_SETTLE IS NULL)
+	</if>
+	AND nvl(dt.flag_insu,'0') = '0'
+	AND dt.del_flag = '0'
+	and pv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+	<if test="pkCgops != null">
+		and dt.pk_cgop IN
+		<foreach collection="pkCgops" item="pkCgop" index="index" open="(" close=")" separator=",">
+			#{pkCgop,jdbcType=VARCHAR}
+		</foreach>
+	</if>
+	<if test="codePv != null">
+		and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+	</if>
+
+	</select>
+	
+	<select id="qryBlSt" parameterType="java.lang.String" resultType="DynaBean">
+		select
+		st.amount_st as aggregate_amount,
+		st.amount_pi as patients_pay,
+		st.amount_insu as medicare_payments,
+		st.*
+		from
+		bl_settle st
+		where
+		st.eu_pvtype in (1,2,4)
+		and
+		st.pk_pv=#{pkPv,jdbcType=VARCHAR}
+		<if test="pkSettle != null and pkSettle != ''">
+			and st.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+		</if>
+
+	</select>
+
+	<select id="qryPksettleCanc" parameterType="java.lang.String" resultType="java.lang.String">
+		select top 1 st.PK_SETTLE
+		from INS_SGSYB_ST insst
+		left join INS_SGSYB_ST insst_canc on
+		insst_canc.PK_INSST=insst.PK_INSST_CANCEL
+		left join bl_settle st on
+		st.PK_SETTLE_CANC=insst_canc.PK_SETTLE
+		where
+		insst.yb_pksettle=#{ybPksettle,jdbcType=VARCHAR}
+		and insst.del_flag='0'
+		<if test="pkPv != null and pkPv != ''">
+			and insst.pk_pv=#{pkPv,jdbcType=VARCHAR}
+		</if>
+		<!-- and ROWNUM='1' -->
+
+	</select>
+
+
+	<select id="qrySgsMedicalInsuranceSum" resultType="DynaBean" parameterType="java.util.Map">
+		--省工伤对账_查询his记录sql_1225
+		select sgsst.code_op,
+			   sgsst.name_pi,
+			   sgsst.sex_name,
+			   sgsst.date_begin,
+			   sgsst.name_dept,
+			   sgsst.AAZ218 as pv_code,
+			   sum(AKC264)  as amount_st,
+			   sum(akb067)  as amount_pi,
+			   sum(BKA832)  as amount_insu
+		from (
+				 --收费
+				 select pi.code_op,
+						pi.name_pi,
+						defSex.name as sex_name,
+						pv.date_begin,
+						dept.name_dept,
+						sgs.AAZ218,
+						sgs.AKC264,
+						sgs.akb067,
+						sgs.BKA832
+				 from ins_sgsyb_st sgs
+						  inner join PV_ENCOUNTER pv on pv.pk_pv = sgs.pk_pv
+						  inner join pi_master pi on pi.pk_pi = sgs.pk_pi
+						  inner join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+						  inner join BL_SETTLE sett on sett.pk_settle = sgs.PK_SETTLE and sett.DT_STTYPE = '01'
+						  inner join bd_defdoc defSex on pi.dt_sex =defSex.code
+				 where defSex.code_defdoclist='000000' and defSex.del_flag = '0'
+		           <if test="deBegn != null and deBegn != ''">
+			          <!-- and to_char(sett.date_st,'yyyy-MM-dd') &gt;= #{deBegn,jdbcType=VARCHAR} -->
+			          and CONVERT(VARCHAR(10), sett.date_st, 120) &gt;= #{deBegn,jdbcType=VARCHAR}
+				   </if>
+		           <if test="deEnd != null and deEnd != ''">
+			           <!-- and to_char(sett.date_st,'yyyy-MM-dd') &lt;= #{deEnd,jdbcType=VARCHAR} -->
+			           and CONVERT(VARCHAR(10), sett.date_st, 120) &lt;= #{deEnd,jdbcType=VARCHAR}
+				   </if>
+				 union all
+				 --退费
+				 select pi.code_op,
+						pi.name_pi,
+						defSex.name as sex_name,
+						pv.date_begin,
+						dept.name_dept,
+						sgs.AAZ218,
+						sgscancel.AKC264,
+						sgscancel.akb067,
+						sgscancel.BKA832
+				 from ins_sgsyb_st sgscancel
+						  left join ins_sgsyb_st sgs on sgs.PK_INSST = sgscancel.PK_INSST_CANCEL
+						  inner join PV_ENCOUNTER pv on pv.pk_pv = sgscancel.pk_pv
+						  inner join pi_master pi on pi.pk_pi = sgscancel.pk_pi
+						  inner join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+						  inner join BL_SETTLE sett on sett.PK_SETTLE_CANC = sgs.PK_SETTLE and sett.DT_STTYPE = '21'
+						  inner join bd_defdoc defSex on pi.dt_sex =defSex.code
+				 where sgscancel.PK_INSST_CANCEL is not null and defSex.code_defdoclist='000000' and defSex.del_flag = '0'
+		             <if test="deBegn != null and deBegn != ''">
+			               <!-- and to_char(sett.date_st,'yyyy-MM-dd') &gt;= #{deBegn,jdbcType=VARCHAR} -->
+			               and CONVERT(VARCHAR(10), sett.date_st, 120) &gt;= #{deBegn,jdbcType=VARCHAR}
+		             </if>
+		             <if test="deEnd != null and deEnd != ''">
+			               <!-- and to_char(sett.date_st,'yyyy-MM-dd') &lt;= #{deEnd,jdbcType=VARCHAR} -->
+			               and CONVERT(VARCHAR(10), sett.date_st, 120) &lt;= #{deEnd,jdbcType=VARCHAR}
+		              </if>
+			 ) sgsst
+		group by sgsst.sex_name,sgsst.code_op, sgsst.date_begin, sgsst.name_pi, sgsst.name_dept, sgsst.AAZ218
+    </select>
+</mapper>

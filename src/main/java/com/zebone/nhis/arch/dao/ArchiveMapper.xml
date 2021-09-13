@@ -1,0 +1,893 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.arch.dao.ArchiveMapper">
+	<select id="queryArchManagerPatiInfo" resultType="DynaBean">
+		select pv.pk_pv,
+		pv.code_pv,
+		pi.name_pi,
+		pi.code_pi,
+		pi.code_ip,
+		pi.id_no,
+		ip.ip_times,
+		pv.pk_dept,
+		dept.name_dept,
+		pv.name_emp_phy,
+		pv.date_begin,
+		pv.date_end,
+		diag.desc_diag,
+		arch.pk_archive,
+		arch.eu_status,
+		arch.flag_arch,
+		arch.flag_arch_paper
+		from pv_encounter pv
+		inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+		inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		inner join bd_ou_dept dept on pv.pk_dept=dept.pk_dept
+		inner join pv_archive arch on pv.pk_pv=arch.pk_pv
+		left outer join pv_diag diag on pv.pk_pv=diag.pk_pv and diag.flag_maj='1'
+		where 1=1 and pv.eu_status in ('2','3')
+		<if test="dateBegin!=null and dateBegin!=''">
+		and pv.date_end &gt;=#{dateBegin,javaType=java.util.Date}
+		</if>
+		<if test="dateEnd!=null and dateEnd!=''">
+		and pv.date_end &lt;=#{dateEnd,javaType=java.util.Date}
+		</if>
+		and pv.pk_org=#{pkOrg,jdbcType=VARCHAR}
+		<if test="codePi!=null and codePi!=''">
+			and pi.code_pi=#{codePi,jdbcType=VARCHAR}
+		</if>
+		<if test="namePi!=null and namePi!=''">
+			and pi.name_pi like '%'||#{namePi}||'%'
+		</if>
+		<if test="codePv!=null and codePv!=''">
+			and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+		</if>
+		<if test="codeIp!=null and codeIp!=''">
+			and pi.code_ip like concat(#{codeIp,jdbcType=VARCHAR},'%')
+		</if>
+		<if test="pkDept!=null and pkDept!=''">
+			and pv.pk_dept = #{pkDept,jdbcType=VARCHAR}
+		</if>
+		<if test="archEuStatus!=null and archEuStatus!=''">
+			and isnull(arch.flag_arch,'0') = #{archEuStatus,jdbcType=VARCHAR}
+		</if>
+		<if test="scanEuStatus!=null and scanEuStatus!=''">
+			and isnull(arch.flag_arch_paper,'0') = #{scanEuStatus,jdbcType=VARCHAR}
+		</if>
+	</select>
+	<select id="queryArchManagerCheck" resultType="DynaBean">
+		select pv.pk_pv,
+		pv.code_pv,
+		pv.name_pi,
+		ip.ip_times, <!-- 住院次数 -->
+		count(1) total, <!-- 应归档文件数 -->
+		sum(case when doc.flag_upload='1' then 1 else 0 end) cnt, <!--实归档文件数 -->
+		sum(case when doctype.eu_doctype='1' then 1 else 0 end) sca,<!-- 扫描类文件数 -->
+		doctype.dt_systype,<!-- 归档系统编码 -->
+		arch.eu_status <!-- 归档状态 -->
+		from pv_archive arch
+		left join pv_arch_doc doc on doc.pk_archive=arch.pk_archive
+		inner join pv_encounter pv on arch.pk_pv=pv.pk_pv
+		inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+		left join bd_arch_doctype doctype on doc.pk_doctype=doctype.pk_doctype
+		left join bd_defdoc systype on doctype.dt_systype=systype.code and systype.code_defdoclist='051001'
+		where 1=1
+		<!-- and doc.flag_valid = '1' and arch.flag_arch='0' -->
+		and arch.pk_archive 
+		<foreach collection="pvArchives" index="index" item="item" open=" in (" separator="," close=")">  
+       		 #{item.pkArchive}  
+    	</foreach> 
+		group by pv.pk_pv,
+		pv.code_pv,
+		pv.name_pi,
+		ip.ip_times,
+		doctype.dt_systype,
+		arch.eu_status
+	</select>
+	<select id="queryMRArchRecord" resultType="DynaBean">
+		select pv.code_pv,
+		pi.name_pi,
+		pi.code_pi,
+		pi.code_ip,
+		ip.ip_times,
+		pv.pk_dept,
+		pv.name_emp_phy,
+		pv.date_begin,
+		pv.date_end,
+		pv.pk_pv,
+		diag.desc_diag,
+		pi.id_no,
+		arch.date_arch,
+		arch.name_emp_arch,
+		arch.eu_status,
+		arch.pk_archive,
+		comt.pk_comt,
+		comt.name_emp_comt,
+		comt.date_end,
+		comt.flag_finish
+		from pv_archive arch
+		inner join pv_encounter pv on arch.pk_pv=pv.pk_pv
+		inner join pv_ip ip
+		on pv.pk_pv=ip.pk_pv
+		inner join pi_master pi on
+		pv.pk_pi=pi.pk_pi
+		inner join pv_diag diag on pv.pk_pv=diag.pk_pv and
+		diag.flag_maj='1'
+		left join pv_arch_comt comt on
+		comt.pk_archive=arch.pk_archive
+		where 1=1
+		and pv.pk_org=#{pkOrg,jdbcType=VARCHAR}
+		<if test="flagArch!=null and flagArch!=''">
+			and arch.flag_arch=#{flagArch,jdbcType=VARCHAR}
+		</if>
+		<if test="codeIp!=null and codeIp!=''">
+			and pi.code_ip=#{codeIp,jdbcType=VARCHAR}
+		</if>
+		<if test="namePi!=null and namePi!=''">
+			and pi.name_pi like '%'||#{namePi}||'%'
+		</if>
+		<if test="codePv!=null and codePv!=''">
+			and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+		</if>
+		<if test="euStatus!=null and euStatus!=''">
+			and arch.eu_status=#{euStatus,jdbcType=VARCHAR}
+		</if>
+		<if test="pkDept!=null and pkDept!=''">
+			and pv.pk_dept=#{pkDept,jdbcType=VARCHAR}
+		</if>
+		<if test="outDateStart != null and outDateStart!='' ">
+			and pv.date_end &gt;=#{outDateStart,javaType=java.util.Date}
+		</if>
+		<if test="outDateEnd != null and outDateEnd!=''">
+			and pv.date_end &lt;=#{outDateEnd,javaType=java.util.Date}
+		</if>
+		<if test="inDateStart != null and inDateStart!='' ">
+			and pv.date_begin &gt;=#{inDateStart,javaType=java.util.Date}
+		</if>
+		<if test="inDateEnd != null and inDateEnd!=''">
+			and pv.date_begin &lt;=#{outDateEnd,javaType=java.util.Date}
+		</if>
+		<if test="archDateStart != null and archDateStart!='' ">
+			and arch.date_arch &gt;=#{archDateStart,javaType=java.util.Date}
+		</if>
+		<if test="archDateEnd != null and archDateEnd!=''">
+			and arch.date_arch &lt;=#{archDateEnd,javaType=java.util.Date}
+		</if>
+	</select>
+	<select id="queryMRArchRecordFlagIn" resultType="DynaBean">
+		select pv.EU_PVTYPE,
+	      (case when pi.CODE_OP is null then arch.paticode else pi.CODE_OP end) CODE_OP,
+	      (case when pi.CODE_IP is null then arch.paticode else pi.CODE_IP end) CODE_IP,
+	      (case when pi.NAME_PI is null then arch.patiname else pi.NAME_PI end) NAME_PI,
+	      (case when pi.pk_pi is null then '' else (case when pv.DT_SEX='02' then '男' when pv.DT_SEX='03' then '女' else '未知' end) end) sex,
+	      pi.BIRTH_DATE,
+	      (case when pi.CODE_PI is null then arch.paticode else pi.CODE_PI end) CODE_PI,
+	      (case when (case when pv.EU_PVTYPE='1' then op.OP_TIMES when pv.EU_PVTYPE='3' then ip.IP_TIMES else 0 end) is null then arch.times else
+	       (case when pv.EU_PVTYPE='1' then op.OP_TIMES when pv.EU_PVTYPE='3' then ip.IP_TIMES else 0 end) end) times,
+	      dept.NAME_DEPT,
+	      pv.DATE_BEGIN,
+	      pv.DATE_END,
+	      diag.desc_diag,
+		  arch.date_arch,
+		  arch.pk_archive
+		from pv_archive arch
+		left outer join pv_encounter pv on arch.pk_pv = pv.pk_pv
+		left outer join pi_master pi on pi.pk_pi = pv.pk_pi
+		left join pv_ip ip on pv.pk_pv = ip.pk_pv
+		left join pv_op op on pv.pk_pv = op.pk_pv
+		left join pv_diag diag on pv.pk_pv = diag.pk_pv and diag.flag_maj = '1'
+	    left join BD_OU_DEPT dept on pv.PK_DEPT=dept.PK_DEPT
+		where arch.pk_org=#{pkOrg,jdbcType=VARCHAR}
+		<if test="namePi!=null and namePi!=''">
+			and arch.patiname like '%'||#{namePi}||'%'
+		</if>
+		<choose>
+		    <when test="codeOp!=null and codeOp!='' and codeIp!=null and codeIp!=''">
+		        and ((arch.paticode=#{codeOp,jdbcType=VARCHAR} and arch.visittype in ('1','2'))
+		          or (arch.paticode=#{codeIp,jdbcType=VARCHAR} and arch.visittype = '3'))
+		    </when>
+		    <otherwise>
+				<if test="codeOp!=null and codeOp!=''">
+					and (arch.paticode=#{codeOp,jdbcType=VARCHAR} and arch.visittype in ('1','2'))
+				</if>
+				<if test="codeIp!=null and codeIp!=''">
+					and (arch.paticode=#{codeIp,jdbcType=VARCHAR} and arch.visittype = '3')
+				</if>
+		    </otherwise>
+		</choose>
+		<if test="dateBegin != null and dateBegin!=''">
+			and pv.date_begin &gt;=#{dateBegin,javaType=java.util.Date}
+		</if>
+		<if test="dateEnd != null and dateEnd!=''">
+			and pv.date_begin &lt;=#{dateEnd,javaType=java.util.Date}
+		</if>
+		<if test="pkDept!=null and pkDept!=''">
+			and pv.pk_dept=#{pkDept,jdbcType=VARCHAR}
+		</if>
+		<if test="archDateStart != null and archDateStart!=''">
+			and arch.date_arch &gt;=#{archDateStart,javaType=java.util.Date}
+		</if>
+		<if test="archDateEnd != null and archDateEnd!=''">
+			and arch.date_arch &lt;=#{archDateEnd,javaType=java.util.Date}
+		</if>
+	</select>
+	<select id="queryMRReview" resultType="DynaBean">
+		select pv.code_pv,
+		pi.name_pi,
+		pi.code_pi,
+		doctype.name_doctype,
+		doc.name_doc,
+		doc.position,
+		comt.date_end,
+		comt.name_emp_comt,
+		dt.comment 
+		from pv_archive arch
+		inner join pv_encounter pv on arch.pk_pv=pv.pk_pv
+		inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		inner join pv_arch_comt comt on arch.pk_archive=comt.pk_archive
+		inner join pv_arch_comt_dt dt on comt.pk_comt=dt.pk_comt
+		inner join pv_arch_doc doc on dt.pk_doc=doc.pk_doc
+		inner join bd_arch_doctype doctype on doc.pk_doctype=doctype.code_doctype
+		where 1=1
+		and pv.pk_org=#{pkOrg,jdbcType=VARCHAR}
+		<if test="codePi!=null and codePi!=''">
+			and pi.code_pi=#{codePi,jdbcType=VARCHAR}
+		</if>
+		<if test="namePi!=null and namePi!=''">
+			and pi.name_pi like '%'||#{namePi}||'%'
+		</if>
+		<if test="codePv!=null and codePv!=''">
+			and pi.code_pv=#{codePv,jdbcType=VARCHAR}
+		</if>
+		<if test="pkDoctype!=null and pkDoctype!=''">
+			and doctype.pk_doctype=#{pkDoctype,jdbcType=VARCHAR}
+		</if>
+		<if test="dateBegin != null and dateBegin!=''">
+			and comt.date_end &gt;=#{dateBegin,javaType=java.util.Date}
+		</if>
+		<if test="dateEnd != null and dateEnd!=''">
+			and comt.date_end &lt;=#{dateEnd,javaType=java.util.Date}
+		</if>
+		<if test="pkEmpComt!=null and pkEmpComt!=''">
+			and comt.pk_emp_comt=#{pkEmpComt,jdbcType=VARCHAR}
+		</if>
+	</select>
+	<select id="qryDocByPv" resultType="com.zebone.nhis.common.module.arch.PvArchDoc">
+		select 
+		    doc.PK_DOC,
+		    doc.pk_org,
+		    doc.PK_ARCHIVE,
+		    doc.PK_DOCTYPE,
+		    doc.NAME_DOC,
+		    doc.POSITION,
+		    doc.PAGES,
+		    doc.SIZE_DOC,
+		    doc.FLAG_UPLOAD,
+		    doc.DATE_UPLOAD,
+		    doc.PK_EMP_UPLOAD,
+		    doc.NAME_EMP_UPLOAD,
+		    doc.FLAG_VALID,
+		    doc.creator,
+		    doc.CREATE_TIME,
+		    doc.MODIFY_TIME,
+		    doc.FLAG_DEL,
+		    doc.TS,
+		    doc.code_rpt,
+		    doc.name_rpt,
+		    doc.sort_no,
+		    type.NAME_DOCTYPE pkDoctype
+		from PV_ARCHIVE arch
+		inner join PV_ARCH_DOC doc on arch.PK_ARCHIVE=doc.PK_ARCHIVE
+  		inner join BD_ARCH_DOCTYPE type on type.CODE_DOCTYPE=doc.PK_DOCTYPE
+		where arch.PK_PV=#{pkPv,jdbcType=VARCHAR}  and doc.NAME_DOC like 'arh%'
+		and isnull(doc.flag_del,0)='0' 
+		<if test="pkDocType!=null and pkDocType!=''">
+			and doc.PK_DOCTYPE=#{pkDocType,jdbcType=VARCHAR}
+		</if>
+		
+	</select>
+	
+	<select id="queryArchDocList" parameterType="java.util.Map" resultType="string">
+		select CODE_DOCTYPE
+		from bd_arch_doctype dtp left outer join pv_arch_doc doc on dtp.code_doctype=doc.pk_doctype
+		where dtp.dt_systype=#{sysType,jdbcType=VARCHAR} and dtp.flag_nec='1' 
+		and doc.pk_archive=#{pkArchive,jdbcType=VARCHAR} and doc.name_doc not like 'Arh%' group by CODE_DOCTYPE
+	</select>
+	
+	<select id="queryRecTypeList" parameterType="java.util.Map" resultType="string">
+		select TYPE_CODE from EMR_MED_REC where DEL_FLAG='0' and PK_PV=#{pkPv,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="qryArchPatList" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT
+			DISTINCT 
+			pv.name_pi,
+			pv.bed_no,
+			pi.code_ip,
+			pi.code_pi,
+			pv.pk_pv
+		FROM
+			pv_encounter pv 
+			INNER join pv_ip ip ON ip.pk_pv = pv.pk_pv 
+			INNER join pi_master pi ON pi.pk_pi = pv.pk_pi 
+		WHERE
+			pv.flag_in = '1' 
+			AND pv.eu_pvtype = '3' 
+			AND pv.pk_org = #{pkOrg}
+			AND pv.eu_status = '1' 
+			AND pv.del_flag = '0' 
+			<if test="pkDept != null and pkDept != ''">
+				AND pv.pk_dept = #{pkDept}
+			</if>
+			<if test="pkDeptNs != null and pkDeptNs != ''">
+				AND pv.pk_dept_ns = #{pkDeptNs}
+			</if>
+			<if test="codeIp != null and codeIp != ''">
+				AND (pi.code_ip like concat(concat('%',#{codeIp,jdbcType=VARCHAR}),'%')
+				or pi.name_pi like concat(concat('%',#{codeIp,jdbcType=VARCHAR}),'%')
+				or pv.bed_no like concat(concat('%',#{codeIp,jdbcType=VARCHAR}),'%'))
+			</if>
+			order by pv.bed_no
+	</select>
+	<select id="qryArchPatListByLabor" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT
+			DISTINCT
+			pv.name_pi,
+			pv.bed_no,
+			pi.code_ip,
+			pi.code_pi,
+			pv.pk_pv
+		FROM
+			pv_encounter pv
+      inner join PV_LABOR labor on labor.PK_PV=pv.PK_PV
+			INNER join pv_ip ip ON ip.pk_pv = pv.pk_pv
+			INNER join pi_master pi ON pi.pk_pi = pv.pk_pi
+		WHERE
+			pv.flag_in = '1'
+			AND pv.eu_pvtype = '3'
+			AND pv.eu_status = '1'
+			AND pv.del_flag = '0'
+      and labor.FLAG_IN='1'
+	</select>
+	<select id="qryArchLeavePatList" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT DISTINCT
+			pv.name_pi,
+			pv.bed_no,
+			pi.code_ip,
+			pi.code_pi,
+			pv.pk_pv
+		FROM
+			pv_encounter pv
+			INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi AND pi.del_flag = '0' 
+			INNER JOIN pv_adt upd ON upd.pk_pv = pv.pk_pv AND upd.del_flag = '0' 
+		WHERE
+			pv.flag_cancel != '1' 
+			AND pv.del_flag = '0' 
+			AND pv.eu_pvtype = '3' 
+			AND pv.eu_status > 0 
+			AND pv.flag_in = '0' 
+			<if test="pkDept != null and pkDept != ''">
+				AND upd.pk_dept = #{pkDept}
+			</if>
+			<if test="pkDeptNs != null and pkDeptNs != ''">
+				AND upd.pk_dept_ns = #{pkDeptNs} 
+			</if>
+			<if test="dateBegin != null and dateBegin != ''">
+		      	 and pv.date_end &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')  
+			</if>
+			<if test="dateEnd !=null and dateEnd != ''">
+			     and pv.date_end &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')  
+			</if>
+			<if test="codeIp != null and codeIp != ''">
+				AND (pi.code_ip like concat(concat('%',#{codeIp,jdbcType=VARCHAR}),'%')
+				or pi.name_pi like concat(concat('%',#{codeIp,jdbcType=VARCHAR}),'%')
+				or pv.bed_no like concat(concat('%',#{codeIp,jdbcType=VARCHAR}),'%'))
+			</if>
+			<if test="pkPv != null and pkPv != ''">
+				AND pv.pk_pv =#{pkPv}
+			</if>
+			order by pv.bed_no
+	</select>
+	
+	<select id="qryArchChangePatList" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT
+			DISTINCT 
+			pv.name_pi,
+			pv.bed_no,
+			pi.code_ip,
+			pi.code_pi,
+			pv.pk_pv
+		FROM
+			pv_encounter pv 
+			INNER join pv_ip ip ON ip.pk_pv = pv.pk_pv 
+			INNER join pi_master pi ON pi.pk_pi = pv.pk_pi
+			INNER join pv_adt adt ON adt.pk_pv = pv.pk_pv
+			INNER join pv_adt adt1 ON adt.pk_adt_source = adt1.pk_adt
+		WHERE
+			pv.eu_pvtype = '3' 
+			AND pv.pk_org = #{pkOrg}
+			AND pv.eu_status not in ('0', '9')
+			AND pv.del_flag = '0' 
+			AND adt.del_flag = '0' 
+			<if test="pkDept != null and pkDept != ''">
+				AND adt1.pk_dept = #{pkDept} 
+			</if> 
+			<if test="pkDeptNs != null and pkDeptNs != ''">
+				AND adt1.pk_dept_ns = #{pkDeptNs} 
+			</if>
+			<if test="codeIp != null and codeIp != ''">
+				AND (pi.code_ip like concat(#{codeIp,jdbcType=VARCHAR},'%')
+				or pi.name_pi like concat(concat('%',#{codeIp,jdbcType=VARCHAR}),'%')
+				or pv.bed_no like concat(concat('%',#{codeIp,jdbcType=VARCHAR}),'%'))
+			</if>
+			order by pv.bed_no
+	</select>
+	
+	<select id="qryArchConsulPatList" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT
+			DISTINCT 
+			pv.name_pi,
+			pv.bed_no,
+			pi.code_ip,
+			pi.code_pi,
+			pv.pk_pv
+		FROM
+			pv_encounter pv 
+			INNER join pv_ip ip ON ip.pk_pv = pv.pk_pv 
+			INNER join pi_master pi ON pi.pk_pi = pv.pk_pi
+			INNER join cn_order ord ON ord.pk_pv = pv.pk_pv
+			INNER join cn_consult_apply con on ord.pk_cnord = con.pk_cnord 
+       		INNER join cn_consult_response rep on con.pk_cons = rep.pk_cons  
+		WHERE
+			pv.flag_in = '1' 
+			AND pv.eu_pvtype = '3' 
+			AND pv.pk_org = #{pkOrg}
+			AND pv.eu_status = '1' 
+			AND pv.del_flag = '0' 
+			AND rep.del_flag = '0' 
+			<if test="pkDept != null and pkDept != ''">
+				AND rep.pk_dept_rep = #{pkDept}
+			</if>
+			<if test="codeIp != null and codeIp != ''">
+				AND (pi.code_ip like concat(concat('%',#{codeIp,jdbcType=VARCHAR}),'%')
+				or pi.name_pi like concat(concat('%',#{codeIp,jdbcType=VARCHAR}),'%')
+				or pv.bed_no like concat(concat('%',#{codeIp,jdbcType=VARCHAR}),'%'))
+			</if>
+			order by pv.bed_no
+	</select>
+	
+	<select id="queryRisCodeRpt" parameterType="java.util.Map" resultType="string">
+        select code_rpt from ex_ris_occ where code_apply = #{codeApply} and del_flag='0'
+    </select>
+    
+    <select id="queryLisCodeRpt" parameterType="java.util.Map" resultType="string">
+        select code_rpt from ex_lab_occ where code_apply = #{codeApply} and del_flag='0'
+    </select>
+    
+    <select id="queryBarCodeByCodePv" parameterType="java.util.Map" resultType="DynaBean">
+        select
+		  arch.code_arch,
+		  pi.code_ip,
+		  pi.name_pi name,
+		  ip.ip_times,
+		  pv.code_pv,
+		  dept.name_dept deptname
+		from pv_archive arch
+		inner join  pv_encounter pv on pv.pk_pv=arch.pk_pv
+		inner join pi_master pi on pi.pk_pi=pv.pk_pi
+		left outer join pv_ip ip on pv.pk_pv=ip.pk_pv
+		left outer join bd_ou_dept dept on pv.pk_dept = dept.pk_dept
+		where code_pv= #{codePv} and pv.del_flag='0'
+    </select>
+    
+    <select id="queryArchPatInfo" resultType="DynaBean">
+		select
+		  pv.code_pv,
+		  pi.name_pi,
+		  pi.code_pi,
+		  pi.code_ip,
+		  ip.ip_times,
+		  pv.pk_dept,
+		  pv.name_emp_phy,
+		  pv.date_begin,
+		  pv.date_end,
+		  pv.pk_pv,
+		  pv.age_pv age,
+		  pi.id_no,
+		  arch.date_arch,
+		  arch.name_emp_arch,
+		  arch.eu_status,
+		  arch.pk_archive,
+		  dept.name_dept
+		from pv_encounter pv 
+		  inner join pv_ip ip on pv.pk_pv = ip.pk_pv
+		  inner join pi_master pi on pv.pk_pi = pi.pk_pi
+		  left join pv_archive arch on arch.pk_pv = pv.pk_pv 
+		  left join bd_ou_dept dept on dept.pk_dept=pv.pk_dept
+		where pv.flag_in='0'
+		<if test="codeIp!=null and codeIp!=''">
+			and pi.code_ip=#{codeIp,jdbcType=VARCHAR}
+		</if>
+		<if test="namePi!=null and namePi!=''">
+			and pi.name_pi like '%'||#{namePi}||'%'
+		</if>
+		<if test="codePv!=null and codePv!=''">
+			and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+		</if>
+		<if test="pkDept!=null and pkDept!=''">
+			and pv.pk_dept=#{pkDept,jdbcType=VARCHAR}
+		</if>
+		<if test="dateBegin!=null and dateBegin!=''">
+		and pv.date_end &gt;=#{dateBegin,javaType=java.util.Date}
+		</if>
+		<if test="dateEnd!=null and dateEnd!=''">
+		and pv.date_end &lt;=#{dateEnd,javaType=java.util.Date}
+		</if>
+	</select>
+	<select id="queryPrintNewPatInfo" resultType="DynaBean">
+		select
+		  pv.code_pv,
+		  pi.name_pi,
+		  pi.code_pi,
+		  pi.code_ip,
+		  ip.ip_times,
+		  pv.pk_dept,
+		  pv.name_emp_phy,
+		  pv.date_begin,
+		  pv.date_end,
+		  pv.pk_pv,
+		  pv.age_pv age,
+		  pi.id_no,
+		  deptAdmit.name_dept admitDept,
+		  deptDis.NAME_DEPT disDept,
+		  pv.flag_in
+		from pv_encounter pv
+		  inner join pv_ip ip on pv.pk_pv = ip.pk_pv
+		  inner join pi_master pi on pv.pk_pi = pi.pk_pi
+		  left outer join bd_ou_dept deptAdmit on deptAdmit.pk_dept=ip.PK_DEPT_ADMIT
+		  left outer join bd_ou_dept deptDis on deptDis.PK_DEPT=ip.PK_DEPT_DIS
+		where pv.EU_STATUS!='9'
+		<if test="codeIp!=null and codeIp!=''">
+			and pi.code_ip=#{codeIp,jdbcType=VARCHAR}
+		</if>
+		<if test="ipTimes!=null and ipTimes!=''">
+			and ip.IP_TIMES=#{ipTimes,jdbcType=VARCHAR}
+		</if>
+	</select>
+	<select id="queryPrintUpdPatInfo" resultType="DynaBean">
+		select
+		  pv.code_pv,
+		  pi.name_pi,
+		  pi.code_pi,
+		  pi.code_ip,
+		  ip.ip_times,
+		  pv.pk_dept,
+		  pv.name_emp_phy,
+		  pv.date_begin,
+		  pv.date_end,
+		  pv.pk_pv,
+		  pv.age_pv age,
+		  pi.id_no,
+		  deptAdmit.name_dept admitDept,
+		  deptDis.NAME_DEPT disDept,
+		  pv.flag_in,
+	      rec.DATE_PRT,
+	      rec.NAME_EMP_PRT,
+	      rec.pk_prt_rec
+		from PV_ARCH_PRT_REC rec
+          inner join pv_encounter pv on rec.PK_PV=pv.PK_PV
+		  inner join pv_ip ip on pv.pk_pv = ip.pk_pv
+		  inner join pi_master pi on pv.pk_pi = pi.pk_pi
+		  left outer join bd_ou_dept deptAdmit on deptAdmit.pk_dept=ip.PK_DEPT_ADMIT
+		  left outer join bd_ou_dept deptDis on deptDis.PK_DEPT=ip.PK_DEPT_DIS
+		where pv.EU_STATUS!='9'
+		<if test="codeIp!=null and codeIp!=''">
+			and pi.code_ip=#{codeIp,jdbcType=VARCHAR}
+		</if>
+		<if test="ipTimes!=null and ipTimes!=''">
+			and ip.IP_TIMES=#{ipTimes,jdbcType=VARCHAR}
+		</if>
+		<if test="dateBegin!=null and dateBegin!=''">
+			and rec.date_prt &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyy-mm-dd')
+		</if>
+		<if test="dateEnd!=null and dateEnd!=''">
+			and rec.date_prt &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-mm-dd')
+		</if>
+	</select>
+	<select id="queryContentByPk" resultType="com.zebone.nhis.arch.vo.PvArchPrt">
+		select * from pv_arch_prt where pk_prt_rec=#{pkPrtRec,jdbcType=VARCHAR} and flag_del='0'
+	</select>
+	<select id="queryArchManagerDoc" resultType="DynaBean">
+		select 
+			distinct 
+			'住' type,
+			doctype.dt_systype,
+			doc.position,  
+			doctype.code_doctype,
+			doctype.name_doctype,
+			doc.name_doc,
+			doc.code_rpt,
+			doc.date_upload,
+			arch.eu_status,
+		 	comt.pk_comt,
+		 	dt.pk_comtdt,
+		 	dt.comment_comt,
+		 	doc.pk_doc,
+		 	doc.code_rpt,
+		 	doc.name_rpt,
+		 	ris.date_rpt risDateRpt,
+		 	lab.date_rpt labDateRpt,
+		 	doc.name_emp_upload
+		 from pv_arch_doc doc  inner join pv_archive arch on doc.pk_archive=arch.pk_archive
+		 inner join bd_arch_doctype doctype on doc.pk_doctype=doctype.code_doctype
+		 left join  pv_arch_comt comt on  doc.pk_archive=comt.pk_archive
+		 left outer join pv_arch_comt_dt dt on comt.pk_comt=dt.pk_comt and doc.pk_doc=dt.pk_doc
+		 left outer join ex_ris_occ ris on ris.code_rpt=doc.code_rpt
+		 left outer join ex_lab_occ lab on lab.code_rpt=doc.code_rpt
+		 where nvl(doc.flag_del,'0') != '1' 
+		 and doc.pk_archive=#{pkArchive,jdbcType=VARCHAR}
+		 order by doc.date_upload desc,doctype.code_doctype,doc.name_doc
+	</select>
+	<select id="queryArchMgrDoc" resultType="DynaBean">
+		select 
+			distinct 
+			'住' type,
+			doctype.dt_systype,
+			doc.position,  
+			doctype.code_doctype,
+			doctype.name_doctype,
+			doc.name_doc,
+			doc.code_rpt,
+			doc.date_upload,
+			arch.eu_status,
+		 	comt.pk_comt,
+		 	dt.pk_comtdt,
+		 	dt.comment_comt,
+		 	doc.pk_doc,
+		 	doc.code_rpt,
+		 	doc.name_rpt,
+		 	ris.date_rpt risDateRpt,
+		 	lab.date_rpt labDateRpt,
+		 	doc.name_emp_upload
+		 from pv_arch_doc doc  inner join pv_archive arch on doc.pk_archive=arch.pk_archive
+		 inner join bd_arch_doctype doctype on doc.pk_doctype=doctype.code_doctype
+		 left join  pv_arch_comt comt on  doc.pk_archive=comt.pk_archive
+		 left outer join pv_arch_comt_dt dt on comt.pk_comt=dt.pk_comt and doc.pk_doc=dt.pk_doc
+		 left outer join ex_ris_occ ris on ris.code_rpt=doc.code_rpt
+		 left outer join ex_lab_occ lab on lab.code_rpt=doc.code_rpt
+		 where nvl(doc.flag_del,'0') != '1' 
+		 <if test="pkArchive!=null and pkArchive!=''">
+		 	and doc.pk_archive=#{pkArchive,jdbcType=VARCHAR}
+		 </if>
+		 order by doctype.code_doctype,doc.date_upload,doc.name_doc
+	</select>
+	<select id="queryArchManagerDocOp" resultType="DynaBean">
+		select
+			distinct
+			'门' type,
+			'' dt_systype,
+			doc.FILE_PATH position,
+			doc.FILE_TYPE code_doctype,
+			'' name_doctype,
+			doc.FILE_NAME name_doc,
+			doc.RID code_rpt,
+			doc.date_upload,
+			''eu_status,
+		 	'' pk_comt,
+		 	'' pk_comtdt,
+		 	'' comment_comt,
+		 	doc.PK_LOG,
+		 	doc.ITEM_NAME name_rpt,
+		 	'' risDateRpt,
+		 	'' labDateRpt,
+		 	doc.NAME_EMP_OPER
+		 from pv_arch_log doc
+         where doc.pvtype='1'
+		 and doc.PATICODE=#{codeOp,jdbcType=VARCHAR}  
+		 order by doc.date_upload desc,doc.FILE_TYPE,doc.FILE_NAME
+	</select>
+	<select id="queryArchLogOpDoc" resultType="com.zebone.nhis.arch.vo.ArchOpDocInfo">
+		<!-- select distinct
+			  paticode COLLATE Chinese_PRC_BIN paticode,
+			  patiname COLLATE Chinese_PRC_BIN patiname,
+			  age COLLATE Chinese_PRC_BIN age,
+			  sex COLLATE Chinese_PRC_BIN sex,
+			  dept COLLATE Chinese_PRC_BIN dept,
+			  iptimes COLLATE Chinese_PRC_BIN iptimes,
+			  file_type COLLATE Chinese_PRC_BIN file_type,
+			  file_name COLLATE Chinese_PRC_BIN file_name,
+			  file_path COLLATE Chinese_PRC_BIN file_path,
+			  item_name COLLATE Chinese_PRC_BIN item_name,
+			  rid COLLATE Chinese_PRC_BIN rid,
+			  daterpt COLLATE Chinese_PRC_BIN daterpt,
+			  detprpt COLLATE Chinese_PRC_BIN detprpt,
+			  '' arch_type
+			from pv_arch_log where 1=1 -->
+			select distinct
+			  paticode,
+			  patiname,
+			  age,
+			  sex,
+			  dept,
+			  iptimes,
+			  file_type,
+			  file_name,
+			  file_path,
+			  item_name,
+			  rid,
+			  daterpt,
+			  detprpt,
+			  '' arch_type
+			from pv_arch_log where 1=1
+		 <if test="patCode!=null and patCode!=''">
+		 	and paticode = #{patCode}
+		 </if>
+		 <if test="patName!=null and patName!=''">
+		 	and patiname=#{patName,jdbcType=VARCHAR}
+		 </if>
+		 <if test="type!=null and type!=''">
+		 	and file_type=#{type,jdbcType=VARCHAR}
+		 </if>
+		 <if test="rptBeginDate!=null and rptBeginDate!=''">
+		 	and daterpt &gt;= #{rptBeginDate,jdbcType=VARCHAR}
+		 </if>
+		 <if test="rptEndDate!=null and rptEndDate!=''">
+		 	and daterpt &lt; #{rptEndDate,jdbcType=VARCHAR}
+		 </if>
+		 <!-- union all
+		 select distinct
+			  paticode,
+			  patiname,
+			  age,
+			  sex,
+			  dept,
+			  iptimes,
+			  file_type,
+			  file_name,
+			  file_path,
+			  item_name,
+			  rid,
+			  daterpt,
+			  detprpt,
+			  arch_type
+			from view_arch_data_eout where 1=1
+		 <if test="patCode!=null and patCode!=''">
+		 	and paticode like '%'||#{patCode}||'%' 
+		 </if>
+		 <if test="patName!=null and patName!=''">
+		 	and patiname=#{patName,jdbcType=VARCHAR}
+		 </if>
+		 <if test="type!=null and type!=''">
+		 	and file_type=#{type,jdbcType=VARCHAR}
+		 </if>
+		 <if test="rptBeginDate!=null and rptBeginDate!=''">
+		 	and daterpt &gt;= #{rptBeginDate,jdbcType=VARCHAR}
+		 </if>
+		 <if test="rptEndDate!=null and rptEndDate!=''">
+		 	and daterpt &lt; #{rptEndDate,jdbcType=VARCHAR}
+		 </if> -->
+		 order by daterpt
+	</select>
+	<select id="queryArchLogOpDocOld" resultType="com.zebone.nhis.arch.vo.ArchOpDocInfo">
+		 select distinct
+			  paticode,
+			  patiname,
+			  age,
+			  sex,
+			  dept,
+			  iptimes,
+			  file_type,
+			  file_name,
+			  file_path,
+			  item_name,
+			  rid,
+			  daterpt,
+			  detprpt,
+			  arch_type
+			from view_arch_data_eout where 1=1
+		 <if test="codePi!=null and codePi!=''">
+		 	and paticode = #{codePi}
+		 </if>
+		 <if test="patName!=null and patName!=''">
+		 	and patiname=#{patName,jdbcType=VARCHAR}
+		 </if>
+		 <if test="type!=null and type!=''">
+		 	and file_type=#{type,jdbcType=VARCHAR}
+		 </if>
+		 <if test="rptBeginDate!=null and rptBeginDate!=''">
+		 	and daterpt &gt;= #{rptBeginDate,jdbcType=VARCHAR}
+		 </if>
+		 <if test="rptEndDate!=null and rptEndDate!=''">
+		 	and daterpt &lt; #{rptEndDate,jdbcType=VARCHAR}
+		 </if>
+		 order by daterpt<!--  COLLATE Chinese_PRC_BIN, file_type COLLATE Chinese_PRC_BIN, file_name COLLATE Chinese_PRC_BIN -->
+	</select>
+	<select id="qryArchOldIpDocInfo" resultType="DynaBean">
+		 select 
+			* 
+		 from view_arch_data_cis
+		 where file_type in ('LIS','PACS','EMR') 
+		 <if test="codeIp!=null and codeIp!=''">
+		 	and code_ip=#{codeIp,jdbcType=VARCHAR}
+		 </if>
+		 <if test="name!=null and name!=''">
+		 	and name=#{name,jdbcType=VARCHAR}
+		 </if>
+		 <if test="type!=null and type!=''">
+		 	and file_type=#{type,jdbcType=VARCHAR}
+		 </if>
+		 <if test="rptBeginDate!=null and rptBeginDate!=''">
+		 	and date_rpt &gt;= #{rptBeginDate,jdbcType=VARCHAR}
+		 </if>
+		 <if test="rptEndDate!=null and rptEndDate!=''">
+		 	and date_rpt &lt; #{rptEndDate,jdbcType=VARCHAR}
+		 </if>
+		 order by date_rpt,file_name
+	</select>
+	
+	<select id="queryPatOpsResultThird" resultType="DynaBean">
+        SELECT
+		    PATIENT_ID PatientId,
+		    VISIT_ID VisitId,
+		    OPERATION_DESC OperationDesc,
+		    OPERATING_DATE OperationDate,
+		    START_DATE_TIME StartDateTime,
+			END_DATE_TIME EndDateTime,
+			ANESTHESIA_METHOD AnesthesiaMethod, 
+			SURGEON Surgeon,
+			FIRST_ASSISTANT FirstAssistant,
+			SECOND_ASSISTANT SecondAssistant,
+			THIRD_ASSISTANT ThirdAssistant,
+			ANESTHESIA_DOCTOR AnesDoctor,
+			ANESTHESIA_DOCTOR_NAME AnesDoctorName,
+			FIRST_OPERATION_NURSE FirstOpNurse,
+			SECOND_OPERATION_NURSE SecondOpNurse,
+			SZSY Szsy,
+			SZSX Szsx,
+			YLHTSW Ylhtsw, 
+			SSGC Ssgc, 
+			BLBBKJ Blbbkj,
+			SHZJJPJ Shzjjpj,
+			QITA Qita
+		FROM  medsurgery.v_operation_nhis
+		where PATIENT_ID = #{codePi,jdbcType=VARCHAR}
+            and visit_id =#{ipTimes,jdbcType=VARCHAR}
+    </select>
+    <select id="queryArchPv" resultType="com.zebone.nhis.common.module.arch.ArchPv">
+		 select
+			pi.CODE_IP,
+			ip.IP_TIMES,
+			pv.PK_PV,
+			pv.date_begin,
+			pv.date_end,
+			STUFF((select '|'+doc.CODE_RPT from PV_ARCH_DOC doc where arch.PK_ARCHIVE=doc.PK_ARCHIVE and CODE_RPT is not null for xml path('')),1,1,'') codeRpt
+		from PI_MASTER pi
+		inner join PV_ENCOUNTER pv on pi.PK_PI=pv.PK_PI
+		inner join PV_IP ip on pv.PK_PV=ip.PK_PV
+		left join PV_ARCHIVE arch on arch.PK_PV=pv.PK_PV
+		where pv.DATE_END &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'YYYYMMDDHH24MISS') and pv.DATE_END &lt;to_date(#{dateEnd,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+		 <if test="codeIp!=null and codeIp!=''">
+		 	and pi.CODE_IP= #{codeIp}
+		 </if>
+		 <if test="name!=null and name!=''">
+		 	and pi.name_pi= #{name}
+		 </if>
+		 <if test="pkDept!=null and pkDept!=''">
+		 	and pv.PK_DEPT= #{pkDept}
+		 </if>
+	</select>
+	<select id="queryArchPacsListBoai" resultType="DynaBean">
+        select
+		  PATIENT_NAME name,
+		  RECORD_NO ReportId,
+		  BODY_OF_CASE ReportName,
+		  REPORT_DOCNAME ReportEmp,
+		  AUDIT_DOCNAME AuditEmp,
+		  REPORT_DATE DateReport
+		from V_INSREPORT
+		where clinic_hospitalno=#{codeIp,jdbcType=VARCHAR} and check_times=#{times,jdbcType=VARCHAR}
+    </select>
+    <select id="queryCodeArchByDate" resultType="string">
+        select CODE_ARCH from PV_ARCHIVE where CODE_ARCH like concat(#{codeArch,jdbcType=VARCHAR},'%') group by CODE_ARCH having count(CODE_ARCH)>1
+    </select>
+</mapper>

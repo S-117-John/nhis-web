@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.PlatFormRegisterInfoMapper">
+    <select id="getRegisterInfo" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.RegisterInfoReq"
+            resultType="com.zebone.nhis.webservice.syx.vo.platForm.RegisterInfoRes">
+        
+        SELECT
+			emp.code_emp doctorId,
+			emp.name_emp doctorName,
+			dept_ch.code_dept deptId,
+			dept_ch.name_dept deptName 
+		FROM
+			sch_sch sch 
+			INNER join sch_resource res ON sch.pk_schres = res.pk_schres 
+			INNER join bd_ou_dept dept ON res.pk_dept_belong = dept.pk_dept 
+			INNER join bd_ou_dept dept_ch ON res.pk_dept = dept_ch.pk_dept 
+			left outer join bd_ou_employee emp ON res.pk_emp = emp.pk_emp  
+		WHERE 
+		 	sch.flag_stop = '0' 
+			AND sch.eu_status = '8' 
+		 	AND dept.code_dept = #{seconddepId,jdbcType=VARCHAR} 
+		 	<if test="type == 1">
+		 		AND sch.cnt_appt &gt; 0 
+		 	</if>  
+		 	AND sch.date_work &gt;= to_date(#{startDate,jdbcType=VARCHAR},'yyyy-mm-dd HH24:mi:ss')
+		 	AND sch.date_work &lt;= to_date(#{endDate,jdbcType=VARCHAR},'yyyy-mm-dd HH24:mi:ss')
+    </select>
+</mapper>

@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.PdindMapper">
+
+	<select id="qryPdInds" parameterType="java.util.Map" resultType="DynaBean">
+		  <!-- 查询适应症用药 -->
+		SELECT ind.pk_pdind,
+		       ind.code_indtype,
+		       ind.code_ind,
+		       ind.name_ind,
+		       ind.ratio_base,
+		       ind.ratio_spec,
+		       ind.ratio_comm,
+		       ind.ratio_ret,
+		       ind.ratio_bear,
+		       ind.ratio_inj,
+		       ind.ratio_rec,
+		       ind.desc_ind,
+		       ind.note
+		  FROM bd_pd_ind ind
+		 WHERE ind.code_indtype=#{codeIndtype}
+	</select>
+
+    <select id="qryPds" parameterType="java.util.Map" resultType="DynaBean">
+        <!-- 查询药品和医嘱 -->
+        SELECT pd.pk_pd,
+        pd.code,
+        pd.name,
+        pd.spec,
+        ip.flag_pd 
+        FROM bd_pd pd
+        inner join bd_pd_indpd ip on pd.pk_pd=ip.pk_pd
+        WHERE ip.pk_pdind=#{pkPdind,jdbcType=VARCHAR} and ip.flag_pd='1' and ip.DEL_FLAG='0' and pd.DEL_FLAG='0'
+        union all
+        SELECT ord.pk_ord,
+        ord.code,
+        ord.name,
+        ord.spec,
+        ip.flag_pd 
+        FROM BD_ORD ord
+        inner join bd_pd_indpd ip on ord.pk_ord=ip.pk_pd
+        WHERE ip.pk_pdind=#{pkPdind,jdbcType=VARCHAR} and ip.flag_pd='0' and ip.DEL_FLAG='0' and ord.DEL_FLAG='0'
+    </select>
+	
+<!--	<select id="qryPds" parameterType="java.lang.String" resultType="DynaBean">
+		  select pd.pk_pd,
+			pd.code,
+			pd.name,
+			pd.spec 
+		  from bd_pd pd
+		  inner join bd_pd_indpd ip on pd.pk_pd=ip.pk_pd
+		  where pd.del_flag = 0  
+		and ip.pk_pdind =#{pkPdind,jdbcType=VARCHAR}
+	</select>-->
+	
+	<!--查询关联的医保  -->
+	<select id="qryHp" parameterType="java.lang.String" resultType="DynaBean">
+		select hp.pk_hp,
+	       hp.code,
+	       hp.name
+	  	from bd_pd_indhp idh
+	       inner join bd_hp hp on idh.pk_hp=hp.pk_hp
+	 	where idh.pk_indtype=#{pkIndtype}
+	</select>
+	
+	<!-- 查询目录类别 -->
+	<select id="qryCatalog" resultType="DynaBean">
+		select idt.pk_indtype,
+	       idt.code_type,
+	       idt.name_type,
+	       idt.note
+	  	from bd_indtype idt
+	 	where idt.del_flag='0'
+			
+	</select>
+	
+	<!-- 删除关联医保 -->
+	<delete id="delHp" parameterType="java.lang.String">
+		delete from bd_pd_indhp where pk_indtype=#{pkIndtype}
+	</delete>
+	
+	<delete id="delPdInd" parameterType="java.lang.String">
+		<!-- 删除适应症用药记录 -->
+		delete from bd_pd_ind where pk_pdind=#{pkPdind}
+	</delete>
+	
+	<delete id="delPd" parameterType="java.lang.String">
+		<!-- 删除适应症用药明细 -->
+		delete from bd_pd_indpd where pk_pdind=#{pkPdind}
+	</delete>
+	
+	
+	<delete id="delPdByType" parameterType="java.lang.String">
+	<!-- 删除目录类别下的适应症关联药品 -->
+		delete from bd_pd_indpd 
+ 		where exists (
+       	select 1
+        from bd_pd_ind ind
+        where bd_pd_indpd.pk_pdind=ind.pk_pdind and 
+              ind.code_indtype=#{codeIndtype}
+              )
+	</delete>
+	
+	<!-- 删除目录类别下的适应症信息 -->
+	<delete id="delPdIndByType" parameterType="java.lang.String">
+		delete from bd_pd_ind where code_indtype=#{codeIndtype}
+	</delete>
+	
+	<delete id="delIndtype" parameterType="java.lang.String">
+		<!-- 删除目录类别 -->
+		delete from bd_indtype where code_type=#{codeType}
+	</delete>
+	
+	<!-- 适应症用药关联医嘱 -->
+	<select id="qryDesc">
+		select ind.desc_ind
+		from bd_indtype idt
+		inner join bd_pd_ind ind on idt.code_type=ind.code_indtype
+		inner join bd_pd_indpd idp on ind.pk_pdind=idp.pk_pdind
+		inner join bd_pd_indhp idh on idt.pk_indtype=idh.pk_indtype
+		where
+		idp.DEL_FLAG='0' and
+		idh.pk_hp=#{pkHp} and
+		idp.pk_pd=#{pkPd}
+        <if test="flagPd != null and flagPd != ''">
+        and idp.flag_pd=#{flagPd}
+        </if>
+	</select>
+	
+	<select id="qryHps" resultType="DynaBean">
+		SELECT * FROM BD_HP FATHER 
+		LEFT JOIN BD_HP SON ON SON.PK_PARENT=FATHER.PK_HP 
+		WHERE SON.PK_HP IS NULL AND FATHER.DEL_FLAG='0'
+		ORDER BY FATHER.CODE ASC
+	</select>
+	
+	<select id="countName" parameterType="java.lang.String" resultType="java.lang.Integer">
+		select count(1) from bd_indtype where name_type = #{nameType}
+	</select>
+	
+	<select id="countCode" parameterType="java.lang.String" resultType="java.lang.Integer">
+		select count(1) from bd_indtype where code_type = #{codeType}
+	</select>
+</mapper>

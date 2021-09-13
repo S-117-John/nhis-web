@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.syx.dao.PivasSystemMapper">
+	<select id="qryPivasList" parameterType="java.util.List" resultType="DynaBean">
+		SELECT
+		  pv.code_pv                                                                  InPatientid,
+		  pi.code_ip                                                                  IPSeqnotext,
+		  pi.name_pi                                                                  PatientName,
+		  CASE pi.dt_sex
+		  WHEN '02'
+		    THEN '1'
+		  WHEN '03'
+		    THEN '2'
+		  ELSE '3' END                                                                SexFlag,
+		  pv.age_pv                                                                   Age,
+		  pi.birth_date                                                               Birthday,
+		  ip.ip_times                                                                 IPtimes,
+		  pv.bed_no                                                                   SickbedNo,
+		  ord.ordsn_parent|| to_char(occ.DATE_PLAN,'dd')                                                            ExecDAID,
+		  CASE pd.eu_drugtype
+		  WHEN '0'
+		    THEN '1'
+		  WHEN '1'
+		    THEN '2'
+		  WHEN '2'
+		    THEN '3' END                                                              Sourcetype,
+		  pd.old_id                                                                   Sourceid,
+		  pd.old_code                                                                     NO,
+		  ord.name_ord || case  occ.FLAG_SELF when'1' then '(自备)' else '' end         Name,
+		  ord.spec                                                                    Spec,
+		  dostype.name                                                                DosetypeName,
+		  pd.vol                                                                      Dosage,
+		  udos.name                                                                   DosageUnit,
+		  uord.name                                                                   PackageUnit,
+		  sup.name                                                                    MedicineUsingMethodName,
+		  freq.note                                                                   TakingMedicineTimeDesc,
+		  1                                                                           Exectimes,
+		  ord.dosage                                                                  DosagePerTime,
+		  empreq.old_id                                                               EmployeeID,
+		  empreq.code_emp                                                             EmployeeNO,
+		  empreq.name_emp                                                             EmployeeName,
+		  deptreq.old_id                                                              DepartMentID,
+		  deptreq.code_dept                                                           DepartmentNO,
+		  deptreq.name_dept                                                           DepartmentName,
+		  sysdate                                                                     SendDatetime,
+		  indiag.desc_diag                                                            DieaseName,
+		  ord.date_start                                                              DaStartDateTime,
+		  nvl(ord.date_stop, to_date('1900-01-01 00:00:00', 'yyyy-MM-dd hh24:mi:ss')) DaStopDatetime,
+		  to_char(occ.date_plan, 'hh24:mi')                                           TakingMedicineTime,
+		  ord.ordsn_parent|| to_char(occ.date_plan,'dd') || '-' || to_char(occ.date_plan, 'hh24mi')                 DASeqno,
+		  ord.ordsn|| to_char(occ.date_plan,'dd')                                                                ExecDAListID,
+		  to_date(to_char(occ.date_plan, 'yyyyMMdd'), 'yyyyMMdd')                     ExecDate,
+		  ord.quan                                                                    UnitPerTime,
+		  ord.note_ord                                                                Description,
+		  ord.eu_always                                                               DAType,
+		  ord.flag_self                                                               ZBFlag
+		FROM ex_order_occ occ
+		  INNER JOIN cn_order ord ON occ.pk_cnord = ord.pk_cnord
+		  INNER JOIN bd_pd pd ON ord.pk_ord = pd.pk_pd
+		  INNER JOIN bd_unit udos ON udos.pk_unit = pd.pk_unit_vol
+		  INNER JOIN bd_unit uord ON uord.pk_unit = ord.pk_unit
+		  INNER JOIN bd_supply sup ON sup.code = ord.code_supply
+		  INNER JOIN bd_term_freq freq ON freq.code = ord.code_freq
+		  INNER JOIN (SELECT *
+		              FROM bd_defdoc
+		              WHERE code_defdoclist = '030400') dostype ON dostype.code = pd.dt_dosage
+		  INNER JOIN pv_encounter pv ON ord.pk_pv = pv.pk_pv
+		  INNER JOIN pv_ip ip ON pv.pk_pv = ip.pk_pv
+		  INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+		  INNER JOIN bd_ou_employee empreq ON empreq.pk_emp = ord.pk_emp_ord
+		  INNER JOIN bd_ou_dept deptreq ON deptreq.pk_dept = ord.pk_dept
+		  left join (select desc_diag ,pk_pv from (select row_number() over(partition by pk_pv order by flag_maj desc) cnt, diag.pk_pv,diag.desc_diag from pv_diag diag ) res where res.cnt = 1) indiag on indiag.PK_PV=pv.PK_PV
+		WHERE occ.pk_pdapdt IN 
+		<foreach collection="list" open="(" close=")" separator="," index="index" item="pkPdapdt">
+			#{pkPdapdt}
+		</foreach>
+	
+	</select>
+	
+	<select id="qryPivasCgItem" resultType="DynaBean">
+		select 
+		  AccountListID accountListID,
+		  InPatientID  code_pi,
+		  PatientName  name_pi,
+		  ItemNo code_item ,
+		  ItemName name_item,
+		  SourceType ,
+		  SourceID old_id_item ,
+		  Quantity  quan,
+		  Amount price,
+		  AccountEmployeeNo CODE_EMP ,
+		  ExecDepartmentID old_id_exdept,
+		  IPDepartmentID old_id_ipdept,
+		  InsertDateTime ,
+		  ReadFlag ,
+		  ReadDateTime
+		from tAccountList_Pivas bl
+			where  bl.ReadFlag='0'
+	</select>
+	
+	<update id="updatePivas">
+		update tAccountList_Pivas set ReadFlag='1',ReadDateTime=#{readDateTime,javaType=java.util.Date}
+			where AccountListID in 
+			<foreach collection="pkList" item="pkList" index="no" open="("
+                separator="," close=")">
+                #{pkList}
+            </foreach>
+	</update>
+	
+	<select id="checkPivasOut" parameterType="java.util.List" resultType="DynaBean">
+		Select   CNSMFlag,ExecDAListID +'-'+
+ 			CONVERT(varchar(10), ExecDate, 23)+' '+TakingMedicineTime+':00' as ordsn_pk,Name,Spec,ExecDAListID ordsn,
+ 			ExecDate+''+TakingMedicineTime date_occ
+     	from tOrders
+		where CNSMFlag='1'   and ExecDAListID in
+		<foreach collection="list" item="ordsn" index="index" open="(" separator="," close=")" >
+			#{ordsn}
+		</foreach>
+		order by ExecDate + '' + TakingMedicineTime
+	</select>
+	
+	<select id="queryPivasData" parameterType="java.util.List" resultType="com.zebone.nhis.ma.pub.syx.vo.OrderOccVo">
+		select occ.date_plan,ord.ordsn,occ.flag_pivas,occ.pk_exocc,occ.pk_pdapdt
+			from ex_order_occ occ 
+			inner join cn_order ord on ord.pk_cnord = occ.pk_cnord
+		where occ.pk_cnord in 
+			   <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+			   		#{item}
+			   </foreach>
+			   and occ.flag_pivas = '1' 
+			   and occ.pk_pdapdt is not null and occ.pk_pdback is null 
+			   and occ.eu_status ='9' 
+			   <!-- and occ.date_plan >ord.date_stop -->
+	</select>
+</mapper>

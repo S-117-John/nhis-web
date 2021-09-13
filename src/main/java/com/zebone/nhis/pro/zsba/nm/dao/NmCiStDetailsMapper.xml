@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.nm.dao.NmCiStDetailsMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.pro.zsba.nm.vo.NmCiStDetails">
+        <id column="pk_ci_std" jdbcType="CHAR" property="pkCiStd"/>
+        <result column="pk_org" jdbcType="CHAR" property="pkOrg"/>
+        <result column="pk_dept" jdbcType="CHAR" property="pkDept"/>
+        
+        <result column="input_dept" jdbcType="CHAR" property="inputDept"/>
+        <result column="pk_pv" jdbcType="CHAR" property="pkPv"/>
+        <result column="name_pi" jdbcType="VARCHAR" property="namePi"/>
+        <result column="pv_type" jdbcType="VARCHAR" property="pvType"/>
+        <result column="code_pv" jdbcType="VARCHAR" property="codePv"/>
+        <result column="times" jdbcType="INTEGER" property="times"/>
+        <result column="date_annal" jdbcType="VARCHAR" property="dateAnnal"/>
+        <result column="num_ord" jdbcType="DECIMAL" property="numOrd"/>
+        <result column="pk_ci" jdbcType="CHAR" property="pkCi"/>
+        <result column="ci_price" jdbcType="DECIMAL" property="ciPrice"/>
+        <result column="total" jdbcType="DECIMAL" property="total"/>
+        <result column="is_sett" jdbcType="CHAR" property="isSett"/>
+        <result column="pk_ci_st" jdbcType="CHAR" property="pkCiSt"/>
+        <result column="is_pay" jdbcType="CHAR" property="isPay"/>
+        <result column="annal_code" jdbcType="VARCHAR" property="annalCode"/>
+        <result column="annal_name" jdbcType="VARCHAR" property="annalName"/>
+        <result column="charge_time" jdbcType="TIMESTAMP" property="chargeTime"/>
+        <result column="refund_time" jdbcType="TIMESTAMP" property="refundTime"/>
+                
+        <result column="creator" jdbcType="CHAR" property="creator"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="modifier" jdbcType="CHAR" property="modifier"/>
+        <result column="modity_time" jdbcType="TIMESTAMP" property="modityTime"/>
+        <result column="del_flag" jdbcType="CHAR" property="delFlag"/>
+        <result column="ts" jdbcType="TIMESTAMP" property="ts"/>
+    </resultMap>
+        
+    <select id="getById" resultMap="BaseResultMap">
+        SELECT * FROM nm_ci_st_details WHERE pk_ci_std = #{pkCiStd ,jdbcType=CHAR}
+    </select>
+    
+    <select id="findByPropertys" resultMap="BaseResultMap">
+		SELECT * FROM nm_ci_st_details 
+		where 1=1
+		<if test="pkOrg != null and pkOrg != ''">
+			and pk_org = #{pkOrg, jdbcType=CHAR}
+		</if>
+		<if test="pkDept != null and pkDept != ''">
+			and pk_dept = #{pkDept, jdbcType=CHAR}
+		</if>
+		<if test="inputDept != null and inputDept != ''">
+			and input_dept = #{inputDept, jdbcType=CHAR}
+		</if>
+		<if test="pvType != null and pvType != ''">
+			and pv_type = #{pvType, jdbcType=VARCHAR}
+		</if>
+		<if test="codePv != null and codePv != ''">
+			and code_pv = #{codePv, jdbcType=VARCHAR}
+		</if>
+		<if test="times != null">
+			and times = #{times, jdbcType=INTEGER}
+		</if>
+		<if test="isSett != null and isSett != ''">
+			and is_sett = #{isSett, jdbcType=CHAR}
+		</if>
+		<if test="isPay != null and isPay != ''">
+			and is_pay = #{isPay, jdbcType=CHAR}
+		</if>
+		<if test="dateBegin != null and dateBegin != ''">
+			and date_annal >= #{dateBegin, jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and date_annal <![CDATA[<]]>= #{dateEnd, jdbcType=VARCHAR}
+		</if>
+    </select>
+
+    <insert id="saveCiStd" parameterType="com.zebone.nhis.pro.zsba.nm.vo.NmCiStDetails" >
+        INSERT INTO nm_ci_st_details
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkCiStd != null" > pk_ci_std, </if>
+            <if test="pkOrg != null" >  pk_org, </if>
+            <if test="pkDept != null" >  pk_dept, </if>
+            <if test="inputDept != null" >  input_dept, </if>
+            <if test="pkPv != null" >  pk_pv, </if>
+            <if test="namePi != null" >  name_pi, </if>
+            <if test="pvType != null" >  pv_type, </if>
+            <if test="codePv != null" >  code_pv, </if>
+            <if test="times != null" >  times, </if>
+            <if test="dateAnnal != null" >  date_annal, </if>
+            <if test="numOrd != null" >  num_ord, </if>
+            <if test="pkCi != null" >  pk_ci, </if>
+            <if test="ciPrice != null" >  ci_price, </if>
+            <if test="total != null" >  total, </if>
+            <if test="isSett != null" >  is_sett, </if>
+            <if test="pkCiSt != null" >  pk_ci_st, </if>
+            <if test="isPay != null" >  is_pay, </if>
+            <if test="annalCode != null" >  annal_code, </if>
+            <if test="annalName != null" >  annal_name, </if>
+            <if test="chargeTime != null" >  charge_time, </if>
+            <if test="refundTime != null" >  refund_time, </if>
+            
+            <if test="creator != null" > creator, </if>
+            <if test="createTime != null" > create_time, </if>
+            <if test="modifier != null" > modifier, </if>
+            <if test="modityTime != null" > modity_time, </if> 
+            <if test="delFlag != null" > del_flag, </if>
+            <if test="ts != null" > ts, </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkCiStd != null" > #{pkCiStd ,jdbcType=CHAR}, </if>
+            <if test="pkOrg != null" >  #{pkOrg ,jdbcType=CHAR}, </if>
+            <if test="pkDept != null" >  #{pkDept ,jdbcType=CHAR}, </if>
+            <if test="inputDept != null" >  #{inputDept ,jdbcType=CHAR}, </if>
+            <if test="pkPv != null" >  #{pkPv ,jdbcType=CHAR}, </if>
+            <if test="namePi != null" >  #{namePi ,jdbcType=VARCHAR}, </if>
+            <if test="pvType != null" >  #{pvType ,jdbcType=VARCHAR}, </if>
+            <if test="codePv != null" >  #{codePv ,jdbcType=VARCHAR}, </if>
+            <if test="times != null" >  #{times ,jdbcType=INTEGER}, </if>
+            <if test="dateAnnal != null" >  #{dateAnnal ,jdbcType=VARCHAR}, </if>
+            <if test="numOrd != null" >  #{numOrd ,jdbcType=DECIMAL}, </if>
+            <if test="pkCi != null" >  #{pkCi ,jdbcType=CHAR}, </if>
+            <if test="ciPrice != null" >  #{ciPrice ,jdbcType=DECIMAL}, </if>
+            <if test="total != null" >  #{total ,jdbcType=DECIMAL}, </if>
+            <if test="isSett != null" >  #{isSett ,jdbcType=CHAR}, </if>
+            <if test="pkCiSt != null" >  #{pkCiSt ,jdbcType=CHAR}, </if>
+            <if test="isPay != null" >  #{isPay ,jdbcType=CHAR}, </if>
+            <if test="annalCode != null" >  #{annalCode ,jdbcType=VARCHAR}, </if>
+            <if test="annalName != null" >  #{annalName ,jdbcType=VARCHAR}, </if>
+            <if test="chargeTime != null" >  #{chargeTime ,jdbcType=TIMESTAMP}, </if>
+            <if test="refundTime != null" >  #{refundTime ,jdbcType=TIMESTAMP},</if>
+            
+            <if test="creator != null" > #{creator ,jdbcType=CHAR}, </if> 
+            <if test="createTime != null" > #{createTime ,jdbcType=TIMESTAMP}, </if> 
+            <if test="modifier != null" > #{modifier ,jdbcType=CHAR}, </if> 
+            <if test="modityTime != null" > #{modityTime ,jdbcType=TIMESTAMP}, </if> 
+            <if test="delFlag != null" > #{delFlag ,jdbcType=CHAR}, </if> 
+            <if test="ts != null" > #{ts ,jdbcType=TIMESTAMP}, </if> 
+        </trim>
+    </insert>
+																					
+    <update id="updateCiStd" parameterType="com.zebone.nhis.pro.zsba.nm.vo.NmCiStDetails" >
+        UPDATE nm_ci_st_details
+        <set>
+            <if test="pkOrg != null" > pk_org = #{pkOrg ,jdbcType=CHAR}, </if>
+            <if test="pkDept != null" >  pk_dept = #{pkDept ,jdbcType=CHAR}, </if>
+            <if test="inputDept != null" >  input_dept = #{inputDept ,jdbcType=CHAR}, </if>
+            <if test="pkPv != null" >  pk_pv = #{pkPv ,jdbcType=CHAR}, </if>
+            <if test="namePi != null" >  name_pi = #{namePi ,jdbcType=VARCHAR}, </if>
+            <if test="pvType != null" >  pv_type = #{pvType ,jdbcType=VARCHAR}, </if>
+            <if test="codePv != null" > code_pv = #{codePv ,jdbcType=VARCHAR}, </if>
+            <if test="times != null" >  times = #{times ,jdbcType=INTEGER}, </if>
+            <if test="dateAnnal != null" >  date_annal = #{dateAnnal ,jdbcType=VARCHAR}, </if>
+            <if test="numOrd != null" >  num_ord = #{numOrd ,jdbcType=DECIMAL}, </if>
+            <if test="pkCi != null" >  pk_ci = #{pkCi ,jdbcType=CHAR}, </if>
+            <if test="ciPrice != null" >  ci_price = #{ciPrice ,jdbcType=DECIMAL}, </if>
+            <if test="total != null" >  total = #{total ,jdbcType=DECIMAL}, </if>
+            <if test="isSett != null" >  is_sett = #{isSett ,jdbcType=CHAR}, </if>
+            <if test="pkCiSt != null" >  pk_ci_st = #{pkCiSt ,jdbcType=CHAR}, </if>
+            <if test="isPay != null" >  is_pay = #{isPay ,jdbcType=CHAR}, </if>
+            <if test="annalCode != null" >  annal_code = #{annalCode ,jdbcType=VARCHAR}, </if>
+            <if test="annalName != null" >  annal_name = #{annalName ,jdbcType=VARCHAR}, </if>
+            <if test="chargeTime != null" >  charge_time = #{chargeTime ,jdbcType=TIMESTAMP}, </if>
+            <if test="refundTime != null" >  refund_time = #{refundTime ,jdbcType=TIMESTAMP},</if>
+            
+            <if test="creator != null" > creator = #{creator ,jdbcType=CHAR}, </if>
+            <if test="createTime != null" > create_time = #{createTime ,jdbcType=TIMESTAMP}, </if>
+            <if test="modifier != null" > modifier = #{modifier ,jdbcType=CHAR}, </if>
+            <if test="modityTime != null" > modity_time = #{modityTime ,jdbcType=TIMESTAMP}, </if>
+            <if test="delFlag != null" > del_flag = #{delFlag ,jdbcType=CHAR}, </if>
+            <if test="ts != null" > ts = #{ts ,jdbcType=TIMESTAMP}, </if>
+        </set>
+        WHERE 
+            pk_ci_std = #{pkCiStd ,jdbcType=CHAR}
+    </update>
+    
+    <delete id="deleteCiStd">
+        DELETE FROM nm_ci_st_details WHERE pk_ci_std = #{pkCiStd ,jdbcType=CHAR}
+    </delete>
+    
+</mapper>

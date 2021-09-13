@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pv.reg.dao.RegSyxMapper">
+    <select id="querySchSrvAndDtInfo" parameterType="java.util.Map" resultType="DynaBean">
+   select srv.*,ord.pk_ord
+   from  sch_srv srv
+   left join sch_srv_ord ord on ord.pk_schsrv = srv.pk_schsrv  and ord.del_flag='0'
+   where srv.del_flag='0' and srv.flag_stop='0' and srv.pk_schsrv = #{pkSchsrv,jdbcType=CHAR}
+   and (case when ord.EU_TYPE is null then '0' else ord.EU_TYPE end ) = #{euType,jdbcType=VARCHAR}
+</select>
+
+    <select id="queryPiMaster" parameterType="java.util.Map" resultType="DynaBean">
+        select pi.pk_pi,
+        pi.code_op,
+        pi.dt_occu,
+        pi.code_ip,
+        pi.name_pi,
+        pi.dt_sex,
+        pi.birth_date,
+        pi.mobile,
+        hp.pk_hp,
+        pi.dt_idtype,
+        pi.id_no,
+        pi.mcno,
+        pi.insur_no,
+        pi.code_ip,
+        pi.flag_realname,
+        pi.pk_picate,
+        pi.spca_no,
+        pi.sen_no,
+        pi.dt_specunit,
+        pi.addr_cur_dt,
+        pi.mobile,
+        pi.dt_source,
+        pi.citizen_no,
+        pi.hic_no,
+        pi.note,
+        pi.addr_cur,
+        pi.name_rel,
+        pi.idno_rel,
+        pi.tel_rel,
+        pi.address,
+        case when emp.flag_active != '1' then '' else  pi.pk_emp end pk_emp,
+        ca.card_no,
+        emp.PK_EMP,
+        GETPVAGE(pi.BIRTH_DATE,null) as age_format
+        from pi_master pi
+        left outer join bd_ou_employee emp on pi.pk_emp=emp.pk_emp
+        left outer join pi_insurance hp on pi.pk_pi=hp.pk_pi and hp.del_flag='0' and hp.flag_def='1'
+        left join pi_card ca on pi.pk_pi=ca.pk_pi and ca.DT_CARDTYPE ='01'and ca.EU_STATUS='0' and ca.FLAG_ACTIVE='1'
+
+
+
+        <choose>
+          <when test="dbType=='sqlserver'">
+              and Getdate()>=ca.DATE_BEGIN  and ca.DATE_END >= Getdate()
+          </when>
+          <otherwise>
+              and sysdate>=ca.DATE_BEGIN   and ca.DATE_END >= sysdate
+          </otherwise>
+        </choose>
+
+        where pi.del_flag='0'
+        <if test="pkPi != null and pkPi != ''">
+            and pi.pk_pi=#{pkPi,jdbcType=VARCHAR}
+        </if>
+        <if test="codePi != null and codePi != ''">
+            and pi.code_pi=#{codePi,jdbcType=VARCHAR}
+        </if>
+        <if test="pkEmp != null and pkEmp != ''">
+            and pi.pk_emp=#{pkEmp,jdbcType=VARCHAR}
+            and emp.flag_active = '1'
+        </if>
+        <if test="content != null and content != ''">
+            <if test='"0"==searchType'><!-- 诊疗卡 -->
+                and ca.CARD_NO = #{content,jdbcType=VARCHAR}
+            </if>
+            <if test='"1"==searchType'><!-- 医疗证 -->
+                and pi.mcno = #{content,jdbcType=VARCHAR}
+            </if>
+            <if test='"2"==searchType'><!-- 医保卡 -->
+                and pi.insur_no = #{content,jdbcType=VARCHAR}
+            </if>
+            <if test='"3"==searchType'><!-- 身份证 -->
+                and pi.id_no like '${content}%'
+            </if>
+            <if test='"4"==searchType'><!-- 姓名 -->
+                and pi.name_pi like '%${content}%'
+            </if>
+            <if test='"insur_no"==searchType'><!-- 医保卡 -->
+                and pi.insur_no = #{content,jdbcType=VARCHAR}
+            </if>
+            <if test='"id_no"==searchType'><!-- 身份证 -->
+                and pi.id_no like '${content}%'
+            </if>
+            <if test="dtSex != null and dtSex != ''"><!-- 性别 -->
+                and pi.DT_SEX = #{dtSex,jdbcType=VARCHAR}
+            </if>
+            <if test="birthDate!= null and birthDate != ''"><!-- 出生年月-->
+                and pi.BIRTH_DATE =  to_date(#{birthDate,jdbcType=VARCHAR},'yyyy-MM-DD HH24:MI:SS')
+            </if>
+            <if test='"5"==searchType'><!-- 工号-->
+                and emp.code_emp = #{content,jdbcType=VARCHAR}
+            </if>
+            <if test='"6"==searchType'><!-- 电话 -->
+                and pi.mobile = #{content,jdbcType=VARCHAR}
+            </if>
+            <if test='"7"==searchType'><!-- 健康卡 -->
+                and pi.hic_no = #{content,jdbcType=VARCHAR}
+            </if>
+            <if test='"8"==searchType'><!-- 门诊号 -->
+                and pi.code_op = #{content,jdbcType=VARCHAR}
+            </if>
+            <if test='"card_no"==searchType'><!-- 诊疗卡 -->
+                and ca.CARD_NO = #{content,jdbcType=VARCHAR}
+            </if>
+             <if test='"hic_no"==searchType'><!-- 健康卡 -->
+                and pi.hic_no = #{content,jdbcType=VARCHAR}
+            </if>
+            <if test='"code_op"==searchType'><!-- 门诊号 -->
+                and pi.code_op = #{content,jdbcType=VARCHAR}
+            </if>
+        </if>
+    </select>
+    <!-- 查询患者挂号记录 -->
+    <select id="queryPvEncounter" parameterType="java.util.Map" resultType="DynaBean">
+        select t.*,srv.eu_srvtype,dept.name_dept,dts.name_dateslot dts_name,srs.name res_name,emp.NAME_EMP
+        from (
+        select pv.pk_pv,
+        pv.code_pv,
+        pv.pk_pi,
+        pv.eu_pvtype,
+        case when pv.eu_pvtype='1' then op.pk_schsrv else er.pk_schsrv end pk_schsrv,
+        case when pv.eu_pvtype='1' then op.pk_dept_pv else er.pk_dept_pv end pk_dept_pv,
+        case when pv.eu_pvtype='1' then op.pk_res else er.pk_res end pk_res,
+        case when pv.eu_pvtype='1' then op.pk_dateslot else er.pk_dateslot end pk_dateslot,
+        case when pv.eu_pvtype='1' then op.date_print else er.date_print end date_print,
+        pv.eu_status
+        ,pv.name_emp_tre
+        ,pv.date_reg
+        ,pv.age_pv
+        ,pv.pk_insu
+        ,hp.name hp_name
+        ,pv.date_begin
+        ,pv.name_emp_reg
+        ,pv.date_cancel
+        ,pv.name_emp_cancel
+        ,pv.pk_picate
+        ,pc.name picate_name
+        ,pv.name_rel
+        ,pv.idno_rel
+        ,pi.name_pi
+        ,pi.dt_sex
+        ,pi.id_no
+        ,pi.mobile
+        ,case when op.eu_regtype ='0' then '现场挂号' when op.eu_regtype='1' then '预约挂号' else '' end reg_type_name
+
+        from pv_encounter pv
+        inner join pi_master pi on pv.pk_pi=pi.pk_pi
+        left join pi_cate pc on pi.pk_picate = pc.pk_picate
+        left join bd_hp hp on pv.pk_insu = hp.pk_hp
+        left outer join pv_op op on pv.pk_pv=op.pk_pv
+        left outer join pv_er er on pv.pk_pv=er.pk_pv
+        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+            pv.eu_pvtype &lt; '3' and pv.pk_pi=#{pkPi,jdbcType=VARCHAR} and pv.flag_cancel='0'
+            <if test="date != null and date != ''">
+                and to_char(pv.date_begin,'yyyyMMdd') = #{date,jdbcType=VARCHAR}
+            </if>
+            <if test="pkPv != null and pkPv != ''">
+                and pv.pk_pv = #{pkPv,jdbcType=VARCHAR}
+            </if>
+        </trim>
+        ) t
+        LEFT JOIN sch_srv srv on t.pk_schsrv = srv.pk_schsrv AND srv.DEL_FLAG = '0'
+        LEFT JOIN sch_resource srs on t.pk_res = srs.pk_schres and srs.DEL_FLAG='0'
+        LEFT JOIN bd_ou_dept dept on t.pk_dept_pv=dept.pk_dept
+        LEFT JOIN bd_code_dateslot dts on t.pk_dateslot = dts.pk_dateslot
+        left join BD_OU_EMPLOYEE emp on emp.PK_EMP = srs.PK_EMP
+    </select>
+
+    <!-- 查询患者预约待确认记录 -->
+    <select id="queryConfirmReservations" resultType="DynaBean">
+		select appt.pk_schappt pk_appt,
+	       appt.date_appt,
+	       appt.ticket_no,
+	       dept.name_dept,
+	       appt.pk_dept_ex pk_dept,
+		   ap.name_emp_phy,
+		   appt.pk_schsrv pk_srv,
+	       appt.pk_schres,
+	       appt.pk_sch,
+	       appt.pk_dateslot,
+	       appt.date_appt date_sch,
+	       appt.pk_schsrv,
+	       srv.eu_srvtype,
+	       appt.dt_apptype,
+		   appt.BEGIN_TIME,appt.END_TIME,
+	       pl.pk_schplan
+	  from sch_appt appt
+	       left join sch_appt_pv ap on appt.pk_schappt=ap.pk_schappt and ap.flag_pv='0'
+	       left join sch_plan pl on appt.pk_schres =pl.pk_schres and appt.pk_schsrv=pl.pk_schsrv
+	       LEFT JOIN bd_ou_dept dept on appt.pk_dept_ex=dept.pk_dept 
+	       left join sch_srv srv on srv.pk_schsrv = appt.pk_schsrv 
+	 where appt.pk_pi=#{pkPi,jdbcType=VARCHAR} and appt.flag_pay='0' 
+	       and appt.flag_cancel='0'
+	       and appt.flag_pay='0'
+	       order by appt.date_appt desc
+	</select>
+
+
+    <update id="updatePiMasterByReg" parameterType="com.zebone.nhis.pv.reg.vo.PiMasterRegVo">
+        update pi_master
+        <set>
+            <if test="spcaNo != null">
+                spca_no = #{spcaNo,jdbcType=VARCHAR},
+            </if>
+            <if test="senNo != null">
+                sen_no = #{senNo,jdbcType=VARCHAR},
+            </if>
+            <if test="citizenNo != null">
+                citizen_no = #{citizenNo,jdbcType=VARCHAR},
+            </if>
+            <if test="dtSpecunit != null">
+                dt_specunit = #{dtSpecunit,jdbcType=VARCHAR},
+            </if>
+            <if test="dtSource != null">
+                dt_source = #{dtSource,jdbcType=VARCHAR},
+            </if>
+            <if test="hicNo != null">
+                hic_no = #{hicNo,jdbcType=VARCHAR},
+            </if>
+            <if test="mobile != null">
+                mobile = #{mobile,jdbcType=VARCHAR},
+            </if>
+            <if test="dtSex != null">
+                dt_sex = #{dtSex,jdbcType=VARCHAR},
+            </if>
+            <if test="birthDate != null">
+                birth_date = #{birthDate,jdbcType=DATE},
+            </if>
+            <if test="modifier != null">
+                modifier = #{modifier,jdbcType=VARCHAR},
+            </if>
+            <if test="ts != null">
+                ts = #{ts,jdbcType=DATE},
+            </if>
+            <if test="dtIdtypeRel != null">
+                dt_idtype_rel = #{dtIdtypeRel,jdbcType=VARCHAR},
+            </if>
+            <if test="idnoRel != null">
+                idno_rel = #{idnoRel,jdbcType=VARCHAR},
+            </if>
+            <if test="telRel != null">
+                tel_rel = #{telRel,jdbcType=VARCHAR},
+            </if>
+            <if test="addrCur != null">
+                addr_cur = #{addrCur,jdbcType=VARCHAR},
+            </if>
+            <if test="mcno != null">
+                mcno = #{mcno,jdbcType=VARCHAR},
+            </if>
+            <if test="insurNo != null">
+                insur_no = #{insurNo,jdbcType=VARCHAR},
+            </if>
+            <if test="addrCurDt != null">
+                addr_cur_dt = #{addrCurDt,jdbcType=VARCHAR},
+            </if>
+            <if test="nameRel != null">
+                name_rel = #{nameRel,jdbcType=VARCHAR},
+            </if>
+            <if test="note != null">
+                note = #{note,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmp != null">
+                pk_emp = #{pkEmp,jdbcType=VARCHAR},
+            </if>
+            <if test="address != null">
+                address = #{address,jdbcType=VARCHAR},
+            </if>
+            <if test="flagRealname != null">
+                flag_realname = #{flagRealname,jdbcType=VARCHAR},
+            </if>
+            <if test="idNo != null and idNo!=''">
+                id_no = #{idNo,jdbcType=VARCHAR},
+            </if>
+            <if test="dtIdtype != null and dtIdtype !=''">
+                dt_idtype = #{dtIdtype,jdbcType=VARCHAR},
+            </if>
+            <if test="namePi != null and namePi !=''">
+                name_pi = #{namePi,jdbcType=VARCHAR},
+            </if>
+            <if test="pkPicate != null and pkPicate !=''">
+                pk_picate = #{pkPicate,jdbcType=VARCHAR},
+            </if>
+        </set>
+        WHERE
+        pk_pi = #{pkPi,jdbcType=CHAR}
+    </update>
+    <select id="querySchResInfo" parameterType="java.util.Map" resultType="DynaBean">
+   select res.eu_restype,res.pk_dept,res.pk_emp,emp.name_emp 
+   from sch_resource res 
+   left join bd_ou_employee emp on emp.pk_emp = res.pk_emp 
+   where res.pk_schres = #{pkSchres,jdbcType=CHAR}
+</select>
+
+    <!-- 挂号费明细 -->
+    <select id="queryRegFeeItems" resultType="com.zebone.nhis.bl.pub.vo.ItemPriceVo">
+    select cg.pk_cgop,cg.amount as amtHppi,cg.name_cg 
+    from bl_op_dt cg 
+	WHERE cg.flag_pv=1 and cg.pk_pv=#{pkPv,jdbcType=CHAR} and cg.flag_settle='1' and cg.del_flag='0'
+</select>
+    <!-- 挂号支付明细 -->
+    <select id="queryRegPayItems" resultType="com.zebone.nhis.common.module.bl.BlDeposit">
+        SELECT doc.name paymodeName, dp.amount,dp.pk_depo,dp.pk_pv,dp.DT_PAYMODE
+        from bl_deposit dp
+        left join bd_defdoc doc on dp.dt_paymode=doc.code and doc.code_defdoclist='110100' and doc.del_flag='0'
+        <!--  and  doc.val_attr like '%1%' -->
+        left join bl_settle st on dp.pk_settle=st.pk_settle
+        where st.dt_sttype='00' and st.pk_pv=#{pkPv,jdbcType=CHAR}
+        <if test='"9"==euStatus'>
+            and dp.eu_direct='-1'
+        </if>
+        <if test='euStatus!="9"'>
+            and dp.eu_direct='1'
+        </if>
+    </select>
+    <select id="queryPatiPvIpInfoByHp" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.common.module.pv.PvEncounter">
+	select pk_pi,pk_pv
+	from pv_encounter 
+	where pk_pi = #{pkPi,jdbcType=CHAR} and flag_settle='0' and eu_status &lt;'9' and eu_pvtype='3' and pk_insu=#{pkHp,jdbcType=CHAR}
+</select>
+    <select id="queryPvEncounterByCon" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.pv.reg.vo.PiMasterRegVo">
+        select pv.pk_pv,
+        pv.code_pv,
+        pv.eu_pvtype,
+        pv.name_pi,
+        pv.dt_sex,
+        pv.age_pv,
+        pv.pk_insu as pkHp,
+        pv.pk_picate,
+        pv.name_rel,
+        pv.idno_rel,
+        pv.tel_rel,
+        pv.date_begin,
+        pv.date_clinic,
+        pv.name_emp_reg,
+        pv.name_emp_cancel,
+        pv.date_cancel,
+        pv.date_reg,
+        pi.pk_pi,
+        case when pv.eu_pvtype in('1','4') then op.pk_schsrv else er.pk_schsrv end pk_schsrv,
+        case when pv.eu_pvtype in('1','4') then op.pk_dept_pv else er.pk_dept_pv end pk_dept,
+        case when pv.eu_pvtype in('1','4')then op.pk_res else er.pk_res end pk_schres,
+        case when pv.eu_pvtype in('1','4') then op.pk_dateslot else er.pk_dateslot end pk_dateslot,
+        case when pv.eu_pvtype in('1','4') then op.date_print else er.date_print end date_print,
+        case when pv.eu_pvtype in('1','4') then op.eu_regtype else '' end eu_regtype,
+        case when pv.eu_pvtype in('1','4') then op.pk_sch else er.pk_sch end pk_sch,
+        case when pv.eu_pvtype in('1','4') then op.pk_schappt else '' end pk_appt,
+        case when pv.eu_pvtype in('1','4') then op.ticketno else er.ticketno end ticketNo,
+        pv.eu_status,
+        pi.id_no,
+        pi.CODE_OP,
+        pi.DT_IDTYPE,
+        st.code_inv,
+        st.ebillno as e_billno
+        from pv_encounter pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        left outer join pv_op op on pv.pk_pv=op.pk_pv
+        left outer join pv_er er on pv.pk_pv=er.pk_pv
+          left join (
+		    select st.pk_settle,st.pk_pv,inv.code_inv,inv.ebillno,inv.flag_cancel from bl_settle st
+		      inner join bl_st_inv stinv on stinv.pk_settle = st.pk_settle
+		      inner join bl_invoice inv on inv.pk_invoice = stinv.pk_invoice
+		    where st.dt_sttype='00' and st.FLAG_CANC!='1' and inv.flag_cancel='0'
+		  ) st on st.pk_pv = pv.pk_pv and st.flag_cancel='0'
+        where pv.eu_pvtype in('1','2','4') and nvl(pv.flag_cancel,'0')='0'
+        <if test="codePv != null">
+            and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+        </if>
+        <if test="codeOp != null">
+            and pi.CODE_OP = #{codeOp,jdbcType=VARCHAR}
+        </if>
+    </select>
+    <update id="updatePvEncounter" parameterType="java.util.Map">
+        update pv_encounter
+        <set>
+            <if test="euStatus != null">
+                eu_status = #{euStatus,jdbcType=VARCHAR},
+            </if>
+            <if test="flagCancel != null">
+                flag_cancel = #{flagCancel,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmpCancel != null">
+                pk_emp_cancel = #{pkEmpCancel,jdbcType=VARCHAR},
+            </if>
+            <if test="nameEmpCancel != null">
+                name_emp_cancel = #{nameEmpCancel,jdbcType=VARCHAR},
+            </if>
+            <if test="dateCancel != null">
+                date_cancel = #{dateCancel,jdbcType=DATE},
+            </if>
+            <if test="reasonCancel != null">
+                reason_cancel = #{reasonCancel,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE
+        pk_pv = #{pkPv,jdbcType=CHAR}
+    </update>
+    <update id="updateSchAppt" parameterType="java.util.Map">
+        update sch_appt
+        <set>
+            <if test="euStatus != null">
+                eu_status = #{euStatus,jdbcType=VARCHAR},
+            </if>
+            <if test="flagCancel != null">
+                flag_cancel = #{flagCancel,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmpCancel != null">
+                pk_emp_cancel = #{pkEmpCancel,jdbcType=VARCHAR},
+            </if>
+            <if test="nameEmpCancel != null">
+                name_emp_cancel = #{nameEmpCancel,jdbcType=VARCHAR},
+            </if>
+            <if test="dateCancel != null">
+                date_cancel = #{dateCancel,jdbcType=DATE},
+            </if>
+            <if test="ts != null">
+                ts = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE
+        pk_schappt = #{pkSchappt,jdbcType=CHAR}
+    </update>
+    <select id="queryPhAttrVal" parameterType="java.lang.String" resultType="DynaBean">
+	select att.val_attr from bd_hp hp inner join bd_dictattr att on hp.pk_hp=att.pk_dict
+	  inner join bd_dictattr_temp tmp on att.pk_dictattrtemp=tmp.pk_dictattrtemp and tmp.dt_dicttype='03' and tmp.code_attr='0311'
+	where hp.PK_HP=#{pkHp,jdbcType=VARCHAR}
+</select>
+    <select id="queryBlextPayItems" resultType="com.zebone.nhis.common.module.pay.BlExtPay">
+        select * from BL_EXT_PAY bl where flag_pay='1'and PK_DEPO=#{pkDepo,jdbcType=CHAR}
+    </select>
+    
+    <select id="qryHpAttrCodeVal" resultType="java.lang.String">
+    	select attr.val_attr
+		  from bd_hp hp
+		       inner join bd_dictattr attr on hp.pk_hp=attr.pk_dict
+		       inner join bd_dictattr_temp tmp on attr.pk_dictattrtemp=tmp.pk_dictattrtemp and tmp.dt_dicttype='03'
+		 where hp.pk_hp = #{pkHp,jdbcType=CHAR} and tmp.del_flag = '0' and attr.del_flag = '0'
+		       and tmp.code_attr=#{attrCode,jdbcType=VARCHAR}
+    </select>
+    
+</mapper>

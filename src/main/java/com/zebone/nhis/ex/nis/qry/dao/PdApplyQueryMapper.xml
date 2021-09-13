@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.qry.dao.PdApplyQueryMapper">
+    <select id="queryPdApply" parameterType="java.util.Map" resultType="DynaBean">
+        select app.pk_pdap,
+        app.code_apply,
+        app.eu_status,
+        app.name_emp_cancel,
+        app.eu_direct,
+        app.date_ap,
+        app.name_emp_ap ,
+        app.flag_finish,
+        app.eu_print,
+        dp.name_dept name_dept_ap
+        from ex_pd_apply app
+        left join bd_ou_dept dp on dp.pk_dept = app.pk_dept_ap
+        where app.del_flag = '0'
+        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+            and app.pk_dept_ap = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and app.date_ap &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and app.date_ap &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="bedNo != null  and  bedNo != ''">
+            and exists (select 1 from ex_pd_apply_detail dt inner join pv_encounter pv on pv.pk_pv = dt.pk_pv where
+            pv.bed_no = #{bedNo} and dt.pk_pdap = app.pk_pdap)
+        </if>
+        <if test="namePd != null  and  namePd != ''">
+            and exists (select 1 from ex_pd_apply_detail dt2 inner join bd_pd pd on pd.pk_pd = dt2.pk_pd where pd.name
+            like '${namePd}%' and dt2.pk_pdap = app.pk_pdap)
+        </if>
+        <if test="pkPv != null  and  pkPv != ''">
+            and exists (select 1 from ex_pd_apply_detail dt3 inner join bd_pd pd on pd.pk_pd = dt3.pk_pd where dt3.pk_pv
+            = #{pkPv} and dt3.pk_pdap = app.pk_pdap)
+        </if>
+        <if test="euDirect != null  and  euDirect != ''">
+            and app.eu_direct = #{euDirect}
+        </if>
+        order by app.date_ap
+    </select>
+
+    <select id="queryPdApplyCount" parameterType="java.util.Map" resultType="DynaBean">
+        select distinct CODE_DE, NAME_DECATE,EU_DIRECT
+        from EX_PD_DE
+        where EU_DIRECT = '1' and
+        pk_dept_ap = #{pkDeptNs,jdbcType=CHAR}
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and date_de &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and date_de &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        </if>
+        union all
+        select distinct CODE_DE, NAME_DECATE,EU_DIRECT
+        from EX_PD_DE
+        where EU_DIRECT = '1' and pk_dept_ap = #{pkDeptNs,jdbcType=CHAR}
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and date_de &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and date_de &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        </if>
+    </select>
+
+    <select id="queryPdApDetail" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.pk_pv,
+        pv.bed_no,
+        pv.name_pi,
+        pi.code_ip,
+        detail.pk_pdapdt,
+        detail.pk_pdap,
+        detail.flag_de,
+        detail.flag_self,
+        detail.flag_stop,
+        detail.flag_base,
+        detail.date_expire,
+        detail.batch_no,
+        detail.flag_canc,
+        detail.date_back,
+        detail.name_emp_back,
+        detail.name_emp_stop,
+        ord.flag_medout,
+        ap.pk_dept_de,
+        deptde.name_dept name_dept_de,
+        ord.eu_always,
+        ord.ordsn,
+        ord.ordsn_parent,
+        ord.date_start,
+        ord.pk_pres,
+        pd.name name_pd,
+        pd.code code_pd,
+        pd.spec,
+        unit.name name_unit,
+        detail.price,
+        detail.quan_pack*detail.eu_direct as quan_min,
+        detail.amount*detail.eu_direct as amount,
+        de.quan_pack*detail.eu_direct quan_de,
+        de.date_de,
+        de.name_emp_de,
+        de.code_de,
+        detail.flag_pivas,
+        detail.flag_emer,
+        detail.eu_direct,
+        '' as sign,
+        exlist.date_plan date_plan_normal,
+        exlist2.date_plan date_plan_revoke
+        from ex_pd_apply_detail detail
+        inner join ex_pd_apply ap on detail.pk_pdap = ap.pk_pdap
+        inner join pv_encounter pv on detail.pk_pv = pv.pk_pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        inner join cn_order ord on ord.pk_cnord = detail.pk_cnord
+        inner join bd_pd pd on pd.pk_pd = detail.pk_pd
+        inner join bd_unit unit on unit.pk_unit = detail.pk_unit
+        left join ex_pd_de de on de.pk_pdapdt = detail.pk_pdapdt
+        left join bd_ou_dept deptde on deptde.pk_dept = ap.pk_dept_de
+        left join (select eoc.pk_pdapdt, min(date_plan) as date_plan
+        from ex_order_occ eoc
+        inner join ex_pd_apply_detail epad on epad.PK_PDAPDT = eoc.PK_PDAPDT where
+        epad.PK_PDAP=#{pkPdap,jdbcType=CHAR}
+        group by eoc.pk_pdapdt) exlist
+        on detail.pk_pdapdt = exlist.pk_pdapdt
+        left join (select eoc.pk_pdback, min(date_plan) as date_plan from ex_order_occ eoc
+        inner join ex_pd_apply_detail epad on epad.PK_PDAPDT = eoc.pk_pdback where
+        epad.PK_PDAP=#{pkPdap,jdbcType=CHAR}
+        group by eoc.pk_pdback) exlist2
+        on detail.pk_pdapdt = exlist2.pk_pdback
+         where detail.pk_pdap = #{pkPdap,jdbcType=CHAR}
+        <if test="euAlways != null  and  euAlways != ''">
+            and ord.eu_always = #{euAlways,jdbcType=VARCHAR}
+        </if>
+        <if test="flagDe != null  and  flagDe != ''">
+            and detail.flag_de = #{flagDe,jdbcType=CHAR}
+        </if>
+        <if test="flagPivas != null  and  flagPivas != '' and flagPivas != 0">
+            and detail.flag_pivas = #{flagPivas,jdbcType=CHAR}
+        </if>
+        <if test="pdname != null  and  pdname != ''">
+            and pd.name like '%${pdname}%'
+        </if>
+        order by pv.bed_no,ord.ordsn_parent,detail.date_occ,ord.ordsn<!-- ,de.date_de -->
+    </select>
+    <select id="queryPdApDeTogether" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.bed_no,
+        pv.name_pi,
+        pi.code_ip,
+        detail.flag_de,
+        detail.flag_self,
+        detail.flag_stop,
+        detail.flag_base,
+        detail.flag_canc,
+        detail.flag_pivas,
+        detail.date_back,
+        detail.name_emp_back,
+        detail.name_emp_stop,
+        ord.flag_medout,
+        ord.ordsn,
+        ord.ordsn_parent,
+        ord.eu_always,
+        app.pk_dept_de,
+        deptde.name_dept name_dept_de,
+        pd.name namepd,
+        unit.name nameunit,
+        pd.spec,
+        detail.price,
+        detail.quan_pack*detail.eu_direct as quan_min,
+        detail.amount*detail.eu_direct as amount,
+        de.quan_pack*detail.eu_direct as quan_de,
+        de.date_de,
+        de.code_de,
+        app.date_ap,
+        app.code_apply,
+        app.eu_status,
+        app.flag_finish,
+        '' as sign
+        from ex_pd_apply_detail detail
+        inner join ex_pd_apply app on app.pk_pdap = detail.pk_pdap
+        inner join pv_encounter pv on detail.pk_pv = pv.pk_pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        inner join cn_order ord on ord.pk_cnord = detail.pk_cnord
+        inner join bd_pd pd on pd.pk_pd = detail.pk_pd
+        inner join bd_unit unit on unit.pk_unit = detail.pk_unit
+        left join ex_pd_de de on de.pk_pdapdt = detail.pk_pdapdt
+        left join bd_ou_dept deptde on deptde.pk_dept = app.pk_dept_de
+        where app.pk_dept_ap = #{pkDeptNs,jdbcType=CHAR}
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and app.date_ap &gt;= to_date(#{dateBegin} , 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and app.date_ap &lt;= to_date(#{dateEnd} , 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="codePv != null  and  codePv != ''">
+            and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+        </if>
+        <if test="codeIp != null  and  codeIp != ''">
+            and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+        </if>
+        <if test="namePi != null  and  namePi != ''">
+            and pv.name_pi like '%${namePi}%'
+        </if>
+        <if test="euAlways != null  and  euAlways != ''">
+            and ord.eu_always = #{euAlways,jdbcType=VARCHAR}
+        </if>
+        <if test="ordsn != null  and  ordsn != ''">
+            and ord.ordsn = #{ordsn}
+        </if>
+        <if test="flagPivas != null  and  flagPivas != ''">
+            and de.flag_pivas = #{flagPivas,jdbcType=CHAR}
+        </if>
+        <if test="pdname != null  and  pdname != ''">
+            and pd.name like '%${pdname}%'
+        </if>
+        <if test="flagDe != null  and  flagDe != ''">
+            and detail.flag_de = #{flagDe,jdbcType=CHAR}
+        </if>
+        <if test="euAptype != null  and  euAptype != ''">
+            and app.eu_aptype = #{euAptype,jdbcType=VARCHAR}
+        </if>
+        <if test="euDirect != null  and  euDirect != ''">
+            and app.eu_direct = #{euDirect}
+        </if>
+        <if test="codeApply != null  and  codeApply != ''">
+            and app.code_apply = #{codeApply}
+        </if>
+        order by pv.bed_no,ord.ordsn_parent,ord.ordsn
+    </select>
+
+    <!-- 医嘱核对时，处理请领停发的医嘱 -->
+    <select id="queryPdApStopDe" parameterType="java.util.Map" resultType="DynaBean">
+        select apdt.pk_cnord,
+        apdt.pk_pdapdt,
+        apdt.pk_pdap
+        from ex_pd_apply_detail apdt
+        inner join ex_pd_apply ap on apdt.pk_pdap=ap.pk_pdap
+        where apdt.flag_stop = '1' <!-- 停发 -->
+        and apdt.eu_direct = '1' <!-- 发药 -->
+        and apdt.eu_result = '0' <!-- 退药原因 -->
+        and ap.flag_cancel = '0' <!-- 取消标志 -->
+        and ap.pk_dept_ap=#{pkDeptAp,jdbcType=CHAR}
+    </select>
+</mapper>

@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.CnOrderSdMapper">
+	<select id="findOrdBaseList" parameterType="java.util.Map" resultType="com.zebone.nhis.cn.ipdw.vo.CnOrderInputVO">
+		select item.*
+		from (
+				 select ord.pk_ord,
+						ord.code,
+						ord.flag_unit,
+						ord.code_ordtype,
+						ord.name,
+						ord.py_code,
+						ord.d_code,
+						ord.srvname,
+						ord.srvname viewname,
+						ord.spec,
+						ord.flag_bl,
+						ord.code_freq,
+						ord.eu_always,
+						ord.cnt,
+						''                            code_supply,
+						'0'                           flag_pivas,
+						ord.quan_def,
+						case
+							when #{flagSpec,jdbcType=VARCHAR} = '1' then ord.price_vip
+							when #{flagSpec,jdbcType=VARCHAR} = '3' then ord.price_chd
+							else ord.price_ori end as price,
+						ord.pk_org_exec,
+						ord.pk_dept_exec,
+						0            pack_size,
+						ord.pk_unit_min,
+						null          quan_pack,
+						'0'           flag_base,
+						ord.FLAG_PD,
+				        ord.EU_USECATE,
+				        ord.DT_POIS,
+				        ord.DT_ANTI,
+				        ord.DESC_IND,
+				        ord.EU_SEX,
+				        ord.AGE_MIN,
+				        ord.AGE_MAX,
+				        ord.PK_UNIT_VOL,
+						ord.PK_UNIT_WT,
+						ord.PK_UNIT,
+				        ord.unit,
+				        ord.PK_UNIT_DEF,
+				        ord.flagctlsrv,
+				        ord.VOL,
+				        ord.QUAN_MIN,ord.eu_muputype,ord.flag_st,
+				        '0' as adjuvant_drug,
+				        ord.eu_source
+				 from VIEW_CNIPUNPD_INPUT_TRANS ord
+						  left join bd_ord_atd atd on ord.pk_ord = atd.pk_ord and ord.pk_org = #{pkOrg,jdbcType=VARCHAR}
+				 where ord.eu_cpoetype = '0'
+				   and (atd.eu_type is null or
+						(atd.eu_type = '0' and atd.pk_orgarea = #{pkOrgarea,jdbcType=VARCHAR}) or
+						(atd.eu_type = '1' and atd.pk_dept = #{pkCurDept,jdbcType=VARCHAR}))
+						and (ord.py_code like '${pyCode}' or ord.srvname like '${name}') 
+				 union all
+				 select pd.pk_ord,
+						pd.code,
+						'1'                                                                                        flag_unit,
+						pd.code_ordtype,
+						pd.name,
+						pd.py_code,
+						pd.d_code,
+						pd.srvname,
+						pd.srvname viewname,
+						case when bas.pk_pd is null then con.spec else pd.spec end                                 spec,
+						'1'                                                                                        flag_bl,
+						pd.code_freq,
+						pd.eu_always,
+						pd.cnt,
+						pd.code_supply,
+						pd.flag_pivas,
+						pd.quan_def,
+						case when bas.pk_pd is null then con.pack_size * pd.price / pd.pack_size else pd.price end price,
+						pds.pk_org                                                                                 pk_org_exec,
+						pds.pk_dept                                                                                pk_dept_exec,
+						case when bas.pk_pd is null then con.pack_size else 1 end                                  pack_size,
+						case when bas.pk_pd is null then con.pk_unit else pd.pk_unit_min end                       pk_unit,
+						stk.quan_min / con.pack_size                                                               quan_pack,
+						case when bas.pk_pd is null then '0' else '1' end                                          flag_base,
+				        pd.FLAG_PD,
+				        pd.EU_USECATE,
+				        pd.DT_POIS,
+				        pd.DT_ANTI,
+				        null DESC_IND,
+				        pd.EU_SEX,
+				        pd.AGE_MIN,
+				        pd.AGE_MAX,
+				        pd.PK_UNIT_VOL,
+						pd.PK_UNIT_WT,
+						pds.PK_UNIT,
+				        unit.NAME unit,
+				        pd.PK_UNIT_DEF,
+				        pd.flagctlsrv,
+				        pd.VOL,
+		                stk.quan_min,pd.eu_muputype,pd.flag_st,
+		                att.val_att as adjuvant_drug,
+		                pd.eu_source		             
+				 from VIEW_CNIPPD_INPUT_TRANS pd
+						  left join bd_pd_store pds on pds.pk_pd = pd.pk_ord and pds.flag_stop = '0' and pds.pk_dept in ('${pkDept}')
+						  left join bd_pd_convert con on con.pk_pdconvert = pds.pk_pdconvert and con.del_flag = '0'
+						  left join (select sum(quan_min - quan_prep) quan_min,
+											pk_pd
+									 from pd_stock
+									 where del_flag = '0'
+									   and pk_dept in ('${pkDept}')
+									   and flag_stop = '0'
+									 group by pk_pd) stk on pds.pk_pd = stk.pk_pd
+						  left join bd_pd_base bas on pd.pk_ord = bas.pk_pd and bas.del_flag = '0' and bas.pk_dept = #{pkDeptNs,jdbcType=VARCHAR}
+						  left join bd_pd_rest rest on pd.pk_ord = rest.pk_pd and rest.del_flag = '0'
+				 		  left join BD_UNIT unit on pds.PK_UNIT = unit.PK_UNIT
+				 		  left outer join (
+                            SELECT bat.val_att,bat.pk_pd
+                            FROM bd_pd_att bat
+                            INNER JOIN bd_pd_att_define def ON bat.pk_pdattdef=def.pk_pdattdef
+                            WHERE def.code_att = '0503' AND bat.del_flag = '0' AND def.del_flag = '0'	
+                          ) att on pd.pk_pd=att.pk_pd
+				 where pd.eu_cpoetype = '0'
+				   and ((bas.pk_pd is null and pds.pk_pdconvert is not null) or (bas.pk_pd is not null))
+				   and (rest.eu_ctrltype is null or
+						(rest.eu_ctrltype = '0' and rest.pk_emp = #{pkEmp,jdbcType=VARCHAR}) or
+						(rest.eu_ctrltype = '1' and rest.pk_dept = #{pkCurDept,jdbcType=VARCHAR}) or
+						(rest.eu_ctrltype = '2' and rest.pk_diag = #{pkDiag,jdbcType=VARCHAR}))
+						and (pd.py_code like '${pyCode}' or pd.srvname like '${name}') 
+			 ) item
+		where 1=1
+				<if test="euSex != null and euSex != ''">
+				  and item.eu_sex in (${euSex})
+				</if>
+				<if test="age != null and age != ''">
+				 and item.age_min &lt;= ${age} and item.age_max &gt;= ${age}
+				</if>
+			<if test="sql != null and sql != ''">
+				  and  ${sql}
+			</if>
+		<if test="dbType != 'sqlserver'">
+			order by
+			instr(item.py_code,ltrim(rtrim('${pyCode}', '%'),'%')),length(item.py_code)
+		</if>
+	</select>
+	
+	<select id="findOrdSzyb" parameterType="java.util.Map" resultType="com.zebone.nhis.cn.ipdw.vo.SzybVo">
+		select code_hosp,aka036,bkm032 from ins_szyb_itemmap
+		where del_flag= '0' and code_hosp in 
+		<foreach item="item" index="index" collection="ord" open="(" separator="," close=")">
+		        #{item.code} 
+		</foreach>
+	
+	</select>
+	<select id="findOrdSzybByCodes" resultType="com.zebone.nhis.cn.ipdw.vo.SzybVo">
+		select code_hosp,aka036,bkm032 from ins_szyb_itemmap
+		where del_flag= '0' and code_hosp = #{code,jdbcType=VARCHAR}
+	</select>
+
+
+</mapper>

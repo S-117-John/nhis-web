@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.VenousLiquorRuleMapper">
+
+	<select id="qryRule" resultType="DynaBean" parameterType="java.lang.String">
+		select 
+			pk_pivasrule,
+	        code_rule, 
+	        name_rule, 
+	        note,     
+	        wheresql  
+	  	from bd_pivasrule  
+	 	where pk_org = #{pkOrg,jdbcType=VARCHAR} 
+	 		  and del_flag='0'
+	</select>
+	
+	<select id="qryDept" resultType="DynaBean" parameterType="java.lang.String">
+		select 
+		   dept.pk_dept,   
+	       dept.code_dept, 
+	       dept.name_dept, 
+	       dept.pk_orgarea,
+	       area.name_area, 
+	       dept.py_code,
+	       prd.pk_pivasruledept,
+		   prd.pk_pivasrule 
+	    from bd_ou_dept dept
+        inner join bd_ou_org_area area on dept.pk_orgarea=area.pk_orgarea
+        inner join bd_pivasrule_dept prd on dept.pk_dept=prd.pk_dept
+        where prd.pk_pivasrule = #{pkPivasrule} and prd.del_flag = '0'
+	</select>
+	
+	<select id="qryDeptNs" resultType="DynaBean" parameterType="java.lang.String">
+		select
+		  dept.*	
+		from
+			bd_ou_dept dept
+			INNER JOIN bd_ou_org_area area ON dept.pk_orgarea = area.pk_orgarea 
+		where
+			dept.dt_depttype = '02' 
+			and dept.del_flag = '0' 
+			and dept.pk_org = #{pkOrg} 
+			and not exists (select 1 
+                     from bd_pivasrule_dept pd 
+                    where dept.pk_dept=pd.pk_dept) 
+	</select>
+	
+</mapper>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.ex.dao.OrderExecBaMapper">
+
+<!-- 根据医嘱主键，作废医嘱执行单 -->
+ <update id="cancelExecListByPkOrd">
+       update ex_order_occ set eu_status = 9,flag_canc = '1', 
+       date_canc = #{dateCanc,jdbcType=TIMESTAMP},
+       pk_dept_canc = #{pkDept,jdbcType=CHAR},
+       pk_emp_canc  = #{pkEmp,jdbcType=CHAR},
+       name_emp_canc  = #{nameEmp,jdbcType=VARCHAR}   
+       where pk_cnord in 
+    <foreach item="pkOrd" index="index" collection="pkOrds" open="(" separator="," close=")">
+            	#{pkOrd}    
+     </foreach>
+ </update>  
+</mapper>

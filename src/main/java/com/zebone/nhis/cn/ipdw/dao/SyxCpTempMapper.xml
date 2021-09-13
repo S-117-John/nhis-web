@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.SyxCpTempMapper">
+
+ <resultMap type="com.zebone.nhis.cn.ipdw.vo.SyxCpTempFormPhaseVo" id="tempFormMap">
+    
+        <id column="pk_cpphase" property="pkCpphase"/>
+        <result column="name_phase" property="codePhase"/>
+        <result column="name_cp" property="title"/>
+        <result column="name_phase" property="subTitle"/>
+        <result column="flag_exp" property="flagExp"/>
+        <result column="exp_reason" property="expReason"/>
+        
+	    <collection property="tabOrds" ofType="com.zebone.nhis.cn.ipdw.vo.SyxCpTempFormItem" >
+	            <id column="pk_cpord" property="pkCpord"/>
+	            <result column="flag_exec" property="flagExec"/>
+	            <result column="ord_type" property="ordType"/>
+	            <result column="name_form" property="nameOrd"/>    
+	    </collection>
+</resultMap>
+    
+<select id="qryCpTemp"  parameterType="java.util.Map" resultType="DynaBean">
+	   select tmp.pk_cptemp,
+	       tmp.code_cp,
+	       tmp.name_cp,
+	       dept.name_dept,
+	       tmp.spcode,
+	       tmp.amount_ref,
+	       tmp.days_min,
+	       tmp.days_max,
+	       max(tmp.version) version,
+	       tmp.eu_status
+	  from cp_temp tmp 
+	  inner join bd_ou_dept dept on dept.pk_dept = tmp.pk_dept 
+	  <if test='pkDept!=null and pkDept!=""'>
+	    where tmp.pk_dept=#{pkDept,jdbcType=VARCHAR}  or 
+	          tmp.pk_org='~'
+	  </if>
+	 group by
+	       dept.name_dept,
+	       tmp.pk_cptemp,
+	       tmp.code_cp,
+	       tmp.name_cp,
+	       tmp.spcode,
+	       tmp.amount_ref,
+	       tmp.days_min,
+	       tmp.days_max,
+	       tmp.eu_status 
+	 order by dept.name_dept, tmp.code_cp,version desc   
+</select>
+<select id="qryBdFlow"  parameterType="java.util.Map" resultType="com.zebone.nhis.cn.ipdw.vo.BdFlowSpVo">
+	   
+	select fl.pk_flow,
+	       fl.code_flow,
+	       fl.name_flow,
+	       fl.eu_type,     <!-- 0科室，1人员 -->
+	       sp.pk_flowstep,
+	       sp.sortno,
+	       sp.name_step,
+	       sp.eu_depttype, <!--  0其他科室，1本科室-->
+	       sp.pk_dept,
+	       sp.pk_emp,
+	       sp.name_emp
+	  from bd_flow fl
+	       inner join bd_flow_step sp on fl.pk_flow=sp.pk_flow and sp.del_flag='0' 
+	 where fl.object_flow='CP_TEMP' and 
+	       sp.flag_start='1' and 
+	       fl.flag_active='1' and 
+	       fl.del_flag='0'
+
+</select>
+<select id="qryCpTempBase"  parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.cn.cp.SyxCpTemp">
+	   
+	select tmp.* 
+	  from cp_temp tmp
+	 where tmp.pk_cptemp=#{pkCptemp,jdbcType=VARCHAR}
+
+</select>
+<select id="qryCpTempFlow"  parameterType="java.util.Map" resultType="com.zebone.nhis.cn.ipdw.vo.BdFlowSpVo">
+	   
+	select fb.pk_flowstep,
+	       fb.pk_dept,
+	       dept.name_dept,
+	       fb.pk_emp,
+	       fb.name_emp,
+	       case fb.eu_result when '0' then '未审核' when '1' then '通过' when '9'  then '退回' else '' end as eu_result,
+	       fb.note,
+	       fb.date_chk,
+	       step.sortno 
+	  from bd_flow_bp fb
+	       inner join bd_flow_step step on step.pk_flowstep = fb.pk_flowstep 
+	       left outer join bd_ou_dept dept on fb.pk_dept=dept.pk_dept
+	 where fb.pk_bppk=#{pkCptemp,jdbcType=VARCHAR}
+     order by fb.ts   
+
+</select>
+
+<select id="qryCpTempDiag"  parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.cn.cp.SyxCpTempDiag">
+	   
+	select td.* 
+	  from cp_temp_diag td 
+	 where td.pk_cptemp=#{pkCptemp,jdbcType=VARCHAR} and 
+	       td.del_flag='0'
+
+</select>
+<select id="qryCpTempDept"  parameterType="java.util.Map" resultType="com.zebone.nhis.cn.ipdw.vo.SyxCpTempDeptVo">
+	   
+	select td.*,
+	       org.name_org,
+	       dept.code_dept,
+	       dept.name_dept
+	  from cp_temp_dept td 
+	       inner join bd_ou_org org on td.pk_org_use=org.pk_org
+	       inner join bd_ou_dept dept on td.pk_dept_use=dept.pk_dept
+	 where td.pk_cptemp=#{pkCptemp,jdbcType=VARCHAR}
+
+</select>
+
+<select id="qryCpTempPhase"  parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.cn.cp.SyxCpTempPhase">
+	   
+	select ph.* 
+	  from cp_temp_phase ph
+	 where ph.pk_cptemp=#{pkCptemp,jdbcType=VARCHAR}
+	  AND  ph.del_flag='0'
+	  order by  ph.sortno 
+
+</select>
+<select id="qryCpTempForm1"  parameterType="java.util.Map" resultType="com.zebone.nhis.cn.ipdw.vo.SyxCpTempFormPhaseVo">
+	   
+select tmp.name_cp,
+       tmp.days_min,     
+       tmp.days_max,     
+       diag.code_icd,    
+       diag.name_icd,    
+       ph.name_phase,    
+       ord.eu_tasktype,  
+       ord.eu_always,  
+       ord.sortno,     
+       ord.name_form   
+  from cp_temp tmp
+       inner join cp_temp_diag diag on tmp.pk_cptemp=diag.pk_cptemp
+       inner join cp_temp_phase ph on tmp.pk_cptemp=ph.pk_cptemp
+       inner join cp_temp_cpord ord on ph.pk_cpphase=ord.pk_cpphase
+ where tmp.pk_cptemp=#{pkCptemp,jdbcType=VARCHAR}
+
+</select>
+<select id="qryCpTempForm"  parameterType="java.util.Map" resultMap="tempFormMap">
+	   
+select 
+       tmp.name_cp,
+       tmp.days_min,     
+       tmp.days_max,     
+       diag.code_icd,    
+       diag.name_icd,
+       ph.pk_cpphase, 
+       '' as flag_exp,  
+       '' as exp_reason, 
+       ph.name_phase,    
+       ord.eu_tasktype, 
+       case ord.eu_always when '0' then '长期医嘱' else '临时医嘱' end as ord_type,
+       ord.eu_always,  
+       ord.sortno,     
+       ord.name_form,
+       ord.pk_cpord,
+       '0' as flag_exec   
+  from cp_temp tmp
+       inner join cp_temp_diag diag on tmp.pk_cptemp=diag.pk_cptemp
+       inner join cp_temp_phase ph on tmp.pk_cptemp=ph.pk_cptemp
+       inner join cp_temp_cpord ord on ph.pk_cpphase=ord.pk_cpphase  and ord.flag_print='1'     
+ where tmp.pk_cptemp=#{pkCptemp,jdbcType=VARCHAR} and ord.eu_tasktype = #{euTasktype,jdbcType=VARCHAR}
+ order by ph.sortno,ord.sortno 
+
+</select>
+<select id="qryCpTempPhaseOrd"  parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.cn.cp.SyxCpTempCpord">  
+	select ord.*,task.eu_reptype   
+	  from cp_temp_cpord ord 
+	  left join bd_cp_task task on task.pk_cptask=ord.pk_ord and task.del_flag='0' 
+	 where ord.pk_cpphase=#{pkCpphase,jdbcType=VARCHAR} 
+	 order by ord.sortno
+</select>
+
+</mapper>

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.st.dao.StoreInitMapper">
+<select id="queryInvInit" parameterType="java.util.Map" resultType="DynaBean"> 
+	select inv.pk_pdinvinit,
+       inv.pk_pd,
+       pd.code,
+       pd.name,
+       pd.spec,
+       un.name as pk_unit,
+       ps.pack_size,
+       pd.pack_size as pack_size_pd,
+       fac.name as pk_factory,
+       inv.quan_min/ps.pack_size as quan_min,
+       inv.price_cost/pd.pack_size*ps.pack_size as price_cost,
+       inv.price/pd.pack_size*ps.pack_size as price,
+       inv.amount_cost,
+       inv.amount,
+       inv.batch_no,
+       inv.date_expire,
+       inv.pk_emp,
+       inv.name_emp,
+       inv.date_input,
+       inv.flag_cc,
+       inv.pk_pdcc,
+       pd.eu_source
+  	from pd_inv_init inv
+       inner join bd_pd_store ps on inv.pk_store=ps.pk_store and inv.pk_pd=ps.pk_pd
+       inner join bd_pd pd on inv.pk_pd=pd.pk_pd
+       left join bd_factory fac on fac.pk_factory = pd.pk_factory
+	   left join bd_unit un on un.pk_unit = ps.pk_unit
+       <where>
+              <choose>
+                     <when test="pdType==0">
+                            and pd.dt_pdtype like '0%'
+                     </when>
+                     <when test="pdType==1">
+                            and pd.dt_pdtype like '1%'
+                     </when>
+                     <otherwise>
+                            1!=1
+                     </otherwise>
+              </choose>
+              <if test=" pkDept != null and  pkDept != '' ">
+                     and inv.pk_dept = #{pkDept,jdbcType=CHAR}
+              </if>
+              <if test=" pkStore != null and  pkStore != '' ">
+                     and inv.pk_store = #{pkStore,jdbcType=CHAR}
+              </if>
+              <if test=" spcodeOrcode !=null and spcodeOrcode !='' ">
+                     and ( upper(pd.spcode) like '${spcodeOrcode}%' or pd.code like '${spcodeOrcode}%' )
+              </if>
+       </where>
+</select>
+<select id="getAllInvInitByCC" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.st.vo.PdInvInitVo">
+select inv.pk_dept,   
+       inv.pk_store,  
+       inv.pk_pd,     
+       inv.price_cost, 
+       inv.price,         
+       sum(inv.quan_min) as quan_min,  
+       sum(inv.amount_cost) as amount_cost,     
+       sum(inv.amount) as amount,              
+       inv.batch_no,    
+       inv.date_expire,
+       pd.spec,
+       pd.pk_factory,  
+       ps.pk_unit,
+       ps.pack_size,
+       pd.pack_size as pack_size_pd   
+  from pd_inv_init inv
+       inner join bd_pd_store ps on inv.pk_store=ps.pk_store and inv.pk_pd=ps.pk_pd
+       inner join bd_pd pd on inv.pk_pd=pd.pk_pd
+ where inv.pk_dept=#{pkDept,jdbcType=CHAR}  and  inv.pk_store=#{pkStore,jdbcType=CHAR}  and inv.flag_cc='0'
+ <choose>
+        <when test="pdType==0">
+               and pd.dt_pdtype like '0%'
+        </when>
+        <when test="pdType==1">
+               and pd.dt_pdtype like '1%'
+        </when>
+        <otherwise>
+               1!=1
+        </otherwise>
+ </choose>
+group by inv.pk_dept,
+       inv.pk_store,
+       inv.pk_pd,
+       inv.price_cost,
+       inv.price,
+       inv.batch_no,
+       inv.date_expire,
+       pd.spec,
+       pd.pk_factory,  
+       ps.pk_unit,
+       ps.pack_size,
+       pd.pack_size
+</select>
+</mapper>

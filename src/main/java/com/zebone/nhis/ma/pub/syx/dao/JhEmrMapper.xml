@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.syx.dao.JhEmrMapper">
+
+	<select id="qryJhEmrList" parameterType="java.util.Map" resultType="DynaBean">
+		select a.PATIENT_ID code_pi,
+	       b.inp_no code_ip,
+	       a.VISIT_ID ip_times, 
+	       b.name name_pi,
+	       deptr.DEPT_name name_dept_admit,
+	       a.ADMISSION_DATE_TIME date_admi,
+	       deptc.DEPT_name name_dept_dis,
+	       a.DISCHARGE_DATE_TIME date_dis
+		from Medrec.pat_visit a
+		inner join PAT_MASTER_INDEX b on a.PATIENT_ID=b.PATIENT_ID
+		inner join DEPT_DICT deptr on deptr.DEPT_CODE =a.DEPT_ADMISSION_TO
+		inner join DEPT_DICT deptc on deptc.DEPT_CODE =a.DEPT_DISCHARGE_FROM
+		where a.PATIENT_ID =#{codePi,jdbcType=CHAR} 
+		order by code_pi,ip_times desc
+	</select>
+	
+</mapper>

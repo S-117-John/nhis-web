@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.pd.dao.DeptPdApplyOpMapper">
+	
+ <select id="getPdStoreInfo" parameterType="java.util.Map" resultType="DynaBean">
+    select 
+    store.pk_pd,
+    convt.pk_unit pk_unit_store,
+	convt.pack_size as pack_size_store  
+    from bd_pd_store store  
+	left join bd_pd_convert convt on convt.pk_pdconvert = store.pk_pdconvert 
+	where store.pk_dept = #{pkDeptOcc,jdbcType=CHAR} and store.pk_pd = #{pkPd,jdbcType=CHAR}
+ </select>
+ <select id="queryPdApply" parameterType="java.util.Map" resultType="DynaBean">
+	  select app.pk_pdap,
+           app.code_apply,
+           app.eu_status,
+           app.name_emp_cancel,
+           app.eu_direct,
+           app.date_ap,
+           app.name_emp_ap ,
+           app.note,
+           app.eu_print,
+           app.flag_finish,
+           dept.name_dept name_dept_de
+      from ex_pd_apply app
+      left join bd_ou_dept dept on dept.pk_dept = app.pk_dept_de
+	 where app.pk_dept_ap = #{pkDeptNs,jdbcType=CHAR}  
+	 and app.eu_aptype='3'
+	  <if test="dateEnd != null  and  dateEnd != ''">
+		    and app.date_ap &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS') 
+      </if>
+      <if test="dateBegin != null  and  dateBegin != ''">
+		     and app.date_ap &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')  
+      </if>
+      <if test="pkDeptDe != null  and  pkDeptDe != ''">
+		     and app.pk_dept_de  = #{pkDeptDe,jdbcType=CHAR}  
+      </if>
+      order by app.date_ap
+  </select>
+  <select id="queryPdApDetail" parameterType="java.util.Map" resultType="DynaBean">
+	  select pv.pk_pv,
+	       pv.name_pi,
+	       pi.code_op,
+	       detail.pk_pdapdt,
+	       detail.flag_de,
+	       detail.flag_stop,
+	       pd.name namepd,
+	       pd.code code_pd,
+	       unit.name nameunit,
+	       pd.spec,
+	       detail.price,
+	       detail.quan_pack*detail.eu_direct as quan_min,
+	       detail.amount*detail.eu_direct as amount,
+	       de.quan_pack*detail.eu_direct quan_de,
+	       de.name_emp_de,
+	       de.date_de,
+	       de.flag_pivas
+	  from ex_pd_apply_detail detail
+	  inner join pv_encounter pv on detail.pk_pv = pv.pk_pv 
+	  inner join pi_master pi on pi.pk_pi = pv.pk_pi 
+	  inner join bd_pd pd on pd.pk_pd = detail.pk_pd 
+	  inner join bd_unit unit on unit.pk_unit = detail.pk_unit 
+	   left join cn_order ord on ord.pk_cnord = detail.pk_cnord 
+	   left join ex_pd_de de on de.pk_pdapdt = detail.pk_pdapdt
+	  where detail.pk_pdap = #{pkPdap,jdbcType=CHAR}
+	  <if test="euAlways != null  and  euAlways != ''">
+		     and ord.eu_always = #{euAlways,jdbcType=VARCHAR} 
+      </if>
+	 <if test="flagDe != null  and  flagDe != ''">
+		     and detail.flag_de = #{flagDe,jdbcType=CHAR} 
+      </if>
+      <if test="flagPivas != null  and  flagPivas != ''">
+		     and de.flag_pivas = #{flagPivas,jdbcType=CHAR} 
+      </if>
+	  <if test="pdname != null  and  pdname != ''">
+		     and pd.name like '%${pdname}%' 
+      </if>
+      order by pi.code_op ,ord.ordsn,de.date_de
+  </select>
+  
+  <select id="qryUnPdApExList" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.pub.vo.GeneratePdApExListVo">
+  	select
+	  cg.pk_cnord,
+	  pv.pk_pv,
+	  pi.pk_pi,
+	  pi.code_op,
+	  pv.name_pi,
+	  cg.name_cg	pdname,
+	  pd.code 		pdcode,
+	  cg.spec,
+	  cg.pk_unit,
+	  cg.pack_size,
+	  cg.price_org   price_min,
+	  case when pk_cnord is null then cg.pk_cgop else null end pk_cgop,
+	  sum(cg.quan)   quan_occ,
+	  sum(cg.amount) amount,
+	  pd.pk_unit_min,
+	  unit.name      name_unit_min,
+	  sto.pk_unit    pk_unit_store,
+	  sto.pack_size pack_size_store,
+	  pd.pk_pd,
+	  round(data.quan_stk/sto.pack_size,2) stock_sum,
+	  cg.batch_no
+	from bl_op_dt cg
+	  inner join bd_pd pd on cg.pk_pd = pd.pk_pd
+	  inner join pv_encounter pv on pv.pk_pv = cg.pk_pv
+	  inner join pi_master pi on pi.pk_pi = pv.pk_pi
+	  inner join bd_pd_store sto on pd.pk_pd = sto.pk_pd and sto.pk_dept = #{pkDeptDe,jdbcType=VARCHAR}
+	  inner join bd_defdoc doc on doc.code = pd.dt_pois and code_defdoclist = '030403'<!-- 码表毒麻分类030403 -->
+	  inner join bd_unit unit on unit.pk_unit = pd.pk_unit_min
+	  inner join bl_settle st on st.PK_SETTLE = cg.PK_SETTLE and st.FLAG_CANC = '0' and st.PK_SETTLE_CANC is null
+	  LEFT JOIN (
+	  	select sum(QUAN_MIN-QUAN_PREP) quan_stk,stk.PK_PD,stk.PK_STORE 
+	  	from PD_STOCK stk 
+	  	where stk.PK_DEPT=#{pkDeptDe,jdbcType=VARCHAR} and stk.FLAG_STOP_op=0
+	  	GROUP BY  stk.PK_PD,stk.PK_STORE
+      ) data on  data.PK_PD=pd.PK_PD and sto.PK_STORE=data.PK_STORE
+	where cg.flag_pd = '1' 
+	  and cg.pk_pdstdt is null 
+	  and cg.pk_dept_ex =#{pkDept,jdbcType=VARCHAR} 
+	  <!-- and not exists(select 1 from bl_op_dt dt where dt.PK_CGOP_BACK = cg.PK_CGOP and dt.del_flag = '0')-->
+	  and cg.flag_settle='1'
+	<if test='dateStart != null and dateStart != "" '>
+		  and cg.date_cg &gt;= to_date(#{dateStart}, 'YYYYMMDDHH24MISS')
+	</if> 
+	<if test='dateEnd != null and dateEnd != "" '>
+		  and cg.date_cg &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+	</if>
+	<if test='codeOp != null and codeOp != "" '>
+		  and pi.code_op like  '%' || #{codeOp,jdbcType=VARCHAR} || '%'
+	</if>
+	<if test='namePd !=null and namePd !=""'>
+		  and pd.name like '%' || #{namePd,jdbcType=VARCHAR} || '%'
+	</if>
+	<if test='pdType == "0"'><!-- 普通药品：00 一般药品, 03 二类精神药品, 05 放射性药品, 06 兴奋剂药品 -->
+	  and doc.code in ('00','03','05','06')
+	</if>
+	<if test='pdType == "1"'><!-- 毒麻药品：01 麻醉药品, 02 一类精神药品, 04 毒药药品 -->
+		  and doc.code in ('01','02','04')
+	</if>
+	group by cg.pk_cnord,
+	  pv.pk_pv,
+	  pi.pk_pi,
+	  pv.name_pi,
+	  pi.code_op,
+	  cg.name_cg,
+	  pd.code,
+	  cg.spec,
+	  cg.pk_unit,
+	  cg.pack_size,
+	  cg.price_org,
+	  pd.pk_unit_min,
+	  sto.pk_unit,
+	  sto.pack_size,
+	  unit.name,
+	  pd.pk_pd,
+	   data.quan_stk,
+	  cg.batch_no,
+	  (case when pk_cnord is null then cg.pk_cgop else null end)
+  </select>
+</mapper>

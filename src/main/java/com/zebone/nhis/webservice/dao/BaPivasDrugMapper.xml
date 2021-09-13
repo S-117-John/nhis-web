@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.webservice.dao.BaPivasDrugMapper">
+    <select id="qryPivaDrugDtInfo" resultType="DynaBean" parameterType="java.util.Map">
+        select  dt.pk_pdapdt,
+        pi.code_ip,
+        ap.pk_dept_ap,
+        ap.code_apply,
+        pi.dt_sex,
+        pv.code_pv,
+        pv.pk_dept,
+        ap.pk_pdap,
+        ap.pk_org pk_org_ap,
+        pv.bed_no,
+        pv.pk_pv,
+        pi.name_pi,
+        dt.pk_pd,
+        pd.name name_pd,
+        fa.name factory,
+        pd.spec,
+        dt.pk_unit,
+        unit.name unit,
+        dt.quan_pack,
+        dt.quan_pack actual_quan_pack,
+        (case de.quan_pack  when null then 0
+        else sum(de.quan_pack) end
+        ) quan_de,
+        dt.quan_min,
+        dt.pack_size ,
+        pd.pack_size pd_pack_size,
+        pd.eu_muputype,
+        ord.ordsn_parent,
+        ord.ordsn,
+        ord.dosage,
+        unit_dos.name unit_dos,
+        sup.name supply,
+        freq.name freq,
+        stk.quan / dt.pack_size quan,
+        dt.price,
+        dt.flag_emer,
+        dt.amount,
+        dt.eu_detype,
+        dt.pk_cnord ,
+        dt.flag_pivas,
+        dt.flag_self,
+        ord.eu_always,
+        ap.pk_pdap,
+        ord.date_stop_chk date_stop,
+        ap.date_ap ,
+        ord.flag_stop_chk,
+        dt.date_occ date_occ,
+        (select count(1)
+        from ex_order_occ occ
+        where occ.pk_pdapdt=dt.pk_pdapdt and
+        occ.flag_canc='1')  eu_status_occ,
+        case when stk.flag_stop='0' then '0' else '1' end flag_stop_stk,
+        ''as pk_pddecate,
+        '' as name_decate ,
+        '' as code_decate
+        from pi_master pi
+        inner join pv_encounter pv on pi.pk_pi = pv.pk_pi
+        inner join ex_pd_apply_detail dt on pv.pk_pv = dt.pk_pv and dt.quan_min > 0
+        inner join ex_pd_apply ap  on ap.pk_pdap=dt.pk_pdap
+        inner join bd_pd pd on dt.pk_pd = pd.pk_pd
+        inner join bd_factory fa on pd.pk_factory = fa.pk_factory
+        inner join bd_unit unit on dt.pk_unit = unit.pk_unit
+        inner join cn_order ord on dt.pk_cnord = ord.pk_cnord
+        left join bd_supply sup on ord.code_supply = sup.code
+        inner join bd_term_freq freq on ord.code_freq = freq.code
+        inner join bd_unit unit_dos on ord.pk_unit_dos = unit_dos.pk_unit
+        left outer join (select pk_pd, sum(quan_min - quan_prep) quan,flag_stop from pd_stock
+        where PK_DEPT = #{pkDept,jdbcType=VARCHAR} and flag_stop='0' group by pk_pd,flag_stop
+        ) stk on dt.pk_pd = stk.pk_pd
+        left outer join ex_pd_de de on dt.pk_pdapdt = de.pk_pdapdt
+        where dt.PK_PDAP in
+        <foreach collection="pkPdapdts" index="index" close=")" open="(" separator="," item="item">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+        and ord.pk_pres is null
+        and dt.eu_direct = '1'
+        and dt.flag_stop = '0'
+        and dt.flag_finish = '0'
+        and (dt.flag_canc='0' or dt.flag_canc is null)
+        and (dt.flag_self not in ('1') or dt.flag_pivas='1')
+        and ap.flag_cancel='0'
+        and ap.flag_finish='0'
+        group by ap.pk_pdap,
+        pi.code_ip,
+        dt.pk_pdapdt,
+        pv.bed_no,
+        pv.pk_pv,
+        pi.name_pi,
+        dt.pk_pd,
+        pd.name,
+        pd.eu_muputype,
+        fa.name,
+        pd.spec,
+        dt.pk_unit,
+        unit.name,
+        dt.quan_pack,
+        de.quan_pack,
+        dt.quan_min,
+        dt.pack_size,
+        pd.pack_size,
+        ord.ordsn_parent,
+        ord.ordsn,
+        ord.dosage,
+        unit_dos.name,
+        sup.name,
+        freq.name,
+        stk.quan,
+        dt.price,
+        dt.amount,
+        dt.eu_detype,
+        ap.pk_dept_ap,
+        ap.pk_org,
+        ap.pk_pdap,
+        dt.flag_emer,
+        dt.pk_cnord,
+        pi.dt_sex,
+        pv.code_pv,
+        pv.pk_dept,
+        dt.flag_pivas,
+        dt.flag_self,
+        stk.flag_stop,
+        ap.code_apply,
+        ord.eu_always,
+        dt.date_occ,
+        ap.date_ap,
+        ord.date_stop_chk,
+        ord.flag_stop_chk
+        order by ap.code_apply, pv.bed_no,ord.ordsn_parent,ord.ordsn
+    </select>
+
+    <select id="qryPivaRetDrugDtInfo" parameterType="java.util.Map" resultType="DynaBean">
+        select dt.pk_pdapdt,
+        pv.bed_no,
+        pv.pk_pv,
+        pi.name_pi,
+        dt.pk_pd,
+        pd.name name_pd,
+        fa.name factory,
+        pd.spec,
+        dt.pk_unit,
+        dt.pk_cgip,
+        unit.name unit,
+        dt.quan_pack * -1 quan_pack,
+        dt.batch_no,
+        dt.quan_min,
+        dt.pack_size,
+        dt.price_cost,
+        dt.price,
+        dt.pk_cnord,
+        dt.date_expire,
+        dt.pk_pdap,
+        dt.eu_detype,
+        dt.amount * -1 amount,
+        ap.pk_dept_ap,
+        pd.eu_usecate,
+        ap.pk_org pk_org_ap ,
+        ord.code_ordtype
+        ,'' as pk_pddecate
+        ,''as name_decate
+        , '' as code_decate
+        from pi_master pi
+        inner join pv_encounter pv on pi.pk_pi = pv.pk_pi
+        inner join ex_pd_apply_detail dt on pv.pk_pv = dt.pk_pv
+        inner join ex_pd_apply ap  on ap.pk_pdap=dt.pk_pdap
+        inner join cn_order ord on ord.pk_cnord=dt.pk_cnord
+        inner join bd_pd pd on dt.pk_pd = pd.pk_pd
+        inner join bd_factory fa on pd.pk_factory =fa.pk_factory
+        inner join bd_unit unit on dt.pk_unit = unit.pk_unit
+        where dt.PK_PDAP in
+        <foreach collection="pkPdapdts" index="index" close=")" open="(" separator="," item="item">
+              <foreach collection="item" index="number" separator="," item="temp">
+                  #{temp,jdbcType=VARCHAR}
+              </foreach>
+        </foreach>
+        and dt.eu_direct = '-1'
+        and dt.flag_stop = '0'
+        and dt.flag_finish = '0'
+        and (dt.flag_canc='0' or dt.flag_canc is null)
+    </select>
+
+</mapper>

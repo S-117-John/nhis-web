@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.bl.opcg.dao.OpcgOrdInsteadEntryMapper">
+
+    <select id="queryCurEnterPresInfo" resultType="DynaBean">
+        select ord.*,opdt.date_expire,opdt.price_cost,opdt.price_org price_cg,opdt.pk_cgop,unitdos.name name_dosage,pres.dt_prestype,pres.pres_no,pres.date_pres,pres.note,pres.pk_diag,pd.pk_unit_min,pd.vol
+        from cn_order ord
+        inner join bd_pd pd on pd.pk_pd=ord.pk_ord
+        inner join bd_unit unitdos on unitdos.pk_unit=ord.pk_unit_dos
+        inner join cn_prescription pres   on ord.pk_pres = pres.pk_pres
+        inner join bl_op_dt opdt   on opdt.pk_cnord = ord.pk_cnord and opdt.flag_settle='0' and opdt.flag_pd='1'
+        <where>
+            ord.eu_pvtype &lt; 3
+            <if test='pkPres!=null and pkPres !=""'>
+                and ord.pk_pres = #{pkPres,jdbcType=VARCHAR}
+            </if>
+            <if test='pkEmp!=null and pkEmp!=""'>
+                and ord.pk_emp_input = #{pkEmp,jdbcType=VARCHAR}
+            </if>
+            <if test='pkPv!=null and pkPv!=""'>
+                and ord.pk_pv = #{pkPv,jdbcType=VARCHAR}
+            </if>
+        </where>
+        order by ord.ordsn
+    </select>
+    <select id="queryCurEnterLisRisInfo" resultType="DynaBean">
+        select ord.*,opdt.price_org priceCg,opdt.amount,opdt.quan quanCg,opdt.pk_cgop,'' as dt_samptype,cra.desc_body
+            from cn_order ord
+            inner join bl_op_dt opdt   on opdt.pk_cnord = ord.pk_cnord  and opdt.flag_settle='0'
+            inner join cn_ris_apply cra on cra.pk_cnord = ord.pk_cnord
+        <where>
+            ord.eu_pvtype &lt; 3
+            <if test='pkCnord !=null and pkCnord!=""'>
+                and ord.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+            </if>
+            <if test='pkEmp!=null and pkEmp!=""'>
+                and ord.pk_emp_input=#{pkEmp,jdbcType=VARCHAR}
+            </if>
+            <if test='pkPv!=null and pkPv!=""'>
+                and ord.pk_pv=#{pkPv,jdbcType=VARCHAR}
+            </if>
+        </where>
+        union all
+        select ord.*,opdt.price_org priceCg,opdt.amount,opdt.quan quanCg,opdt.pk_cgop,cla.dt_samptype,'' as desc_body
+            from cn_order ord
+            inner join bl_op_dt opdt   on opdt.pk_cnord = ord.pk_cnord  and opdt.flag_settle='0'
+            inner join cn_lab_apply cla on cla.pk_cnord = ord.pk_cnord
+        <where>
+            ord.eu_pvtype &lt; 3
+            <if test='pkCnord !=null and pkCnord!=""'>
+                and ord.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+            </if>
+            <if test='pkEmp!=null and pkEmp!=""'>
+                and ord.pk_emp_input=#{pkEmp,jdbcType=VARCHAR}
+            </if>
+            <if test='pkPv!=null and pkPv!=""'>
+                and ord.pk_pv=#{pkPv,jdbcType=VARCHAR}
+            </if>
+        </where>
+        union all
+            select ord.*,opdt.price_org priceCg,opdt.amount,opdt.quan quanCg,opdt.pk_cgop,'' as dt_samptype,'' as desc_body
+            from cn_order ord
+            inner join bl_op_dt opdt   on opdt.pk_cnord = ord.pk_cnord  and opdt.flag_settle='0'
+        <where>
+            ord.eu_pvtype &lt; 3 and ord.code_ordtype !='02' and ord.code_ordtype!='03' and nvl(ord.pk_pres,'0')='0'
+            <if test='pkCnord !=null and pkCnord!=""'>
+                and ord.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+            </if>
+            <if test='pkEmp!=null and pkEmp!=""'>
+                and ord.pk_emp_input=#{pkEmp,jdbcType=VARCHAR}
+            </if>
+            <if test='pkPv!=null and pkPv!=""'>
+                and ord.pk_pv=#{pkPv,jdbcType=VARCHAR}
+            </if>
+        </where>
+    </select>
+    <select id="queryCurEnterHerbInfo" resultType="DynaBean">
+        select herb.*,pd.name name_pd,unit.name unit_name,pres.pres_no,pres.date_pres,pres.note,pres.pk_dept,pres.pk_emp_ord,pres.pk_pres
+        from cn_order ord
+        inner join cn_prescription pres on ord.pk_pres=pres.pk_pres
+        inner join cn_ord_herb herb on herb.pk_cnord = ord.pk_cnord
+        inner join bd_pd pd on pd.pk_pd=herb.pk_pd
+        inner join bd_unit unit on herb.pk_unit=unit.pk_unit
+        <where>
+            <if test='pkPres!=null and pkPres!=""'>
+                and pres.pk_pres=#{pkPres,jdbcType=VARCHAR}
+            </if>
+            <if test='pkEmp!=null and pkEmp!=""'>
+                and ord.pk_emp_input = #{pkEmp,jdbcType=VARCHAR}
+            </if>
+            <if test='pkPv!=null and pkPv!=""'>
+                and ord.pk_pv = #{pkPv,jdbcType=VARCHAR}
+            </if>
+        </where>
+    </select>
+
+    <select id="MasterPlan" resultType="DynaBean">
+        select pk_insu from pv_encounter where del_flag = '0'
+        and
+        pk_pv = #{pkPv,jdbcType=VARCHAR}
+    </select>
+
+
+    <select id="ExtendedAttributes" resultType="DynaBean">
+        select attr.* from bd_hp hp
+        inner join bd_dictattr attr on hp.pk_hp=attr.pk_dict
+        inner join bd_dictattr_temp tmp on attr.pk_dictattrtemp=tmp.pk_dictattrtemp
+        where hp.pk_hp=#{pkHp,jdbcType=VARCHAR}
+    </select>
+
+    <select id="queryDictAttrByType" resultType="DynaBean">
+    SELECT temp.NAME_ATTR,temp.CODE_ATTR, dict.VAL_ATTR
+    FROM BD_DICTATTR dict
+    INNER JOIN BD_DICTATTR_TEMP temp ON temp.PK_DICTATTRTEMP = dict.PK_DICTATTRTEMP AND temp.DEL_FLAG = '0'
+    WHERE dict.DEL_FLAG = '0'
+    AND temp.CODE_ATTR = #{codeAttr,jdbcType=CHAR}
+    AND dict.pk_dict = #{pkDict,jdbcType=CHAR}
+    </select>
+
+</mapper>

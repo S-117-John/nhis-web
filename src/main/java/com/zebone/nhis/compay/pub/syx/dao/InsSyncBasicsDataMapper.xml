@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.compay.pub.syx.dao.InsSyncBasicsDataMapper">
+	<!--015001007025获取中间库诊疗项目及服务设施目录-市医保 -->
+	<select id="queryViewItemList" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.compay.pub.syx.vo.ViewItem">
+		SELECT b.* FROM VIEW_MATCH a INNER JOIN VIEW_ITEM b ON
+		a.ITEM_CODE=b.ITEM_CODE 
+		<if test="codeHp != null and codeHp != '' ">
+			WHERE a.HOSP_CODE =#{codeHp,jdbcType=VARCHAR}
+		</if>
+	</select>
+	<!-- 015001007026获取中间库药品目录-市医保 -->
+	<select id="queryViewMediList" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.compay.pub.syx.vo.ViewMedi">
+		SELECT b.* FROM VIEW_MATCH a INNER JOIN VIEW_MEDI b ON
+		a.ITEM_CODE=b.MEDI_CODE  
+		<if test="codeHp != null and codeHp != '' ">
+			WHERE a.HOSP_CODE =#{codeHp,jdbcType=VARCHAR}
+		</if>
+	</select>
+	<!-- 015001007028获取中间库目录对应表-市医保 -->
+	<select id="queryViewMatchList" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.compay.pub.syx.vo.ViewMatch">
+		SELECT * FROM VIEW_MATCH  
+		<if test="codeHp != null and codeHp != '' ">
+			WHERE HOSP_CODE=#{codeHp,jdbcType=VARCHAR}
+		</if>
+	</select>
+
+	<select id="queryViewItemListOut" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.compay.pub.syx.vo.ViewItemOut">
+		SELECT b.* FROM VIEW_MATCH_OUT a INNER JOIN VIEW_ITEM_OUT b ON
+		a.ITEM_CODE_OUT=b.ITEM_CODE_OUTS 
+		<if test="codeHp != null and codeHp != '' ">
+			WHERE a.HOSP_CODE =#{codeHp,jdbcType=VARCHAR}
+		</if>
+
+	</select>
+
+	<select id="queryViewMediListOut" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.compay.pub.syx.vo.ViewMediOut">
+		SELECT b.* FROM VIEW_MATCH_OUT a INNER JOIN VIEW_MEDI_OUT b ON
+		a.ITEM_CODE_OUT=b.MEDI_CODE_OUTS  
+		<if test="codeHp != null and codeHp != '' ">
+			WHERE a.HOSP_CODE =#{codeHp,jdbcType=VARCHAR}
+		</if>
+	</select>
+
+	<select id="queryViewMatchListOut" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.compay.pub.syx.vo.ViewMatchOut">
+		SELECT * FROM VIEW_MATCH_OUT 
+		<if test="codeHp != null and codeHp != '' ">
+			WHERE HOSP_CODE=#{codeHp,jdbcType=VARCHAR}
+		</if>
+	</select>
+
+	<select id="seachInsSyncBasicsData" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.compay.pub.syx.vo.InsSyncBasicsDataVo">
+		select
+		item.code_hp AS CODE_HP,/*上传编码*/
+		item.code AS CODE,/*项目编码*/
+		item.name AS NAME,/*项目名称*/
+		item.spec AS SPEC,/*规格*/
+		item.dosage AS
+		DOSAGE,/*剂型*/
+		item.spcode AS SPCODE,/*助记码*/
+		gitem.code_item AS
+		CODE_CENTER,/*中心编码*/
+		gitem.name_item AS NAME_CENTER,/*中心名称*/
+		gitem.model AS DOSAGE_CENTER,/*中心剂型*/
+		case
+		gitem.eu_staple
+		when '0' then
+		'甲类'
+		when '1' then '乙类'
+		when '2' then '全自费'
+		else '未知' end AS STAPLE ,/*等级
+		0 - 甲类，1 - 乙类，2- 全自费*/
+		gitem.flag_wl AS FLAG_WL,/*工伤*/
+		gitem.flag_bo AS
+		FLAG_BO,/*生育*/
+		gitem.flag_rest AS FLAG_REST,/*限制*/
+		gitem.ratio AS
+		RATIO,/*自负比例*/
+		gitem.date_expire AS DATE_EXPIRE,/*失效日期*/
+		gitem.range_rest AS RANGE_REST/*限制范围*/
+		from (select '1'
+		item_type,
+		pk_item ,code,name,spec,'' as dosage,code_hp,spcode from
+		bd_item
+		union
+		select '2' item_type,pd.pk_pd as pk_item,pd.code,pd.name,
+		pd.spec,def.name as dosage,pd.code_hp,pd.spcode from bd_pd pd
+		left join
+		bd_defdoc def on pd.dt_dosage=def.code and code_defdoclist='030400'
+		)
+		item left join (
+		select gi.*,imap.code_hosp from ins_gzyb_item gi
+		inner
+		join ins_gzyb_itemmap imap on gi.code_item=imap.code_center and
+		gi.eu_hpdicttype=imap.eu_hpdicttype
+		where gi.flag_valid='1' and gi.DEL_FLAG='0' and imap.DEL_FLAG='0'
+		) gitem on
+		item.code_hp=gitem.code_hosp where gitem.eu_hpdicttype
+		=#{euhphicttype,jdbcType=VARCHAR}
+		<if test="euitemtype != null and euitemtype != ''">
+			<if test="euitemtype.indexOf('1') >= 0 ">
+				and gitem.EU_ITEMTYPE='1'
+			</if>
+			<if test="euitemtype.indexOf('0') >= 0 ">
+				and gitem.EU_ITEMTYPE='0'
+			</if>
+		</if>
+		<if test="keyword != null and keyword != '' ">
+			and item.code like '%'||#{keyword}||'%'
+			or item.code_hp
+			like '%'||#{keyword}||'%'
+			or item.name like '%'||#{keyword}||'%'
+			or
+			item.spcode like
+			'%'||#{keyword}||'%'
+			or gitem.code_item like
+			'%'||#{keyword}||'%'
+			or gitem.name_item like
+			'%'||#{keyword}||'%'
+		</if>
+	</select>
+
+	<select id="qryNeedCopyHpData" resultType="com.zebone.nhis.compay.pub.syx.vo.SyxHpDataVo"
+		parameterType="java.util.Map">
+		select data.* from (
+		select itema.name_item, 
+		case itema.eu_itemtype when '0' then '1' else '0' end as flag_pd,
+		mapa.code_hosp as code,
+		bd_item.pk_itemcate as pk_itemcate,
+		bd_item.pk_item as pk_item,
+		case when itema.eu_staple IS null then '2' else itema.eu_staple END as dt_hptype,
+		itema.ratio,
+		itema.flag_otc,
+		itema.flag_wl,
+		itema.flag_bo,
+		itema.flag_valid,
+		itema.date_effect as date_begin,
+		itema.date_expire as date_end,
+		itema.flag_rest,
+		#{pkhpcgdiv} as pk_hpcgdiv,
+		itema.range_rest ,
+		itema.eu_hpdicttype
+		from ins_gzyb_item itema inner join  ins_gzyb_itemmap mapa on itema.code_item =mapa.code_center
+		inner join bd_item on bd_item.code_hp = mapa.code_hosp
+		where itema.eu_itemtype not in ('0')
+		and itema.eu_hpdicttype = mapa.eu_hpdicttype
+		and itema.desc_conn=mapa.desc_conn
+		and itema.del_flag ='0' and mapa.del_flag ='0'
+		and itema.eu_hpdicttype =#{euhpdicttype,jdbcType=VARCHAR}
+		and mapa.eu_hpdicttype =#{euhpdicttype,jdbcType=VARCHAR}
+		and mapa.code_hosp=#{codehosp,jdbcType=VARCHAR}
+		union all
+		select itemb.name_item, 
+		case itemb.eu_itemtype when '0' then '1' else '0' end as flag_pd,
+		mapb.code_hosp as code,
+		bd_pd.pk_itemcate as pk_itemcate,
+		bd_pd.pk_pd as pk_item,
+		case when itemb.eu_staple IS null then '2' else itemb.eu_staple END as dt_hptype,
+		itemb.ratio ,
+		itemb.flag_otc,
+		itemb.flag_wl,
+		itemb.flag_bo,
+		itemb.flag_valid,
+		itemb.date_effect as date_begin,
+		itemb.date_expire as date_end,
+		itemb.flag_rest ,
+		#{pkhpcgdiv} as pk_hpcgdiv ,
+		itemb.range_rest ,
+		itemb.eu_hpdicttype
+		from ins_gzyb_item itemb inner join ins_gzyb_itemmap mapb on itemb.code_item =mapb.code_center 
+		inner join bd_pd on bd_pd.code_hp = mapb.code_hosp
+		where itemb.eu_itemtype = '0'
+		and itemb.eu_hpdicttype = mapb.eu_hpdicttype
+		and itemb.desc_conn=mapb.desc_conn
+		and itemb.del_flag ='0' and mapb.del_flag ='0'
+		and itemb.eu_hpdicttype =#{euhpdicttype,jdbcType=VARCHAR}
+		and mapb.eu_hpdicttype =#{euhpdicttype,jdbcType=VARCHAR}		
+		and mapb.code_hosp=#{codehosp,jdbcType=VARCHAR}
+		) data where
+		<if test='status=="ADD"'>
+			not exists (select 1 from bd_hp_cgdiv_item bhci where bhci.del_flag='0'
+			and bhci.eu_divide='1' and bhci.pk_item =data.pk_item and
+			bhci.code=data.code and bhci.pk_hpcgdiv=#{pkhpcgdiv} )
+		</if>
+		<if test='status=="UPDATE"'>
+			exists (select 1 from bd_hp_cgdiv_item bhci where bhci.del_flag='0' and
+			bhci.pk_item =data.pk_item and bhci.code=data.code and
+			bhci.eu_divide='2' and bhci.pk_hpcgdiv=#{pkhpcgdiv})
+		</if>
+	</select>
+	<select id="qryNeedHpDataForOther" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.compay.pub.syx.vo.SyxHpDataVo">
+		select itema.name_item,
+		case itema.eu_itemtype when '0' then '1' else '0' end as flag_pd,
+		mapa.code_hosp as code,
+		bd_item.pk_itemcate as pk_itemcate,
+		bd_item.pk_item as pk_item,
+		case when itema.eu_staple IS null then '2' else itema.eu_staple END	as dt_hptype,
+		itema.ratio,
+		itema.flag_otc,
+		itema.flag_wl,
+		itema.flag_bo,
+		itema.flag_valid,
+		itema.date_effect as date_begin,
+		itema.date_expire as date_end,
+		itema.flag_rest,
+		itema.range_rest ,
+		itema.eu_hpdicttype
+		from ins_gzyb_item itema inner join ins_gzyb_itemmap mapa on
+		itema.code_item =mapa.code_center
+		inner join bd_item on bd_item.code_hp = mapa.code_hosp
+		where itema.eu_itemtype not in ('0')
+		and itema.eu_hpdicttype = mapa.eu_hpdicttype
+		and itema.flag_valid='1' and mapa.flag_audit='1'
+		and itema.del_flag ='0' and mapa.del_flag ='0'
+		and exists (select 1 from bd_defdoc where code_defdoclist='040010' and
+		del_flag ='0' and bd_defdoc.code= itema.eu_hpdicttype)
+		and itema.eu_hpdicttype =#{euhpdicttype,jdbcType=VARCHAR}
+		and mapa.eu_hpdicttype =#{euhpdicttype,jdbcType=VARCHAR}
+		and mapa.code_hosp=#{codehosp,jdbcType=VARCHAR}
+		union all
+		select itemb.name_item, 
+		case itemb.eu_itemtype when '0' then '1' else '0' end as flag_pd,
+		mapb.code_hosp as code,
+		bd_pd.pk_itemcate as pk_itemcate,
+		bd_pd.pk_pd as pk_item,
+		case when itemb.eu_staple IS null then '2' else itemb.eu_staple END as dt_hptype,
+		itemb.ratio ,
+		itemb.flag_otc,
+		itemb.flag_wl,
+		itemb.flag_bo,
+		itemb.flag_valid,
+		itemb.date_effect as date_begin,
+		itemb.date_expire as date_end,
+		itemb.flag_rest ,
+		itemb.range_rest ,
+		itemb.eu_hpdicttype
+		from ins_gzyb_item itemb  inner join ins_gzyb_itemmap mapb  on  itemb.code_item =mapb.code_center 
+		inner join bd_pd on bd_pd.code_hp = mapb.code_hosp
+		where itemb.eu_itemtype = '0'
+		and itemb.eu_hpdicttype = mapb.eu_hpdicttype
+		and itemb.flag_valid='1' and mapb.flag_audit='1'
+		and itemb.del_flag ='0' and mapb.del_flag ='0'
+		and exists (select 1 from bd_defdoc where code_defdoclist='040010' and
+		del_flag ='0' and bd_defdoc.code= itemb.eu_hpdicttype)
+		and itemb.eu_hpdicttype =#{euhpdicttype,jdbcType=VARCHAR}
+		and mapb.eu_hpdicttype =#{euhpdicttype,jdbcType=VARCHAR}
+		and mapb.code_hosp=#{codehosp,jdbcType=VARCHAR}
+	</select>
+</mapper>

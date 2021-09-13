@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.pivas.dao.PivasHandMapper">
+
+	<!-- 根据请领单明细主键数组查询物品请领(退)明细列表 -->
+	<select id="getExPdApplyDetailByPkPdapdts" resultType="com.zebone.nhis.common.module.ex.nis.ns.ExPdApplyDetail">
+		select pivas.quan_pack as pivas_quan_pack,pivas.quan_min as pivas_quan_min,ep.*, pd.pack_size as pdPackSize,epa.pk_org as pk_org_ap,epa.pk_dept_ap
+		from ex_pd_apply_detail ep
+		left join bd_pd pd on pd.pk_pd = ep.pk_pd
+		left join (select epp.pk_pdapdt,sum(epp.quan_pack) as quan_pack,sum(epp.quan_min) as quan_min 
+		          from EX_PD_PIVAS epp 
+		          where epp.pk_pdpivas in 
+		          <foreach item="item" index="index" collection="pkPdpivass"  
+					  open="(" separator="," close=")"> #{item} 
+				  </foreach> 
+		          and epp.del_flag = '0'
+		          group by epp.pk_pdapdt
+		          ) pivas on pivas.pk_pdapdt = ep.pk_pdapdt
+		left join ex_pd_apply epa on epa.pk_pdap = ep.pk_pdap
+		where ep.del_flag = '0' 
+			and ep.pk_pdapdt in
+				<foreach item="item" index="index" collection="pkPdapdts"  
+				  open="(" separator="," close=")"> #{item} 
+			    </foreach>
+		
+		
+		<!-- 
+		select ep.*, pd.pack_size as pdPackSize
+		from ex_pd_apply_detail ep
+		left join bd_pd pd on pd.pk_pd = ep.pk_pd
+		where ep.del_flag = '0' and ep.pk_pdapdt in 
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+           #{item}
+        </foreach>
+        -->
+	</select>
+	
+	<!-- 根据静配记录主键数组查询检验信息 -->
+	<select id="getCnOrderCheckVoList" resultType="com.zebone.nhis.ex.pivas.vo.CnOrderCheckVo">
+		select pivas.time_plan,ord.date_stop,ord.flag_erase,ord.flag_stop,pivas.eu_status
+		from ex_pd_pivas pivas 
+		inner join cn_order ord on pivas.pk_cnord=ord.pk_cnord and ord .del_flag = '0' 
+		where pivas.del_flag = '0' and pivas.pk_pdpivas in
+		<foreach item="item" collection="array" open="(" separator="," close=")">
+           #{item}	
+        </foreach>
+	</select>
+	
+	<!-- 根据静配记录主键数组查询静配管理信息列表 -->
+	<select id="getExPdPivasListByPkPdpivas" resultType="com.zebone.nhis.common.module.ex.nis.ns.ExPdPivas">
+		select * 
+		from ex_pd_pivas
+		where del_flag = '0' and pk_pdpivas in 
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+           #{item}
+        </foreach>
+	</select>
+	
+	<!-- 获取静配待计费信息 -->
+	<select id="getBlPubParamVoList" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.BlPubParamVo"> 
+		select corder.pk_pres, corder.flag_fit,corder.eu_pvtype, corder.pk_pv, corder.pk_pi, corder.pk_ord, corder.pk_cnord, corder.quan_cg, 
+			corder.pk_org as pkOrgApp, corder.pk_dept as pkDeptApp, corder.pk_emp_ord as pkEmpApp, 
+			corder.name_emp_ord as nameEmpApp, corder.pk_dept_ns as pkDeptNsApp, corder.infant_no, pivas.pk_item
+		from cn_order corder
+		inner join (select epp.pk_cnord,pcate.pk_item
+					from ex_pd_pivas epp 
+					inner join bd_pivas_cate pcate on pcate.pk_pivascate = epp.pk_pivascate and pcate.del_flag = '0'
+					where epp.del_flag = '0' 
+						and pcate.pk_org = #{pkOrg,jdbcType=VARCHAR}
+						and pcate.pk_item is not null
+						and epp.pk_pdpivas in 
+						<foreach item="item" index="index" collection="pkPdpivass"  
+							open="(" separator="," close=")"> #{item} 
+						</foreach> 
+					) pivas on pivas.pk_cnord = corder.pk_cnord
+		where corder.del_flag = '0'			
+	</select>
+</mapper>

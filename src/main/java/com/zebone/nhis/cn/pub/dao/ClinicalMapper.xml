@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.pub.dao.ClinicalMapper">
+    <select id="qryLab" resultType="DynaBean" parameterType="java.util.Map">
+        select distinct
+               occ.date_rpt,
+               occ.name_ord,
+               occ.eu_type,
+               occ.code_samp,
+               occ.code_apply,
+               ord.PK_DEPT_EXEC pk_dept_occ,
+               ord.pk_dept,
+               ord.name_emp_ord,
+               ord.date_start
+        from ex_lab_occ occ
+        left outer join cn_order ord on occ.pk_cnord=ord.pk_cnord
+        where occ.pk_pv=#{pkPv,jdbcType=VARCHAR} and occ.DEL_FLAG='0'
+        order by date_rpt desc
+    </select>
+    <select id="qryLabReport" resultType="DynaBean" parameterType="java.util.Map">
+        select
+            occ.sort_no,
+            occ.name_index,
+            occ.val,
+            occ.val1,
+            occ.unit,
+            occ.val_max,
+            occ.eu_result,
+            occ.val_min
+        from ex_lab_occ occ
+        where occ.code_apply=#{codeApply,jdbcType=VARCHAR}
+        <if test='codeSamp != null and codeSamp != "" '>
+            and occ.code_samp=#{codeSamp,jdbcType=VARCHAR}
+        </if>
+        order by sort_no
+    </select>
+    <select id="qryRis" resultType="DynaBean" parameterType="java.util.Map">
+        select
+            ris.pk_risocc,
+            ris.date_rpt,
+            ris.name_ord,
+            ord.PK_DEPT_EXEC  pk_dept_occ,
+            ris.name_emp_occ,
+            ris.code_apply,
+            ord.pk_dept,
+            ord.name_emp_ord,
+            ord.date_start,
+            ris.addr_img,
+            ris.RESULT_OBJ,
+			ris.RESULT_SUB
+        from ex_ris_occ ris
+        inner join cn_order ord on ris.pk_cnord=ord.pk_cnord
+        where ris.pk_pv=#{pkPv,jdbcType=VARCHAR} and ris.DEL_FLAG='0'
+    </select>
+</mapper>

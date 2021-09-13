@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.purchase.dao.PuOrderMapper">
+<select id="queryPuPlanByCon" parameterType="java.util.Map" resultType="DynaBean">
+  select distinct 
+       pladt.pk_supplyer,
+       spr.name spr,
+       dept.name_dept,
+       pla.pk_pdplan,
+       pla.code_plan,
+       pla.eu_status,
+       pla.date_plan,
+       pla.note 
+  from pd_plan pla
+       inner join pd_plan_detail pladt on pla.pk_pdplan=pladt.pk_pdplan
+       inner join bd_supplyer spr on pladt.pk_supplyer=spr.pk_supplyer
+       inner join bd_ou_dept dept on pla.pk_dept=dept.pk_dept
+       inner join (select bp.pk_pd from bd_pd bp where bp.dt_pdtype like '0%' group by bp.pk_pd ) pd on pd.pk_pd=pladt.pk_pd<!-- 限制物资内容 -->
+ where pla.eu_status &gt;0 and  pladt.flag_finish=0 
+       <if test="planType != null  and  planType != ''">
+          and pla.dt_plantype=#{planType,jdbcType=VARCHAR}
+       </if> 
+       <if test="pkOrg != null  and  pkOrg != ''">
+          and pla.pk_org=#{pkOrg,jdbcType=CHAR}
+       </if>
+        <if test="flagChk!=null and flagChk!=''">
+            and pla.flag_chk = #{flagChk,jdbcType=VARCHAR}
+        </if>
+       order by pla.date_plan 
+</select>
+<select id="queryPuPlanDtByCon" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdPlanDtVo">
+select pla.pk_org as pk_org_plan,
+       pla.pk_dept as pk_dept_plan,
+       pla.pk_store as pk_store_plan,
+       pla.pk_pdplan,
+       pladt.pk_pd,
+       pd.code code_pd,
+       pd.name name_pd,
+       pd.spec,
+       pladt.pk_unit,
+       pd.spcode,
+       fa.name factory_name,
+       unit.name unit_name,
+       pladt.quan_pack,
+       pladt.quan_min,
+       pladt.pack_size,
+       pladt.date_need,
+       pladt.sort_no,
+       pladt.pk_pdplandt,
+       sup.name supply_name   
+  from pd_plan pla
+       inner join pd_plan_detail pladt on pla.pk_pdplan=pladt.pk_pdplan
+       inner join bd_pd pd on pladt.pk_pd=pd.pk_pd
+       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+       inner join bd_unit unit on pladt.pk_unit=unit.pk_unit
+       inner join bd_supplyer sup on sup.pk_supplyer = pladt.pk_supplyer 
+ where  pladt.pk_supplyer = #{pkSupplyer,jdbcType=CHAR} and pla.pk_pdplan = #{pkPdplan,jdbcType=CHAR}   
+   and pd.dt_pdtype like '01%' 
+</select>
+<select id="queryPuOrderList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PuOrderVo">
+select pdp.*,
+       putype.name putype,
+       dept.name_dept,
+       spr.name name_spr  
+  from pd_purchase pdp
+       inner join bd_ou_dept dept on pdp.pk_dept=dept.pk_dept
+       inner join bd_supplyer spr on pdp.pk_supplyer=spr.pk_supplyer
+       inner join bd_defdoc putype on pdp.dt_putype=putype.code and putype.code_defdoclist='080006'
+       inner join (select ppd.pk_pdpu  from pd_purchase_dt ppd
+		      	inner join bd_pd bp on ppd.pk_pd=bp.pk_pd
+		      	where bp.dt_pdtype like '01%' group by ppd.pk_pdpu) ppds on ppds.pk_pdpu=pdp.pk_pdpu
+ where pdp.pk_org=#{pkOrg,jdbcType=CHAR}  
+       <if test="dtPutype != null  and  dtPutype != ''">
+         and pdp.dt_putype = #{dtPutype,jdbcType=VARCHAR}
+       </if>
+       <if test="codePu != null  and  codePu != ''">
+         and pdp.code_pu = #{codePu,jdbcType=VARCHAR}
+       </if>
+       <if test="pkSupplyer != null  and  pkSupplyer != ''">
+         and pdp.pk_supplyer = #{pkSupplyer,jdbcType=CHAR}
+       </if>
+       <if test="datePuBegin != null  and  datePuBegin != ''">
+         and pdp.date_pu &gt;= to_date(#{datePuBegin},'YYYYMMDDHH24MISS')
+       </if>
+        <if test="datePuEnd != null  and  datePuEnd != ''">
+         and pdp.date_pu &lt;= to_date(#{datePuEnd},'YYYYMMDDHH24MISS')
+       </if>
+       <if test="pkEmpMak != null  and  pkEmpMak != ''">
+         and pdp.pk_emp_mak = #{pkEmpMak,jdbcType=CHAR}
+       </if>
+        <if test="euStatus != null  and  euStatus != ''">
+         and pdp.eu_status = #{euStatus,jdbcType=VARCHAR}
+       </if>
+       order by pdp.date_pu 
+</select>
+<select id="queryPuOrderDtList"  resultType="com.zebone.nhis.scm.pub.vo.PuOrderDtVo">
+select dt.*, 
+       pd.code code_pd,
+       pd.name name_pd,
+       pd.spec,
+       fa.name factory,
+       unit.name unit,
+       org.name_org,
+       dept.name_dept,
+       sto.name name_store
+  from pd_purchase_dt dt
+       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+       inner join bd_ou_org org on dt.pk_org_use=org.pk_org
+       inner join bd_ou_dept dept on dt.pk_dept_use=dept.pk_dept
+       inner join bd_store sto on dt.pk_store_use=sto.pk_store
+       inner join bd_unit unit on dt.pk_unit=unit.pk_unit
+ where dt.pk_pdpu = #{pkPdpu,jdbcType=CHAR}
+ and pd.dt_pdtype like '0%'
+order by sort_no
+</select>
+</mapper>

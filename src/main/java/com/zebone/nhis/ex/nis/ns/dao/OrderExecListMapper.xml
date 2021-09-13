@@ -1,0 +1,1847 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.ns.dao.OrderExecListMapper">
+
+    <!-- 根据医嘱主键，查询医嘱对应的已执行执行单列表 -->
+    <select id="queryOrderExecListByOrd" parameterType="java.util.Map" resultType="DynaBean">
+        select ord.pk_cnord,count(ord.pk_cnord) as num,ord.name_ord
+        from cn_order ord
+        inner join ex_order_occ exlist on ord.pk_cnord = exlist.pk_cnord
+        where exlist.eu_status = '1' and ord.pk_cnord in
+        <foreach item="pkOrd" index="index" collection="pkOrds" open="(" separator="," close=")">
+            #{pkOrd}
+        </foreach>
+        group by ord.pk_cnord,ord.name_ord
+    </select>
+    <!-- 根据医嘱主键，作废医嘱执行单 -->
+    <update id="cancelExecListByPkOrd">
+        update ex_order_occ set eu_status = 9,flag_canc = '1',
+        date_canc = #{dateCanc,jdbcType=TIMESTAMP},
+        pk_dept_canc = #{pkDept,jdbcType=CHAR},
+        pk_emp_canc = #{pkEmp,jdbcType=CHAR},
+        name_emp_canc = #{nameEmp,jdbcType=VARCHAR}
+        where eu_status ='0' and pk_cnord in
+        <foreach item="pkOrd" index="index" collection="pkOrds" open="(" separator="," close=")">
+            #{pkOrd}
+        </foreach>
+    </update>
+    <!-- 根据不同条件查询符合条件的需要生成执行单的医嘱 -->
+    <select id="queryOrderPlanList" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.ex.pub.vo.GenerateExLisOrdVo">
+        select ord.pk_cnord,
+        ord.pk_ord,
+        ord.pk_org,
+        pv.eu_pvtype,
+        ord.code_ordtype,
+        ord.eu_always,
+        ord.dosage,
+        ord.pk_unit_dos,
+        ord.quan quan_occ,
+        ord.pk_unit,
+        ord.code_freq,
+        ord.name_ord,
+        ord.date_last_ex,
+        ord.code_supply,
+        ord.ords,
+        pv.pk_pi,
+        pv.pk_pv,
+        ord.ordsn,
+        ord.ordsn_parent,
+        ord.quan,
+        ord.pk_pres,
+        ord.note_supply,
+        ord.days,
+        ord.code_freq,
+        ord.flag_self,
+        ord.flag_base,
+        ord.date_stop,
+        pv.bed_no,
+        pv.pk_insu,
+        pv.name_pi,
+        ord.name_ord,
+        freq.name as namefreq,
+        freq.flag_plan,
+        freq.eu_cycle,
+        supply.name as namesupply,
+        ord.date_start,
+        ord.flag_durg,
+        ord.drip_speed,
+        ord.pk_org_exec,
+        ord.pk_dept_exec,
+        ord.pk_dept,
+        ord.name_emp_ord,
+        ord.flag_first
+        from cn_order ord
+        inner join pv_encounter pv on ord.pk_pv = pv.pk_pv
+        inner join bd_term_freq freq on freq.code = ord.code_freq
+        left join bd_supply supply on ord.code_supply = supply.code
+        where ((ord.eu_always = 0 and (ord.date_last_ex is null or ord.date_last_ex &lt;
+        to_date(#{dateEnd},'YYYYMMDDHH24MISS')) and
+        ord.eu_status_ord in (2, 3, 4) and ord.date_start &lt; to_date(#{dateEnd},'YYYYMMDDHH24MISS')) or
+        (ord.eu_always = 1 and ord.date_last_ex is null and ord.eu_status_ord = '2'))
+        and ord.flag_stop_chk = '0' <!-- 2019-06-29 停止核对的条件还原，调整为每天0点生成执行单 -->
+        and ord.flag_erase = '0'
+        <if test="pkDept != null  and  pkDept != ''">
+            and ord.pk_dept = #{pkDept,jdbcType=CHAR}
+        </if>
+        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+            and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        <if test="pkPvs != null  and  pkPvs != ''">
+            and pv.pk_pv in
+            <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+                #{pkpv}
+            </foreach>
+        </if>
+        <if test="flagDurg != null  and  flagDurg != ''">
+            and ord.flag_durg = #{flagDurg,jdbcType=CHAR}
+        </if>
+        order by pv.bed_no,ord.pk_pv, ord.ordsn_parent,ord.ordsn
+    </select>
+    <!-- 根据不同条件查询医嘱执行单 -->
+    <select id="queryExecListByCon" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.pub.vo.ExlistPubVo">
+        select pv.pk_pv,
+        pv.bed_no,
+        pv.name_pi,
+        pv.pk_pi,
+        pv.eu_pvtype ,
+        pv.pk_dept as pk_dept_pv,
+        exlist.pk_exocc,
+        exlist.date_plan,
+        exlist.date_occ,
+        exlist.quan_occ,
+        exlist.name_emp_occ,
+        exlist.name_emp_occ2,
+        exlist.pk_emp_occ,
+        exlist.pk_emp_occ2,
+        exlist.pk_unit,
+        exlist.eu_status,
+        unit.name as name_unit,
+        dept.name_dept as name_dept_occ,
+        org.name_org as name_org_occ,
+        case when exlist.pk_pdapdt is not null then '1' else '0' end as flag_ap,
+        case when exlist.pk_pdback is not null then '1' else '0' end as flag_back,
+        case when dt.flag_de = '1' then '1' else '0' end as flag_de,
+        exlist.flag_self,
+        exlist.flag_base,
+        exlist.flag_pivas,
+        ord.flag_durg,
+        ord.name_ord,
+        ord.date_start,
+        ord.flag_bl,
+        ord.infant_no,
+        ord.pk_cnord,
+        ord.code_ordtype,
+        ord.pk_ord,
+        ord.pk_pres,
+        ord.pk_org,
+        ord.pk_dept,
+        ord.pk_dept_exec,
+        ord.pk_dept_ns,
+        ord.pk_emp_ex,
+        ord.name_emp_ex,
+        ord.date_plan_ex,
+        exlist.pk_org_occ,
+        exlist.pack_size,
+        ord.code_supply,
+        ord.ordsn,
+        ord.flag_fit,
+        ord.desc_fit,
+        ord.note_ord,
+        ord.first_num,
+        ord.Last_num,
+        ord.pk_emp_ord,
+        ord.name_emp_ord,
+        ord.ordsn_parent,
+        ord.price_cg,
+        ord.groupno,
+        pd.flag_st,
+        freq.name as name_freq,
+        freq.cnt cnt_freq,
+        freq.eu_always as eu_always_freq,
+        supply.name as name_supply,
+        ord.eu_always,
+        ord.eu_st,
+        ord.dosage,
+        ord.spec,
+        ord.flag_medout,
+        unitDos.name as name_unit_dos,
+        ord.price_cg * round((ord.quan+0.49999),0) * nvl(ord.ords,1) as price,<!--通过该函数向上取整-->
+        ordtype.name as ordtype
+        from ex_order_occ exlist
+        inner join cn_order ord on ord.pk_cnord = exlist.pk_cnord
+        inner join pv_encounter pv on pv.pk_pv = exlist.pk_pv
+        left join bd_pd pd on pd.pk_pd = ord.pk_ord and pd.del_flag = '0'
+        left join bd_unit unit on unit.pk_unit = exlist.pk_unit
+        left join bd_unit unitDos on unitDos.pk_unit = ord.pk_unit_dos
+        left join bd_ou_dept dept on dept.pk_dept = exlist.pk_dept_occ
+        left join bd_ou_org org on org.pk_org = exlist.pk_org_occ
+        left join bd_term_freq freq on freq.code = ord.code_freq
+        left join bd_supply supply on supply.code = ord.code_supply
+        left join bd_ordtype ordtype on ordtype.code = ord.code_ordtype and ordtype.del_flag = '0'
+        left join ex_pd_apply_detail dt on dt.pk_pdapdt = exlist.pk_pdapdt
+        left join cn_prescription pre on pre.pk_pres = ord.pk_pres
+        where exlist.date_plan &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        and exlist.date_plan &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        <!-- 转科患者 去掉此条件 博爱-日常工作-取消执行-转科 -->
+        <if test="isDeptChange == null  and  isDeptChange == ''">
+            and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        <if test="ordtype != null  and  ordtype != ''">
+            and ord.code_ordtype like '${ordtype}%'
+        </if>
+        <if test="euAlways != null  and  euAlways != ''">
+            and ord.eu_always = #{euAlways,jdbcType=CHAR}
+        </if>
+        <if test="ordsn != null  and  ordsn != ''">
+            and (ord.ordsn = #{ordsn,jdbcType=CHAR}
+            or ord.ordsn_parent = #{ordsn,jdbcType=CHAR}
+            or ord.groupno = #{ordsn,jdbcType=CHAR}
+            or pre.pres_no like '%${ordsn}%')
+        </if>
+        <!-- 如果是执行确认，添加执行确认条件  -->
+        <if test="confirmFlag != null  and  confirmFlag != ''">
+            and (supply.flag_st = '0' or supply.flag_st is null ) and ord.code_ordtype!='0502'
+            <if test='euStatus == "0"'><!-- 未执行查询 -->
+                and exlist.eu_status = #{euStatus,jdbcType=CHAR}
+                and ((exlist.pk_dept_occ = #{pkDeptNs,jdbcType=CHAR} and (ord.flag_durg = '0' or ord.flag_durg is null))
+                or
+                (ord.flag_durg = '1' and
+                ((exists (select 1 from ex_pd_apply_detail detail where detail.pk_pdapdt = exlist.pk_pdapdt and
+                detail.flag_de = '1' and detail.flag_finish = '1')) or exlist.flag_self = '1' or
+                exlist.flag_base = '1' or ord.flag_note = '1' )))
+                <!--   and
+                 ((exists (select 1 from ex_pd_apply_detail detail where detail.pk_pdapdt = exlist.pk_pdapdt and detail.flag_de = '1' and detail.flag_finish = '1'))  or exlist.flag_self = '1' or
+                  exlist.flag_base = '1'))) -->
+                and (exlist.pk_pdback is null or exlist.pk_pdback='')
+            </if>
+            <if test='euStatus == "1"'><!-- 已执行查询 -->
+                and exlist.eu_status = #{euStatus,jdbcType=CHAR}
+                and ((exlist.pk_dept_occ = #{pkDeptNs,jdbcType=CHAR} and (ord.flag_durg = '0' or ord.flag_durg is null))
+                or ord.flag_durg='1')
+            </if>
+            <if test='euStatus == "2"'><!-- 全部查询 -->
+                and ((exlist.pk_dept_occ = #{pkDeptNs,jdbcType=CHAR} and (ord.flag_durg = '0' or ord.flag_durg is null))
+                or
+                (ord.flag_durg = '1' and
+                ((exists (select 1 from ex_pd_apply_detail detail where detail.pk_pdapdt = exlist.pk_pdapdt and
+                detail.flag_de = '1' and detail.flag_finish = '1')) or exlist.flag_self = '1' or
+                exlist.flag_base = '1' or ord.flag_note = '1' )))
+            </if>
+            <if test="ordtypesql != null and ordtypesql != ''">
+                and ${ordtypesql}
+            </if>
+            <if test='euStatus == "3" '><!-- 未执行【输血】 -->
+                and exlist.eu_status = '0'
+                and ( ord.code_ordtype = '12' <!-- 输血制品 -->
+                or ((pd.dt_pharm = '012003' or pd.flag_ped='1') <!-- 输血药品【自备 || 非自备已发药】 -->
+                and (exlist.flag_self = '1'
+                or exlist.flag_base = '1'
+                or ord.flag_note = '1'
+                or exists (
+                select 1 from ex_pd_apply_detail detail
+                where detail.pk_pdapdt = exlist.pk_pdapdt
+                and detail.flag_de = '1'
+                and detail.flag_finish = '1'))))
+            </if>
+            <if test='euStatus == "4"'><!-- 第一执行【输血】 -->
+                and (ord.code_ordtype = '12' or pd.dt_pharm = '012003' or pd.flag_ped='1' ) and exlist.eu_status = '1'
+                and exlist.pk_emp_occ2 is null
+            </if>
+            <if test='euStatus == "5"'><!-- 第二执行【输血】 -->
+                and (ord.code_ordtype = '12' or pd.dt_pharm = '012003' or pd.flag_ped='1') and exlist.eu_status = '1'
+                and exlist.pk_emp_occ2 is not null
+            </if>
+            <if test='euStatus == "6"'><!-- 全部【输血】 -->
+                and (ord.code_ordtype = '12' or pd.dt_pharm = '012003' or pd.flag_ped='1')
+            </if>
+            <if test='flagZE == "1"'><!-- 通用执行【中二】添加非输血过滤 以及 血制品的药品 -->
+                and ord.code_ordtype != '12' and (pd.dt_pharm is null or pd.dt_pharm &lt;&gt; '012003' or
+                pd.flag_ped='0')
+            </if>
+        </if>
+        <!-- 如果是取消执行标志， 取消执行 -->
+        <if test="cancelFlag!= null  and  cancelFlag != ''">
+            and ((exlist.pk_dept_occ = #{pkDeptNs,jdbcType=CHAR} and (ord.flag_durg = '0' or ord.flag_durg is null) ) or
+            (ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR} and ord.flag_durg = '1'))
+            <if test="nameOrd != null and nameOrd !='' ">
+                AND ((ord.name_ord LIKE '%${nameOrd}%'
+                OR exists(SELECT 1 FROM ex_order_occ occ1
+                INNER JOIN cn_order ord1 ON ord1.pk_cnord = occ1.pk_cnord
+                WHERE ord1.ordsn_parent = ord.ordsn_parent
+                AND occ1.date_plan = exlist.date_plan
+                and ord1.NAME_ORD LIKE '%${nameOrd}%' )))
+            </if>
+            <if test="euStatus != null  and  euStatus != ''">
+                and exlist.eu_status = #{euStatus,jdbcType=CHAR}
+            </if>
+        </if>
+        <if test="pkPvs != null  and  pkPvs != ''">
+            and pv.pk_pv in
+            <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+                #{pkpv}
+            </foreach>
+        </if>
+        order by pv.bed_no,ord.ordsn_parent,exlist.date_plan,ord.ordsn
+    </select>
+    <!-- 根据医嘱的pkCnord查询医嘱执行单列表 -->
+    <select id="queryExecListByPkCnord" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.pub.vo.ExlistPubVo">
+       SELECT pv.pk_pv,
+       pv.bed_no,
+       pv.name_pi,
+       pv.pk_pi,
+       pv.eu_pvtype,
+       pv.pk_dept AS pk_dept_pv,
+       exlist.pk_exocc,
+       exlist.date_plan,
+       exlist.date_occ,
+       exlist.quan_occ,
+       exlist.name_emp_occ,
+       exlist.name_emp_occ2,
+       exlist.pk_emp_occ,
+       exlist.pk_emp_occ2,
+       exlist.pk_unit,
+       exlist.eu_status,
+       unit.name AS name_unit,
+       dept.name_dept AS name_dept_occ,
+       org.name_org AS name_org_occ,
+       CASE
+           WHEN exlist.pk_pdapdt IS NOT NULL THEN
+            '1'
+           ELSE
+            '0'
+       END AS flag_ap,
+       CASE
+           WHEN exlist.pk_pdback IS NOT NULL THEN
+            '1'
+           ELSE
+            '0'
+       END AS flag_back,
+       CASE
+           WHEN dt.flag_de = '1' THEN
+            '1'
+           ELSE
+            '0'
+       END AS flag_de,
+       exlist.flag_self,
+       exlist.flag_base,
+       exlist.flag_pivas,
+       ord.flag_durg,
+       ord.name_ord,
+       ord.date_start,
+       ord.flag_bl,
+       ord.infant_no,
+       ord.pk_cnord,
+       ord.code_ordtype,
+       ord.pk_ord,
+       ord.pk_pres,
+       ord.pk_org,
+       ord.pk_dept,
+       ord.pk_dept_exec,
+       ord.pk_dept_ns,
+       ord.pk_emp_ex,
+       ord.name_emp_ex,
+       ord.date_plan_ex,
+       exlist.pk_org_occ,
+       exlist.pack_size,
+       ord.code_supply,
+       ord.ordsn,
+       ord.flag_fit,
+       ord.desc_fit,
+       ord.note_ord,
+       ord.first_num,
+       ord.Last_num,
+       ord.pk_emp_ord,
+       ord.name_emp_ord,
+       ord.ordsn_parent,
+       ord.price_cg,
+       ord.groupno,
+       pd.flag_st,
+       freq.name AS name_freq,
+       freq.cnt cnt_freq,
+       freq.eu_always AS eu_always_freq,
+       supply.name AS name_supply,
+       ord.eu_always,
+       ord.eu_st,
+       ord.dosage,
+       ord.spec,
+       ord.flag_medout,
+       unitDos.name AS name_unit_dos,
+       ord.price_cg * round((ord.quan + 0.49999), 0) * nvl(ord.ords, 1) AS price,       
+       ordtype.name AS ordtype
+		FROM   ex_order_occ exlist
+		INNER  JOIN cn_order ord
+		ON     ord.pk_cnord = exlist.pk_cnord
+		INNER  JOIN pv_encounter pv
+		ON     pv.pk_pv = exlist.pk_pv
+		LEFT   JOIN bd_pd pd
+		ON     pd.pk_pd = ord.pk_ord
+		AND    pd.del_flag = '0'
+		LEFT   JOIN bd_unit unit
+		ON     unit.pk_unit = exlist.pk_unit
+		LEFT   JOIN bd_unit unitDos
+		ON     unitDos.pk_unit = ord.pk_unit_dos
+		LEFT   JOIN bd_ou_dept dept
+		ON     dept.pk_dept = exlist.pk_dept_occ
+		LEFT   JOIN bd_ou_org org
+		ON     org.pk_org = exlist.pk_org_occ
+		LEFT   JOIN bd_term_freq freq
+		ON     freq.code = ord.code_freq
+		LEFT   JOIN bd_supply supply
+		ON     supply.code = ord.code_supply
+		LEFT   JOIN bd_ordtype ordtype
+		ON     ordtype.code = ord.code_ordtype
+		AND    ordtype.del_flag = '0'
+		LEFT   JOIN ex_pd_apply_detail dt
+		ON     dt.pk_pdapdt = exlist.pk_pdapdt
+		LEFT   JOIN cn_prescription pre
+		ON     pre.pk_pres = ord.pk_pres
+		WHERE  exlist.pk_cnord = #{pkCnord,jdbcType=CHAR}
+    </select>
+    <!-- 根据不同条件查询医嘱执行单 -->
+    <select id="queryExecListContainApDrug" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.ex.pub.vo.ExlistPubVo">
+        select pv.pk_pv,
+        pv.bed_no,
+        pv.name_pi,
+        pv.pk_pi,
+        pv.eu_pvtype ,
+        pv.pk_dept as pk_dept_pv,
+        exlist.pk_exocc,
+        exlist.date_plan,
+        exlist.date_occ,
+        exlist.quan_occ,
+        exlist.name_emp_occ,
+        exlist.name_emp_occ2,
+        exlist.pk_emp_occ,
+        exlist.pk_emp_occ2,
+        exlist.pk_unit,
+        exlist.eu_status,
+        unit.name as name_unit,
+        dept.name_dept as name_dept_occ,
+        org.name_org as name_org_occ,
+        case when exlist.pk_pdapdt is not null then '1' else '0' end as flag_ap,
+        case when exlist.pk_pdback is not null then '1' else '0' end as flag_back,
+        case when dt.flag_de = '1' then '1' else '0' end as flag_de,
+        exlist.flag_self,
+        exlist.flag_base,
+        exlist.flag_pivas,
+        exlist.pk_pdapdt,
+        ord.flag_durg,
+        ord.FLAG_NOTE,
+        ord.price_cg,
+        ord.name_ord,
+        ord.date_start,
+        ord.flag_bl,
+        ord.infant_no,
+        ord.pk_cnord,
+        ord.code_ordtype,
+        ord.pk_ord,
+        ord.pk_pres,
+        ord.pk_org,
+        ord.pk_dept,
+        ord.flag_fit,
+        ord.desc_fit,
+        ord.pk_dept_exec,
+        ord.pk_dept_ns,
+        ord.dosage,
+        ord.spec,
+        ord.pk_emp_ex,
+        ord.name_emp_ex,
+        ord.date_plan_ex,
+        ord.first_num,
+        ord.Last_num,
+        unitDos.name as name_unit_dos,
+        exlist.pk_org_occ,
+        exlist.pack_size,
+        ord.code_supply,
+        ord.ordsn,
+        ord.note_ord,
+        ord.pk_emp_ord,
+        ord.name_emp_ord,
+        ord.ordsn_parent,
+        pd.flag_st,
+        freq.name as name_freq,
+        freq.cnt cnt_freq,
+        freq.eu_always as eu_always_freq,
+        supply.name as name_supply,
+        ord.eu_always,
+        ord.eu_st,
+        <!-- p.amount * ord.quan as price, -->
+        ord.price_cg * round((case ord.quan_cg 
+          when 0.0000 then ord.quan
+          when null then ord.quan
+          else ord.quan_cg end + 0.49999),0) * nvl(ord.ords,1) as price,<!--通过该函数实现向上取整-->
+        ord.quan,
+        ord.ords,
+        ordtype.name as ordtype
+        from ex_order_occ exlist
+        inner join cn_order ord on ord.pk_cnord = exlist.pk_cnord
+        inner join pv_encounter pv on pv.pk_pv = exlist.pk_pv
+        left join bd_pd pd on pd.pk_pd = ord.pk_ord and pd.del_flag = '0'
+        left join bd_unit unit on unit.pk_unit = exlist.pk_unit
+        left join bd_unit unitDos on unitDos.pk_unit = ord.pk_unit_dos
+        left join bd_ou_dept dept on dept.pk_dept = exlist.pk_dept_occ
+        left join bd_ou_org org on org.pk_org = exlist.pk_org_occ
+        left join bd_term_freq freq on freq.code = ord.code_freq
+        left join bd_supply supply on supply.code = ord.code_supply
+        left join ex_pd_apply_detail dt on dt.pk_pdapdt = exlist.pk_pdapdt
+        left join bd_ordtype ordtype on ordtype.code = ord.code_ordtype and ordtype.del_flag = '0'
+        where exlist.date_plan &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        and exlist.date_plan &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        <if test="ordtype != null  and  ordtype != ''">
+            and ord.code_ordtype like '${ordtype}%'
+        </if>
+        <if test="euAlways != null  and  euAlways != ''">
+            and ord.eu_always = #{euAlways,jdbcType=CHAR}
+        </if>
+        <!-- 如果是执行确认，添加执行确认条件  -->
+        <if test="confirmFlag != null  and  confirmFlag != ''">
+            and (supply.flag_st = '0' or supply.flag_st is null ) and ord.code_ordtype!='0502'
+            <if test='euStatus == "0"'><!-- 未执行查询 含未发药的药品医嘱-->
+                and ((exlist.pk_dept_occ = #{pkDeptNs,jdbcType=CHAR} and (ord.flag_durg = '0' or ord.flag_durg is null))
+                or
+                (ord.flag_durg = '1' and
+                ((exlist.pk_pdapdt !='' or exlist.pk_pdapdt is not null) or exlist.flag_self = '1' or exlist.flag_base =
+                '1' or ord.flag_note = '1')))
+                <!--   and
+                 ((exists (select 1 from ex_pd_apply_detail detail where detail.pk_pdapdt = exlist.pk_pdapdt and detail.flag_de = '1' and detail.flag_finish = '1'))  or exlist.flag_self = '1' or
+                  exlist.flag_base = '1'))) -->
+                and (exlist.pk_pdback is null or exlist.pk_pdback='')
+                and exlist.eu_status = #{euStatus,jdbcType=CHAR}
+            </if>
+            <if test='euStatus == "1"'><!-- 已执行查询 -->
+                and exlist.eu_status = #{euStatus,jdbcType=CHAR}
+                and ((exlist.pk_dept_occ = #{pkDeptNs,jdbcType=CHAR}
+                and (ord.flag_durg = '0' or ord.flag_durg is null)) or ord.flag_durg='1')
+            </if>
+            <if test='euStatus == "2"'><!-- 全部查询 -->
+                and ((exlist.pk_dept_occ = #{pkDeptNs,jdbcType=CHAR} and (ord.flag_durg = '0' or ord.flag_durg is null))
+                or
+                (ord.flag_durg = '1' and
+                <!--((exists (select 1 from ex_pd_apply_detail detail where detail.pk_pdapdt = exlist.pk_pdapdt and detail.flag_de = '1' and detail.flag_finish = '1'))  or exlist.flag_self = '1' or
+                       exlist.flag_base = '1' or ord.flag_note = '1'))-->
+                ((exlist.pk_pdapdt !='' or exlist.pk_pdapdt is not null) or exlist.flag_self = '1' or exlist.flag_base =
+                '1' or ord.flag_note = '1')))
+                and (exlist.pk_pdback is null or exlist.pk_pdback='')
+            </if>
+            <if test="ordtypesql != null and ordtypesql != ''">
+                and ${ordtypesql}
+            </if>
+            <if test='euStatus == "3" '><!-- 未执行【输血】 -->
+                and exlist.eu_status = '0'
+                and ( ord.code_ordtype = '12' <!-- 输血制品 -->
+                or ((pd.dt_pharm = '012003' or pd.flag_ped='1') <!-- 输血药品【自备 || 非自备已请领】 -->
+                and (exlist.flag_self = '1'
+                or exlist.flag_base = '1'
+                or ord.flag_note = '1'
+                or ( exlist.flag_self = '0' and exlist.flag_base = '0' and exlist.pk_pdapdt is not null))))
+            </if>
+            <if test='euStatus == "4"'><!-- 第一执行【输血】 -->
+                and (ord.code_ordtype = '12' or pd.dt_pharm = '012003' or pd.flag_ped='1') and exlist.eu_status = '1'
+                and exlist.pk_emp_occ2 is null
+            </if>
+            <if test='euStatus == "5"'><!-- 第二执行【输血】 -->
+                and (ord.code_ordtype = '12' or pd.dt_pharm = '012003' or pd.flag_ped='1') and exlist.eu_status = '1'
+                and exlist.pk_emp_occ2 is not null
+            </if>
+            <if test='euStatus == "6"'><!-- 全部【输血】 -->
+                and (ord.code_ordtype = '12' or pd.dt_pharm = '012003' or pd.flag_ped='1')
+            </if>
+            <if test='flagZE == "1"'><!-- 通用执行【中二】添加非输血过滤 以及 血制品的药品 -->
+                and ord.code_ordtype != '12' and (pd.dt_pharm is null or pd.dt_pharm &lt;&gt; '012003' or
+                pd.flag_ped='0')
+            </if>
+        </if>
+        <!-- 如果是取消执行标志， 取消执行 -->
+        <if test="cancelFlag!= null  and  cancelFlag != ''">
+            and ((exlist.pk_dept_occ = #{pkDeptNs,jdbcType=CHAR} and (ord.flag_durg = '0' or ord.flag_durg is null) ) or
+            (ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR} and ord.flag_durg = '1'))
+            and (exlist.flag_canc ='0' or exlist.flag_canc is null )
+            <if test="nameOrd != null and nameOrd !='' ">
+                and ord.name_ord like '%${nameOrd}%'
+            </if>
+            <if test="euStatus != null  and  euStatus != ''">
+                and exlist.eu_status = #{euStatus,jdbcType=CHAR}
+            </if>
+        </if>
+        <if test="pkPvs != null  and  pkPvs != ''">
+            and pv.pk_pv in
+            <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+                #{pkpv}
+            </foreach>
+        </if>
+        and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+        order by pv.bed_no,ord.ordsn_parent,exlist.date_plan,ord.ordsn
+    </select>
+
+    <!-- 根据患者查询未执行试敏医嘱 -->
+    <select id="queryStUnExecListByPv" parameterType="java.util.Map" resultType="DynaBean">
+        select ord.ordsn,
+        ord.ordsn_parent,
+        ord.date_start,
+        ord.name_ord,
+        ord.code_supply,
+        ord.eu_status_ord,
+        ord.name_emp_ord,
+        ord.pk_dept,
+        ord.pk_dept_ns,
+        ord.flag_fit,
+        ord.desc_fit,
+        ord.note_ord,
+        ord.pk_cnord,
+        ord.date_start,
+        exlist.date_plan,
+        exlist.pk_exocc,
+        exlist.pk_cnord,
+        exlist.quan_occ,
+        exlist.pack_size,
+        exlist.pk_unit,
+        exlist.pk_org_occ,
+        exlist.eu_status,
+        stOcc.PK_STOCC,
+        stOcc.PK_DEPT_OCC,
+        stOcc.PK_EMP_OCC,
+        stOcc.NAME_EMP_OCC,
+        stOcc.DATE_OCC,
+        stOcc.DATE_BEGIN_ST,
+        stOcc.DUARTION,
+        stOcc.EU_STMODE,
+        stOcc.LENGTH_CAL,
+        stOcc.WIDTH_CAL,
+        stOcc.LENGTH_VEL,
+        stOcc.WIDTH_VEL,
+        stOcc.LENGTH_SWO,
+        stOcc.WIDTH_SWO,
+        stOcc.FLAG_NEC,
+        stOcc.FLAG_LYM,
+        stOcc.RESULT,
+        stOcc.PK_DEPT_AP,
+        stOcc.PK_DEPT_NS_AP,
+        stOcc.FLAG_CHK,
+        stOcc.DATE_CHK,
+        stOcc.PK_EMP_CHK,
+        stOcc.NAME_EMP_CHK,
+        stOcc.batch_no,
+        pv.pk_pv,
+        pv.pk_pi,
+        pv.bed_no,
+        pv.name_pi,
+        supply.name name_supply,
+        dept.name_dept name_dept_ord,
+        <!--   expdde.batch_no, 改为取皮试执行表批号-->
+        emp.name_emp name_emp_ord,
+        pd.flag_st
+        from ex_order_occ exlist
+        inner join cn_order ord on ord.pk_cnord=exlist.pk_cnord
+        inner join bd_supply supply on supply.code=ord.code_supply
+        inner join pv_encounter pv on exlist.pk_pv = pv.pk_pv
+        inner join bd_ou_dept dept on dept.pk_dept = ord.pk_dept
+        left join bd_ou_employee emp on emp.pk_emp = ord.pk_emp_ord
+        left join ex_st_occ stOcc on stOcc.pk_cnord = exlist.pk_cnord
+        left  join bd_pd pd on ord.pk_ord=pd.pk_pd
+        where supply.flag_st = '1'
+        and ord.flag_doctor = '1'
+        and exlist.eu_status = '0'
+        and (stOcc.result is null or stOcc.result like '% %')
+        and exlist.date_plan &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        and exlist.date_plan &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        <if test="pkPvs != null  and  pkPvs != ''">
+            and exlist.pk_pv in
+            <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+                #{pkpv}
+            </foreach>
+        </if>
+        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+            and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        <!-- order by pv.bed_no,exlist.date_plan -->
+        order by pv.bed_no,ord.ordsn_parent,exlist.date_plan,ord.ordsn
+    </select>
+
+    <!-- 根据患者查询已执行试敏医嘱-->
+    <select id="queryStExecListByPv" parameterType="java.util.Map" resultType="DynaBean">
+        select ord.ordsn,
+        ord.ordsn_parent,
+        ord.date_start,
+        ord.name_ord,
+        ord.name_emp_ord,
+        ord.note_ord,
+        ord.pk_cnord,
+        ord.flag_fit,
+        ord.desc_fit,
+        ord.date_start,
+        orddept.name_dept as name_dept_ord,
+        pv.pk_pv,
+        pv.pk_pi,
+        pv.bed_no,
+        pv.name_pi,
+        st.pk_stocc,
+        st.pk_org_occ,
+        st.pk_dept_occ,
+        st.pk_emp_occ,
+        st.name_emp_occ,
+        st.date_occ,
+        st.date_begin_st,
+        st.duartion,
+        st.eu_stmode,
+        st.length_cal,
+        st.width_cal,
+        st.length_vel,
+        st.width_vel,
+        st.length_swo,
+        st.width_swo,
+        st.flag_nec,
+        st.flag_lym,
+        st.result,
+        st.pk_dept_ap,
+        st.pk_dept_ns_ap,
+        st.flag_chk,
+        st.date_chk,
+        st.pk_emp_chk,
+        st.name_emp_chk,
+        st.quan_right,
+        st.flag_cal_right,
+        st.length_val_right,
+        st.width_val_right,
+        st.eu_skin_right,
+        st.eu_skin,
+        st.quan,
+        st.batch_no,
+        st.flag_cal,
+        <!--  expdde.batch_no,-->
+        dept.name_dept as name_dept_occ
+        from cn_order ord
+        LEFT JOIN ex_st_occ st ON ord.pk_cnord= st.pk_cnord and st.result IS NOT NULL and st.result not LIKE '% %'
+        INNER JOIN ex_order_occ occ ON occ.pk_cnord = ord.pk_cnord AND ( occ.flag_canc= '0' OR occ.flag_canc IS NULL )
+        INNER JOIN bd_supply supply ON supply.CODE = ord.code_supply and supply.flag_st = '1'
+        INNER JOIN pv_encounter pv ON occ.pk_pv = pv.pk_pv
+        INNER JOIN bd_ou_dept dept ON dept.pk_dept = occ.pk_dept_occ
+        INNER JOIN bd_ou_dept orddept ON ord.pk_dept = orddept.pk_dept
+        <!--  left join ex_pd_de expdde on occ.pk_cnord = expdde.pk_cnord-->
+        where occ.date_occ &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        and occ.date_occ &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        and occ.eu_status = '1'
+        <if test="pkPvs != null  and  pkPvs != ''">
+            and occ.pk_pv in
+            <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+                #{pkpv}
+            </foreach>
+        </if>
+        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+            and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        <!-- order by pv.bed_no,ord.ordsn  -->
+        order by pv.bed_no,ord.ordsn_parent,occ.date_plan,ord.ordsn
+
+    </select>
+
+    <!-- 根据患者查询全部试敏医嘱-->
+    <select id="queryAllStExecListByPv" parameterType="java.util.Map" resultType="DynaBean">
+        select ord.ordsn,
+        ord.ordsn_parent,
+        ord.date_start,
+        ord.name_ord,
+        ord.code_supply,
+        ord.eu_status_ord,
+        ord.name_emp_ord,
+        ord.pk_dept,
+        ord.pk_dept_ns,
+        ord.flag_fit,
+        ord.desc_fit,
+        ord.note_ord,
+        ord.pk_cnord,
+        ord.date_start,
+        ord.eu_always,
+        ord.pk_emp_ex,
+        ord.name_emp_ex,
+        ord.date_plan_ex,
+        exlist.date_plan,
+        exlist.pk_exocc,
+        exlist.pk_cnord,
+        exlist.quan_occ,
+        exlist.pk_unit,
+        exlist.eu_status,
+        (CASE WHEN '1' = exlist.eu_status THEN stOcc.pk_org_occ ELSE exlist.pk_org_occ END) pk_org_occ,
+        stOcc.PK_STOCC,
+        stOcc.PK_DEPT_OCC,
+        stOcc.PK_EMP_OCC,
+        stOcc.NAME_EMP_OCC,
+        stOcc.DATE_OCC,
+        stOcc.DATE_BEGIN_ST,
+        stOcc.DUARTION,
+        stOcc.EU_STMODE,
+        stOcc.LENGTH_CAL,
+        stOcc.WIDTH_CAL,
+        stOcc.LENGTH_VEL,
+        stOcc.WIDTH_VEL,
+        stOcc.LENGTH_SWO,
+        stOcc.WIDTH_SWO,
+        stOcc.FLAG_NEC,
+        stOcc.FLAG_LYM,
+        stOcc.RESULT,
+        stOcc.PK_DEPT_AP,
+        stOcc.PK_DEPT_NS_AP,
+        stOcc.FLAG_CHK,
+        stOcc.DATE_CHK,
+        stOcc.PK_EMP_CHK,
+        stOcc.NAME_EMP_CHK,
+        stOcc.batch_no,
+        pv.pk_pv,
+        pv.pk_pi,
+        pv.bed_no,
+        pv.name_pi,
+        supply.name name_supply,
+        dept.name_dept name_dept_ord,
+        emp.name_emp name_emp_ord,
+        deptOcc.name_dept name_dept_occ,
+        <!--   expdde.batch_no,-->
+        freq.cnt
+        from ex_order_occ exlist
+        inner join cn_order ord on ord.pk_cnord=exlist.pk_cnord
+        inner join bd_supply supply on supply.code=ord.code_supply
+        inner join pv_encounter pv on exlist.pk_pv = pv.pk_pv
+        inner join bd_ou_dept dept on dept.pk_dept = ord.pk_dept
+        left join bd_ou_employee emp on emp.pk_emp = ord.pk_emp_ord
+        left join ex_st_occ stOcc on stOcc.pk_cnord = exlist.pk_cnord
+        left join bd_ou_dept deptOcc on deptOcc.pk_dept = stOcc.PK_DEPT_OCC
+        left join bd_term_freq freq on freq.code = ord.code_freq
+        <!-- left join ex_pd_de expdde on exlist.pk_cnord = expdde.pk_cnord -->
+        where supply.flag_st = '1'
+        and ord.flag_doctor = '1'
+        and exlist.eu_status &lt;&gt; '9'
+        and ord.flag_erase &lt;&gt; '1'
+        and exlist.date_plan &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        and exlist.date_plan &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        <if test="pkPvs != null  and  pkPvs != ''">
+            and exlist.pk_pv in
+            <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+                #{pkpv}
+            </foreach>
+        </if>
+        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+            and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        <!-- order by pv.bed_no,exlist.date_plan -->
+        order by pv.bed_no,ord.ordsn_parent,exlist.date_plan,ord.ordsn
+    </select>
+
+
+    <!-- 查询血糖医嘱 -->
+    <select id="queryBloodList" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.pk_pv,
+        pv.pk_pi,
+        pv.bed_no,
+        pv.name_pi,
+        pi.code_ip,
+        ord.pk_cnord,
+        ord.name_ord,
+        ord.name_emp_ord,
+        ord.note_ord,
+        ord.flag_fit,
+        ord.desc_fit,
+        freq.name name_freq,
+        occ.pk_exocc,
+        occ.quan_occ,
+        occ.date_plan,
+        occ.name_emp_occ,
+        occ.eu_status,
+        occ.date_occ,
+        glu.pk_gluocc,
+        glu.dt_glupoint,
+        glu.dt_glutype,
+        glu.eu_reason,
+        glu.note,
+        glu.val,
+        pot.name glupoint
+        from ex_order_occ occ
+        inner join cn_order ord on occ.pk_cnord = ord.pk_cnord and occ.eu_status!='9'
+        inner join bd_term_freq freq on ord.code_freq =freq.code
+        inner join pv_encounter pv on ord.pk_pv = pv.pk_pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        left join ex_glu_occ glu on occ.pk_exocc = glu.pk_exocc
+        left join bd_defdoc pot on glu.dt_glupoint = pot.code and pot.code_defdoclist = '120108'
+        where pv.pk_pv in
+        <foreach item="pv" index="index" collection="pkpv" open="(" separator="," close=")">
+            #{pv}
+        </foreach>
+        and ord.code_ordtype='0502'
+        <if test="status != null  and status != '' and status !=2 ">
+            and occ.eu_status=#{status}
+        </if>
+        and occ.date_plan &gt;= to_date(#{dateS}, 'YYYYMMDDHH24MISS')
+        and occ.date_plan &lt;= to_date(#{dateE}, 'YYYYMMDDHH24MISS')
+        order by pv.name_pi,ord.name_ord,occ.date_plan
+    </select>
+
+    <update id="updateStOrd" parameterType="java.util.Map">
+        update cn_order set eu_st=#{euSt,jdbcType=VARCHAR}
+        where pk_cnord in
+        <foreach item="pkCnord" index="index" collection="ordList" open="(" separator="," close=")">
+            #{pkCnord}
+        </foreach>
+    </update>
+
+    <select id="queryStOrdList" parameterType="java.util.Map" resultType="DynaBean">
+select ord.pk_cnord,
+       ord.eu_always,
+       ord.date_start,
+       ord.name_ord,
+       ord.spec,
+       ord.dosage,
+       ord.flag_fit,
+       ord.desc_fit,
+       unit.name as name_unit_dos,
+       sup.name as name_supply,
+       ord.code_freq,
+       freq.name name_freq,
+       ord.note_ord,
+       ord.eu_st,
+       ord.name_emp_ord
+  from cn_order ord
+    left join bd_supply sup on sup.code = ord.code_supply
+    inner join bd_unit unit on unit.pk_unit = ord.pk_unit_dos
+     left join bd_term_freq freq on freq.code = ord.code_freq
+ where ord.pk_pv=#{pkPv,jdbcType=CHAR}
+   and ord.eu_st &gt; '0'
+   and ord.flag_erase = '0'
+   and ord.eu_status_ord &lt; '9'
+   and exists (select 1 from ex_order_occ occ
+                  where ord.pk_cnord=occ.pk_cnord
+                    and occ.eu_status='0'
+                    <if test = 'flag != null and flag != "1" '>
+                        and ord.NAME_ORD = #{nameOrd,jdbcType=CHAR}/*修改30455，皮试有可能是嘱托所以用医嘱名称关联*/
+                    </if>
+                    and ord.pk_cnord!=#{pkCnord,jdbcType=CHAR} )
+</select>
+    <update id="updateExOrderOcc" parameterType="com.zebone.nhis.common.module.ex.nis.ns.ExOrderOcc">
+update ex_order_occ set name_emp_occ=#{nameEmpOcc},pk_dept_occ=#{pkDeptOcc},
+pk_emp_occ=#{pkEmpOcc},pk_Org_Occ=#{pkOrgOcc},date_occ=#{dateOcc},eu_status=#{euStatus} 
+where pk_exocc=#{pkExocc}
+</update>
+    <select id="queryFreqTimeList" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.nis.ns.vo.FreqTimeVo">
+select time.*,freq.eu_cycle  from bd_term_freq_time time
+    inner join bd_term_freq freq on freq.pk_freq = time.pk_freq  
+ where freq.code=#{code,jdbcType=VARCHAR}  
+ order by time.time_occ  
+</select>
+    <select id="queryExListByWhereSql" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.nis.ns.vo.ExCgVo">
+ select occ.pk_exocc,cg.quan,cg.pk_cgip from ex_order_occ occ 
+ inner join bl_ip_dt cg on cg.pk_ordexdt = occ.pk_exocc 
+ where not exists (select 1 from bl_ip_dt b where cg.pk_cgip=b.pk_cgip_back) and occ.eu_status = '1' and ${sql}  
+</select>
+    <!-- 根据执行单号及住院号查询执行单列表 -->
+    <select id="queryExecListByPkAndCodeIp" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.ex.pub.vo.ExlistPubVo">
+select pv.pk_pv,
+	       pv.bed_no,
+	       pv.name_pi,
+	       pv.pk_pi,
+	       pv.eu_pvtype ,
+	       pv.pk_dept as pk_dept_pv,
+	       exlist.pk_exocc,
+	       exlist.date_plan,
+	       exlist.date_occ,
+	       exlist.quan_occ,
+	       exlist.name_emp_occ,
+	       exlist.pk_unit,
+	       exlist.eu_status,
+	       exlist.flag_self,
+	       exlist.flag_base,
+	       exlist.pk_org_occ,
+	       exlist.pack_size,
+	       ord.flag_durg,
+	       ord.name_ord,
+	       ord.flag_bl,
+	       ord.infant_no,
+	       ord.flag_fit,
+	       ord.desc_fit,
+	       ord.pk_cnord,
+	       ord.pk_ord,
+	       ord.pk_pres,
+	       ord.pk_org,
+	       ord.pk_dept,
+	       ord.pk_dept_exec,
+	       ord.pk_dept_ns,
+	       ord.code_supply,
+	       ord.ordsn,
+	       ord.pk_emp_ord,
+	       ord.name_emp_ord,
+	       ord.ordsn_parent,
+	       ord.eu_always,
+	       ord.note_ord,
+	       unit.name as name_unit,
+	       supply.name as name_supply    
+	  from ex_order_occ exlist
+	 inner join cn_order ord on ord.pk_cnord = exlist.pk_cnord
+	 inner join pv_encounter pv on pv.pk_pv = exlist.pk_pv
+	 inner join pi_master pi on pi.pk_pi = exlist.pk_pi
+	 left join bd_unit unit on unit.pk_unit = exlist.pk_unit
+	 left join bd_supply supply on supply.code = ord.code_supply 
+     where exlist.pk_pdde = #{pkExocc,jdbcType=VARCHAR} 
+       and pi.code_ip = #{codeIp,jdbcType=VARCHAR}  
+       and ((ord.flag_durg='1' and (exlist.pk_pdapdt is not null or exlist.pk_pdapdt !='')) or ord.flag_durg='0') 
+       and exlist.eu_status='0' 
+</select>
+
+    <!-- 核对时查询需要生成执行单的医嘱列表 -->
+    <select id="getCheckedOrdList" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.nis.ns.vo.OrderCheckVo">
+        select ord.pk_cnord,
+        ord.pk_ord,
+        ord.pk_org,
+        ord.code_freq,
+        ord.first_num,
+        ord.date_start,
+        ord.name_ord
+        from cn_order ord
+        where ord.eu_status_ord ='2' and ord.date_last_ex is null
+        <if test="pkOrds != null  and  pkOrds != ''">
+            and (ord.pk_cnord in
+			<trim suffixOverrides=" OR ord.pk_cnord IN()">    <!-- 表示删除最后一个条件 -->
+            	<foreach collection="pkOrds" item="pkOrd" index="index" open="(" close=")">
+            		<if test="index != 0">
+            			<choose>
+            				<when test="index % 1000 == 999">) OR ord.pk_cnord IN (</when>
+            				<otherwise>,</otherwise>
+            			</choose>
+            		</if>
+            		#{pkOrd}
+            	</foreach>
+            </trim>
+        )
+        </if>
+        order by ord.pk_pv, ord.ordsn_parent,ord.ordsn
+    </select>
+
+    <!-- 检验标本采集查询 oracle -->
+    <select id="qryLabExlist" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.bed_no,
+        pv.pk_pv,
+        pv.pk_pi,
+        pi.name_pi,
+        ord.pk_cnord,
+        ord.flag_emer,
+        ord.name_ord,
+        ord.ordsn,
+        ord.ordsn_parent,
+        ord.code_apply,
+        ord.pk_cnord,
+        ord.pk_ord,
+        ord.pk_dept pk_dept_app,
+        ord.pk_emp_ord pk_emp_app,
+        ord.name_emp_ord name_emp_app,
+        ord.infant_no,
+        ord.note_ord,
+        ord.pk_emp_ex,
+        ord.name_emp_ex,
+        ord.date_plan_ex,
+        ord.flag_bl,
+        to_char(ord.date_start,'yyyyMMddHH24mi') || '00' date_start,
+        ord.code_ordtype,
+        def_samp.name as name_samptype,
+        def_tube.name as name_tubetype,
+        lab.pk_ordlis,
+        lab.name_emp_col,
+        lab.dt_samptype,
+        lab.dt_tubetype,
+        lab.date_col,
+        lab.eu_status,
+        lab.form_app,
+        occ.pk_exocc,
+        occ.pk_dept_occ,
+        occ.pk_org_occ,
+        to_char(occ.date_plan,'yyyyMMddHH24mi') || '00' date_plan,
+        occ.quan_occ,
+        blab.note,
+        blab.dt_lisgroup,
+        deptOcc.name_dept name_dept_occ,
+        orgOcc.name_org name_org_occ
+        from ex_order_occ occ
+        inner join cn_order ord on occ.pk_cnord=ord.pk_cnord
+        inner join pv_encounter pv on occ.pk_pv=pv.pk_pv
+        inner join pi_master pi on pv.pk_pi=pi.pk_pi
+        inner join cn_lab_apply lab on ord.pk_cnord=lab.pk_cnord
+        left join bd_ord_lab blab on blab.pk_ord= ord.pk_ord
+        left join bd_defdoc def_samp on def_samp.code=lab.dt_samptype and def_samp.code_defdoclist='030200'
+        left join bd_defdoc def_tube on def_tube.code=lab.dt_tubetype and def_tube.code_defdoclist='030203'
+        left join bd_ou_dept deptOcc on deptOcc.pk_dept = occ.pk_dept_occ
+        left join bd_ou_org orgOcc on orgOcc.pk_org = occ.pk_org_occ
+        where occ.del_flag = '0'
+        and lab.eu_status &gt; '0'
+        <!--and occ.eu_status = '0' 执行单： 未执行 -->
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and occ.date_plan &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and occ.date_plan &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="sampNo != null  and  sampNo != ''">
+            and lab.samp_no = #{sampNo,jdbcType=CHAR}
+        </if>
+        <if test="dtSamptype != null  and  dtSamptype != ''">
+            and lab.dt_samptype = #{dtSamptype,jdbcType=CHAR}
+        </if>
+        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+            and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        <if test='flagCol == "1" '>
+            and lab.pk_emp_col is not null and lab.pk_emp_col not like '% %'   <!--申请单：采集[采集人不为空]-->
+        </if>
+        <if test='flagCol == "0" '>
+            and (lab.pk_emp_col is null or lab.pk_emp_col like '% %')  <!--申请单：未采集[采集人为空] -->
+        </if>
+        <if test="pkPvs != null  and  pkPvs != ''">
+            and occ.pk_pv in
+            <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+                #{pkpv}
+            </foreach>
+        </if>
+        order by pv.bed_no,occ.date_plan,ord.code_apply
+    </select>
+
+    <!-- 检验标本采集查询  Sqlserver-->
+    <select id="qryLabExlistSsr" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.bed_no,
+        pv.pk_pv,
+        pv.pk_pi,
+        pi.name_pi,
+        ord.pk_cnord,
+        ord.flag_emer,
+        ord.name_ord,
+        ord.ordsn,
+        ord.ordsn_parent,
+        ord.code_apply,
+        ord.pk_cnord,
+        ord.pk_ord,
+        ord.pk_dept pk_dept_app,
+        ord.pk_emp_ord pk_emp_app,
+        ord.name_emp_ord name_emp_app,
+        ord.infant_no,
+        ord.note_ord,
+        ord.pk_emp_ex,
+        ord.name_emp_ex,
+        ord.date_plan_ex,
+        ord.flag_bl,
+        CONVERT(datetime ,left(convert(varchar, ord.date_start, 120),17)+'00',121) date_start,
+        ord.code_ordtype,
+        def_samp.name as name_samptype,
+        def_tube.name as name_tubetype,
+        lab.pk_ordlis,
+        lab.name_emp_col,
+        lab.dt_samptype,
+        lab.dt_tubetype,
+        lab.date_col,
+        lab.eu_status,
+        lab.form_app,
+        occ.pk_exocc,
+        occ.pk_dept_occ,
+        occ.pk_org_occ,
+        CONVERT(datetime ,left(convert(varchar, occ.date_plan, 120),17)+'00',121) date_plan,
+        occ.quan_occ,
+        blab.note,
+        blab.dt_lisgroup,
+        deptOcc.name_dept name_dept_occ,
+        orgOcc.name_org name_org_occ
+        from ex_order_occ occ
+        inner join cn_order ord on occ.pk_cnord=ord.pk_cnord
+        inner join pv_encounter pv on occ.pk_pv=pv.pk_pv
+        inner join pi_master pi on pv.pk_pi=pi.pk_pi
+        inner join cn_lab_apply lab on ord.pk_cnord=lab.pk_cnord
+        left join bd_ord_lab blab on blab.pk_ord= ord.pk_ord
+        left join bd_defdoc def_samp on def_samp.code=lab.dt_samptype and def_samp.code_defdoclist='030200'
+        left join bd_defdoc def_tube on def_tube.code=lab.dt_tubetype and def_tube.code_defdoclist='030203'
+        left join bd_ou_dept deptOcc on deptOcc.pk_dept = occ.pk_dept_occ
+        left join bd_ou_org orgOcc on orgOcc.pk_org = occ.pk_org_occ
+        where occ.del_flag = '0'
+        and lab.eu_status &gt; '0'
+        <!--and occ.eu_status = '0' 执行单： 未执行 -->
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and occ.date_plan &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and occ.date_plan &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="sampNo != null  and  sampNo != ''">
+            and lab.samp_no = #{sampNo,jdbcType=CHAR}
+        </if>
+        <if test="dtSamptype != null  and  dtSamptype != ''">
+            and lab.dt_samptype = #{dtSamptype,jdbcType=CHAR}
+        </if>
+        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+            and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        <if test='flagCol == "1" '>
+            and lab.pk_emp_col is not null and lab.pk_emp_col not like '% %'   <!--申请单：采集[采集人不为空]-->
+        </if>
+        <if test='flagCol == "0" '>
+            and (lab.pk_emp_col is null or lab.pk_emp_col like '% %')  <!--申请单：未采集[采集人为空] -->
+        </if>
+        <if test="pkPvs != null  and  pkPvs != ''">
+            and occ.pk_pv in
+            <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+                #{pkpv}
+            </foreach>
+        </if>
+        order by pv.bed_no,occ.date_plan,ord.code_apply
+    </select>
+
+    <!-- 检验标本采集查询=> 并单使用oracle(因为时间转换问题) -->
+    <select id="qryLabExlistForDif" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.nis.ns.vo.LabColVo">
+        select pv.bed_no,
+        pv.pk_pv,
+        pv.pk_pi,
+        pi.name_pi,
+        ord.pk_cnord,
+        ord.flag_emer,
+        ord.name_ord,
+        ord.ordsn,
+        ord.ordsn_parent,
+        ord.code_apply,
+        ord.pk_cnord,
+        ord.pk_ord,
+        ord.pk_dept pk_dept_app,
+        ord.pk_emp_ord pk_emp_app,
+        ord.name_emp_ord name_emp_app,
+        ord.infant_no,
+        ord.note_ord,
+        to_date(to_char(ord.date_start,'yyyy-MM-dd HH24:mi') || '00','yyyy-MM-dd HH24:mi:ss') date_start,
+        ord.code_ordtype,
+        def_samp.name as name_samptype,
+        def_tube.name as name_tubetype,
+        lab.pk_ordlis,
+        lab.name_emp_col,
+        lab.dt_samptype,
+        lab.dt_tubetype,
+        lab.date_col,
+        lab.eu_status,
+        lab.form_app,
+        occ.pk_exocc,
+        occ.pk_dept_occ,
+        occ.pk_org_occ,
+        to_date(to_char(occ.date_plan,'yyyy-MM-dd HH24:mi') || '00','yyyy-MM-dd HH24:mi:ss') date_plan,
+        occ.quan_occ,
+        blab.note,
+        blab.dt_lisgroup,
+        deptOcc.name_dept name_dept_occ,
+        orgOcc.name_org name_org_occ
+        from ex_order_occ occ
+        inner join cn_order ord on occ.pk_cnord=ord.pk_cnord
+        inner join pv_encounter pv on occ.pk_pv=pv.pk_pv
+        inner join pi_master pi on pv.pk_pi=pi.pk_pi
+        inner join cn_lab_apply lab on ord.pk_cnord=lab.pk_cnord
+        left join bd_ord_lab blab on blab.pk_ord= ord.pk_ord
+        left join bd_defdoc def_samp on def_samp.code=lab.dt_samptype and def_samp.code_defdoclist='030200'
+        left join bd_defdoc def_tube on def_tube.code=lab.dt_tubetype and def_tube.code_defdoclist='030203'
+        left join bd_ou_dept deptOcc on deptOcc.pk_dept = occ.pk_dept_occ
+        left join bd_ou_org orgOcc on orgOcc.pk_org = occ.pk_org_occ
+        where occ.del_flag = '0'
+        and lab.eu_status &gt; '0'
+        <!--and occ.eu_status = '0' 执行单： 未执行 -->
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and occ.date_plan &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and occ.date_plan &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="sampNo != null  and  sampNo != ''">
+            and lab.samp_no = #{sampNo,jdbcType=CHAR}
+        </if>
+        <if test="dtSamptype != null  and  dtSamptype != ''">
+            and lab.dt_samptype = #{dtSamptype,jdbcType=CHAR}
+        </if>
+        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+            and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        <if test='flagCol == "1" '>
+            and lab.pk_emp_col is not null and lab.pk_emp_col not like '% %'   <!--申请单：采集[采集人不为空]-->
+        </if>
+        <if test='flagCol == "0" '>
+            and (lab.pk_emp_col is null or lab.pk_emp_col like '% %')  <!--申请单：未采集[采集人为空] -->
+        </if>
+        <if test="pkPvs != null  and  pkPvs != ''">
+            and occ.pk_pv in
+            <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+                #{pkpv}
+            </foreach>
+        </if>
+        order by pv.pk_pv,occ.date_plan,ord.flag_emer,lab.dt_samptype,occ.pk_dept_occ,lab.dt_tubetype,ord.code_apply
+    </select>
+
+
+    <!-- 检验标本采集查询=> 并单使用sqlserver(因为时间转换问题) -->
+    <select id="qryLabExlistForDifSsr" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.nis.ns.vo.LabColVo">
+        select pv.bed_no,
+        pv.pk_pv,
+        pv.pk_pi,
+        pi.name_pi,
+        ord.pk_cnord,
+        ord.flag_emer,
+        ord.name_ord,
+        ord.ordsn,
+        ord.ordsn_parent,
+        ord.code_apply,
+        ord.pk_cnord,
+        ord.pk_ord,
+        ord.pk_dept pk_dept_app,
+        ord.pk_emp_ord pk_emp_app,
+        ord.name_emp_ord name_emp_app,
+        ord.infant_no,
+        ord.note_ord,
+        CONVERT(datetime ,left(convert(varchar, ord.date_start, 120),17)+'00',121) date_start,
+        ord.code_ordtype,
+        def_samp.name as name_samptype,
+        def_tube.name as name_tubetype,
+        lab.pk_ordlis,
+        lab.name_emp_col,
+        lab.dt_samptype,
+        lab.dt_tubetype,
+        lab.date_col,
+        lab.eu_status,
+        lab.form_app,
+        occ.pk_exocc,
+        occ.pk_dept_occ,
+        occ.pk_org_occ,
+        CONVERT(datetime ,left(convert(varchar, occ.date_plan, 120),17)+'00',121) date_plan,
+        occ.quan_occ,
+        blab.note,
+        blab.dt_lisgroup,
+        deptOcc.name_dept name_dept_occ,
+        orgOcc.name_org name_org_occ
+        from ex_order_occ occ
+        inner join cn_order ord on occ.pk_cnord=ord.pk_cnord
+        inner join pv_encounter pv on occ.pk_pv=pv.pk_pv
+        inner join pi_master pi on pv.pk_pi=pi.pk_pi
+        inner join cn_lab_apply lab on ord.pk_cnord=lab.pk_cnord
+        left join bd_ord_lab blab on blab.pk_ord= ord.pk_ord
+        left join bd_defdoc def_samp on def_samp.code=lab.dt_samptype and def_samp.code_defdoclist='030200'
+        left join bd_defdoc def_tube on def_tube.code=lab.dt_tubetype and def_tube.code_defdoclist='030203'
+        left join bd_ou_dept deptOcc on deptOcc.pk_dept = occ.pk_dept_occ
+        left join bd_ou_org orgOcc on orgOcc.pk_org = occ.pk_org_occ
+        where occ.del_flag = '0'
+        and lab.eu_status &gt; '0'
+        <!--and occ.eu_status = '0' 执行单： 未执行 -->
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and occ.date_plan &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and occ.date_plan &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="sampNo != null  and  sampNo != ''">
+            and lab.samp_no = #{sampNo,jdbcType=CHAR}
+        </if>
+        <if test="dtSamptype != null  and  dtSamptype != ''">
+            and lab.dt_samptype = #{dtSamptype,jdbcType=CHAR}
+        </if>
+        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+            and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        <if test='flagCol == "1" '>
+            and lab.pk_emp_col is not null and lab.pk_emp_col not like '% %'   <!--申请单：采集[采集人不为空]-->
+        </if>
+        <if test='flagCol == "0" '>
+            and (lab.pk_emp_col is null or lab.pk_emp_col like '% %')  <!--申请单：未采集[采集人为空] -->
+        </if>
+        <if test="pkPvs != null  and  pkPvs != ''">
+            and occ.pk_pv in
+            <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+                #{pkpv}
+            </foreach>
+        </if>
+        order by pv.pk_pv,occ.date_plan,ord.flag_emer,lab.dt_samptype,occ.pk_dept_occ,lab.dt_tubetype,ord.code_apply
+    </select>
+
+    <!-- 检验容器采集查询oracle -->
+    <select id="qryLabContCgVo" parameterType="java.util.List"
+            resultType="com.zebone.nhis.bl.pub.vo.BlPubParamVo">
+     select item.pk_item,
+     		item.name,
+  			item.code,
+  			item.spec,
+  			item.price,
+  			defitem.quan quanCg,
+            defitem.code_defdoc,
+            nvl(item.price,0) * nvl(defitem.quan,0) amount,
+  			nvl(item.price,0) * nvl(defitem.quan,0) amount_pi
+  	   from bd_item_defdoc defitem
+  	  inner join bd_item item on item.pk_item = defitem.pk_item
+	  where defitem.eu_pvtype = '3'
+        and defitem.code_defdoclist = '030203'
+        and defitem.code_defdoc in
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and defitem.del_flag = '0'
+	order by item.code 
+</select>
+
+    <!-- 检验容器采集查询 sqlserver-->
+    <select id="qryLabContCgVoSsr" parameterType="java.util.List"
+            resultType="com.zebone.nhis.bl.pub.vo.BlPubParamVo">
+     select item.pk_item,
+     		item.name,
+  			item.code,
+  			item.spec,
+  			item.price,
+  			defitem.quan quanCg,
+            defitem.code_defdoc,
+  			nvl(item.price,0) * cast( nvl(defitem.quan,0)  as numeric) amount,
+  			nvl(item.price,0) * cast(nvl(defitem.quan,0)  as numeric) amount_pi
+  	   from bd_item_defdoc defitem
+  	  inner join bd_item item on item.pk_item = defitem.pk_item
+	  where defitem.eu_pvtype = '3'
+        and defitem.code_defdoclist = '030203'
+        and defitem.code_defdoc in
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and defitem.del_flag = '0'
+	order by item.code 
+</select>
+
+    <!-- 检验标本采集查询 oracle-->
+    <select id="qryLabSpecCgVo" parameterType="java.util.List"
+            resultType="com.zebone.nhis.bl.pub.vo.BlPubParamVo">
+     select item.pk_item,
+     		item.name,
+  			item.code,
+  			item.spec,
+  			item.price,
+  			defitem.quan quanCg,
+            defitem.code_defdoc,
+  			nvl(item.price,0) * nvl(defitem.quan,0) amount,
+  			nvl(item.price,0) * nvl(defitem.quan,0) amount_pi
+  	   from bd_item_defdoc defitem
+  	  inner join bd_item item on item.pk_item = defitem.pk_item
+	  where defitem.eu_pvtype = '3'
+        and defitem.code_defdoclist = '030200'
+        and defitem.del_flag = '0'
+        and defitem.code_defdoc in
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+	  order by item.code 
+</select>
+
+    <!-- 检验标本采集查询 sqlserver-->
+    <select id="qryLabSpecCgVoSsr" parameterType="java.util.List"
+            resultType="com.zebone.nhis.bl.pub.vo.BlPubParamVo">
+     select item.pk_item,
+     		item.name,
+  			item.code,
+  			item.spec,
+  			item.price,
+  			defitem.quan quanCg,
+            defitem.code_defdoc,
+            nvl(item.price,0) * cast(nvl(defitem.quan,0) as numeric) amount,
+  			nvl(item.price,0) * cast(nvl(defitem.quan,0)as numeric)  amount_pi
+  	   from bd_item_defdoc defitem
+  	  inner join bd_item item on item.pk_item = defitem.pk_item
+	  where defitem.eu_pvtype = '3'
+        and defitem.code_defdoclist = '030200'
+        and defitem.del_flag = '0'
+        and defitem.code_defdoc in
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+	  order by item.code 
+</select>
+
+
+    <select id="queryExListByDate" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.common.module.ex.nis.ns.ExOrderOcc">
+  select date_plan  
+  from ex_order_occ 
+  where date_plan &gt; to_date(#{dateStart},'YYYYMMDDHH24MISS') 
+  and date_plan &lt; to_date(#{end},'YYYYMMDDHH24MISS') 
+  and pk_cnord  = #{pkCnord,jdbcType=CHAR} 
+  order by date_plan desc 
+</select>
+    <delete id="deleteExList" parameterType="java.util.Map">
+        delete from ex_order_occ
+        where eu_status='0'
+        <if test="pkOrds != null  and  pkOrds != ''">
+            and pk_cnord in
+            <foreach item="pkOrd" index="index" collection="pkOrds" open="(" separator="," close=")">
+                #{pkOrd}
+            </foreach>
+        </if>
+    </delete>
+
+    <!-- 更新输血申请单状态  -->
+    <update id="updateTransApply" parameterType="java.util.List">
+        UPDATE CN_TRANS_APPLY SET
+        eu_status='3'
+        where eu_status &lt; '3' and pk_cnord in
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item.pkCnord}
+        </foreach>
+    </update>
+
+    <!-- 更新临时医嘱的执行护士  -->
+    <update id="updateOrdEmpNsEx" parameterType="java.util.Map">
+        UPDATE CN_ORDER SET
+        <!-- NAME_EMP_EX = #{nameEmpEx,jdbcType=CHAR} -->
+        NAME_EMP_EX = (CASE WHEN NAME_EMP_EX IS NULL THEN #{nameEmpEx,jdbcType=CHAR}
+        ELSE NAME_EMP_EX || '/' || #{nameEmpEx,jdbcType=CHAR} END )
+        , MODIFIER = #{modifier,jdbcType=CHAR}
+        , MODITY_TIME = #{modifierTime,jdbcType=TIMESTAMP}
+        <if test="pkEmpEx != null  and  pkEmpEx != ''">
+            , PK_EMP_EX = #{pkEmpEx,jdbcType=CHAR}
+        </if>
+        <if test="datePlanEx != null  and  datePlanEx != ''">
+            , DATE_PLAN_EX = (CASE WHEN DATE_PLAN_EX IS NULL THEN #{datePlanEx,jdbcType=TIMESTAMP} ELSE DATE_PLAN_EX END
+            )
+        </if>
+        WHERE DEL_FLAG = '0'
+        AND PK_CNORD IN
+        <foreach item="pkCnord" index="index" collection="pkCnords" open="(" separator="," close=")">
+            #{pkCnord}
+        </foreach>
+    </update>
+    <select id="queryExAndCglist" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.nis.ns.vo.ExCgVo">
+        select cg.quan,cg.pk_cgip ,occ.pk_exocc,occ.eu_status,occ.date_plan,occ.pk_pdapdt from ex_order_occ occ
+        inner join bl_ip_dt cg on cg.pk_ordexdt = occ.pk_exocc where occ.del_flag='0'
+        <if test="pkExocc != null  and  pkExocc != ''">
+            and occ.pk_exocc = #{pkExocc,jdbcType=CHAR}
+        </if>
+        order by occ.date_plan
+    </select>
+    <select id="queryExlist" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.common.module.ex.nis.ns.ExOrderOcc">
+        select occ.* from ex_order_occ occ where occ.del_flag='0'
+        <if test="pkCnord != null  and  pkCnord != ''">
+            and occ.pk_cnord = #{pkCnord,jdbcType=CHAR}
+        </if>
+        order by occ.date_plan
+    </select>
+
+    <select id="queryExStOccPv" parameterType="java.lang.String" resultType="com.zebone.nhis.ex.nis.ns.vo.ExStOccPv">
+		 select pve.name_pi,sex.name name_sex,pve.dt_sex,pve.age_pv,pim.code_ip,pve.pk_dept , dept.name_dept ,pve.pk_dept_ns, ns.name_dept as name_dept_ns,pve.bed_no,diag.name_diag ,stocc.*  
+			from pv_encounter pve 
+			inner join pi_master pim on pim.pk_pi = pve.pk_pi and pim.del_flag='0'  
+			inner join bd_ou_dept dept on dept.pk_dept = pve.pk_dept and dept.del_flag='0' 
+			inner join bd_ou_dept ns on ns.pk_dept = pve.pk_dept_ns and dept.del_flag='0' 
+			left join pv_diag diag on diag.pk_pv = pve.pk_pv and diag.flag_maj='1'  
+			left join ex_st_occ stocc on  stocc.pk_pv = pve.pk_pv  and stocc.pk_cnord=#{pkCnord,jdbcType=CHAR}
+			left join bd_defdoc sex on sex.code =pve.dt_sex and sex.code_defdoclist = '000000' 
+		where pve.pk_pv=#{pkPv,jdbcType=CHAR}
+  </select>
+
+
+    <select id="queryAdtByPkpv" parameterType="java.util.Map" resultType="DynaBean">
+        select adt.pk_pv,adt.pk_adt,adt.pk_adt_source,adt.date_end,adt.pk_dept,adt.pk_dept_ns,adt.pk_emp_end,dept.dt_medicaltype
+        from pv_adt adt
+        inner join ( select pk_adt,pk_adt_source
+                     from pv_adt where pk_pv in (${pkPv}) and date_end is null and PK_ADT_SOURCE is not null
+                                 and date_begin >= to_date(#{dateBegin},'yyyymmddhh24miss') and date_begin &lt;= to_date(#{dateEnd},'yyyymmddhh24miss')) aa
+                     on aa.pk_adt=adt.pk_adt or aa.pk_adt_source=adt.pk_adt
+        left join bd_ou_dept dept on dept.pk_dept = adt.pk_dept and adt.pk_adt_source is not null
+        left join bd_ou_dept deptns on deptns.pk_dept = adt.pk_dept_ns and adt.date_end is null
+
+		<!--select *
+	    from pv_adt
+	    where pk_pv = #{pkPv,jdbcType=CHAR}
+	    and date_end is null
+		and  date_begin >= to_date(#{dateBegin}, 'yyyymmddhh24miss' )
+		and  date_begin &lt;= to_date(#{dateEnd}, 'yyyymmddhh24miss' )
+		or pk_adt = (select pk_adt_source
+		  		     from pv_adt
+				     where pk_pv = #{pkPv,jdbcType=CHAR}
+				     and date_end is null)-->
+	</select>
+
+    <select id="queryOrderOcc" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.common.module.ex.nis.ns.ExOrderOcc">
+		select * from
+		ex_order_occ  occ
+		left join cn_order ord on ord.pk_cnord = occ.pk_cnord
+		where ord.pk_pv in (${pkPv})
+		and ord.code_ordtype = '0602'
+		and occ.pk_dept_occ in (${pkDeptOcc})
+		and occ.eu_status != '9'
+		and  date_occ >= to_date(#{dateBegin}, 'yyyymmddhh24miss' )
+		and  date_occ &lt;= to_date(#{dateEnd}, 'yyyymmddhh24miss' )
+	</select>
+
+    <!-- 根据不同条件查询代理医嘱执行单 -->
+
+    <select id="queryAgentExecList" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.pub.vo.ExlistPubVo">
+        select pv.pk_pv,
+        pv.bed_no,
+        pv.name_pi,
+        pv.pk_pi,
+        pv.eu_pvtype ,
+        pv.pk_dept as pk_dept_pv,
+        exlist.pk_exocc,
+        exlist.date_plan,
+        exlist.date_occ,
+        ord.quan as quan_occ,
+        exlist.name_emp_occ,
+        exlist.name_emp_occ2,
+        exlist.pk_emp_occ,
+        exlist.pk_emp_occ2,
+        ord.pk_unit,
+        unit.name as name_unit,
+        exlist.eu_status,
+        dept.name_dept as name_dept_occ,
+        org.name_org as name_org_occ,
+        case when exlist.pk_pdapdt is not null then '1' else '0' end as flag_ap,
+        case when exlist.pk_pdback is not null then '1' else '0' end as flag_back,
+        case when dt.flag_de = '1' then '1' else '0' end as flag_de,
+        exlist.flag_self,
+        exlist.flag_base,
+        exlist.flag_pivas,
+        ord.flag_durg,
+        ord.name_ord,
+        ord.date_start,
+        ord.flag_bl,
+        ord.infant_no,
+        ord.pk_cnord,
+        ord.code_ordtype,
+        ord.pk_ord,
+        ord.pk_pres,
+        ord.pk_org,
+        ord.pk_dept,
+        ord.pk_dept_exec,
+        ord.pk_dept_ns,
+        ord.pk_emp_ex,
+        ord.name_emp_ex,
+        ord.date_plan_ex,
+        exlist.pk_org_occ,
+        exlist.pack_size,
+        ord.code_supply,
+        ord.ordsn,
+        ord.flag_fit,
+        ord.desc_fit,
+        ord.note_ord,
+        ord.first_num,
+        ord.Last_num,
+        ord.pk_emp_ord,
+        ord.name_emp_ord,
+        ord.ordsn_parent,
+        ord.price_cg,
+        ord.groupno,
+        pd.flag_st,
+        freq.name as name_freq,
+        freq.cnt cnt_freq,
+        freq.eu_always as eu_always_freq,
+        supply.name as name_supply,
+        ord.eu_always,
+        ord.eu_st,
+        ord.dosage,
+        ord.spec,
+        ord.flag_medout,
+        unitDos.name as name_unit_dos,
+        ord.price_cg * round((ord.quan+0.49999),0) * nvl(ord.ords,1) as price,<!--通过该函数向上取整-->
+        ordtype.name as ordtype,
+        ris.eu_status as ris_eu_status,
+        case when ipdt.amountSum >0 then '已收费' else '未收费' end charging_status
+        from ex_order_occ exlist
+        inner join cn_order ord on ord.pk_cnord = exlist.pk_cnord
+        inner join pv_encounter pv on pv.pk_pv = exlist.pk_pv
+        left join bd_pd pd on pd.pk_pd = ord.pk_ord and pd.del_flag = '0'
+        left join bd_unit unit on unit.pk_unit = ord.pk_unit
+        left join bd_unit unitDos on unitDos.pk_unit = ord.pk_unit_dos
+        left join bd_ou_dept dept on dept.pk_dept = exlist.pk_dept_occ
+        left join bd_ou_org org on org.pk_org = exlist.pk_org_occ
+        left join bd_term_freq freq on freq.code = ord.code_freq
+        left join bd_supply supply on supply.code = ord.code_supply
+        left join bd_ordtype ordtype on ordtype.code = ord.code_ordtype and ordtype.del_flag = '0'
+        left join ex_pd_apply_detail dt on dt.pk_pdapdt = exlist.pk_pdapdt
+        left join cn_ris_apply ris on ord.pk_cnord = ris.pk_cnord
+        left join (select dt.PK_ORDEXDT,sum(AMOUNT) amountSum  from bl_ip_dt dt where 1=1
+        <if test="pkPvs != null  and  pkPvs != ''">
+            and dt.pk_pv in
+            <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+                #{pkpv}
+            </foreach>
+        </if>
+          group by  dt.PK_ORDEXDT) ipdt on ipdt.PK_ORDEXDT =exlist.PK_EXOCC
+        where ord.flag_durg='0' and ord.flag_erase='0'
+        and exlist.pk_dept_occ!=ord.pk_dept_ns
+        and dept.dt_depttype not in ('0302','0303')
+        and exlist.date_plan &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        and exlist.date_plan &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+            and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        <if test="pkDeptOcc != null  and  pkDeptOcc != ''">
+            and exlist.pk_dept_occ = #{pkDeptOcc,jdbcType=CHAR}
+        </if>
+        <if test='euStatus == "0"'><!-- 未执行查询 -->
+            and exlist.eu_status = #{euStatus,jdbcType=CHAR}
+        </if>
+        <if test='euStatus == "1"'><!-- 已执行查询 -->
+            and exlist.eu_status = #{euStatus,jdbcType=CHAR}
+            and exists (select 1 from bl_ip_dt cg where exlist.pk_exocc = cg.pk_ordexdt
+             and cg.quan>0)
+        </if>
+        <if test='euStatus == "2"'><!-- 全部查询 -->
+            and (exlist.eu_status = '0' or
+            (exlist.eu_status = '1' and exists (select 1 from bl_ip_dt cg where exlist.pk_exocc = cg.pk_ordexdt
+             and cg.quan>0))) 
+        </if>
+        <if test="pkPvs != null  and  pkPvs != ''">
+            and pv.pk_pv in
+            <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+                #{pkpv}
+            </foreach>
+        </if>
+        order by pv.bed_no,ord.ordsn_parent,exlist.date_plan,ord.ordsn
+    </select>
+
+
+    <!-- 根据父医嘱号查询对应子医嘱执行单 -->
+    <select id="queryExecListByParent" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.pub.vo.ExlistPubVo">
+        select pv.pk_pv,
+        pv.bed_no,
+        pv.name_pi,
+        pv.pk_pi,
+        pv.eu_pvtype ,
+        pv.pk_dept as pk_dept_pv,
+        exlist.pk_exocc,
+        exlist.date_plan,
+        exlist.date_occ,
+        exlist.quan_occ,
+        exlist.name_emp_occ,
+        exlist.name_emp_occ2,
+        exlist.pk_emp_occ,
+        exlist.pk_emp_occ2,
+        exlist.pk_unit,
+        exlist.eu_status,
+        unit.name as name_unit,
+        dept.name_dept as name_dept_occ,
+        org.name_org as name_org_occ,
+        case when exlist.pk_pdapdt is not null then '1' else '0' end as flag_ap,
+        case when exlist.pk_pdback is not null then '1' else '0' end as flag_back,
+        case when dt.flag_de = '1' then '1' else '0' end as flag_de,
+        exlist.flag_self,
+        exlist.flag_base,
+        exlist.flag_pivas,
+        ord.flag_durg,
+        ord.name_ord,
+        ord.date_start,
+        ord.flag_bl,
+        ord.infant_no,
+        ord.pk_cnord,
+        ord.code_ordtype,
+        ord.pk_ord,
+        ord.pk_pres,
+        ord.pk_org,
+        ord.pk_dept,
+        ord.pk_dept_exec,
+        ord.pk_dept_ns,
+        ord.pk_emp_ex,
+        ord.name_emp_ex,
+        ord.date_plan_ex,
+        exlist.pk_org_occ,
+        exlist.pack_size,
+        ord.code_supply,
+        ord.ordsn,
+        ord.flag_fit,
+        ord.desc_fit,
+        ord.note_ord,
+        ord.first_num,
+        ord.Last_num,
+        ord.pk_emp_ord,
+        ord.name_emp_ord,
+        ord.ordsn_parent,
+        ord.price_cg,
+        ord.groupno,
+        pd.flag_st,
+        freq.name as name_freq,
+        freq.cnt cnt_freq,
+        freq.eu_always as eu_always_freq,
+        supply.name as name_supply,
+        ord.eu_always,
+        ord.eu_st,
+        ord.dosage,
+        ord.spec,
+        ord.flag_medout,
+        unitDos.name as name_unit_dos,
+        ord.price_cg * round((ord.quan+0.49999),0) * nvl(ord.ords,1) as price,<!--通过该函数向上取整-->
+        ordtype.name as ordtype
+        from ex_order_occ exlist
+        inner join cn_order ord on ord.pk_cnord = exlist.pk_cnord
+        inner join pv_encounter pv on pv.pk_pv = exlist.pk_pv
+        left join bd_pd pd on pd.pk_pd = ord.pk_ord and pd.del_flag = '0'
+        left join bd_unit unit on unit.pk_unit = exlist.pk_unit
+        left join bd_unit unitDos on unitDos.pk_unit = ord.pk_unit_dos
+        left join bd_ou_dept dept on dept.pk_dept = exlist.pk_dept_occ
+        left join bd_ou_org org on org.pk_org = exlist.pk_org_occ
+        left join bd_term_freq freq on freq.code = ord.code_freq
+        left join bd_supply supply on supply.code = ord.code_supply
+        left join bd_ordtype ordtype on ordtype.code = ord.code_ordtype and ordtype.del_flag = '0'
+        left join ex_pd_apply_detail dt on dt.pk_pdapdt = exlist.pk_pdapdt
+        left join cn_prescription pre on pre.pk_pres = ord.pk_pres
+        where ord.ordsn != ord.ordsn_parent and ord.code_ordtype  not like '01%'
+        and exlist.date_plan &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        and exlist.date_plan &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        <!-- 转科患者 去掉此条件 博爱-日常工作-取消执行-转科 -->
+        <if test="isDeptChange == null  and  isDeptChange == ''">
+            and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        <if test="euAlways != null  and  euAlways != ''">
+            and ord.eu_always = #{euAlways,jdbcType=CHAR}
+        </if>
+        <!-- 如果是执行确认，添加执行确认条件  -->
+        <if test="confirmFlag != null  and  confirmFlag != ''">
+            and (supply.flag_st = '0' or supply.flag_st is null ) and ord.code_ordtype!='0502'
+            <if test='euStatus == "0"'><!-- 未执行查询 -->
+                and exlist.eu_status = #{euStatus,jdbcType=CHAR}
+                and ((exlist.pk_dept_occ = #{pkDeptNs,jdbcType=CHAR} and (ord.flag_durg = '0' or ord.flag_durg is null))
+                or
+                (ord.flag_durg = '1' and
+                ((exists (select 1 from ex_pd_apply_detail detail where detail.pk_pdapdt = exlist.pk_pdapdt and
+                detail.flag_de = '1' and detail.flag_finish = '1')) or exlist.flag_self = '1' or
+                exlist.flag_base = '1' or ord.flag_note = '1' )))
+                <!--   and
+                 ((exists (select 1 from ex_pd_apply_detail detail where detail.pk_pdapdt = exlist.pk_pdapdt and detail.flag_de = '1' and detail.flag_finish = '1'))  or exlist.flag_self = '1' or
+                  exlist.flag_base = '1'))) -->
+                and (exlist.pk_pdback is null or exlist.pk_pdback='')
+            </if>
+            <if test='euStatus == "1"'><!-- 已执行查询 -->
+                and exlist.eu_status = #{euStatus,jdbcType=CHAR}
+                and ((exlist.pk_dept_occ = #{pkDeptNs,jdbcType=CHAR} and (ord.flag_durg = '0' or ord.flag_durg is null))
+                or ord.flag_durg='1')
+            </if>
+            <if test='euStatus == "2"'><!-- 全部查询 -->
+                and ((exlist.pk_dept_occ = #{pkDeptNs,jdbcType=CHAR} and (ord.flag_durg = '0' or ord.flag_durg is null))
+                or
+                (ord.flag_durg = '1' and
+                ((exists (select 1 from ex_pd_apply_detail detail where detail.pk_pdapdt = exlist.pk_pdapdt and
+                detail.flag_de = '1' and detail.flag_finish = '1')) or exlist.flag_self = '1' or
+                exlist.flag_base = '1' or ord.flag_note = '1' )))
+            </if>
+            <if test="ordtypesql != null and ordtypesql != ''">
+                and ${ordtypesql}
+            </if>
+            <if test='flagZE == "1"'><!-- 通用执行【中二】添加非输血过滤 以及 血制品的药品 -->
+                and ord.code_ordtype != '12' and (pd.dt_pharm is null or pd.dt_pharm &lt;&gt; '012003' or
+                pd.flag_ped='0')
+            </if>
+        </if>
+        <if test="pkPvs != null  and  pkPvs != ''">
+            and pv.pk_pv in
+            <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+                #{pkpv}
+            </foreach>
+        </if>
+        <if test="ordsnParents != null  and  ordsnParents.size > 0 ">
+            and ord.ordsn_parent in
+            <!-- 处理in的集合超过1000条时Oracle不支持的情况 -->
+            <trim suffixOverrides=" or ord.ordsn_parent in()">	<!-- 表示删除最后一个条件 -->
+                <foreach collection="ordsnParents" item="ordsnParent" index="index" open="(" close=")">
+                    <if test="index != 0">
+                        <choose>
+                            <when test="index % 1000 == 999">) or ord.ordsn_parent in (</when>
+                            <otherwise>,</otherwise>
+                        </choose>
+                    </if>
+                    #{ordsnParent}
+                </foreach>
+            </trim>
+        </if>
+        order by pv.bed_no,ord.ordsn_parent,exlist.date_plan,ord.ordsn
+    </select>
+</mapper>

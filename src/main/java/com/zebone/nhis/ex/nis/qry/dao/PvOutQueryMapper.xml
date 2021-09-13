@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.qry.dao.PvOutQueryMapper">
+    <select id="queryPvOutList" parameterType="java.util.Map" resultType="DynaBean">
+        select
+                pi.code_pi,
+                pi.code_ip,
+                pi.name_pi,
+        <if test="dataBaseType == 'sqlserver'">
+            pi.p_car_code,
+            pi.insur_no,
+        </if>
+        pv.pk_pv,
+        pv.pk_pi,
+        pv.bed_no,
+        pv.age_pv     as                                              age,
+        case when pi.mobile is null then pi.tel_no else pi.mobile end tel_no,
+        pi.dt_sex,
+        pi.birth_date,
+        pi.ID_NO,
+        pv.pk_insu,
+        hp.name       as                                              namehp,
+        pv.code_pv,
+        pv.pk_dept,
+        pv.date_begin,
+        pv.date_end,
+        pv.name_emp_phy,
+        pv.eu_status                                                  eu_status_pv,
+        pvip.ip_times,
+        outtype.name                                                  outtype,
+        pd.NAME_DIAG,
+        deptns.code_dept                                              ward_no,
+        '${euStatus}' as                                              euStatus
+                from pv_encounter pv
+                             inner join pi_master pi on pi.pk_pi = pv.pk_pi
+                             inner join bd_hp hp on hp.pk_hp = pv.pk_insu
+                             inner join pv_ip pvip on pvip.pk_pv = pv.pk_pv
+                             inner join bd_ou_dept deptns on deptns.pk_dept = pv.pk_dept_ns
+                             left join PV_DIAG PD on PD.PK_PV = pv.PK_PV and pd.FLAG_MAJ = '1'
+                             left join bd_defdoc outtype
+                        on outtype.code = pvip.dt_outtype and outtype.code_defdoclist = '000105'
+                where  1 = 1
+        <if test='euStatus == "1"'>
+            and pv.eu_status = '1'
+            and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        <if test='euStatus == "0"'>
+            and pv.eu_pvtype = '3'
+            and exists(select *
+                       from pv_adt adt
+                       where pv.pk_pv = adt.pk_pv
+                        <if test="dateRtnBegin != null  and dateRtnBegin != ''">
+                            and adt.date_end &gt;= to_date(#{dateRtnBegin}, 'YYYYMMDDHH24MISS')
+                        </if>
+                        <if test="dateRtnEnd != null  and dateRtnEnd != ''">
+                            and adt.date_end &lt;= to_date(#{dateRtnEnd}, 'YYYYMMDDHH24MISS')
+                        </if>
+                         and adt.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+                         and (adt.flag_dis = '0' or adt.flag_dis is null)
+                         and adt.date_end is not null)
+        </if>
+        <if test='euStatus == "9"'>
+            and pv.flag_in = '0'
+            and pv.eu_pvtype = '3'
+             and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+            and exists(
+                    select * from pv_adt adt where pv.pk_pv = adt.pk_pv and adt.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR})
+        </if>
+        <if test="dateEnd != null  and dateEnd != ''">
+            and pv.date_end &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateBegin != null  and dateBegin != ''">
+            and pv.date_end &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateEndIn != null  and dateEndIn != ''">
+            and pv.date_begin &lt;= to_date(#{dateEndIn}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateBeginIn != null  and dateBeginIn != ''">
+            and pv.date_begin &gt;= to_date(#{dateBeginIn}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="codeIp != null  and codeIp != ''">
+            and pi.code_ip like '%${codeIp}%'
+        </if>
+
+        <if test="namePi != null  and namePi != ''">
+            and pv.name_pi like '%${namePi}%'
+        </if>
+        <if test="pkDept != null  and pkDept != ''">
+            and pv.pk_dept = #{pkDept,jdbcType=CHAR}
+        </if>
+        <if test="pkPv != null  and pkPv != ''">
+            and pv.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        order by pv.date_end desc, pi.code_ip, pvip.ip_times
+    </select>
+</mapper>

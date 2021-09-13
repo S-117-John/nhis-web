@@ -1,0 +1,638 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.qry.dao.OrderQueryMapper">
+
+   <select id="queryOrdByCon" parameterType="java.util.Map" resultType="DynaBean">
+   	select a.* from  (select ord.pk_cnord, 
+		       ord.name_ord, 
+		       ord.spec,
+		       ord.eu_always,
+		       ord.date_enter,
+		       ord.name_emp_ex,
+		       ord.date_plan_ex,
+		       freq.name namefreq,
+		       ord.date_start,
+		       ord.eu_status_ord,
+		       ord.flag_first,
+		       ord.first_num,
+		       ord.flag_base,
+		       ord.flag_medout,
+		       ord.flag_emer,
+		       ord.last_num,
+		       ord.days,
+		       ord.code_ordtype,
+		       ord.code_apply,
+		       ord.dosage,
+		       ord.groupno,
+		       ord.pk_ord,
+		       ord.pk_dept,
+		       ord.flag_pivas,
+		       ord.price_cg,
+		       ord.date_sign,
+		       ord.name_emp_ord,
+		       ord.date_chk,
+		       ord.name_emp_chk,
+		       ord.date_stop,
+		       ord.name_emp_stop,
+		       ord.date_stop_chk,
+		       ord.name_emp_stop_chk,
+		       ord.date_erase,
+		       ord.name_emp_erase,
+		       ord.date_erase_chk,
+		       ord.name_erase_chk,
+		       ord.eu_st,
+		       ord.note_supply,
+		       unitDos.name nameDosunit,
+		       supply.name namesupply,
+		       ord.flag_self,
+		       ord.quan,
+		       ord.pack_size,
+		       '' as sign,
+		       unit.name nameUnit,
+		       dept.name_dept nameDeptEx,
+		       deptOp.name_dept nameDept,
+		       deptOpNs.name_dept name_dept_ns,
+		       ord.pk_dept_exec,
+		       ord.infant_no,
+		       ord.flag_durg,
+		       ord.ordsn,
+		       ord.ordsn_parent,
+		       ord.flag_doctor,
+		       ord.note_ord,
+		       ord.flag_bl,
+		       ord.flag_fit,
+		       pres.eu_boil,
+			   ord.pk_pv,
+			   ord.CODE_ORD,
+		       ordtype.name ordtype,
+		       lab.samp_no,
+	           def.name AS lab_name,
+	           ord.quan_cg,
+	           unitCg.NAME nameUnitCg
+			  from cn_order ord
+			  left join bd_term_freq freq on freq.code = ord.code_freq and freq.del_flag = '0'
+			  left join bd_supply supply on supply.code = ord.code_supply and supply.del_flag = '0'
+			  left join bd_unit unitDos on unitDos.pk_unit = ord.pk_unit_dos and unitDos.del_flag = '0'
+			  left join bd_unit unit on unit.pk_unit = ord.pk_unit and unit.del_flag = '0'
+	          left join bd_unit unitCg on unitCg.pk_unit = ord.pk_unit_cg and unitCg.del_flag = '0'
+	          left join bd_ou_dept dept on dept.pk_dept = ord.pk_dept_exec and dept.del_flag = '0'
+			  left join bd_ou_dept deptOp on deptOp.pk_dept = ord.pk_dept and deptOp.del_flag = '0'
+			  left join bd_ou_dept deptOpNs on deptOpNs.pk_dept = ord.pk_dept_ns and deptOpNs.del_flag = '0'
+			  left join bd_ord_org ordinfo on ordinfo.pk_ord = ord.pk_ord and ordinfo.pk_org = ord.pk_org and ord.flag_durg ='0' and ordinfo.DEL_FLAG = '1'
+			  left join bd_pd pd on pd.pk_pd = ord.pk_ord and ord.flag_durg ='1' 
+			  left join bd_ordtype ordtype on ordtype.code = ord.code_ordtype and ordtype.del_flag = '0' 
+			  left join cn_prescription pres on pres.pk_pres = ord.pk_pres and pres.del_flag = '0'
+	   		  left join cn_lab_apply lab on lab.pk_cnord = ord.pk_cnord and lab.del_flag = '0'
+	          left join BD_DEFDOC def on def.code = lab.dt_samptype and def.del_flag = '0' and def.code_defdoclist = '030200'
+	   		  LEFT JOIN BD_ORD srv ON srv.pk_ord = ord.pk_ord AND srv.del_flag = '0'
+	          left join pv_encounter cnt  on cnt.pk_pv=ord.pk_pv  and cnt.pk_pi=ord.pk_pi  and cnt.flag_in='1'
+	          where ord.pk_pv = #{pkPv,jdbcType=CHAR}
+			  <if test='ordtype == "1" '>
+				   and  ((ord.eu_always='0' and ord.flag_stop_chk='0') or ( ord.eu_always='1')) and (ord.flag_erase='0')
+			  </if>
+			   <if test='ordtype == "2" '><!-- 当天医嘱 -->
+				   and ( cnt.date_admit between to_date(#{curDateBegin},'YYYYMMDDHH24MISS') and to_date(#{curDateEnd},'YYYYMMDDHH24MISS'))
+			  </if>
+			   <if test='ordtype == "3" '><!-- 3日内医嘱 -->
+				   and ( cnt.date_admit between (to_date(#{curDateBegin},'YYYYMMDDHH24MISS'))-2 and (to_date(#{curDateEnd},'YYYYMMDDHH24MISS')) )
+			  </if>
+			   <if test='ordtype == "4" '><!-- 10日内医嘱 -->
+				   and ( cnt.date_admit between (to_date(#{curDateBegin},'YYYYMMDDHH24MISS'))-9 and (to_date(#{curDateEnd},'YYYYMMDDHH24MISS')) )
+			  </if>
+			  <if test='ordtype == "5" '><!-- 当日停止 -->
+				   and ( cnt.date_admit between to_date(#{curDateBegin},'YYYYMMDDHH24MISS') and to_date(#{curDateEnd},'YYYYMMDDHH24MISS'))
+			  </if> 
+			  <if test='ordtype == "9" '><!-- 当前医嘱 没作废 and  (  当天开立|当天开始 or （长期医嘱并且没有停止核对的） ) -->
+				   and  ord.flag_erase = '0' 
+				   and ( (ord.date_enter between to_date(#{curDateBegin},'YYYYMMDDHH24MISS') and to_date(#{curDateEnd},'YYYYMMDDHH24MISS'))
+				      or (ord.date_start between to_date(#{curDateBegin},'YYYYMMDDHH24MISS') and to_date(#{curDateEnd},'YYYYMMDDHH24MISS'))
+				      or ( ord.date_stop between to_date(#{curDateBegin},'YYYYMMDDHH24MISS') and to_date(#{curDateEnd},'YYYYMMDDHH24MISS'))
+				      or (ord.eu_always = '0' and ord.flag_stop_chk = '0'))
+			  </if> 
+			  <if test="euAlways != null  and  euAlways != ''">
+				   and ord.eu_always = #{euAlways,jdbcType=VARCHAR}
+			  </if>
+			  <if test="durgType != null  and  durgType != ''">
+				   and ord.flag_durg = #{durgType,jdbcType=VARCHAR}
+			  </if>
+			  <if test="ordsn != null  and  ordsn != ''"><!-- 医嘱号、父医嘱号、医嘱序号 -->
+			   and (ord.ordsn like '%${ordsn}%' or ord.ordsn_parent like '%${ordsn}%' or ord.groupno like '%${ordsn}%')
+			 </if>
+			  <if test="codeOrdtype != null  and  codeOrdtype != ''">
+				   and ord.code_ordtype like  #{codeOrdtype,jdbcType=VARCHAR} || '%'
+			  </if>
+			  <if test="nameOrd != null  and  nameOrd != ''">
+			  and ( (ord.flag_durg = '0' and  (ord.name_ord like '%${nameOrd}%' or  ordinfo.spcode like '%${nameOrd}%' or ordinfo.d_code like '%${nameOrd}%' or srv.spcode like '%${nameOrd}%' or srv.name like '%${nameOrd}%') )
+			    or ( ord.flag_durg = '1' and (ord.name_ord like '%${nameOrd}%' or  pd.spcode like '%${nameOrd}%')))
+			 </if>
+			 <if test="infantNo != null  and  infantNo != ''"><!-- 婴儿序号 -->
+				   and ord.infant_no = #{infantNo,jdbcType=VARCHAR}
+			 </if>
+			 <if test="pkDept != null  and  pkDept != ''">
+				   and ord.pk_dept = #{pkDept,jdbcType=CHAR}
+			  </if>
+			  <if test="pkDeptNs != null  and  pkDeptNs != ''">
+				   and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+			  </if>       
+			  <if test='flagDoc != null  and  flagDoc != "" and  flagDoc != "9" '><!-- 医嘱/护嘱 -->
+				   and ord.flag_doctor = #{flagDoc,jdbcType=VARCHAR}
+			  </if>
+		      <if test="euStatus!=null">
+			       and ord.eu_status_ord in 
+			       <foreach collection="euStatus" index="index" item="stu" open="(" separator="," close=")">
+			         #{stu} 
+			       </foreach>
+			  </if> 
+			  <if test="dateEnd != null  and  dateEnd != ''">
+				   and cnt.date_admit &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+			  </if>
+			  <if test="dateBegin != null  and  dateBegin != ''">
+				   and cnt.date_admit &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+			  </if>  
+			 and ord.del_flag = '0'
+	   union all 
+			select ord.pk_cnord, 
+		       ord.name_ord, 
+		       ord.spec,
+		       ord.eu_always,
+		       ord.date_enter,
+		       ord.name_emp_ex,
+		       ord.date_plan_ex,
+		       freq.name namefreq,
+		       ord.date_start,
+		       ord.eu_status_ord,
+		       ord.flag_first,
+		       ord.first_num,
+		       ord.flag_base,
+		       ord.flag_medout,
+		       ord.flag_emer,
+		       ord.last_num,
+		       ord.days,
+		       ord.code_ordtype,
+		       ord.code_apply,
+		       ord.dosage,
+		       ord.groupno,
+		       ord.pk_ord,
+		       ord.pk_dept,
+		       ord.flag_pivas,
+		       ord.price_cg,
+		       ord.date_sign,
+		       ord.name_emp_ord,
+		       ord.date_chk,
+		       ord.name_emp_chk,
+		       ord.date_stop,
+		       ord.name_emp_stop,
+		       ord.date_stop_chk,
+		       ord.name_emp_stop_chk,
+		       ord.date_erase,
+		       ord.name_emp_erase,
+		       ord.date_erase_chk,
+		       ord.name_erase_chk,
+		       ord.eu_st,
+	   		   ord.note_supply,
+		       unitDos.name nameDosunit,
+		       supply.name namesupply,
+		       ord.flag_self,
+		       ord.quan,
+		       ord.pack_size,
+		       '' as sign,
+		       unit.name nameUnit,
+		       dept.name_dept nameDeptEx,
+		       deptOp.name_dept nameDept,
+		       deptOpNs.name_dept name_dept_ns,
+		       ord.pk_dept_exec,
+		       ord.infant_no,
+		       ord.flag_durg,
+		       ord.ordsn,
+		       ord.ordsn_parent,
+		       ord.flag_doctor,
+		       ord.note_ord,
+		       ord.flag_bl,
+		       ord.flag_fit,
+		       pres.eu_boil,
+			   ord.pk_pv,
+	   		   ord.CODE_ORD,
+		       ordtype.name ordtype,
+	   		   lab.samp_no,
+	           def.name AS lab_name,
+	           ord.quan_cg,
+	           unitCg.NAME nameUnitCg
+			  from cn_order_b ord
+			  left join bd_term_freq freq on freq.code = ord.code_freq and freq.del_flag = '0'
+			  left join bd_supply supply on supply.code = ord.code_supply and supply.del_flag = '0'
+			  left join bd_unit unitDos on unitDos.pk_unit = ord.pk_unit_dos and unitDos.del_flag = '0'
+			  left join bd_unit unit on unit.pk_unit = ord.pk_unit and unit.del_flag = '0'
+	          left join bd_unit unitCg on unitCg.pk_unit = ord.pk_unit_cg and unitCg.del_flag = '0'
+	          left join bd_ou_dept dept on dept.pk_dept = ord.pk_dept_exec and dept.del_flag = '0'
+			  left join bd_ou_dept deptOp on deptOp.pk_dept = ord.pk_dept and deptOp.del_flag = '0'
+			  left join bd_ou_dept deptOpNs on deptOpNs.pk_dept = ord.pk_dept_ns and deptOpNs.del_flag = '0'
+			  left join bd_ord_org ordinfo on ordinfo.pk_ord = ord.pk_ord and ordinfo.pk_org = ord.pk_org and ord.flag_durg ='0' and ordinfo.DEL_FLAG = '1'
+			  left join bd_pd pd on pd.pk_pd = ord.pk_ord and ord.flag_durg ='1' 
+			  left join bd_ordtype ordtype on ordtype.code = ord.code_ordtype and ordtype.del_flag = '0' 
+			  left join cn_prescription pres on pres.pk_pres = ord.pk_pres and pres.del_flag = '0'
+	   		  left join cn_lab_apply lab on lab.pk_cnord = ord.pk_cnord and lab.del_flag = '0'
+	          left join BD_DEFDOC def on def.code = lab.dt_samptype and def.del_flag = '0' and def.code_defdoclist = '030200'
+	   		  LEFT JOIN BD_ORD srv ON srv.pk_ord = ord.pk_ord AND srv.del_flag = '0'
+	          left join pv_encounter cnt  on cnt.pk_pv=ord.pk_pv  and cnt.pk_pi=ord.pk_pi  and cnt.flag_in='1'
+	          where ord.pk_pv = #{pkPv,jdbcType=CHAR}
+			  <if test='ordtype == "1" '>
+				   and  ((ord.eu_always='0' and ord.flag_stop_chk='0') or ( ord.eu_always='1')) and (ord.flag_erase='0')
+			  </if>
+			   <if test='ordtype == "2" '><!-- 当天医嘱 -->
+				   and ( cnt.date_admit between to_date(#{curDateBegin},'YYYYMMDDHH24MISS') and to_date(#{curDateEnd},'YYYYMMDDHH24MISS'))
+			  </if>
+			   <if test='ordtype == "3" '><!-- 3日内医嘱 -->
+				   and ( cnt.date_admit between (to_date(#{curDateBegin},'YYYYMMDDHH24MISS'))-2 and (to_date(#{curDateEnd},'YYYYMMDDHH24MISS')) )
+			  </if>
+			   <if test='ordtype == "4" '><!-- 10日内医嘱 -->
+				   and ( cnt.date_admit between (to_date(#{curDateBegin},'YYYYMMDDHH24MISS'))-9 and (to_date(#{curDateEnd},'YYYYMMDDHH24MISS')) )
+			  </if>
+			  <if test='ordtype == "5" '><!-- 当日停止 -->
+				   and ( cnt.date_admit between to_date(#{curDateBegin},'YYYYMMDDHH24MISS') and to_date(#{curDateEnd},'YYYYMMDDHH24MISS'))
+			  </if> 
+			  <if test='ordtype == "9" '><!-- 当前医嘱 没作废 and  (  当天开立|当天开始 or （长期医嘱并且没有停止核对的） ) -->
+				   and  ord.flag_erase = '0' 
+				   and ( (ord.date_enter between to_date(#{curDateBegin},'YYYYMMDDHH24MISS') and to_date(#{curDateEnd},'YYYYMMDDHH24MISS'))
+				      or (ord.date_start between to_date(#{curDateBegin},'YYYYMMDDHH24MISS') and to_date(#{curDateEnd},'YYYYMMDDHH24MISS'))
+				      or ( ord.date_stop between to_date(#{curDateBegin},'YYYYMMDDHH24MISS') and to_date(#{curDateEnd},'YYYYMMDDHH24MISS'))
+				      or (ord.eu_always = '0' and ord.flag_stop_chk = '0'))
+			  </if> 
+			  <if test="euAlways != null  and  euAlways != ''">
+				   and ord.eu_always = #{euAlways,jdbcType=VARCHAR}
+			  </if>
+			  <if test="durgType != null  and  durgType != ''">
+				   and ord.flag_durg = #{durgType,jdbcType=VARCHAR}
+			  </if>
+			  <if test="ordsn != null  and  ordsn != ''"><!-- 医嘱号、父医嘱号、医嘱序号 -->
+			   and (ord.ordsn like '%${ordsn}%' or ord.ordsn_parent like '%${ordsn}%' or ord.groupno like '%${ordsn}%')
+			 </if>
+			  <if test="codeOrdtype != null  and  codeOrdtype != ''">
+				   and ord.code_ordtype like '%' || #{codeOrdtype,jdbcType=VARCHAR} || '%'
+			  </if>
+			  <if test="nameOrd != null  and  nameOrd != ''">
+			  and ( (ord.flag_durg = '0' and  (ord.name_ord like '%${nameOrd}%' or  ordinfo.spcode like '%${nameOrd}%' or ordinfo.d_code like '%${nameOrd}%' or srv.spcode like '%${nameOrd}%' or srv.name like '%${nameOrd}%') )
+			    or ( ord.flag_durg = '1' and (ord.name_ord like '%${nameOrd}%' or  pd.spcode like '%${nameOrd}%')))
+			 </if>
+			 <if test="infantNo != null  and  infantNo != ''"><!-- 婴儿序号 -->
+				   and ord.infant_no = #{infantNo,jdbcType=VARCHAR}
+			 </if>
+			 <if test="pkDept != null  and  pkDept != ''">
+				   and ord.pk_dept = #{pkDept,jdbcType=CHAR}
+			  </if>
+			  <if test="pkDeptNs != null  and  pkDeptNs != ''">
+				   and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+			  </if>       
+			  <if test='flagDoc != null  and  flagDoc != "" and  flagDoc != "9" '><!-- 医嘱/护嘱 -->
+				   and ord.flag_doctor = #{flagDoc,jdbcType=VARCHAR}
+			  </if>
+		      <if test="euStatus!=null">
+			       and ord.eu_status_ord in 
+			       <foreach collection="euStatus" index="index" item="stu" open="(" separator="," close=")">
+			         #{stu} 
+			       </foreach>
+			  </if> 
+			  <if test="dateEnd != null  and  dateEnd != ''">
+				   and cnt.date_admit &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+			  </if>
+			  <if test="dateBegin != null  and  dateBegin != ''">
+				   and cnt.date_admit &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+			  </if>  
+			 and ord.del_flag = '0'
+		) a
+		order by pk_pv, date_start,nvl(groupno,0), ordsn_parent,ordsn 
+	<!-- select ord.pk_cnord, 
+       ord.name_ord, 
+       ord.spec,
+       ord.eu_always,
+       ord.date_enter,
+       ord.name_emp_ex,
+       ord.date_plan_ex,
+       freq.name namefreq,
+       ord.date_start,
+       ord.eu_status_ord,
+       ord.flag_first,
+       ord.first_num,
+       ord.flag_base,
+       ord.flag_medout,
+       ord.flag_emer,
+       ord.last_num,
+       ord.days,
+       ord.code_ordtype,
+       ord.code_apply,
+       ord.dosage,
+       ord.groupno,
+       ord.pk_ord,
+       ord.pk_dept,
+       ord.flag_pivas,
+       ord.price_cg,
+       ord.date_sign,
+       ord.name_emp_ord,
+       ord.date_chk,
+       ord.name_emp_chk,
+       ord.date_stop,
+       ord.name_emp_stop,
+       ord.date_stop_chk,
+       ord.name_emp_stop_chk,
+       ord.date_erase,
+       ord.name_emp_erase,
+       ord.date_erase_chk,
+       ord.name_erase_chk,
+       ord.eu_st,
+       unitDos.name nameDosunit,
+       supply.name namesupply,
+       ord.flag_self,
+       ord.quan,
+       ord.pack_size,
+       '' as sign,
+       unit.name nameUnit,
+       dept.name_dept nameDeptEx,
+       deptOp.name_dept nameDept,
+       deptOpNs.name_dept name_dept_ns,
+       ord.pk_dept_exec,
+       ord.infant_no,
+       ord.flag_durg,
+       ord.ordsn,
+       ord.ordsn_parent,
+       ord.flag_doctor,
+       ord.note_ord,
+       ord.flag_bl,
+       pres.eu_boil,
+       ordtype.name ordtype
+	  from cn_order ord
+	  left join bd_term_freq freq on freq.code = ord.code_freq and freq.del_flag = '0'
+	  left join bd_supply supply on supply.code = ord.code_supply and supply.del_flag = '0'
+	  left join bd_unit unitDos on unitDos.pk_unit = ord.pk_unit_dos and unitDos.del_flag = '0'
+	  left join bd_unit unit on unit.pk_unit = ord.pk_unit and unit.del_flag = '0'
+	  left join bd_ou_dept dept on dept.pk_dept = ord.pk_dept_exec and dept.del_flag = '0'
+	  left join bd_ou_dept deptOp on deptOp.pk_dept = ord.pk_dept and deptOp.del_flag = '0'
+	  left join bd_ou_dept deptOpNs on deptOpNs.pk_dept = ord.pk_dept_ns and deptOpNs.del_flag = '0'
+	  left join bd_ord_org ordinfo on ordinfo.pk_ord = ord.pk_ord and ordinfo.pk_org = ord.pk_org and ord.flag_durg ='0' and ordinfo.DEL_FLAG = '1'
+	  left join bd_pd pd on pd.pk_pd = ord.pk_ord and ord.flag_durg ='1' 
+	  left join bd_ordtype ordtype on ordtype.code = ord.code_ordtype and ordtype.del_flag = '0' 
+	  left join cn_prescription pres on pres.pk_pres = ord.pk_pres and pres.del_flag = '0'
+	 where ord.pk_pv = #{pkPv,jdbcType=CHAR}
+	  <if test='ordtype == "1" '>
+		   and  ((ord.eu_always='0' and ord.flag_stop_chk='0') or ( ord.eu_always='1')) and (ord.flag_erase='0')
+	  </if>
+	   <if test='ordtype == "2" '>当天医嘱
+		   and ( ord.date_start between to_date(#{curDateBegin},'YYYYMMDDHH24MISS') and to_date(#{curDateEnd},'YYYYMMDDHH24MISS'))
+	  </if>
+	   <if test='ordtype == "3" '>3日内医嘱
+		   and ( ord.date_start between (to_date(#{curDateBegin},'YYYYMMDDHH24MISS'))-2 and (to_date(#{curDateEnd},'YYYYMMDDHH24MISS')) )
+	  </if>
+	   <if test='ordtype == "4" '>10日内医嘱
+		   and ( ord.date_start between (to_date(#{curDateBegin},'YYYYMMDDHH24MISS'))-9 and (to_date(#{curDateEnd},'YYYYMMDDHH24MISS')) )
+	  </if>
+	  <if test='ordtype == "5" '>当日停止
+		   and ( ord.date_stop between to_date(#{curDateBegin},'YYYYMMDDHH24MISS') and to_date(#{curDateEnd},'YYYYMMDDHH24MISS'))
+	  </if> 
+	  <if test='ordtype == "9" '>当前医嘱 没作废 and  (  当天开立|当天开始 or （长期医嘱并且没有停止核对的） )
+		   and  ord.flag_erase = '0' 
+		   and ( (ord.date_enter between to_date(#{curDateBegin},'YYYYMMDDHH24MISS') and to_date(#{curDateEnd},'YYYYMMDDHH24MISS'))
+		      or (ord.date_start between to_date(#{curDateBegin},'YYYYMMDDHH24MISS') and to_date(#{curDateEnd},'YYYYMMDDHH24MISS'))
+		      or (ord.eu_always = '0' and ord.flag_stop_chk = '0'))
+	  </if> 
+	  <if test="euAlways != null  and  euAlways != ''">
+		   and ord.eu_always = #{euAlways,jdbcType=VARCHAR}
+	  </if>
+	  <if test="durgType != null  and  durgType != ''">
+		   and ord.flag_durg = #{durgType,jdbcType=VARCHAR}
+	  </if>
+	  <if test="ordsn != null  and  ordsn != ''">医嘱号、父医嘱号、医嘱序号
+	   and (ord.ordsn like '${ordsn}%' or ord.ordsn_parent like '${ordsn}%' or ord.groupno like '${ordsn}%')
+	 </if>
+	  <if test="codeOrdtype != null  and  codeOrdtype != ''">
+		   and ord.code_ordtype like #{codeOrdtype,jdbcType=VARCHAR} || '%'
+	  </if>
+	  <if test="nameOrd != null  and  nameOrd != ''">
+	  and ( (ord.flag_durg = '0' and  (ord.name_ord like '%${nameOrd}%' or  ordinfo.spcode like '${nameOrd}%' or ordinfo.d_code like '${nameOrd}%') ) 
+	    or ( ord.flag_durg = '1' and (ord.name_ord like '%${nameOrd}%' or  pd.spcode like '${nameOrd}%'))) 
+	 </if>
+	 <if test="infantNo != null  and  infantNo != ''">婴儿序号
+		   and ord.infant_no = #{infantNo,jdbcType=VARCHAR}
+	 </if>
+	 <if test="pkDept != null  and  pkDept != ''">
+		   and ord.pk_dept = #{pkDept,jdbcType=CHAR}
+	  </if>
+	  <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		   and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	  </if>       
+	  <if test='flagDoc != null  and  flagDoc != "" and  flagDoc != "9" '>医嘱/护嘱
+		   and ord.flag_doctor = #{flagDoc,jdbcType=VARCHAR}
+	  </if>
+      <if test="euStatus!=null">
+	       and ord.eu_status_ord in 
+	       <foreach collection="euStatus" index="index" item="stu" open="(" separator="," close=")">
+	         #{stu} 
+	       </foreach>
+	  </if> 
+	  <if test="dateEnd != null  and  dateEnd != ''">
+		   and ord.date_start &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS') 
+	  </if>
+	  <if test="dateBegin != null  and  dateBegin != ''">
+		   and ord.date_start &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')  
+	  </if>  
+	 and ord.del_flag = '0'
+	 order by ord.pk_pv, ord.date_start,nvl(ord.groupno,0), ord.ordsn_parent,ord.ordsn  -->
+   </select>
+  
+   <select id="queryOrdByCg" parameterType="java.util.Map" resultType="DynaBean">
+     select a.* from  (
+				select ord.name_ord,
+			  ord.date_start,
+			  ord.quan,
+			  unit.name nameunit,
+			  freq.name namefreq,
+			  supply.name namesupply  
+			  from cn_order ord
+			  left join bd_term_freq freq on freq.code = ord.code_freq 
+			  left join bd_unit unit on unit.pk_unit = ord.pk_unit
+			  left join bd_supply supply  on supply.code = ord.code_supply 
+			 where exists (select 1
+			          from bl_ip_dt cg
+			         where cg.pk_cnord = ord.pk_cnord
+			           and cg.pk_cgip = #{pkCgip,jdbcType=CHAR}) 
+		union all 
+				select ord.name_ord,
+			  ord.date_start,
+			  ord.quan,
+			  unit.name nameunit,
+			  freq.name namefreq,
+			  supply.name namesupply  
+			  from cn_order_b ord
+			  left join bd_term_freq freq on freq.code = ord.code_freq 
+			  left join bd_unit unit on unit.pk_unit = ord.pk_unit
+			  left join bd_supply supply  on supply.code = ord.code_supply 
+			 where exists (select 1
+			          from bl_ip_dt_b cg
+			         where cg.pk_cnord = ord.pk_cnord
+			           and cg.pk_cgip = #{pkCgip,jdbcType=CHAR})
+		) a 
+     <!-- select ord.name_ord,
+	  ord.date_start,
+	  ord.quan,
+	  unit.name nameunit,
+	  freq.name namefreq,
+	  supply.name namesupply  
+	  from cn_order ord
+	  left join bd_term_freq freq on freq.code = ord.code_freq 
+	  left join bd_unit unit on unit.pk_unit = ord.pk_unit
+	  left join bd_supply supply  on supply.code = ord.code_supply 
+	 where exists (select 1
+	          from bl_ip_dt cg
+	         where cg.pk_cnord = ord.pk_cnord
+	           and cg.pk_cgip = #{pkCgip,jdbcType=CHAR}) -->
+   
+   </select>
+   
+   <select id="queryOrdByDept" parameterType="java.util.Map" resultType="DynaBean">
+	select 
+	   pv.pk_pv,
+	   pi.code_ip,
+	   pv.bed_no,
+	   pv.name_pi,
+	   pv.age_pv,
+	   sex.name sex,
+	   pv.date_begin,
+	   dept.name_dept name_dept_pv,
+	   ord.pk_cnord, 
+       ord.name_ord, 
+       ord.eu_always,
+       freq.name namefreq,
+       ord.date_start,
+       ord.eu_status_ord,
+       ord.flag_first,
+       ord.last_num,
+       ord.first_num,
+       ord.code_ordtype,
+       ord.dosage,
+       unitDos.name nameDosunit,
+       supply.name namesupply,
+       ord.flag_self,
+       ord.quan,
+       '' as sign,
+       unit.name nameUnit,
+       deptEx.name_dept nameDeptEx,
+       deptAp.name_dept nameDeptAp,
+       deptNs.name_dept nameDeptNs,
+       ord.name_emp_ord,
+       ord.pk_dept_exec,
+       ord.infant_no,
+       ord.date_stop,
+       ord.ordsn,
+       ord.ordsn_parent,
+       ord.flag_doctor,
+       ord.note_ord 
+	  from cn_order ord
+	 inner join pv_encounter pv on pv.pk_pv = ord.pk_pv and pv.flag_in = '1' and pv.eu_status = '1'
+	 inner join pi_master pi on pi.pk_pi = pv.pk_pi
+	  left join bd_term_freq freq on freq.code = ord.code_freq
+	  left join bd_supply supply on supply.code = ord.code_supply
+	  left join bd_unit unitDos on unitDos.pk_unit = ord.pk_unit_dos 
+	  left join bd_unit unit on unit.pk_unit = ord.pk_unit
+	  left join bd_ou_dept deptEx on deptEx.pk_dept = ord.pk_dept_exec
+	  left join bd_ou_dept deptAp on deptAp.pk_dept = ord.pk_dept
+	  left join bd_ou_dept deptNs on deptNs.pk_dept = ord.pk_dept_ns
+	  left join bd_ord_org ordinfo on ordinfo.pk_ord = ord.pk_ord and ordinfo.pk_org = ord.pk_org and ord.flag_durg ='0'  
+	  left join bd_pd pd on pd.pk_pd = ord.pk_ord and ord.flag_durg ='1' 
+	  left join bd_defdoc sex on sex.code = pv.dt_sex and sex.code_defdoclist='000000' and sex.del_flag = '0'
+	  left join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+	 where 1 = 1
+	  <if test='ordtype == "1" '>
+		   and  ((ord.eu_always='0' and ord.flag_stop_chk='0') or ( ord.eu_always='1')) and (ord.flag_erase='0')
+	  </if>
+	   <if test='ordtype == "2" '><!-- 当天医嘱 -->
+		   and ( ord.date_start between to_date(#{curDateBegin},'YYYYMMDDHH24MISS') and to_date(#{curDateEnd},'YYYYMMDDHH24MISS'))
+	  </if>
+	   <if test='ordtype == "3" '><!-- 3日内医嘱 -->
+		   and ( ord.date_start between (to_date(#{curDateBegin},'YYYYMMDDHH24MISS'))-2 and (to_date(#{curDateEnd},'YYYYMMDDHH24MISS')) )
+	  </if>
+	   <if test='ordtype == "4" '><!-- 10日内医嘱 -->
+		   and ( ord.date_start between (to_date(#{curDateBegin},'YYYYMMDDHH24MISS'))-9 and (to_date(#{curDateEnd},'YYYYMMDDHH24MISS')) )
+	  </if>
+	  <if test="euAlways != null  and  euAlways != ''">
+		   and ord.eu_always = #{euAlways,jdbcType=VARCHAR}
+	  </if>
+	  <if test="durgType != null  and  durgType != ''">
+		   and ord.flag_durg = #{durgType,jdbcType=VARCHAR}
+	  </if>
+	 <if test="infantNo != null  and  infantNo != ''"><!-- 婴儿序号 -->
+		   and ord.infant_no = #{infantNo,jdbcType=VARCHAR}
+	 </if>
+	 <if test="pkDeptNsPv != null  and  pkDeptNsPv != ''"><!-- 就诊病区 -->
+		   and pv.pk_dept_ns = #{pkDeptNsPv,jdbcType=CHAR}
+	  </if>
+	 <if test="pkDept != null  and  pkDept != ''"><!-- 开立科室 -->
+		   and ord.pk_dept = #{pkDept,jdbcType=CHAR}
+	  </if>
+	  <if test="pkDeptNs != null  and  pkDeptNs != ''"><!-- 开立病区 -->
+		   and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	  </if>       
+	  <if test='flagDoc != null  and  flagDoc != "" and  flagDoc != "9" '><!-- 医嘱/护嘱 -->
+		   and ord.flag_doctor = #{flagDoc,jdbcType=VARCHAR}
+	  </if>
+	  <if test="dateEnd != null  and  dateEnd != ''"><!-- 结束时间 -->
+		   and ord.date_start &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+	  </if>
+	  <if test="dateBegin != null  and  dateBegin != ''"><!-- 开始时间 -->
+		   and ord.date_start &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')  
+	  </if>
+	  <if test="codeFreq!=null and codeFreq!=''"><!-- 频次 -->
+	       and ord.code_freq = #{codeFreq,jdbcType=VARCHAR} 
+	  </if>
+	  <if test="codeSupply!=null and codeSupply!=''"><!-- 用法 -->
+	       and ord.code_supply = #{codeSupply,jdbcType=VARCHAR}  
+	  </if>
+	  <if test="euStatus!=null"><!-- 医嘱状态 -->
+	       and ord.eu_status_ord in 
+	       <foreach collection="euStatus" index="index" item="stu" open="(" separator="," close=")">
+	         #{stu} 
+	       </foreach>
+	  </if> 
+	  <if test="ordsn != null  and  ordsn != ''"><!-- 医嘱号、父医嘱号、医嘱序号 -->
+	       and (ord.ordsn like '${ordsn}%' or ord.ordsn_parent like '${ordsn}%' or ord.groupno like '${ordsn}%')
+	 </if>
+	  <if test="nameOrds!=null"><!-- 名称模糊匹配，支持多个名称 -->
+	       and  
+	       <foreach collection="nameOrds" index="index" item="name" open="(" separator=" or " close=")">
+	         ord.name_ord like '%${name}%' 
+	       </foreach>
+	  </if> 
+	  <if test="spcodes!=null"><!-- 拼音码模糊匹配，支持多个拼音码 -->
+	       and ((ord.flag_durg = '0' and 
+	       <foreach collection="spcodes" index="index" item="spcode" open="(" separator=" or " close=")">
+	         ordinfo.spcode like '${spcode}%' or ordinfo.d_code like '${spcode}%' 
+	       </foreach>
+	       )
+	       or (ord.flag_durg = '1' and 
+	       <foreach collection="spcodes" index="index" item="spcode2" open="(" separator=" or " close=")">
+	         pd.spcode like '${spcode2}%' 
+	       </foreach>
+	       ))
+	  </if> 
+	 order by pv.bed_no,pv.pk_pv,ord.date_start,ord.ordsn_parent,ord.ordsn 
+   </select>
+   
+   <select id="queryPiInfoByPv" parameterType="java.util.Map" resultType="DynaBean">
+     select pv.pk_pv,
+     		pv.pk_pi,
+     		pv.date_begin,
+     		pv.date_end,
+     		pv.pk_dept,
+     		pv.name_pi,
+     		pv.pk_dept_ns,
+     		pi.code_ip,
+     		pv.bed_no,
+     		pv.age_pv,
+     		hp.name name_hp,
+     		sex.name sex,
+     		GETPVAGE(pi.BIRTH_DATE,pv.DATE_BEGIN) as age_format
+	   from pv_encounter pv
+	   left join pi_master pi on pi.pk_pi = pv.pk_pi
+	   left join bd_hp hp on hp.pk_hp = pv.pk_insu
+	   left join bd_defdoc sex on sex.code = pi.dt_sex and sex.code_defdoclist = '000000'
+	  where pv.del_flag = '0'
+	    and pv.pk_pv = #{pkPv,jdbcType=CHAR}
+   </select>
+
+</mapper>

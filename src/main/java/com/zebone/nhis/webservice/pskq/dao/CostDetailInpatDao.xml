@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.pskq.dao.CostDetailInpatDao">
+
+
+  <select id="billCode" parameterType="java.util.Map" resultType="DynaBean">
+
+select distinct bdaudit.code AS codeBill, '1' AS flagPd, 'acc' AS billType, item.pk_pd AS pkItem
+from bd_audit bdaudit
+         inner join bd_pd item on bdaudit.pk_audit = item.pk_audit
+where item.pk_pd = #{pkPd}
+  and bdaudit.del_flag = '0'
+  and item.del_flag = '0'
+union all
+select distinct bdaudit.code AS codeBill, '0' AS flagPd, 'acc' AS billType, item.pk_item
+from bd_audit bdaudit
+         inner join bd_item item on bdaudit.pk_audit = item.pk_audit
+where item.pk_item = #{pkItem}
+  and bdaudit.del_flag = '0'
+  and item.del_flag = '0'
+union all
+select distinct bdaudit.code as codeBill, '1' as flagPd, 'acc' as billType, item.PK_PD as pkItem
+from bd_audit bdaudit
+         inner join bd_audit_itemcate auditcateitem on bdaudit.pk_audit = auditcateitem.pk_audit
+         inner join bd_itemcate itemcate on itemcate.pk_itemcate = auditcateitem.pk_itemcate
+         inner join bd_pd item on itemcate.pk_itemcate = item.pk_itemcate
+where item.pk_pd = #{pkPd}
+  and bdaudit.del_flag = '0'
+  and auditcateitem.del_flag = '0'
+  and itemcate.del_flag = '0'
+  and item.del_flag = '0'
+union all
+select distinct bdaudit.code as codeBill, '0' as flagPd, 'acc' as billType, item.PK_ITEM
+from bd_audit bdaudit
+         inner join bd_audit_itemcate auditcateitem on bdaudit.pk_audit = auditcateitem.pk_audit
+         inner join bd_itemcate itemcate on itemcate.pk_itemcate = auditcateitem.pk_itemcate
+         inner join bd_item item on itemcate.pk_itemcate = item.pk_itemcate
+where item.pk_item = #{pkItem}
+  and bdaudit.del_flag = '0'
+  and auditcateitem.del_flag = '0'
+  and itemcate.del_flag = '0'
+  and item.del_flag = '0'
+union all
+select distinct invitem.code as codeBill, '1' as flagPd, 'bill' as billType, item.PK_PD as pkItem
+from bd_invcate_item invitem
+         inner join bd_invcate_itemcate cate on invitem.pk_invcateitem = cate.pk_invcateitem
+         inner join bd_invcate inv on invitem.pk_invcate = inv.pk_invcate
+         inner join bd_pd item on cate.pk_itemcate = item.pk_itemcate
+where item.pk_pd = #{pkPd}
+  and inv.eu_type = '1'
+  and invitem.del_flag = '0'
+  and invitem.pk_org = #{pkOrg}
+  and cate.del_flag = '0'
+  and inv.del_flag = '0'
+  and item.del_flag = '0'
+union all
+select distinct invitem.code as codeBill, '0' as flagPd, 'bill' as billType, item.PK_ITEM
+from bd_invcate_item invitem
+         inner join bd_invcate_itemcate cate on invitem.pk_invcateitem = cate.pk_invcateitem
+         inner join bd_invcate inv on invitem.pk_invcate = inv.pk_invcate
+         inner join bd_item item on cate.pk_itemcate = item.pk_itemcate
+where item.pk_item = #{pkItem}
+  and inv.eu_type = '1'
+  and invitem.del_flag = '0'
+  and invitem.pk_org = #{pkOrg}
+  and cate.del_flag = '0'
+  and inv.del_flag = '0'
+  and item.del_flag = '0'
+
+  </select>
+</mapper>

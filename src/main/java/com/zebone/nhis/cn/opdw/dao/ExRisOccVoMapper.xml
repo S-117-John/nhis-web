@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.opdw.dao.ExRisOccVoMapper">
+<select id="getExRisOccVo"  resultType="com.zebone.nhis.cn.opdw.vo.ExRisOccVo" parameterType="String">
+select e.pk_ord, e.date_rpt, e.pk_dept_occ ,o.name_ord from ex_ris_occ e,cn_order o
+where o.pk_ord=e.pk_ord and e.pk_pi = #{pkpi,jdbcType=VARCHAR} and e.del_flag = '0' and e.ts > (SELECT DATEADD(day, -5, GetDate()))
+
+</select>
+<select id="getExRisOccVoOracle"  resultType="com.zebone.nhis.cn.opdw.vo.ExRisOccVo" parameterType="String">
+select e.pk_ord, e.date_rpt, e.pk_dept_occ ,o.name_ord from ex_ris_occ e,cn_order o
+where o.pk_ord=e.pk_ord and e.pk_pi = #{pkpi,jdbcType=VARCHAR} and e.del_flag = '0' and e.ts > sysdate - 5
+
+</select>
+</mapper>

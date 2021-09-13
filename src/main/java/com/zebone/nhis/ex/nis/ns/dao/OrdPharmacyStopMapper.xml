@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.ns.dao.OrdPharmacyStopMapper">
+
+	<!-- 更新请领单明细 -->
+    <update id="ordStopUpdate" parameterType="com.zebone.nhis.ex.nis.ns.vo.OrdVo">
+        update ex_pd_apply_detail set eu_result=#{euResult,jdbcType=VARCHAR} 
+            , modity_time = to_date(#{dateOpe},'YYYYMMDDHH24MISS') 
+            , modifier = #{nameEmp,jdbcType=VARCHAR}
+        <if test="euResult=='1'.toString()">
+            , flag_stop='0'
+        </if>
+        where pk_pdapdt in (${pkPdapdts})
+    </update>
+    
+	<!-- 更新执行单：取消，清空请领明细 -->
+    <update id="updateExlist" parameterType="com.zebone.nhis.ex.nis.ns.vo.OrdVo">
+        update ex_order_occ set pk_pdapdt = null
+        <if test="flagCanc=='1'.toString()">
+             , eu_status = '9', flag_canc = '1'
+             , pk_emp_canc = #{pkEmp,jdbcType=VARCHAR}
+             , name_emp_canc = #{nameEmp,jdbcType=VARCHAR}
+             , date_canc = to_date(#{dateOpe},'YYYYMMDDHH24MISS')
+        </if>
+             , modity_time = to_date(#{dateOpe},'YYYYMMDDHH24MISS') 
+             , modifier = #{pkEmp,jdbcType=VARCHAR}
+        where pk_exocc in (${pkExoccs})
+    </update>
+    
+    <select id="ordQuery" parameterType="java.lang.String" resultType="DynaBean">
+        select apdt.pk_pdapdt,
+               pv.bed_no,
+               pv.name_pi,
+               pi.code_ip,
+               ord.date_start,
+               ord.ordsn,
+               ord.name_ord,
+               ord.spec,
+               ord.dosage,
+               udos.name		unit_dos,
+               ord.code_freq,
+               freq.name		name_freq,
+               sup.name			name_sup,
+               ord.flag_medout,
+               ord.days,
+               ord.ords,
+               ord.dt_herbusage,
+               ord.dt_usagenote,
+               ord.note_ord,
+               occ.date_plan,
+               occ.pk_exocc,
+               occ.quan_occ		quan_cg,
+               uocc.name		unit_cg,
+               apdt.reason_stop,
+               ap.date_ap,
+               ap.code_apply,
+               ord.eu_always
+         from ex_pd_apply_detail apdt
+        inner join ex_pd_apply ap on apdt.pk_pdap = ap.pk_pdap and ap.del_flag = '0'
+        inner join ex_order_occ occ on apdt.pk_pdapdt = occ.pk_pdapdt and occ.del_flag = '0'
+        inner join cn_order ord on occ.pk_cnord = ord.pk_cnord and ord.del_flag = '0'
+        inner join pv_encounter pv on occ.pk_pv = pv.pk_pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+         left join bd_unit udos on ord.pk_unit_dos = udos.pk_unit and udos.del_flag = '0'
+         left join bd_unit uocc on occ.pk_unit = uocc.pk_unit and uocc.del_flag = '0'
+         left join bd_supply sup on ord.code_supply = sup.code
+         left join bd_term_freq freq on ord.code_freq = freq.code
+        where apdt.flag_stop = '1' 
+          and apdt.eu_result = '0'
+          and apdt.eu_direct = '1'
+          and ap.pk_dept_ap = #{pkDept,jdbcType=VARCHAR}
+        order by pv.bed_no, pv.name_pi,occ.date_plan, ord.date_start,ord.ordsn_parent,ord.ordsn
+    </select>
+    
+</mapper>

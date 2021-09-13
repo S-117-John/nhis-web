@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.ipdedrug.dao.IpPdDrugPackMapper">
+	<select id="qryRetDrugPrice" parameterType="java.util.List" resultType="com.zebone.nhis.common.module.ex.nis.ns.ExPdApplyDetail">
+		SELECT
+		  stdt.PRICE / pd.PACK_SIZE * stdt.PACK_SIZE price,
+		  stdt.PRICE_COST / pd.PACK_SIZE * stdt.PACK_SIZE price_cost,
+		  stdt.BATCH_NO,
+		  stdt.DATE_EXPIRE,
+		  ipdt.PK_CGIP
+		FROM PD_ST_DETAIL stdt
+		  INNER JOIN BL_IP_DT ipdt ON ipdt.PK_PDSTDT = stdt.PK_PDSTDT
+		  INNER JOIN BD_PD pd ON pd.PK_PD = stdt.PK_PD
+		WHERE ipdt.PK_CGIP IN 
+		<foreach collection="list" index="index" open="(" close=")" item="pkCgip" separator=",">
+			#{pkCgip,jdbcType=VARCHAR}
+		</foreach>
+	</select>
+
+	<select id="qryDeptRetDrugPrice" parameterType="java.util.List" resultType="com.zebone.nhis.common.module.ex.nis.ns.ExPdApplyDetail">
+		SELECT
+		stdt.PRICE / pd.PACK_SIZE * stdt.PACK_SIZE price,
+		stdt.PRICE_COST / pd.PACK_SIZE * stdt.PACK_SIZE price_cost,
+		stdt.BATCH_NO,
+		stdt.DATE_EXPIRE,
+		expdde.PK_pdapdt pk_pdapdt_back
+		from ex_pd_de expdde
+		INNER JOIN PD_ST_DETAIL stdt on expdde.PK_PDSTDT = stdt.PK_PDSTDT
+		INNER JOIN BD_PD pd ON pd.PK_PD = stdt.PK_PD
+		WHERE expdde.PK_pdapdt IN
+		<foreach collection="list" index="index" open="(" close=")" item="pkPdapdt" separator=",">
+			#{pkPdapdt,jdbcType=VARCHAR}
+		</foreach>
+	</select>
+</mapper>

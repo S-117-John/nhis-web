@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ex.pub.dao.PvInfantPubMapper">
+    <select id="queryInfantMother" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.pub.vo.PvEncounterVo">
+        select pi.dt_country,
+               pi.dt_nation,
+               pi.mobile,
+               pv.pk_pi,
+               pv.name_pi,
+               pv.pk_dept,
+               pv.pk_dept_ns,
+               pv.pk_pv,
+               pv.addrcode_cur,
+               pv.addr_cur,
+               pv.addr_cur_dt,
+               pi.tel_no,
+               pv.postcode_cur,
+               pv.addrcode_regi,
+               pv.addr_regi,
+               pv.addr_regi_dt,
+               pv.postcode_regi,
+               pv.name_rel,
+               pv.dt_ralation,
+               pv.tel_rel,
+               pv.addr_rel,
+               pv.pk_emp_tre,
+               pv.name_emp_tre,
+               pi.id_no,
+               pi.dt_idtype
+        from pv_encounter pv
+                     inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        where pv.pk_pv = #{pkPv,jdbcType=CHAR}
+    </select>
+
+    <insert id="saveBean" parameterType="com.zebone.nhis.common.module.pv.PvIp">
+        INSERT INTO PV_IP
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkPvip != null">
+                PK_PVIP,
+            </if>
+            <if test="pkPv != null">
+                PK_PV,
+            </if>
+            <if test="ipTimes != null">
+                IP_TIMES,
+            </if>
+            <if test="dtLevelDise != null">
+                DT_LEVEL_DISE,
+            </if>
+            <if test="flagInfant != null">
+                FLAG_INFANT,
+            </if>
+            <if test="quanInfant != null">
+                QUAN_INFANT,
+            </if>
+            <if test="pkDeptAdmit != null">
+                PK_DEPT_ADMIT,
+            </if>
+            <if test="pkDeptNsAdmit != null">
+                PK_DEPT_NS_ADMIT,
+            </if>
+            <if test="flagPrest != null">
+                FLAG_PREST,
+            </if>
+
+            <if test="delFlag != null">
+                DEL_FLAG,
+            </if>
+            <if test="pkOrg != null">
+                PK_ORG,
+            </if>
+            <if test="creator != null">
+                CREATOR,
+            </if>
+            <if test="createTime != null">
+                CREATE_TIME,
+            </if>
+            <if test="ts != null">
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkPvip != null">
+                #{pkPvip,jdbcType=CHAR},
+            </if>
+            <if test="pkPv != null">
+                #{pkPv,jdbcType=CHAR},
+            </if>
+            <if test="ipTimes != null">
+                #{ipTimes,jdbcType=CHAR},
+            </if>
+            <if test="dtLevelDise != null">
+                #{dtLevelDise,jdbcType=CHAR},
+            </if>
+            <if test="flagInfant != null">
+                #{flagInfant,jdbcType=CHAR},
+            </if>
+            <if test="quanInfant != null">
+                #{quanInfant,jdbcType=VARCHAR},
+            </if>
+            <if test="pkDeptAdmit != null">
+                #{pkDeptAdmit,jdbcType=VARCHAR},
+            </if>
+            <if test="pkDeptNsAdmit != null">
+                #{pkDeptNsAdmit,jdbcType=VARCHAR},
+            </if>
+            <if test="flagPrest != null">
+                #{flagPrest,jdbcType=CHAR},
+            </if>
+
+            <if test="delFlag != null">
+                #{delFlag,jdbcType=CHAR},
+            </if>
+
+            <if test="pkOrg != null">
+                #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null">
+                #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null">
+                #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null">
+                #{ts,jdbcType=DATE},
+            </if>
+        </trim>
+    </insert>
+</mapper>

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.nm.dao.NmChargeItemMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.pro.zsba.nm.vo.NmChargeItem">
+        <id column="pk_ci" jdbcType="CHAR" property="pkCi"/>
+        <result column="pk_org" jdbcType="CHAR" property="pkOrg"/>
+        
+        <result column="code_item" jdbcType="VARCHAR" property="codeItem"/>
+        <result column="name_item" jdbcType="VARCHAR" property="nameItem"/>
+        <result column="py_code" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="spec" jdbcType="VARCHAR" property="spec"/>
+        <result column="unit" jdbcType="VARCHAR" property="unit"/>
+        <result column="price" jdbcType="DECIMAL" property="price"/>
+        <result column="nhis_pk_item" jdbcType="VARCHAR" property="nhisPkItem"/>
+        <result column="show_site" jdbcType="CHAR" property="showSite"/>
+        <result column="auto_annal" jdbcType="CHAR" property="autoAnnal"/>
+        <result column="pk_dept" jdbcType="VARCHAR" property="pkDept"/>
+        
+        <result column="creator" jdbcType="CHAR" property="creator"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="modifier" jdbcType="CHAR" property="modifier"/>
+        <result column="modity_time" jdbcType="TIMESTAMP" property="modityTime"/>
+        <result column="del_flag" jdbcType="CHAR" property="delFlag"/>
+        <result column="ts" jdbcType="TIMESTAMP" property="ts"/>
+    </resultMap>
+        
+    <select id="getById" resultMap="BaseResultMap">
+        SELECT * FROM nm_charge_item WHERE pk_ci = #{pkCi ,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAll" resultMap="BaseResultMap">
+          SELECT * FROM nm_charge_item order by del_flag asc
+    </select>
+    
+    <select id="findByUse" resultMap="BaseResultMap">
+          SELECT * FROM nm_charge_item  where del_flag = '0'
+          <if test="showSite != null and showSite == '1'">
+			and show_sitein ('0', '1')
+		</if>
+		<if test="showSite != null and showSite == '2'">
+			and show_site in ('0', '2')
+		</if> 
+		<if test="pkDept != null and pkDept != ''">
+			and pk_dept like "%"#{pkDept}"%"
+		</if> 
+    </select>
+
+    <insert id="saveCi" parameterType="com.zebone.nhis.pro.zsba.nm.vo.NmChargeItem" >
+        INSERT INTO nm_charge_item
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkCi != null" > pk_ci, </if>
+            <if test="pkOrg != null" >  pk_org, </if>
+            <if test="codeItem != null" > code_item, </if>
+            <if test="nameItem != null" > name_item, </if>
+            <if test="pyCode != null" > py_code, </if>
+            <if test="spec != null" > spec, </if>
+            <if test="unit != null" > unit, </if>
+            <if test="price != null" > price, </if>
+            <if test="nhisPkItem != null" >  nhis_pk_item, </if>
+            <if test="showSite != null" >  show_site, </if>
+            <if test="autoAnnal != null" >  auto_annal, </if>
+            <if test="pkDept != null" >  pk_dept, </if>
+            
+            <if test="creator != null" > creator, </if>
+            <if test="createTime != null" > create_time, </if>
+            <if test="modifier != null" > modifier, </if>
+            <if test="modityTime != null" > modity_time, </if> 
+            <if test="delFlag != null" > del_flag, </if>
+            <if test="ts != null" > ts, </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkCi != null" > #{pkCi ,jdbcType=CHAR}, </if> 
+            <if test="pkOrg != null" >  #{pkOrg ,jdbcType=CHAR}, </if> 
+            <if test="codeItem != null" >  #{codeItem ,jdbcType=VARCHAR}, </if> 
+            <if test="nameItem != null" >  #{nameItem ,jdbcType=VARCHAR}, </if> 
+            <if test="pyCode != null" > #{pyCode ,jdbcType=VARCHAR}, </if> 
+            <if test="spec != null" > #{spec ,jdbcType=VARCHAR}, </if> 
+            <if test="unit != null" > #{unit ,jdbcType=VARCHAR}, </if> 
+            <if test="price != null" > #{price ,jdbcType=DECIMAL}, </if> 
+            <if test="nhisPkItem != null" > #{nhisPkItem ,jdbcType=VARCHAR}, </if> 
+            <if test="showSite != null" > #{showSite ,jdbcType=CHAR}, </if> 
+            <if test="autoAnnal != null" > #{autoAnnal ,jdbcType=CHAR}, </if> 
+            <if test="pkDept != null" > #{pkDept ,jdbcType=VARCHAR}, </if> 
+            
+            <if test="creator != null" > #{creator ,jdbcType=CHAR}, </if> 
+            <if test="createTime != null" > #{createTime ,jdbcType=TIMESTAMP}, </if> 
+            <if test="modifier != null" > #{modifier ,jdbcType=CHAR}, </if> 
+            <if test="modityTime != null" > #{modityTime ,jdbcType=TIMESTAMP}, </if> 
+            <if test="delFlag != null" > #{delFlag ,jdbcType=CHAR}, </if> 
+            <if test="ts != null" > #{ts ,jdbcType=TIMESTAMP}, </if> 
+        </trim>
+    </insert>
+																					
+    <update id="updateCi" parameterType="com.zebone.nhis.pro.zsba.nm.vo.NmChargeItem" >
+        UPDATE nm_charge_item
+        <set>
+            <if test="pkOrg != null" > pk_org = #{pkOrg ,jdbcType=CHAR}, </if>
+            <if test="codeItem != null" >  code_item = #{codeItem ,jdbcType=VARCHAR}, </if>
+            <if test="nameItem != null" > name_item = #{nameItem ,jdbcType=VARCHAR}, </if>
+            <if test="pyCode != null" > py_code = #{pyCode ,jdbcType=VARCHAR}, </if>
+            <if test="spec != null" > spec = #{spec ,jdbcType=VARCHAR}, </if>
+            <if test="unit != null" > unit = #{unit ,jdbcType=VARCHAR}, </if>
+            <if test="price != null" > price = #{price ,jdbcType=DECIMAL}, </if>
+            <if test="nhisPkItem != null" > nhis_pk_item = #{nhisPkItem ,jdbcType=VARCHAR}, </if>
+            <if test="showSite != null" > show_site = #{showSite ,jdbcType=CHAR}, </if>
+            <if test="autoAnnal != null" > auto_annal = #{autoAnnal ,jdbcType=CHAR}, </if>
+            <if test="pkDept != null" > pk_dept = #{pkDept ,jdbcType=CHAR}, </if> 
+             
+            <if test="creator != null" > creator = #{creator ,jdbcType=CHAR}, </if>
+            <if test="createTime != null" > create_time = #{createTime ,jdbcType=TIMESTAMP}, </if>
+            <if test="modifier != null" > modifier = #{modifier ,jdbcType=CHAR}, </if>
+            <if test="modityTime != null" > modity_time = #{modityTime ,jdbcType=TIMESTAMP}, </if>
+            <if test="delFlag != null" > del_flag = #{delFlag ,jdbcType=CHAR}, </if>
+            <if test="ts != null" > ts = #{ts ,jdbcType=TIMESTAMP}, </if>
+        </set>
+        WHERE 
+            pk_ci = #{pkCi ,jdbcType=CHAR}
+    </update>
+    
+    <delete id="deleteCi">
+        DELETE FROM nm_charge_item WHERE pk_ci = #{pkCi ,jdbcType=CHAR}
+    </delete>
+    
+</mapper>

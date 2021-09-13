@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.platform.manage.transcode.dao.TransMapper">
+	<select id="queryRpcList" resultType="DynaBean">
+		select r.trans_code,
+		           substr(r.trans_code,1,3) as pproxy,
+		           substr(r.trans_code,1,6) as proxy,
+		           r.address 
+        from sys_service_register r where r.type = 'rpc'
+	</select>
+	
+	<select id="queryProxyRange" resultType="DynaBean">
+		select c.id,c.proxyname,c.pid from sys_service_trans_code c where c.id in (
+		  select distinct substr(r.trans_code,1,3) as id from sys_service_register r where r.type = 'rpc'
+		  union
+		  select distinct substr(r.trans_code,1,6) as id from sys_service_register r where r.type = 'rpc'
+		)
+	</select>
+</mapper>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.sch.appt.dao.SchApptDoctorSkillMapper">
+	<select id="getCheckApplyByPk" resultType="com.zebone.nhis.sch.appt.vo.CheckApplyVo" parameterType="String" >
+	 select pv.pk_pv,   
+       pv.code_pv, 
+       pv.name_pi, 
+       pv.dt_sex sex,  
+       pv.age_pv,  
+       ord.pk_cnord,    
+       ord.eu_pvtype,   
+       srv.name namesrv,
+       ord.code_apply,  
+       ord.name_emp_ord,
+       ord.pk_dept,     
+       ord.pk_dept_ns, 
+       ord.name_ord,    
+       ris.desc_body,   
+       ord.note_ord note,    
+       ord.flag_emer,   
+       ord.pk_ord,
+       dept.name_dept deptPv,
+       ns.name_dept deptNs    
+     from cn_order ord
+       inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+       inner join bd_ou_dept dept ON pv.pk_dept = dept.pk_dept
+  	   left outer join bd_ou_dept ns ON pv.pk_dept_ns = ns.pk_dept
+       left outer join cn_ris_apply ris on ord.pk_cnord=ris.pk_cnord
+       left outer join sch_srv_ord so on ord.pk_ord=so.pk_ord
+       left outer join sch_srv srv on so.pk_schsrv=srv.pk_schsrv
+       <trim prefix="WHERE" prefixOverrides="AND |OR ">
+       	ord.pk_cnord=#{pk,jdbcType=CHAR}
+       </trim>
+	</select>
+	
+	<select id="getSkillSchInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.sch.plan.vo.SchSchVo">
+		select
+		  sch.*,
+		  res.name           schresname,
+		  srv.name           schsrvname,
+		res.pk_ticketrules,
+      	  case when (select count(1) from sch_ticket where DEL_FLAG = '0' and pk_sch = sch.PK_SCH ) > 0
+          THEN '1' ELSE '0' END AS flagTicket
+		from sch_sch sch
+		     inner join sch_resource res on sch.pk_schres = res.pk_schres
+		     inner join sch_srv srv on sch.pk_schsrv = srv.pk_schsrv
+		     inner join sch_srv_ord ord on srv.pk_schsrv=ord.pk_schsrv
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and sch.del_flag = '0'
+			and ord.pk_ord = #{pkOrd,jdbcType=VARCHAR}
+			and sch.eu_schclass='1'
+		  	<if test="dateWork != null and dateWork != ''">
+				and sch.date_work - to_date(#{dateWork,jdbcType=VARCHAR},'yyyy-mm-dd') &gt;= 0
+				and sch.date_work - to_date(#{dateWork,jdbcType=VARCHAR},'yyyy-mm-dd') &lt; 7
+		  	</if> 
+		  	<if test="dateBegin != null">
+		  		and sch.date_work &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyy-mm-dd')
+		  	</if>
+		  	<if test="dateEnd != null">
+		  		and sch.date_work &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-mm-dd')
+		  	</if>
+	  	</trim>
+	</select>
+	
+</mapper>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.lb.dao.LbGXarchMapper">
+
+	<select id="qryArchInfo" resultType="com.zebone.nhis.ma.pub.lb.vo.archInfoVo.PiArchInfoVo">
+		select PK_PV as pkpv
+		from v_yb_HOME_PAGE
+		where  DATE_ST &gt;= to_date(#{dateSt},'yyyy-MM-dd hh24:mi:ss')
+			and DATE_ST &lt;= to_date(#{dateEnd},'yyyy-MM-dd hh24:mi:ss')
+	</select>
+	<select id="qryArchMainInfo"  resultType="com.zebone.nhis.ma.pub.lb.vo.archInfoVo.Medical">
+		select * from v_yb_HOME_PAGE
+		where PK_PV = #{pkpv}
+
+	</select>
+	<select id="qryArchAttach" resultType="com.zebone.nhis.ma.pub.lb.vo.archInfoVo.MedicalAttach">
+		SELECT to_char(hpy.CSRQ,'yyyy-MM-dd hh24:mi:ss') as CSRQ,hpy.*
+		FROM v_yb_HOME_PAGE_ybb hpy
+		inner join v_yb_HOME_PAGE hp on  hp.PK_PV = hpy.PK_PV
+		WHERE  hp.PK_PV = #{pkpv}
+
+	</select>
+	<select id="qryListOperation" resultType="com.zebone.nhis.ma.pub.lb.vo.archInfoVo.ListOperation">
+		SELECT ho.* FROM  v_yb_HOME_PAGE hp
+		right join v_yb_HOME_OPS ho  on hp.PK_PV = ho.PK_PV
+		WHERE hp.PK_PV = #{pkpv}
+<!--		<if test="datest != null and datest !=''">-->
+<!--			and hp.DATE_ST &gt;= to_date(#{datest},'yyyy-MM-dd hh24:mi:ss')-->
+<!--		</if>-->
+<!--		<if test="dateEnd != null and dateEnd !=''">-->
+<!--			and hp.DATE_ST &lt;= to_date(#{dateEnd},'yyyy-MM-dd hh24:mi:ss')-->
+<!--		</if>-->
+	</select>
+	<select id="qryListOpeDetail" resultType="com.zebone.nhis.ma.pub.lb.vo.archInfoVo.ListOperationDetail">
+		SELECT mx.* FROM v_yb_HOME_PAGE hp
+		right join v_yb_HOME_OPS ho  on hp.PK_PV = ho.PK_PV
+		right join v_yb_HOME_OPS_MX mx on mx.OperationRecordNo = ho.OperationRecordNo and mx.pk_pv = ho.PK_PV
+		WHERE hp.PK_PV = #{pkpv}
+		and mx.OperationRecordNo = #{operationRecordNo}
+	</select>
+	<select id="qryUpLoadByDate" resultType="com.zebone.nhis.ma.pub.lb.vo.archInfoVo.PiArchInfoVo">
+		select  hp.PK_PV as pkpv,hpy.XM as xm,hp.Dept_Name as deptName, hp.AdmissionNo as admissionNo
+		,case when hp.qdidgx is null then '0' else '1' end flagUpLoad
+		from v_yb_HOME_PAGE hp
+		inner join v_yb_HOME_PAGE_ybb hpy on hp.PK_PV = hpy.PK_PV
+		where
+		 DATE_ST &gt;= to_date(#{dateSt},'yyyy-MM-dd hh24:mi:ss')
+		and DATE_ST &lt;= to_date(#{dateEnd},'yyyy-MM-dd hh24:mi:ss')
+		<if test="flagUpload != null and flagUpload != ''">
+			and hp.qdidgx = #{flagUpload}
+		</if>
+
+	</select>
+	<select id="qryNoUpLoadByDate" resultType="com.zebone.nhis.ma.pub.lb.vo.archInfoVo.PiArchInfoVo">
+		select  hp.PK_PV as pkpv,hpy.XM as xm,hp.Dept_Name as deptName, hp.AdmissionNo as admissionNo
+		,case when hp.qdidgx is null then '0' else '1' end flagUpLoad
+		from v_yb_HOME_PAGE hp
+		inner join v_yb_HOME_PAGE_ybb hpy on hp.PK_PV = hpy.PK_PV
+		where
+		DATE_ST &gt;= to_date(#{dateSt},'yyyy-MM-dd hh24:mi:ss')
+		and DATE_ST &lt;= to_date(#{dateEnd},'yyyy-MM-dd hh24:mi:ss')
+		and hp.qdidgx is null
+	</select>
+
+
+</mapper>

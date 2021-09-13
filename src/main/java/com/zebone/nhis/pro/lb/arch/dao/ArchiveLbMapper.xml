@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.lb.arch.dao.ArchiveLbMapper">
+	
+	<select id="queryPatientOfArch" resultType="com.zebone.nhis.pro.lb.arch.vo.PatientArchVo">
+		select pv.pk_pv,
+	       pi.code_ip,
+	       pi.name_pi,
+	       dc.name dt_sex,
+	       pi.birth_date,
+	       pv.age_pv,
+	       (case pv.eu_status when '0' then '登记' when '1' then '就诊' when '2' then '结束' when '3' then '结算' when '9' then '退诊' else '' end) eu_status,
+	       pv.date_begin,
+	       pv.date_end,
+	       pv.pk_dept,
+	       dp.name_dept,
+	       pv.pk_dept_ns,
+	       dpn.name_dept name_dept_ns,
+	       ap.cnt_arch,
+	       hp.name name_hp
+	  from pv_encounter pv
+	       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+	       left join bd_hp hp on pv.PK_INSU=hp.pk_hp
+	       left join bd_defdoc dc on pi.dt_sex=dc.code and dc.CODE_DEFDOCLIST='000000'
+	       left join arch_pv ap on pv.pk_pv=ap.pk_pv and ap.del_flag='0'
+	       left join bd_ou_dept dp on pv.pk_dept = dp.pk_dept
+	       left join bd_ou_dept dpn on pv.pk_dept_ns = dpn.pk_dept
+	 where pv.eu_pvtype='3'
+	       and pv.flag_in='0'
+	       and pv.flag_cancel='0'
+	       and pv.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		<if test="dateBegin != null  and  dateBegin != ''">
+		 	and pv.date_end &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+		 </if>
+		 <if test="dateEnd != null  and  dateEnd != ''">
+		 	and pv.date_end &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+		 </if>
+		 <if test="pkDept !=null and pkDept !=''">
+			and pv.pk_dept = #{pkDept,jdbcType=VARCHAR} 
+		</if>
+		<if test="pkDeptNs !=null and pkDeptNs !=''">
+			and pv.pk_dept_ns = #{pkDeptNs,jdbcType=VARCHAR} 
+		</if>
+		<if test="codeIp !=null and codeIp !=''">
+			and pi.code_ip = #{codeIp,jdbcType=VARCHAR} 
+		</if>
+		<if test="namePi !=null and namePi !=''">
+			and pi.name_pi like '%' || #{namePi,jdbcType=VARCHAR} || '%'
+		</if>
+		<choose>
+			<when test="archStatus == 0">
+				and nvl(ap.cnt_arch,0) = 0
+			</when>
+			<when test="archStatus == 1">
+				and nvl(ap.cnt_arch,0) &gt; 0
+			</when>
+		</choose>
+		order by pi.code_ip
+	</select>
+	
+	<resultMap type="com.zebone.nhis.pro.lb.arch.vo.ArchDocVo" id="adPrint" autoMapping="true">
+		<id column="PK_ARCHDOC" property="pkArchdoc" jdbcType="VARCHAR"/>
+		<!-- 版本太低，collection上不支持autoMapping？ -->
+		<collection property="listPrint" ofType="com.zebone.nhis.common.module.arch.ArchPrint" columnPrefix="ap_">
+			<id property="pkArchprint" column="PK_ARCHPRINT"/>
+			<id property="pkArchdoc" column="PK_ARCHDOC"/>
+			<id property="datePrint" column="DATE_PRINT"/>
+			<id property="pkEmpPrint" column="PK_EMP_PRINT"/>
+			<id property="nameEmpPrint" column="NAME_EMP_PRINT"/>
+		</collection>
+	</resultMap>
+	
+	<select id="queryArchDocAndPrint" resultMap="adPrint">
+	select ad.pk_archdoc,ad.sortno,ad.dt_meddoctype,ad.name_doc,ad.cnt_print,
+		ap.PK_ARCHPRINT ap_PK_ARCHPRINT,
+       ap.PK_ORG ap_PK_ORG,
+       ap.PK_ARCHDOC ap_PK_ARCHDOC,
+       ap.DATE_PRINT ap_DATE_PRINT,
+       ap.PK_EMP_PRINT ap_PK_EMP_PRINT,
+       ap.NAME_EMP_PRINT ap_NAME_EMP_PRINT,
+       ap.CREATOR ap_CREATOR,
+       ap.CREATE_TIME ap_CREATE_TIME,
+       ap.MODIFIER ap_MODIFIER,
+       ap.DEL_FLAG ap_DEL_FLAG,
+       ap.TS ap_TS,
+       dc.name dt_meddocname
+	from ARCH_DOC ad
+	inner join ARCH_PV ar on ad.pk_archpv = ar.pk_archpv
+	left join ARCH_PRINT ap on ad.pk_archdoc = ap.pk_archdoc
+	left join bd_defdoc dc on ad.dt_meddoctype=dc.code and dc.CODE_DEFDOCLIST='090400'
+	where ad.flag_cancel='0'
+	and ar.pk_pv=#{pkPv,jdbcType=CHAR}
+	order by ad.sortno
+	</select>
+	
+	<select id="queryArchDoc" resultType="com.zebone.nhis.pro.lb.arch.vo.ArchDocVo">
+	select ad.PK_ARCHDOC,ad.SORTNO,ad.DT_MEDDOCTYPE,ad.NAME_DOC,ad.PATH
+	from ARCH_DOC ad
+	  inner join ARCH_PV ap on ad.PK_ARCHPV=ap.PK_ARCHPV
+	where ap.PK_PV=#{pkPv,jdbcType=CHAR} and ad.flag_cancel='0'
+	order by ad.SORTNO
+	</select>
+</mapper>

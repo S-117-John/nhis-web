@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.pskq.dao.SurgicalAnesthesiaDao">
+
+
+    <select id="refundableItems" parameterType="java.util.Map" resultType="DynaBean">
+
+    select *
+    from (select blip.date_cg,
+    blip.date_hap,
+    blip.name_cg,
+    blip.price_org,
+    blip.price,
+    blip.quan + (CASE WHEN back.quan is null THEN 0 ELSE back.quan END) as                     quan,
+    blip.amount + (CASE WHEN back.amt is null THEN 0 ELSE back.amt END) as                     amount,
+    blip.amount + (CASE WHEN back.amt is null THEN 0 ELSE back.amt END) as                     oldAmount,
+    case when blip.flag_pd = '0' then item.code_hp when blip.flag_pd = '1' then pd.code_hp end codeHp,
+    blip.pk_cgip,
+    blip.barcode,
+    blip.pk_dept_ex,
+    blip.name_emp_ex,
+    case when blip.flag_pd = '0' then item.PK_ITEM when blip.flag_pd = '1' then pd.PK_PD end PK_ITEM,
+    case when blip.flag_pd = '0' then item.CODE when blip.flag_pd = '1' then pd.CODE end code
+    from bl_ip_dt blip
+    left outer join (select sum(quan) quan, sum(amount) amt, pk_cgip_back
+    from bl_ip_dt
+    where flag_settle = 0
+    and eu_bltype = '9'
+    and quan &lt; 0
+    and pk_pv = #{pkPv}
+    group by pk_cgip_back) back on blip.pk_cgip = back.pk_cgip_back
+    left join bd_item item on blip.pk_item = item.pk_item
+    left join bd_pd pd on blip.pk_item = pd.pk_pd
+    where blip.flag_settle = 0
+    and blip.eu_bltype = '9'
+    and blip.pk_pv = #{pkPv}
+    and blip.quan &gt; 0) temp
+    where temp.quan &gt; 0
+    order by temp.date_cg desc
+
+  </select>
+
+    <select id="findBlIpDt" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.bl.BlIpDt">
+        select *
+        from bl_ip_dt
+        where del_flag = '0'
+        and pk_cgip in
+        <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+
+    <select id="findBlIpDtCount" parameterType="java.util.Map" resultType="DynaBean">
+        select cg.pk_item,
+        cg.NAME_CG,
+        cg.quan + nvl(bk.quan, 0) quan,
+        cg.amount + nvl(bk.amount, 0) amount,
+        cg.pk_cgip,
+        cg.amount_pi + nvl(bk.amount_pi, 0) amount_pi,
+        cg.amount_add + nvl(bk.amount_add, 0) amount_add,
+        cg.amount_hppi + nvl(bk.amount_hppi, 0) amount_hppi
+        from bl_ip_dt cg
+        left outer join (select back.pk_cgip_back,
+        sum(back.quan) quan,
+        sum(back.amount) amount,
+        sum(back.amount_pi) amount_pi,
+        sum(back.amount_hppi) amount_hppi,
+        sum(back.amount_add) amount_add
+        from bl_ip_dt back
+        where back.pk_cgip_back in
+        <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+        and BACK.flag_SETTLE = '0'
+        group by back.pk_cgip_back) bk on cg.pk_cgip = bk.pk_cgip_back
+        where cg.pk_cgip in
+        <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="findPvEncounter" resultType="DynaBean">
+    select pv.eu_status, pv.name_pi, ip.flag_frozen
+from pv_encounter pv
+         inner join pv_ip ip on pv.pk_pv = ip.pk_pv
+where pv.pk_pv = #{pkPv}
+  and pv.flag_cancel = '0'
+  </select>
+
+
+    <select id="findValAttr" resultType="java.lang.String">
+        select attr.val_attr
+        from bd_hp hp
+                 inner join bd_dictattr attr on hp.pk_hp = attr.pk_dict
+                 inner join bd_dictattr_temp tmp on attr.pk_dictattrtemp = tmp.pk_dictattrtemp and tmp.dt_dicttype = '03'
+                 inner join pv_encounter pv on pv.pk_insu = hp.pk_hp
+        where pv.pk_pv = #{pkPv}
+          and tmp.code_attr = '0301'
+  </select>
+
+</mapper>

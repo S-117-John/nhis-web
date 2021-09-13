@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ma.pub.platform.zsrm.dao.ZsphSchMapper">
+    
+    <select id="getSchbyParam" resultType="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.model.SchVo">
+        select sch.PK_SCH,dept.CODE_DEPT,dept.NAME_DEPT,bd.NAME_DATESLOT,bd.CODE_DATESLOT,srv.EU_SRVTYPE,res.EU_RESTYPE,res.NAME name_res
+        ,to_char(sch.date_work,'yyyy-MM-dd') DATE_WORK,bd.TIME_BEGIN,bd.TIME_END,emp.CODE_EMP,emp.NAME_EMP
+        from sch_sch sch
+            inner join BD_OU_DEPT dept on sch.PK_DEPT = dept.PK_DEPT
+            left join SCH_RESOURCE res on sch.PK_SCHRES=res.PK_SCHRES
+            left join sch_srv srv on sch.pk_schsrv = srv.pk_schsrv
+            LEFT JOIN bd_code_dateslot bd ON sch.pk_dateslot=bd.pk_dateslot
+            left join BD_OU_EMPLOYEE emp on res.PK_EMP = emp.PK_EMP and res.EU_RESTYPE='1'
+        WHERE sch.del_flag = '0' and sch.EU_STATUS='8' and sch.EU_SCHCLASS='0'
+          and dept.CODE_DEPT = #{deptnno,jdbcType=VARCHAR}
+          and to_char(sch.date_work,'yyyy-MM-dd') = #{clinicdate,jdbcType=VARCHAR}
+        <if test="doctorno!=null and doctorno!=''">
+            and emp.CODE_EMP = #{doctorno,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+    <select id="getSchApptDept" resultType="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.model.SchDeptVo">
+        select  res.PK_FATHER,res.CODE,res.NAME,res.desc_res,bd.CODE_DEPT,bd.NAME_DEPT,res.pk_schres,res.spec,bd.NAME_PLACE,res.sortno dept_sort_no
+        from sch_resource res
+        left join bd_ou_dept bd on bd.pk_dept = res.pk_dept_area
+        where res.eu_restype = '0'
+          and nvl(res.flag_specdise,'0') = '0'
+          and nvl(res.del_flag,'0')='0'
+        order by res.sortno
+    </select>
+
+    <select id="getSchApptDoctor" resultType="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.model.SchDoctorVo">
+        select  sch.PK_SCH,res.PK_SCHRES,res.pk_emp,min(emp.CODE_EMP)CODE_EMP,min(emp.NAME_EMP)NAME_EMP,min(emp.SPEC) SPEC,min(to_char(emp.introduction)) introduction,
+        min(dept.code_dept)code_dept,min(dept.name_dept) name_dept,res.CODE,res.NAME,min(bdou.NAME_DEPT) NAME_DEPT_AREA
+         ,min(bdou.NAME_PLACE) NAME_PLACE_AREA,min(bdou.CODE_DEPT) CODE_DEPT_AREA
+        ,min(emp.dt_empsrvtype) dt_empsrvtype,min(doc.NAME) empsrv_text,sch.date_work,slot.NAME_DATESLOT,slot.CODE_DATESLOT sortno,
+        count(distinct tk.PK_SCHTICKET) cnt_appt,min(item.PRICE) price,srv.pk_schsrv,min(res.sortno) docter_sort_no
+        from SCH_RESOURCE res
+        left join SCH_SCH sch on sch.PK_SCHRES=res.PK_SCHRES  and   sch.EU_STATUS='8'   and sch.EU_SCHCLASS='0'  and sch.del_flag = '0' and sch.flag_stop='0'
+        left join BD_CODE_DATESLOT slot on sch.PK_DATESLOT=slot.PK_DATESLOT
+        inner join BD_OU_EMPLOYEE emp on res.PK_EMP=emp.PK_EMP
+        left join sch_ticket tk on sch.PK_SCH=tk.PK_SCH and   tk.FLAG_USED='0' and tk.FLAG_STOP='0' and tk.FLAG_APPT='1' and tk.DT_APPTYPE >'1'
+        inner join BD_OU_DEPT dept on dept.PK_DEPT = res.PK_DEPT_BELONG
+        left join BD_DEFDOC doc on emp.dt_empsrvtype = doc.CODE and doc.CODE_DEFDOCLIST='010305'
+        left join BD_OU_DEPT bdou on res.PK_DEPT_AREA=bdou.PK_DEPT
+        left join sch_srv srv on srv.PK_SCHSRV = res.PK_SCHSRV and srv.flag_stop = '0'
+        left join BD_ITEM item on item.PK_ITEM = srv.PK_ITEM_SPEC
+        where res.eu_restype='1'
+        and sch.date_work &gt;= to_date(#{clinicDate,jdbcType=VARCHAR},'yyyy-mm-dd')
+        and sch.date_work &lt;= to_date(#{clinicDate2,jdbcType=VARCHAR},'yyyy-mm-dd')
+        and res.PK_DEPT = (select PK_SCHRES from SCH_RESOURCE where code=#{resourceCode,jdbcType=VARCHAR})
+        <if test="channelSource!=null and channelSource =='WX'">
+            and exists(select 1 from sch_ticket tk where tk.pk_sch=sch.pk_sch and tk.DT_APPTYPE='2' and tk.FLAG_APPT='1' and tk.flag_stop='0')
+        </if>
+        group by res.PK_EMP,sch.DATE_WORK,sch.PK_DATESLOT,sch.PK_SCH,res.PK_SCHRES,res.CODE,res.NAME,slot.NAME_DATESLOT,slot.CODE_DATESLOT,res.sortno,srv.srv.pk_schsrv
+        order by res.sortno
+    </select>
+
+    <select id="getSchApptDoctorShare" resultType="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.model.SchDoctorVo">
+        select  sch.PK_SCH,res.PK_SCHRES,res.pk_emp,min(emp.CODE_EMP)CODE_EMP,min(emp.NAME_EMP)NAME_EMP,min(emp.SPEC) SPEC,min(to_char(emp.introduction)) introduction,
+        min(dept.code_dept)code_dept,min(dept.name_dept) name_dept,res.CODE,res.NAME,min(bdou.NAME_DEPT) NAME_DEPT_AREA
+         ,min(bdou.NAME_PLACE) NAME_PLACE_AREA,min(bdou.CODE_DEPT) CODE_DEPT_AREA
+        ,min(emp.dt_empsrvtype) dt_empsrvtype,min(doc.NAME) empsrv_text,sch.date_work,slot.NAME_DATESLOT,slot.CODE_DATESLOT sortno,
+        count(distinct tk.PK_SCHTICKET) cnt_appt,min(item.PRICE) price,srv.pk_schsrv,min(res.sortno) docter_sort_no
+        from SCH_RESOURCE res
+        left join SCH_SCH sch on sch.PK_SCHRES=res.PK_SCHRES  and   sch.EU_STATUS='8'   and sch.EU_SCHCLASS='0'  and sch.del_flag = '0' and sch.flag_stop='0'
+        left join BD_CODE_DATESLOT slot on sch.PK_DATESLOT=slot.PK_DATESLOT
+        inner join BD_OU_EMPLOYEE emp on res.PK_EMP=emp.PK_EMP
+        left join sch_ticket tk on sch.PK_SCH=tk.PK_SCH and   tk.FLAG_USED='0' and tk.FLAG_STOP='0' and tk.FLAG_APPT='1' and tk.DT_APPTYPE >'1'
+        inner join BD_OU_DEPT dept on dept.PK_DEPT = res.PK_DEPT_BELONG
+        left join BD_DEFDOC doc on emp.dt_empsrvtype = doc.CODE and doc.CODE_DEFDOCLIST='010305'
+        left join BD_OU_DEPT bdou on res.PK_DEPT_AREA=bdou.PK_DEPT
+        left join sch_srv srv on srv.PK_SCHSRV = res.PK_SCHSRV and srv.flag_stop = '0'
+        left join BD_ITEM item on item.PK_ITEM = srv.PK_ITEM_SPEC
+        where res.eu_restype='1'
+        and sch.date_work &gt;= to_date(#{clinicDate,jdbcType=VARCHAR},'yyyy-mm-dd')
+        and sch.date_work &lt;= to_date(#{clinicDate2,jdbcType=VARCHAR},'yyyy-mm-dd')
+        and res.flag_share='1'
+        and res.pk_emp in (select resinp.PK_EMP from SCH_RESOURCE resinp where  resinp.flag_share ='1' and resinp.PK_DEPT in (select resde.PK_SCHRES  from SCH_RESOURCE resde  where code=#{resourceCode,jdbcType=VARCHAR}))
+        <if test="pkSchresList!=null and pkSchresList.size>0">
+            and res.PK_SCHRES not in
+            <foreach collection="pkSchresList" item="pkSchres" separator="," index="index" open="(" close=")">
+                #{pkSchres,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="channelSource!=null and channelSource =='WX'">
+            and exists(select 1 from sch_ticket tk where tk.pk_sch=sch.pk_sch and tk.DT_APPTYPE='2' and tk.FLAG_APPT='1' and tk.flag_stop='0')
+        </if>
+        group by res.PK_EMP,sch.DATE_WORK,sch.PK_DATESLOT,sch.PK_SCH,res.PK_SCHRES,res.CODE,res.NAME,slot.NAME_DATESLOT,slot.CODE_DATESLOT,res.sortno,srv.srv.pk_schsrv
+        order by res.sortno
+    </select>
+
+    <select id="getSchApptDoctorClass" resultType="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.model.SchDoctorVo">
+
+        select distinct sch.PK_SCH,res.PK_SCHRES,emp.pk_emp,emp.CODE_EMP,emp.NAME_EMP,emp.SPEC,to_char(emp.introduction) introduction,
+                    dept.code_dept,dept.name_dept ,res.CODE,res.NAME
+                    ,bdou.NAME_DEPT NAME_DEPT_AREA,res.sortno docter_sort_no
+            ,bdou.NAME_PLACE NAME_PLACE_AREA,bdou.CODE_DEPT CODE_DEPT_AREA,res.sortno sortno_no
+            ,emp.dt_empsrvtype,doc.NAME empsrv_text,sch.date_work,item.PRICE,srv.pk_schsrv,
+                    sum(case when tk.FLAG_USED='0' then 1 else 0 end) over ( partition by emp.PK_EMP,sch.DATE_WORK) cnt_appt
+        from SCH_RESOURCE res
+             left join SCH_SCH sch on sch.PK_SCHRES=res.PK_SCHRES  and   sch.EU_STATUS='8'   and sch.EU_SCHCLASS='0'  and sch.del_flag = '0' and sch.flag_stop = '0'
+             inner join BD_OU_EMPLOYEE emp on res.PK_EMP=emp.PK_EMP
+             left join sch_ticket tk on sch.PK_SCH=tk.PK_SCH and   tk.FLAG_USED='0' and tk.FLAG_STOP='0' and tk.FLAG_APPT='1' and tk.DT_APPTYPE >'1'
+             inner join BD_OU_DEPT dept on dept.PK_DEPT = res.PK_DEPT_BELONG
+             left join BD_DEFDOC doc on emp.dt_empsrvtype = doc.CODE and doc.CODE_DEFDOCLIST='010305'
+             left join BD_OU_DEPT bdou on res.PK_DEPT_AREA=bdou.PK_DEPT
+             left join sch_srv srv on srv.PK_SCHSRV = res.PK_SCHSRV and srv.flag_stop = '0'
+             left join BD_ITEM item on item.PK_ITEM = srv.PK_ITEM_SPEC
+        where res.eu_restype='1'
+        and sch.date_work &gt;= to_date(#{clinicDate,jdbcType=VARCHAR},'yyyy-mm-dd')
+        and sch.date_work &lt;= to_date(#{clinicDate2,jdbcType=VARCHAR},'yyyy-mm-dd')
+        and res.PK_DEPT = (select PK_SCHRES from SCH_RESOURCE where code=#{resourceCode,jdbcType=VARCHAR})
+        <if test="channelSource!=null and channelSource =='WX'">
+            and exists(select 1 from sch_ticket tk where tk.pk_sch=sch.pk_sch and tk.DT_APPTYPE='2' and tk.FLAG_APPT='1' and tk.flag_stop='0')
+        </if>
+    </select>
+
+
+    <select id="getSchApptDoctorClassShare" resultType="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.model.SchDoctorVo">
+
+        select distinct sch.PK_SCH,res.PK_SCHRES,emp.pk_emp,emp.CODE_EMP,emp.NAME_EMP,emp.SPEC,to_char(emp.introduction) introduction,
+                    dept.code_dept,dept.name_dept ,res.CODE,res.NAME
+                    ,bdou.NAME_DEPT NAME_DEPT_AREA,res.sortno docter_sort_no
+            ,bdou.NAME_PLACE NAME_PLACE_AREA,bdou.CODE_DEPT CODE_DEPT_AREA,res.sortno sortno_no
+            ,emp.dt_empsrvtype,doc.NAME empsrv_text,sch.date_work,item.PRICE,srv.pk_schsrv,
+                    sum(case when tk.FLAG_USED='0' then 1 else 0 end) over ( partition by emp.PK_EMP,sch.DATE_WORK) cnt_appt
+        from SCH_RESOURCE res
+             left join SCH_SCH sch on sch.PK_SCHRES=res.PK_SCHRES  and   sch.EU_STATUS='8'   and sch.EU_SCHCLASS='0'  and sch.del_flag = '0' and sch.flag_stop = '0'
+             inner join BD_OU_EMPLOYEE emp on res.PK_EMP=emp.PK_EMP
+             left join sch_ticket tk on sch.PK_SCH=tk.PK_SCH and   tk.FLAG_USED='0' and tk.FLAG_STOP='0' and tk.FLAG_APPT='1' and tk.DT_APPTYPE >'1'
+             inner join BD_OU_DEPT dept on dept.PK_DEPT = res.PK_DEPT_BELONG
+             left join BD_DEFDOC doc on emp.dt_empsrvtype = doc.CODE and doc.CODE_DEFDOCLIST='010305'
+             left join BD_OU_DEPT bdou on res.PK_DEPT_AREA=bdou.PK_DEPT
+             left join sch_srv srv on srv.PK_SCHSRV = res.PK_SCHSRV and srv.flag_stop = '0'
+             left join BD_ITEM item on item.PK_ITEM = srv.PK_ITEM_SPEC
+        where res.eu_restype='1'
+        and sch.date_work &gt;= to_date(#{clinicDate,jdbcType=VARCHAR},'yyyy-mm-dd')
+        and sch.date_work &lt;= to_date(#{clinicDate2,jdbcType=VARCHAR},'yyyy-mm-dd')
+        and res.flag_share='1'
+        and res.pk_emp in (select resinp.PK_EMP from SCH_RESOURCE resinp where  resinp.flag_share ='1' and resinp.PK_DEPT in (select resde.PK_SCHRES  from SCH_RESOURCE resde  where code=#{resourceCode,jdbcType=VARCHAR}))
+        <if test="pkSchresList!=null and pkSchresList.size>0">
+            and res.PK_SCHRES not in
+            <foreach collection="pkSchresList" item="pkSchres" separator="," index="index" open="(" close=")">
+                #{pkSchres,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+    </select>
+    <select id="getSchApptTime" resultType="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.model.SchVo">
+            select min(sch.PK_SCH) PK_SCH,min(sch.PK_DEPT) PK_DEPT,min(emp.pk_emp) pk_emp,min(emp.CODE_EMP) CODE_EMP,min(emp.NAME_EMP) NAME_EMP,
+            min(dept.code_dept) code_dept,min(dept.name_dept) name_dept, ---挂号科室编码及名称 与查询医生的内容不一样
+            min(res.CODE) CODE,
+            min(res.NAME) NAME,
+            min(bdou.NAME_DEPT) NAME_DEPT_AREA,
+            min(bdou.NAME_PLACE) NAME_PLACE_AREA,
+            min(bd.NAME_DATESLOT) NAME_DATESLOT,min(bd.CODE_DATESLOT) CODE_DATESLOT,min(bd.sortno) sortno
+            ,to_char(tk.BEGIN_TIME,'HH24:mi:ss') TIME_BEGIN,to_char(tk.END_TIME,'HH24:mi:ss') TIME_END,
+            count(to_char(tk.BEGIN_TIME,'HH24:mi:ss')) as cnt_appt
+            from SCH_SCH sch
+            inner join SCH_RESOURCE res on sch.PK_SCHRES=res.PK_SCHRES
+            inner join BD_OU_EMPLOYEE emp on res.PK_EMP=emp.PK_EMP
+            inner join sch_ticket tk on sch.PK_SCH=tk.PK_SCH
+            inner join BD_OU_DEPT dept on  dept.PK_DEPT = res.PK_DEPT_BELONG
+            LEFT JOIN bd_code_dateslot bd ON sch.pk_dateslot=bd.pk_dateslot
+            left join BD_OU_DEPT bdou on res.PK_DEPT_AREA=bdou.PK_DEPT
+            where sch.EU_STATUS='8'  --审核状态
+            and sch.EU_SCHCLASS='0'
+            and sch.del_flag = '0'
+            and sch.flag_stop = '0'
+            and tk.FLAG_USED='0' --未使用
+            and tk.FLAG_STOP='0'
+            and tk.FLAG_APPT='1' --可约
+            and tk.DT_APPTYPE >'1' --非诊间号开放给第三方
+            and sch.date_work = to_date(#{clinicDate,jdbcType=VARCHAR}, 'yyyy-mm-dd')
+            and res.PK_SCHRES=#{pkSchres,jdbcType=VARCHAR}
+            <if test="sortno != null  and  sortno != ''">
+               and bd.CODE_DATESLOT=#{sortno,jdbcType=VARCHAR}
+            </if>
+        group by to_char(tk.BEGIN_TIME,'HH24:mi:ss'),to_char(tk.END_TIME,'HH24:mi:ss')
+    </select>
+
+    <select id="getResource" resultType="com.zebone.nhis.common.module.sch.pub.SchResource">
+        select res.pk_schres, #{pkSchsrv,jdbcType=VARCHAR} as pk_schsrv
+        From sch_resource res
+        Inner Join sch_srv srv On res.pk_schsrv=srv.pk_schsrv And srv.eu_srvtype='0'
+        Where res.del_flag='0'
+         And res.pk_emp=#{pkEmp,jdbcType=VARCHAR}
+         And res.pk_schsrv != #{pkSchsrv,jdbcType=VARCHAR}
+    </select>
+    <update id="updateSchResourceList" parameterType="java.util.List">
+    	  <foreach collection="list" item="SchResource" index="index" open="" close="" separator=";">
+    		update sch_resource
+    		<set>
+    		  <if test="SchResource.pkSchsrv != null  and  SchResource.pkSchsrv != ''">
+    		    pk_schsrv=#{SchResource.pkSchsrv,jdbcType=VARCHAR},
+    		  </if>
+    		</set>
+    		where pk_schres=#{SchResource.pkSchres,jdbcType=VARCHAR}
+    	 </foreach>
+       </update>
+</mapper>

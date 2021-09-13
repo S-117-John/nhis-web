@@ -1,0 +1,612 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.mz.ins.zsba.dao.ZsbaQGMapper">
+	<select id="updatePv" parameterType="java.lang.String" >
+		update PV_ENCOUNTER
+		set pk_insu=(
+			select pk_hp
+			from bd_hp
+			where CODE = #{insutype,jdbcType=VARCHAR}
+			and DEL_FLAG = '0'
+		)
+		where pk_pv = #{pkPv,jdbcType=VARCHAR}
+	</select>
+
+	<select id="qryInsBasePre" parameterType="java.lang.String"
+		resultType="DynaBean">
+		select distinct pi.PK_PI,
+		pi.NAME_PI,
+		pi.ID_NO as mdtrt_cert_no,
+		pi.INSUR_NO,
+		'02' AS mdtrt_cert_type
+		from PV_ENCOUNTER pv
+		inner join pi_master pi on pi.PK_PI = pv.PK_PI
+		where pi.DEL_FLAG = '0' and pv.pk_pv= #{pkPv,jdbcType=VARCHAR}
+	</select>
+	<select id="qryInsRegPre" parameterType="java.lang.String"
+		resultType="DynaBean">
+		select 
+		<!-- to_char(pv.DATE_BEGIN, 'yyyy-MM-dd HH:mm:ss') as begntime, -->
+		CONVERT(VARCHAR(19), pv.DATE_BEGIN, 120) as begntime,
+		pi.CODE_op as ipt_otp_no,
+		case when pv.PK_EMP_PHY is null then empdiag.code_emp else emppv.CODE_EMP
+		end as atddr_no,
+		case when pv.PK_EMP_PHY is null then empdiag.NAME_EMP else emppv.NAME_EMP
+		end as dr_name,
+		dept.CODE_DEPT as dept_code,
+		dept.NAME_DEPT as dept_name,
+		<!-- map.CODE_INSUR as caty -->
+		dept.CODE_DEPT_NATION_INS as caty
+		from PV_ENCOUNTER pv
+		left join PV_DIAG diag on diag.PK_pv = pv.PK_PV and diag.FLAG_MAJ='1'
+		left join BD_OU_EMPLOYEE emppv on emppv.PK_EMP = pv.PK_EMP_PHY
+		left join BD_OU_EMPLOYEE empdiag on empdiag.PK_EMP = diag.PK_EMP_DIAG
+		left join BD_OU_DEPT dept on dept.PK_DEPT = pv.PK_DEPT
+		inner join pi_master pi on pi.PK_PI = pv.PK_PI and pi.DEL_FLAG = '0'
+		<!-- left join ins_qgyb_dictmap map on map.pk_his = dept.PK_DEPT and -->
+		<!-- map.CODE_TYPE = 'CATY' and map.EU_HPDICTTYPE='01' and map.del_flag='0' -->
+		where pv.PK_PV = #{pkPv,jdbcType=VARCHAR}
+	</select>
+
+	<select id="qryInsVisit" parameterType="java.lang.String"
+		resultType="DynaBean">
+		<!-- select * from ( -->
+			select top 1 visit.mdtrt_id,
+			visit.psn_no,
+			case when inspv.med_type is null then '11' else inspv.med_type end as med_type,
+			<!-- to_char(visit.begntime, 'yyyy-MM-dd HH:mm:ss') as begntime, -->
+			CONVERT(VARCHAR(19), visit.begntime, 120) as begntime,
+			visit.flag_insu,
+			inspv.main_cond_dscr,
+			inspv.dise_codg,
+			inspv.dise_name,
+			inspv.birctrl_type,
+			CONVERT(VARCHAR(10), inspv.birctrl_matn_date, 120) as birctrl_matn_date,
+			visit.insutype
+			from ins_qgyb_visit visit
+			<!-- left join ins_qgyb_visit_city city on city.pk_visit=visit.pk_visit -->
+			left join ins_qgyb_pv inspv on inspv.PK_PV=visit.PK_PV and inspv.del_flag='0'
+			where
+			visit.del_flag='0'
+			and visit.PK_PV =#{pkPv,jdbcType=VARCHAR}
+			order by visit.create_time desc
+		<!-- ) where ROWNUM='1' -->
+	</select>
+	<select id="qryPvDiag" parameterType="java.lang.String"
+		resultType="DynaBean">
+		select distinct diag.CODE_ICD as diag_code, --诊断代码
+		case when
+		BD_CNDIAG.DT_CNDIAGTYPE = '02' then '3'
+		else '1' end diag_type , --诊断类别
+		diag.SORT_NO as diag_srt_no, --诊断排序号
+		diag.DESC_DIAG as diag_name,
+		--诊断名称
+		dept.NAME_DEPT as diag_dept, --诊断科室
+		emp.CODE_EMP as dise_dor_no,
+		--诊断科室
+		emp.NAME_EMP as dise_dor_name, --诊断医生姓名
+		<!-- to_char(diag.CREATE_TIME, 'yyyy-MM-dd HH:mm:ss') as diag_time, --> --诊断时间
+		CONVERT(VARCHAR(19), diag.CREATE_TIME, 120) as diag_time, --诊断时间
+		'1' as vali_flag --有效标志
+		from PV_DIAG diag
+		left join bd_cndiag on
+		bd_cndiag.CODE_ICD = diag.CODE_ICD and
+		bd_cndiag.DEL_FLAG = '0'
+		left
+		join PV_ENCOUNTER pv on pv.PK_PV = diag.PK_PV and pv.DEL_FLAG = '0'
+		left join bd_ou_dept dept on dept.PK_DEPT = pv.PK_DEPT and
+		dept.DEL_FLAG = '0'
+		left join BD_OU_EMPLOYEE emp on emp.PK_EMP =
+		diag.PK_EMP_DIAG and
+		emp.DEL_FLAG = '0'
+		where diag.DEL_FLAG = '0'
+		and
+		diag.FLAG_MAJ = '1'
+		and diag.PK_PV = #{pkPv,jdbcType=VARCHAR} <!-- #{pkPv,jdbcType=VARCHAR} -->
+	</select>
+
+	<!-- 根据处方主键查询其中中药饮片相关信息 -->
+	<select id="qryHerbalListInfoByPkPres" resultType="DynaBean">
+		select dt.PK_PRES pk_pres,dt.PK_CGOP pk_cgop,dt.NAME_CG name_cg,
+		case when indpd.PK_PDINDPD is null and item.ywmldj='乙' then 'C' 
+		when item.ywmldj='自费' then 'D' 
+		else 'A' end 'drug_type' 
+		from BL_OP_DT dt 
+		inner join INS_ITEM_MAP map on map.PK_ITEM=dt.PK_ITEM 
+		inner join ins_item item on item.PK_INSITEM=map.PK_INSITEM 
+		left join bd_pd_indpd indpd on indpd.PK_PD=dt.PK_PD 
+		where item.mllx='4' and dt.PK_SETTLE is null 
+		<if test='pkPresList!=null and pkPresList.size()>0'>
+             and dt.PK_PRES in 
+             <foreach collection="pkPresList" item="pkPresList" index="no" open="("
+                separator="," close=")">
+                #{pkPresList}
+            </foreach> 
+         </if>
+	</select>
+
+	<select id="qryChargeDetailNoUpload" parameterType="java.lang.String"
+		resultType="DynaBean">
+		select
+			<!-- case when dt.flag_settle='1' then -dt.CODE_CG || dt.SORTNO 
+			else dt.CODE_CG || dt.SORTNO end  feedetl_sn, --> <!-- 费用明细流水号+序号 -->
+			case when dt.flag_settle='1' then '-'+dt.CODE_CG+CAST(dt.SORTNO as VARCHAR(20)) 
+			else dt.CODE_CG+CAST(dt.SORTNO as VARCHAR(20)) end as feedetl_sn, <!-- 费用明细流水号+序号 -->
+			visit.MDTRT_ID as mdtrt_id, <!-- 就诊ID -->
+			visit.PSN_NO as psn_no, <!-- 人员编号 ** -->
+			#{chrgBchno,jdbcType=VARCHAR} as chrg_bchno, <!--收费批次号 **编码规则生成 -->
+			inspv.dise_codg, <!--病种编码 -->
+			dt.PK_PRES as pk_pres, <!--处方主键 -->
+			pres.PRES_NO as rxno, <!--处方号 -->
+			'0' as rx_circ_flag, <!--外购处方标志 -->
+			<!-- to_char(dt.DATE_CG, 'yyyy-MM-dd HH:mm:ss') as fee_ocur_time, --><!--费用发生时间 -->
+			CONVERT(VARCHAR(19), dt.DATE_CG, 120) as fee_ocur_time,
+			<!-- map.med_list_codg, --><!--医疗目录编码 ** -->
+			<!-- map.CODE_HOSP as medins_list_codg, --><!--医药机构目录编码 -->
+			item.NATION_CODE as med_list_codg,<!--医疗目录编码 ** -->
+			itemMap.CODE as medins_list_codg,<!--医药机构目录编码 -->
+			<!-- round((dt.amount-dt.amount_add)/dt.quan,6) as pric, --><!--单价 -->
+			<!-- dt.QUAN as cnt, --><!--数量 -->
+			<!-- round((dt.amount-dt.amount_add)/dt.quan,2)*dt.quan as det_item_fee_sumamt, --><!--明细项目费用总额 -->
+			
+		  	<!--单价 -->
+		  	case dt.flag_pd when 1 then 
+		  	cast(round((case dt.pack_size when 1 then ((dt.amount-dt.amount_add)/dt.quan) else (((dt.amount-dt.amount_add)/dt.quan)/dt.pack_size) end),6) as numeric(16,6)) 
+		  	else round((dt.amount-dt.amount_add)/dt.quan,6) end as pric,
+			<!--数量 -->
+			case dt.flag_pd when 1 then 
+			case dt.pack_size when 1 then dt.quan else (dt.quan*dt.pack_size) end 
+			else dt.QUAN end as cnt,
+			<!--明细项目费用总额 -->
+			case dt.flag_pd when 1 then 
+		  	cast(round((case dt.pack_size when 1 then ((dt.amount-dt.amount_add)/dt.quan*(case dt.pack_size when 1 then dt.quan else (dt.quan*dt.pack_size) end)) else (((dt.amount-dt.amount_add)/dt.quan)/dt.pack_size*(case dt.pack_size when 1 then dt.quan else (dt.quan*dt.pack_size) end)) end),2) as numeric(16,2)) 
+		  	else round((dt.amount-dt.amount_add)/dt.quan*dt.quan,2) end as det_item_fee_sumamt,
+		  	
+			ord.DOSAGE as sin_dos_dscr, <!--单次剂量描述 -->
+			freq.NAME as used_frqu_dscr, <!--使用频次描述 -->
+			ord.DAYS as prd_days, <!--周期天数 -->
+			'' as medc_way_dscr, <!--用药途径 -->
+			deptAp.CODE_DEPT as bilg_dept_codg, <!--开单科室编码 -->
+			deptAp.NAME_DEPT as bilg_dept_name, <!--开单科室名称 -->
+			empAp.CODE_EMP as bilg_dr_codg, <!--开单医生编码 -->
+			empAp.NAME_EMP as bilg_dr_name, <!--开单医师姓名 -->
+	
+			deptEx.CODE_DEPT as acord_dept_codg, <!--受单科室编码 -->
+			deptEx.NAME_DEPT as acord_dept_name, <!--受单科室名称 -->
+			'' as orders_dr_code,<!--受单医生编码 -->
+			'' as orders_dr_name, <!--受单医师姓名 -->
+			case when ord.flag_fit is null then '0' else ord.flag_fit end hosp_appr_flag, <!--医院审批标志 -->
+			'' as tcmdrug_used_way, <!--中药使用方式 1-复方，2-单方 -->
+			'' as etip_flag, <!--外检标志 -->
+			'' as etip_hosp_code,<!--外检医院编码 -->
+			'' as dscg_tkdrug_flag, <!-- 出院带药标志 -->
+			'' as matn_fee_flag, <!-- 生育费用标志 -->
+			dt.name_cg,
+			dt.pk_cgop
+		from pv_encounter pv
+		left join BL_OP_DT dt on dt.pk_pv=pv.pk_pv
+		left join CN_ORDER ord on ord.PK_CNORD=dt.PK_CNORD
+		left join CN_PRESCRIPTION pres on pres.PK_PRES =dt.PK_PRES
+		left join BD_OU_DEPT deptAp on deptAp.PK_DEPT=dt.PK_DEPT_APP
+		left join BD_OU_DEPT deptEx on deptEx.PK_DEPT=dt.PK_DEPT_EX
+		left join BD_OU_EMPLOYEE empAp on empAp.PK_EMP=dt.PK_EMP_APP
+		left join BD_TERM_FREQ freq on freq.code=ord.CODE_FREQ
+		left join (
+			<!-- select * from (
+				select * from INS_QGYB_VISIT vs where vs.pk_pv = #{pkPv,jdbcType=VARCHAR} order by CREATE_TIME desc
+			) where rownum=1 -->
+			select top 1 * from INS_QGYB_VISIT vs where vs.pk_pv = #{pkPv,jdbcType=VARCHAR} order by CREATE_TIME desc
+		) visit on visit.PK_PV=pv.PK_PV
+		left join INS_QGYB_PV inspv on inspv.pk_pv=pv.pk_pv
+		<!-- left join INS_QGYB_ITEMMAP map on map.PK_ITEM=dt.PK_ITEM and map.del_flag='0'  -->
+		left join INS_ITEM_MAP itemMap on itemMap.PK_ITEM=dt.PK_ITEM and itemMap.del_flag='0' 
+		left join INS_ITEM item on itemMap.PK_INSITEM = item.PK_INSITEM 
+		left join BD_itemcate cate on cate.pk_itemcate=dt.pk_itemcate
+		where pv.EU_PVTYPE in (1,2,4) and cate.code not in ('96') 
+		and (dt.pk_payer is null or RTRIM(LTRIM(dt.pk_payer))='') <!--没有院内优惠付款方 -->
+		<!-- AND (dt.PK_CNORD is null or ord.DATE_EFFE>=GETDATE()) --> <!--取医嘱有效时间大于当前时间 -主要用于自助机之类过滤，NHIS前台待缴费列表已过滤 -->
+		AND (pres.DT_PRESTYPE!='07' OR pres.DT_PRESTYPE is NULL) <!--过滤外流处方 -主要用于自助机之类过滤，NHIS前台待缴费列表已过滤 -->
+		and dt.amount_pi=dt.amount <!--总金额和患者自费金额一致(无优惠) -->
+			<if test="rePay == null">
+				AND (dt.flag_settle = '0' OR dt.PK_SETTLE IS NULL)
+			</if>
+			AND nvl(dt.flag_insu,'0') = '0'
+			AND dt.del_flag = '0'
+			and pv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+			<if test="pkCgops != null">
+				and dt.pk_cgop IN
+				<foreach collection="pkCgops" item="pkCgop" index="index"
+					open="(" close=")" separator=",">
+					#{pkCgop,jdbcType=VARCHAR}
+				</foreach>
+			</if>
+			<if test="codePv != null">
+				and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+			</if>
+
+	</select>
+	<select id="qryChargeDetailNoUploadSpec" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.bl.opcg.BlOpDt">
+	select dt.*
+	from pv_encounter pv
+    left join BL_OP_DT dt on dt.pk_pv = pv.pk_pv
+    left join BD_itemcate cate on cate.pk_itemcate = dt.pk_itemcate
+	where pv.EU_PVTYPE in (1,2,4) and cate.code in ('96')
+	<if test="rePay == null">
+		AND (dt.flag_settle = '0' OR dt.PK_SETTLE IS NULL)
+	</if>
+	AND nvl(dt.flag_insu,'0') = '0'
+	AND dt.del_flag = '0'
+	and pv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+	<if test="pkCgops != null">
+		and dt.pk_cgop IN
+		<foreach collection="pkCgops" item="pkCgop" index="index" open="(" close=")" separator=",">
+			#{pkCgop,jdbcType=VARCHAR}
+		</foreach>
+	</if>
+	<if test="codePv != null">
+		and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+	</if>
+
+	</select>
+	
+	<select id="qryChargeDts" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.bl.opcg.BlOpDt">
+	select dt.*
+	from pv_encounter pv
+    left join BL_OP_DT dt on dt.pk_pv = pv.pk_pv
+    left join BD_itemcate cate on cate.pk_itemcate = dt.pk_itemcate
+	where pv.EU_PVTYPE in (1,2,4) 
+	<if test="rePay == null">
+		AND (dt.flag_settle = '0' OR dt.PK_SETTLE IS NULL)
+	</if>
+	AND nvl(dt.flag_insu,'0') = '0'
+	AND dt.del_flag = '0'
+	and pv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+	<if test="pkCgops != null">
+		and dt.pk_cgop IN
+		<foreach collection="pkCgops" item="pkCgop" index="index" open="(" close=")" separator=",">
+			#{pkCgop,jdbcType=VARCHAR}
+		</foreach>
+	</if>
+	<if test="codePv != null">
+		and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+	</if>
+
+	</select>
+
+	<select id="qryBlSt" parameterType="java.lang.String" resultType="DynaBean">
+		select
+		st.amount_st as aggregate_amount,
+		st.amount_pi as patients_pay,
+		st.amount_insu as medicare_payments,
+		st.*
+		from bl_settle st
+		where st.eu_pvtype in (1,2,4)
+		and st.pk_pv=#{pkPv,jdbcType=VARCHAR}
+		<if test="pkSettle != null and pkSettle != ''">
+			and st.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+		</if>
+
+	</select>
+	
+	<select id="qryPksettleCanc" parameterType="java.lang.String" resultType="java.lang.String">
+	select top 1 st.PK_SETTLE
+	from INS_QGYB_ST insst
+	left join INS_QGYB_ST insst_canc on insst_canc.PK_INSST=insst.PK_INSST_CANCEL
+	left join bl_settle st on st.PK_SETTLE_CANC=insst_canc.PK_SETTLE
+	where insst.SETL_ID=#{setlId,jdbcType=VARCHAR} 
+	and insst.del_flag='0'
+	<if test="pkPv != null and pkPv != ''">
+		and insst.pk_pv=#{pkPv,jdbcType=VARCHAR}
+	</if>
+	<!-- and ROWNUM='1' -->
+
+	</select>
+
+	<select id="qryHisPdIns" resultType="com.zebone.nhis.pro.zsba.mz.ins.zsba.vo.MedicalCharges" parameterType="java.util.Map">
+	  select o.*
+      from (select
+              bd.pk_pd as pk_item,
+              bd.code   as Code,
+              bd.name   as Name,
+              ''  as NameEn,
+              bd.spcode as Mnemonic,
+              bic.code  as DtItem,
+              bu.code as Unit,
+              bd.dt_dosage as DoseType,
+              bd.price as Price,
+              bd.dosage_def as Dosage,
+              bd.code_freq as Frequency,
+              bd.code_supply as Usage,
+              bd.spec as Spec,
+              '0' as FlagPre,
+              (case
+                when bd.dt_pois='00' and bd.dt_anti='00'then '0'
+                else '1' end ) as FlagSpec,bd.appr_no,fac.name as factory_name,
+                bd.eu_drugtype as his_type,
+                ins.state
+            from bd_pd bd
+            left join bd_unit bu on bd.pk_unit_pack = bu.pk_unit
+            left join bd_itemcate bic on bd.pk_itemcate = bic.pk_itemcate
+            left join bd_factory fac on bd.pk_factory=fac.pk_factory
+            LEFT JOIN INS_QGYB_ITEMMAP ins on ins.pk_item=bd.pk_pd
+            where bd.del_flag = '0' and bd.flag_stop='0'
+            <if test="codeOrName != null and codeOrName != ''">
+                and (bd.code like '%${codeOrName}%' or bd.name like '%${codeOrName}%' or bd.spcode like '%${codeOrName}%' )
+            </if>
+		    <if test="state != null and state != '' and state =='99' ">
+                and ins.state is null
+			</if>
+		    <if test="state != null and state != '' and state !='99' ">
+			    and ins.state=#{state,jdbcType=VARCHAR}
+		     </if>
+            order by bd.code desc) o
+	</select>
+
+	<select id="qryHisItemIns" resultType="com.zebone.nhis.pro.zsba.mz.ins.zsba.vo.MedicalCharges" parameterType="java.util.Map">
+	    select o.*
+        from (select
+               bi.pk_item,
+               bi.code as Code,
+               bi.name as Name,
+               bi.spcode as Mnemonic,
+               bic.code as DtItem,
+               (case when (bp.price is null) then bi.price else bp.price end) as Price,
+        	   bi.spec as Spec,
+        	   bi.dt_itemtype as his_type,
+        	   ins.state
+        from bd_item bi
+        left join bd_item_price bp on bi.pk_item = bp.pk_item  and bp.del_flag='0' AND bp.flag_stop='0'
+        left join bd_itemcate bic on bi.pk_itemcate = bic.pk_itemcate and bic.del_flag='0'
+        LEFT JOIN INS_QGYB_ITEMMAP ins on ins.pk_item=bi.pk_item
+        where bi.del_flag='0' and bi.flag_active='1'
+        <if test="orgId != null and orgId != ''">
+             and bp.pk_org=#{orgId,jdbcType=VARCHAR}
+        </if>
+        <if test="pricetype != null and pricetype != ''">
+             and bp.eu_pricetype=#{pricetype,jdbcType=VARCHAR}
+        </if>
+		<if test="DtItemtype != null and DtItemtype != ''">
+			and bi.dt_itemtype like '%'||#{DtItemtype,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="state != null and state != '' and state =='99' ">
+			and ins.state is null
+		</if>
+		<if test="state != null and state != '' and state !='99' ">
+			and ins.state=#{state,jdbcType=VARCHAR}
+		</if>
+        <if test="codeOrName != null and codeOrName != ''">
+             and (
+              bi.name like '%${codeOrName}%'
+              or bi.code like '%${codeOrName}%'
+              or bi.spcode like '%${codeOrName}%'
+              )
+        </if>
+         order by bi.code desc) o
+	</select>
+
+
+	<select id="qryInsQgybItem" resultType="com.zebone.nhis.pro.zsba.mz.ins.zsba.vo.InsurCata" parameterType="java.util.Map">
+        select * from ins_qgyb_item
+        where 1=1
+        <if test="nameOrCode != null and nameOrCode != ''">
+             and (INS_ITEM_CODE like '%${nameOrCode}%' or INS_ITEM_NAME like '%${nameOrCode}%')
+        </if>
+        <if test="insType != null and insType != ''">
+            and INS_TYPE=#{insType}
+        </if>
+        <if test="itemType != null and itemType != ''">
+            and ITEM_TYPE=#{itemType}
+        </if>
+    </select>
+
+    <select id="qryInsQgybItemmap" resultType="com.zebone.nhis.pro.zsba.mz.ins.zsba.vo.MedicalCharges" parameterType="java.util.Map">
+             select insmap.PK_ITEMMAP,
+                    item.code as his_item_code,
+                    item.name as his_item_name,
+             	    insitem.ins_item_code,
+             	    insitem.Ins_item_name,
+             	    insmap.state,
+		            insmap.CREATE_TIME,
+             	    insmap.upload_date
+             from INS_QGYB_ITEMMAP insmap
+             left join INS_QGYB_ITEM insitem on insitem.pk_insitem=insmap.pk_insitem
+             inner join BD_ITEM item on item.pk_item=insmap.pk_item
+             where 1=1
+              <if test="state != null and state != ''">
+                 and insmap.state=#{state,jdbcType=VARCHAR}
+              </if>
+              <if test="nameOrCode != null and nameOrCode != ''">
+                 and (item.code like '%${nameOrCode}%' or item.name like '%${nameOrCode}%' or insitem.ins_item_code like '%${nameOrCode}%' or insitem.Ins_item_name like '%${nameOrCode}%')
+              </if>
+              <if test="insType != null and insType != ''">
+                 and insmap.INS_TYPE=#{insType,jdbcType=VARCHAR}
+              </if>
+             UNION
+             select insmaps.PK_ITEMMAP,
+                    pd.code as his_item_code,
+                    pd.name as his_item_name,
+             		insitems.ins_item_code,
+             		insitems.Ins_item_name,
+             		insmaps.state,
+		            insmaps.CREATE_TIME,
+             		insmaps.upload_date
+             from INS_QGYB_ITEMMAP insmaps
+             left join INS_QGYB_ITEM insitems on insitems.pk_insitem=insmaps.pk_insitem
+             inner join BD_pd pd on pd.pk_pd=insmaps.pk_item
+              where 1=1
+              <if test="state != null and state != ''">
+                 and insmaps.state=#{state,jdbcType=VARCHAR}
+              </if>
+              <if test="nameOrCode != null and nameOrCode != ''">
+                 and (pd.code like '%${nameOrCode}%' or pd.name like '%${nameOrCode}%' or insitems.ins_item_code like '%${nameOrCode}%' or insitems.Ins_item_name like '%${nameOrCode}%')
+              </if>
+              <if test="insType != null and insType != ''">
+                 and insmaps.INS_TYPE=#{insType,jdbcType=VARCHAR}
+              </if>
+    </select>
+
+    <select id="qryItemMap" resultType="java.util.Map" parameterType="java.lang.String">
+                 select
+                    item.code AS medins_list_codg,
+                    insitem.ins_item_code AS hilist_code,
+                    <!-- to_char(insmap.upload_date, 'yyyy-MM-dd') AS updt_time -->
+                    CONVERT(VARCHAR(10), insmap.upload_date, 120) AS updt_time
+                 from INS_QGYB_ITEMMAP insmap
+                 left join INS_QGYB_ITEM insitem on insitem.pk_insitem=insmap.pk_insitem
+                 inner join BD_ITEM item on item.pk_item=insmap.pk_item
+                 where insmap.state='1' and insmap.upload_date is not null
+                  and insmap.PK_ITEMMAP=#{pkItemMap,jdbcType=VARCHAR}
+                 UNION
+                 select
+                    pd.code AS his_item_code,
+                    insitems.ins_item_code AS hilist_code,
+                    <!-- to_char(insmaps.upload_date, 'yyyy-MM-dd') AS updt_time -->
+                    CONVERT(VARCHAR(10), insmaps.upload_date, 120) AS updt_time
+                 from INS_QGYB_ITEMMAP insmaps
+                 left join INS_QGYB_ITEM insitems on insitems.pk_insitem=insmaps.pk_insitem
+                 inner join BD_pd pd on pd.pk_pd=insmaps.pk_item
+                  where insmaps.state='1' and insmaps.upload_date is not null
+                  and insmaps.PK_ITEMMAP=#{pkItemMap,jdbcType=VARCHAR}
+    </select>
+    <delete id="delInsQgybItemmap" parameterType="java.util.Map">
+		delete from INS_QGYB_ITEMMAP where PK_ITEMMAP =#{pkItemmap,jdbcType=VARCHAR}
+	</delete>
+
+	<select id="qryQGYBMedicalInsuranceSum" resultType="DynaBean" parameterType="java.util.Map">
+select insutype, clr_type,sum(amount_st) as amount_st,sum(amount_insu) as amount_insu,
+sum(amount_pi) as amount_pi,sum(data_num) as data_num
+from (
+         SELECT ybst.insutype,
+                ybst.clr_type,
+                sum(ybst.medfee_sumamt)   as amount_st,
+                sum(ybst.fund_pay_sumamt) as amount_insu,
+                sum(ybst.acct_pay)        as amount_pi,
+                count(1)                  as data_num
+         FROM ins_qgyb_st ybst
+                  inner JOIN bl_settle st ON ybst.PK_SETTLE = st.PK_SETTLE
+         WHERE ybst.medfee_sumamt &gt; 0
+           and ybst.PK_SETTLE IS NOT NULL
+		<if test="deBegn != null and deBegn != ''">
+			<!-- and to_char(st.date_st,'yyyy-MM-dd') &gt;= #{deBegn,jdbcType=VARCHAR} -->
+			and CONVERT(VARCHAR(10), st.date_st, 120) &gt;= #{deBegn,jdbcType=VARCHAR}
+		</if>
+		<if test="deEnd != null and deEnd != ''">
+			<!-- and to_char(st.date_st,'yyyy-MM-dd') &lt;= #{deEnd,jdbcType=VARCHAR} -->
+			and CONVERT(VARCHAR(10), st.date_st, 120) &lt;= #{deEnd,jdbcType=VARCHAR}
+		</if>
+		<if test="insutype != null and insutype != ''">
+			and ybst.INSUTYPE = #{insutype,jdbcType=VARCHAR}
+		</if>
+         group by ybst.INSUTYPE, ybst.clr_type
+
+         union all
+         SELECT ybstcanc.insutype,
+                ybstcanc.clr_type,
+                sum(ybstcanc.medfee_sumamt)   as amount_st,
+                sum(ybstcanc.fund_pay_sumamt) as amount_insu,
+                sum(ybstcanc.acct_pay)        as amount_pi,
+                count(1)                      as data_num
+         FROM ins_qgyb_st ybstcanc
+                  inner join ins_qgyb_st ybst on ybstcanc.PK_INSST_CANCEL = ybst.PK_INSST
+                  inner JOIN bl_settle stcanc ON stcanc.PK_SETTLE_CANC = ybst.PK_SETTLE
+         WHERE ybstcanc.medfee_sumamt &lt; 0
+           and ybst.PK_SETTLE IS NOT NULL
+		<if test="deBegn != null and deBegn != ''">
+			<!-- and to_char(stcanc.date_st,'yyyy-MM-dd') &gt;= #{deBegn,jdbcType=VARCHAR} -->
+			and CONVERT(VARCHAR(10), stcanc.date_st, 120) &gt;= #{deBegn,jdbcType=VARCHAR}
+		</if>
+		<if test="deEnd != null and deEnd != ''">
+			<!-- and to_char(stcanc.date_st,'yyyy-MM-dd') &lt;= #{deEnd,jdbcType=VARCHAR} -->
+			and CONVERT(VARCHAR(10), stcanc.date_st, 120) &lt;= #{deEnd,jdbcType=VARCHAR}
+		</if>
+		<if test="insutype != null and insutype != ''">
+			and ybstcanc.INSUTYPE = #{insutype,jdbcType=VARCHAR}
+		</if>
+         group by ybstcanc.INSUTYPE, ybstcanc.clr_type
+     )group by insutype, clr_type
+    </select>
+
+    <select id="qryQGYBMedicalInsuranceDetailed" resultType="DynaBean" parameterType="java.util.Map">
+          select *
+	from (
+         select qgyb.setl_id,
+                qgyb.mdtrt_id,
+                qgyb.psn_no,
+                qgyb.medfee_sumamt,
+                qgyb.fund_pay_sumamt,
+                qgyb.acct_pay,
+                '0' refd_setl_flag
+         from ins_qgyb_st qgyb
+                  inner join bl_settle bl on qgyb.PK_SETTLE = bl.PK_SETTLE
+         where qgyb.PK_SETTLE is not null
+           and qgyb.MEDFEE_SUMAMT &gt; 0
+        <if test="deBegn != null and deBegn != ''">
+          <!-- and to_char(qgyb.date_st,'yyyy-MM-dd') &gt;= #{deBegn,jdbcType=VARCHAR} -->
+          and CONVERT(VARCHAR(10), qgyb.date_st, 120) &gt;= #{deBegn,jdbcType=VARCHAR}
+        </if>
+        <if test="deEnd != null and deEnd != ''">
+          <!-- and to_char(qgyb.date_st,'yyyy-MM-dd') &lt;= #{deEnd,jdbcType=VARCHAR} -->
+          and CONVERT(VARCHAR(10), qgyb.date_st, 120) &lt;= #{deEnd,jdbcType=VARCHAR}
+        </if>
+        <if test="insutype != null and insutype != ''">
+           and qgyb.INSUTYPE = #{insutype,jdbcType=VARCHAR}
+        </if>
+         union all
+         select ybstcanc.setl_id,
+                ybstcanc.mdtrt_id,
+                ybstcanc.psn_no,
+                ybstcanc.medfee_sumamt,
+                ybstcanc.fund_pay_sumamt,
+                ybstcanc.acct_pay,
+                '1' refd_setl_flag
+         from ins_qgyb_st ybstcanc
+                  inner join ins_qgyb_st ybst on ybst.PK_INSST = ybstcanc.PK_INSST_CANCEL
+                  inner join bl_settle bl on bl.PK_SETTLE = ybst.PK_SETTLE
+         where ybstcanc.MEDFEE_SUMAMT &lt; 0
+        <if test="deBegn != null and deBegn != ''">
+          <!-- and to_char(ybstcanc.date_st,'yyyy-MM-dd') &gt;= #{deBegn,jdbcType=VARCHAR} -->
+          and CONVERT(VARCHAR(10), ybstcanc.date_st, 120) &gt;= #{deBegn,jdbcType=VARCHAR}
+        </if>
+        <if test="deEnd != null and deEnd != ''">
+          <!-- and to_char(ybstcanc.date_st,'yyyy-MM-dd') &lt;= #{deEnd,jdbcType=VARCHAR} -->
+          and CONVERT(VARCHAR(10), ybstcanc.date_st, 120) &lt;= #{deEnd,jdbcType=VARCHAR}
+        </if>
+        <if test="insutype != null and insutype != ''">
+           and ybstcanc.INSUTYPE = #{insutype,jdbcType=VARCHAR}
+        </if>
+     )
+    </select>
+	
+	<select id="qryRecordMtList"  parameterType="java.util.Map" resultType="java.util.Map">
+		select pidise.*,pi.id_no,pi.name_pi,
+		case when (pi.THIRD_SOCIAL_NO is not null and pi.THIRD_SOCIAL_NO!='') then pi.THIRD_SOCIAL_NO else pi.INSUR_NO end as insur_no 
+		from ins_qgyb_pidise pidise 
+		inner join PI_MASTER pi on pidise.PK_PI=pi.pk_pi 
+		where pidise.del_flag='0' 
+		<if test="startDate != null and startDate != ''">
+			and pidise.HOSP_IDE_DATE &gt;= #{startDate,jdbcType=VARCHAR}+' 00:00:00' 
+		</if>
+		<if test="endDate != null and endDate != ''">
+			and pidise.HOSP_IDE_DATE &lt;= #{endDate,jdbcType=VARCHAR}+' 23:59:59' 
+		</if>
+		<if test="codeOp != null and codeOp != ''">
+			and pi.CODE_OP = #{codeOp,jdbcType=VARCHAR} 
+		</if>
+		<if test="cardNo != null and cardNo != ''">
+			and pi.P_CAR_CODE = #{cardNo,jdbcType=VARCHAR} 
+		</if>
+		<if test="thirdSocialNo != null and thirdSocialNo != ''">
+			and pi.THIRD_SOCIAL_NO = #{thirdSocialNo,jdbcType=VARCHAR} 
+		</if>
+		<if test="insurNo != null and insurNo != ''">
+			and pi.INSUR_NO = #{insurNo,jdbcType=VARCHAR} 
+		</if>
+		<if test="idNo != null and idNo != ''">
+			and pi.ID_NO = #{idNo,jdbcType=VARCHAR} 
+		</if>
+		<if test="icCardId != null and icCardId != ''">
+			and pi.IC_CARD_ID = #{icCardId,jdbcType=VARCHAR} 
+		</if>
+		order by pidise.CREATE_TIME desc
+	</select>
+</mapper>

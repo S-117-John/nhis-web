@@ -1,0 +1,466 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ma.pub.platform.zb.dao.MsgRecMapper">
+     <select id="queryMsgList" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.ma.msg.SysMsgRec">
+        SELECT
+            rec.pk_msg,rec.pk_org,rec.msg_id,rec.msg_type,rec.trans_type,rec.trans_date,rec.msg_content,
+            rec.sys_code,rec.msg_status,rec.err_txt,rec.pk_emp,rec.del_flag,rec.remark,rec.creator,rec.create_time,rec.ts
+        FROM
+             sys_msg_rec rec
+        WHERE            
+            rec.del_flag !='1'
+		<if test="beginDate != null">
+			and rec.trans_date &gt;=
+			to_date(#{beginDate,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+		</if>
+		<if test="endDate != null">
+			and rec.trans_date &lt;
+			to_date(#{endDate,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+		</if>
+   	    <if test="msgType != null" >
+            and rec.msg_type like #{msgType,jdbcType=VARCHAR}
+        </if> 		
+   	    <if test="transType != null" >
+            and upper(rec.trans_type) = #{transType,jdbcType=VARCHAR}
+        </if> 		
+        <if test="msgContent != null" >
+		  	and rec.msg_content like '%${msgContent}%'
+		 </if>
+   	    <if test="msgStatus != null" >
+            and rec.msg_status = #{msgStatus,jdbcType=VARCHAR}
+        </if>
+        <if test="pkOrgStr != null">
+			${pkOrgStr}
+		</if>
+		 <if test="codeParam != null and codeParam!=''" >
+			 and #{codeParam,jdbcType=VARCHAR} in(code_pi,code_op,code_pv,code_ip,code_other)
+		 </if>
+		 <if test="msgId != null and msgId !=''" >
+			 and rec.msg_id = #{msgId,jdbcType=VARCHAR}
+		 </if>
+	 order by rec.create_time
+	 </select>
+    
+   <!-- 查询患者基本信息+住院就诊信息 -->
+     <select id="queryPatListIp" parameterType="java.util.Map" resultType="DynaBean">
+         SELECT
+	       pi.pk_pi,
+	       pi.code_pi,
+	       pi.code_op,
+	       pi.code_ip,
+	       pv.code_pv pat_no,
+	       pi.barcode,
+	       pi.pk_picate,
+	       pi.name_pi,
+	       pi.name_pi NAME,
+	       pi.photo_pi,
+	       pi.dt_idtype,
+	       pi.hic_no,
+	       pi.insur_no,
+	       (
+		     CASE pi.dt_idtype
+		        WHEN '01' THEN
+			    pi.id_no
+		     ELSE
+			    NULL
+		     END
+	       ) id_no,
+	      pi.mpi,
+	      pi.flag_ehr,
+	      pi.dt_sex,
+	      TO_CHAR (pi.birth_date,'YYYYMMDDHH24MISS') birth_date,
+	      pi.place_birth,
+	      pi.dt_marry,
+	      pi.dt_occu,
+	      pi.dt_country,
+	      zd_country. NAME country_name,
+	      pi.dt_nation,
+	      zd_nation. NAME nation_name,
+	      ( CASE pi.dt_blood_abo
+		      WHEN NULL THEN
+			     ''
+		      ELSE
+			 SUBSTR (pi.dt_blood_abo, 0, 2)
+		      END
+	       ) dt_blood_abo,
+	      pi.dt_blood_rh,
+	      pi.dt_edu,
+	      pi.tel_no,
+	      pi.mobile,
+	      pi.wechat_no,
+	      pi.email,
+	     pi.unit_work,
+    	pi.tel_work,
+    	pi.postcode_work,
+    	pi.address,
+    	pi.name_rel,
+    	pi.dt_ralation,
+    	zd_rel. NAME ralation_name,
+    	pi.tel_rel,
+	    pi.addr_rel,
+	    pv.pk_pv,
+    	pv.pk_org,
+	    pv.code_pv,
+	    pv.eu_pvtype,
+	    TO_CHAR (
+	    	pv.date_begin,
+		    'YYYYMMDDHH24MISS'
+	    ) date_begin,
+	    TO_CHAR (
+		    pv.date_end,
+	    	'YYYYMMDDHH24MISS'
+	    ) date_end,
+    	TO_CHAR (
+		    pv.date_clinic,
+		    'YYYYMMDDHH24MISS'
+	    ) date_clinic,
+    	TO_CHAR (
+		pv.date_admit,
+		'YYYYMMDDHH24MISS'
+	) date_admit,
+	TO_CHAR (
+		pv.date_reg,
+		'YYYYMMDDHH24MISS'
+	) date_reg,
+    	pv.eu_status eu_status_pv,
+    	pv.flag_in,
+    	pv.name_pi name_pi_pv,
+    	pv.dt_sex dt_sex_pv,
+    	pv.age_pv,
+    	pv.pk_insu,
+    	bd_hp.code insu_code,
+    	bd_hp. NAME insu_name,
+    	bd_hp.eu_hptype,
+    	pv.pk_picate,
+    	pv.address address_pv,
+    	pv.dt_marry dt_marry_pv,
+    	pv.pk_dept,
+    	dept.name_dept,
+    	dept.code_dept,
+    	pv.pk_dept_ns,
+    	ns.code_dept code_dept_ns,
+    	pv.pk_wg,
+    	pv.bed_no,
+	    pv.pk_emp_ns,
+	    pv.name_emp_ns,
+	     pv.pk_emp_tre,
+	    pv.name_emp_tre,
+	      emp_tre.code_emp code_emp_tre,
+	    pv.pk_emp_phy,
+	   pv.name_emp_phy,
+	   emp_phy.code_emp code_emp_phy,
+	     pv.pk_emp_reg,
+	    pv.name_emp_reg,
+	    pv.flag_settle,
+	     pv.eu_status_fp,
+	    pv.flag_cancel,
+	    pv.pk_emp_cancel,
+	    pv.name_emp_cancel,
+	    TO_CHAR (pv.date_cancel,'YYYYMMDDHH24MISS') date_cancel,
+	    pv.creator creator_pv,
+	    pv.create_time create_time_pv,
+	    pv.modifier modifier_pv,
+	    pv.del_flag,
+	    pv.ts,
+	    pv_ip.pk_pvip,
+	    pv_ip.pk_ip_notice,
+	    pv_ip.ip_times,
+	    TO_CHAR (pv_ip.date_notice,'YYYYMMDDHH24MISS') date_notice,
+	    pv_ip.flag_opt,
+	    pv_ip.dt_level_ns,
+	    pv_ip.dt_level_dise,
+	    pv_ip.dt_level_nutr,
+	    pv_ip.dt_outcomes,
+	    pv_ip.flag_infant flag_inf,
+	    pv_ip.quan_infant,
+	    pv_ip.eu_status_doc,
+	    TO_CHAR (pv_ip.date_commit_doc,'YYYYMMDDHH24MISS') date_commit_doc,
+	    pv_ip.flag_ga,
+	    pv_ip.flag_ga_ns,
+	    pv_ip.dt_intype,
+	    pv_ip.dt_outtype,
+	    pv_ip.pk_dept_admit,
+	    pv_ip.pk_dept_dis,
+	    pv_ip.pk_dept_ns_admit,
+	    pv_ip.pk_dept_ns_dis,
+	    TO_CHAR (pv_ip.date_prest,'YYYYMMDDHH24MISS') date_prest,
+	    pv_ip.flag_prest,
+	    pv_ip.pk_emp_prest,
+	    pv_ip.name_emp_prest,
+	    pi.addrcode_origin,
+	    pi.addr_origin,
+	    pi.addr_cur || NVL (pi.addr_cur_dt, '') addr_cur,
+	    pi.addrcode_cur,
+	    pi.addr_cur_dt,
+	    pi.postcode_cur,
+	    pi.addrcode_birth,
+	    pi.addr_birth,
+	    card.card_no cardno,
+	    pi.postcode_regi,
+	    pi.addr_regi || NVL (pi.addr_regi_dt, '') addr_regi,
+	    pi.addr_regi_dt
+        FROM
+	        pv_encounter pv
+        INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+        LEFT JOIN bd_ou_dept dept ON pv.pk_dept = dept.pk_dept
+        LEFT JOIN pv_ip ON pv.pk_pv = pv_ip.pk_pv  
+        LEFT JOIN bd_ou_dept ns ON pv.pk_dept_ns = ns.pk_dept
+        LEFT JOIN bd_defdoc zd_nation ON pi.dt_nation = zd_nation.code AND zd_nation.code_defdoclist = '000003'
+        LEFT JOIN bd_defdoc zd_country ON pi.dt_country = zd_country.code AND zd_country.code_defdoclist = '000009'
+        LEFT JOIN bd_defdoc zd_rel ON pi.dt_ralation = zd_rel.code AND zd_rel.code_defdoclist = '000013'
+        LEFT JOIN bd_ou_employee emp_tre ON emp_tre.pk_emp = pv.pk_emp_tre
+        LEFT JOIN bd_ou_employee emp_phy ON emp_phy.pk_emp = pv.pk_emp_phy
+        LEFT JOIN bd_hp ON pv.pk_insu = bd_hp.pk_hp
+        LEFT JOIN pi_card card ON card.pk_pi = pv.pk_pi AND card.eu_status = '0' AND card.dt_cardtype = '01' AND card.FLAG_ACTIVE = '1'
+           WHERE
+	           1 = 1
+   	    <if test="pkPv != null" >
+            and pv.pk_pv = #{pkPv,jdbcType=VARCHAR}
+        </if> 		
+   	    <if test="pkPi != null" >
+            and pv.pk_pi = #{pkPi,jdbcType=VARCHAR}
+            and (pv.eu_status = '0' or pv.eu_status = '1')
+        </if> 		
+   	    <if test="codePi != null" >
+            and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+        </if> 		
+   	    <if test="codeIp != null" >
+            and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+        </if>
+       	<if test="codePv != null" >
+            and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+        </if>
+        ORDER BY card.create_time DESC	
+    </select>
+    
+    <!-- 查询患者基本信息+门诊就诊信息 -->
+     <select id="queryPatListOp" parameterType="java.util.Map" resultType="DynaBean">
+         SELECT
+	       pi.pk_pi,
+	       pi.code_pi,
+	       pi.code_op,
+	       pi.code_ip,
+	       pv.code_pv pat_no,
+	       pi.barcode,
+	       pi.pk_picate,
+	       pi.name_pi,
+	       pi.name_pi NAME,
+	       pi.photo_pi,
+	       pi.dt_idtype,
+	       pi.hic_no,
+	       pi.insur_no,
+	       (
+		     CASE pi.dt_idtype
+		        WHEN '01' THEN
+			    pi.id_no
+		     ELSE
+			    NULL
+		     END
+	       ) id_no,
+	      pi.mpi,
+	      pi.flag_ehr,
+	      pi.dt_sex,
+	      TO_CHAR (pi.birth_date,'YYYYMMDDHH24MISS') birth_date,
+	      pi.place_birth,
+	      pi.dt_marry,
+	      pi.dt_occu,
+	      pi.dt_country,
+	      zd_country. NAME country_name,
+	      pi.dt_nation,
+	      zd_nation. NAME nation_name,
+	      ( CASE pi.dt_blood_abo
+		      WHEN NULL THEN
+			     ''
+		      ELSE
+			 SUBSTR (pi.dt_blood_abo, 0, 2)
+		      END
+	       ) dt_blood_abo,
+	       pi.dt_blood_rh,
+	       pi.dt_edu,
+	       pi.tel_no,
+	       pi.mobile,
+	       pi.wechat_no,
+	       pi.email,
+	       pi.unit_work,
+	       pi.tel_work,
+	       pi.postcode_work,
+	       pi.address,
+	       pi.name_rel,
+	       pi.dt_ralation,
+	    zd_rel. NAME ralation_name,
+	    pi.tel_rel,
+	    pi.addr_rel,
+	    pv.pk_pv,
+	    pv.pk_org,
+    	pv.code_pv,
+	    pv.eu_pvtype,
+	    TO_CHAR (pv.date_begin,'YYYYMMDDHH24MISS') date_begin,
+	    TO_CHAR (pv.date_end,'YYYYMMDDHH24MISS') date_end,
+    	TO_CHAR (pv.date_clinic,'YYYYMMDDHH24MISS') date_clinic,
+	    TO_CHAR (pv.date_admit,'YYYYMMDDHH24MISS') date_admit,
+    	TO_CHAR (pv.date_reg,'YYYYMMDDHH24MISS') date_reg,
+    	pv.eu_status eu_status_pv,
+	    pv.flag_in,
+    	pv.name_pi name_pi_pv,
+	    pv.dt_sex dt_sex_pv,
+	    pv.age_pv,
+	    pv.pk_insu,
+	    bd_hp.code insu_code,
+	    bd_hp. NAME insu_name,
+	    bd_hp.eu_hptype,
+	    pv.pk_picate,
+	    pv.address address_pv,
+	    pv.dt_marry dt_marry_pv,
+	    pv.pk_dept,
+	    dept.name_dept,
+	    dept.code_dept,
+	    pv.pk_dept_ns,
+	    ns.code_dept code_dept_ns,
+	    pv.pk_wg,
+	    pv.bed_no,
+	    pv.pk_emp_ns,
+	    pv.name_emp_ns,
+	    pv.pk_emp_tre,
+	    pv.name_emp_tre,
+	    emp_tre.code_emp code_emp_tre,
+	    pv.pk_emp_phy,
+	    pv.name_emp_phy,
+	    emp_phy.code_emp code_emp_phy,
+	    pv.pk_emp_reg,
+	    pv.name_emp_reg,
+	    pv.flag_settle,
+	    pv.eu_status_fp,
+	    pv.flag_cancel,
+	    pv.pk_emp_cancel,
+	    pv.name_emp_cancel,
+	    TO_CHAR (pv.date_cancel,'YYYYMMDDHH24MISS') date_cancel,
+	    pv.creator creator_pv,
+	    pv.create_time create_time_pv,
+	    pv.modifier modifier_pv,
+	    pv.del_flag,
+	    pv.ts,
+	    pv_op.op_times,
+	    sch_srv.eu_srvtype,
+	    pi.addrcode_origin,
+	    pi.addr_origin,
+	    pi.addr_cur || NVL (pi.addr_cur_dt, '') addr_cur,
+	    pi.addrcode_cur,
+	    pi.addr_cur_dt,
+	    pi.postcode_cur,
+	    pi.addrcode_birth,
+	    pi.addr_birth,
+	    card.card_no cardno,
+	    pi.postcode_regi,
+	    pi.addr_regi || NVL (pi.addr_regi_dt, '') addr_regi,
+	    pi.addr_regi_dt
+         FROM
+	        pv_encounter pv
+        INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+        LEFT JOIN bd_ou_dept dept ON pv.pk_dept = dept.pk_dept 
+        LEFT JOIN pv_op ON pv.pk_pv = pv_op.pk_pv
+        LEFT JOIN bd_ou_dept ns ON pv.pk_dept_ns = ns.pk_dept
+        LEFT JOIN bd_defdoc zd_nation ON pi.dt_nation = zd_nation.code AND zd_nation.code_defdoclist = '000003'
+        LEFT JOIN bd_defdoc zd_country ON pi.dt_country = zd_country.code AND zd_country.code_defdoclist = '000009'
+        LEFT JOIN bd_defdoc zd_rel ON pi.dt_ralation = zd_rel.code AND zd_rel.code_defdoclist = '000013'
+        LEFT JOIN bd_ou_employee emp_tre ON emp_tre.pk_emp = pv.pk_emp_tre
+        LEFT JOIN bd_ou_employee emp_phy ON emp_phy.pk_emp = pv.pk_emp_phy
+        LEFT JOIN bd_hp ON pv.pk_insu = bd_hp.pk_hp
+        LEFT JOIN sch_srv ON sch_srv.pk_schsrv = pv_op.pk_schsrv
+        LEFT JOIN pi_card card ON card.pk_pi = pv.pk_pi AND card.eu_status = '0' AND card.dt_cardtype = '01' AND card.FLAG_ACTIVE = '1'
+        WHERE
+	        1 = 1
+   	    <if test="pkPv != null" >
+            and pv.pk_pv = #{pkPv,jdbcType=VARCHAR}
+        </if> 		
+   	    <if test="pkPi != null" >
+            and pv.pk_pi = #{pkPi,jdbcType=VARCHAR}
+            and (pv.eu_status = '0' or pv.eu_status = '1')
+        </if> 		
+   	    <if test="codePi != null" >
+            and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+        </if> 		
+   	    <if test="codeIp != null" >
+            and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+        </if>
+       	<if test="codePv != null" >
+            and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+        </if>
+        ORDER BY card.create_time DESC	
+    </select>
+    
+	<select id="queryReqOrdList" parameterType="java.util.Map" resultType="DynaBean">
+		select ord.pk_cnord,
+		ord.pk_org,
+		ord.pk_pv,
+		ord.pk_pi,
+		ord.flag_fit,
+        ord.pk_ord,
+        ord.code_ordtype,
+        ord.date_start,
+        ord.code_ord,
+        ord.name_ord,
+        ord.desc_ord,
+        ord.code_apply,
+        ord.pk_dept_exec,
+        ord.pk_org_exec,
+        ord.eu_pvtype,
+        ord.pk_dept,
+        ord.pk_dept_ns,
+        ord.pk_emp_input,
+        ord.name_emp_input,
+        ord.quan,
+        ord.quan_cg,
+        ord.infant_no        
+		from cn_order ord  
+		where ord.del_flag='0'  
+   	    <if test="pkPv != null" >
+            and ord.pk_pv = #{pkPv,jdbcType=VARCHAR}
+        </if> 		
+   	    <if test="pkPi != null" >
+            and ord.pk_pi = #{pkPi,jdbcType=VARCHAR}
+        </if>
+        <if test="ordsn != null" >
+            and ord.ordsn = #{ordsn,jdbcType=VARCHAR}
+        </if>
+        <if test="codeApply != null" >
+            AND ord.code_apply = #{codeApply,jdbcType=VARCHAR}
+        </if>
+        <if test="ordsnStr != null" >
+            ${ordsnStr}
+        </if>
+		<if test="codeApplyStr != null">
+			${codeApplyStr}
+		</if>
+
+    </select> 
+    
+    <select id="queryPiMaster" parameterType="java.util.Map" resultType="DynaBean">
+        SELECT * FROM pi_master WHERE  1=1
+        <if test="pkPi != null" >
+            and pk_pi = #{pkPi,jdbcType=VARCHAR}
+        </if> 
+    </select>
+    
+    <!-- 查询病人信息，后期发现缺少什么字段在补充 -->
+	<select id="queryPatList" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT 
+		pv.pk_pv,
+		pv.eu_pvtype,
+		pi.pk_pi
+		 FROM PV_ENCOUNTER pv
+		INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+		 WHERE 1=1
+		<if test="codePi != null" >
+            and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+        </if> 		
+   	    <if test="codeIp != null" >
+            and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+        </if>
+       	<if test="codePv != null" >
+            and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+        </if>
+        <if test="euStatus != null" >
+             and (pv.eu_status = '0' or pv.eu_status = '1')
+        </if>
+	</select>   
+</mapper>

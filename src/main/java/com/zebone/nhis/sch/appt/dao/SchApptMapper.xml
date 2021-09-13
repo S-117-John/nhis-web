@@ -1,0 +1,840 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.sch.appt.dao.SchApptMapper">
+
+	
+	<select id="searchSchApptApply" resultType="com.zebone.nhis.sch.appt.vo.SchApptApplyVo" parameterType="java.util.Map">
+		select saa.*,
+			pm.code_pi ,
+			pm.name_pi,
+			pm.mobile,
+			pm.dt_idtype,
+			pm.id_no,
+			pm.dt_sex, 
+			pm.birth_date,
+			sr.name schResName,
+			ss.name schSrvName 
+		from SCH_APPT_APPLY saa
+			INNER JOIN PI_MASTER pm on saa.pk_pi = pm.pk_pi
+			INNER JOIN SCH_RESOURCE sr on saa.pk_schres = sr.pk_schres
+			INNER JOIN SCH_SRV ss on saa.pk_schsrv = ss.pk_schsrv
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and saa.del_flag = '0'
+			<if test="pkSchsrv != null and pkSchsrv != ''">
+		  		and saa.pk_schsrv = #{pkSchsrv,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="pkSchres != null and pkSchres != ''">
+		  		and saa.pk_schres = #{pkSchres,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="dateBegin != null">
+				and saa.date_Begin &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyymmddHH24miss')
+		  	</if> 
+		  	<if test="dateEnd != null">
+				and saa.date_End &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyymmddHH24miss')
+		  	</if> 
+		  	<if test="codePi != null and codePi != ''">
+		  		and pm.code_pi = #{codePi,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="namePi != null and namePi != ''">
+		  		and pm.name_pi like '%' || #{namePi,jdbcType=VARCHAR} || '%'
+		  	</if>
+		  	<if test="mobile != null and mobile != ''">
+		  		and pm.mobile = #{mobile,jdbcType=VARCHAR}
+		  	</if>
+	  	</trim>
+	</select>
+	
+	
+	<select id="searchSchAppt" resultType="DynaBean" parameterType="java.util.Map">
+		select * from (
+			select 
+			   appt.pk_schappt,
+			   appt.code,
+		       pi.name_pi,
+		       doc.NAME name_sex,
+		       pi.id_no,
+		       pi.mobile,
+		       pi.code_op,
+		       org.name_org,
+		       dept.name_dept,
+		       pv.name_emp_phy,
+		       emp.code_emp code_emp_phy, 
+		       appt.date_appt,
+		       ds.name_dateslot,
+		       to_char(appt.begin_time,'hh24:mi:ss')||'-'||to_char(appt.end_time,'hh24:mi:ss') begin_end,
+		       appt.ticket_no,
+		       appt.eu_status,
+		       appttype.name appttype,
+		       appt.flag_notice,
+		       appt.name_emp_reg,
+		       to_char(appt.date_reg,'YYYY-MM-DD HH24:MI:SS') date_reg,
+		       appt.name_emp_cancel,
+		       to_char(appt.date_cancel,'YYYY-MM-DD HH24:MI:SS') date_cancel,
+		       appt.flag_notice_canc,
+		       appt.note,
+		       appt.flag_pay,
+		       pv.pk_pv
+		  	from sch_appt appt
+		       left join sch_appt_pv pv on appt.pk_schappt=pv.pk_schappt
+		       inner join pi_master pi on appt.pk_pi=pi.pk_pi
+		       inner join bd_ou_org org on appt.pk_org_ex=org.pk_org
+		       inner join bd_ou_dept dept on appt.pk_dept_ex=dept.pk_dept
+		       inner join bd_code_dateslot ds on appt.pk_dateslot=ds.pk_dateslot
+			   LEFT JOIN SCH_RESOURCE res on RES.PK_SCHRES = APPT.PK_SCHRES
+		       left join BD_DEFDOC doc on doc.CODE=pi.DT_SEX and CODE_DEFDOCLIST='000000'
+			   LEFT JOIN sch_emp schemp on schemp.pk_sch = appt.pk_sch
+		       left join bd_defdoc appttype on appt.dt_apptype=appttype.code and appttype.code_defdoclist='020100'
+	       	   left join bd_ou_employee emp on emp.pk_emp=pv.pk_emp_phy  
+	       <trim prefix="WHERE" prefixOverrides="AND |OR ">
+	       	   appt.eu_schclass = '0'
+			   <if test="code != null and code != ''">
+			   	  and appt.code like '%' || #{code,jdbcType=VARCHAR} || '%'
+			   </if>
+			   <if test="mobile != null and mobile != ''">
+			   	  and pi.mobile = #{mobile,jdbcType=VARCHAR} 
+			   </if>
+			   <if test="namePi != null and namePi != ''">
+			   	  and pi.name_pi like '%' || #{namePi,jdbcType=VARCHAR} || '%'  
+			   </if>
+			   <if test="beginTime != null and beginTime != ''">
+			   	  and appt.date_appt &gt;= to_date(#{beginTime,jdbcType=VARCHAR},'yyyymmddHH24miss') 
+			   </if>
+			   <if test="endTime != null and endTime != ''">
+			   	  and appt.date_appt &lt;= to_date(#{endTime,jdbcType=VARCHAR},'yyyymmddHH24miss') 
+			   </if>
+			   <if test="pkSchsrv != null and pkSchsrv != ''">
+			   	  and appt.pk_schsrv = #{pkSchsrv,jdbcType=VARCHAR}   
+			   </if>
+			   <if test="pkEmp != null and pkEmp != ''">
+			   	  AND ( res.pk_emp = #{pkEmp,jdbcType=VARCHAR}
+	                 OR schemp.pk_emp = #{pkEmp,jdbcType=VARCHAR})
+			   </if>
+			   <if test="pkDeptEx != null and pkDeptEx != ''">
+			   	  and appt.pk_dept_ex = #{pkDeptEx,jdbcType=VARCHAR}  
+			   </if>
+			   <if test="euStatus != null and euStatus != ''">
+			   	  and appt.eu_status = #{euStatus,jdbcType=VARCHAR} 
+			   </if>
+			   <if test="pkOrg != null and pkOrg != ''">
+			   	  and appt.pk_org = #{pkOrg,jdbcType=VARCHAR} 
+			   </if>
+			   <if test="codeOp != null and codeOp != ''">
+				   and pi.code_op = #{codeOp,jdbcType=VARCHAR}
+			   </if>
+			   <if test="pkDateslot != null and pkDateslot != ''">
+				   and appt.PK_DATESLOT = #{pkDateslot,jdbcType=VARCHAR}
+			   </if>
+			   <if test="pkDept != null and pkDept != ''">
+				   and appt.pk_dept_ex = #{pkDept,jdbcType=VARCHAR}
+			   </if>
+			   <if test="pkDeptRes != null and pkDeptRes != ''">
+				   and (res.pk_dept = #{pkDeptRes,jdbcType=VARCHAR} or (res.EU_RESTYPE='0' and res.pk_schres=#{pkDeptRes,jdbcType=VARCHAR}))
+			   </if>
+			   <!--增加过滤条件， flagDept=1 只查询科室号-->
+			   <if test=" (pkDeptRes == null or pkDeptRes == '' ) and flagDept =='1'.toString() ">
+					and res.EU_RESTYPE='0'
+			   </if>
+			   <!--所属资源为空的情况，增加过滤条件，是否包含科室号 flagDept=0 不包含-->
+			   <if test="(pkDeptRes == null or pkDeptRes == '' ) and flagDept =='0'.toString() ">
+				   and res.EU_RESTYPE='1'
+			   </if>
+			   <if test="pkFather != null and pkFather != ''">
+				   and res.pk_dept in 
+						(select pk_schres from sch_resource  
+							where pk_father = #{pkFather,jdbcType=VARCHAR}
+							<if test="euSchclass != null and euSchclass != ''">
+								and eu_schclass = #{euSchclass,jdbcType=VARCHAR}
+							</if>
+							<if test="ftByUser !=null and ftByUser==3"><!--参数SCH0018=3的情况 根据业务线类型【12】诊区权限判断，通过人员登陆的科室，拿到科室对应的诊区进行过滤信息-->
+							 	and pk_dept_area in (
+							 		select busa.pk_dept
+									from bd_dept_bus bus
+									inner join bd_dept_bu bu on bus.pk_deptbu=bu.pk_deptbu
+									inner join bd_dept_bus busa on bus.pk_deptbu=busa.pk_deptbu
+									where busa.dt_depttype='16' 
+									And bu.dt_butype='12' 
+									And busa.del_flag='0' 
+									and bus.pk_dept=#{pkDeptbus,jdbcType=VARCHAR}
+							 	)
+						 	</if>
+						)
+			   </if>
+	       </trim>
+       ) order by date_appt asc,name_emp_phy asc,begin_end asc,to_number(nvl(ticket_no,0)) asc 
+	</select>
+	
+	
+	<select id="checkApply" resultType="com.zebone.nhis.sch.appt.vo.CheckApplyVo" parameterType="java.util.Map">
+		select pv.pk_pv,
+	       pv.eu_pvtype,
+	       pv.code_pv,
+	       pi.pk_pi,
+	       pi.name_pi,
+	       sex.name sex,
+	       pv.age_pv,
+	       ord.name_emp_ord,
+	       schsrv.pk_schsrv,
+	       schsrv.name namesrv,
+	       ord.pk_cnord,
+	       ord.name_ord,
+	       ord.quan,
+	       ord.code_apply,
+	       ord.date_start,
+	       dept.name_dept deptPv,
+	       ns.name_dept deptNs,
+	       ris.pk_ordris,
+	       pa.pk_ordpa
+	  	from cn_order ord
+	       inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+	       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+	       inner join sch_srv_ord so on ord.pk_ord=so.pk_ord and so.del_flag = '0'
+	       inner join sch_srv schsrv on so.pk_schsrv=schsrv.pk_schsrv
+	       inner join bd_defdoc sex on pi.dt_sex=sex.code and sex.code_defdoclist='000000'
+	       inner join bd_ou_dept dept on pv.pk_dept = dept.pk_dept
+	       left outer join bd_ou_dept ns on pv.pk_dept_ns=ns.pk_dept
+	       left outer join cn_ris_apply ris on ord.pk_cnord=ris.pk_cnord and ris.eu_status=1
+	       left outer join cn_pa_apply pa on ord.pk_cnord=pa.pk_cnord and pa.eu_status=1
+	       left join pi_card pc on pc.pk_pi=pi.pk_pi
+       <trim prefix="WHERE" prefixOverrides="AND |OR ">
+       	ord.code_ordtype like '02%' 
+       	and ord.del_flag = '0'
+       	and ord.flag_erase = 0 
+	 	and (ris.eu_status = 1 or pa.eu_status = 1) 
+	 	<if test="dateBegin != null">
+		 	and ord.date_start &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyymmddHH24miss')
+	 	</if>
+	 	<if test="dateEnd != null">
+	 		and ord.date_start &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyymmddHH24miss')  
+	 	</if>
+	 	<if test="codeApply != null and codeApply != ''">
+	 		and ord.code_apply like '%'|| #{codeApply,jdbcType=VARCHAR} ||'%'
+	 	</if>
+	 	<if test="codePv != null and codePv != ''">
+	 		and pv.code_pv like '%'||#{codePv,jdbcType=VARCHAR} ||'%' 
+	 	</if>
+	 	<if test="namePi != null and namePi != ''">
+	 		and pi.name_pi like '%'|| #{namePi,jdbcType=VARCHAR} ||'%'
+	 	</if>
+	 	<if test="pkDept != null and pkDept != ''">
+	 		and ord.pk_dept_exec = #{pkDept,jdbcType=VARCHAR}
+	 	</if>
+	 	
+	 	<if test="pkOrg != null and pkOrg != ''">
+            and ord.pk_org = #{pkOrg,jdbcType=VARCHAR}
+        </if>
+
+        <if test="pkOrg != null and pkOrg != ''">
+            and schsrv.pk_org = #{pkOrg,jdbcType=VARCHAR}
+        </if>
+        <if test="jzNo != null">
+		 	   and pc.card_no = #{jzNo,jdbcType=VARCHAR}
+	 	</if>
+	 	<if test="idNo != null">
+		 	   and pi.id_no = #{idNo,jdbcType=VARCHAR}
+	 	</if>
+       </trim>
+	</select>
+	
+	<select id="getApplyCheckInfo" resultType="com.zebone.nhis.sch.appt.vo.ApplyCheckInfo" parameterType="java.util.Map">
+		select 
+		   appt.eu_status euStatus,
+		   appt.pk_schappt pkSchappt,
+		   pv.eu_pvtype euPvtype,
+	       pv.code_pv codePv,
+	       pi.name_pi namePi,
+	       pi.mobile mobile,
+	       appt.date_appt dateAppt,
+	       appt.begin_time beginTime,
+	       exdp.name_dept deptEx,
+	       schres.name nameres,
+	       dept.name_dept deptPv,
+	       ns.name_dept deptNs,
+	       appt.ticket_no ticketNo,
+	       ord.code_apply codeApply,
+	       appt.name_emp_reg nameEmpReg,
+	       appt.date_reg dateReg,
+	       appt.name_emp_cancel nameEmpCancel,
+	       appt.date_cancel dateCancel,
+	       appt.flag_notice_canc flagNoticeCanc
+	  	from sch_appt appt
+	       inner join sch_appt_ord apord on appt.pk_schappt=apord.pk_schappt
+	       inner join cn_order ord on apord.pk_cnord=ord.pk_cnord
+	       inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+	       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+	       inner join sch_resource schres on appt.pk_schres=schres.pk_schres
+	       inner join bd_ou_dept exdp on appt.pk_dept_ex=exdp.pk_dept
+	       inner join bd_ou_dept dept on ord.pk_dept=dept.pk_dept
+	       inner join bd_ou_dept ns on ord.pk_dept_ns=ns.pk_dept
+	 	<trim prefix="WHERE" prefixOverrides="AND |OR "> 
+	 		appt.eu_schclass = '1'
+	 		<if test="codePv != null and codePv != ''">
+		 		and pv.code_pv like '%'||#{codePv,jdbcType=VARCHAR}||'%'
+		 	</if>
+		 	<if test="namePi != null and namePi != ''">
+		 		and pi.name_pi like '%'|| #{namePi,jdbcType=VARCHAR} ||'%'
+		 	</if>
+		 	<if test="mobile != null and mobile != ''">
+		 		and pi.mobile like '%'||#{mobile,jdbcType=VARCHAR}||'%'
+		 	</if>
+		 	<if test="beginDate != null">
+		 		 and appt.begin_time &gt;= to_date(#{beginDate,jdbcType=VARCHAR},'yyyymmddHH24miss')
+		 	</if>
+		 	<if test="endDate != null">
+		 		and appt.end_time &lt;= to_date(#{endDate,jdbcType=VARCHAR},'yyyymmddHH24miss')
+		 	</if>
+		 	<if test="pkSchres != null and pkSchres != ''">
+		 		and appt.pk_schres = #{pkSchres,jdbcType=VARCHAR}
+		 	</if>
+		 	<if test="pkSchsrv != null and pkSchsrv != ''">
+		 		and appt.pk_schsrv = #{pkSchsrv,jdbcType=VARCHAR}
+		 	</if>
+		 	<if test="pkCheckDept != null and pkCheckDept != ''">
+		 		and appt.pk_dept_ex = #{pkCheckDept,jdbcType=VARCHAR}
+		 	</if>
+		 	<if test="pkPvDept != null and pkPvDept != ''">
+		 		and ord.pk_dept = #{pkPvDept,jdbcType=VARCHAR}
+		 	</if>
+		 	<if test="euStatus != null and euStatus != ''">
+		 		and appt.eu_status = #{euStatus,jdbcType=VARCHAR}
+		 	</if>
+		 	<if test="pkOrg != null and pkOrg != ''">
+		 		and appt.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		 	</if>
+         </trim>
+	</select>
+	
+	
+	<select id="genApplyBlacklist" resultType="com.zebone.nhis.sch.appt.vo.ApplyBlacklist" parameterType="java.util.Map">
+	  select pi.pk_pi,
+		pi.code_pi,
+		pi.name_pi,
+		sex.name sex,
+		pi.birth_date,
+		pi.id_no,
+		pi.mobile,
+		case when lk.pk_pi = pi.pk_pi then '1' else '-1' end status,
+		count(1) cnt
+	  from pi_master pi
+		inner join sch_appt appt on pi.pk_pi = appt.pk_pi
+		inner join bd_defdoc sex on pi.dt_sex = sex.code and sex.code_defdoclist='000000'
+		left outer join pi_lock lk on pi.pk_pi = lk.pk_pi
+	  where appt.eu_schclass = 0 
+		and appt.eu_status = 0 
+		and appt.date_appt &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyymmddHH24miss') 
+		and appt.date_appt &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyymmddHH24miss')
+	  group by pi.pk_pi, 
+		pi.code_pi,
+		pi.name_pi,
+		sex.name,
+		pi.birth_date,
+		pi.id_no,
+		pi.mobile,
+		case when lk.pk_pi = pi.pk_pi then '1' else '-1' end
+	  having count(1) &gt; #{breakCnt,jdbcType=INTEGER}	
+	</select>
+	
+	
+	<select id="getSchApptBlacklist" resultType="DynaBean" parameterType="java.util.Map">
+	  SELECT
+		appt.code,
+		appt.date_appt,
+		appt.eu_status,
+		appt.ticket_no,
+		to_char(appt.begin_time,'hh24:mi:ss')||'-'||to_char(appt.end_time,'hh24:mi:ss') begin_end,
+		res.pk_emp,  
+        res.pk_dept,
+		dept.name_dept,
+		employee.name_emp
+	  FROM
+		sch_appt appt
+		Inner Join sch_resource res On appt.pk_schres=res.pk_schres
+		left join bd_ou_dept dept on dept.pk_dept = res.PK_DEPT_BELONG
+		left join BD_OU_EMPLOYEE employee on employee.pk_emp = res.pk_emp
+	  WHERE
+		appt.eu_schclass = 0
+		AND appt.eu_status = 0
+		AND appt.date_appt &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyymmddHH24miss')
+		AND appt.date_appt &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyymmddHH24miss')
+		AND appt.pk_pi = #{pkPi,jdbcType=VARCHAR}
+	</select>
+	
+	
+	<select id="getPiList" resultType="com.zebone.nhis.sch.appt.vo.ApplyBlacklist" parameterType="java.util.Map">
+	  select
+	     pi.code_op,
+	     pi.pk_pi,
+	  	 pi.code_pi,
+         pi.name_pi,
+         sex.name sex,
+         pi.birth_date,
+         pi.id_no,
+         pi.mobile,
+         case when lo.pk_pi=pi.pk_pi then '1' else '-1' end status
+      from pi_master pi
+         inner join bd_defdoc sex on pi.dt_sex=sex.code and sex.code_defdoclist='000000'
+         left outer join pi_lock lo on pi.pk_pi=lo.pk_pi
+      <trim prefix="WHERE" prefixOverrides="AND |OR ">
+      
+         <if test="codeOp != null and codeOp != ''">
+      		 and pi.code_op = #{codeOp,jdbcType=VARCHAR}
+      	</if>     
+      	<!-- <if test="codePi != null and codePi != ''">
+      		and pi.code_pi like '%'|| #{codePi,jdbcType=VARCHAR} ||'%'
+      	</if> -->	
+      	<if test="namePi != null and namePi != ''">
+      		and pi.name_pi like '%'|| #{namePi,jdbcType=VARCHAR} ||'%' 
+      	</if>
+      	<if test="idNo != null and idNo != ''">
+      		and pi.id_no = #{idNo,jdbcType=VARCHAR}
+      	</if>
+      	<if test="mobile != null and mobile != ''">
+      		and pi.mobile = #{mobile,jdbcType=VARCHAR}
+      	</if>      	
+      	<if test='status == "-1"'>
+      		and lo.pk_pi is null
+      	</if>
+      	<if test='status == "1"'>
+      		and lo.pk_pi is not null
+      	</if>
+      </trim>
+	</select>
+	
+	
+	<update id="batchUpdatePiLockDt" parameterType="java.util.List">
+		<foreach collection="list" item="item" separator=";" open="" close="">
+			update pi_lock_dt
+			set pk_org = #{item.pkOrg,jdbcType=VARCHAR},
+			eu_locktype = '0',
+			eu_direct = '-1',
+			pk_emp_opera = #{item.pkEmpOpera,jdbcType=VARCHAR},
+			name_emp_opera = #{item.nameEmpOpera,jdbcType=VARCHAR}
+			where pk_pi = #{item.pkPi,jdbcType=VARCHAR}
+		</foreach>
+	</update>
+	
+	<select id="searchApply_sql" resultType="DynaBean">
+		SELECT 
+		        ap.pk_pi,  
+		    pi.name_pi,
+		    schres.name schres,
+		    ap.pk_schapply,
+		    ap.pk_schsrv,
+		    ap.PK_SCHRES,
+		    ap.date_begin,
+		    ap.date_end,
+		    ap.pk_dateslot
+		FROM
+		    sch_resource schres
+		INNER JOIN sch_appt_apply ap ON schres.pk_schres = ap.pk_schres
+		INNER JOIN pi_master pi ON ap.pk_pi = pi.pk_pi
+		WHERE
+		    ap.eu_schclass = '0'
+		AND ap.eu_status = '0'
+		AND (SELECT count(*) FROM sch_appt  WHERE pk_schsrv = ap.pk_schsrv and ap.pk_pi=pk_pi and create_time&gt;=ap.create_time )&lt;=0
+		AND ap.flag_cancel = '0' 
+		AND ap.date_begin &lt;= to_date(to_char( getdate(),'yyyy-mm-dd'),'yyyy-mm-dd')
+		AND ap.date_end &gt;= to_date(to_char( getdate(),'yyyy-mm-dd'),'yyyy-mm-dd')
+		ORDER BY
+		    ap.date_reg
+	</select>
+	
+	<select id="searchApply_oracle" resultType="DynaBean">
+        SELECT 
+                ap.pk_pi,  
+            pi.name_pi,
+            schres.name schres,
+            ap.pk_schapply,
+            ap.pk_schsrv,
+            ap.PK_SCHRES,
+            ap.date_begin,
+            ap.date_end,
+            ap.pk_dateslot
+        FROM
+            sch_resource schres
+        INNER JOIN sch_appt_apply ap ON schres.pk_schres = ap.pk_schres
+        INNER JOIN pi_master pi ON ap.pk_pi = pi.pk_pi    
+        WHERE
+            ap.eu_schclass = '0'
+        AND ap.eu_status = '0'
+        AND (SELECT count(*) FROM sch_appt  WHERE pk_schsrv = ap.pk_schsrv and ap.pk_pi=pk_pi and create_time&gt;=ap.create_time )&lt;=0
+        AND ap.flag_cancel = '0' 
+        AND ap.date_begin &lt;= to_date(to_char( sysdate,'yyyy-mm-dd'),'yyyy-mm-dd')
+        AND ap.date_end &gt;= to_date(to_char( sysdate,'yyyy-mm-dd'),'yyyy-mm-dd')
+        ORDER BY
+            ap.date_reg
+    </select>
+
+    
+    <select id="searchAlreadyApply" resultType="DynaBean" parameterType="java.util.Map">
+    select appt.pk_schappt,
+          appt.date_appt,
+          schres.name shcres
+    from sch_appt appt 
+           inner join sch_resource schres on appt.pk_schres=schres.pk_schres
+    where appt.eu_schclass = '0' 
+		    <if test="pkPi != null">
+		    and appt.pk_pi = #{pkPi, jdbcType=VARCHAR}
+		    </if> 
+              and appt.eu_status = '0'
+		    <if test="dateAppt != null">
+              and appt.date_appt &gt;=  #{dateAppt, jdbcType=DATE}
+			</if>
+		order by appt.date_appt desc
+    </select>
+    
+    <select id="getCanApplyDeptDetail_sql" resultType="DynaBean">
+    SELECT
+        MAX (SCH.DATE_WORK) as last_DateTime,
+        SCH.PK_SCHSRV ,
+        SRV. NAME srv_name  , 
+        SCH.PK_SCHRES,
+        res. NAME res_name,
+      res.PK_EMP,
+      emp.NAME_EMP
+    FROM
+        SCH_SCH sch
+    INNER JOIN SCH_SRV srv ON SCH.PK_SCHSRV = SRV.PK_SCHSRV
+    INNER JOIN SCH_RESOURCE res ON SCH.PK_SCHRES = res.pk_schres
+    left JOIN BD_OU_EMPLOYEE emp  on emp.PK_EMP=res.PK_EMP
+    where SCH.EU_SCHCLASS = '0' and SCH.DATE_WORK > getdate()
+    <if test="pkDept != null">
+    and sch.PK_DEPT=#{pkDept, jdbcType=VARCHAR}
+    </if> 
+    GROUP BY
+        SCH.PK_SCHSRV,
+        SRV. NAME,
+        SCH.PK_SCHRES,
+        res. NAME,
+      res.PK_EMP,
+      emp.NAME_EMP
+    
+    </select>
+    
+    <select id="getCanApplyDeptDetail_oracle" resultType="DynaBean">
+    SELECT
+	    MAX (SCH.DATE_WORK) as last_DateTime,
+	    SCH.PK_SCHSRV ,
+	    SRV. NAME srv_name  , 
+	    SCH.PK_SCHRES,
+	    res. NAME res_name,
+	  res.PK_EMP,
+	  emp.NAME_EMP
+	FROM
+	    SCH_SCH sch
+	INNER JOIN SCH_SRV srv ON SCH.PK_SCHSRV = SRV.PK_SCHSRV
+	INNER JOIN SCH_RESOURCE res ON SCH.PK_SCHRES = res.pk_schres
+	left JOIN BD_OU_EMPLOYEE emp  on emp.PK_EMP=res.PK_EMP
+	where SCH.EU_SCHCLASS = '0' and SCH.DATE_WORK>SYSDATE 
+	<if test="pkDept != null">
+    and sch.PK_DEPT=#{pkDept, jdbcType=VARCHAR}
+    </if> 
+	GROUP BY
+	    SCH.PK_SCHSRV,
+	    SRV. NAME,
+	    SCH.PK_SCHRES,
+	    res. NAME,
+	  res.PK_EMP,
+	  emp.NAME_EMP
+    
+    </select>
+    
+    <select id="getCanApplyDept_oracle" resultType="DynaBean">
+    SELECT
+	  MAX (SCH.DATE_WORK) as last_DateTime,
+	    ceil(MAX (SCH.DATE_WORK)-sysdate)  as appt_Days,
+	    sch.PK_DEPT ,
+	    DEPT.NAME_DEPT
+	FROM
+	    sch_sch sch
+	LEFT OUTER JOIN BD_OU_DEPT dept ON SCH.PK_DEPT = DEPT.PK_DEPT
+	where  SCH.EU_SCHCLASS = '0' and SCH.DATE_WORK>SYSDATE
+	and sch.pk_org = #{pkOrg, jdbcType=VARCHAR}
+	GROUP BY
+	    SCH.PK_DEPT,
+	    DEPT.NAME_DEPT
+    </select>
+    
+    <select id="getCanApplyDept_sql" resultType="DynaBean">
+    SELECT
+	  MAX (SCH.DATE_WORK) as last_DateTime,
+	    DATEDIFF(day, getdate() ,MAX(SCH.DATE_WORK))  as appt_Days,
+	    sch.PK_DEPT ,
+	    DEPT.NAME_DEPT
+	FROM
+	    sch_sch sch
+	LEFT OUTER JOIN BD_OU_DEPT dept ON SCH.PK_DEPT = DEPT.PK_DEPT
+	where  SCH.EU_SCHCLASS = '0' and SCH.DATE_WORK>getdate()
+	and sch.pk_org = #{pkOrg, jdbcType=VARCHAR}
+	GROUP BY
+	    SCH.PK_DEPT,
+	    DEPT.NAME_DEPT
+    </select>
+    
+    <select id="getSchApptBlackLLatelist" resultType="DynaBean" parameterType="java.util.Map">
+    select appt.code,
+       appt.date_appt,
+       to_char(appt.begin_time,'hh24:mi:ss')||'-'||to_char(appt.end_time,'hh24:mi:ss'), 
+       res.pk_emp,
+       res.pk_dept,
+       appt.eu_status,
+       appt.ticket_no,
+       op.date_sign,
+       dept.name_dept,
+	   employee.name_emp
+	from sch_appt appt
+		Inner Join sch_appt_pv appv On appt.pk_schappt=appv.pk_schappt
+		Inner Join sch_resource res On appt.pk_schres=res.pk_schres
+		left join bd_ou_dept dept on dept.pk_dept = res.pk_dept 
+		left join BD_OU_EMPLOYEE employee on employee.pk_emp = res.pk_emp
+		Left Join pv_op op On appv.pk_pv=op.pk_pv	
+		where appt.eu_schclass = 0 and
+		      appt.eu_status = 1 and   
+		      appt.end_time &lt; op.date_sign 		
+        and appt.date_appt &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyymmddHH24miss')
+		and appt.date_appt &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyymmddHH24miss')
+		and appt.pk_pi = #{pkPi,jdbcType=VARCHAR}
+    </select>
+    
+    <select id="genApplyBlackLatelist" parameterType="java.util.Map" resultType="com.zebone.nhis.sch.appt.vo.ApplyBlacklist">
+          select pi.pk_pi,
+		       pi.code_pi,
+		       pi.name_pi,
+		       sex.name sex,
+		       pi.birth_date,
+		       pi.id_no,
+		       pi.mobile,
+		       case when lk.pk_pi=pi.pk_pi then 'Y' else 'N' end status,
+		       count(1) cnt
+          from pi_master pi
+		       inner join sch_appt appt on pi.pk_pi=appt.pk_pi
+		       inner join bd_defdoc sex on pi.dt_sex=sex.code and sex.code_defdoclist='000000'
+		       Inner Join sch_appt_pv appv On appt.pk_schappt=appv.pk_schappt
+		       Left Outer Join pv_op op On appv.pk_pv=op.pk_pv
+		       Left Outer Join pi_lock lk on pi.pk_pi=lk.pk_pi
+          where appt.eu_schclass = 0 and
+		       appt.eu_status = 1 and 
+		       appt.end_time &lt; op.date_sign and 
+		       appt.date_appt &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyymmddHH24miss') and
+		       appt.date_appt &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyymmddHH24miss')       
+          group by pi.pk_pi, 
+		       pi.code_pi,
+		       pi.name_pi,
+		       sex.name,
+		       pi.birth_date,
+		       pi.id_no,
+		       pi.mobile,
+		       case when lk.pk_pi=pi.pk_pi then 'Y' else 'N' end
+		       having count(1) &gt; #{lateTimer,jdbcType=INTEGER}	
+    </select>
+    
+    <select id="searchPvop" parameterType="java.util.Map" resultType="DynaBean">
+          Select dept.name_dept,  
+		       op.name_emp_pv name_emp_phy,  
+		       sch.date_work,   
+		       ds.name_dateslot,  
+		       pv.name_pi, 
+			   pi.id_no,
+			   org.name_org,	
+		       pi.mobile, 
+		       pi.code_op,  
+		       op.ticketno, 					
+		       op.create_time register_time,  
+		       '' eu_status,
+		       '现场挂号' appttype,
+		       '1' flag_pay,
+		       op.creator, 
+		       employee.name_emp name_emp_reg,
+               to_char(op.create_time,'YYYY-MM-DD HH24:MI:SS') date_reg
+          from pv_op op
+		      Inner Join sch_sch sch On op.pk_sch=sch.pk_sch
+		      Inner Join bd_ou_dept dept on op.pk_dept_pv=dept.pk_dept
+		      Inner Join bd_code_dateslot ds on sch.pk_dateslot=ds.pk_dateslot
+					inner join bd_ou_org org on op.pk_org = org.pk_org
+		      Inner Join pv_encounter pv On pv.pk_pv=op.pk_pv
+		      Inner Join pi_master pi On pi.pk_pi=pv.pk_pi
+		      left join BD_OU_EMPLOYEE employee on employee.pk_emp = op.CREATOR
+		   <trim prefix="WHERE" prefixOverrides="AND |OR ">
+       	      op.eu_regtype='0'
+			   <if test="mobile != null and mobile != ''">
+			   	  and pi.mobile = #{mobile,jdbcType=VARCHAR} 
+			   </if>
+			   <if test="namePi != null and namePi != ''">
+			   	  and pi.name_pi like '%' || #{namePi,jdbcType=VARCHAR} || '%'  
+			   </if>
+			   <if test="beginTime != null and beginTime != ''">
+			   	  and op.create_time &gt;= to_date(#{beginTime,jdbcType=VARCHAR},'yyyymmddHH24miss') 
+			   </if>
+			   <if test="endTime != null and endTime != ''">
+			   	  and op.create_time &lt;= to_date(#{endTime,jdbcType=VARCHAR},'yyyymmddHH24miss') 
+			   </if>
+			   <if test="pkSchsrv != null and pkSchsrv != ''">
+			   	  and op.pk_schsrv = #{pkSchsrv,jdbcType=VARCHAR}   
+			   </if>		  
+			   <if test="pkDeptEx != null and pkDeptEx != ''">
+			   	  and op.pk_dept_pv = #{pkDeptEx,jdbcType=VARCHAR}  
+			   </if>
+		   </trim>			      			 			      
+    </select>
+    <select id="getPiAuditList" resultType="com.zebone.nhis.sch.appt.vo.ApplyBlacklist" parameterType="java.util.Map">
+	  select
+	     pi.code_op,
+	     pi.pk_pi,
+	  	 pi.code_pi,
+         pi.name_pi,
+         sex.name sex,
+         pi.birth_date,
+         pi.id_no,
+         pi.mobile,
+         case when (sum(case when dt.flag_effect='1' then 1 else 0 end)>0) then '1' else '0' end status_audit
+      from pi_master pi
+		 inner join pi_lock lo on pi.pk_pi=lo.pk_pi
+		 left join bd_defdoc sex on pi.dt_sex=sex.code and sex.code_defdoclist='000000'
+		 left join pi_lock_dt dt on dt.PK_PI=lo.PK_PI
+      <trim prefix="WHERE" prefixOverrides="AND |OR ">
+         <if test="codeOp != null and codeOp != ''">
+      		 and pi.code_op = #{codeOp,jdbcType=VARCHAR}
+      	</if>     
+      	<if test="namePi != null and namePi != ''">
+      		and pi.name_pi like '%'|| #{namePi,jdbcType=VARCHAR} ||'%' 
+      	</if>
+      	<if test="idNo != null and idNo != ''">
+      		and pi.id_no = #{idNo,jdbcType=VARCHAR}
+      	</if>
+      	<if test="mobile != null and mobile != ''">
+      		and pi.mobile = #{mobile,jdbcType=VARCHAR}
+      	</if>
+      	<if test="beginDate !=null and beginDate != ''">
+        	and lo.date_begin<![CDATA[>=]]> to_date(#{beginDate,jdbcType=VARCHAR},'yyyy-mm-dd')
+        </if>
+        <if test="endDate !=null and endDate != ''">
+        	and lo.date_end<![CDATA[<=]]> to_date(#{endDate,jdbcType=VARCHAR} || ' 23:59','yyyy-mm-dd hh24:mi')
+        </if>
+        <if test="statusAudit!=null and statusAudit == 0">
+      		and (dt.flag_effect is null or dt.flag_effect='0')
+      	</if>
+      	<if test="statusAudit!=null and statusAudit == 1">
+      		and dt.flag_effect='1'
+      	</if>
+      </trim>
+		group by
+		pi.code_op,
+		pi.pk_pi,
+		pi.code_pi,
+		pi.name_pi,
+		sex.name,
+		pi.birth_date,
+		pi.id_no,
+		pi.mobile
+	</select>
+	    
+	<select id="getDeptTree" resultType="DynaBean" parameterType="java.util.Map">
+	  	select DISTINCT org.pk_org as id, org.name_org as name,null as fatherid,org.py_code as pyCode
+			from BD_OU_ORG org 
+			inner join bd_ou_dept dept on ORG.pk_org = DEPT.PK_ORG
+			where dept.flag_active=1 
+			and dept.dt_depttype='01' 
+			and dept.flag_op=1
+			and dept.del_flag=0 
+			<if test="pkOrg != null and pkOrg != ''">
+      			and org.pk_org=#{pkOrg,jdbcType=VARCHAR}
+      		</if>
+		union
+		select DISTINCT dept.pk_dept as id,dept.name_dept as name,org.pk_org as fatherid,dept.py_code as pyCode
+			from BD_OU_ORG org 
+			RIGHT JOIN bd_ou_dept dept on ORG.pk_org = DEPT.PK_ORG
+			where dept.flag_active=1 
+			and dt_depttype='01' 
+			and flag_op=1 
+			and dept.del_flag=0 
+			<if test="pkOrg != null and pkOrg != ''">
+      			and org.pk_org=#{pkOrg,jdbcType=VARCHAR}
+      		</if>
+	</select>    
+	
+	<select id="getAreaDeptTree" resultType="DynaBean" parameterType="java.util.Map">
+  	 	select Distinct fa.pk_dept as id,  fa.name_dept as name, null as fatherid, fa.py_code as pyCode 
+  	 		from sch_resource res
+			inner JOIN bd_ou_dept fa on res.pk_dept_area=fa.pk_dept  And fa.del_flag='0'
+			where res.DEL_FLAG ='0'
+			<if test="pkOrg != null and pkOrg != ''">
+     			and res.pk_org=#{pkOrg,jdbcType=VARCHAR}
+     		</if>
+     		<if test="pkDept != null and pkDept != ''">
+     			and fa.pk_dept in (select busa.pk_dept 
+  						from bd_dept_bus bus
+       					inner join bd_dept_bu bu on bus.pk_deptbu=bu.pk_deptbu
+				        inner join bd_dept_bus busa on bus.pk_deptbu=busa.pk_deptbu
+				 		where busa.dt_depttype='16' And
+					    bu.dt_butype='12' And
+					    busa.del_flag=0 And
+					    bus.pk_dept=#{pkDept,jdbcType=VARCHAR}
+				)
+     		</if>
+		union
+		select Distinct res.pk_dept_belong as id,  dept.name_dept as name, res.pk_dept_area as fatherid, dept.py_code as pyCode from
+ 			sch_resource res
+			inner JOIN bd_ou_dept dept On res.pk_dept_belong=dept.pk_dept And dept.del_flag='0'
+  			inner JOIN bd_ou_dept fa on res.pk_dept_area=fa.pk_dept And fa.del_flag='0'
+			where res.DEL_FLAG ='0' 
+			<if test="pkOrg != null and pkOrg != ''">
+      			and res.pk_org=#{pkOrg,jdbcType=VARCHAR}
+      		</if>
+      		<if test="pkDept != null and pkDept != ''">
+      			and fa.pk_dept in (select busa.pk_dept 
+  						from bd_dept_bus bus
+       					inner join bd_dept_bu bu on bus.pk_deptbu=bu.pk_deptbu
+				        inner join bd_dept_bus busa on bus.pk_deptbu=busa.pk_deptbu
+				 		where busa.dt_depttype='16' And
+					    bu.dt_butype='12' And
+					    busa.del_flag=0 And
+					    bus.pk_dept=#{pkDept,jdbcType=VARCHAR}
+				)
+      		</if>
+	</select> 
+
+	<select id="getApptStatCount" resultType="com.zebone.nhis.sch.appt.vo.SchApptCntVo">
+		select tick.pk_sch
+		     ,count(1) cnt_appt
+		     ,sum(case when tick.DT_APPTYPE > '1' then 1 else 0 end) cnt_appt_out
+			 ,sum(case when tick.DT_APPTYPE &lt;= '1' then 1 else 0 end) cnt_appt_in
+		from SCH_TICKET tick
+		where tick.END_TIME>=to_date(#{date,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi:ss')
+			and tick.FLAG_STOP='0' and tick.FLAG_APPT='1' and tick.FLAG_USED='0'
+		<if test="pkSchs !=null and pkSchs.size()>0">
+			and tick.pk_sch in
+			<foreach collection="pkSchs" item="pkSch" open="(" separator="," close=")">
+				#{pkSch,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+		group by tick.PK_SCH
+	</select>
+	
+	
+	<select id="getLockDtlist" resultType="DynaBean">
+    select dc.date_clinic,temp.* 
+    from ( 
+		select  
+		  dt.pk_pi,
+		  dt.date_lock,
+		  pi.date_begin,
+		  pi.date_end,
+		  pi.eu_locktype,
+		  dt.eu_direct,
+		  dt.name_emp_opera,
+		  dt.note,
+		  CASE
+		WHEN dt.flag_effect = '1' THEN
+		  '已审核'
+		ELSE
+		  '未审核'
+		END flag_effect,
+		 boe.name_emp pk_emp_effect,
+		 dt.pk_pilockdt
+		FROM
+		  (SELECT * from  pi_lock_dt where pk_pi =#{pkPi,jdbcType=VARCHAR} ) dt
+		Left Join pi_lock pi On pi.pk_pi=dt.pk_pi left join BD_OU_EMPLOYEE boe on boe.pk_emp=dt.pk_emp_effect
+	) temp, ( SELECT date_clinic from (SELECT date_clinic from  pv_encounter 
+		      where pk_pi =#{pkPi,jdbcType=VARCHAR} ORDER BY date_clinic desc ) pv where ROWNUM &lt;=1 ) dc
+    </select>
+    
+</mapper>

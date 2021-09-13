@@ -1,0 +1,608 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.sch.plan.dao.SchMapper">
+
+    <select id="listAll" resultType="com.zebone.nhis.common.module.sch.plan.SchSch">
+      select * from sch_sch
+    </select>
+
+	<!-- 获取当天一天的排班 -->
+	<select id="getTodaySchInfos" resultType="DynaBean">
+		select h.pk_sch,
+				   h.cnt_total,
+				   (h.cnt_total-h.cnt_used) as can_use,
+				   h.pk_schsrv,
+				   s.name as schsrv_name,
+				   s.eu_srvtype,
+				   h.pk_schres as pk_res,
+				   r.name as sch_name,
+				   r.spcode,
+				   r.d_code,
+				   r.pk_emp,
+				   r.pk_dept_belong,
+				   h.pk_dateslot,
+				   d.name_dateslot as dateslot_name
+		from sch_sch h
+				   inner join sch_srv s on s.pk_schsrv = h.pk_schsrv and s.eu_schclass='0'
+				   inner join sch_resource r on r.pk_schres = h.pk_schres and r.eu_schclass='0'
+				   inner join bd_code_dateslot d on d.pk_dateslot = h.pk_dateslot
+		 where h.del_flag = '0' and h.flag_stop = '0'
+		             and h.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		             <if test="rescode != null  and  rescode != ''">
+				     and (r.spcode like '%'||#{rescode,jdbcType=VARCHAR}||'%' or r.d_code like '%'||#{rescode,jdbcType=VARCHAR}||'%')
+				     </if>
+				     <if test="pkSchres != null  and  pkSchres != ''">
+				     and r.pk_schres = #{pkSchres,jdbcType=VARCHAR}
+				      </if>
+				     and to_char(h.date_work,'yyyy-MM-dd') = #{nowdate,jdbcType=VARCHAR}
+				     and h.cnt_used &lt; h.cnt_total
+	     order by h.pk_schres,d.sortno
+	</select>
+
+
+	<!-- 获取当天目前可用的排班 -->
+	<select id="getTodaySchInfosByDate" resultType="DynaBean">
+		select s.pk_org,
+  			   s.eu_srvtype,
+  			   s.name	as schsrv_name,
+  			   r.name	as sch_name,
+  			   d.name_dateslot	as dateslot_name,
+  			   h.pk_sch,
+  			   h.cnt_total,
+  			   (h.cnt_total - h.cnt_used) as can_use,
+  			   h.pk_schsrv,
+  			   h.pk_schres	as pk_res,
+  			   r.spcode,
+  			   r.d_code,
+  			   r.pk_emp,
+  			   emp.name_emp,
+  			   r.pk_dept_belong,
+  			   dept.name_dept as dept_belong_name,
+  			   h.pk_dateslot
+  		  from sch_sch h
+  		 inner join sch_srv s on h.pk_schsrv = s.pk_schsrv and s.eu_schclass = '0'
+  		 inner join sch_resource r on h.pk_schres = r.pk_schres and r.eu_schclass = '0'
+  		 inner join bd_code_dateslot d on h.pk_dateslot = d.pk_dateslot
+  		 inner join bd_ou_dept dept on dept.pk_dept = r.pk_dept_belong
+  		  left join bd_ou_employee emp on emp.pk_emp = r.pk_emp
+  		  left join bd_code_dateslot_time d_time on d_time.pk_dateslot = d.pk_dateslot
+		 where h.del_flag = '0'
+      	   and h.flag_stop = '0'
+      	 <if test="rescode != null  and  rescode != ''">
+		   and (r.spcode like '%'||#{rescode,jdbcType=VARCHAR}||'%' or r.d_code like '%'||#{rescode,jdbcType=VARCHAR}||'%')
+		 </if>
+		 <if test="pkSchres != null  and  pkSchres != ''">
+		   and r.pk_schres = #{pkSchres,jdbcType=VARCHAR}
+		 </if>
+		   and h.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		   and h.date_Work = to_date(#{nowDate},'YYYYMMDDHH24MISS')
+		   and h.cnt_used &lt; h.cnt_total
+		   and (lpad(valid_month_begin,2,'0') || '-' || lpad(valid_day_begin,2,'0') &lt;= #{nowDay,jdbcType=VARCHAR}
+                 and lpad(valid_month_end,2,'0') || '-' || lpad(valid_day_end,2,'0') &gt;= #{nowDay,jdbcType=VARCHAR}
+                 and lpad(d_time.time_begin, 8, '0')  &lt;= #{nowTime,jdbcType=VARCHAR}
+                 and lpad(d_time.time_end, 8, '0') &gt;= #{nowTime,jdbcType=VARCHAR}
+                 and d_time.pk_dateslottime is not null )
+		 order by h.pk_schres,h.pk_schsrv
+	</select>
+
+	<select id="getSchInfo" resultType="com.zebone.nhis.sch.plan.vo.SchSchVo" parameterType="java.lang.String">
+		select t1.*,t2.name schresName,t3.name schsrvName,t4.pk_planweek pkPlanweekCheck, t5.pk_schplan pkSchplanCheck, t2.pk_ticketrules pkTicketrules
+		from sch_sch t1
+		left join sch_resource t2 on t1.pk_schres = t2.pk_schres
+		left join sch_srv t3 on t1.pk_schsrv = t3.pk_schsrv
+		left join sch_plan_week t4 on t1.pk_planweek = t4.pk_planweek
+		left join sch_plan t5 on t1.pk_schplan = t5.pk_schplan
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and t1.del_flag = '0'
+			and t1.pk_org = #{pkOrg,jdbcType=VARCHAR}
+			<if test="flagStop != null and flagStop != ''">
+				and t1.FLAG_STOP = #{flagStop,jdbcType=VARCHAR}
+			</if>
+			<if test="euStatus != null and euStatus != ''">
+				and t1.EU_STATUS = #{euStatus,jdbcType=VARCHAR}
+			</if>
+			<if test="pkSchsrv != null and pkSchsrv != ''">
+		  		and t1.pk_schsrv = #{pkSchsrv,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="euSchclass != null and euSchclass != ''">
+		  		and t1.eu_schclass = #{euSchclass,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="pkSchres != null and pkSchres != ''">
+		  		and t1.pk_schres = #{pkSchres,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="pkDept != null and pkDept != ''">
+		  		and t1.pk_dept = #{pkDept,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="dateWork != null and dateWork != ''">
+				and t1.date_work - to_date(#{dateWork,jdbcType=VARCHAR},'yyyy-mm-dd') &gt;= 0
+				and t1.date_work - to_date(#{dateWork,jdbcType=VARCHAR},'yyyy-mm-dd') &lt; 7
+		  	</if>
+		  	<if test="dateBegin != null">
+		  		and t1.date_work &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyy-mm-dd')
+		  	</if>
+		  	<if test="dateEnd != null">
+		  		and t1.date_work &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-mm-dd')
+		  	</if>
+		  	<if test="disease != null and disease != ''">
+		  	    and t2.spec like '%'||#{disease,jdbcType=VARCHAR}||'%'
+		  	</if>
+	  	</trim>
+	  	order by t1.pk_schres,t1.pk_schsrv
+	</select>
+
+	<select id="getSchInfoZs" resultType="com.zebone.nhis.sch.plan.vo.SchSchVo" parameterType="java.util.Map">
+		select sch.*,
+		to_char(sch.date_work,'d') as weekNo,
+		bd.code_dateslot,
+		bd.name_dateslot,
+		t2.name schresName,
+		t3.name schsrvName,
+		dpu.name name_deptunit,
+		emp.NAME_EMP Modifier_Name,
+		t2.pk_dept pk_dept_rs,
+		dp.name_dept name_dept_rs,
+	   <choose>
+		   <when test="dbType == 'sqlserver'">0 </when>
+		   <otherwise>(select count(1) from sch_TICKET  t where t.flag_appt='1'and t.flag_used='0' and t.FLAG_STOP='0' and t.pk_sch=sch.PK_SCH)</otherwise>
+	   </choose>
+		 cnt_Appt_Sur,
+		t2.eu_restype
+		from sch_sch sch
+		left join sch_resource t2 on sch.pk_schres = t2.pk_schres
+            left join sch_srv t3 on sch.pk_schsrv = t3.pk_schsrv
+		LEFT JOIN bd_code_dateslot bd ON sch.pk_dateslot=bd.pk_dateslot
+		LEFT JOIN bd_dept_unit dpu on sch.pk_deptunit = dpu.pk_deptunit
+		LEFT JOIN bd_ou_dept dp on t2.pk_dept = dp.pk_dept
+		left join BD_OU_EMPLOYEE emp on emp.PK_EMP=sch.MODIFIER
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and sch.del_flag = '0'
+			and sch.cnt_total&gt;=0<!-- 按照产品LJ的需求，限定死不查询临时排班。 -->
+			and sch.pk_org = #{pkOrg,jdbcType=VARCHAR}
+			<if test="pkSchsrv != null and pkSchsrv != ''">
+				and sch.pk_schsrv = #{pkSchsrv,jdbcType=VARCHAR}
+			</if>
+			<if test="euSchclass != null and euSchclass != ''">
+				and sch.eu_schclass = #{euSchclass,jdbcType=VARCHAR}
+			</if>
+			<if test="pkSchres != null and pkSchres != ''">
+				and sch.pk_schres = #{pkSchres,jdbcType=VARCHAR}
+			</if>
+			<if test="pkDept != null and pkDept != ''">
+				and sch.pk_dept = #{pkDept,jdbcType=VARCHAR}
+			</if>
+			<if test="pkDeptunit != null and pkDeptunit != ''">
+				and sch.pk_deptunit = #{pkDeptunit,jdbcType=VARCHAR}
+			</if>
+			<if test="dateWork != null and dateWork != ''">
+				and sch.date_work - to_date(#{dateWork,jdbcType=VARCHAR},'yyyy-mm-dd') &gt;= 0
+				and sch.date_work - to_date(#{dateWork,jdbcType=VARCHAR},'yyyy-mm-dd') &lt; 7
+			</if>
+			<if test="dateBegin != null">
+				and sch.date_work &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyy-mm-dd')
+			</if>
+			<if test="dateEnd != null">
+				and sch.date_work &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-mm-dd')
+			</if>
+			<if test="euStatus != null and euStatus != ''">
+				and sch.eu_status = #{euStatus,jdbcType=VARCHAR}
+			</if>
+			<if test="pkEmp != null and pkEmp != ''">
+				and t2.pk_emp =#{pkEmp,jdbcType=VARCHAR}
+			</if>
+			<if test="pkQcplatform !=null and pkQcplatform !=''">
+				and sch.pk_dept in (select que.PK_DEPT from bd_qc_platform pf
+					inner join bd_qc_que que on pf.pk_qcplatform=que.pk_qcplatform
+					where pf.pk_qcplatform =#{pkQcplatform,jdbcType=VARCHAR}
+					)
+			</if>
+			<if test='pkDateslot !=null and pkDateslot!=""'>
+				and sch.pk_dateslot=#{pkDateslot,jdbcType=VARCHAR}
+			</if>
+			<if test='nameDateslot !=null and nameDateslot!="all" and nameDateslot!= "" '>
+				and bd.NAME_DATESLOT=#{nameDateslot,jdbcType=VARCHAR}
+			</if>
+			<if test="ftByUser !=null and ftByUser==1"><!--扩展参数SCH0012=1的情况 根据分诊台权限过滤信息-->
+				and sch.pk_dept in (select PK_DEPT from bd_ou_empjob where PK_EMP=#{pkEmpJob,jdbcType=VARCHAR} and DEL_FLAG='0' )
+			</if>
+			<if test="ftByUser !=null and ftByUser==2"><!--扩展参数SCH0012=2的情况 根据分诊台权限过滤信息-->
+				and sch.pk_dept in (select que.PK_DEPT from bd_qc_platform pf
+				inner join bd_qc_que que on pf.pk_qcplatform=que.pk_qcplatform
+				inner join bd_qc_perm perm on perm.pk_qcplatform = que.pk_qcplatform
+				where perm.pk_user = #{pkUser,jdbcType=VARCHAR}
+				)
+			</if>
+			<if test="ftByUser !=null and ftByUser==3"><!--扩展参数SCH0012=3的情况 根据业务线类型【12】诊区权限判断-->
+				and t2.PK_DEPT_AREA  in
+                    (select busa.pk_dept
+                      from bd_dept_bus bus
+                      inner join bd_dept_bu bu on bus.pk_deptbu=bu.pk_deptbu
+                      inner join bd_dept_bus busa on bus.pk_deptbu=busa.pk_deptbu
+                      where busa.dt_depttype='16'
+                      And bu.dt_butype='12'
+                      And busa.del_flag=0
+                      And bus.pk_dept=#{pkDeptArea,jdbcType=VARCHAR}
+                    )
+
+			</if>
+		</trim>
+		order by sch.date_work,bd.sortno
+	</select>
+
+
+	<select id="getSchplanWithWeek" resultType="com.zebone.nhis.sch.plan.vo.SchPlanWithWeek" parameterType="java.util.Map">
+		select pl.pk_schplan,
+	       pl.pk_schres,
+	       pl.pk_schsrv,
+	       pl.pk_workcalendar,
+	       pl.pk_ticketrules,
+	       pl.minute_per,
+	       pl.flag_ticket,
+	       pl.eu_appttype,
+	       plw.pk_deptunit,
+	       res.pk_dept_belong pk_dept,
+	       pl.eu_schclass,
+	       pl.pk_org,
+	       plw.pk_planweek,
+	       plw.week_no,
+	       plw.pk_dateslot,
+	       plw.cnt_total,
+	       plw.cnt_appt,
+	       plw.cnt_add,pl.NAME pl_name,dt.NAME_DATESLOT,
+		   res.PK_SCHRES,
+		   res.PK_EMP,
+		   dt.eu_noon
+	  from sch_plan pl
+	       inner join sch_plan_week plw on pl.pk_schplan=plw.pk_schplan
+	       INNER JOIN SCH_RESOURCE res on RES.pk_schres = pl.pk_schres
+	       left join BD_CODE_DATESLOT dt on plw.PK_DATESLOT = dt.PK_DATESLOT
+       <trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and pl.del_flag = '0'
+			and plw.del_flag = '0'
+			and pl.flag_stop = '0'
+			<if test="pkSchplan != null and pkSchplan != ''">
+		  		and pl.pk_schplan = #{pkSchplan,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="pkDept != null and pkDept != ''">
+		  		and res.pk_dept_belong = #{pkDept,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="euSchclass != null and euSchclass != ''">
+				and pl.eu_schclass = #{euSchclass,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="pkOrg != null and pkOrg != ''">
+				and pl.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		  	</if>
+	   </trim>
+	</select>
+
+	<select id="getSchPlanEmpByPkSchplan" resultType="com.zebone.nhis.common.module.sch.plan.SchPlanEmp" parameterType="java.lang.String">
+		select * from SCH_PLAN_EMP
+		where del_flag = '0'
+		and PK_SCHPLAN = #{_parameter,jdbcType=VARCHAR}
+	</select>
+
+	<select id="getPkSchsByExclude" resultType="java.lang.String" parameterType="java.util.List">
+		<foreach item="item" index="index" collection="schExcludes" open=""
+		           separator="union" close="">
+	        select pk_sch from SCH_SCH WHERE
+	        DEL_FLAG = '0'
+			AND PK_SCHRES = #{item.pkSchres}
+			AND PK_SCHSRV = #{item.pkSchsrv}
+        </foreach>
+	</select>
+
+	<select id="getSchstopworks" resultType="java.util.Map" parameterType="java.lang.String">
+		select date_stop as dateStop,date_end as dateEnd,EU_NOON as euNoon   
+		from sch_schstop  
+		where del_flag='0' and pk_emp_stop=#{pkEmp,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getSchSchDateworks" resultType="java.util.Date" parameterType="java.util.Map">
+		select DISTINCT date_work from SCH_SCH
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			del_flag = '0'
+			<if test="beginDate != null and beginDate != ''">
+				and date_work &gt;= to_date(#{beginDate,jdbcType=VARCHAR},'yyyy-mm-dd')
+		  	</if>
+		  	<if test="endDate != null and endDate != ''">
+				and date_work &lt;= to_date(#{endDate,jdbcType=VARCHAR},'yyyy-mm-dd')
+		  	</if>
+		  	<if test="pkOrg != null and pkOrg != ''">
+				and pk_org = #{pkOrg,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="euSchclass != null and euSchclass != ''">
+				and eu_schclass = #{euSchclass,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="pkDept != null and pkDept != ''">
+		  		and pk_dept = #{pkDept,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="pkSchplan != null and pkSchplan != ''">
+		  		and pk_schplan = #{pkSchplan,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="pkDateslot != null and pkDateslot != ''">
+		  		and (pk_dateslot = #{pkDateslot,jdbcType=VARCHAR} 
+		  			or exists( 
+		  			select 1 from BD_CODE_DATESLOT lot where lot.EU_NOON in ( select EU_NOON from BD_CODE_DATESLOT where EU_NOON is not null and PK_DATESLOT=#{pkDateslot,jdbcType=VARCHAR} )
+   					and lot.PK_DATESLOT = SCH_SCH.PK_DATESLOT )
+   				)
+		  	</if>
+			<if test="pkSchres != null and pkSchres != '' ">
+				and pk_schres = #{pkSchres,jdbcType=VARCHAR}
+			</if>
+		  	<if test="exclude0cnt != null and exclude0cnt">
+		  		and cnt_total &gt;= 0
+		  	</if>
+
+		</trim>
+		order BY date_work
+
+	</select>
+
+	<select id="getSchPlanweekPvtypeByPkSchplanweek" resultType="com.zebone.nhis.common.module.sch.plan.SchPlanweekPvtype" parameterType="java.lang.String">
+		select * from SCH_PLANWEEK_PVTYPE
+		where del_flag = '0'
+		and PK_PLANWEEK = #{_parameter,jdbcType=VARCHAR}
+	</select>
+
+	<update id="deleteSchSch" parameterType="java.util.List">
+		update sch_sch set del_flag = '1',MODITY_TIME = #{modityTime,jdbcType=TIMESTAMP},
+		MODIFIER = #{pkEmp,jdbcType=CHAR}
+		where pk_sch in
+	    <foreach item="item" index="index" collection="pkSchs" open="("
+           separator="," close=")">
+           #{item}
+        </foreach>
+	</update>
+
+	<delete id="deleteSchSchByPlanWeeks" parameterType="java.util.Map">
+		delete from sch_sch
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and to_char(date_work,'YYYY-MM-DD') &gt;= #{beginDate,jdbcType=VARCHAR}
+			and to_char(date_work,'YYYY-MM-DD') &lt;= #{endDate,jdbcType=VARCHAR}
+		  	<if test="pkSchplan != null and pkSchplan != ''">
+		  		and pk_schplan = #{pkSchplan,jdbcType=VARCHAR}
+		  	</if>
+			<if test="euStatusN != null and euStatusN != ''">
+		  		and eu_status != #{euStatusN,jdbcType=VARCHAR}
+		  	</if>
+			<if test="pkDept != null and pkDept != ''">
+				and pk_dept = #{pkDept,jdbcType=VARCHAR}
+			</if>
+		  	and not exists (select 1  from pv_op pv where pv.pk_sch=sch_sch.pk_sch)
+		  	and not exists (select 1  from pv_er er where er.pk_sch=sch_sch.pk_sch)
+		</trim>
+
+	</delete>
+
+	<!-- <delete id="deleteSchSchByPlanWeeksOracle" parameterType="java.util.Map">
+		delete from sch_sch
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="beginDate != null and endDate != ''">
+				and nvl(substr(to_char(date_work,'yyyy-MM-dd hh24:mi:ss'),1,10),sysdate) &gt;= #{beginDate,jdbcType=VARCHAR}
+				and nvl(substr(to_char(date_work,'yyyy-MM-dd hh24:mi:ss'),1,10),sysdate) &lt;= #{endDate,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="resAndSrv != null and resAndSrv != ''">
+		  		and pk_schres||'@'||pk_schsrv = #{resAndSrv,jdbcType=VARCHAR}
+		  	</if>
+			<if test="pkPlanweeks != null">
+				and pk_planweek in
+			    <foreach item="item" index="index" collection="pkPlanweeks" open="("
+		           separator="," close=")">
+		           #{item}
+		        </foreach>
+			</if>
+		</trim>
+	</delete> -->
+
+
+	<update id="deleteSchEmp" parameterType="java.util.List">
+		update Sch_Emp set del_flag = '1',MODITY_TIME = #{modityTime,jdbcType=TIMESTAMP},
+		MODIFIER = #{pkEmp,jdbcType=CHAR}
+		where pk_sch in
+	    <foreach item="item" index="index" collection="pkSchs" open="("
+           separator="," close=")">
+           #{item}
+        </foreach>
+	</update>
+
+	<update id="deleteSchEmpByPkSch" parameterType="java.lang.String">
+		update Sch_Emp set del_flag = '1' where pk_sch = #{pkSch,jdbcType=VARCHAR}
+	</update>
+
+	<update id="deleteSchPvtypeByPkSch" parameterType="java.lang.String">
+		update Sch_Pvtype set del_flag = '1' where pk_sch = #{pkSch,jdbcType=VARCHAR}
+	</update>
+
+	<update id="updateSchTicketnoType">
+		update SCH_TICKET set EU_PVTYPE = #{euPvtype,jdbcType=VARCHAR}  where pk_sch = #{pkSch,jdbcType=VARCHAR}
+		and ticketno in
+	    <foreach item="item" index="index" collection="ticketnos" open="("
+           separator="," close=")">
+           #{item}
+        </foreach>
+	</update>
+
+
+	<update id="deleteSchPvtype" parameterType="java.util.List">
+		update Sch_Pvtype set del_flag = '1',MODITY_TIME = #{modityTime,jdbcType=TIMESTAMP},
+		MODIFIER = #{pkEmp,jdbcType=CHAR}
+		where pk_sch in
+	    <foreach item="item" index="index" collection="pkSchs" open="("
+           separator="," close=")">
+           #{item}
+        </foreach>
+	</update>
+
+	<update id="deleteSchTicket" parameterType="java.util.List">
+		update Sch_Ticket set del_flag = '1',MODITY_TIME = #{modityTime,jdbcType=TIMESTAMP},
+		MODIFIER = #{pkEmp,jdbcType=CHAR}
+		where pk_sch in
+	    <foreach item="item" index="index" collection="pkSchs" open="("
+           separator="," close=")">
+           #{item}
+        </foreach>
+	</update>
+
+    <select id="getWordcalendardate" resultType="com.zebone.nhis.common.module.base.bd.code.BdWorkcalendardate" parameterType="java.util.Map">
+		select * from BD_WORKCALENDARDATE
+		where del_flag = '0'
+		and PK_WORKCALENDAR = #{pkWorkcalendar,jdbcType=VARCHAR}
+		and to_char(calendardate,'YYYY-MM-DD') &gt;= #{beginDate,jdbcType=VARCHAR}
+		and to_char(calendardate,'YYYY-MM-DD') &lt;= #{endDate,jdbcType=VARCHAR}
+	</select>
+
+	<update id="updateEuStatus"  parameterType="java.util.List" >
+		update sch_sch set eu_status = #{sch.euStatus,jdbcType=VARCHAR},
+		pk_emp_chk = #{sch.pkEmpChk,jdbcType=VARCHAR},
+		name_emp_chk = #{sch.nameEmpChk,jdbcType=VARCHAR},
+		date_chk = #{sch.dateChk,jdbcType=TIMESTAMP},
+		modity_time = #{sch.modityTime,jdbcType=TIMESTAMP},
+		modifier = #{sch.modifier,jdbcType=VARCHAR}
+		<if test="sch.flagModi !=null ">
+			,flag_modi = #{sch.flagModi,jdbcType=VARCHAR}
+		</if>
+		where 1=1
+		<choose>
+			<when test="pkSchs != null and pkSchs.size > 0">
+				AND (pk_sch IN
+				<trim suffixOverrides=" OR pk_sch IN()">    <!-- 表示删除最后一个条件 -->
+					<foreach collection="pkSchs" item="pkSch" index="index" open="(" close=")">
+						<if test="index != 0">
+							<choose>
+								<when test="index % 1000 == 999">) OR pk_sch IN (</when>
+								<otherwise>,</otherwise>
+							</choose>
+						</if>
+						#{pkSch,jdbcType=VARCHAR}
+					</foreach>
+				</trim>
+				)
+			</when>
+			<otherwise> and 1!=1</otherwise>
+		</choose>
+        <if test="originalStatus !=null and originalStatus !=''">
+        	and eu_status = #{originalStatus}
+        </if>
+	</update>
+
+    <select id="getSchTicketSum" parameterType="java.lang.String" resultType="int">
+		select count(*) from Sch_Ticket where del_flag = '0' and flag_used='1' and pk_sch=#{pkSch,jdbcType=VARCHAR}
+	</select>
+
+	<select id="qrySchByPkSchSrv" resultType="com.zebone.nhis.sch.plan.vo.SchSchVo" parameterType="java.util.Map">
+		select sch.*
+		from sch_sch sch
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and sch.del_flag='0'
+			<if test="pkSchres != null and pkSchres != ''">
+				and sch.pk_schres = #{pkSchres,jdbcType=VARCHAR}
+			</if>
+			<if test="dateBegin != null">
+				and sch.date_work &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyy-mm-dd')
+			</if>
+			<if test="dateEnd != null">
+				and sch.date_work &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-mm-dd')
+			</if>
+		</trim>
+	</select>
+
+	<sql id="SchOfApptGroupFun">
+		<if test="isSqlServer=='true'">group_concat(t1.PK_SCH)</if>
+		<if test="isSqlServer=='false'">wm_concat(t1.PK_SCH)</if>
+		as pk_schs
+	</sql>
+	<select id="getSchOfApptGroup" resultType="java.lang.String">
+		select
+			<include refid="SchOfApptGroupFun"/>
+		from sch_sch t1
+		left join sch_resource t2 on t1.pk_schres = t2.pk_schres
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and t1.del_flag = '0'
+			and t1.pk_org = #{pkOrg,jdbcType=VARCHAR}
+			<if test="flagStop != null and flagStop != ''">
+				and t1.FLAG_STOP = #{flagStop,jdbcType=VARCHAR}
+			</if>
+			<if test="euStatus != null and euStatus != ''">
+				and t1.EU_STATUS = #{euStatus,jdbcType=VARCHAR}
+			</if>
+			<if test="pkSchsrv != null and pkSchsrv != ''">
+				and t1.pk_schsrv = #{pkSchsrv,jdbcType=VARCHAR}
+			</if>
+			<if test="euSchclass != null and euSchclass != ''">
+				and t1.eu_schclass = #{euSchclass,jdbcType=VARCHAR}
+			</if>
+			<if test="pkSchres != null and pkSchres != ''">
+				and t1.pk_schres = #{pkSchres,jdbcType=VARCHAR}
+			</if>
+			<if test="pkDept != null and pkDept != ''">
+				and t1.pk_dept = #{pkDept,jdbcType=VARCHAR}
+			</if>
+			<if test="pkEmp != null and pkEmp != ''">
+				and t2.pk_emp = #{pkEmp,jdbcType=VARCHAR}
+			</if>
+			<if test="dateWork != null and dateWork != ''">
+				and t1.date_work - to_date(#{dateWork,jdbcType=VARCHAR},'yyyy-mm-dd') &gt;= 0
+				and t1.date_work - to_date(#{dateWork,jdbcType=VARCHAR},'yyyy-mm-dd') &lt; 7
+			</if>
+			<if test="dateBegin != null">
+				and t1.date_work &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyy-mm-dd')
+			</if>
+			<if test="dateEnd != null">
+				and t1.date_work &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-mm-dd')
+			</if>
+			<if test="disease != null and disease != ''">
+				and t2.spec like '%'||#{disease,jdbcType=VARCHAR}||'%'
+			</if>
+			<if test="pkDeptArea !=null and pkDeptArea !=''">
+				and t1.pk_dept in (select pk_dept_belong from sch_resource where PK_DEPT_AREA = #{pkDeptArea,jdbcType=VARCHAR})
+			</if>
+		</trim>
+		group by t1.PK_SCHRES,t1.PK_SCHSRV,t2.PK_EMP
+	</select>
+
+	<select id="getSchOfApptInfo" resultType="com.zebone.nhis.sch.plan.vo.SchSchVo">
+		select t1.*,t2.name schresName,t3.name schsrvName,t1.pk_planweek pkPlanweekCheck, t1.pk_schplan pkSchplanCheck, t2.pk_ticketrules pkTicketrules
+		,t2.PK_EMP,emp.NAME_EMP doctor_name
+		from sch_sch t1
+		left join sch_resource t2 on t1.pk_schres = t2.pk_schres
+		left join sch_srv t3 on t1.pk_schsrv = t3.pk_schsrv
+		left join bd_ou_employee emp on t2.PK_EMP=emp.PK_EMP
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="pkSchs != null and pkSchs.size > 0">
+				AND (t1.pk_sch IN
+				<trim suffixOverrides=" OR t1.pk_sch IN()">    <!-- 表示删除最后一个条件 -->
+					<foreach collection="pkSchs" item="pkSch" index="index" open="(" close=")">
+						<if test="index != 0">
+							<choose>
+								<when test="index % 1000 == 999">) OR t1.pk_sch IN (</when>
+								<otherwise>,</otherwise>
+							</choose>
+						</if>
+						#{pkSch,jdbcType=VARCHAR}
+					</foreach>
+				</trim>
+				)
+			</if>
+
+		</trim>
+	</select>
+	
+	
+	<select id="getEuNoonByPlan" resultType="java.lang.String" parameterType="java.util.Map">
+		select  dl.eu_noon
+        from  (select * from sch_plan where PK_SCHPLAN = #{pkSchplan,jdbcType=VARCHAR} ) sp 
+              inner join (select * from BD_DEFDOC where  DEL_FLAG = '0' and CODE_DEFDOCLIST = '020005')  bd on sp.dt_dateslottype = bd.CODE
+              inner join (select * from bd_code_dateslot where PK_DATESLOT = #{pkDateslot,jdbcType=VARCHAR} ) dl on bd.code=dl.dt_dateslottype
+	</select>
+	
+	<select id="getEuNoonByResource" resultType="java.lang.String" parameterType="java.util.Map">
+		SELECT  dl.eu_noon
+       from   ( SELECT * from SCH_RESOURCE where pk_schres = #{pkSchres,jdbcType=VARCHAR} ) re
+      INNER JOIN sch_plan sp on sp.pk_schres = re.pk_schres
+      INNER JOIN (select * from BD_DEFDOC where  DEL_FLAG = '0' and CODE_DEFDOCLIST = '020005')  bd on sp.dt_dateslottype = bd.CODE
+      INNER JOIN (SELECT * from bd_code_dateslot where PK_DATESLOT = #{pkDateslot,jdbcType=VARCHAR} ) dl on bd.code=dl.dt_dateslottype
+
+	</select>
+	
+	
+	
+</mapper>

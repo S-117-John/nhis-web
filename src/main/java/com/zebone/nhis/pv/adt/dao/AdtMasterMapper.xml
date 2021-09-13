@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pv.adt.dao.AdtMasterMapper">
+	
+	<!-- 获取住院费用 -->
+	<select id="getBlIpDtListByPkPv" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.bl.BlIpDt">
+		select * 
+		from bl_ip_dt
+		where del_flag = '0' and pk_pv = #{pkPv,jdbcType=VARCHAR}
+	</select>
+	
+	 <!-- bug35168 【入院登记】调用, 关联关系参考交易号：002003001031, 此sql待优化  -->
+	<select id="getRepeatPatientList" parameterType="java.util.Map" resultType="com.zebone.nhis.pi.pub.vo.PiMasterAndAddr">
+        select m.photo_pi,
+               m.pk_pi,m.pk_org,m.code_pi,m.code_op,m.code_ip,m.barcode,m.pk_picate,m.name_pi,m.dt_idtype,m.id_no,m.hic_no,m.insur_no,
+			   m.mpi,m.flag_ehr,m.dt_sex,m.birth_date,m.place_birth,m.dt_marry,m.dt_occu,m.dt_edu,m.dt_country,m.dt_nation,m.tel_no,m.mobile,
+			   m.wechat_no,m.email,m.name_rel,m.tel_rel,m.dt_ralation,m.addr_rel,m.dt_blood_abo,m.dt_blood_rh,m.creator,m.create_time,m.modifier,m.del_flag,m.ts,
+			   m.addrcode_birth,m.addr_birth,m.addrcode_origin,m.addr_origin,
+			   m.addrcode_regi ,m.addr_regi ,m.addr_regi_dt,m.postcode_regi,
+			   m.addrcode_cur ,m.addr_cur ,m.addr_cur_dt,m.postcode_cur,
+			   m.unit_work,m.tel_work,m.address,m.postcode_work,m.FLAG_REALNAME,m.FLAG_REALMOBILE,m.DT_IDTYPE_REL,m.IDNO_REL,m.FLAG_TEAM,
+			   
+			   bir.PROV addr_prov_birth ,bir.CITY addr_city_birth, bir.DIST addr_dist_birth,
+			   orign.PROV addr_prov_origin ,orign.CITY addr_city_origin, orign.DIST addr_dist_origin,
+			   cur.PROV addr_prov_cur ,cur.CITY addr_city_cur,cur.DIST addr_dist_cur,curStre.name_div addr_stre_cur,curVillage.name_div addr_village_cur,  
+			   rign.PROV addr_prov_regi ,rign.CITY addr_city_regi, rign.DIST addr_dist_regi 
+		  from ( 
+	   	  select * from pi_master pm
+		  where pm.del_flag = '0'
+		     <if test="dtIdtype != null and dtIdtype != ''">
+			      and pm.dt_idtype =#{dtIdtype,jdbcType=VARCHAR}
+	         </if>
+	           and ( (pm.id_no = #{idNo,jdbcType=VARCHAR}  and pm.name_pi = #{namePi,jdbcType=VARCHAR} ) 
+	                 or (pm.name_pi = #{namePi,jdbcType=VARCHAR} and pm.mobile = #{mobile,jdbcType=VARCHAR} )
+	                 or ( pm.mobile = #{mobile,jdbcType=VARCHAR} and pm.id_no = #{idNo,jdbcType=VARCHAR} )
+                   )
+	      ) m 
+	      left join bd_admin_division bir on bir.code_div = m.addrcode_birth and bir.del_flag = '0' 
+		  left join bd_admin_division orign on orign.code_div = m.addrcode_origin and orign.del_flag = '0' 
+		  left join bd_admin_division cur on cur.code_div = m.addrcode_cur and cur.del_flag = '0'
+		  left join bd_admin_division curStre on curStre.code_div = (substr(m.addrcode_cur,0,9) || '000') and curStre.del_flag = '0'
+		  left join bd_admin_division curVillage on curVillage.code_div =  m.addrcode_cur and curStre.del_flag = '0'
+          left join bd_admin_division rign on rign.code_div = m.addrcode_regi and rign.del_flag = '0'
+      	      
+     </select>
+	   
+</mapper>

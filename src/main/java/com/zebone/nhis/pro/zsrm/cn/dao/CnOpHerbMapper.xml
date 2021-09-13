@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsrm.cn.dao.CnOpHerbMapper">
+    <select id = "qryHerPd"  parameterType="com.zebone.nhis.pro.zsrm.cn.vo.HerbVo" resultType="DynaBean">
+        SELECT
+        	pd.pk_pd,
+        	pd.code,
+        	pd. NAME,
+        	'1' as quan,
+        	unit.NAME AS unit,
+        	pd.eu_herbtype,
+        	Case When pd.eu_herbtype='0' Then transy.pk_pd_k
+                 When pd.eu_herbtype='1' Then transk.pk_pd_y
+                 Else Null End pk_pdtrans ,
+            Case When pd.eu_herbtype='0' Then pdy.code
+                 When pd.eu_herbtype='1' Then pdk.code
+                 Else Null End code_trans,
+            Case When pd.eu_herbtype='0' Then pdy.name
+                 When pd.eu_herbtype='1' Then pdk.name
+                 Else Null End name_trans,
+            Case When pd.eu_herbtype='0' Then round(1 / transy.rate / pdy.vol,4)
+                 When pd.eu_herbtype='1' Then 1*transk.rate*pd.vol
+                 Else Null End quan_trans,
+            Case When pd.eu_herbtype='0' Then unity.name
+                 When pd.eu_herbtype='1' Then unitk.name
+                 Else Null End unit_trans,
+        Case When pd.eu_herbtype = '0' Then pd.PK_UNIT_MIN When pd.eu_herbtype = '1' Then pdk.PK_UNIT_MIN Else Null End pk_unit_trans
+        FROM
+        	 bd_pd pd
+        INNER JOIN bd_unit unit ON pd.pk_unit_min = unit.pk_unit
+        LEFT JOIN bd_pd_trans transy ON pd.PK_PD = transy.pk_pd_y AND pd.eu_herbtype = '0' and transy.DEL_FLAG='0'
+        LEFT JOIN bd_pd pdy ON transy.pk_pd_k = pdy.pk_pd
+        LEFT JOIN bd_unit unity ON pdy.pk_unit_min = unity.pk_unit
+        LEFT JOIN bd_pd_trans transk ON pd.pk_pd = transk.pk_pd_k AND pd.eu_herbtype = '1' and transk.DEL_FLAG='0'
+        LEFT JOIN bd_pd pdk ON transk.pk_pd_y = pdk.pk_pd
+        LEFT JOIN bd_unit unitk ON pdk.pk_unit_min = unitk.pk_unit
+        WHERE   1=1
+        <if test="pkPds !=null and pkPds.size()>0">
+        	and pd.pk_pd IN
+        	<foreach collection="pkPds" index="index" item="item" open="(" separator="," close=")" >
+        		#{item, jdbcType=VARCHAR}
+        	</foreach>
+        </if>
+    </select>
+
+    <select id="qryBdDefdoc" resultType="com.zebone.nhis.common.module.base.bd.code.BdDefdoc" parameterType="java.util.Map">
+        select def.*
+        from bd_defdoc def
+        where def.code_defdoclist='030410' and def.del_flag='0'
+        <if test="code !=null and code.size()>0">
+        and def.code IN
+        <foreach collection="code" index="index" item="item" open="(" separator="," close=")" >
+            #{item, jdbcType=VARCHAR}
+        </foreach>
+        </if>
+    </select>
+
+    <select id="getHerbItems" resultType="DynaBean" parameterType="java.lang.String">
+     	select DISTINCT herb.*,unit.name unit_name, pd.name pd_name,def.name as dt_herbusage_name,stk.quan_min as stock,pd.spec,
+     	ph.hp_rate
+    	 from CN_ORD_HERB herb
+    	inner join bd_unit unit on herb.pk_unit = unit.pk_unit and unit.del_flag='0'
+    	inner join bd_pd pd on  herb.pk_pd = pd.pk_pd and pd.del_flag='0'
+    	<!--
+        inner join bd_pd_convert con on herb.PK_PD = con.PK_PD and con.del_flag = '0' and herb.PK_UNIT=con.PK_UNIT
+        inner join bd_pd_store pds on con.pk_pdconvert = pds.pk_pdconvert and pds.flag_stop = '0' and pds.del_flag = '0' and pds.pk_dept=#{pkDeptExe,jdbcType=CHAR}
+    	-->
+    	left  join bd_defdoc def on def.code_defdoclist='030410' and def.code=herb.dt_herbusage and def.del_flag='0'
+    	left outer join (select t.* from (
+                                      select sum(quan_min - quan_prep) quan_min, pk_pd,
+                                     price,row_number() over ( partition by pk_pd ORDER BY  price  )as pdIDS
+                         from pd_stock
+                        where del_flag = '0'
+                        and pk_dept =#{pkDeptExe,jdbcType=CHAR}
+                        group by pk_pd, price, pk_org, pk_dept) t where t.pdIDS=1) stk
+        on pd.pk_pd = stk.pk_pd
+            left join ( select ihp.pk_item,(1 - NVL(ihp.ratio_self, 0)) * 100 || '%' as hp_rate
+                from bd_item_hp ihp where ihp.del_flag='0'
+            <if test="pkHp != null and pkHp != ''">
+                and ihp.pk_hp =#{pkHp,jdbcType=VARCHAR}
+            </if>
+            ) ph on ph.pk_item=pd.pk_pd
+        where  herb.pk_cnord = #{pkCnord,jdbcType=CHAR}
+      	order by sort_no
+     </select>
+
+</mapper>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pv.arr.dao.QcBigScreenSetMapper">
+	<delete id="delScreenDuByPks">
+		delete from bd_qc_screen_du
+		where PK_QCSCREENDU in
+		<foreach collection="list" item="pk" open="(" close=")">
+			#{pk,jdbcType=CHAR}
+		</foreach>
+	</delete>
+
+	<select id="qryScreenList" parameterType="java.lang.String" resultType="DynaBean" >
+		
+		SELECT
+			sc.pk_qcscreen,
+			sc.code_scn,
+			sc.name_scn,
+			sc.voice,
+			sc.computer 
+		FROM 
+			bd_qc_screen sc 
+		WHERE 
+			sc.pk_org = #{pkOrg,jdbcType=VARCHAR} 
+			AND sc.del_flag = '0'
+	</select>
+	
+	<select id="qryScreenDuList" parameterType="java.lang.String" resultType="DynaBean" >
+		
+		SELECT
+			sd.pk_qcscreendu,
+			sd.pk_deptunit,
+			du.NAME,
+			dept.name_dept,
+			sd.note 
+		FROM 
+			bd_qc_screen_du sd 
+			INNER JOIN bd_dept_unit du ON sd.pk_deptunit = du.pk_deptunit 
+			INNER JOIN bd_ou_dept dept ON du.pk_dept = dept.pk_dept 
+		WHERE 
+			sd.pk_qcscreen = #{pkQcscreen,jdbcType=VARCHAR} 
+	</select>
+	
+	<select id="qryExportList" parameterType="java.lang.String" resultType="DynaBean" >
+		
+		SELECT
+			du.pk_deptunit,
+			du.code,
+			du.name,
+			du.spcode,
+			du.d_code,
+			dept.name_dept,
+			dept.pk_dept 
+		FROM 
+			bd_dept_unit du 
+			INNER join bd_ou_dept dept ON du.pk_dept = dept.pk_dept 
+		WHERE 
+			du.pk_org = #{pkOrg,jdbcType=VARCHAR} 
+			AND du.eu_butype = '0' 
+			AND NOT EXISTS (SELECT 1 FROM bd_qc_screen_du sd WHERE du.pk_deptunit = sd.pk_deptunit)
+	</select>
+
+	<!-- 保存时查询其他屏幕已存在的诊室 -->
+	<select id="qryExists" resultType="java.lang.String">
+		select unit.name
+		from BD_QC_SCREEN_DU du
+			inner join BD_DEPT_UNIT unit
+			on du.PK_DEPTUNIT = unit.PK_DEPTUNIT
+			inner join BD_QC_SCREEN screen
+			on du.pk_qcscreen = screen.PK_QCSCREEN
+		where du.pk_qcscreen &lt;&gt; #{pkQcscreen,jdbcType=CHAR}
+			and du.DEL_FLAG = '0'
+			and du.PK_DEPTUNIT in
+		<foreach collection="list" item="pk" open="(" close=")" separator=",">
+		    #{pk,jdbcType=CHAR}
+		</foreach>
+	</select>
+</mapper>

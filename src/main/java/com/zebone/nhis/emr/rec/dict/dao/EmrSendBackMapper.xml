@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.emr.rec.dict.dao.EmrSendBackMapper">
+
+    <resultMap id="ResultMapEmrSendBackType" type="com.zebone.nhis.emr.rec.dict.vo.EmrDocListPrarm">
+    <id column="pk_rec" jdbcType="CHAR" property="pkRec"/>
+    <result column="pk_patrec" jdbcType="VARCHAR" property="pkPatrec"/>
+    <result column="name" jdbcType="VARCHAR" property="name"/>
+    <result column="typeCode" jdbcType="VARCHAR" property="typeCode"/>
+    <result column="typeName" jdbcType="VARCHAR" property="typeName"/>
+    <result column="create_name" jdbcType="VARCHAR" property="createName"/>
+    <result column="refer_name" jdbcType="DECIMAL" property="referName"/>
+    <result column="pk_ward" jdbcType="VARCHAR" property="pkWard"/>
+    <result column="pk_pi" jdbcType="VARCHAR" property="pkPi"/>
+    <result column="pk_pv" jdbcType="VARCHAR" property="pkPv"/>
+    <result column="SEX_NAME" jdbcType="VARCHAR" property="dtSex"/>
+    <result column="flag_course" jdbcType="VARCHAR" property="flagCourse"/>
+    <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+    <result column="PK_EMP_REFER" jdbcType="VARCHAR" property="pkEmpRefeR"/>
+    <result column="pk_dept" jdbcType="VARCHAR" property="pkDept"/>
+    <result column="name_pi" jdbcType="VARCHAR" property="namePi"/>
+    <result column="code_pi" jdbcType="VARCHAR" property="codePi"/>
+</resultMap>
+
+    <select id="queryEmrDocList" resultMap="ResultMapEmrSendBackType" parameterType="String">
+        select rec.PK_REC,
+        rec.PK_PATREC,
+        rec.NAME,
+        rec.CREATOR,
+        rec.PK_EMP_REFER,
+        rec.pk_dept,
+        typ.name typeName,
+        rec.TYPE_CODE,
+        rec.PK_PI,
+        rec.PK_PV,
+        patList.sex_name DT_SEX,
+        pi.name_pi,
+        pi.code_pi,
+        typ.flag_course,
+        emp_refer.name refer_name,
+        emp.name create_name
+        from emr_med_rec rec inner join
+        emr_med_doc doc on rec.pk_doc=doc.pk_doc left outer join
+        emr_doc_type typ on rec.type_code=typ.code left outer join
+        view_emr_emp_list emp on rec.creator=emp.pk_emp left outer join
+        view_emr_emp_list emp_refer on rec.pk_emp_refer=emp_refer.pk_emp left outer join
+        VIEW_EMR_PAT_LIST patList on patList.pk_pv=rec.pk_pv
+        inner JOIN EMR_PAT_REC pat ON rec.PK_PATREC = pat.PK_PATREC
+        INNER JOIN PI_MASTER pi ON pi.PK_PI = rec.PK_PI
+        WHERE rec.pk_pv = #{pkPv,jdbcType=CHAR}
+        and rec.del_flag !='1'
+        order by floor(typ.sort_num/100)*100,rec.rec_date,rec.seq_no,rec.pk_tmp
+    </select>
+
+    <select id="selectEmrPatRecByPkPv" parameterType="string" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrPatRec">
+        SELECT * FROM EMR_PAT_REC WHERE PK_PV = #{pkPv,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectEmrMedRecByPkREc" parameterType="java.util.List" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrMedRec">
+        SELECT * FROM EMR_MED_REC
+        WHERE PK_REC in
+        <foreach collection="list" index="index" item="list" open="(" separator="," close=")">
+            #{list}
+        </foreach>
+        AND DEL_FLAG != '1'
+    </select>
+
+    <select id="queryEmrRecallList" parameterType="java.util.Map" resultType="com.zebone.nhis.emr.rec.dict.vo.EmrOpenEditRecParam">
+        select
+        pat.*,
+        openedit.pk_edit_rec,
+        openedit.pk_emp_apply,
+        openedit.pk_dept_apply,
+        openedit.apply_date,
+        openedit.apply_txt,
+        openedit.begin_date openBeginDate,
+        openedit.end_date openEndDate,
+        openedit.eu_status openEuStatus,
+        openedit.approve_date,
+        openedit.pk_dept_approve,
+        openPat.SUBMIT_DATE submitDate,
+        emp_submit.name submitName,
+        home.in_hos_days
+        from VIEW_EMR_PAT_LIST pat 
+        left outer join emr_open_edit_rec openedit on pat.PK_PV=openedit.PK_PV
+        left outer join view_emr_emp_list emp_apply ON openedit.pk_emp_apply=emp_apply.pk_emp
+        left outer join emr_pat_rec openPat on openPat.PK_PV=openedit.PK_PV
+        left outer join view_emr_emp_list emp_submit ON openPat.PK_EMP_SUBMIT=emp_submit.pk_emp
+        left outer join emr_home_page home  on home.PK_PV=openedit.PK_PV AND home.DEL_FLAG = '0'
+        where openedit.DEL_FLAG='0' AND openedit.eu_type='1' 
+        <if test="dateBegin != null">
+            and openedit.apply_date &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyy-mm-dd')
+        </if>
+        <if test="dateEnd != null">
+            and openedit.apply_date &lt; to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyy-mm-dd')
+        </if>
+        <if test="name != null and name != ''">
+            and pat.NAME_PI = #{name,jdbcType=VARCHAR}
+        </if>
+        <if test="codeIp != null and codeIp != ''">
+            and pat.CODE_IP = #{codeIp,jdbcType=VARCHAR}
+        </if>
+        <if test="pkEmpApply != null and pkEmpApply != ''">
+        	and emp_apply.name = #{pkEmpApply,jdbcType=VARCHAR}
+        </if>
+        <if test='status == "0"'>
+            and openedit.eu_status = #{status,jdbcType=VARCHAR}
+            and openPat.eu_status &gt;= '4'
+        </if>
+        <if test='status == "1"'>
+            and openedit.eu_status !='0'
+        </if>
+        <if test="pkDateApply != null and pkDateApply != ''">
+            and home.pk_dept_dis = #{pkDateApply,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+    <select id="queryEmrDoclList" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrMedRec" parameterType="java.util.Map">
+      SELECT rec.pk_rec,rec.NAME,
+      	doc.type_code,
+      	typ.name EditTypeName,
+      	emp.NAME createName,
+      	emp_refer.name referName,
+      	doc.eu_edit_type,
+      	openRec.pk_edit_rec
+        FROM emr_open_edit_doc doc
+        left outer join EMR_MED_REC rec on rec.PK_REC=doc.PK_REC
+        left outer join emr_doc_type typ on doc.type_code=typ.code
+        left outer join	view_emr_emp_list emp on rec.creator=emp.pk_emp
+        left outer join	view_emr_emp_list emp_refer on rec.pk_emp_refer=emp_refer.pk_emp
+        left outer join emr_open_edit_rec openRec on openRec.pk_edit_rec=doc.pk_edit_rec
+        WHERE openRec.del_flag='0'
+        <if test="pkPv != null and pkPv != ''">
+            and openRec.pk_pv = #{pkPv,jdbcType=VARCHAR}
+        </if>
+        <if test="pkEditRec != null and pkEditRec != ''">
+            and openRec.pk_edit_rec = #{pkEditRec,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+</mapper>

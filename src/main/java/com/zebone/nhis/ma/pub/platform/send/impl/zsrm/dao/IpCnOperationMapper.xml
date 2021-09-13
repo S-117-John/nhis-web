@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.dao.IpCnOperationMapper" >
+
+    <select id="qryPiPv" resultType="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.model.PvEncounterVo">
+        select pi.CODE_OP,pi.CODE_PI,pi.CODE_IP,pv.CODE_PV,pi.ID_NO,pi.TEL_NO
+             ,pi.NAME_PI,decode(pi.DT_SEX,'02','male','03','female','unknown') dt_sex,pi.BIRTH_DATE
+             ,pv.EU_PVTYPE,pv.BED_NO,ip.IP_TIMES,hp.NAME name_hp
+        from PI_MASTER pi
+                 inner join PV_ENCOUNTER pv on pi.PK_PI=pv.PK_PI
+                 LEFT JOIN PV_IP ip on pv.PK_PV=ip.PK_PV
+                 left join BD_HP hp on pv.PK_INSU=hp.PK_HP
+        where pv.PK_PV= #{pkPv,jdbcType=VARCHAR}
+    </select>
+
+    <select id="qryCnOrd" resultType="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.model.CnOrderVo">
+        select od.PK_CNORD,od.ORDSN,decode(od.EU_STATUS_ORD,'2','on-hold','3','active','9','cancelled','4','stopped','draft')EU_STATUS_ORD,od.NOTE_ORD,odtp.NAME name_ordtype,od.CODE_ORDTYPE,od.CODE_ORD
+         ,od.NAME_ORD,pd.DT_DOSAGE code_dosage,doc.NAME name_dosage
+         ,dept.NAME_DEPT,dept.CODE_DEPT,depta.NAME_DEPT NAME_DEPT_AREA,depta.CODE_DEPT CODE_DEPT_AREA
+         ,to_char(od.date_sign,'yyyy-MM-dd HH24:mi:ss') create_time,doctor.NAME_EMP name_emp_ord,doctor.CODE_EMP code_emp_ord
+         ,emph.NAME_EMP name_emp_chk,emph.CODE_EMP code_emp_chk,DECODE(od.eu_always, '0', '长期', '1', '临时', '') eu_always
+         ,DECODE(od.eu_always, '0', '1', '1', '2') eu_always_code,od.ORDSN_PARENT,od.CODE_SUPPLY,sup.NAME name_supply,od.code_freq,freq.NAME name_freq
+        ,utdos.NAME dos_name,od.DOSAGE,to_char(od.DATE_START,'yyyy-MM-dd HH24:mi:ss') DATE_START,to_char(od.DATE_STOP,'yyyy-MM-dd HH24:mi:ss') DATE_STOP
+        ,deptex.CODE_DEPT CODE_DEPT_EX,deptex.NAME_DEPT NAME_DEPT_EX,od.quan_cg,unitcg.name unit_Cg_Name
+        from CN_ORDER od
+        left join bd_ordtype odtp on odtp.code = od.code_ordtype and odtp.del_flag = '0'
+        left join BD_PD pd on od.PK_ORD=pd.PK_PD and od.FLAG_DURG='1'
+        left join BD_DEFDOC doc on doc.CODE_DEFDOCLIST='030400' and doc.CODE=pd.DT_DOSAGE
+        left join BD_OU_DEPT dept on od.PK_DEPT=dept.PK_DEPT
+        left join BD_OU_DEPT depta on od.PK_DEPT_NS=depta.PK_DEPT
+        left join BD_OU_DEPT deptex on od.PK_DEPT_EXEC=deptex.PK_DEPT
+        left join BD_OU_EMPLOYEE doctor on od.PK_EMP_ORD=doctor.PK_EMP
+        left join BD_OU_EMPLOYEE emph on ((od.EU_STATUS_ORD='2' and od.PK_EMP_CHK=emph.PK_EMP)
+            or (od.EU_STATUS_ORD='3' and od.pk_emp_ex=emph.PK_EMP)
+            or (od.EU_STATUS_ORD='4' and od.pk_emp_stop_chk=emph.PK_EMP)
+            or (od.EU_STATUS_ORD='9' and od.pk_emp_erase_chk=emph.PK_EMP))
+        left join bd_supply sup on sup.code = od.code_supply and sup.del_flag = '0'
+        inner join bd_term_freq freq on freq.code = od.code_freq
+        left join bd_unit utdos on utdos.pk_unit = od.pk_unit_dos
+        left join bd_unit unitcg on unitcg.pk_unit = od.pk_unit_cg
+        where od.PK_PV = #{pkPv,jdbcType=VARCHAR}
+        <choose>
+            <when test="pkCnOds!=null and pkCnOds.size()>0">
+                and (od.PK_CNORD in
+                <trim suffixOverrides=" OR ca.pk_cnord IN()">
+                    <foreach collection="pkCnOds" item="pkCnOrd" index="index" open="(" close=")">
+                        <if test="index != 0">
+                            <choose>
+                                <when test="index % 1000 == 999">) OR pk_cnord IN (</when>
+                                <otherwise>,</otherwise>
+                            </choose>
+                        </if>
+                        #{pkCnOrd,jdbcType=VARCHAR}
+                    </foreach>
+                </trim>
+                     )
+            </when>
+            <otherwise>
+                and 1!=1
+            </otherwise>
+        </choose>
+    </select>
+</mapper>

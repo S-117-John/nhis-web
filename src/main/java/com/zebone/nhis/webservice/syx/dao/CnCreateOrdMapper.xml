@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.CnCreateOrdMapper">
+	<select id="qryPkPi" parameterType="java.lang.String" resultType="java.lang.String">
+		select pk_pi from pi_master where code_pi = #{codePi}
+	</select>
+	
+	<select id="qryPkPv" parameterType="java.lang.String" resultType="DynaBean">
+		select pk_pv,pk_dept from pv_encounter where code_pv = #{0} and eu_pvtype = #{1}
+	</select>
+	
+	<select id="qryEmp" parameterType="java.lang.String" resultType="DynaBean">
+		select pk_emp ,name_emp from bd_ou_employee where code_emp = #{codeDept}
+	</select>
+	
+	<select id="qryOrdtype" parameterType="java.lang.String" resultType="java.lang.Integer">
+		select count(1) from bd_ordtype where code = #{codeOrdtype}
+	</select>
+	
+	<select id="getPkOrg"  resultType="java.lang.String">
+		select pk_org from bd_ou_org where code_org = '0201'
+	</select>
+	
+	<select id="qryBdOrd" parameterType="java.lang.String" resultType="DynaBean">
+		select pk_ord from bd_ord where code = #{code}
+	</select>
+	
+	<select id="qryPkDept" parameterType="java.lang.String" resultType="java.lang.String">
+		select pk_dept from bd_ou_dept where code_dept = #{codeDept}
+	</select>
+	
+	<select id="qryDocCode" parameterType="java.lang.String" resultType="java.lang.String" >
+			select code from bd_defdoc where code_defdoclist = #{codeList} and name = #{name}
+	</select>
+	
+	<select id="qryUnit" parameterType="java.lang.String" resultType="java.lang.String" >
+			select pk_unit from bd_unit where  code = #{name}
+	</select>
+	
+	<select id="qryOrderInfo" parameterType="java.lang.String" resultType="DynaBean">
+	SELECT  
+	ord.date_enter,
+	ord.name_emp_input,
+	inemp.code_emp in_code_emp,
+	inde.code_dept in_code_dept,
+	inde.name_dept in_name_dept,
+	chkemp.code_emp code_emp_chk,
+	ord.name_emp_chk,
+	ord.date_chk,
+	ord.ordsn,
+	ord.code_ordtype,
+	ordtype.NAME name_ordtype,
+	ord.date_start,
+	ord.date_stop,
+	freq.NAME code_freq,
+	freq.note freq_name,
+	sup.NAME name_supply,
+	ord.code_supply,
+	dos.NAME name_dos,
+	ord.dosage,
+	ord.quan,
+	quan.NAME name_quan,
+	ord.days,
+	pddoc.code_std pddoc_code_std,
+	pddoc.name_std pddoc_name_std,
+	pd.CODE code_pd,
+	pd.NAME name_pd,
+	pd.spec,
+	pd.appr_no,
+	exdept.code_dept ex_code_dept,
+	exdept.name_dept ex_name_dept,
+	ord.ordsn_parent,
+	ord.eu_always,
+	ord.quan quan_ap,
+	quan.NAME name_unit_ap,
+	ord.note_ord,
+	ip.ip_times,
+	pv.code_pv,
+	op.op_times,
+	pv.eu_pvtype,
+	pi.pk_pi,
+	pi.code_op,
+	pi.code_ip,
+	pi.tel_no,
+	pi.id_no,
+	pi.name_pi,
+	sexdoc.code_std sex_code_std,
+	sexdoc.name_std sex_name_std,
+	pi.birth_date,
+	pi.hic_no pi_hic_no,
+	bed.code bed_code,
+	bed.name bed_name,
+	bed.houseno bed_houseno,
+	pv.bed_no,
+	pvdept.code_dept pv_code_dept,
+	pvdept.name_dept pv_name_dept,
+	nsdept.code_dept ns_code_dept,
+	nsdept.name_dept ns_name_dept,
+	item.dt_hptype,
+	poldoc.code_std poldoc_code_std,
+	poldoc.name_std poldoc_name_std
+FROM
+	cn_order ord
+		left join bd_ou_employee inemp on inemp.pk_emp=ord.pk_emp_ord
+		left join bd_ou_dept inde on inde.pk_dept=ord.pk_dept
+		left join bd_ou_employee chkemp on chkemp.pk_emp=ord.pk_emp_chk
+		left join bd_ordtype ordtype on ordtype.code=ord.code_ordtype
+		left join bd_term_freq freq on freq.code=ord.code_freq
+		left join bd_supply sup on sup.code=ord.code_supply
+		left join bd_unit dos on dos.pk_unit=ord.pk_unit_dos
+		left join bd_unit quan on quan.pk_unit=ord.pk_unit
+		left join bd_pd pd on pd.pk_pd=ord.pk_ord
+		left join bd_defdoc pddoc on pddoc.code=pd.dt_dosage and pddoc.code_defdoclist='030400'
+		left join bd_ou_dept exdept on exdept.pk_dept=ord.pk_dept_exec
+		left join pv_encounter pv on pv.pk_pv=ord.pk_pv
+		left join pv_ip ip on ip.pk_pv=pv.pk_pv
+		left join pv_op op on op.pk_pv=pv.pk_pv
+		left join pi_master pi on pi.pk_pi=pv.pk_pi
+		left join bd_defdoc sexdoc on sexdoc.code=pi.dt_sex and sexdoc.code_defdoclist='000000'
+		left join bd_res_bed bed on bed.code=pv.bed_no  and bed.pk_ward=pv.pk_dept_ns
+		left join bd_ou_dept pvdept on pvdept.pk_dept=pv.pk_dept
+		left join bd_ou_dept nsdept on nsdept.pk_dept=pv.pk_dept_ns
+		left join bd_hp hp on hp.pk_hp=pv.pk_insu
+		left join BD_HP_CGDIV_ITEM item on pd.PK_PD=item.PK_ITEM
+		left join bd_defdoc poldoc on poldoc.CODE_DEFDOCLIST='040001' and poldoc.CODE=item.DT_HPTYPE
+		where ord.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+	</select>
+</mapper>

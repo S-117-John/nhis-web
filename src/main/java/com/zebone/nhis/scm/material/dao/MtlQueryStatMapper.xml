@@ -1,0 +1,839 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.material.dao.MtlQueryStatMapper">
+	
+	<select id="searchPdSDeptUsing" parameterType="java.util.Map" 
+			resultType="com.zebone.nhis.scm.material.vo.PdDeptUsingVo">
+		select us.pk_dept_use,
+	       dept.name_dept deptName,
+	       pd.pk_pd,
+	       pd.name,
+	       pd.spec,
+	       pd.pk_factory,
+	       bf.name as factoryName,
+	       pd.pk_unit_pack,
+	       unit.name unitName,
+	       sum(us.quan) quan,
+	       sum(us.amount_cost) amt
+		from pd_deptusing us
+	       inner join bd_pd pd on us.pk_pd=pd.pk_pd
+	       inner join bd_ou_dept dept on us.pk_dept_use = dept.pk_dept
+	       inner join bd_factory bf on pd.pk_factory = bf.pk_factory
+	       inner join bd_unit unit on pd.pk_unit_pack = unit.pk_unit
+		where 1=1 
+			<if test='pkStore!=null and pkStore!=""'>
+				and us.pk_store = #{pkStore,jdbcType=VARCHAR}
+			</if>
+			<if test='pkDeptUse!=null and pkDeptUse!=""'>
+				and us.pk_dept_use=#{pkDeptUse,jdbcType=VARCHAR}
+			</if>
+			<if test='pkPd!=null and pkPd!=""'>
+				and us.pk_pd=#{pkPd,jdbcType=VARCHAR}
+			</if>
+			<if test='dateBegin!=null and dateBegin!=""'>
+				and us.date_beign &gt;=to_date(#{dateBegin},'yyyyMMddHH24MISS')
+			</if>
+			<if test='dateEnd!=null and dateEnd!=""'>
+				and us.date_beign &lt;=to_date(#{dateEnd},'yyyyMMddHH24MISS')
+			</if>
+		group by us.pk_dept_use,
+		       dept.name_dept,
+		       pd.pk_pd,
+		       pd.name,
+		       pd.spec,
+		       pd.pk_factory,
+		       bf.name,
+		       pd.pk_unit_pack,
+		       unit.name
+	</select>
+	
+	<select id="searchReceiveInfo" parameterType="java.util.Map" 
+			resultType="com.zebone.nhis.scm.material.vo.BdPdReceiveVo">
+		
+		select st.pk_dept_lk,
+	       dept.name_dept as deptName,
+	       pd.name,
+	       pd.spec,
+	       pd.pk_factory,
+	       bf.name as factoryName,
+	       pd.pk_unit_pack,
+	       unit.name as unitName,
+	       dt.quan_pack,
+	       dt.amount_cost,
+	       dt.amount,
+	       st.date_chk,
+	       st.pk_pdst
+	  	from pd_st st
+	       inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst
+	       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+	       left join bd_factory bf on pd.pk_factory = bf.PK_FACTORY
+	       left join bd_unit unit on pd.pk_unit_pack = unit.pk_unit
+	       left join bd_ou_dept dept on st.pk_dept_lk = dept.pk_dept
+		 where st.pk_store_st=#{pkStoreSt,jdbcType=VARCHAR}
+		 	and st.eu_direct=-1 
+	        and st.dt_sttype='0202' 
+	        and st.flag_chk='1' 
+		 	<if test='pkPd!=null and pkPd!=""'>
+		 		and dt.pk_pd = #{pkPd,jdbcType=VARCHAR} 
+		 	</if>
+		 	<if test='pkDeptLk!=null and pkDeptLk!=""'>
+		 		and st.pk_dept_lk=#{pkDeptLk,jdbcType=VARCHAR} 
+		 	</if>
+		 	<if test='dateBegin!=null and dateBegin!=""'>
+		 		and st.date_chk &gt;= to_date(#{dateBegin},'yyyyMMddHH24MISS') 
+		 	</if>
+			<if test='dateEnd!=null and dateEnd!=""'>
+				and st.date_chk &lt;=to_date(#{dateEnd},'yyyyMMddHH24MISS') 
+			</if>
+		 order by pk_dept_lk
+		
+	</select>
+	
+	<select id="searchReceiveByPk" parameterType="string" 
+			resultType="com.zebone.nhis.scm.material.vo.BdPdStVo">
+		select st.pk_pdst,
+		       st.dt_sttype,  
+		       st.code_st,
+		       st.date_st,
+		       st.pk_org_lk,  
+		       st.pk_dept_lk, 
+		       st.eu_status,
+		       st.pk_emp_op,
+		       st.name_emp_op,
+		       st.pk_emp_chk,
+		       st.name_emp_chk,
+		       st.date_chk,
+		       st.note,
+		       st.pk_store_lk,
+		       st.pk_supplyer,
+           	   bs.name as supplyerName
+		  from pd_st st
+        left join bd_supplyer bs on st.pk_supplyer = bs.pk_supplyer
+		 where st.pk_pdst=#{pkPdst,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="searchStDtsByPkPdst" parameterType="string" 
+			resultType="com.zebone.nhis.scm.material.vo.BdPdStDetailsVo">
+		select dt.pk_pdstdt,
+		       dt.pk_pd,
+		       pd.code,
+		       pd.name,
+		       pd.spec,
+		       pd.spcode,
+		       pd.pk_factory,
+		       bf.name as factoryName,
+		       dt.pk_unit_pack,
+		       unit.name as unitName,
+		       dt.price_cost,
+		       dt.price,
+		       dt.quan_pack,
+		       dt.quan_min,
+		       dt.amount_cost,
+		       dt.amount,
+		       dt.batch_no,
+		       dt.date_expire,
+		       dt.price,
+		       dt.price_cost
+		  from pd_st_detail dt
+		       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+		       left join bd_factory bf on pd.pk_factory = bf.PK_FACTORY
+			     left join bd_unit unit on pd.pk_unit_pack = unit.pk_unit
+		where dt.pk_pdst=#{pkPdst,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="searchBdPdPurInfo" parameterType="java.util.Map" 
+			resultType="com.zebone.nhis.scm.material.vo.BdPdPurVo">
+		
+		select st.pk_pdst,
+		       st.pk_supplyer,
+           	   bs.name as supplyerName,
+		       pd.name,
+		       pd.spec,
+		       pd.pk_factory,
+               bf.name as factoryName,
+		       pd.pk_unit_pack,
+           	   unit.name as unitName,
+		       dt.quan_pack,
+		       dt.amount_cost,
+		       dt.amount,
+		       st.date_chk
+		  from pd_st st
+		       inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst
+		       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+           left join bd_supplyer bs on st.pk_supplyer = bs.pk_supplyer
+           left join bd_factory bf on pd.pk_factory = bf.pk_factory
+           left join bd_unit unit on pd.pk_unit_pack = unit.pk_unit
+		 where st.pk_store_st = #{pkStoreSt,jdbcType=VARCHAR}
+	       and st.flag_chk='1' 
+	       and st.flag_pu='1'
+	       	<if test='pkPd!=null and pkPd!=""'>
+	 			and dt.pk_pd = #{pkPd,jdbcType=VARCHAR} 
+		 	</if>
+		 	<if test='pkSupplyer!=null and pkSupplyer!=""'>
+		 		and st.pk_supplyer=#{pkSupplyer,jdbcType=VARCHAR} 
+		 	</if>
+		 	<if test='dateBegin!=null and dateBegin!=""'>
+		 		and st.date_chk &gt;= to_date(#{dateBegin},'yyyyMMddHH24MISS') 
+		 	</if>
+			<if test='dateEnd!=null and dateEnd!=""'>
+				and st.date_chk &lt;=to_date(#{dateEnd},'yyyyMMddHH24MISS') 
+			</if>
+		
+	</select>
+	
+	<select id="searchPdStRecord" parameterType="string" 
+			resultType="com.zebone.nhis.scm.material.vo.BdPdStRecordVo">
+		select st.dt_sttype,
+		       def.name as sttypeName,
+		       pd.name,
+		       pd.spec,
+		       pd.pk_factory,
+		       bf.name as factoryName,
+		       pd.pk_unit_pack,
+		       unit.name as unitName,
+		       dt.quan_pack,
+		       dt.amount_cost,
+		       dt.amount,
+		       st.date_chk
+		  from pd_st st
+		       inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst
+		       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+		       left join bd_defdoc def on def.code_defdoclist = '080008' and st.dt_sttype = def.code
+		       left join bd_factory bf on pd.pk_factory = bf.pk_factory
+		       left join bd_unit unit on pd.pk_unit_pack = unit.pk_unit
+		  where st.pk_store_st = #{pkStoreSt,jdbcType=VARCHAR}
+	       		and st.flag_chk='1' 
+	       <if test='pkPd!=null and pkPd!=""'>
+ 				and dt.pk_pd = #{pkPd,jdbcType=VARCHAR} 
+	 	   </if>
+	 	   <if test='dtSttype!=null and dtSttype!=""'>
+ 				and st.dt_sttype = #{dtSttype,jdbcType=VARCHAR} 
+	 	   </if>
+	       <if test='dateBegin!=null and dateBegin!=""'>
+	 			and st.date_chk &gt;= to_date(#{dateBegin},'yyyyMMddHH24MISS') 
+		   </if>
+		   <if test='dateEnd!=null and dateEnd!=""'>
+				and st.date_chk &lt;=to_date(#{dateEnd},'yyyyMMddHH24MISS') 
+		   </if>
+	</select>
+	
+	<select id="searchBdPdBillAmt" parameterType="java.util.Map" 
+			resultType="com.zebone.nhis.scm.material.vo.BdPdBillVo">
+		select
+		  tj.pk_pd,
+		  tj.name,
+		  tj.spec,
+		  tj.pk_factory,
+		  tj.factoryName,
+		  tj.pk_unit_pack,
+		  tj.unitName,
+		  sum(tj.cq_quan) cq_quan,
+		  sum(tj.cq_amt) cq_amt,
+		  sum(tj.sr_quan) sr_quan,
+		  sum(tj.sr_amt) sr_amt,
+		  sum(tj.zc_quan) zc_quan,
+		  sum(tj.zc_amt) zc_amt,
+		  sum(tj.tj_amt) tj_amt
+		from (
+		        SELECT pd.pk_pd,
+		         pd.name,
+		         pd.spec,
+		         pd.pk_factory,
+		         bf.name factoryName,
+		         pd.pk_unit_pack,
+		         unit.name unitName,
+		         dt.quan_min cq_quan,  
+		         sum(dt.amount) cq_amt, 
+		          0 sr_quan,    
+		          0 sr_amt, 
+		          0 zc_quan,    
+		          0 zc_amt,
+		          0 tj_amt --调价金额
+		         FROM pd_cc cc
+		           INNER JOIN pd_cc_detail dt ON cc.pk_pdcc=dt.pk_pdcc
+		           INNER JOIN bd_pd pd ON dt.pk_pd=pd.pk_pd
+		           left join bd_factory bf on pd.pk_factory = bf.PK_FACTORY
+		           left join bd_unit unit on pd.pk_unit_pack = unit.pk_unit
+		         WHERE
+		         cc.pk_store=#{pkStoreSt,jdbcType=VARCHAR}
+		         and cc.month_fin = #{calMonBegin,jdbcType=BIGINT}
+		         and pd.dt_pdtype like '1%'
+		         GROUP BY
+		           pd.pk_pd,
+		           pd.name,
+		           pd.spec,
+		           pd.pk_factory,
+		           bf.name,
+		           pd.pk_unit_pack,
+		           unit.name,
+		           dt.quan_min
+		union
+		      select pd.pk_pd,
+		             pd.name,
+		             pd.spec,
+		             pd.pk_factory,
+		             bf.name factoryName,
+		             pd.pk_unit_pack,
+		             unit.name unitName,
+		             0 cq_quan,    
+		             0 cq_amt, 
+		             dt.quan_pack sr_quan,  
+		             sum(dt.amount) sr_amt, 
+		             0 zc_quan,   
+		             0 zc_amt ,
+		             0 tj_amt 
+		        from pd_st st
+		             inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst
+		             inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+		             left join bd_factory bf on pd.pk_factory = bf.PK_FACTORY
+		             left join bd_unit unit on pd.pk_unit_pack = unit.pk_unit
+		       where
+		             st.pk_store_st = #{pkStoreSt,jdbcType=VARCHAR} and
+		             st.eu_direct=1 and
+		             st.flag_chk='1'
+		             and pd.dt_pdtype like '1%'
+		             <if test="dateBegin!=null and dateBegin!=''">
+		             	and st.date_chk &gt;=to_date(#{dateBegin},'yyyyMMddHH24MISS')
+		             </if>
+		             <if test='dateEnd!=null and dateEnd!=""'>
+		             	and st.date_chk &lt;=to_date(#{dateEnd},'yyyyMMddHH24MISS')
+		             </if>
+		      group by
+		          pd.pk_pd,
+		          pd.name,
+		          pd.spec,
+		          pd.pk_factory,
+		          bf.name,
+		          pd.pk_unit_pack,
+		          unit.name,
+		          dt.quan_pack
+		union
+		       select
+		         pd.pk_pd,
+		         pd.name,
+		         pd.spec,
+		         pd.pk_factory,
+		         bf.name factoryName,
+		         pd.pk_unit_pack,
+		         unit.name unitName,
+		         0 cq_quan,     
+		         0 cq_amt, 
+		         0 sr_quan,    
+		         0 sr_amt, 
+		         dt.quan_pack zc_quan,          
+		         sum(dt.amount) zc_amt,
+		         0 tj_amt --调价金额
+		       FROM pd_st st
+		         INNER JOIN pd_st_detail dt ON st.pk_pdst = dt.pk_pdst
+		         INNER JOIN bd_pd pd ON dt.pk_pd = pd.pk_pd
+		         left join bd_factory bf on pd.pk_factory = bf.PK_FACTORY
+		         left join bd_unit unit on pd.pk_unit_pack = unit.pk_unit
+		       WHERE
+		         st.pk_store_st=#{pkStoreSt,jdbcType=VARCHAR} and
+		         st.eu_direct = -1 AND
+		         st.flag_chk = '1' 
+		         <if test="dateBegin!=null and dateBegin!=''">
+             		and st.date_chk &gt;=to_date(#{dateBegin},'yyyyMMddHH24MISS')
+	             </if>
+	             <if test='dateEnd!=null and dateEnd!=""'>
+	             	and st.date_chk &lt;=to_date(#{dateEnd},'yyyyMMddHH24MISS')
+	             </if>
+		       GROUP BY pd.pk_pd,
+		         pd.name,
+		         pd.spec,
+		         pd.pk_factory,
+		         bf.name,
+		         pd.pk_unit_pack,
+		         unit.name,
+		         dt.quan_pack
+		union
+	        select
+	          pd.pk_pd,
+	          pd.name,
+	          pd.spec,
+	          pd.pk_factory,
+	          bf.name factoryName,
+	          pd.pk_unit_pack,
+	          unit.name unitName,
+	           0 cq_quan,     --初期数量
+	           0 cq_amt, --零售金额
+	           0 sr_quan,--收入数量
+	           0 sr_amt, --收入零售金额
+	           0 zc_quan,--支出数量
+	           0 zc_amt, --支出零售金额
+	           sum(rep.amount_rep) tj_amt --调价金额
+	          from pd_reprice_hist rep
+	            inner join bd_pd pd on rep.pk_pd=pd.pk_pd
+	            left join bd_factory bf on pd.pk_factory = bf.PK_FACTORY
+	            left join bd_unit unit on pd.pk_unit_pack = unit.pk_unit
+	         where
+	         	 rep.pk_store=#{pkStoreSt,jdbcType=VARCHAR}
+	         	<if test="dateBegin!=null and dateBegin!=''">
+	         		and rep.date_reprice &gt;=to_date(#{dateBegin}, 'yyyyMMddHH24MISS') 
+	         	</if>
+	         	<if test="dateEnd!=null and dateEnd!=''">
+	         		and rep.date_reprice &lt;=to_date(#{dateEnd}, 'yyyyMMddHH24MISS')
+	         	</if>
+	        group by pd.pk_pd,
+	                pd.name,
+	                pd.spec,
+	                pd.pk_factory,
+	                bf.name,
+	                pd.pk_unit_pack,
+	                unit.name	
+		) tj
+		GROUP BY
+		  tj.pk_pd,
+		  tj.name,
+		  tj.spec,
+		  tj.pk_factory,
+		  tj.factoryName,
+		  tj.pk_unit_pack,
+		  tj.unitName
+	</select>
+	
+	<select id="searchBdPdBillAmtCost" parameterType="java.util.Map" 
+			resultType="com.zebone.nhis.scm.material.vo.BdPdBillVo">
+		select
+		  tj.pk_pd,
+		  tj.name,
+		  tj.spec,
+		  tj.pk_factory,
+		  tj.factoryName,
+		  tj.pk_unit_pack,
+		  tj.unitName,
+		  sum(tj.cq_quan) cq_quan,
+		  sum(tj.cq_amt_cost) cq_amt,
+		  sum(tj.sr_quan) sr_quan,
+		  sum(tj.sr_amt_cost) sr_amt,
+		  sum(tj.zc_quan) zc_quan,
+		  sum(tj.zc_amt_cost) zc_amt,
+		  sum(tj.tj_amt) tj_amt
+		from (
+		        SELECT pd.pk_pd,
+		         pd.name,
+		         pd.spec,
+		         pd.pk_factory,
+		         bf.name factoryName,
+		         pd.pk_unit_pack,
+		         unit.name unitName,
+		         dt.quan_min cq_quan,  --初期数量
+		         sum(dt.amount_cost) cq_amt_cost, --初期成本金额
+		          0 sr_quan,    --收入数量
+		          0 sr_amt_cost, --收入成本金额
+		          0 zc_quan,    --支出数量
+		          0 zc_amt_cost, --成本金额
+		          0 tj_amt --调价金额
+		         FROM pd_cc cc
+		           INNER JOIN pd_cc_detail dt ON cc.pk_pdcc=dt.pk_pdcc
+		           INNER JOIN bd_pd pd ON dt.pk_pd=pd.pk_pd
+		           left join bd_factory bf on pd.pk_factory = bf.PK_FACTORY
+		           left join bd_unit unit on pd.pk_unit_pack = unit.pk_unit
+		         WHERE
+		         cc.pk_store=#{pkStoreSt,jdbcType=VARCHAR} and --当前仓库
+		         cc.month_fin = #{calMonBegin,jdbcType=BIGINT} --开始财务月份-1
+		         and pd.dt_pdtype like '1%'
+		         GROUP BY
+		           pd.pk_pd,
+		           pd.name,
+		           pd.spec,
+		           pd.pk_factory,
+		           bf.name,
+		           pd.pk_unit_pack,
+		           unit.name,
+		           dt.quan_min
+		union
+		      select pd.pk_pd,
+		             pd.name,
+		             pd.spec,
+		             pd.pk_factory,
+		             bf.name factoryName,
+		             pd.pk_unit_pack,
+		             unit.name unitName,
+		             0 cq_quan,     --初期数量
+		             0 cq_amt_cost, --成本金额
+		             dt.quan_pack sr_quan,  --收入数量
+		             sum(dt.amount_cost) sr_amt_cost, --成本金额
+		             0 zc_quan,    --支出数量
+		             0 zc_amt_cost, --成本金额
+		             0 tj_amt --调价金额
+		        from pd_st st
+		             inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst
+		             inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+		             left join bd_factory bf on pd.pk_factory = bf.PK_FACTORY
+		             left join bd_unit unit on pd.pk_unit_pack = unit.pk_unit
+		       where
+		             st.pk_store_st=#{pkStoreSt,jdbcType=VARCHAR} and --当前仓库
+		             st.eu_direct=1 and
+		             st.flag_chk='1'
+		             and pd.dt_pdtype like '1%'
+		             <if test="dateBegin!=null and dateBegin!=''">
+	             		and st.date_chk &gt;=to_date(#{dateBegin},'yyyyMMddHH24MISS')
+		             </if>
+		             <if test='dateEnd!=null and dateEnd!=""'>
+		             	and st.date_chk &lt;=to_date(#{dateEnd},'yyyyMMddHH24MISS')
+		             </if>
+		      group by
+		          pd.pk_pd,
+		          pd.name,
+		          pd.spec,
+		          pd.pk_factory,
+		          bf.name,
+		          pd.pk_unit_pack,
+		          unit.name,
+		          dt.quan_pack
+		union
+		       select
+		         pd.pk_pd,
+		         pd.name,
+		         pd.spec,
+		         pd.pk_factory,
+		         bf.name factoryName,
+		         pd.pk_unit_pack,
+		         unit.name unitName,
+		         0 cq_quan,     --初期数量
+		         0 cq_amt_cost, --成本金额
+		         0 sr_quan,    --收入数量
+		         0 sr_amt_cost, --收入成本金额
+		         dt.quan_pack zc_quan,          --支出数量
+		         sum(dt.amount_cost) zc_amt_cost, --支出成本金额
+				 0 tj_amt --调价金额
+		       FROM pd_st st
+		         INNER JOIN pd_st_detail dt ON st.pk_pdst = dt.pk_pdst
+		         INNER JOIN bd_pd pd ON dt.pk_pd = pd.pk_pd
+		         left join bd_factory bf on pd.pk_factory = bf.PK_FACTORY
+		         left join bd_unit unit on pd.pk_unit_pack = unit.pk_unit
+		       WHERE
+		         st.pk_store_st=#{pkStoreSt,jdbcType=VARCHAR} and --当前仓库
+		         st.eu_direct = -1 AND
+		         st.flag_chk = '1' 
+		         <if test="dateBegin!=null and dateBegin!=''">
+             		and st.date_chk &gt;=to_date(#{dateBegin},'yyyyMMddHH24MISS')
+	             </if>
+	             <if test='dateEnd!=null and dateEnd!=""'>
+	             	and st.date_chk &lt;=to_date(#{dateEnd},'yyyyMMddHH24MISS')
+	             </if>
+		       GROUP BY pd.pk_pd,
+		         pd.name,
+		         pd.spec,
+		         pd.pk_factory,
+		         bf.name,
+		         pd.pk_unit_pack,
+		         unit.name,
+		         dt.quan_pack
+		union
+	        select
+	          pd.pk_pd,
+	          pd.name,
+	          pd.spec,
+	          pd.pk_factory,
+	          bf.name factoryName,
+	          pd.pk_unit_pack,
+	          unit.name unitName,
+	           0 cq_quan,     --初期数量
+	           0 cq_amt, --零售金额
+	           0 sr_quan,--收入数量
+	           0 sr_amt, --收入零售金额
+	           0 zc_quan,--支出数量
+	           0 zc_amt, --支出零售金额
+	           sum(rep.amount_rep) tj_amt --调价金额
+	          from pd_reprice_hist rep
+	            inner join bd_pd pd on rep.pk_pd=pd.pk_pd
+	            left join bd_factory bf on pd.pk_factory = bf.PK_FACTORY
+	            left join bd_unit unit on pd.pk_unit_pack = unit.pk_unit
+	         where
+	         	rep.pk_store=#{pkStoreSt,jdbcType=VARCHAR} and
+	         	<if test="dateBegin!=null and dateBegin!=''">
+	         		rep.date_reprice &gt;=to_date(#{dateBegin}, 'yyyyMMddHH24MISS') 
+	         	</if>
+	         	<if test="dateEnd!=null and dateEnd!=''">
+	         		and rep.date_reprice &lt;=to_date(#{dateEnd}, 'yyyyMMddHH24MISS')
+	         	</if>
+	        group by pd.pk_pd,
+	                pd.name,
+	                pd.spec,
+	                pd.pk_factory,
+	                bf.name,
+	                pd.pk_unit_pack,
+	                unit.name		  
+		) tj
+		GROUP BY
+		  tj.pk_pd,
+		  tj.name,
+		  tj.spec,
+		  tj.pk_factory,
+		  tj.factoryName,
+		  tj.pk_unit_pack,
+		  tj.unitName
+	</select>
+	
+	<select id="searchBdPdBillDtls" 
+	parameterType="java.util.Map" resultType="com.zebone.nhis.scm.material.vo.BdPdQuyBillDtlsVo">
+		select  dtls.date_dtl,
+		        dtls.code_st,
+		        dtls.dt_sttype,
+		        dtls.sttypeName,
+		        dtls.eu_direct,
+		        dtls.code_rep,
+		        dtls.dt_reptype,
+		        dtls.tj_eu_direct,  
+		        dtls.reptypeName, 	
+		        dtls.cq_quan,
+		        dtls.cq_amount,
+		        dtls.cq_amount_cost,
+		        dtls.st_quan,
+		        dtls.st_amount,
+		        dtls.st_amount_cost,
+		        dtls.tj_quan,
+		        dtls.tj_amt
+		from(
+		
+		  select cc.date_end+1  date_dtl, 		--开始财务月份的开始日期
+		          '' code_st,
+		          '' dt_sttype,   		--摘要
+		          '' sttypeName, 		--摘要名称
+		          '' eu_direct,   		--1收入，-1支出
+		          '' code_rep,        	--调价单号
+		          '' dt_reptype,      	--调价类型
+		          '' tj_eu_direct,		--调价类型
+		          '' reptypeName, 		--调价类型名称
+		          dt.quan_min cq_quan,			--初期结存数量
+			      dt.amount	  cq_amount,		--期初结存零售金额
+			      dt.amount_cost cq_amount_cost,--期初结存成本金额
+			      0 st_quan,   		  	--数量
+			      0 st_amount,      	--零售金额
+			      0 st_amount_cost,  	--成本金额
+			      0 tj_quan,			--调价数量
+		          0 tj_amt         		--调价金额
+				  from pd_cc cc
+				       inner join pd_cc_detail dt on cc.pk_pdcc=dt.pk_pdcc
+		      where 
+			 	   cc.pk_store=#{pkStoreSt,jdbcType=VARCHAR} and --当前仓库
+			       dt.pk_pd = #{pkPd,jdbcType=VARCHAR}
+			       and cc.month_fin = #{calMonBegin,jdbcType=BIGINT} --开始财务月份-1
+		union
+		  select st.date_chk date_dtl,    		  --日期
+		          st.code_st,     			      --单据号
+			      st.dt_sttype,   				  --摘要
+		          doc.name sttypeName, 		  	  --摘要名称
+			      st.eu_direct,   				  --1收入，-1支出
+		          '' code_rep,        	--调价单号
+		          '' dt_reptype,      	--调价类型
+		          '' tj_eu_direct,
+		          '' reptypeName, 		--调价类型名称
+		          0 cq_quan,			--初期结存数量
+			      0 cq_amount,			--期初结存零售金额
+			      0 cq_amount_cost, 	--期初结存成本金额
+			      dt.quan_pack st_quan,   		  	--数量
+			      dt.amount	st_amount,        		--零售金额
+			      dt.amount_cost st_amount_cost,  	--成本金额
+			      0 tj_quan,			--调价数量
+		          0 tj_amt         		--调价金额
+				  from pd_st st
+				       inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst
+		           	   left join bd_defdoc doc on st.dt_sttype = doc.code and doc.del_flag = '0' and doc.code_defdoclist =  '080008'
+		      where 
+		 		st.pk_store_st=#{pkStoreSt,jdbcType=VARCHAR} and
+		       dt.pk_pd=#{pkPd,jdbcType=VARCHAR}
+		       and st.date_chk &gt;=to_date(#{dateBegin}, 'yyyyMMddHH24MISS') 
+		       and st.date_chk &lt;=to_date(#{dateEnd}, 'yyyyMMddHH24MISS')
+		union
+		  select rep.date_reprice date_dtl,
+		          '' code_st,
+		          '' dt_sttype,   		  --摘要
+		          '' sttypeName, 		  --摘要名称
+                  ''eu_direct,   		  --1收入，-1支出
+			      rep.code_rep,			  --调价单号
+			      rep.dt_reptype,		  --调价类型
+			      case when rep.amount_rep>0 then '1' else '-1' end tj_eu_direct,
+			      doc.name reptypeName, --调价类型名称
+		          0 cq_quan,			--初期结存数量
+		          0 cq_amount,			--期初结存零售金额
+		          0 cq_amount_cost, 	--期初结存成本金额
+		          0 st_quan,   		  	--数量
+			      0 st_amount,      	--零售金额
+			      0 st_amount_cost,  	--成本金额
+		          rep.quan_rep tj_quan,	--调价数量
+			      rep.amount_rep tj_amt --调价零售金额
+				  from pd_reprice_hist rep
+				  	left join bd_defdoc doc on rep.dt_reptype = doc.code and doc.del_flag = '0' and doc.code_defdoclist =  '080010'
+		       where 
+			 		rep.pk_store=#{pkStoreSt,jdbcType=VARCHAR} and
+			       rep.pk_pd=#{pkPd,jdbcType=VARCHAR}
+			       and rep.date_reprice &gt;=to_date(#{dateBegin}, 'yyyyMMddHH24MISS') 
+			       and rep.date_reprice &lt;=to_date(#{dateEnd}, 'yyyyMMddHH24MISS')
+		
+		) dtls
+		order by dtls.date_dtl asc
+			
+	</select>
+	
+	<select id="queryMtlTransSum" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.material.vo.MtlTransSumVo">
+		select c.*,
+		 (case when 1=#{euStatisType,jdbcType=BIGINT} then b.amt  else b.amt_cost end) amt_begin,
+		 (case when 1=#{euStatisType,jdbcType=BIGINT} then i.amt  else i.amt_cost end) amt_in,
+		 (case when 1=#{euStatisType,jdbcType=BIGINT} then o.amt  else o.amt_cost end) amt_out,
+		 (case when 1=#{euStatisType,jdbcType=BIGINT} then p.amt  else p.amt_cost end) amt_price  
+		from 
+		(select cate.pk_pdcate,
+		       cate.name_pdcate
+		  from bd_pdcate cate 
+		order by cate.code_pdcate,cate.name_pdcate
+		) c left outer join
+		(
+		select cate.pk_pdcate,
+		       cate.name_pdcate,  
+		       sum(dt.amount) amt,
+		       sum(dt.amount_cost) amt_cost 
+		  from pd_cc cc
+		       inner join pd_cc_detail dt on cc.pk_pdcc=dt.pk_pdcc
+		       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+		       inner join bd_pdcate cate on pd.pk_pdcate=cate.pk_pdcate
+		 where cc.pk_store=#{pkStoreSt,jdbcType=VARCHAR} and  
+		       cc.month_fin=#{calMonBegin,jdbcType=BIGINT} 
+		group by cate.pk_pdcate,
+		         cate.name_pdcate
+		) b on c.pk_pdcate=b.pk_pdcate
+		left outer join 
+		(select cate.pk_pdcate,
+		       cate.name_pdcate,
+		       sum(dt.amount) amt,
+		       sum(dt.amount_cost) amt_cost
+		  from pd_st st
+		       inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst
+		       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+		       inner join bd_pdcate cate on pd.pk_pdcate=cate.pk_pdcate
+		    where st.pk_store_st=#{pkStoreSt,jdbcType=VARCHAR} and
+		       st.eu_direct=1 and
+		       st.flag_chk='1' and
+		       st.date_chk &gt;= to_date(#{dateBegin}, 'yyyyMMddHH24MISS')  and
+		       st.date_chk &lt;= to_date(#{dateEnd}, 'yyyyMMddHH24MISS')
+		group by cate.pk_pdcate,
+		         cate.name_pdcate
+		) i on c.pk_pdcate=i.pk_pdcate
+		left outer join
+		(select cate.pk_pdcate,
+		       cate.name_pdcate, 
+		       sum(dt.amount) amt,
+		       sum(dt.amount_cost) amt_cost
+		  from pd_st st
+		       inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst
+		       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+		       inner join bd_pdcate cate on pd.pk_pdcate=cate.pk_pdcate
+		  where st.pk_store_st=#{pkStoreSt,jdbcType=VARCHAR} and
+		       st.eu_direct=-1 and
+		       st.flag_chk='1' and
+		       st.date_chk &gt;= to_date(#{dateBegin}, 'yyyyMMddHH24MISS') and
+		       st.date_chk &lt;= to_date(#{dateEnd}, 'yyyyMMddHH24MISS')
+		group by cate.pk_pdcate,
+		         cate.name_pdcate
+		 ) o on c.pk_pdcate=o.pk_pdcate
+         left outer join 
+		(select cate.pk_pdcate,
+		       cate.name_pdcate, 
+		       sum(rep.amount_rep) amt,
+		       0 amt_cost
+		  from pd_reprice_hist rep 
+		       inner join bd_pd pd on rep.pk_pd=pd.pk_pd
+		       inner join bd_pdcate cate on pd.pk_pdcate=cate.pk_pdcate
+		 where rep.pk_store=#{pkStoreSt,jdbcType=VARCHAR} and
+		       rep.date_reprice &gt;= to_date(#{dateBegin}, 'yyyyMMddHH24MISS') and
+		       rep.date_reprice &lt;= to_date(#{dateEnd}, 'yyyyMMddHH24MISS')
+		group by cate.pk_pdcate,
+		         cate.name_pdcate
+		) p on c.pk_pdcate=p.pk_pdcate
+	</select>
+	<select id="queryMtlLicensePd" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.material.vo.MtlLicensePdVo">
+		select pd.pk_pd,
+			   pd.code,
+		       pd.name,
+		       pd.spec,
+		       pd.spcode,
+		       pd.pk_factory,
+		       bf.name as factoryName,
+		       pd.pk_unit_pack,
+		       unit.name as unitName,
+		       pd.reg_no,
+		       pd.date_valid_reg
+		  from bd_pd pd left outer join 
+		       bd_factory bf on pd.pk_factory = bf.pk_factory left outer join
+		       bd_unit unit on pd.pk_unit_pack = unit.pk_unit
+		  where pd.flag_stop='0' 
+	       <if test='beginDate!=null and beginDate!=""'>
+	 			and pd.date_valid_reg &gt;= to_date(#{beginDate},'yyyyMMddHH24MISS') 
+		   </if>
+		   <if test='endDate!=null and endDate!=""'>
+				and pd.date_valid_reg &lt;= to_date(#{endDate},'yyyyMMddHH24MISS') 
+		   </if>
+	</select>	
+	<select id="queryMtlLicenseSup" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.material.vo.MtlLicenseSupVo">
+		select spr.code,
+		       spr.name,
+		       spr.spcode,
+		       spr.name_rel,
+		       spr.tel,
+		       spr.reg_no,
+		       spr.date_valid_run,
+		       spr.license_no,
+		       spr.date_valid_license
+		  from bd_supplyer spr
+		  where 
+	 			(
+		 			(
+		 				spr.date_valid_license &gt;= to_date(#{beginDate},'yyyyMMddHH24MISS') 
+						and spr.date_valid_license &lt;= to_date(#{endDate},'yyyyMMddHH24MISS') 
+					) 
+					or 
+					(
+			 			spr.date_valid_run &gt;= to_date(#{beginDate},'yyyyMMddHH24MISS') 
+						and spr.date_valid_run &lt;= to_date(#{endDate},'yyyyMMddHH24MISS') 
+					)
+				)
+				and spr.flag_stop='0' 
+	</select>
+	<select id="queryDeptPdSt" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.material.vo.MtlDeptPdStVo">
+		select st.pk_store_st,
+			   st.dt_sttype,
+			   def.name sttype_name,
+			   pd.code,
+		       pd.name,
+		       pd.spec,
+		       pd.spcode,
+		       pd.pk_factory,
+		       bf.name as factory_name,
+		       pd.pk_unit_pack,
+		       unit.name as unit_name,
+		       dt.quan_pack,
+		       dt.amount_cost,
+		       dt.amount,
+		       st.date_st,
+		       st.code_st,
+		       bs.name store_st_name
+		  from pd_st st inner join
+		       pd_st_detail dt on st.pk_pdst=dt.pk_pdst inner join 
+		  	   bd_pd pd on dt.pk_pd=pd.pk_pd left outer join 
+		       bd_factory bf on pd.pk_factory = bf.pk_factory left outer join
+		       bd_unit unit on pd.pk_unit_pack = unit.pk_unit left outer join
+		       bd_store bs on st.pk_store_st = bs.pk_store left outer join
+		       bd_defdoc def on def.code_defdoclist = '080008' and st.dt_sttype = def.code
+		  where st.flag_chk='1'
+			<if test='pkDept!=null and pkDept!=""'>
+ 				and st.pk_dept_lk = #{pkDept,jdbcType=VARCHAR} 
+	 	    </if>			
+			<if test='pkPd!=null and pkPd!=""'>
+				and dt.pk_pd=#{pkPd,jdbcType=VARCHAR}
+			</if>
+			<if test='pkStore!=null and pkStore!=""'>
+ 				and st.pk_store_st = #{pkStore,jdbcType=VARCHAR} 
+	 	   </if>			
+			<if test='dtSttype!=null and dtSttype!=""'>
+ 				and st.dt_sttype = #{dtSttype,jdbcType=VARCHAR} 
+	 	   </if>			
+	       <if test='beginDate!=null and beginDate!=""'>
+	 			and st.date_chk &gt;= to_date(#{beginDate},'yyyyMMddHH24MISS') 
+		   </if>
+		   <if test='endDate!=null and endDate!=""'>
+				and st.date_chk &lt;= to_date(#{endDate},'yyyyMMddHH24MISS') 
+		   </if>
+	</select>			
+</mapper>

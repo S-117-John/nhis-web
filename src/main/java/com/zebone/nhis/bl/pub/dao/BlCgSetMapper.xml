@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.bl.pub.dao.BlCgSetMapper">
+
+	<select id="qryCgSetDts" parameterType="java.util.Set" resultType="com.zebone.nhis.bl.pub.vo.BlCgSetDtVo">
+		select *
+		from (SELECT dt.*,
+		             item.name as name_item,
+		             item.spec,
+		             item.price,
+		             item.pk_unit unit,
+		             '0'          flag_pd,
+		             null         price_cost,
+		             item.PK_UNIT pk_unit_pd,
+		             1            pack_size,
+		             null CODE_FREQ,
+		             null CODE_SUPPLY,
+		             null DOSAGE_DEF,
+		             null PK_UNIT_DEF
+		      FROM bl_cgset_dt dt
+		               inner join bd_item item ON item.pk_item = dt.pk_item and item.flag_active='1' and item.del_flag='0'
+		      UNION ALL
+		      SELECT dt.*,
+		             bp.name                 as name_item,
+		             bp.spec,
+		             bp.price / bp.pack_size as price,
+		             bp.pk_unit_min             unit,
+		             '1'                        flag_pd,
+		             bp.price                   price_cost,
+		             bp.pk_unit_min             pk_unit_pd,
+		             1                          pack_size,
+		             bp.CODE_FREQ ,
+		             bp.CODE_SUPPLY ,
+		             bp.DOSAGE_DEF ,
+		             bp.PK_UNIT_DEF
+		      FROM bl_cgset_dt dt
+		               inner join bd_pd bp on bp.pk_pd = dt.pk_item and bp.flag_stop='0') cgdt 
+		where del_flag ='0' and cgdt.PK_CGSET in 
+		<foreach collection="pkCgsets" item="item" index="index" open="(" close=")" separator=",">
+		      #{item} 
+	    </foreach>
+		ORDER BY SORTNO
+	</select>
+	
+</mapper>

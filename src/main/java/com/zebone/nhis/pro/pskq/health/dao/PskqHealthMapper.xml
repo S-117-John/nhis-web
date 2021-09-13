@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.pskq.health.dao.PskqHealthMapper">
+
+	<select id="querySettleDataByPkSettle" parameterType="java.lang.String" resultType="DynaBean">
+		select
+		  st.pk_settle,
+		  st.amount_insu,
+		  st.amount_pi,
+		  st.amount_st,
+		  pay.pk_depo,
+		  pay.serial_no,
+		  pay.trade_no,
+		  pv.pk_pv,
+		  pv.date_reg,
+		  pv.eu_pvtype,
+		  pv.code_pv,
+		  pi.pk_pi,
+		  pi.code_op,
+		  pi.insur_no,
+		  pi.name_pi,
+		  pi.code_pi,
+		  org.code_org,
+		  inv.ebillbatchcode,
+		  inv.ebillno,
+		  inv.checkcode,
+		  inv.date_ebill,
+		  inv.qrcode_ebill,
+		  inv.url_ebill,
+		  inv.url_netebill 
+		from bl_settle st
+		inner join pv_encounter pv on pv.pk_pv=st.pk_pv
+		inner join pi_master pi on pi.pk_pi=pv.pk_pi
+		inner join bl_ext_pay pay on pay.pk_settle=st.pk_settle
+		left join bd_ou_org org on org.pk_org=pv.pk_org
+		left join bl_st_inv invst on invst.PK_SETTLE = st.PK_SETTLE
+    	left join BL_INVOICE inv on  inv.pk_invoice=invst.pk_invoice
+		where st.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="queryDepositDataByPkDepo" parameterType="java.lang.String" resultType="DynaBean">
+		select
+		  bl.amount as amount_st,
+		  pay.pk_depo,
+		  pay.serial_no,
+		  pay.trade_no,
+		  pv.pk_pv,
+		  pv.date_reg,
+		  pv.eu_pvtype,
+		  pv.code_pv,
+		  pi.pk_pi,
+		  pi.code_op,
+		  pi.insur_no,
+		  pi.name_pi,
+		  pi.code_pi,
+		  org.code_org 
+		from bl_deposit bl
+		inner join pv_encounter pv on pv.pk_pv=bl.pk_pv
+		inner join pi_master pi on pi.pk_pi=pv.pk_pi
+		inner join bl_ext_pay pay on pay.pk_depo=bl.pk_depo
+		left join bd_ou_org org on org.pk_org=pv.pk_org
+		where bl.pk_depo=#{pkDepo,jdbcType=VARCHAR}
+	</select>
+	
+	
+</mapper>

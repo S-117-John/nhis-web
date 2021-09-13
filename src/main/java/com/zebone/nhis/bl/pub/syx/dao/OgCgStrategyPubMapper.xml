@@ -1,0 +1,436 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.bl.pub.syx.dao.OgCgStrategyPubMapper">
+
+	<select id="qryPvInsuAttrVal" resultType="DynaBean">
+		select hp.pk_hp,
+               hp.eu_hptype,
+			   attr.val_attr
+		  from bd_hp hp
+		       inner join bd_dictattr attr on hp.pk_hp=attr.pk_dict
+		       inner join bd_dictattr_temp tmp on attr.pk_dictattrtemp=tmp.pk_dictattrtemp and tmp.dt_dicttype='03'
+		       inner join pv_encounter pv on hp.pk_hp = pv.pk_insu
+		 where pv.pk_pv=#{pkPv,jdbcType=CHAR}
+		 	   and tmp.code_attr='0301'
+	</select>
+	
+	<select id="queryHp" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.syx.vo.HpVo">
+	 select hp.*,pi.pk_picate,fa.code fa_code
+	 from bd_hp hp
+	 left join pi_cate pi on hp.pk_hp = pi.pk_hp 
+	 left join bd_hp fa on hp.pk_parent=fa.pk_hp
+	 where hp.del_flag = '0' 
+	  <if test="pkHp != null  and  pkHp != ''">
+	 	and hp.pk_hp = #{pkHp,jdbcType=VARCHAR}
+	  </if>
+	   <if test="euPvType=='1'.toString()">
+        and hp.flag_op='1'
+      </if>
+       <if test="euPvType=='2'.toString()">
+        and hp.flag_er='1'
+      </if>
+       <if test="euPvType=='3'.toString()">
+        and hp.flag_ip='1'
+      </if>
+       <if test="euPvType=='4'.toString()">
+        and hp.flag_pe='1'
+      </if>
+       <if test="euPvType=='5'.toString()">
+        and hp.flag_hm='1'
+      </if> 
+      <if test='pkPicate!=null and pkPicate!=""'>
+      	and pi.pk_picate = #{pkPicate,jdbcType=CHAR}
+      </if>
+	</select>
+	
+	<select id="qryHpStatusByPv" parameterType="java.util.Map" resultType="java.lang.String">
+		select inspv.eu_pvmode_hp 
+		  from ins_gzgy_pv inspv
+		 where inspv.pk_pv=#{pkPv,jdbcType=VARCHAR} and
+		       inspv.pk_hp=#{pkHp,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="qrygyGeneralOpDrugAmt" parameterType="java.util.Map" resultType="DynaBean">
+		select pv.pk_pv,
+		       hp.pk_hp,
+		       hp.rate_op,
+		       hp.drugquota_op,
+		       gzgyPv.DRUGQUOTA,
+		       sum(cg.amount) amt_drug,
+		       sum(case when cg.amount_hppi=cg.amount then 0
+		           else cg.amount end) amt_hpdrug
+		  from pv_encounter pv
+		  	   left join ins_gzgy_pv gzgyPv on gzgyPv.pk_pv = pv.pk_pv
+		       inner join bl_op_dt cg on pv.pk_pv=cg.pk_pv
+		       inner join bd_hp hp on pv.pk_insu=hp.pk_hp
+		 where pv.pk_pv=#{pkPv,jdbcType=VARCHAR} and
+		       pv.eu_pvtype=#{euPvtype,jdbcType=VARCHAR} and
+		       cg.flag_pd='1'   and
+		       cg.flag_settle='0' 
+		       <if test='pkList!=null and pkList.size()>0'>
+	             and cg.pk_cgop in 
+	             <foreach collection="pkList" item="pkList" index="no" open="("
+	                separator="," close=")">
+	                #{pkList}
+	             </foreach> 
+	           </if>
+		group by pv.pk_pv,
+		        hp.pk_hp,
+		        hp.rate_op,
+		        hp.drugquota_op,
+		        gzgyPv.DRUGQUOTA
+	</select>
+	
+	<select id="qryRatioCountByPv" parameterType="java.util.Map" resultType="DynaBean">
+		select distinct 
+		       cg.ratio_self
+		  from bl_op_dt cg 
+		 where cg.flag_pd='1' and cg.pk_pv=#{pkPv,jdbcType=VARCHAR}
+		    	<if test='pkList!=null and pkList.size()>0'>
+	             and cg.pk_cgop in 
+	             <foreach collection="pkList" item="pkList" index="no" open="("
+	                separator="," close=")">
+	                #{pkList}
+	             </foreach> 
+	           </if>
+		       and cg.ratio_self &lt; 1
+	</select>
+	
+	<select id="qryTodayDrugAmtByPi" parameterType="java.util.Map" resultType="DynaBean">
+		select pv.pk_pv,
+		       sum(ist.amount_ins_drug) amount_ins_drug, 
+		       cg.amt_drug,  
+		       cg.amt_hpdrug 
+		  from pv_encounter pv
+		       inner join bl_settle st on pv.pk_pv=st.pk_pv and st.dt_sttype='01'
+		       inner join ins_gzgy_st ist on st.pk_settle=ist.pk_settle
+		       inner join (select pk_pv,
+		                          sum(amount) amt_drug,
+		                          sum(case when amount=amount_hppi then 0 else amount end) amt_hpdrug
+		                     from bl_op_dt
+		                    where pk_pi=#{pkPi,jdbcType=CHAR} and flag_pd='1' and flag_settle='1'
+		                    group by pk_pv) cg on st.pk_pv=cg.pk_pv
+		 where pv.pk_pi=#{pkPi,jdbcType=VARCHAR} and
+		       pv.date_begin &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') and
+		       pv.date_begin &lt;=to_date(#{dateEnd},'YYYYMMDDHH24MISS') and
+		       pv.eu_pvtype=#{euPvtype,jdbcType=VARCHAR} and
+		       st.dt_sttype='01' and
+		       not exists (select 1 from bl_settle bk where st.pk_settle=bk.pk_settle_canc)
+		group by pv.pk_pv,
+		         cg.amt_drug,
+		         cg.amt_hpdrug
+	</select>
+	
+	<select id="qryOpVisitCount" parameterType="java.util.Map" resultType="java.lang.String">
+		select attr.val_attr
+		  from bd_hp hp
+		       inner join bd_dictattr attr on hp.pk_hp=attr.pk_dict
+		       inner join bd_dictattr_temp tmp on attr.pk_dictattrtemp=tmp.pk_dictattrtemp and tmp.dt_dicttype='03'
+		 where hp.pk_hp=#{pkHp,jdbcType=VARCHAR} and
+		       tmp.code_attr='0302'
+	</select>
+	
+	<select id="qrygyGeneralOpItemAmt" parameterType="java.util.Map" resultType="DynaBean">
+		select sum(cg.amount) amt,  
+		       sum(cg.amount_hppi) amt_hppi, 
+		       sum(cg.amount-cg.amount_hppi)amt_hp 
+		  from pv_encounter pv
+		       inner join bl_op_dt cg on pv.pk_pv=cg.pk_pv
+		 where pv.pk_pv=#{pkPv,jdbcType=VARCHAR} and  
+		       pv.eu_pvtype='1' and 
+		       cg.flag_pd='0' and   
+		       cg.flag_settle='0' and
+		       cg.flag_pv = '0'
+		       <if test='pkList!=null and pkList.size()>0'>
+	             and cg.pk_cgop in 
+	             <foreach collection="pkList" item="pkList" index="no" open="("
+	                separator="," close=")">
+	                #{pkList}
+	             </foreach> 
+	           </if>
+	</select>
+	
+	<select id="qryOpcgsByPv" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.bl.opcg.BlOpDt">
+		select * from bl_op_dt 
+		 where pk_pv = #{pkPv,jdbcType=VARCHAR} 
+		       and FLAG_SETTLE = '0' 
+		       <if test='pkList!=null and pkList.size()>0'>
+	             and pk_cgop in 
+	             <foreach collection="pkList" item="pkList" index="no" open="("
+	                separator="," close=")">
+	                #{pkList}
+	             </foreach> 
+	           </if>
+	</select>
+	
+	<select id="qryChronicTypeByDiag" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(1)
+		  from ins_gzgy_disease dise
+		       inner join ins_gzgy_hp_div div on dise.pk_gzgydisease=div.pk_div and div.eu_divtype='10'
+		 where div.pk_hp=#{pkHp,jdbcType=VARCHAR}  and
+		       dise.dt_diseasetype='01' and
+		       dise.name_diag=#{nameDiag,jdbcType=VARCHAR} 
+	</select>
+	
+	<select id="qryNamediagByPv" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.cn.ipdw.PvDiag">
+		select NAME_DIAG,EU_SPTYPE from pv_diag where pk_pv=#{pkPv,jdbcType=VARCHAR} 
+	</select>
+	
+	<select id="qrygyChronicOpAmt" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT
+		  sum(cg.amount)                       amt,
+		  sum(CASE WHEN cg.ratio_self >= 1 THEN 0 ELSE cg.amount END) * hp.rate_op amt_hppi,
+		  sum(CASE WHEN cg.ratio_self >= 1 THEN cg.amount ELSE 0 END) amt_hppi2
+		FROM pv_encounter pv
+		  INNER JOIN bd_hp hp ON pv.pk_insu = hp.pk_hp
+		  INNER JOIN bl_op_dt cg ON pv.pk_pv = cg.pk_pv
+		WHERE pv.pk_pv = #{pkPv,jdbcType=CHAR} AND 
+		      pv.eu_pvtype = '1' AND 
+		      cg.flag_settle = '0' 
+		      <if test='pkList!=null and pkList.size()>0'>
+	             and cg.pk_cgop in 
+	             <foreach collection="pkList" item="pkList" index="no" open="("
+	                separator="," close=")">
+	                #{pkList}
+	             </foreach> 
+	           </if>
+		group by hp.rate_op
+	</select>
+	
+	<select id="qrySpdisInfoByPv" parameterType="java.util.Map" resultType="DynaBean">
+		select dise.amount,
+		       dise.amount_year,
+		       case when pv.eu_pvmode_hp='2'then '1' else '0' end flag_valid
+		  from ins_gzgy_pv pv
+		       inner join ins_gzgy_hp_div div on pv.pk_hp=div.pk_hp and div.eu_divtype='10'
+		       inner join ins_gzgy_disease dise on div.pk_div=dise.pk_gzgydisease and
+		                                           dise.dt_diseasetype='02' and
+		                                           dise.name_diag = #{nameDiag,jdbcType=VARCHAR}
+		 where pv.pk_pv = #{pkPv,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="qryOpListByPv" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.syx.vo.BlOpDtVo">
+		select cg.*,
+		       case item.eu_divide
+		         when '0' then item.amount/cg.price
+		         when '1' then item.rate
+		         when '2' then hp.rate_ip
+		         when '3' then item.rate*hp.rate_ip
+		         else 1 end rate_pi
+		  from ins_gzgy_pv pv
+		       inner join bl_op_dt cg on pv.pk_pv=cg.pk_pv
+		       inner join bd_hp hp on pv.pk_hp=hp.pk_hp
+		       inner join bd_hp_divconfig conf on hp.pk_hp=conf.pk_hp and conf.eu_pvtype='2'
+		       inner join bd_hp_cgdiv div on conf.pk_hpcgdiv=div.pk_hpcgdiv
+		       inner join bd_hp_cgdiv_item item on div.pk_hpcgdiv=item.pk_hpcgdiv and cg.pk_item=item.pk_item
+		 where pv.pk_pv=#{pkPv,jdbcType=VARCHAR} and
+		       pv.eu_pvmode_hp='2' and
+		       cg.pk_settle='0' 
+		       <if test='pkList!=null and pkList.size()>0'>
+	             and cg.pk_cgop in 
+	             <foreach collection="pkList" item="pkList" index="no" open="("
+	                separator="," close=")">
+	                #{pkList}
+	             </foreach> 
+	           </if>
+	</select>
+	
+	<select id="qrySpdisOpAmt" parameterType="java.util.Map" resultType="DynaBean">
+		select sum(cg.amount) amt_cur,         
+		       sum(CASE WHEN cg.ratio_self >= 1 THEN 0 ELSE cg.amount END)*hp.rate_ip  amt_pi_cur,
+		       sum(CASE WHEN cg.ratio_self >= 1 THEN 0 ELSE cg.amount END)*(1-hp.rate_ip) amt_hp_cur,
+		       sum(CASE WHEN cg.ratio_self >= 1 THEN cg.amount ELSE 0 END) amt_pi_cur2
+		  from bl_op_dt cg
+		       inner join ins_gzgy_pv pv on cg.pk_pv=pv.pk_pv
+		       inner join bd_hp hp on pv.pk_hp=hp.pk_hp
+		 where pv.pk_pv=#{pkPv,jdbcType=VARCHAR} and          
+		       pv.eu_pvmode_hp='2' and 
+		       cg.flag_settle='0' 
+		       <if test='pkList!=null and pkList.size()>0'>
+	             and cg.pk_cgop in 
+	             <foreach collection="pkList" item="pkList" index="no" open="("
+	                separator="," close=")">
+	                #{pkList}
+	             </foreach> 
+	           </if>
+	       group by hp.rate_ip
+	</select>
+	
+	<select id="qrySpdisStOpAmt" parameterType="java.util.Map" resultType="DynaBean">
+		select sum(ist.amount) amt_total,
+		       sum(ist.amount_pi) amt_pi_total,
+		       sum(ist.amount_ins) amt_hp_total
+		  from bl_settle st
+		       inner join ins_gzgy_st ist on st.pk_settle=ist.pk_settle
+		       inner join ins_gzgy_pv pv on st.pk_pv=pv.pk_pv
+		 where pv.pk_pi=#{pkPi,jdbcType=VARCHAR} and
+		 	   <if test='euPvtype.equals("1")'>
+		 	   	pv.eu_pvtype='1' and
+		 	   </if>
+		 	   <if test='euPvtype.equals("3")'>
+		 	   	pv.eu_pvtype &lt; '3' and
+		 	   </if>
+		       pv.eu_pvmode_hp='2' and
+		       st.date_st &gt;= to_date(#{dateBegin},'YYYYMMDD') and
+		       st.date_st &lt; to_date(#{dateEnd},'YYYYMMDD') and  
+		       st.dt_sttype &lt; '20' and
+		       not exists (select 1
+                     from bl_settle back
+                    where st.pk_settle=back.pk_settle_canc)
+	</select>
+	
+	<select id="qryOpCgNumByPv" resultType="java.lang.String">
+		select sum(dt.quan) 
+		  from bl_op_dt dt
+		 where dt.pk_pv=#{pkPv,jdbcType=CHAR} and
+		       dt.date_hap=to_date(#{dateHap}, 'YYYYMMDDHH24MISS') and
+		       dt.pk_item=#{pkItem,jdbcType=CHAR} and
+		       dt.flag_pd='0'
+	</select>
+	
+	<select id="qryItemCgNum" resultType="com.zebone.nhis.bl.pub.syx.vo.ItemCgNumVo">
+		select item.pk_item,
+			   item.name,
+		       att.val_attr
+		  from bd_item item
+		       inner join bd_dictattr att on item.pk_item=att.pk_dict
+		       inner join bd_dictattr_temp tmp on att.pk_dictattrtemp=tmp.pk_dictattrtemp and
+		                                               tmp.dt_dicttype='01' and
+		                                               tmp.code_attr='0104'
+		 where item.del_flag='0'
+			<if test="pkList != null and pkList.size > 0">
+				AND (item.pk_item IN
+				<!-- 处理in的集合超过1000条时Oracle不支持的情况 -->
+				<trim suffixOverrides=" OR item.pk_item IN()">    <!-- 表示删除最后一个条件 -->
+					<foreach collection="pkList" item="Id" index="index" open="(" close=")">
+						<if test="index != 0">
+							<choose>
+								<when test="index % 1000 == 999">) OR item.pk_item IN (</when>
+								<otherwise>,</otherwise>
+							</choose>
+						</if>
+						#{Id}
+					</foreach>
+				</trim>
+				)
+			</if>
+	</select>
+	
+	<select id="qryStInfoByPv" resultType="java.lang.Integer">
+		select count(1) from BL_SETTLE st
+			inner join BL_ST_INV stInv on stInv.PK_SETTLE = st.PK_SETTLE
+		  where pk_pv = #{pkPv,jdbcType=CHAR}
+		    and DT_STTYPE = '01' and FLAG_CANC = '0'
+		    and not exists (
+		      select 1 from BL_SETTLE canlSt where canlSt.PK_SETTLE_CANC = st.PK_SETTLE
+		  )
+	</select>
+	
+	<select id="qryExamFeeInfo" resultType="DynaBean">
+		select pv.pk_pv,
+		       hp.pk_hp,
+		       hp.rate_op,
+		       case when hp.dtquota_op is null then 0 else hp.dtquota_op end dtquota_op,             
+		       sum(cg.amount) amt_pv,         
+		       sum(cg.amount-cg.amount_hppi) amt_hppv 
+		  from pv_encounter pv
+		       inner join bl_op_dt cg on pv.pk_pv=cg.pk_pv
+		       inner join bd_hp hp on pv.pk_insu=hp.pk_hp
+		 where pv.pk_pv=#{pkPv,jdbcType=CHAR} and  
+		       pv.eu_pvtype='1' and 
+		       cg.flag_pv='1'   
+		       <if test='flagSettle!=null and flagSettle!=""'>
+		    	and cg.flag_settle = #{flagSettle,jdbcType=CHAR}
+		       </if>
+		group by pv.pk_pv,
+		        hp.pk_hp,
+		        hp.rate_op,
+		        hp.dtquota_op
+	</select>
+	
+	<select id="qryExamPkList" resultType="java.lang.String">
+		select pk_cgop from bl_op_dt dt 
+		  where dt.pk_pv = #{pkPv,jdbcType=CHAR}
+		    and dt.flag_PV = '1'
+		    AND dt.flag_settle = '0'
+	</select>
+	
+	<select id="qryGyItemList" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.GyStItemVo">
+		select cg.ratio_self,
+		       case when item.dt_itemtype like '01%' then cg.price
+		            when item.dt_itemtype like '07%' then cg.price
+		            when item.dt_itemtype='11' then cg.price
+		            else 1
+		       end price,
+		       sum(cg.quan) quan,
+		       sum(cg.amount) amt,
+		       sum(cg.amount_hppi) amt_hppi,
+		       sum(cg.amount_pi) amt_pi,
+		       item.dt_itemtype,
+		       hp.rate_op,
+		       hp.dtquota_op,
+		       hp.bedquota
+		  from bl_op_dt cg
+		       inner join pv_encounter pv on cg.pk_pv=pv.pk_pv
+		       inner join bd_hp hp on pv.pk_insu=hp.pk_hp
+		       inner join bd_item item on cg.pk_item=item.pk_item
+		 where cg.pk_pv=#{pkPv,jdbcType=CHAR} And
+		       cg.flag_pd='0' and
+		       cg.flag_settle='0' and 
+		       cg.quan>0
+		       <if test='pkList!=null and pkList.size()>0'>
+	             and cg.pk_cgop in 
+	             <foreach collection="pkList" item="pkList" index="no" open="("
+	                separator="," close=")">
+	                #{pkList}
+	             </foreach> 
+	           </if>
+		group by cg.ratio_self,
+		         case when item.dt_itemtype like '01%' then cg.price
+		            when item.dt_itemtype like '07%' then cg.price
+		            when item.dt_itemtype='11' then cg.price
+		            else 1 end,
+		         item.dt_itemtype,
+		         hp.rate_op,
+		         hp.dtquota_op,
+		         hp.bedquota
+	</select>
+	
+	<select id="qryMaterialsInfo" resultType="com.zebone.nhis.bl.pub.vo.GyHpDivInfo">
+		select hv.price_min,
+		       hv.price_max,
+		       hv.ratio_init, 
+		       hv.eu_calcmode,
+		       hv.ratio
+		  from ins_gzgy_div_hvitem hv
+		       inner join ins_gzgy_hp_div div on hv.pk_hvitemdiv=div.pk_div and div.eu_divtype='2'
+		 where div.pk_hp=#{pkHp,jdbcType=CHAR}
+	</select>
+	
+	<select id="qryMedicalInfo" resultType="DynaBean">
+		select att.val_attr
+		  from bd_dictattr att
+		       inner join bd_dictattr_temp tmp on att.pk_dictattrtemp=tmp.pk_dictattrtemp
+		       inner join bd_hp hp on hp.pk_parent=att.pk_dict 
+		 where tmp.code_attr='0322' and
+		       pk_hp=#{pkHp,jdbcType=CHAR}
+	</select>
+	
+	<select id="qryMcnoByPv" resultType="java.lang.String">
+		select MCNO from ins_gzgy_pv where pk_pv = #{pkPv,jdbcType=CHAR}
+	</select>
+	
+	<select id="checkDesHos" resultType="java.lang.Integer">
+		select count(1)
+		  from ins_gzgy_pi pi
+		  inner join bd_hp hp on pi.pk_hp=hp.pk_parent 
+		 where pi.mcno=#{mcno,jdbcType=VARCHAR} and
+		       hp.pk_hp=#{pkHp,jdbcType=CHAR} and
+		       (pi.hosp1=#{medical,jdbcType=VARCHAR} or
+		        pi.hosp2=#{medical,jdbcType=VARCHAR} or
+		        pi.hosp3=#{medical,jdbcType=VARCHAR} or
+		        pi.hosp4=#{medical,jdbcType=VARCHAR} or
+		        pi.hosp5=#{medical,jdbcType=VARCHAR}) and
+		       pi.flag_valid='1'
+	</select>
+</mapper>

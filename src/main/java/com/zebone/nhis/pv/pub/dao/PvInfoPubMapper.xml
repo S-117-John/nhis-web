@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pv.pub.dao.PvInfoPubMapper">
+
+    <!-- 根据主键获取就诊记录 -->
+    <select id="getPvOutInfoForIns" parameterType="java.util.Map"
+            resultType="DynaBean">
+        select diag.diagcode,diag.diagname,doc.name as
+        out_reason,pv.date_end,ip.quan_infant,to_char(infant.date_birth,'YYYYMMDD')
+        as date_birth
+        from pv_encounter pv
+        left join pv_diag pvdiag on pv.pk_pv
+        = pvdiag.pk_pv
+        left join bd_term_diag diag on diag.pk_diag =
+        pvdiag.pk_diag
+        <if test="dtDiagtype != null and dtDiagtype != ''">
+            and pvdiag.dt_diagtype = #{dtDiagtype,jdbcType=VARCHAR}
+        </if>
+        left join pv_ip ip on pv.pk_pv = ip.pk_pv
+        left join pv_infant infant on
+        pv.pk_pv = infant.pk_pv and infant.sort_no=1
+        left join bd_defdoc doc on
+        doc.code = ip.dt_outtype and
+        doc.code_defdoclist='000105'
+        where pv.pk_pv
+        = #{pkPv,jdbcType=CHAR} and pv.eu_status='2'
+
+    </select>
+
+    <!-- 根据就诊主键,指定医保获取患者分类 -->
+    <select id="getPiCateCodeByPv" parameterType="java.lang.String"
+            resultType="DynaBean">
+		select cate.code
+		from pv_encounter pv
+		inner join pi_cate cate
+		on pv.pk_picate=cate.pk_picate
+		where pv.pk_pv= #{pkPv,jdbcType=CHAR}
+	</select>
+
+    <select id="getPvEncounterVoList" parameterType="com.zebone.nhis.pv.pub.vo.PageQryPvParam"
+            resultType="com.zebone.nhis.pv.pub.vo.PvEncounterListVo">
+	      select pi.pk_pi,pi.name_pi,pv.pk_pv,pv.code_pv,pi.code_ip,pi.code_pi,pv.bed_no,
+	             pv.PK_INSU,hp.NAME name_hp, pv.pk_dept,dept.NAME_DEPT, sex.name sex,
+	             pv.age_pv age ,pv.pk_dept_ns,deptNs.NAME_DEPT name_dept_ns,
+	             pv.eu_status,pv.name_emp_phy,ip.ip_times,
+	             pv.name_emp_ns,pv.name_emp_reg,pv.date_begin,pv.date_admit,pv.date_end,
+	             pv.date_cancel,pv.flag_cancel,pv.flag_in,pv.flag_settle,pi.ID_NO,idtype.name
+	             id_type,pi.UNIT_WORK, pi.BIRTH_DATE, bls.date_st,ca.NAME as name__picate
+	        from pi_master pi
+	       inner join pv_encounter pv on pi.pk_pi=pv.pk_pi and pv.del_flag = '0' and pv.eu_pvtype='3'
+	       inner join pi_cate ca on ca.PK_PICATE=pv.PK_PICATE
+	        left join pv_ip ip on ip.pk_pv = pv.pk_pv 
+	        left join bd_hp hp on hp.PK_HP = pv.PK_INSU
+	        left join bd_ou_dept dept on dept.PK_DEPT = pv.PK_DEPT
+	        left join bd_ou_dept deptNs on deptNs.PK_DEPT = pv.PK_DEPT_NS
+	        left join BD_DEFDOC idtype on idtype.CODE = pi.DT_IDTYPE and idtype.DEL_FLAG = '0' and idtype.CODE_DEFDOCLIST = '000007'
+	        left join BD_DEFDOC sex on sex.CODE = pi.DT_SEX and sex.DEL_FLAG = '0' and sex.CODE_DEFDOCLIST = '000000'
+	        left join BD_OU_ORG_AREA orgarea on orgarea.PK_ORGAREA=dept.PK_ORGAREA
+	        left join BL_SETTLE bls on pv.pk_pv=bls.pk_pv and bls.FLAG_CANC='0'
+	       where 1=1
+	         and pv.pk_org = #{pkOrg,jdbcType=VARCHAR}
+        <if test="pkOrgArea != null and pkOrgArea != ''">
+             and dept.PK_ORGAREA = #{pkOrgArea,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDept != null and pkDept != ''">
+             and pv.pk_dept = #{pkDept,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDeptNs != null and pkDeptNs != ''">
+             and pv.pk_dept_ns = #{pkDeptNs,jdbcType=VARCHAR}
+        </if>
+        <if test="codePv != null and codePv != ''">
+             and pv.CODE_PV = #{codePv,jdbcType=VARCHAR}
+        </if>
+        <if test="codePi != null and codePi != ''">
+             and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+        </if>
+        <if test="codeIp != null and codeIp != ''">
+             and pi.code_ip like '%'||#{codeIp,jdbcType=VARCHAR}||'%'
+        </if>
+        <if test="euStatus != null and euStatus != ''">
+             and pv.eu_status = #{euStatus,jdbcType=VARCHAR}
+        </if>
+        <if test="bedNo != null and bedNo != ''">
+             and pv.bed_no = #{bedNo,jdbcType=VARCHAR}
+        </if>
+        <if test="namePi != null and namePi != ''">
+             and pi.name_pi like '%'||#{namePi,jdbcType=VARCHAR}||'%'
+        </if>
+        <if test="dateBeginKs != null and dateBeginKs != ''">
+             and pv.date_begin &gt;=#{dateBeginKs,javaType=java.util.Date}
+        </if>
+        <if test="dateBeginJz != null and dateBeginJz != ''">
+             and pv.date_begin &lt;=#{dateBeginJz,javaType=java.util.Date}
+        </if>
+        <if test="dateEndKs != null and dateEndKs != ''">
+             and pv.date_end &gt;=#{dateEndKs,javaType=java.util.Date}
+        </if>
+        <if test="dateEndJz != null and dateEndJz != ''">
+             and pv.date_end &lt;=#{dateEndJz,javaType=java.util.Date}
+        </if>
+        <if test="dateBeginSt != null and dateBeginSt != ''">
+             and bls.date_st &gt;=#{dateBeginSt,javaType=java.util.Date}
+        </if>
+        <if test="dateEndSt != null and dateEndSt != ''">
+             and bls.date_st &lt;=#{dateEndSt,javaType=java.util.Date}
+        </if>
+           order by pi.code_ip,pv.date_begin,bls.date_st
+    </select>
+
+    <select id="getSearchPatiAuditInfoPaging" parameterType="com.zebone.nhis.pv.pub.vo.PageQryAuditParam"
+            resultType="com.zebone.nhis.pv.pub.vo.PvEnCounterAuditVo">
+        Select pi.pk_pi,pv.pk_pv,pi.code_ip,
+        pv.name_pi,
+        pv.bed_no,
+        pv.pk_insu,
+        hp.NAME as name_hp,
+        pv.eu_status,
+        pv.pk_dept,
+        dept.NAME_DEPT,
+        pv.pk_dept_ns,
+        deptNs.NAME_DEPT as name_dept_ns,
+        pv.date_begin,
+        pvpi.flag_checkin,
+        case when pvpi.flag_checkin='0' then '待审' when pvpi.flag_checkin='1' then '已审' else '未知' end as
+        flag_checkin_status,
+        pvpi.pk_emp_chk,
+        pvpi.NAME_EMP_CHK,
+        pvpi.date_chk,
+        '' as dataAttachment
+        from pv_encounter pv
+        inner Join pv_ip pvpi On pv.pk_pv=pvpi.pk_pv
+        inner Join pi_master pi On pv.pk_pi=pi.pk_pi
+        left Join bd_ou_dept dept On pv.pk_dept=dept.pk_dept
+        left join bd_ou_dept deptNs on deptNs.PK_DEPT = pv.PK_DEPT_NS
+        left join bd_hp hp on hp.PK_HP = pv.PK_INSU
+        where 1=1
+        <if test="pkOrgArea != null and pkOrgArea != ''">
+            and dept.PK_ORGAREA = #{pkOrgArea,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDept != null and pkDept != ''">
+            and pv.pk_dept = #{pkDept,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDeptNs != null and pkDeptNs != ''">
+            and pv.pk_dept_ns = #{pkDeptNs,jdbcType=VARCHAR}
+        </if>
+        <if test="codeIp != null and codeIp != ''">
+            and pi.code_ip like '%'||#{codeIp,jdbcType=VARCHAR}||'%'
+        </if>
+        <if test="bedNo != null and bedNo != ''">
+            and pv.bed_no = #{bedNo,jdbcType=VARCHAR}
+        </if>
+        <if test="idNo != null and idNo != ''">
+            and pi.id_no = #{idNo,jdbcType=VARCHAR}
+        </if>
+        <if test="flagCheckIn != null and flagCheckIn != ''">
+            and pvpi.flag_checkin = #{flagCheckIn,jdbcType=VARCHAR}
+        </if>
+        <if test="namePi != null and namePi != ''">
+            and pi.name_pi like '%'||#{namePi,jdbcType=VARCHAR}||'%'
+        </if>
+        order by pi.code_ip,pv.date_begin
+    </select>
+    <select id="getCodeiP" resultType="java.lang.String">
+       select min(CODE_IP) code_ip
+       from (
+         select pv.PK_PV, PK_PI, EU_PVTYPE, FLAG_CANCEL, pv.NAME_PI
+         from PV_ENCOUNTER pv
+         where not exists(select 1 from PV_ENCOUNTER pv1 where pv1.PK_PI = pv.PK_PI and pv1.FLAG_CANCEL = '0')
+         group by pv.PK_PV, PK_PI, EU_PVTYPE, FLAG_CANCEL, pv.NAME_PI
+         having EU_PVTYPE = '3'
+            and FLAG_CANCEL = '1') A
+         inner join PV_IP ip on A.PK_PV = ip.PK_PV
+         inner join PI_MASTER pi on pi.PK_PI = A.PK_PI
+       where IP_TIMES = '1'
+	</select>
+
+    <select id="queryDepartmentDictAttr" resultType="DynaBean">
+    SELECT attr.*,hp.CODE_DEPT, hp.NAME_DEPT
+    FROM bd_dictattr attr
+    INNER JOIN bd_ou_dept hp
+    ON attr.pk_dict = hp.PK_DEPT
+    WHERE hp.del_flag = '0'
+    <if test="codeAttr != null and codeAttr != ''">
+        AND code_attr = #{codeAttr,jdbcType=CHAR}
+    </if>
+    <if test="pkDept != null and pkDept != ''">
+        AND hp.PK_DEPT = #{pkDept,jdbcType=CHAR}
+    </if>
+    </select>
+
+</mapper>

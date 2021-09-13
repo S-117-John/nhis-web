@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.pskq.dao.SysMsgRecDao">
+  <resultMap id="BaseResultMap" type="com.zebone.nhis.common.module.ma.msg.SysMsgRec">
+    <id column="PK_MSG" jdbcType="CHAR" property="pkMsg" />
+    <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg" />
+    <result column="MSG_ID" jdbcType="VARCHAR" property="msgId" />
+    <result column="MSG_TYPE" jdbcType="VARCHAR" property="msgType" />
+    <result column="TRANS_TYPE" jdbcType="VARCHAR" property="transType" />
+    <result column="TRANS_DATE" jdbcType="TIMESTAMP" property="transDate" />
+    <result column="SYS_CODE" jdbcType="VARCHAR" property="sysCode" />
+    <result column="MSG_STATUS" jdbcType="VARCHAR" property="msgStatus" />
+    <result column="ERR_TXT" jdbcType="VARCHAR" property="errTxt" />
+    <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag" />
+    <result column="REMARK" jdbcType="VARCHAR" property="remark" />
+    <result column="CREATOR" jdbcType="VARCHAR" property="creator" />
+    <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="TS" jdbcType="TIMESTAMP" property="ts" />
+    <result column="MSG_CONTENT" jdbcType="CLOB" property="msgContent" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    PK_MSG, PK_ORG, MSG_ID, MSG_TYPE, TRANS_TYPE, TRANS_DATE, SYS_CODE, MSG_STATUS, ERR_TXT, 
+    PK_EMP, DEL_FLAG, REMARK, CREATOR, CREATE_TIME, TS
+  </sql>
+
+  <select id="selectMessage" parameterType="java.util.Map" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from SYS_MSG_REC
+    <where>
+      <if test="beginDate != null">
+        and rec.trans_date &gt;=
+        to_date(#{beginDate,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+      </if>
+      <if test="endDate != null">
+        and rec.trans_date &lt;
+        to_date(#{endDate,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+      </if>
+      <if test="msgType != null" >
+        and rec.msg_type like #{msgType,jdbcType=VARCHAR}
+      </if>
+      <if test="transType != null" >
+        and upper(rec.trans_type) = #{transType,jdbcType=VARCHAR}
+      </if>
+      <if test="msgContent != null" >
+        and rec.msg_content like '%${msgContent}%'
+      </if>
+      <if test="msgStatus != null" >
+        and rec.msg_status = #{msgStatus,jdbcType=VARCHAR}
+      </if>
+      <if test="pkOrgStr != null">
+        ${pkOrgStr}
+      </if>
+    </where>
+  </select>
+
+
+
+
+</mapper>

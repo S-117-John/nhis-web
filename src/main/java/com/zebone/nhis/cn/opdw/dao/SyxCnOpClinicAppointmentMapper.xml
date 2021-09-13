@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.opdw.dao.SyxCnOpClinicAppointmentMapper">
+    <select id="qryClinicSch" parameterType="java.util.Map" resultType="DynaBean">
+        select sum(sch.cnt_appt - sch.cnt_used) cnt,
+               emp.PK_EMP,
+               sch.PK_DEPT,
+               sch.date_work
+        from sch_sch sch
+                     inner join sch_resource res on sch.PK_SCHRES = res.PK_SCHRES
+                     inner join BD_OU_EMPLOYEE emp on res.PK_EMP = emp.PK_EMP
+        where sch.eu_schclass = '0'
+          and sch.eu_status = '8'
+          and sch.flag_stop = '0'
+
+          and sch.date_work &gt;= to_date(#{beginTime,jdbcType=VARCHAR}, 'yyyy-MM-dd hh24:mi:ss')
+          and sch.date_work &lt;= to_date(#{endTime,jdbcType=VARCHAR}, 'yyyy-MM-dd hh24:mi:ss')
+        group by sch.date_work, emp.PK_EMP,
+                 sch.PK_DEPT
+        ORDER BY sch.date_work
+    </select>
+    <select id="qryClinicSchTic" parameterType="java.util.Map" resultType="DynaBean">
+        select
+        <choose>
+            <when test="isSqlServer==1">
+                sum(cast (tic.flag_appt as numeric ) ) - sum(cast(tic.flag_used as numeric)) cnt,
+            </when>
+            <otherwise>
+                sum(tic.flag_appt)-sum(tic.flag_used) cnt,
+            </otherwise>
+        </choose>
+        sch.date_work,emp.PK_EMP,
+        sch.PK_DEPT,
+        to_char(sch.date_work,'day')
+        from sch_sch sch
+        Inner Join sch_ticket tic On sch.pk_sch=tic.pk_sch And tic.dt_apptype='0'
+        inner join sch_resource res on sch.PK_SCHRES = res.PK_SCHRES
+        inner join BD_OU_EMPLOYEE emp on res.PK_EMP = emp.PK_EMP
+        where sch.eu_schclass='0'
+
+        and sch.date_work &gt;= to_date(#{beginTime,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+        and sch.date_work &lt;= to_date(#{endTime,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+        and sch.eu_status='8'
+        and sch.flag_stop='0'
+        group by sch.date_work,emp.PK_EMP,
+        sch.PK_DEPT
+    </select>
+    <select id="qryClinicSchList" parameterType="java.util.Map" resultType="DynaBean">
+        select sch.pk_sch,
+               emp.PK_EMP,
+               emp.NAME_EMP,
+               dept.PK_DEPT,
+               sch.pk_dateslot,
+               dept.name_dept,
+               tk.begin_time,
+               tk.end_time,res.PK_DEPT res_pk_dept,
+ 				res.EU_RESTYPE,
+               sum(case when tk.flag_used = '1' then 0 else 1 end) cnt
+        from sch_sch sch
+                     inner join sch_ticket tk on sch.pk_sch = tk.pk_sch
+                     inner join bd_ou_dept dept on sch.pk_dept = dept.pk_dept
+                     inner join sch_resource res on sch.PK_SCHRES = res.PK_SCHRES
+                     inner join BD_OU_EMPLOYEE emp on res.PK_EMP = emp.PK_EMP
+        where to_char(sch.date_work, 'yyyy-MM-dd') = #{dateWork,jdbcType=VARCHAR}
+          and sch.eu_status = '8'
+          and sch.flag_stop = '0'
+          and tk.flag_appt = '1'
+          and tk.FLAG_STOP = '0'
+        group by sch.pk_sch,
+                 sch.pk_dateslot,
+                 dept.name_dept,
+                 tk.begin_time,
+                 emp.PK_EMP,
+                 emp.NAME_EMP,
+                 dept.PK_DEPT,res.PK_DEPT,
+ 				res.EU_RESTYPE,
+                 tk.end_time
+        order by emp.NAME_EMP, dept.name_dept, tk.begin_time
+    </select>
+    <select id="qryClinicSchListTic" parameterType="java.util.Map" resultType="DynaBean">
+        select sch.pk_sch,
+               emp.PK_EMP,
+               emp.NAME_EMP,
+               dept.PK_DEPT,
+               sch.pk_dateslot,
+               dept.name_dept,
+               tk.begin_time,
+               tk.end_time,
+               res.PK_DEPT res_pk_dept,
+ 				res.EU_RESTYPE,
+               sum(case when tk.flag_used = '1' then 0 else 1 end) cnt
+        from sch_sch sch
+                     inner join sch_ticket tk on sch.pk_sch = tk.pk_sch
+                     inner join bd_ou_dept dept on sch.pk_dept = dept.pk_dept
+                     inner join sch_resource res on sch.PK_SCHRES = res.PK_SCHRES
+                     inner join BD_OU_EMPLOYEE emp on res.PK_EMP = emp.PK_EMP
+        where to_char(sch.date_work, 'yyyy-MM-dd') = #{dateWork,jdbcType=VARCHAR}
+          and sch.eu_status = '8'
+          and sch.flag_stop = '0'
+          and tk.flag_appt = '1'
+          and tk.flag_used = '0'
+          and tk.flag_stop = '0'
+          and tk.dt_apptype = '0'
+        group by sch.pk_sch,
+                 sch.pk_dateslot,
+                 dept.name_dept,
+                 tk.begin_time,
+                 emp.PK_EMP,
+                 emp.NAME_EMP,
+                 dept.PK_DEPT,
+                 res.PK_DEPT,
+ 				res.EU_RESTYPE,
+                 tk.end_time
+        order by emp.NAME_EMP, dept.name_dept, tk.begin_time
+    </select>
+</mapper>

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.platform.send.impl.pskq.dao.PskqPlatFormSendPatientMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.ma.pub.platform.pskq.model.Patient">
+        <id column="mpi" jdbcType="VARCHAR" property="empiId" />
+        <result column="abo_blood_type_code" jdbcType="VARCHAR" property="aboBloodTypeCode" />
+        <result column="abo_blood_type_name" jdbcType="VARCHAR" property="aboBloodTypeName" />
+        <result column="allergy_desc" jdbcType="VARCHAR" property="allergyDesc" />
+        <result column="allergy_flag" jdbcType="BIT" property="allergyFlag" />
+        <result column="birth_place" jdbcType="VARCHAR" property="birthPlace" />
+        <result column="birth_place_city" jdbcType="VARCHAR" property="birthPlaceCity" />
+        <result column="birth_place_county" jdbcType="VARCHAR" property="birthPlaceCounty" />
+        <result column="birth_place_province" jdbcType="VARCHAR" property="birthPlaceProvince" />
+        <result column="mcno" jdbcType="VARCHAR" property="computerNo" />
+        <result column="addr_rel" jdbcType="VARCHAR" property="contactAddress" />
+        <result column="contact_address_postal_code" jdbcType="VARCHAR" property="contactAddressPostalCode" />
+        <result column="idno_rel" jdbcType="VARCHAR" property="contactIdNo" />
+        <result column="name_rel" jdbcType="VARCHAR" property="contactName" />
+        <result column="tel_rel" jdbcType="VARCHAR" property="contactPhoneNo" />
+        <result column="contact_relationship_code" jdbcType="VARCHAR" property="contactRelationshipCode" />
+        <result column="contact_relationship_name" jdbcType="VARCHAR" property="contactRelationshipName" />
+        <result column="birth_date" jdbcType="TIMESTAMP" property="dateOfBirth" />
+        <result column="hic_no" jdbcType="VARCHAR" property="eMedInsuranceNo" />
+        <result column="education_code" jdbcType="VARCHAR" property="educationCode" />
+        <result column="education_name" jdbcType="VARCHAR" property="educationName" />
+        <result column="hic_no" jdbcType="VARCHAR" property="ehealthCardNo" />
+        <result column="create_time" jdbcType="TIMESTAMP" property="enterDateTime" />
+        <result column="enter_opera_id" jdbcType="VARCHAR" property="enterOperaId" />
+        <result column="enter_opera_name" jdbcType="VARCHAR" property="enterOperaName" />
+        <result column="ethnic_code" jdbcType="VARCHAR" property="ethnicCode" />
+        <result column="ethnic_name" jdbcType="VARCHAR" property="ethnicName" />
+        <result column="family_doctor_id" jdbcType="VARCHAR" property="familyDoctorId" />
+        <result column="family_doctor_name" jdbcType="VARCHAR" property="familyDoctorName" />
+        <result column="gender_code" jdbcType="VARCHAR" property="genderCode" />
+        <result column="gender_name" jdbcType="VARCHAR" property="genderName" />
+        <result column="hic_no" jdbcType="VARCHAR" property="healthCardNo" />
+        <result column="tel_no" jdbcType="VARCHAR" property="homePhoneNo" />
+        <result column="household_address" jdbcType="VARCHAR" property="householdAddress" />
+        <result column="household_address_city" jdbcType="VARCHAR" property="householdAddressCity" />
+        <result column="household_address_country" jdbcType="VARCHAR" property="householdAddressCountry" />
+        <result column="household_address_county" jdbcType="VARCHAR" property="householdAddressCounty" />
+        <result column="household_address_house_no" jdbcType="VARCHAR" property="householdAddressHouseNo" />
+        <result column="postcode_regi" jdbcType="VARCHAR" property="householdAddressPostalCode" />
+        <result column="household_address_province" jdbcType="VARCHAR" property="householdAddressProvince" />
+        <result column="household_address_village" jdbcType="VARCHAR" property="householdAddressVillage" />
+        <result column="id_no" jdbcType="VARCHAR" property="idNo" />
+        <result column="id_type_code" jdbcType="VARCHAR" property="idTypeCode" />
+        <result column="id_type_name" jdbcType="VARCHAR" property="idTypeName" />
+        <result column="marital_status_code" jdbcType="VARCHAR" property="maritalStatusCode" />
+        <result column="marital_status_name" jdbcType="VARCHAR" property="maritalStatusName" />
+        <result column="insur_no" jdbcType="VARCHAR" property="medInsuranceNo" />
+        <result column="modify_date_time" jdbcType="TIMESTAMP" property="modifyDateTime" />
+        <result column="modify_opera_id" jdbcType="VARCHAR" property="modifyOperaId" />
+        <result column="modify_opera_name" jdbcType="VARCHAR" property="modifyOperaName" />
+        <result column="nationality_code" jdbcType="VARCHAR" property="nationalityCode" />
+        <result column="nationality_name" jdbcType="VARCHAR" property="nationalityName" />
+        <result column="native_place" jdbcType="VARCHAR" property="nativePlace" />
+        <result column="native_place_city" jdbcType="VARCHAR" property="nativePlaceCity" />
+        <result column="native_place_province" jdbcType="VARCHAR" property="nativePlaceProvince" />
+        <result column="occupation_code" jdbcType="VARCHAR" property="occupationCode" />
+        <result column="occupation_name" jdbcType="VARCHAR" property="occupationName" />
+        <result column="org_code" jdbcType="VARCHAR" property="orgCode" />
+        <result column="org_name" jdbcType="VARCHAR" property="orgName" />
+        <result column="name_pi" jdbcType="VARCHAR" property="patientName" />
+        <result column="tel_no" jdbcType="VARCHAR" property="phoneNo" />
+        <result column="code_pi" jdbcType="VARCHAR" property="pkPatient" />
+        <result column="patient_id" jdbcType="VARCHAR" property="patientId" />
+        <result column="present_address" jdbcType="VARCHAR" property="presentAddress" />
+        <result column="present_address_country" jdbcType="VARCHAR" property="presentAddressCountry" />
+        <result column="present_address_county" jdbcType="VARCHAR" property="presentAddressCounty" />
+        <result column="present_address_city" jdbcType="VARCHAR" property="presentAddressCity" />
+        <result column="present_address_house_no" jdbcType="VARCHAR" property="presentAddressHouseNo" />
+        <result column="postcode_cur" jdbcType="VARCHAR" property="presentAddressPostalCode" />
+        <result column="present_address_province" jdbcType="VARCHAR" property="presentAddressProvince" />
+        <result column="present_address_village" jdbcType="VARCHAR" property="presentAddressVillage" />
+        <result column="rh_blood_type_code" jdbcType="VARCHAR" property="rhBloodTypeCode" />
+        <result column="rh_blood_type_name" jdbcType="VARCHAR" property="rhBloodTypeName" />
+        <result column="source_system_code" jdbcType="VARCHAR" property="sourceSystemCode" />
+        <result column="work_address" jdbcType="VARCHAR" property="workAddress" />
+        <result column="work_address_city" jdbcType="VARCHAR" property="workAddressCity" />
+        <result column="work_address_county" jdbcType="VARCHAR" property="workAddressCounty" />
+        <result column="postcode_work" jdbcType="VARCHAR" property="workAddressPostalCode" />
+        <result column="work_address_province" jdbcType="VARCHAR" property="workAddressProvince" />
+        <result column="tel_work" jdbcType="VARCHAR" property="workPhoneNo" />
+        <result column="unit_work" jdbcType="VARCHAR" property="workUnitName" />
+        <result column="PHONE_NO" jdbcType="VARCHAR" property="phoneNo" />
+    </resultMap>
+    <update id="upatePiMasterByCodePi">
+            update PI_MASTER
+            <set>
+                <if test="empiId != null">
+                    MPI = #{empiId,jdbcType=CHAR},
+                </if>
+            </set>
+            where CODE_PI = #{pkPatient,jdbcType=CHAR}
+    </update>
+    <select id="getPiMasterById" parameterType = "java.util.Map" resultMap="BaseResultMap">
+        SELECT
+        pi.*,
+        def.code gender_code,
+        def.name gender_name,
+        defdoc.code as id_type_code,
+        defdoc.name as id_type_name,
+        nationality.code nationality_code,
+        nationality.name nationality_name,
+        nation.code ethnic_code,
+        nation.name ethnic_name,
+        occupation.code occupation_code,
+        occupation.name occupation_name,
+        marriage.code marital_status_code,
+        marriage.name marital_status_name,
+        edu.code education_code,
+        edu.name education_name,
+        zd_addr_birth.prov birth_place_province,
+        zd_addr_birth.city birth_place_city,
+        zd_addr_birth.dist birth_place_county,
+        pi.addr_birth birth_place,
+        zd_addr_origin.prov native_place_province,
+        zd_addr_origin.city native_place_city,
+        pi.addr_origin native_place,
+        zd_addr_regi.prov household_address_province,
+        zd_addr_regi.city household_address_city,
+        zd_addr_regi.dist household_address_county,
+        pi.addr_regi household_address_country,
+        pi.addr_regi household_address_village,
+        pi.addr_regi householdAddressHouseNo,
+        pi.addr_regi_dt household_address,
+        zd_addr_cur.prov present_address_province,
+        zd_addr_cur.city present_address_city,
+        zd_addr_cur.dist present_address_county,
+        pi.addr_regi present_address_country,
+        pi.addr_regi present_address_village,
+        pi.addr_regi present_address_house_no,
+        pi.addr_cur_dt present_address,
+        zd_rel.code contact_relationship_code,
+        zd_rel.name contact_relationship_name,
+        abo.code abo_blood_type_code,
+        abo.name abo_blood_type_name,
+        abo.code rh_blood_type_code,
+        abo.name rh_blood_type_name,
+        nvl((select distinct 1 from  pi_allergic al where al.pk_pi=pi.pk_pi and al.del_flag = '0'),'0') allergy_flag,
+        (select wmsys.wm_concat(name_al) from  pi_allergic al where al.pk_pi=pi.pk_pi and al.del_flag = '0') allergy_desc,
+        org.code_org org_code,
+        org.name_org org_name,
+        emp.code_emp enter_opera_id,
+        emp.name_emp enter_opera_name,
+        empmo.code_emp modify_opera_id,
+        empmo.name_emp modify_opera_name,
+        pi.pk_pi as patient_id,
+        pi.MOBILE phone_no
+        FROM
+        PI_MASTER pi
+        left join bd_defdoc def on pi.dt_sex = def.CODE and def.code_defdoclist='000000'
+        left join bd_defdoc defdoc on defdoc.code = pi.dt_idtype and defdoc.code_defdoclist='000007'
+        left join bd_defdoc nationality on pi.dt_country = nationality.code and nationality.code_defdoclist = '000009'
+        left join bd_defdoc nation on pi.dt_nation = nation.code and nation.code_defdoclist = '000003'
+        left join bd_defdoc occupation on pi.dt_occu = occupation.code and occupation.code_defdoclist = '000010'
+        left join bd_defdoc marriage on pi.dt_marry = marriage.code and marriage.code_defdoclist = '000006'
+        left join bd_defdoc edu  on  edu.code=pi.dt_edu and edu.code_defdoclist = '010302'
+        left join bd_defdoc zd_rel on pi.dt_ralation = zd_rel.code and zd_rel.code_defdoclist = '000013'
+        left join bd_defdoc abo on  abo.code_defdoclist='000004' and pi.DT_BLOOD_ABO=abo.code
+        left join bd_defdoc zd_rh on pi.dt_blood_rh = zd_rh.code and zd_rh.code_defdoclist = '000005'
+        left join bd_admin_division zd_addr_cur on pi.addrcode_cur = zd_addr_cur.code_div and zd_addr_cur.del_flag='0'
+        left join bd_admin_division zd_addr_birth on pi.addrcode_birth = zd_addr_birth.code_div and zd_addr_birth.del_flag='0'
+        left join bd_admin_division zd_addr_origin on pi.addrcode_origin = zd_addr_origin.code_div and zd_addr_origin.del_flag='0'
+        left join bd_admin_division zd_addr_regi on pi.addrcode_regi = zd_addr_regi.code_div and zd_addr_regi.del_flag='0'
+        left join pi_allergic allergic on pi.pk_pi = allergic.pk_pi  and allergic.del_flag = '0'
+        left join bd_ou_org org on pi.pk_org = org.pk_org
+        left join BD_OU_EMPLOYEE emp on emp.pk_emp = pi.creator
+        left join BD_OU_EMPLOYEE empmo on emp.pk_emp = pi.modifier
+        WHERE
+        pi.pk_pi = #{pkPi,jdbcType=CHAR}
+    </select>
+	
+</mapper>

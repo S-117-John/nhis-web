@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.CnIpPressAuthMapper">
+
+	 <select id="qryPressAuth" parameterType="java.lang.String" resultType="DynaBean">
+		select emp.dt_empsrvtype,
+	       emp.flag_pres,     
+	       emp.flag_anes,     
+	       emp.flag_spir_one, 
+	       emp.flag_spir_sec, 
+	       emp.eu_drtype,
+	       emp.flag_poi,
+	       emp.dt_anti       
+		 from bd_ou_employee emp,bd_ou_user u 
+		 where u.pk_user = #{id} and u.pk_emp=emp.pk_emp
+         and emp.flag_active = 1
+    </select>
+       		   
+</mapper>

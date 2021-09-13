@@ -1,0 +1,2109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.compay.daysettle.pub.dao.ZsBlIpCcMapper">
+	<select id="qryStAmtInfo" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsbaBlCc">
+		select sum(st.amount_st) amt_settle ,sum(st.amount_prep) amt_prep_rt,
+		sum(st.amount_insu) amt_insu, sum(amount_pi) amt_pi, sum(amount_disc) as amt_disc,
+		sum(isnull(insSt.gzzfuje,0) + isnull(insSt.gzzfeje,0) + isnull(stQg.acct_pay,0)) as amt_gz
+		from bl_settle st left join ins_st insSt on st.pk_settle = insSt.pk_settle  and insSt.del_flag = '0'
+		left join ins_st_qg stQg on stQg.pk_settle = st.pk_settle and stQg.del_flag = '0'
+		where st.eu_pvtype = 3 and st.flag_cc = 0
+		<if test="pkOrg != null and pkOrg != ''">
+			and st.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and st.pk_emp_st = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and st.date_st &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+	</select>
+
+	<select id="qryAmtInsu" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsAmtInsuVo">
+		select sum(st.amount_insu) amt_insu,
+		da.val_attr
+		from bl_settle st
+		inner join bd_hp hp on st.pk_insurance=hp.pk_hp
+		inner join bd_dictattr da on hp.pk_hp=da.pk_dict
+		inner join bd_dictattr_temp dat on da.pk_dictattrtemp=dat.pk_dictattrtemp
+		where dat.code_attr='0301'
+		<if test="pkEmp != null and pkEmp != ''">
+			and st.eu_pvtype = 3 and st.flag_cc = 0
+			and st.pk_emp_st = #{pkEmp,jdbcType=VARCHAR}
+			and st.pk_org = #{pkOrg,jdbcType=VARCHAR}
+			and st.date_st &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		<if test="pkCc!=null and pkCc!=''">
+			and st.pk_cc=#{pkCc,jdbcType=VARCHAR}
+		</if>
+		group by da.val_attr
+
+	</select>
+
+	<select id="qryStInv" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsInvInfo">
+		select inv.pk_empinvoice,
+		inv.pk_invcate,
+		max(inv.code_inv) endcode,
+		min(inv.code_inv) begincode,
+		count(1) cnt
+		from bl_st_inv stinv
+		inner join bl_invoice inv on stinv.pk_invoice = inv.pk_invoice
+		inner join bl_settle st on st.pk_settle = stinv.pk_settle
+		where st.eu_pvtype = 3 and inv.flag_cc = 0
+		<if test="pkOrg != null and pkOrg != ''">
+			and st.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and inv.pk_emp_inv = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and inv.date_inv &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		group by inv.pk_empinvoice,
+		inv.pk_invcate
+	</select>
+
+	<select id="qryStInvOracle" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsInvInfo">
+		select
+		tmp.pk_empinvoice,
+		tmp.pk_invcate,
+		max(tmp.code_inv) endcode,
+		min(tmp.code_inv) begincode,
+		count(1) cnt
+		from (
+		SELECT
+		inv.pk_empinvoice,
+		inv.pk_invcate,
+		inv.code_inv,
+		substr(inv.code_inv, nvl(length(bei.inv_prefix) + 1, 1)) cc
+		FROM bl_st_inv stinv
+		INNER JOIN bl_invoice inv ON stinv.pk_invoice = inv.pk_invoice
+		INNER JOIN bl_settle st ON st.pk_settle = stinv.pk_settle
+		INNER JOIN bl_emp_invoice bei ON inv.pk_empinvoice = bei.pk_empinv
+		WHERE st.eu_pvtype = 3 AND inv.flag_cc = 0
+		<if test="pkOrg != null and pkOrg != ''">
+			and st.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and inv.pk_emp_inv = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and inv.date_inv &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		order by inv.code_inv asc
+		) tmp
+		group by
+		to_number(tmp.cc-rownum),tmp.pk_empinvoice, tmp.pk_invcate
+		order by
+		begincode asc
+	</select>
+
+	<select id="qryStInvSqlServer" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsInvInfo">
+		select
+		tmp.pk_empinvoice,
+		tmp.pk_invcate,
+		max(tmp.code_inv) endcode,
+		min(tmp.code_inv) begincode,
+		count(1) cnt
+		from (
+		SELECT
+		inv.pk_empinvoice,
+		inv.pk_invcate,
+		inv.code_inv,
+		substring(inv.code_inv,isnull(len(bei.inv_prefix)+1,1),len(inv.code_inv))
+		cc,
+		row_number() over (order by inv.code_inv) as rownum
+		FROM bl_st_inv stinv
+		INNER JOIN bl_invoice inv ON stinv.pk_invoice = inv.pk_invoice
+		INNER JOIN bl_settle st ON st.pk_settle = stinv.pk_settle
+		INNER JOIN bl_emp_invoice bei ON inv.pk_empinvoice = bei.pk_empinv
+		WHERE st.eu_pvtype = 3 AND inv.flag_cc = 0
+		<if test="pkOrg != null and pkOrg != ''">
+			and st.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and inv.pk_emp_inv = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and inv.date_inv &lt;=
+			convert(DATETIME2,left('${dateEnd}',8)+cast(' ' as nvarchar)+substring('${dateEnd}',9,2)+cast(':' as nvarchar)+substring('${dateEnd}',11,2)+cast(':' as nvarchar)+substring('${dateEnd}',13,2),120)
+		</if>
+		) tmp
+		group by convert(numeric,tmp.cc-rownum),tmp.pk_empinvoice,
+		tmp.pk_invcate
+		order by begincode asc
+	</select>
+
+
+	<select id="qryStInv_Invalid" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsInvalidStInv">
+		select inv.pk_invcate,
+		inv.pk_empinvoice,
+		inv.code_inv
+		from bl_invoice inv
+		inner join bd_invcate cate on inv.pk_invcate=cate.pk_invcate
+		where
+		cate.eu_type = '1' and inv.flag_cancel = 1 and inv.flag_cc_cancel = 0
+		<if test="pkOrg != null and pkOrg != ''">
+			and inv.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and inv.pk_emp_cancel = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and inv.date_cancel &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		order by inv.code_inv asc
+	</select>
+	<select id="qryDepoInfo" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.common.module.bl.BlCcPay">
+		select sum(depo.amount) amt,
+		count(1) cnt_trade,
+		depo.dt_paymode,
+		case
+		when depo.eu_dptype='4' and depo.eu_direct='1' then '-1'
+		when depo.eu_dptype='4' and depo.eu_direct='-1' then '1'
+		else depo.eu_direct
+		end eu_direct,
+		depo.eu_dptype eu_paytype
+		from bl_deposit depo
+		where (depo.eu_pvtype = 3 or depo.eu_pvtype = 11) and depo.flag_cc = 0 and depo.amount!=0  
+		<if test="pkOrg != null and pkOrg != ''">
+			and depo.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and depo.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and depo.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		group by depo.dt_paymode,
+		depo.eu_direct,
+		depo.eu_dptype
+	</select>
+
+
+	<select id="qryDepoInvOracle" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsDepositInv">
+		select min(tmp.rept_no) begincoe,
+		max(tmp.rept_no) endcoe,
+		tmp.pk_empinvoice pk_Empinvoice_Prep,
+		to_number(tmp.cc-rownum)
+		from(
+		select depo.rept_no,
+		depo.PK_EMPINVOICE,
+		substr(depo.rept_no,nvl(length(bei.inv_prefix)+1,1)) cc
+		from bl_deposit depo
+		inner join bl_emp_invoice bei on depo.pk_empinvoice=bei.pk_empinv
+		where depo.eu_dptype = 9 and 
+		depo.eu_direct = '1' and
+		depo.flag_cc = 0 and
+		depo.amount!=0
+		<if test="pkOrg != null and pkOrg != ''">
+			and depo.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and depo.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}  
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+        and  depo.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyymmddhh24miss') 
+		</if>
+		order by depo.rept_no
+		) tmp
+		group by
+		to_number(tmp.cc-rownum),tmp.pk_empinvoice
+		order by begincoe asc
+	</select>
+	<select id="qryDepoInvSqlServer" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsDepositInv">
+		select min(tmp.rept_no) begincoe,
+		max(tmp.rept_no) endcoe,
+		tmp.pk_empinvoice pk_Empinvoice_Prep,
+		convert(numeric,tmp.cc-rownum)
+		from(
+		select depo.rept_no,
+		depo.PK_EMPINVOICE,
+		substring(depo.rept_no,isnull(len(bei.inv_prefix)+1,1),len(depo.rept_no))
+		cc,
+		row_number() over (order by depo.rept_no) as rownum
+		from bl_deposit depo
+		inner join bl_emp_invoice bei on depo.pk_empinvoice=bei.pk_empinv
+		where
+		depo.eu_dptype = 9 and
+		depo.eu_direct = '1' and
+		depo.flag_cc = 0 and
+		depo.amount!=0
+		<if test="pkOrg != null and pkOrg != ''">
+			and depo.pk_org = #{pkOrg,jdbcType=CHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and  depo.pk_emp_pay = #{pkEmp,jdbcType=CHAR} 
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and  depo.date_pay &lt;=
+			convert(DATETIME2,left('${dateEnd}',8)+cast(' ' as nvarchar)+substring('${dateEnd}',9,2)+cast(':' as nvarchar)+substring('${dateEnd}',11,2)+cast(':' as nvarchar)+substring('${dateEnd}',13,2),120)
+		</if>
+		) tmp
+		group by convert(numeric,tmp.cc-rownum),tmp.pk_empinvoice
+		order by
+		begincoe asc
+	</select>
+	<select id="qryDepoInv_Rtn" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsDepoRtnInfo">
+		select depo.rept_no,
+		depo.pk_empinvoice
+		from bl_deposit depo
+		where depo.eu_dptype = 9 and
+		depo.flag_cc = 0 and
+		depo.eu_direct = -1
+		<if test="pkOrg != null and pkOrg != ''">
+			and depo.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and depo.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and depo.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		order by depo.rept_no asc
+	</select>
+	<select id="qryPrepPay" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.common.module.bl.BlCc">
+		select sum(depo.amount) amt_prep,
+		sum(case when eu_direct=1 then 1 else 0 end) cnt_depo
+		from bl_deposit depo 
+		where depo.eu_dptype = 9 and depo.flag_cc = 0 and depo.dt_paymode != '91'
+		<if test="pkOrg != null and pkOrg != ''">
+			and depo.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and depo.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and depo.create_time &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyymmddhh24miss')
+		</if>
+	</select>
+
+
+
+	<update id="updBlSettle" parameterType="java.util.Map">
+		update bl_settle set flag_cc = 1,
+		<if test="pkCc != null  and  pkCc != ''">
+			pk_cc = #{pkCc,jdbcType=VARCHAR}
+		</if>
+		where eu_pvtype = 3 and flag_cc = 0 and date_st &lt;
+		#{dateSt,jdbcType=DATE}
+		<if test="pkEmp != null  and  pkEmp != ''">
+			and pk_emp_st = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="pkOrg != null  and  pkOrg != ''">
+			and pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+	</update>
+
+
+
+	<update id="updBlDeposit" parameterType="java.util.Map">
+
+		update bl_deposit set flag_cc = 1,
+		<if test="pkCc != null  and  pkCc != ''">
+			pk_cc = #{pkCc,jdbcType=VARCHAR}
+		</if>
+		where flag_cc = 0 and eu_pvtype = 3 and date_pay
+		&lt;#{dateSt,jdbcType=DATE}
+		<if test="pkEmp != null  and  pkEmp != ''">
+			and pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="pkOrg != null  and  pkOrg != ''">
+			and pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+	</update>
+
+	<!-- <update id="updInv" parameterType="java.util.Map" > /**/update bl_invoice 
+		inv set inv.flag_cc = 1, inv.pk_cc = #{pkCc,jdbcType=VARCHAR} where exists 
+		(select 1 from bl_settle st inner join bl_st_inv si on st.pk_settle=si.pk_settle 
+		where inv.pk_invoice=si.pk_invoice and st.pk_org = #{pkOrg,jdbcType=VARCHAR} 
+		and st.eu_pvtype = 3) and inv.pk_emp_inv = #{pkEmp,jdbcType=VARCHAR} and 
+		inv.flag_cc = 0 and inv.date_inv &lt;=sysdate </update> <update id="updInvCanc" 
+		parameterType="java.util.Map" > update bl_invoice inv set inv.flag_cc_cancel 
+		= 1, <if test="pkCc != null and pkCc != ''"> inv.pk_cc_cancel = #{pkCc,jdbcType=VARCHAR} 
+		</if> where exists (select 1 from bl_settle st inner join bl_st_inv si on 
+		st.pk_settle=si.pk_settle where inv.pk_invoice=si.pk_invoice <if test="pkOrg 
+		!= null and pkOrg != ''"> and st.pk_org = #{pkOrg,jdbcType=VARCHAR} </if> 
+		and st.eu_pvtype = 3) and inv.date_cancel &lt;=sysdate and inv.flag_cc_cancel 
+		= 0 <if test="pkEmp != null and pkEmp != ''"> and inv.pk_emp_cancel = #{pkEmp,jdbcType=VARCHAR} 
+		</if> </update> -->
+	<!-- 根据操作员获取上一次结账信息 -->
+	<select id="getLastCcByPkEmp" parameterType="java.lang.String"
+				resultType="com.zebone.nhis.common.module.bl.BlCc">
+		select t.*
+		from(
+		select *
+		from bl_cc
+		where del_flag = '0' and EU_CCTYPE='8'and pk_emp_opera = #{pkEmp,jdbcType=VARCHAR}
+		order by date_end desc ) t
+		where rownum = 1
+	</select>
+	<!-- 根据操作员获取上一次结账信息（sqlserver） -->
+	<select id="getLastBlCcByPkEmpForSql" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.common.module.bl.BlCc">
+		select top 1 *
+		from bl_cc
+		where del_flag = '0'and  EU_CCTYPE='8' and pk_emp_opera = #{pkEmp,jdbcType=VARCHAR}
+		order by date_end desc
+	</select>
+
+	<!-- 根据操作员获取时间最早的结算记录（sqlserver） -->
+	<select id="getLastBlSettleByPkEmpForSql" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.common.module.bl.BlSettle">
+		select top 1 *
+		from bl_settle
+		where del_flag = '0' and pk_emp_st = #{pkEmp,jdbcType=VARCHAR}
+		order by date_st
+	</select>
+	<!-- 根据操作员获取时间最早的结算记录 -->
+	<select id="getLastStByPkEmp" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.common.module.bl.BlSettle">
+		select t.*
+		from(
+		select *
+		from bl_settle
+		where del_flag = '0' and pk_emp_st = #{pkEmp,jdbcType=VARCHAR}
+		order by date_st) t
+		where rownum = 1
+	</select>
+
+	<select id="cancelData" parameterType="java.lang.String"
+		resultType="java.util.Map">
+		select count(1) cnt from bl_cc cc where cc.eu_cctype = 8 and
+		cc.date_cc &gt; (select blcc.date_cc from bl_cc blcc
+		where blcc.pk_cc = #{pkCc,jdbcType=VARCHAR} and
+		blcc.pk_emp_opera=cc.pk_emp_opera and blcc.eu_cctype = 8)
+	</select>
+	<select id="getBlCcDepoDetail" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.bl.pub.vo.BlCcDepoDetail">
+		select * from (
+		select st.pk_settle,
+		pi.code_ip,
+		pi.name_pi,
+		st.code_st,
+		st.amount_st,
+		inv.amount_inv,
+		st.date_st,
+		inv.code_inv,
+		st.flag_canc,
+		st.pk_settle_canc,
+		case when inv.pk_cc=inv.pk_cc_cancel then '1' else '0' end flag,
+		st.eu_stresult
+		from bl_settle st
+		inner join pi_master pi on st.pk_pi=pi.pk_pi
+		inner join bl_st_inv stinv on st.pk_settle=stinv.pk_settle
+		inner join bl_invoice inv on stinv.pk_invoice=inv.pk_invoice
+		where inv.pk_cc=#{pkCc,jdbcType=VARCHAR}
+		union
+		select st.pk_settle,
+		pi.code_ip,
+		pi.name_pi,
+		st.code_st,
+		st.amount_st,
+		inv.amount_inv,
+		st.date_st,
+		inv.code_inv,
+		st.flag_canc,
+		st.pk_settle_canc,
+		inv.flag_cancel flag,
+		st.eu_stresult
+		from bl_settle st
+		inner join pi_master pi on st.pk_pi=pi.pk_pi
+		inner join bl_st_inv stinv on st.pk_settle=stinv.pk_settle
+		inner join bl_invoice inv on stinv.pk_invoice=inv.pk_invoice
+		where inv.pk_cc_cancel=#{pkCc,jdbcType=VARCHAR}
+		) stInfo
+		order by stInfo.DATE_ST,flag asc
+	</select>
+	<select id="getBlCcStDetail" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsBlCcStDetail">
+		select
+		depo.pk_depo,pi.code_pi,pi.name_pi,depo.amount,pi.code_ip,
+		paymode.name
+		paymode,depo.rept_no,depo.date_pay,depo.eu_direct,depo.pk_depo_back,depo.note,depo.eu_dptype
+		from bl_deposit depo
+		inner join pi_master pi on depo.pk_pi=pi.pk_pi
+		inner join bd_defdoc paymode on depo.dt_paymode=paymode.code and
+		paymode.code_defdoclist='110100'
+		where depo.eu_dptype in (3,9) and depo.pk_cc = #{pkCc,jdbcType=VARCHAR}
+		order by depo.date_pay asc
+	</select>
+	<select id="getBlCcStGetDetail" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsBlCcStGetDetail">
+		select hp.name hp,payer.name payer,
+		CASE st.flag_canc
+         WHEN '1' THEN dt.amount-dt.amount-dt.amount
+         WHEN '0' THEN dt.amount
+		END as amount, st.flag_canc
+		from bl_settle st
+		inner join bl_settle_detail dt on st.pk_settle=dt.pk_settle
+		left outer join bd_hp hp on dt.pk_insurance = hp.pk_hp
+		left outer join bd_payer payer on dt.pk_payer=payer.pk_payer
+		where dt.amount &gt;0 and st.pk_cc = #{pkCc,jdbcType=VARCHAR}
+	</select>
+
+
+
+	<select id="getBlCcDepoDetail_Unclose" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsBlCcDepoDetail">
+		select st.pk_settle,
+		pi.code_ip,
+		pi.name_pi,
+		st.code_st,
+		st.amount_st,
+		inv.amount_inv,
+		st.date_st,
+		inv.code_inv,
+		st.flag_canc,
+		st.pk_settle_canc,
+		case when inv.date_cancel &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+		'yyyymmddhh24miss') then '1' else '0' end flag,
+		st.eu_stresult
+		from bl_settle st
+		inner join pi_master pi on st.pk_pi=pi.pk_pi
+		inner join bl_st_inv stinv on st.pk_settle=stinv.pk_settle
+		inner join bl_invoice inv on stinv.pk_invoice=inv.pk_invoice
+		where st.eu_pvtype = 3 and st.flag_cc = 0
+		<if test="pkEmp != null  and  pkEmp != ''">
+			and st.pk_emp_st = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="pkOrg != null  and  pkOrg != ''">
+			and st.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+			and st.date_st &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		order by st.date_st,flag asc
+
+	</select>
+	<select id="getBlCcStDetail_Unclose" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsBlCcStDetail">
+		select depo.pk_depo,pi.code_pi,pi.name_pi,pi.code_ip,depo.amount,
+		paymode.name paymode,depo.rept_no,depo.date_pay,
+		depo.eu_direct,depo.pk_depo_back,depo.eu_dptype
+		from bl_deposit depo inner join pi_master pi on depo.pk_pi=pi.pk_pi
+		inner join bd_defdoc paymode on depo.dt_paymode=paymode.code and
+		paymode.code_defdoclist='110100'
+		where depo.eu_dptype in (3,9) and depo.flag_cc = 0 
+
+		<if test="pkEmp != null  and  pkEmp != ''">
+			and depo.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="pkOrg != null  and  pkOrg != ''">
+			and depo.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+			and depo.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		order by depo.date_pay asc
+	</select>
+	<select id="getBlCcStGetDetail_Unclose" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsBlCcStGetDetail">
+		select hp.name hp,payer.name payer,dt.amount
+		from bl_settle st
+		inner join bl_settle_detail dt on st.pk_settle=dt.pk_settle
+		left outer join bd_hp hp on dt.pk_insurance = hp.pk_hp
+		left outer join bd_payer payer on dt.pk_payer=payer.pk_payer
+		where st.eu_pvtype = 3 and st.flag_cc = 0
+		<if test="pkEmp != null  and  pkEmp != ''">
+			and st.pk_emp_st = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="pkOrg != null  and  pkOrg != ''">
+			and st.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+			and st.date_st &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+	</select>
+
+	<update id="updSumCc" parameterType="java.util.Map">
+		update bl_cc set flag_leader = 1,
+		pk_emp_leader = #{pkEmp,jdbcType=VARCHAR},
+		name_emp_leader = #{nameEmp,jdbcType=VARCHAR},
+		date_leader = #{dateCc,jdbcType=TIMESTAMP},
+		eu_status = 1
+		where pk_org = #{pkOrg,jdbcType=VARCHAR}
+		and eu_cctype = 8 and flag_leader = 0 and
+		date_end &lt;= to_date(#{dateLeader,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+	</update>
+
+	<select id="cancelSumData" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		select count(1) cnt from bl_cc cc
+		where cc.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		and cc.eu_cctype = 8 and cc.flag_leader = 1
+		and cc.pk_emp_leader = #{pkEmp,jdbcType=VARCHAR}
+		and cc.date_leader &gt; to_date(#{dateLeader,jdbcType=VARCHAR},
+		'yyyymmddhh24miss')
+	</select>
+
+	<update id="updCancelSumCc" parameterType="java.util.Map">
+		update bl_cc set flag_leader = 0,pk_emp_leader = null,
+		name_emp_leader = null, date_leader = null,eu_status = 0
+		where pk_org = #{pkOrg,jdbcType=VARCHAR}
+		and pk_emp_leader = #{pkEmp,jdbcType=VARCHAR}
+		and date_leader = to_date(#{dateLeader,jdbcType=VARCHAR},
+		'yyyymmddhh24miss')
+		and eu_cctype = 8 and flag_leader = 1
+
+	</update>
+	<select id="QrySumDepo" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsBlSumDepoVo">
+
+		select cc.pk_emp_opera,cc.name_emp_opera,sum(cc.amt_settle) amt_settle,
+		sum(cc.amt_prep) amt_prep,sum(cc.amt_prep_rt)
+		amt_prep_rt,sum(cc.amt_insu) amt_insu,sum(pay.amt_pay) amt_pay
+		from bl_cc cc
+		Inner Join (Select pk_cc,
+                     sum(amt+amt_back) amt_pay
+              From bl_cc_pay
+              Where dt_paymode='1'
+              Group By pk_cc ) pay On cc.pk_cc=pay.pk_cc
+		where cc.eu_cctype = 8 and
+		cc.flag_leader = 1
+		and cc.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		and cc.pk_emp_leader = #{pkEmp,jdbcType=VARCHAR}
+		and cc.date_leader = to_date(#{dateLeader,jdbcType=VARCHAR},
+		'yyyymmddhh24miss')
+		group by cc.pk_emp_opera,
+		cc.name_emp_opera
+	</select>
+	<select id="QrySumPay" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsBlSumPayVo">
+
+		select sum(pay.amt) amt,sum(pay.amt_back)
+		amt_back,pay.dt_paymode,pay.eu_paytype,paymode.name paymode
+		from bl_cc_pay pay
+		inner join bl_cc cc on pay.pk_cc=cc.pk_cc
+		inner join bd_defdoc paymode on pay.dt_paymode=paymode.code and
+		paymode.code_defdoclist='110100'
+		where cc.eu_cctype = 8 and
+		cc.flag_leader = 1
+		and cc.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		and cc.pk_emp_leader = #{pkEmp,jdbcType=VARCHAR}
+		and cc.date_leader = to_date(#{dateLeader,jdbcType=VARCHAR},
+		'yyyymmddhh24miss')
+		group by pay.dt_paymode,
+		paymode.name,
+		pay.eu_paytype
+
+	</select>
+
+	<select id="QrySumRecords" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsBlSumRecords">
+
+		select cc.date_leader, min(cc.date_begin) date_begin,max(cc.date_end)
+		date_end, cc.eu_status
+		from bl_cc cc
+		where cc.eu_cctype = 8 and cc.flag_leader = 1
+		and cc.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		and cc.pk_emp_leader = #{pkEmp,jdbcType=VARCHAR}
+		and cc.date_leader &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},
+		'yyyymmddhh24miss')
+		and cc.date_leader &lt; to_date(#{dateEnd,jdbcType=VARCHAR},
+		'yyyymmddhh24miss')
+		group by cc.date_leader,cc.eu_status
+
+	</select>
+
+
+	<select id="QryUnSumDepo" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsBlSumDepoVo">
+		select cc.pk_emp_opera,cc.name_emp_opera,sum(cc.amt_settle) amt_settle,
+		sum(cc.amt_prep) amt_prep,sum(cc.amt_prep_rt)
+		amt_prep_rt,sum(cc.amt_insu) amt_insu,sum(cc.amt_ar)
+		amt_ar,sum(cc.amt_repair) amt_repair
+		,sum(cc.amt_sor) amt_sor,sum(cc.amt_ca) amt_ca,sum(pay.amt_pay) amt_pay
+		from bl_cc cc
+		Inner Join (Select pk_cc,
+                     sum(amt+amt_back) amt_pay
+              From bl_cc_pay
+              Where dt_paymode='1'  
+              Group By pk_cc ) pay On cc.pk_cc=pay.pk_cc
+		where cc.eu_cctype = 8 and
+		(cc.flag_leader = '0' or cc.flag_leader is null)
+		and cc.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		and cc.date_cc &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+		'yyyymmddhh24miss')
+		group by cc.pk_emp_opera,
+		cc.name_emp_opera
+	</select>
+	<select id="QryUnSumPay" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsBlSumPayVo">
+
+		select sum(pay.amt) amt,sum(pay.amt_back)
+		amt_back,pay.dt_paymode,pay.eu_paytype,paymode.name paymode
+		from bl_cc_pay pay
+		inner join bl_cc cc on pay.pk_cc=cc.pk_cc
+		inner join bd_defdoc paymode on pay.dt_paymode=paymode.code and
+		paymode.code_defdoclist='110100'
+		where cc.eu_cctype = 8 and
+		(cc.flag_leader = '0' or cc.flag_leader is null)
+		and cc.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		and cc.date_cc &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+		'yyyymmddhh24miss')
+		group by pay.dt_paymode,
+		paymode.name,
+		pay.eu_paytype
+
+	</select>
+	<select id="QryUnSumInfo" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsBlSumRecords">
+		select min(date_begin) as dateBegin
+		from bl_cc cc
+		where cc.eu_cctype = 8 and
+		(cc.flag_leader = '0' or cc.flag_leader is null)
+		and cc.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		and cc.date_cc &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+		'yyyymmddhh24miss')
+	</select>
+
+	<select id="QrySumInfo" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsBlSumRecords">
+		select min(cc.date_begin) date_begin,max(cc.date_end) date_end
+		from bl_cc cc
+		where cc.eu_cctype = 8 and cc.flag_leader = 1
+		and cc.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		and cc.pk_emp_leader = #{pkEmp,jdbcType=VARCHAR}
+		and cc.date_leader = to_date(#{dateLeader,jdbcType=VARCHAR},
+		'yyyymmddhh24miss')
+
+	</select>
+
+	<select id="getEuStatus" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.common.module.bl.BlCc">
+		select cc.date_cc,
+		cc.date_begin,
+		cc.date_end,
+		cc.eu_status,
+		cc.pk_cc
+		from bl_cc cc
+		where cc.eu_cctype = 8 and cc.pk_org =
+		#{pkOrg,jdbcType=VARCHAR} and cc.pk_emp_opera =
+		#{pkEmp,jdbcType=VARCHAR}
+		and cc.pk_cc = #{pkCc,jdbcType=VARCHAR}
+
+	</select>
+
+	<!-- 根据操作员获取时间最早的预交金记录（sqlserver） -->
+	<select id="getLastPreByPkEmpForSql" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.common.module.bl.BlDeposit">
+		select top 1 *
+		from BL_DEPOSIT
+		where DEL_FLAG = '0' and PK_EMP_PAY = #{pkEmp,jdbcType=VARCHAR}
+		order by date_pay
+	</select>
+	<!-- 根据操作员获取时间最早的预交金记录 -->
+	<select id="getLastPreByPkEmp" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.common.module.bl.BlDeposit">
+		select t.*
+		from(
+		select *
+		from BL_DEPOSIT
+		where DEL_FLAG = '0' and PK_EMP_PAY = #{pkEmp,jdbcType=VARCHAR}
+		order by date_pay) t
+		where rownum = 1
+	</select>
+	<select id="qryStAmtAr" resultType="java.lang.Double">
+		select sum(AMT_AR) amt_ar from BL_SETTLE_AR star
+		left join BL_SETTLE st on st.PK_SETTLE = star.PK_SETTLE
+		where not
+		exists(select canst.PK_SETTLE_CANC from BL_SETTLE canst where
+		canst.PK_SETTLE_CANC = st.PK_SETTLE)
+		<if test="pkOrg != null and pkOrg != ''">
+			and st.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and st.pk_emp_st = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and st.date_st &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		<if test="pkCc!=null and pkCc!= ''">
+			and st.pk_cc = #{pkCc,jdbcType=VARCHAR}
+		</if>
+	</select>
+
+	<select id="qrySettleAmtAr" resultType="java.lang.Double">
+		select sum(st.amt_ar) amt_ar
+		from bl_settle_ar st
+		where st.flag_cc = 0
+		<if test="pkOrg != null and pkOrg != ''">
+			and st.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and st.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and st.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+	</select>
+
+	<select id="qrySettleAmtArFee" resultType="java.lang.Double">
+		select sum(depo.amount) amt_arfee
+		from bl_deposit depo
+		inner join bl_settle st on st.pk_settle = depo.pk_settle and st.flag_canc =
+		'0'
+		where depo.eu_dptype = 3 and depo.flag_cc = 0 
+		<if test="pkOrg != null and pkOrg != ''">
+			and depo.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and depo.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and depo.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+	</select>
+
+	<select id="qrySettleAmtSor" resultType="java.lang.Double">
+		select sum(amt_sor) as amt_sor from (
+		select sum(st.amount_pi-st.amount_prep) amt_sor
+		from bl_settle st
+		where
+		st.flag_cc='0' and st.eu_prest='1'
+		<if test="pkEmp != null and pkEmp != ''">
+			and st.pk_emp_st = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and st.date_st &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		<if test="pkOrg != null and pkOrg != ''">
+			and st.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		union
+		select sum(st.amount_pi-st.amount_prep) amt_sor
+		from bl_settle st
+		where st.flag_cc='0' and st.eu_prest='9'
+		<if test="pkEmp != null and pkEmp != ''">
+			and st.pk_emp_st=#{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and st.date_st &lt;=to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		) st
+	</select>
+
+	<select id="qrySettleAmtCa" resultType="java.lang.Double">
+		select sum(dp.amount) amt_ca
+		from bl_deposit dp
+		inner join bl_settle st on dp.pk_settle=st.pk_settle
+		where dp.eu_dptype='0' and
+		dp.flag_cc='0' and
+		st.flag_cc='1' and
+		st.eu_prest>'0'
+		<if test="pkOrg != null and pkOrg != ''">
+			and dp.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and dp.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and dp.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+	</select>
+	<select id="qryReceiptsData" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.common.module.bl.BlDeposit">
+		select * from bl_deposit depo
+		where depo.eu_dptype = 9 and depo.flag_cc_rept ='0' and depo.rept_no is not null
+		<if test="pkOrg != null and pkOrg != ''">
+			and depo.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmpRept != null and pkEmpRept != ''">
+			and depo.pk_emp_rept = #{pkEmpRept,jdbcType=VARCHAR}
+		</if>
+		<if test="dateRept != null and dateRept != ''">
+			and depo.date_rept &lt;= to_date(#{dateRept,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+	</select>
+	
+	<select id="qryPayerData" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsPayerData">
+		select sum(sd.amount) amtPayer, bp.name as namePayer
+		from bl_settle st inner join bl_settle_detail sd ON st.pk_settle = sd.pk_settle
+		inner join bd_payer bp on sd.pk_payer = bp.pk_payer
+		where st.eu_pvtype = 3 and st.flag_cc = 0
+		<if test="pkOrg != null and pkOrg != ''">
+			and st.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and st.pk_emp_st = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and st.date_st &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		group by bp.name
+	</select>
+	
+		<select id="qryPayerDataRj" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsPayerData">
+		select sum(sd.amount) amtPayer, bp.name as namePayer
+		from bl_settle st inner join bl_settle_detail sd ON st.pk_settle = sd.pk_settle
+		inner join bd_payer bp on sd.pk_payer = bp.pk_payer
+		where st.eu_pvtype = 3
+		<if test="pkCc != null and pkCc != ''">
+			and st.pk_cc = #{pkCc,jdbcType=VARCHAR}
+		</if>
+		group by bp.name
+	</select>
+	
+	<select id="QryUnSumPayerData" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsPayerData">
+		select sum(sd.amount) amtPayer, bp.name as namePayer from bl_cc cc inner join BL_SETTLE st on cc.pk_cc = st.pk_cc
+		inner join BL_SETTLE_DETAIL sd on st.pk_settle = sd.pk_settle
+		inner join bd_payer bp on sd.pk_payer = bp.pk_payer
+		where cc.eu_cctype = 8 
+		and(cc.flag_leader = '0' or cc.flag_leader is null)
+		and cc.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		and cc.date_cc &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+		'yyyymmddhh24miss')
+		group by bp.name
+	</select>
+	
+	<select id="QrySumPayerData" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsPayerData">
+
+		select sum(sd.amount) amtPayer, bp.name as namePayer from bl_cc cc inner join BL_SETTLE st on cc.pk_cc = st.pk_cc
+		inner join BL_SETTLE_DETAIL sd on st.pk_settle = sd.pk_settle
+		inner join bd_payer bp on sd.pk_payer = bp.pk_payer
+		where cc.eu_cctype = 8 and
+		cc.flag_leader = 1
+		and cc.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		and cc.pk_emp_leader = #{pkEmp,jdbcType=VARCHAR}
+		and cc.date_leader = to_date(#{dateLeader,jdbcType=VARCHAR},
+		'yyyymmddhh24miss')
+		group by bp.name
+	</select>
+	
+	<select id="QrySumEmp" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		select cc.pk_emp_leader, cc.name_emp_leader
+		from bl_cc cc
+		where cc.eu_cctype = 8 and cc.flag_leader = 1
+		and cc.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		and cc.pk_emp_leader = #{pkEmp,jdbcType=VARCHAR}
+		and cc.date_leader = to_date(#{dateLeader,jdbcType=VARCHAR},
+		'yyyymmddhh24miss')
+		group by cc.pk_emp_leader, cc.name_emp_leader
+	</select>
+	
+		<select id="queryEmployees" resultType="com.zebone.nhis.common.module.base.ou.BdOuEmployee">
+		select emp.*
+  			from bd_ou_employee emp
+      	 inner join bd_dictattr att on emp.pk_emp=att.pk_dict
+       <where>
+       	<if test="codeAttr">
+       	 and att.code_attr=#{codeAttr,jdbcType=VARCHAR}
+       	</if>
+       	and emp.pk_org = #{pkOrg,jdbcType=VARCHAR}
+       	and att.val_attr = '1'
+	 	and emp.flag_active='1' 
+	 	and emp.del_flag='0'
+       </where>
+	</select>
+	
+	<select id="queryEmployeesRj" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.base.ou.BdOuEmployee">
+	 	SELECT
+			a.*
+		FROM
+			bd_ou_employee a
+		<where>
+		    and a.pk_org = #{pkOrg,jdbcType=VARCHAR}
+			and a.pk_emp IN (
+				SELECT
+					t1.pk_emp
+				FROM
+					bd_ou_employee t1
+				INNER JOIN (
+					SELECT
+						pk_emp_pay AS pk_emp
+					FROM
+						bl_deposit
+					WHERE
+						CONVERT (nvarchar(10), date_pay, 120) = #{date,jdbcType=VARCHAR}
+						AND flag_cc = '0' and eu_pvtype = '3'
+					UNION ALL
+						SELECT
+							pk_emp_st AS pk_emp
+						FROM
+							BL_SETTLE
+						WHERE
+							CONVERT (nvarchar(10), date_st, 120) = #{date,jdbcType=VARCHAR}
+							AND flag_cc = '0' and eu_pvtype = '3'
+				) t2 ON t1.pk_emp = t2.pk_emp
+				GROUP BY
+					t1.pk_emp
+			)
+       </where>
+	</select>
+	
+	<select id="qryCntRetreat" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		select count(*) as cntRetreat
+		from bl_deposit depo
+		where depo.eu_dptype = 9 and
+		depo.flag_cc = #{flagCc,jdbcType=VARCHAR} and
+		depo.eu_direct = -1
+		and depo.void_type = '1'
+		<if test="pkOrg != null and pkOrg != ''">
+			and depo.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and depo.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and depo.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		<if test="pkCc!= null and pkCc != ''">
+			and depo.pk_cc = #{pkCc,jdbcType=VARCHAR}
+		</if>
+	</select>
+	
+	<select id="qryCntScrap" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		select count(*) as cntScrap
+		from bl_deposit depo
+		where depo.eu_dptype = 9 and
+		depo.flag_cc = #{flagCc,jdbcType=VARCHAR} and
+		depo.eu_direct = -1
+		and depo.void_type = '2'
+		<if test="pkOrg != null and pkOrg != ''">
+			and depo.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and depo.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and depo.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		<if test="pkCc!= null and pkCc != ''">
+			and depo.pk_cc = #{pkCc,jdbcType=VARCHAR}
+		</if>
+	</select>
+	
+	<select id="qryStInvScrapCnt" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		select count(*) cnt
+		from bl_invoice inv
+		inner join bd_invcate cate on inv.pk_invcate=cate.pk_invcate
+		where
+		cate.eu_type = '1' and inv.flag_cancel = 1 and inv.flag_cc_cancel = 0
+		<if test="flagCc != null and flagCc != ''">
+			and inv.flag_cc = #{flagCc,jdbcType=VARCHAR}
+		</if>
+		<if test="pkOrg != null and pkOrg != ''">
+			and inv.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and inv.pk_emp_cancel = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and inv.date_cancel &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+	</select>
+	
+	<select id="qryStInvRetreatCnt" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		select count(*) cnt
+		from bl_invoice inv
+		inner join bd_invcate cate on inv.pk_invcate=cate.pk_invcate
+		where
+		cate.eu_type = '1' and inv.flag_back = 1 and inv.flag_cc_cancel = 0
+		<if test="flagCc != null and flagCc != ''">
+			and inv.flag_cc = #{flagCc,jdbcType=VARCHAR}
+		</if>
+		<if test="pkOrg != null and pkOrg != ''">
+			and inv.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and inv.pk_emp_cancel = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and inv.date_cancel &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+	</select>
+	
+	<select id="qryCcStInvRetreatCnt" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		select count(*) cnt
+		from bl_invoice inv
+		where
+		inv.flag_back = 1
+		<if test="invInfoCanc!= null and invInfoCanc != ''">
+			and inv.code_inv in
+			<foreach collection="invInfoCanc" item="vo" index="index"
+				      open="(" close=")" separator=",">
+				      #{vo,jdbcType=VARCHAR} 
+			</foreach>
+		</if>
+	</select>
+	
+	<select id="qryYjkAmt" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		select sum(amount) as amount, dt_paymode 
+		from bl_deposit 
+		where eu_dptype = '9' and eu_pvtype = '3' and dt_paymode in ('1','3','7','8','92')
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and pk_cc = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and flag_cc = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and create_time &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		group by dt_paymode
+	</select>
+	
+	<select id="qryYjkAmtSand" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		select sum(amount) as amount, dt_paymode 
+		from bl_deposit 
+		where eu_dptype = '9' and eu_pvtype = '3' and dt_paymode in ('7','8') and dt_bank='1'
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and pk_cc = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and flag_cc = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and create_time &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		group by dt_paymode
+	</select>
+	
+	<select id="qryYjkAmtGzh" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		select sum(amount) as amount, dt_paymode 
+		from bl_deposit 
+		where eu_dptype = '9' and eu_pvtype = '3' and dt_paymode in ('7','8') AND (dt_bank != '1' or dt_bank is null)
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and pk_cc = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and flag_cc = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and create_time &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		group by dt_paymode
+	</select>
+	
+	<select id="qryMjkAmt" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		select sum(amount) as amount, dt_paymode 
+		from bl_deposit 
+		where eu_dptype = '11' and eu_pvtype = '11' and dt_paymode in ('1','3','7','8','92')
+		and del_flag = '0' 
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and pk_cc = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and flag_cc = '0'
+		    </otherwise>
+		</choose>
+		<if test="euDirect != null and euDirect != ''">
+			and eu_direct = #{euDirect,jdbcType=VARCHAR}
+		</if>
+		<if test="pkOrg != null and pkOrg != ''">
+			and pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and create_time &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		group by dt_paymode
+	</select>
+	
+	<select id="qryJstkAmt" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		select sum(t1.amount) as amount, t1.dt_paymode from
+		(select a.amount, a.dt_paymode 
+		from bl_deposit a
+		left join BL_SETTLE b on a.pk_settle = b.pk_settle 
+		where a.EU_DPTYPE in ('0','1') and a.eu_pvtype = '3' and a.dt_paymode in ('1','3','92') and a.eu_direct = '-1'
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and a.pk_cc = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and a.flag_cc = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and a.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and a.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and a.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		UNION ALL
+		select a.amount, a.dt_paymode 
+		from bl_deposit a
+		left join BL_SETTLE b on a.pk_settle = b.pk_settle 
+		where a.EU_DPTYPE in ('4') and a.eu_pvtype = '3' and a.dt_paymode in ('1','3','92') and a.eu_direct = '1'
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and a.pk_cc = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and a.flag_cc = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and a.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and a.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and a.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		) t1
+		group by t1.dt_paymode
+	</select>
+	
+	<select id="qryJstkAmtSand" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		select sum(t1.amount) as amount, t1.dt_paymode from
+		(select a.amount, a.dt_paymode 
+		from bl_deposit a
+		left join BL_SETTLE b on a.pk_settle = b.pk_settle 
+		where a.EU_DPTYPE in ('0','1') and a.eu_pvtype = '3' and a.dt_paymode in ('7','8') and a.eu_direct = '-1' and a.dt_bank = '1'
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and a.pk_cc = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and a.flag_cc = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and a.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and a.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and a.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		UNION ALL
+		select a.amount, a.dt_paymode 
+		from bl_deposit a
+		left join BL_SETTLE b on a.pk_settle = b.pk_settle 
+		where a.EU_DPTYPE in ('4') and a.eu_pvtype = '3' and a.dt_paymode in ('7','8') and a.eu_direct = '1' and a.dt_bank='1'
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and a.pk_cc = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and a.flag_cc = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and a.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and a.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and a.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		) t1
+		group by t1.dt_paymode
+	</select>
+	
+		<select id="qryJstkAmtGzh" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		select sum(t1.amount) as amount, t1.dt_paymode from
+		(select a.amount, a.dt_paymode 
+		from bl_deposit a
+		left join BL_SETTLE b on a.pk_settle = b.pk_settle 
+		where a.EU_DPTYPE in ('0','1') and a.eu_pvtype = '3' and a.dt_paymode in ('7','8') and a.eu_direct = '-1' AND (a.dt_bank != '1' or a.dt_bank is null)
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and a.pk_cc = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and a.flag_cc = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and a.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and a.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and a.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		UNION ALL
+		select a.amount, a.dt_paymode 
+		from bl_deposit a
+		left join BL_SETTLE b on a.pk_settle = b.pk_settle 
+		where a.EU_DPTYPE in ('4') and a.eu_pvtype = '3' and a.dt_paymode in ('7','8') and a.eu_direct = '1' AND (a.dt_bank != '1' or a.dt_bank is null)
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and a.pk_cc = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and a.flag_cc = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and a.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and a.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and a.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		) t1
+		group by t1.dt_paymode
+	</select>
+	
+	
+	<select id="qryJsskAmt" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		select sum(t1.amount) as amount, t1.dt_paymode from
+		(select a.amount, a.dt_paymode 
+		from bl_deposit a
+		left join BL_SETTLE b on a.pk_settle = b.pk_settle 
+		where a.EU_DPTYPE in ('0','1') and a.eu_pvtype = '3' and a.dt_paymode in ('1','3','92') and a.eu_direct = '1'
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and a.pk_cc = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and a.flag_cc = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and a.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and a.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and a.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		UNION ALL
+		select a.amount, a.dt_paymode 
+		from bl_deposit a
+		left join BL_SETTLE b on a.pk_settle = b.pk_settle 
+		where a.EU_DPTYPE in ('4') and a.eu_pvtype = '3' and a.dt_paymode in ('1','3','92') and a.eu_direct = '-1' 
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and a.pk_cc = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and a.flag_cc = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and a.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and a.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and a.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		) t1
+		group by t1.dt_paymode
+	</select>
+	
+	<select id="qryJsskAmtSand" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		select sum(t1.amount) as amount, t1.dt_paymode from
+		(select a.amount, a.dt_paymode 
+		from bl_deposit a
+		left join BL_SETTLE b on a.pk_settle = b.pk_settle 
+		where a.EU_DPTYPE in ('0','1') and a.eu_pvtype = '3' and a.dt_paymode in ('7','8') and a.eu_direct = '1' and a.dt_bank = '1'
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and a.pk_cc = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and a.flag_cc = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and a.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and a.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and a.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		UNION ALL
+		select a.amount, a.dt_paymode 
+		from bl_deposit a
+		left join BL_SETTLE b on a.pk_settle = b.pk_settle 
+		where a.EU_DPTYPE in ('4') and a.eu_pvtype = '3' and a.dt_paymode in ('7','8') and a.eu_direct = '-1'  and a.dt_bank = '1'
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and a.pk_cc = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and a.flag_cc = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and a.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and a.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and a.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		) t1
+		group by t1.dt_paymode
+	</select>
+	
+	
+	<select id="qryJsskAmtGzh" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		select sum(t1.amount) as amount, t1.dt_paymode from
+		(select a.amount, a.dt_paymode 
+		from bl_deposit a
+		left join BL_SETTLE b on a.pk_settle = b.pk_settle 
+		where a.EU_DPTYPE in ('0','1') and a.eu_pvtype = '3' and a.dt_paymode in ('7','8') and a.eu_direct = '1' and a.dt_bank != '1'
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and a.pk_cc = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and a.flag_cc = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and a.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and a.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and a.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		UNION ALL
+		select a.amount, a.dt_paymode 
+		from bl_deposit a
+		left join BL_SETTLE b on a.pk_settle = b.pk_settle 
+		where a.EU_DPTYPE in ('4') and a.eu_pvtype = '3' and a.dt_paymode in ('7','8') and a.eu_direct = '-1'  and a.dt_bank != '1'
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and a.pk_cc = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and a.flag_cc = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and a.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and a.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and a.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		) t1
+		group by t1.dt_paymode
+	</select>
+	
+	
+	<select id="qryAmtKy" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		
+		SELECT
+			SUM (amount) AS amtKy
+		FROM
+			(
+				SELECT DISTINCT
+					a.pk_settle,
+					(b.amount - isNULL(a.AMOUNT_DISC, 0)) as amount
+				FROM
+					BL_SETTLE a
+				inner join BL_SETTLE_DETAIL b on a.pk_settle = b.pk_settle
+				inner join BD_PAYER payer on payer.PK_PAYER=b.pk_payer
+				WHERE
+					payer.code in ('03', '04', '05', '06', '07', '08','10', '14')
+				<choose>
+				    <when test="pkCc != null and pkCc != ''">
+				       and a.PK_CC = #{pkCc,jdbcType=VARCHAR}
+				    </when>
+				    <otherwise>
+				        and a.FLAG_CC = '0'
+				    </otherwise>
+				</choose>
+				<if test="pkOrg != null and pkOrg != ''">
+					and a.pk_org_st = #{pkOrg,jdbcType=VARCHAR}
+				</if>
+				<if test="pkEmp != null and pkEmp != ''">
+					and a.pk_emp_st = #{pkEmp,jdbcType=VARCHAR}
+				</if>
+				<if test="dateEnd != null and dateEnd != ''">
+					and a.date_st &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+					'yyyymmddhh24miss')
+				</if>
+			) AS t1
+	</select>
+	
+	<select id="qryStInvVoid" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsInvalidStInv">
+		select inv.pk_invcate,
+		inv.pk_empinvoice,
+		inv.code_inv
+		from bl_invoice inv
+		inner join bd_invcate cate on inv.pk_invcate=cate.pk_invcate
+		where
+		cate.eu_type = '1' and inv.flag_cancel = 1  and (inv.flag_back is null or inv.flag_back = '0')
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and (inv.PK_CC = #{pkCc,jdbcType=VARCHAR}
+		       or inv.pk_cc_cancel = #{pkCc,jdbcType=VARCHAR})
+		    </when>
+		    <otherwise>
+		        and (inv.FLAG_CC = '0'
+		        or inv.flag_cc_cancel = 0)
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and inv.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and inv.pk_emp_cancel = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and inv.date_cancel &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		order by inv.code_inv asc
+	</select>
+	
+	<select id="qryStInvBack" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsInvalidStInv">
+		select inv.pk_invcate,
+		inv.pk_empinvoice,
+		inv.code_inv
+		from bl_invoice inv
+		inner join bd_invcate cate on inv.pk_invcate=cate.pk_invcate
+		where
+		cate.eu_type = '1' and inv.flag_cancel = 1  and inv.flag_back = '1'
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and (inv.PK_CC = #{pkCc,jdbcType=VARCHAR}
+		       or inv.pk_cc_cancel = #{pkCc,jdbcType=VARCHAR})
+		    </when>
+		    <otherwise>
+		        and (inv.FLAG_CC = '0'
+		        or inv.flag_cc_cancel = 0)
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and inv.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and inv.pk_emp_cancel = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and inv.date_cancel &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		order by inv.code_inv asc
+	</select>
+	
+	<select id="qryDepoInvVoid" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsDepoRtnInfo">
+		select depo.rept_no,
+		depo.pk_empinvoice
+		from bl_deposit depo
+		where depo.eu_dptype = 9 and
+		depo.eu_direct = -1
+		and depo.void_type = '2'
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and depo.PK_CC = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and depo.FLAG_CC = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and depo.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and depo.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and depo.create_time &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		order by depo.rept_no asc
+	</select>
+	
+	<select id="qryDepoInvBack" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsDepoRtnInfo">
+		select depo.rept_no,
+		depo.pk_empinvoice
+		from bl_deposit depo
+		where depo.eu_dptype = 9 and
+		depo.eu_direct = -1
+		and depo.void_type = '1'
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and depo.PK_CC = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and depo.FLAG_CC = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and depo.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and depo.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and depo.create_time &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		order by depo.rept_no asc
+	</select>
+	
+	<select id="qryDepoAmtBack" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		select sum(depo.amount) as amount
+		from bl_deposit depo
+		where depo.eu_dptype = 9 and
+		depo.eu_direct = -1
+		and depo.void_type = '1'
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and depo.PK_CC = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and depo.FLAG_CC = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and depo.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and depo.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and depo.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+	</select>
+	
+		<select id="qryDepoAmtCollect" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		select sum(depo.amount) as amount
+		from bl_deposit depo
+		where depo.eu_dptype = 9 and
+		depo.eu_direct = 1
+		and depo.void_type = '0'
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and depo.PK_CC = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and depo.FLAG_CC = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and depo.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and depo.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and depo.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+	</select>
+	
+	<select id="qryAmtPi" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		select sum(amount_pi) as amtPi from BL_SETTLE where pk_cc = #{pkCc,jdbcType=VARCHAR}
+	</select>
+	
+ 	<select id="qryNotSummarizedInfo" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsBaBlSumVo">
+		select cc.pk_emp_opera,
+		       cc.name_emp_opera,
+		       cc.date_end as date_cc,
+					 sum(cc.amt_prep) amt_prep,   
+		       sum(cc.amt_ca) amt_ca,    
+		       sum(cc.amt_sor) amt_sor,  
+		       sum(cc.amt_settle) amt_settle,  
+		       sum(ccDs.amt_ip) amt_ip, 
+		       sum(ccDs.amt_ins) amt_ins,    
+		       sum(cc.amt_prep_rt) amt_prep_rt, 
+		       sum(cc.amt_ar) amt_ar,    
+		       sum(cc.amt_repair) amt_repair, 
+		       sum(ccDs.amt_ss_xj) amt_ss_xj,
+		       sum(ccDs.amt_ss) amt_ss
+		  from bl_cc cc
+		  Inner Join bl_cc_ds ccDs on cc.pk_cc = ccDs.pk_cc
+		 where 
+		       cc.eu_cctype = 8 
+		       <if test="dateBegin != null and dateEnd != ''">
+					and cc.date_end &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},
+					'yyyymmddhh24miss')
+				</if>
+		       <if test="dateEnd != null and dateEnd != ''">
+					and cc.date_end &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+					'yyyymmddhh24miss')
+				</if>
+			<choose>
+			    <when test="dateLeader!= null and dateLeader != ''">
+			       and cc.flag_leader = 1
+					and cc.pk_emp_leader = #{pkEmp,jdbcType=VARCHAR}
+					and cc.date_leader = to_date(#{dateLeader,jdbcType=VARCHAR},
+					'yyyymmddhh24miss')
+			    </when>
+			    <otherwise>
+			        and cc.flag_leader = '0'
+			    </otherwise>
+			</choose>
+		group by cc.pk_emp_opera,
+		         cc.name_emp_opera,
+		         cc.date_end
+	</select>
+	
+	<select id="qryBackInvInfo" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsbaBackInvInfo">
+		select 
+		case c.flag_back when '1' then d.name else '' end as sf_name,
+		case c.flag_back when '1' then e.code_ip else '' end as code_ip,
+		case c.flag_back when '1' then e.name_pi else '' end as name_pi,
+		c.code_inv, 
+		case c.flag_back when '1' then cast(c.amount_inv - c.amount_inv - c.amount_inv as varchar) else '*' end as amount_inv,
+		case c.flag_back when '1' then '退发票' else '作废发票' end as note
+		from BL_SETTLE a inner join BL_ST_INV b on a.pk_settle = b.pk_settle
+		inner join BL_INVOICE c on b.pk_invoice = c.pk_invoice
+		inner join bd_hp d on d.pk_hp = a.pk_insurance
+		inner join PI_MASTER e on e.pk_pi = a.pk_pi
+		where c.flag_cancel = '1'
+		and a.eu_pvtype = 3 
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and c.pk_cc_cancel = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and (c.FLAG_CC = '0'
+		        or c.flag_cc_cancel = 0)
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and c.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and c.pk_emp_cancel = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and c.date_cancel &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		group by c.flag_back, c.code_inv, d.name, e.code_ip, e.name_pi, c.amount_inv, c.ts
+		order by c.flag_back desc, c.ts asc 
+	</select>
+	
+	<select id="qryBackDepoInfo" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsbaBackDepoInfo">
+		select 
+		case a.void_type when '1' then b.name else '' end as sf_name,
+		case a.void_type when '1' then c.code_ip else '' end as code_ip,
+		case a.void_type when '1' then c.name_pi else '' end as name_pi,
+		a.rept_no, 
+		case a.void_type when '1' then cast(a.amount as varchar) else '*' end as amount,
+		case a.eu_pvtype when '3' then case a.void_type when '1' then '退预交金收据' else '作废预交金收据' end 
+		else '退门禁卡预交金' end as note 
+		from BL_DEPOSIT a 
+		inner join PI_MASTER c on c.pk_pi = a.pk_pi
+		inner join PV_ENCOUNTER d on a.pk_pv = d.pk_pv
+		inner join bd_hp b on b.pk_hp = d.pk_insu
+		where 
+		(a.void_type = '1' or a.void_type = '2')
+		and (a.eu_pvtype = 3 or a.eu_pvtype = 11) 
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and a.PK_CC = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and a.FLAG_CC = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and a.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and a.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and a.create_time &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		order by a.void_type, a.ts asc
+	</select>
+	
+	<select id="qryssAmt" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.common.module.bl.BlCc">
+		select sum(st.amount_st) amt_settle ,sum(st.amount_prep) amt_prep_rt,
+		sum(st.amount_insu) amt_insu, sum(amount_pi) amt_pi
+		from bl_settle st where st.eu_pvtype = 3 and st.flag_cc = 0
+		<if test="pkOrg != null and pkOrg != ''">
+			and st.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and st.pk_emp_st = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and st.date_st &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		
+
+	</select>
+	
+	
+	<select id="qryJstyjjAmt" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		select sum(a.amount) as amount, a.dt_paymode 
+		from bl_deposit a
+		LEFT JOIN BL_SETTLE b ON a.pk_settle = b.pk_settle
+		where (a.eu_dptype = '0' or a.eu_dptype = '1') and a.eu_pvtype = '3' and a.dt_paymode in ('1','3','92') and a.eu_direct = '-1'
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and a.pk_cc = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and a.flag_cc = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and a.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and a.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and a.create_time &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		and (b.pk_settle_canc is null or b.pk_settle_canc not in (
+			select nt1.PK_SETTLE from BL_SETTLE nt1 
+			inner join bl_deposit nt2 on nt1.pk_settle = nt2.pk_settle 
+			where nt1.flag_canc = '1' and nt1.PK_SETTLE_CANC is  null 
+			and nt2.dt_paymode in ('1','3','92')
+			<choose>
+			    <when test="pkCc != null and pkCc != ''">
+			       and nt2.pk_cc = #{pkCc,jdbcType=VARCHAR}
+			    </when>
+			    <otherwise>
+			        and nt2.flag_cc = '0'
+			    </otherwise>
+			</choose>
+			<if test="pkOrg != null and pkOrg != ''">
+				and nt2.pk_org = #{pkOrg,jdbcType=VARCHAR}
+			</if>
+			<if test="pkEmp != null and pkEmp != ''">
+				and nt2.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+			</if>
+			<if test="dateEnd != null and dateEnd != ''">
+				and nt2.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+				'yyyymmddhh24miss')
+			</if>
+		))
+		and b.pk_settle not in (
+			select nt1.PK_SETTLE_CANC from BL_SETTLE nt1 
+			inner join bl_deposit nt2 on nt1.pk_settle = nt2.pk_settle 
+			where nt1.flag_canc = '1' and nt1.PK_SETTLE_CANC is not  null 
+			and nt2.dt_paymode in ('1','3','92')
+			<choose>
+			    <when test="pkCc != null and pkCc != ''">
+			       and nt2.pk_cc = #{pkCc,jdbcType=VARCHAR}
+			    </when>
+			    <otherwise>
+			        and nt2.flag_cc = '0'
+			    </otherwise>
+			</choose>
+			<if test="pkOrg != null and pkOrg != ''">
+				and nt2.pk_org = #{pkOrg,jdbcType=VARCHAR}
+			</if>
+			<if test="pkEmp != null and pkEmp != ''">
+				and nt2.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+			</if>
+			<if test="dateEnd != null and dateEnd != ''">
+				and nt2.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+				'yyyymmddhh24miss')
+			</if>
+		)
+		group by a.dt_paymode
+	</select>
+
+ 	<select id="qryJstyjjAmtSand" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		select sum(a.amount) as amount, a.dt_paymode 
+		from bl_deposit a
+		LEFT JOIN BL_SETTLE b ON a.pk_settle = b.pk_settle
+		where (a.eu_dptype = '0' or a.eu_dptype = '1') and a.eu_pvtype = '3' and a.dt_paymode in ('7','8') and a.eu_direct = '-1'
+		and a.dt_bank = '1'
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and a.pk_cc = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and a.flag_cc = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and a.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and a.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and a.create_time &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		and (b.pk_settle_canc is null or b.pk_settle_canc not in (
+			select nt1.PK_SETTLE from BL_SETTLE nt1 
+			inner join bl_deposit nt2 on nt1.pk_settle = nt2.pk_settle 
+			where nt1.flag_canc = '1' and nt1.PK_SETTLE_CANC is  null 
+			and nt2.dt_paymode in ('7','8') and nt2.dt_bank = '1'
+			<choose>
+			    <when test="pkCc != null and pkCc != ''">
+			       and nt2.pk_cc = #{pkCc,jdbcType=VARCHAR}
+			    </when>
+			    <otherwise>
+			        and nt2.flag_cc = '0'
+			    </otherwise>
+			</choose>
+			<if test="pkOrg != null and pkOrg != ''">
+				and nt2.pk_org = #{pkOrg,jdbcType=VARCHAR}
+			</if>
+			<if test="pkEmp != null and pkEmp != ''">
+				and nt2.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+			</if>
+			<if test="dateEnd != null and dateEnd != ''">
+				and nt2.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+				'yyyymmddhh24miss')
+			</if>
+		))
+		and b.pk_settle not in (
+			select nt1.PK_SETTLE_CANC from BL_SETTLE nt1 
+			inner join bl_deposit nt2 on nt1.pk_settle = nt2.pk_settle 
+			where nt1.flag_canc = '1' and nt1.PK_SETTLE_CANC is not  null 
+			and nt2.dt_paymode in ('7','8') and nt2.dt_bank = '1'
+			<choose>
+			    <when test="pkCc != null and pkCc != ''">
+			       and nt2.pk_cc = #{pkCc,jdbcType=VARCHAR}
+			    </when>
+			    <otherwise>
+			        and nt2.flag_cc = '0'
+			    </otherwise>
+			</choose>
+			<if test="pkOrg != null and pkOrg != ''">
+				and nt2.pk_org = #{pkOrg,jdbcType=VARCHAR}
+			</if>
+			<if test="pkEmp != null and pkEmp != ''">
+				and nt2.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+			</if>
+			<if test="dateEnd != null and dateEnd != ''">
+				and nt2.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+				'yyyymmddhh24miss')
+			</if>
+		)
+		group by a.dt_paymode
+	</select>
+ 
+ 	<select id="qryJstyjjAmtGzh" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		select sum(a.amount) as amount, a.dt_paymode 
+		from bl_deposit a
+		LEFT JOIN BL_SETTLE b ON a.pk_settle = b.pk_settle
+		where (a.eu_dptype = '0' or a.eu_dptype = '1') and a.eu_pvtype = '3' and a.dt_paymode in ('1','3','7','8','92') and a.eu_direct = '-1'
+		and a.dt_bank != '1'
+		<choose>
+		    <when test="pkCc != null and pkCc != ''">
+		       and a.pk_cc = #{pkCc,jdbcType=VARCHAR}
+		    </when>
+		    <otherwise>
+		        and a.flag_cc = '0'
+		    </otherwise>
+		</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+			and a.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and a.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and a.create_time &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		and (b.pk_settle_canc is null or b.pk_settle_canc not in (
+			select nt1.PK_SETTLE from BL_SETTLE nt1 
+			inner join bl_deposit nt2 on nt1.pk_settle = nt2.pk_settle 
+			where nt1.flag_canc = '1' and nt1.PK_SETTLE_CANC is  null 
+			and nt2.dt_paymode in ('7','8') and nt2.dt_bank != '1'
+			<choose>
+			    <when test="pkCc != null and pkCc != ''">
+			       and nt2.pk_cc = #{pkCc,jdbcType=VARCHAR}
+			    </when>
+			    <otherwise>
+			        and nt2.flag_cc = '0'
+			    </otherwise>
+			</choose>
+			<if test="pkOrg != null and pkOrg != ''">
+				and nt2.pk_org = #{pkOrg,jdbcType=VARCHAR}
+			</if>
+			<if test="pkEmp != null and pkEmp != ''">
+				and nt2.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+			</if>
+			<if test="dateEnd != null and dateEnd != ''">
+				and nt2.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+				'yyyymmddhh24miss')
+			</if>
+		))
+		and b.pk_settle not in (
+			select nt1.PK_SETTLE_CANC from BL_SETTLE nt1 
+			inner join bl_deposit nt2 on nt1.pk_settle = nt2.pk_settle 
+			where nt1.flag_canc = '1' and nt1.PK_SETTLE_CANC is not  null 
+			and nt2.dt_paymode in ('7','8') and nt2.dt_bank != '1'
+			<choose>
+			    <when test="pkCc != null and pkCc != ''">
+			       and nt2.pk_cc = #{pkCc,jdbcType=VARCHAR}
+			    </when>
+			    <otherwise>
+			        and nt2.flag_cc = '0'
+			    </otherwise>
+			</choose>
+			<if test="pkOrg != null and pkOrg != ''">
+				and nt2.pk_org = #{pkOrg,jdbcType=VARCHAR}
+			</if>
+			<if test="pkEmp != null and pkEmp != ''">
+				and nt2.pk_emp_pay = #{pkEmp,jdbcType=VARCHAR}
+			</if>
+			<if test="dateEnd != null and dateEnd != ''">
+				and nt2.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+				'yyyymmddhh24miss')
+			</if>
+		)
+		group by a.dt_paymode
+	</select>
+ 
+	
+	<select id="qryNbzzList" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.pro.zsba.compay.daysettle.pub.vo.ZsbaBackDepoInfo">
+		select b.*, e.name as sf_name, c.code_ip, c.name_pi from BL_SETTLE a inner join BL_DEPOSIT b on a.PK_SETTLE = b.PK_SETTLE
+		inner join PI_MASTER c on c.pk_pi = a.pk_pi
+		inner join PV_ENCOUNTER d on a.pk_pv = d.pk_pv
+		inner join bd_hp e on e.pk_hp = d.pk_insu
+		where b.dt_paymode = '91'
+		<choose>
+				    <when test="pkCc != null and pkCc != ''">
+				       and a.pk_cc = #{pkCc,jdbcType=VARCHAR}
+				    </when>
+				    <otherwise>
+				        and a.FLAG_CC = '0'
+				    </otherwise>
+				</choose>
+		<if test="pkOrg != null and pkOrg != ''">
+					and a.pk_org = #{pkOrg,jdbcType=VARCHAR}
+				</if>
+				<if test="pkEmp != null and pkEmp != ''">
+					and a.pk_emp_st = #{pkEmp,jdbcType=VARCHAR}
+				</if>
+				<if test="dateEnd != null and dateEnd != ''">
+					and a.date_st &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},
+					'yyyymmddhh24miss')
+				</if>
+	</select>
+</mapper>

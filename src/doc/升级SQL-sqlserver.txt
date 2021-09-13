@@ -1,0 +1,52 @@
+
+--1.添加字段
+alter table QRTZ_JOB_DETAILS add SCHED_NAME VARCHAR(120);
+alter table QRTZ_JOB_DETAILS add IS_UPDATE_DATA VARCHAR(1) default '1' not null;
+alter table QRTZ_JOB_DETAILS add IS_NONCONCURRENT VARCHAR(1) default '0' not null;
+alter table qrtz_triggers add SCHED_NAME VARCHAR(120);
+alter table qrtz_simple_triggers add SCHED_NAME VARCHAR(120);
+alter table qrtz_cron_triggers add SCHED_NAME VARCHAR(120);
+alter table qrtz_blob_triggers add SCHED_NAME VARCHAR(120);
+alter table qrtz_calendars add SCHED_NAME VARCHAR(120);
+alter table qrtz_fired_triggers  add SCHED_NAME VARCHAR(120);
+alter table qrtz_fired_triggers  add SCHED_TIME bigint;
+alter table qrtz_fired_triggers add IS_NONCONCURRENT VARCHAR(1) default '0' not null;
+alter table qrtz_scheduler_state add SCHED_NAME VARCHAR(120);
+alter table qrtz_locks  add SCHED_NAME VARCHAR(120);
+alter table QRTZ_PAUSED_TRIGGER_GRPS add SCHED_NAME VARCHAR(120);
+
+--2.设置值（目前没有启用cloud模式，全部设置为一个值）
+update QRTZ_JOB_DETAILS set SCHED_NAME='feaHumsScheduler';
+update qrtz_triggers set SCHED_NAME='feaHumsScheduler';
+update qrtz_simple_triggers set SCHED_NAME='feaHumsScheduler';
+update qrtz_cron_triggers set SCHED_NAME='feaHumsScheduler';
+update qrtz_blob_triggers set SCHED_NAME='feaHumsScheduler';
+update qrtz_calendars set SCHED_NAME='feaHumsScheduler';
+update qrtz_fired_triggers set SCHED_NAME='feaHumsScheduler';
+update qrtz_scheduler_state set SCHED_NAME='feaHumsScheduler';
+update qrtz_locks set SCHED_NAME='feaHumsScheduler';
+update QRTZ_PAUSED_TRIGGER_GRPS set SCHED_NAME='feaHumsScheduler';
+
+--3.添加约束
+alter table QRTZ_JOB_DETAILS alter column SCHED_NAME varchar(120) not null;
+alter table qrtz_triggers alter column SCHED_NAME varchar(120) not null;
+alter table qrtz_simple_triggers alter column SCHED_NAME varchar(120) not null;
+alter table qrtz_cron_triggers alter column SCHED_NAME varchar(120) not null;
+alter table qrtz_blob_triggers alter column SCHED_NAME varchar(120) not null;
+alter table qrtz_calendars alter column SCHED_NAME varchar(120) not null;
+alter table qrtz_fired_triggers alter column SCHED_NAME varchar(120) not null;
+alter table qrtz_scheduler_state alter column SCHED_NAME varchar(120) not null;
+alter table qrtz_locks alter column SCHED_NAME varchar(120) not null;
+alter table QRTZ_PAUSED_TRIGGER_GRPS alter column SCHED_NAME varchar(120) not null;
+
+--4.添加唯一键
+alter table QRTZ_JOB_DETAILS add CONSTRAINT QRTZ_JOB_DETAILS_PK PRIMARY KEY (SCHED_NAME,JOB_NAME,JOB_GROUP);
+alter table qrtz_triggers add CONSTRAINT QRTZ_TRIGGERS_PK PRIMARY KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP);
+alter table qrtz_simple_triggers add CONSTRAINT QRTZ_SIMPLE_TRIG_PK PRIMARY KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP);
+alter table qrtz_cron_triggers add CONSTRAINT QRTZ_CRON_TRIG_PK PRIMARY KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP);
+alter table qrtz_blob_triggers add CONSTRAINT QRTZ_BLOB_TRIG_PK PRIMARY KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP);
+alter table qrtz_calendars add CONSTRAINT QRTZ_CALENDARS_PK PRIMARY KEY (SCHED_NAME,CALENDAR_NAME);
+alter table qrtz_fired_triggers add CONSTRAINT QRTZ_FIRED_TRIGGER_PK PRIMARY KEY (SCHED_NAME,ENTRY_ID);
+alter table qrtz_scheduler_state add CONSTRAINT QRTZ_SCHEDULER_STATE_PK PRIMARY KEY (SCHED_NAME,INSTANCE_NAME);
+alter table qrtz_locks add CONSTRAINT QRTZ_LOCKS_PK PRIMARY KEY (SCHED_NAME,LOCK_NAME);
+alter table QRTZ_PAUSED_TRIGGER_GRPS add CONSTRAINT QRTZ_PAUSED_TRIG_GRPS_PK PRIMARY KEY (SCHED_NAME,TRIGGER_GROUP);

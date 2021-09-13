@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ma.pub.platform.pskq.dao.AdmissionEvaluationSheetDao">
+
+
+    <select id="admissionEvaluationSheet" resultType="DynaBean">
+
+        select doc.NAME doc_name, p.NAME_PI, v.Code label_code, v.NAME label_name, v.TEXT label_value,
+        p.PK_PV,p.CODE_PV,p.PK_PI
+        from EMR_MED_VALUE v
+        LEFT JOIN EMR_MED_REC doc on doc.PK_DOC = v.ITEM
+        LEFT JOIN PV_ENCOUNTER p on p.PK_PV = v.FATHER
+        where
+        doc.DEL_FLAG != '1'
+        and v.DEL_FLAG != '1'
+        and p.PK_PV = #{pkPv}
+        and INSTR(doc.NAME, '入院评估') > 0
+    </select>
+
+
+    <select id="singleRiskAssessment" resultType="DynaBean">
+
+        select doc.NAME doc_name, p.NAME_PI, v.Code label_code, v.NAME label_name, v.TEXT label_value,
+        p.PK_PV,p.CODE_PV,p.PK_PI
+        from EMR_MED_VALUE v
+        LEFT JOIN EMR_MED_REC doc on doc.PK_DOC = v.ITEM
+        LEFT JOIN PV_ENCOUNTER p on p.PK_PV = v.FATHER
+        where
+        doc.DEL_FLAG != '1'
+        and v.DEL_FLAG != '1'
+        and p.PK_PV = #{pkPv}
+        and INSTR(doc.NAME, '压疮风险评估') > 0
+    </select>
+
+</mapper>

@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.bl.pub.syx.dao.OpBlccRegMapper">
+	<!-- 获取结账记录 -->
+	<select id="queryBlccList" parameterType="java.util.HashMap" resultType="DynaBean">
+		select cc.date_cc, cc.date_begin,cc.date_end,cc.eu_status,cc.pk_cc
+ 		from bl_cc cc
+ 		where cc.pk_org = #{pkOrg,jdbcType=VARCHAR}  
+ 		<if test="pkEmpOpera != null and pkEmpOpera != ''">
+        	and cc.pk_emp_opera = #{pkEmpOpera,jdbcType=VARCHAR} 
+        </if>
+        <if test="euCctype != null and euCctype != ''">
+			and cc.eu_cctype = #{euCctype,jdbcType=VARCHAR}
+		</if>
+		<if test="dateCcBegin != null and dateCcBegin != ''">
+			and cc.date_cc &gt;= to_date(#{dateCcBegin},'YYYYMMDDHH24MISS')
+		</if>
+		<if test="dateCcEnd != null and dateCcEnd != ''">
+			and cc.date_cc &lt;= to_date(#{dateCcEnd},'YYYYMMDDHH24MISS')
+		</if>	
+	</select>
+	<select id="queryBlccByPaymode" parameterType="java.util.HashMap" resultType="DynaBean">
+	select pk_schsrv,name,sum(cnt)cnt,type,sum(amount)amount,dt_paymode,sum(amount_depo)amount_depo,name_paymode
+	from (
+	       select op.pk_schsrv,
+	              srv.name,
+	              (case when st.DT_STTYPE = '20' then -1 else 1 end)         cnt,
+	              (case when st.DT_STTYPE = '20' then '作废' else '挂号' end) as type,
+	              st.amount_pi                                               amount,
+	              depo.dt_paymode,
+	              depo.amount                                             as amount_depo,
+	              doc.name                                                as name_paymode
+	       from bl_settle st
+	              inner Join bl_deposit depo on st.pk_settle = depo.pk_settle
+	              inner join bd_defdoc doc on doc.CODE = depo.DT_PAYMODE and doc.CODE_DEFDOCLIST = '110100'
+	              left join pv_op op on op.pk_pv = st.pk_pv
+	              left join pv_er er on er.pk_pv = st.pk_pv
+	              inner Join sch_srv srv on decode(op.pk_schsrv, null, er.pk_schsrv, op.pk_schsrv) = srv.pk_schsrv
+	       where st.pk_cc=#{pkCc,jdbcType=CHAR} and st.flag_cc='1'
+	     ) tmp
+			group By
+			      pk_schsrv,
+			      name,
+			      dt_paymode,
+			      name,type,name_paymode
+	   order by dt_paymode 
+	</select>
+	<select id="queryBlCcInfoByBlccPay" parameterType="java.util.HashMap" resultType="com.zebone.nhis.common.module.bl.BlCc">
+	   select cc.inv_info_canc, 
+        cc.cnt_inv, 
+        cc.inv_info 
+        from bl_cc cc
+       where cc.pk_cc = #{pkCc,jdbcType=CHAR} 
+	</select>
+	<select id="queryReceiptByPaymode" parameterType="java.util.HashMap" resultType="DynaBean">
+	   select  depo.dt_paymode,
+       count(distinct st.receipt_no) cnt,
+       doc.name as name_paymode 
+	   from bl_settle st
+	   inner Join bl_deposit depo on st.pk_settle=depo.pk_settle 
+	   inner join bd_defdoc doc on doc.CODE = depo.DT_PAYMODE and doc.CODE_DEFDOCLIST='110100'
+	   where st.pk_cc= #{pkCc,jdbcType=CHAR}  And st.pk_emp_st&lt;&gt;st.pk_emp_receipt and  st.pk_emp_receipt=#{pkEmpReceipt,jdbcType=CHAR} 
+	   group by depo.dt_paymode,doc.name 
+	</select>
+	<select id="queryUnBlccByPaymode" parameterType="java.util.HashMap" resultType="DynaBean">
+	select pk_schsrv,name,sum(cnt) as cnt,sum(amount) as amount,sum(amount_depo) amount_depo,dt_paymode,name_paymode,type from(
+	  select op.pk_schsrv,
+       srv.name,
+       (case when pv.eu_status ='9' and st.dt_sttype='20' then -1 else 1 end) cnt  , 
+       st.amount_pi as amount,
+       depo.amount amount_depo,
+       depo.dt_paymode,
+       doc.name as name_paymode,
+       (case when pv.eu_status ='9' and st.dt_sttype='20' then '作废' else '挂号' end) as type
+       	   from  pv_op op 
+	   inner Join pv_encounter pv on op.pk_pv=pv.pk_pv
+	   inner Join bl_settle st on op.pk_pv=st.pk_pv and st.dt_sttype In('00' ,'20') 
+	   inner Join bl_deposit depo on st.pk_settle=depo.pk_settle 
+	   inner join bd_defdoc doc on doc.CODE = depo.DT_PAYMODE and doc.CODE_DEFDOCLIST='110100'
+	   inner Join sch_srv srv on op.pk_schsrv=srv.pk_schsrv
+	   where st.pk_org=#{pkOrg,jdbcType=CHAR}  
+	      and st.pk_emp_st=#{pkEmp,jdbcType=CHAR} 
+	      and st.date_st&lt;=to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+	      and st.flag_cc='0' 
+	  union all	
+	   select er.pk_schsrv,
+       srv.name,
+       (case when pv.eu_status ='9' and st.dt_sttype='20' then -1 else 1 end) cnt  , 
+       st.amount_pi as amount,
+	   depo.amount amount_depo,
+       depo.dt_paymode,
+       doc.name as name_paymode,
+       (case when pv.eu_status ='9' and st.dt_sttype='20' then '作废' else '挂号' end) as type
+	   from  pv_er er 
+	   inner join pv_encounter pv on er.pk_pv=pv.pk_pv
+	   inner join bl_settle st on er.pk_pv=st.pk_pv and st.dt_sttype in('00' ,'20')
+	   inner join bl_deposit depo on st.pk_settle=depo.pk_settle 
+	   inner join bd_defdoc doc on doc.CODE = depo.DT_PAYMODE and doc.CODE_DEFDOCLIST='110100'
+	   inner join sch_srv srv on er.pk_schsrv=srv.pk_schsrv
+	   where st.pk_org=#{pkOrg,jdbcType=CHAR}  
+	   and  st.pk_emp_st=#{pkEmp,jdbcType=CHAR}  
+       and st.date_st&lt;=to_date(#{dateEnd},'YYYYMMDDHH24MISS')  
+       and st.flag_cc='0' 
+       ) tmp 
+       group by pk_schsrv,name,dt_paymode,name_paymode,type
+       order by dt_paymode 
+	</select>
+	<select id="queryUnBlccReceipt" parameterType="java.util.HashMap" resultType="DynaBean">
+	  select Min(st.receipt_no) begin_inv,  
+             Max(st.receipt_no)  end_inv,  
+			 Count(Distinct st.receipt_no) cnt 
+	  from bl_settle st
+	  where st.pk_org=#{pkOrg,jdbcType=CHAR}   
+        and st.pk_emp_receipt=#{pkEmp,jdbcType=CHAR}  
+        and st.dt_sttype In('00','20')  
+		and	st.date_receipt&lt;=to_date(#{dateEnd},'YYYYMMDDHH24MISS')  
+		and	st.flag_cc='0' 
+	</select>
+	<select id="queryUnBlccRtnReceipt" parameterType="java.util.HashMap" resultType="DynaBean">
+	  select
+       st.receipt_no,
+       to_char(st.date_receipt,'YY-MM-DD') as date_receipt,
+       emp.code_emp
+	 from bl_settle st
+     inner join bd_ou_employee emp on st.pk_emp_receipt=emp.pk_emp
+     where st.pk_org=#{pkOrg,jdbcType=CHAR}  
+      and st.pk_emp_st=#{pkEmp,jdbcType=CHAR}   
+      and st.dt_sttype='20'   
+      and st.date_st&lt;=to_date(#{dateEnd},'YYYYMMDDHH24MISS')   
+      and  st.flag_cc='0'  
+	</select>
+	<!-- 查询未结账支付信息 -->
+	<select id="qryUnBlccPayDetail" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.bl.BlCcPay">
+		SELECT
+		  nvl(t2.dt_paymode, t3.dt_paymode) dt_paymode,
+		  nvl(t2.name_paymode,t3.name_paymode) name_paymode,
+		  CASE WHEN t2.amt IS NULL
+		    THEN 0 ELSE t2.amt END                   amt,
+		  CASE WHEN t2.cnt_trade IS NULL
+		    THEN 0 ELSE t2.cnt_trade END             cnt_trade,
+		  CASE WHEN t3.amt_back IS NULL
+		    THEN 0 ELSE t3.amt_back END              amt_back,
+		  CASE WHEN t3.cnt_trade_back IS NULL
+		    THEN 0 ELSE t3.cnt_trade_back END        cnt_trade_back
+		FROM (select depo.dt_paymode,
+					doc.name name_paymode,
+		               CASE sum(depo.amount) WHEN NULL THEN 0 ELSE sum(depo.amount) END amt,
+		               count(1) cnt_trade
+		          from bl_deposit depo
+		               inner join bl_settle st on depo.pk_settle=st.pk_settle
+		                left join bd_defdoc doc on doc.code = depo.dt_paymode and doc.DEL_FLAG = '0' and doc.CODE_DEFDOCLIST = '110100'
+		        where 
+		        		<if test="pkEmp != null and pkEmp != ''">
+		        	  		st.pk_org=#{pkOrg,jdbcType=CHAR} and
+			              depo.pk_emp_pay=#{pkEmp,jdbcType=CHAR} and
+			              depo.date_pay &lt;=to_date(#{dateEnd,jdbcType=VARCHAR},'yyyymmddhh24miss') 
+			              and st.eu_pvtype in(1,2,4) 
+			              and depo.flag_cc='0' 
+			              and depo.eu_direct = '1' and 
+			              (st.DT_STTYPE = '00' or st.DT_STTYPE = '20')
+		        	  	</if>
+		        	  	<if test="pkCc!=null and pkCc!=''">
+	                	  	depo.pk_cc = #{pkCc,jdbcType=CHAR}
+	                	  	and  depo.eu_direct = '1'
+                	    </if>
+		        group by depo.dt_paymode,doc.name
+		     ) t2
+		  FULL JOIN (select depo.dt_paymode,
+		  					doc.name name_paymode,
+		                       CASE sum(depo.amount) WHEN NULL THEN 0 ELSE sum(depo.amount) END amt_back,
+		                       count(1) cnt_trade_back
+		                  from bl_deposit depo
+		                       inner join bl_settle st on depo.pk_settle=st.pk_settle
+		                        left join bd_defdoc doc on doc.code = depo.dt_paymode and doc.DEL_FLAG = '0' and doc.CODE_DEFDOCLIST = '110100'
+		                where 
+		                	  <if test="pkEmp != null and pkEmp != ''">
+		                	  	st.pk_org=#{pkOrg,jdbcType=CHAR} and
+					              depo.pk_emp_back=#{pkEmp,jdbcType=CHAR} and
+					              depo.date_pay &lt;=to_date(#{dateEnd,jdbcType=VARCHAR},'yyyymmddhh24miss') 
+			                      and st.eu_pvtype in(1,2,4) 
+			                      and depo.flag_cc='0' 
+			                      and depo.eu_direct = '-1' 
+			                      and  (st.DT_STTYPE = '00' or st.DT_STTYPE = '20')
+		                	  </if>
+		                	  <if test="pkCc!=null and pkCc!=''">
+		                	  	depo.pk_cc = #{pkCc,jdbcType=CHAR} and 
+		                	  	depo.eu_direct = '-1'
+		                	  </if>
+		                group by depo.dt_paymode,doc.name
+		    ) t3 ON t2.dt_paymode = t3.dt_paymode
+		
+	</select>
+	
+	<select id="queryCanCancelData" parameterType="java.lang.String" resultType="java.util.Map">
+			select count(1) cnt from bl_cc cc  
+			where cc.eu_cctype = 0 
+			and
+		       cc.date_cc &gt; (select blcc.date_cc from bl_cc blcc  
+		       where blcc.pk_cc = #{pkCc,jdbcType=VARCHAR}  
+		       and blcc.pk_emp_opera=cc.pk_emp_opera and blcc.eu_cctype = 1
+		       )
+	</select>
+	<select id="queryInvcateByCate" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.base.bd.price.BdInvcate">
+	   select * 
+	   from bd_invcate  
+	   where pk_org = #{pkOrg,jdbcType=VARCHAR}  and eu_type = #{euType,jdbcType=VARCHAR} 
+	</select>
+</mapper>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTDConfig 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+
+	<settings>
+		<setting name="mapUnderscoreToCamelCase" value="true" />
+	</settings>
+
+	<typeAliases>
+		<typeAlias alias="DynaBean" type="com.zebone.platform.modules.mybatis.DynaBean"/>
+	</typeAliases>
+	<plugins>
+		<!-- 分页查询插件 -->
+		<plugin interceptor="com.zebone.nhis.common.module.mybatis.MyBatisPage">
+		<!-- 表示使用的是oracle数据库 ,进行分页查询时，使用oracle分页形式,如果没有指定，将使用逻辑分页形式-->
+			<property name="dialect" value="oracle"/>
+		</plugin>
+		<plugin interceptor="com.zebone.nhis.common.module.mybatis.TimeStampInterceptor" >
+		        <property name="dialect" value="oracle"/>   
+		</plugin>
+		
+	</plugins>
+
+</configuration>

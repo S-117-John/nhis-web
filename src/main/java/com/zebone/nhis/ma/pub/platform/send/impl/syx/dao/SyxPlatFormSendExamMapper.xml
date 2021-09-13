@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.platform.send.impl.syx.dao.SyxPlatFormSendExamMapper">
+	<select id="qryExamAndCheckAll" parameterType="java.util.List" resultType="DynaBean">
+		select 
+			ord.pk_cnord,
+			ord.code_apply, 
+			ord.desc_ord, 
+			ord.name_ord,
+			ord.code_ord,
+			lab.samp_no, 
+			lab.pk_ordlis,
+			cnRis.pk_ordris,
+			cnRis.ris_notice,
+			sampDoc.code_std sampCode ,
+			sampDoc.name_std sampName ,
+			emp.name_emp,  
+			emp.code_emp,
+			ord.date_sign,
+			inputEmp.name_emp inputName,
+			inputEmp.code_emp inputCode,
+			dept.name_dept,
+			dept.code_dept,
+			ord.date_chk,
+			nsEmp.name_emp nsName,
+			nsEmp.code_emp	nsCode,
+			ord.code_ord,
+			bdOrd.code_ordtype,
+			bdOrd.name bdOrdName,
+			bdOrd.code bdOrdCode,
+			ord.code_supply,
+			sup.code supCode,
+			sup.name supName,
+			ord.date_start,
+			deptExec.code_dept execCode,
+			deptExec.name_dept execName,
+			lab.note,
+			ent.code_pv,
+			ent.eu_pvtype,
+			pi.code_pi,
+			pi.id_no,
+			pi.insur_no,
+			pi.name_pi,
+			pi.mobile,
+			pi.tel_no,
+			pi.pk_pi,
+			sexDoc.code_Std codeSex,
+			sexDoc.name_Std nameSex,
+			pi.birth_date,
+			pi.addr_cur,
+			pi.addr_cur_dt,
+			pvDept.name_dept pvDeptName,
+			pvDept.code_dept pvDeptCode,
+			risDoc.name_std risDocName,
+			risDoc.code_std risDocCode,
+			bodyDoc.name_std bodyDocName,
+			bodyDoc.code_std bodyDocCode,
+			ip.ip_times,
+			pi.code_ip,
+			pi.code_op,
+			op.op_times,
+			type.code typeNode,
+			type.name typeName,
+			lab.ts lisTime,
+			cnRis.ts risTime,
+			bdlab.note labNote,
+			bdris.desc_att risNote,
+			ns.name_dept deptnsName,
+			ns.code_dept deptnsCode,
+			bed.name bedName,
+			bed.code bedCode,
+			bed.houseno,
+			ord.flag_emer,
+			pi.dt_idtype，
+			trans.pk_ordbt,
+			ord.ordsn ,
+			lab.eu_status eu_status_lab,
+			cnRis.eu_status eu_status_ris,
+			trans.eu_status eu_status_trans
+		 from cn_order ord 
+		 left join cn_lab_apply lab on ord.pk_cnord = lab.pk_cnord
+		 left join cn_ris_apply cnRis on ord.pk_cnord = cnRis.pk_cnord
+		 left join cn_trans_apply trans on ord.pk_cnord = trans.pk_cnord 
+		 left join bd_ou_employee emp on emp.pk_emp = ord.pk_emp_ord 
+		 left join bd_ou_employee inputEmp on inputEmp.pk_emp = ord.pk_emp_input 
+		 left join bd_ou_employee nsEmp on nsEmp.pk_emp = ord.pk_emp_chk 
+		 left join bd_ord bdOrd on bdOrd.pk_ord = ord.pk_ord 
+		 left join bd_ord_mt ordMt on ordMt.pk_ord = bdOrd.pk_ord 
+		 left join bd_supply sup on sup.code = ordMt.code_supply 
+		 left join bd_ou_dept dept on ord.pk_dept = dept.pk_dept 
+		 left join bd_ou_dept deptExec on ord.pk_dept_exec = deptExec.pk_dept 
+		 left join pv_encounter ent on ent.pk_pv = ord.pk_pv
+		 left join bd_ou_dept ns on ns.pk_dept = ent.pk_dept_ns
+		 left join bd_ou_dept pvDept on ent.pk_dept = pvDept.pk_dept  
+		 left join pi_master pi on pi.pk_pi = ent.pk_pi 
+		 left join bd_ord_ris ris on bdOrd.pk_ord = ris.pk_ord 
+		 left join pv_ip ip on ent.pk_pv =  ip.pk_pv
+		 left join pv_op op on ent.pk_pv =  op.pk_pv
+		 left join bd_ordtype type on type.pk_ordtype = bdOrd.pk_ordtype
+		 left join bd_ord_lab bdlab on bdlab.pk_ord = ord.pk_ord
+		 left join bd_ord_ris bdris on bdris.pk_ord = ord.pk_ord
+		 left join bd_res_bed bed on bed.code = ent.bed_no and bed.pk_dept = ent.pk_dept
+		 left join bd_defdoc sampDoc on lab.dt_samptype = sampDoc.code and sampDoc.code_defdoclist = '030200'
+		 left join bd_defdoc sexDoc on pi.dt_sex = sexDoc.code and sexDoc.code_defdoclist = '000000'
+		 left join bd_defdoc risDoc on ris.dt_type = risDoc.code and risDoc.code_defdoclist = '030100'
+		 left join bd_defdoc bodyDoc on ris.dt_body = bodyDoc.code and bodyDoc.code_defdoclist = '030101'
+		 where ord.pk_cnord in
+		 <foreach item="item" index="index" collection="pkCnords" open="(" separator="," close=")">
+            #{item.pkCnord}
+        </foreach>
+	</select>
+	
+	<select id="qryBloodInfo" parameterType="java.lang.String" resultType="DynaBean">
+		select 
+			ord.code_apply, 
+			ord.desc_ord, 
+			emp.name_emp,  
+			emp.code_emp,
+			ord.date_sign,
+			inputEmp.name_emp inputName,
+			inputEmp.code_emp inputCode,
+			dept.name_dept,
+			dept.code_dept,
+			ord.date_chk,
+			nsEmp.name_emp nsName,
+			nsEmp.code_emp	nsCode,
+			ord.code_ord,
+			bdOrd.name bdOrdName,
+			bdOrd.code bdOrdCode,
+			ord.code_supply,
+			sup.code supCode,
+			sup.name supName,
+			ord.date_start,
+			deptExec.code_dept execCode,
+			deptExec.name_dept execName,
+			ent.code_pv,
+			ent.eu_pvtype,
+			pi.code_pi,
+			pi.id_no,
+			pi.insur_no,
+			pi.name_pi,
+			pi.mobile,
+			pi.tel_no,
+			sexDoc.code_Std codeSex,
+			sexDoc.name_Std nameSex,
+			pi.birth_date,
+			pi.addr_cur,
+			pi.addr_cur_dt,
+			ent.bed_no,
+			pvDept.name_dept pvDeptName,
+			pvDept.code_dept pvDeptCode,
+			ip.ip_times,
+			op.op_times,
+			aboDoc.name_std aboName,
+			aboDoc.code_std aboCode,
+			rhDoc.name_std rhName,
+			rhDoc.code_std rhCode,
+			ent.height,
+			ent.weight
+		 from cn_order ord 
+		 left join bd_ou_employee emp on emp.pk_emp = ord.pk_emp_ord 
+		 left join bd_ou_employee inputEmp on inputEmp.pk_emp = ord.pk_emp_input 
+		 left join bd_ou_employee nsEmp on nsEmp.pk_emp = ord.pk_emp_chk 
+		 left join bd_ord bdOrd on bdOrd.pk_ord = ord.pk_ord 
+		 left join bd_ord_mt ordMt on ordMt.pk_ord = bdOrd.pk_ord 
+		 left join bd_supply sup on sup.code = ordMt.code_supply 
+		 left join bd_ou_dept dept on ord.pk_dept = dept.pk_dept 
+		 left join bd_ou_dept deptExec on ord.pk_dept_exec = deptExec.pk_dept 
+		 left join pv_encounter ent on ent.pk_pv = ord.pk_pv 
+	     left join bd_ou_dept pvDept on ent.pk_dept = pvDept.pk_dept 
+		 left join pi_master pi on pi.pk_pi = ent.pk_pi 
+		 left join pv_ip ip on ent.pk_pv =  ip.pk_pv
+		 left join pv_op op on ent.pk_pv =  op.pk_pv
+		 left join cn_trans_apply trans on trans.pk_cnord =  ord.pk_cnord
+		 left join bd_defdoc sexDoc on pi.dt_sex = sexDoc.code and sexDoc.code_defdoclist = '000000'
+		 left join bd_defdoc aboDoc on trans.dt_bt_abo = aboDoc.code and aboDoc.code_defdoclist = '000004'
+		 left join bd_defdoc rhDoc on trans.dt_bt_rh = rhDoc.code and rhDoc.code_defdoclist = '000005'
+		 
+		 where pk_cnord = #{pkCnord}
+	</select>
+	
+	
+	<select id="qryPathologyAll" parameterType="java.util.List" resultType="DynaBean">
+		select 
+			ord.ordsn,
+			ord.code_apply, 
+			ord.desc_ord, 
+			ord.name_ord,
+			ord.code_ord,
+			lab.samp_no, 
+			lab.pk_ordlis,
+			cnRis.pk_ordris,
+			cnRis.ris_notice,
+			sampDoc.code_std sampCode ,
+			sampDoc.name_std sampName ,
+			emp.name_emp,  
+			emp.code_emp,
+			ord.date_sign,
+			inputEmp.name_emp inputName,
+			inputEmp.code_emp inputCode,
+			dept.name_dept,
+			dept.code_dept,
+			ord.date_chk,
+			nsEmp.name_emp nsName,
+			nsEmp.code_emp	nsCode,
+			ord.code_ord,
+			bdOrd.code_ordtype,
+			bdOrd.name bdOrdName,
+			bdOrd.code bdOrdCode,
+			ord.code_supply,
+			sup.code supCode,
+			sup.name supName,
+			ord.date_start,
+			deptExec.code_dept execCode,
+			deptExec.name_dept execName,
+			lab.note,
+			ent.code_pv,
+			ent.eu_pvtype,
+			pi.code_pi,
+			pi.id_no,
+			pi.insur_no,
+			pi.name_pi,
+			pi.mobile,
+			pi.tel_no,
+			pi.pk_pi,
+			sexDoc.code_Std codeSex,
+			sexDoc.name_Std nameSex,
+			pi.birth_date,
+			pi.addr_cur,
+			pi.addr_cur_dt,
+			pvDept.name_dept pvDeptName,
+			pvDept.code_dept pvDeptCode,
+			risDoc.name_std risDocName,
+			risDoc.code_std risDocCode,
+			bodyDoc.name bodyDocName,
+			bodyDoc.code bodyDocCode,
+			ip.ip_times,
+			pi.code_ip,
+			pi.code_op,
+			op.op_times,
+			type.code typeNode,
+			type.name typeName,
+			lab.ts lisTime,
+			cnRis.ts risTime,
+			bdlab.note labNote,
+			bdris.desc_att risNote,
+			ns.name_dept deptnsName,
+			ns.code_dept deptnsCode,
+			bed.name bedName,
+			bed.code bedCode,
+			bed.houseno,
+			nationality.code_std natCode,
+			nationality.name_std natName,
+			marriage.code_std marCode,
+			nation.code_std nation_code,
+			occupation.code_std occCode,
+			occupation.name_std occName,
+			pi.unit_work,
+			pi.tel_rel,
+			pi.name_rel,
+			pi.dt_idtype,
+			pa.pk_ordpa 
+		 from cn_order ord 
+		 left join cn_lab_apply lab on ord.pk_cnord = lab.pk_cnord
+		 left join cn_ris_apply cnRis on ord.pk_cnord = cnRis.pk_cnord
+		 left join cn_pa_apply pa on ord.pk_cnord = pa.pk_cnord
+		 left join bd_ou_employee emp on emp.pk_emp = ord.pk_emp_ord 
+		 left join bd_ou_employee inputEmp on inputEmp.pk_emp = ord.pk_emp_input 
+		 left join bd_ou_employee nsEmp on nsEmp.pk_emp = ord.pk_emp_chk 
+		 left join bd_ord bdOrd on bdOrd.pk_ord = ord.pk_ord 
+		 left join bd_ord_mt ordMt on ordMt.pk_ord = bdOrd.pk_ord 
+		 left join bd_supply sup on sup.code = ordMt.code_supply 
+		 left join bd_ou_dept dept on ord.pk_dept = dept.pk_dept 
+		 left join bd_ou_dept deptExec on ord.pk_dept_exec = deptExec.pk_dept 
+		 left join pv_encounter ent on ent.pk_pv = ord.pk_pv
+		 left join bd_ou_dept ns on ns.pk_dept = ent.pk_dept_ns
+		 left join bd_ou_dept pvDept on ent.pk_dept = pvDept.pk_dept  
+		 left join pi_master pi on pi.pk_pi = ent.pk_pi 
+		 left join bd_ord_ris ris on bdOrd.pk_ord = ris.pk_ord 
+		 left join pv_ip ip on ent.pk_pv =  ip.pk_pv
+		 left join pv_op op on ent.pk_pv =  op.pk_pv
+		 left join bd_ordtype type on type.pk_ordtype = bdOrd.pk_ordtype
+		 left join bd_ord_lab bdlab on bdlab.pk_ord = ord.pk_ord
+		 left join bd_ord_ris bdris on bdris.pk_ord = ord.pk_ord
+		 left join bd_res_bed bed on bed.code = ent.bed_no and bed.pk_dept = ent.pk_dept
+		 left join bd_defdoc sampDoc on lab.dt_samptype = sampDoc.code and sampDoc.code_defdoclist = '030200'
+		 left join bd_defdoc sexDoc on pi.dt_sex = sexDoc.code and sexDoc.code_defdoclist = '000000'
+		 left join bd_defdoc risDoc on ris.dt_type = risDoc.code and risDoc.code_defdoclist = '030100'
+		 left join bd_defdoc bodyDoc on ris.dt_body = bodyDoc.code and bodyDoc.code_defdoclist = '030101'
+		 left join bd_defdoc nationality on pi.dt_country = nationality.code and nationality.code_defdoclist = '000009'
+		 left join bd_defdoc marriage on pi.dt_marry = marriage.code and marriage.code_defdoclist = '000006'
+		 left join bd_defdoc nation on pi.dt_nation = nation.code and nation.code_defdoclist = '000003'
+		 left join bd_defdoc occupation on pi.dt_occu = occupation.code and occupation.code_defdoclist = '000010'
+		 
+		 where ord.pk_cnord  in
+		 <foreach item="item" index="index" collection="pkCnords" open="(" separator="," close=")">
+            #{item.pkCnord}
+        </foreach>
+	</select>
+	
+	<select id="getOrdType" parameterType="java.lang.String" resultType="java.lang.String">
+		select code_ordtype from cn_order where pk_cnord = #{pkCnord}
+	</select>
+	
+	<select id="qryPathologyDept" parameterType="java.util.List" resultType="java.lang.String">
+		select ord.pk_cnord pkCnord from cn_order ord inner join bd_ou_dept dept on dept.pk_dept = ord.pk_dept_exec inner join bd_defdoc doc on doc.code = dept.dt_depttype and dept.dt_depttype = '030104'
+		where ord.pk_cnord in 
+		<foreach item="item" index="index" collection="pkCnords" open="(" separator="," close=")">
+            #{item.pkCnord}
+        </foreach>
+	</select>
+</mapper>

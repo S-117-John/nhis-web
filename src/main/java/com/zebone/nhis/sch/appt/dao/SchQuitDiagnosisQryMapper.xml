@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.sch.appt.dao.SchQuitDiagnosisQryMapper">
+
+    <select id="getSchAppt" parameterType="java.util.Map" resultType="DynaBean">
+       Select dept.name_dept,
+	       pv.name_emp_phy,
+	       appt.date_appt,
+	       ds.name_dateslot,
+	       pi.name_pi,
+	       pi.id_no,
+	       pi.mobile,
+	       appt.ticket_no,
+	       appttype.name appttype,
+	       appt.flag_notice,
+	       appt.name_emp_reg,
+	       appt.date_reg,
+	       appt.name_emp_cancel,
+	       appt.date_cancel,
+	       appt.flag_notice_canc,
+	       appt.note
+       from sch_appt appt
+	       inner join sch_appt_pv pv on appt.pk_schappt=pv.pk_schappt
+	       Inner Join sch_sch sch On appt.pk_sch=sch.pk_sch     
+	       inner join pi_master pi on appt.pk_pi=pi.pk_pi
+	       inner join bd_ou_org org on appt.pk_org_ex=org.pk_org
+	       inner join bd_ou_dept dept on appt.pk_dept_ex=dept.pk_dept
+	       inner join bd_code_dateslot ds on appt.pk_dateslot=ds.pk_dateslot
+	       left outer join bd_defdoc appttype on appt.dt_apptype=appttype.code and appttype.code_defdoclist='020100'
+		   Left Outer Join sch_emp emp On sch.pk_sch=emp.pk_sch
+		   Left Outer Join sch_resource res On appt.pk_schres=res.pk_schres
+		  where sch.flag_stop='1'
+		  <if test="dateBegin != null and dateBegin != ''">
+		      and appt.date_appt &gt;= #{dateBegin}
+		  </if>
+		  
+		  <if test="dateEnd != null and dateEnd != ''">
+		   	  and appt.date_appt &lt;= #{dateEnd} 
+		   </if>
+		   
+		   <if test="dictDept != null and dictDept != ''">
+		   	  and appt.pk_dept_ex = #{dictDept,jdbcType=VARCHAR} 
+		   </if>
+		   
+		   <if test="dictDoctor != null and dictDoctor != ''">
+		   	  and (emp.pk_emp=#{dictDoctor,jdbcType=VARCHAR} Or res.pk_emp=#{dictDoctor,jdbcType=VARCHAR})		   	   
+		   </if>		   		   
+		   		        
+    </select>
+</mapper>

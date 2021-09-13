@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.base.drg.dao.BdTermDcdtMapper">
+	<sql id="Base_Column_List" >
+		      dcdt.PK_DCDT,
+			  dcdt.PK_ORG,
+			  dcdt.CODE_DIV,
+			  dcdt.CODE_DCDT,
+			  dcdt.NAME_DCDT,
+			  dcdt.SPCODE,
+			  dcdt.D_CODE,
+			  dcdt.PK_CCDT,
+			  dcdt.CODE_CCDT,
+			  dcdt.CREATOR,
+			  dcdt.CREATE_TIME,
+			  dcdt.MODIFIER,
+			  dcdt.FLAG_DEL,
+			  dcdt.TS,
+			  ccdt.CODE_ICD,
+			  ccdt.NAME_ICD,
+			  ccdt.name_ccdt,
+			  bad.name_div
+	  </sql>
+	  
+	<select id="queryTermDcdtList"  parameterType="java.util.Map" resultType="DynaBean">
+        select 
+        	<include refid="Base_Column_List" />
+        from BD_TERM_DCDT dcdt
+        left join BD_TERM_CCDT ccdt on ccdt.pk_ccdt=dcdt.pk_ccdt
+        left join BD_ADMIN_DIVISION bad on bad.code_div=dcdt.code_div
+        where    
+        	dcdt.FLAG_DEL = '0'    
+        <if test="codeDcdt !=null and codeDcdt != ''">
+            and dcdt.code_Dcdt like #{codeDcdt,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test="nameDcdt !=null and nameDcdt != ''">
+            and dcdt.name_Dcdt like '%' || #{nameDcdt,jdbcType=VARCHAR} || '%'   
+        </if>
+        <if test="codeDiv !=null and codeDiv != ''">
+            and dcdt.code_Div = #{codeDiv,jdbcType=VARCHAR}
+        </if>
+        <if test="codeCcdt !=null and codeCcdt != ''">
+            and dcdt.code_ccdt like #{codeCcdt,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test="nameCcdt !=null and nameCcdt != ''">
+            and ccdt.name_ccdt like '%' || #{nameCcdt,jdbcType=VARCHAR} || '%'   
+        </if>
+        <if test="codeIcd !=null and codeIcd != ''">
+            and ccdt.CODE_ICD like #{codeIcd,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test="codeOrName !=null and codeOrName != ''">
+            and (dcdt.code_Dcdt like #{codeOrName,jdbcType=VARCHAR} || '%'
+            	or dcdt.name_Dcdt like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'   
+            	or dcdt.spcode like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'  
+            )	
+        </if>
+        order by dcdt.CODE_DCDT
+    </select>
+</mapper>

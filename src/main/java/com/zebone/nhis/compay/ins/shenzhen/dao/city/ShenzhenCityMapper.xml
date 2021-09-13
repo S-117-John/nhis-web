@@ -1,0 +1,1568 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.compay.ins.shenzhen.dao.city.ShenzhenCityMapper">
+
+<select id="qryVisit" resultType="DynaBean" parameterType="java.util.Map" >
+	select pi.DT_IDTYPE,visit.*,pv.code_pv,PV.date_begin,PV.pk_dept,PV.pk_dept_ns,PV.bed_no,diag.code_icd,diag.desc_diag,
+	       city.aae140,ip.dt_outcomes,city.aac999,city.alc005,city.aka120,city.akc196,hpDg.aka121 as name_akc196,city.cme320,city.amc021,city.cme331,city.bcc334
+	  from ins_szyb_visit visit
+	    inner join ins_szyb_visit_city city on visit.pk_visit=city.pk_visit and city.del_flag='0'
+		inner join pv_encounter pv on VISIT.pk_pv=pv.pk_pv and PV.del_flag='0'
+		inner join pv_ip ip on ip.pk_pv=visit.pk_pv and ip.del_flag='0'
+		inner join pi_master pi on pi.pk_pi=pv.pk_pi and pi.del_flag='0'
+		left join pv_diag diag on diag.pk_pv = visit.pk_pv and diag.flag_maj = '1' and diag.del_flag = '0'
+		left join INS_SZYB_DISE hpDg on city.akc196=hpDg.aka120 and hpDg.DEL_FLAG='0'
+		where visit.pk_pv=#{pkPv,jdbcType=CHAR} and visit.del_flag='0'
+		<choose>
+	        <when test='pkVisit != null and pkVisit != "" '>
+	            and visit.pk_visit=#{pkVisit,jdbcType=VARCHAR}
+	        </when>
+	        <otherwise>
+	            and visit.eu_status_st='0'
+	        </otherwise>
+        </choose>
+        order by visit.date_reg desc
+
+</select>
+
+<select id="qryVisitCity" resultType="DynaBean" parameterType="java.util.Map" >
+	select CITY.*,to_date(cme331,'yyyymmdd') dateCme331,
+		    pv.bed_no,
+			pv.pk_dept,
+			pv.pk_dept_ns,
+			pv.Pk_Emp_Phy,
+			pv.pk_insu,
+			visit.persontype,
+			visit.DT_EXTHP,
+			bp.CODE hp_code
+	From INS_SZYB_VISIT_CITY city
+	Inner Join pv_encounter pv On city.pk_pv=pv.pk_pv and pv.del_flag='0'
+	Inner Join ins_szyb_visit visit On city.pk_visit=visit.pk_visit and visit.del_flag='0'
+	inner join BD_HP bp on bp.PK_HP=visit.PK_HP
+	Where city.pk_pv=#{pkPv,jdbcType=VARCHAR} and CITY.del_flag='0'
+	<if test='pkVisit != null and pkVisit != "" '>
+		and visit.pk_visit=#{pkVisit,jdbcType=VARCHAR}
+	</if>
+    order by visit.create_time desc
+</select>
+
+<select id="qryUploadDetail" resultType="DynaBean" parameterType="java.util.Map" >
+	select bl.pk_cgip,
+		bl.pk_item,
+		bl.flag_pd,
+		cate.code as code_cate,
+	    pv.code_pv,
+	    nvl(BL.sortno,0) as aae072,
+	    '1' as bkc369,
+		bl.code_cg || bl.sortno as bkf500,
+		hpit.ake001,
+		hpit.ake002,
+		case when map.bkm017 is null then hpit.bkm017 else map.bkm017 end bkm017,
+		hpit.aka064,
+		hpit.ala026,
+		hpit.aka070,
+		case when  bl.flag_pd='1' then case when map.bkm032='02' then  pd.code||'d' when map.bkm032='03' then  pd.code||'j' else pd.code end
+		else item.code end as ake005,
+		BL.name_cg as ake006,
+		bl.spec as aka074,
+		case when ('${flagState}'='1' and pd.eu_source='4') or hpit.ckm102='1' then bl.Price/bl.pack_size else bl.Price  end as akc225,
+		case when ('${flagState}'='1' and pd.eu_source='4') or hpit.ckm102='1'  then bl.pack_size * bl.Quan else bl.Quan  end as akc226,
+		case when ('${flagState}'='1' and pd.eu_source='4') or hpit.ckm102='1' then minUnit.name else UNIT.name  end as aka067,
+		bl.Amount as akc264,
+		to_char(bl.date_hap ,'yyyyMMdd') as akc271,
+		cgemp.code_insur as bkc320,
+		nvl(nvl(cnor.name_emp_ord,stf.name_emp),'空') as name_emp_cg,
+		case when nvl(cnor.desc_fit,'xx')!='xx' and cnor.flag_fit='0' and cnor.desc_fit='自费' then '91' else null end  as cke400
+		from bl_ip_dt bl
+		inner join pv_encounter pv on BL.pk_pv=pv.pk_pv and pv.del_flag='0'
+
+		left join (
+			select * from (
+			select rownum,a.* from  pv_staff a where  dt_role='0001' and pk_pv=#{pkPv,jdbcType=CHAR}
+			order by date_begin desc
+			) where rownum=1
+			) stf
+		ON  pv.pk_pv = stf.pk_pv
+		AND stf.pk_dept = pv.pk_dept
+		AND stf.del_flag = '0'
+
+		left join bd_itemcate cate on bl.pk_itemcate=cate.pk_itemcate and cate.del_flag='0'
+		left join bd_unit unit on unit.pk_unit=BL.pk_unit and unit.del_flag='0'
+		left join cn_order cnor on bl.flag_pd='1' and cnor.pk_cnord=bl.pk_cnord and cnor.del_flag='0'
+		left join cn_prescription pres on pres.pk_pres=cnor.pk_pres and pres.del_flag='0'
+		left join ins_szyb_dictmap cgemp on cgemp.eu_hpdicttype='01' and cgemp.flag_chd='1' and cgemp.code_type='YS001' and cgemp.pk_his=nvl(cnor.pk_emp_ord,stf.pk_emp) and cgemp.del_flag='0'
+
+		left join bd_pd pd on bl.flag_pd='1' and BL.pk_item=pd.pk_pd and pd.del_flag='0'
+		left join bd_unit packUnit on packUnit.pk_unit=pd.pk_unit_pack and packUnit.del_flag='0'
+		left join bd_unit minUnit on minUnit.pk_unit=pd.pk_unit_min and minUnit.del_flag='0'
+
+		left join bd_item item on bl.flag_pd='0' and BL.pk_item=item.pk_item and item.del_flag='0'
+
+		left join ins_szyb_itemmap map on map.eu_hpdicttype='01' and  map.del_flag='0' and ((bl.flag_pd='1' and map.pk_item=pd.pk_pd and map.flag_state='0') or (bl.flag_pd='0' and map.pk_item=item.pk_item ))
+									  and bl.date_hap <![CDATA[>=]]>  to_date(to_char(map.date_begin,'yyyy-MM-dd'),'yyyy-MM-dd') and bl.date_hap <![CDATA[<]]>  to_date(to_char(map.date_end,'yyyy-MM-dd'),'yyyy-MM-dd')
+		left join ins_szyb_item hpit   on hpit.eu_hpdicttype='01' and hpit.ake001=map.ake001 and hpit.del_flag='0'
+		left join INS_SZYB_ORDER insc  on cnor.pk_pv=insc.pk_pv and cnor.ordsn=insc.ordsn and insc.del_flag='0' and insc.code_hp=hpit.ake001
+
+
+
+	where bl.pk_pv=#{pkPv,jdbcType=CHAR}
+	  AND (bl.flag_settle = '0' OR bl.PK_SETTLE IS NULL)
+      AND nvl(bl.flag_insu,'0') = '0'
+      AND bl.del_flag = '0'
+      and nvl(pres.dt_prestype,'00')!='07'
+      and (insc.pk_insord is null or insc.flag_valid='1')
+      <if test='flagMidway!=null and flagMidway!="" and flagMidway.equals("1")'>
+      	<if test='dateEnd!=null and dateEnd!=""'>
+      		and bl.date_hap <![CDATA[<=]]> to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+      	</if>
+      </if>
+
+
+    <!-- 基本医疗保险患者不收取自费的60元诊查费，需求号：3802
+    <if test='aae140 != null and aae140 == "310" '>
+			and nvl(item.code,' ') !='F00000000013'
+	</if>
+	-->
+
+</select>
+
+
+<select id="qryF00000000013" resultType="com.zebone.nhis.common.module.bl.BlIpDt" parameterType="java.util.Map" >
+			select * from (
+  		SELECT
+		bl.pk_cgip,
+		bl.pk_org,
+		bl.Pk_Org_App,
+		bl.Pk_Org_Ex,
+		bl.Pk_Dept_App,
+		bl.Pk_Dept_Cg,
+		bl.Pk_Dept_Ex,
+		bl.Pk_Emp_App,
+		bl.Name_Emp_App,
+		bl.Pk_Emp_Cg,
+		bl.Name_Emp_Cg,
+		bl.Date_Hap,
+		bl.Pk_Pv,
+		bl.Pk_Pi,
+		bl.Eu_Bltype,
+		bl.pk_item,
+	    bl.PRICE,
+	    bl.quan + (CASE WHEN back.quan IS NULL THEN 0 ELSE back.quan END)  AS quan,
+	    bl.amount + (CASE WHEN back.amt IS NULL THEN 0 ELSE back.amt END) AS amount
+	  FROM bl_ip_dt bl
+	    INNER JOIN bd_item item ON bl.flag_pd = '0' AND BL.pk_item = item.pk_item AND item.del_flag = '0'
+	    LEFT OUTER JOIN (SELECT sum(quan) quan,sum(amount) amt,pk_cgip_back
+	                            FROM bl_ip_dt
+	                              WHERE flag_settle = '0' AND flag_pd = '0' AND quan <![CDATA[<]]> 0 AND pk_pv = #{pkPv,jdbcType=CHAR}
+	                             GROUP BY pk_cgip_back
+	                    ) back ON bl.pk_cgip = back.pk_cgip_back
+	  WHERE bl.pk_pv = #{pkPv,jdbcType=CHAR}
+	        AND (bl.flag_settle = '0' OR bl.PK_SETTLE IS NULL)
+	        AND nvl(bl.flag_insu, '0') = '0'
+	        AND bl.del_flag = '0'
+	        AND item.code = 'F00000000013'
+	        AND bl.quan > 0
+	) temp where temp.quan>0
+</select>
+
+
+
+<select id="qryUploadPresDetail" resultType="DynaBean" parameterType="java.util.Map" >
+	select cn.pk_cnord as pk_cgip,
+		cn.pk_ord as pk_item,
+		pv.code_pv,
+		cn.ordsn as aae072,
+		'2' as bkc369,
+		cn.ordsn bkf500,
+		hpit.ake001,
+		hpit.ake002 ,
+		case when map.bkm017 is null then hpit.bkm017 else map.bkm017 end bkm017,
+		hpit.aka064,
+		hpit.ala026,
+		hpit.aka070 ,
+
+		<!-- cn.code_ord ake005,  先注释掉，等与老系统并行期过后启用 -->
+		case when map.bkm032='02' then  cn.code_ord ||'d' when map.bkm032='03' then  cn.code_ord ||'j' else cn.code_ord  end ake005,
+
+		cn.name_ord ake006,
+		cn.spec as aka074,
+
+		case when '${flagState}'='1' and pd.eu_source='4' then cn.price_cg/cn.pack_size else cn.price_cg   end as akc225, <!-- 单价 -->
+		case when '${flagState}'='1' and pd.eu_source='4' then cn.quan_cg*cn.pack_size else cn.quan_cg  end as akc226, <!-- 数量 -->
+		case when '${flagState}'='1' and pd.eu_source='4' then minUnit.name else unitCg.name  end as aka067, <!-- 单位 -->
+		null as akc264,<!-- 金额 -->
+
+		to_char(pres.date_pres,'yyyyMMdd') as akc271,
+		cgemp.code_insur as bkc320,
+		nvl(cn.name_emp_ord,'空') as name_emp_cg,
+		case when nvl(cn.desc_fit,'')!='' and cn.flag_fit='0' then '91' else null end  as cke400,
+		suy.name as ckm113
+	from cn_prescription pres
+	inner join cn_order cn on pres.pk_pres =cn.pk_pres and cn.del_flag='0'
+	inner join pv_encounter pv on pres.pk_pv=pv.pk_pv and pv.del_flag='0'
+	inner join bd_pd pd on cn.pk_ord=pd.pk_pd and pd.del_flag='0'
+	left join bd_unit unitCg on cn.pk_unit_cg=unitCg.pk_unit and unitCg.del_flag='0'
+	left join bd_unit minUnit on minUnit.pk_unit=pd.pk_unit_min and minUnit.del_flag='0'
+	left join ins_szyb_dictmap cgemp on cgemp.eu_hpdicttype='01' and cgemp.flag_chd='1' and cgemp.code_type='YS001' and cgemp.pk_his=cn.pk_emp_ord and cgemp.del_flag='0'
+	left join bd_supply suy on cn.code_supply=suy.code and suy.del_flag='0'
+
+	left join ins_szyb_itemmap map on map.eu_hpdicttype='01' and  map.del_flag='0' and map.pk_item=cn.pk_ord and map.flag_state='0'
+							      and pres.date_pres <![CDATA[>=]]>  to_date(to_char(map.date_begin,'yyyy-MM-dd'),'yyyy-MM-dd') and pres.date_pres <![CDATA[<]]>  to_date(to_char(map.date_end,'yyyy-MM-dd'),'yyyy-MM-dd')
+	left join ins_szyb_item hpit   on hpit.eu_hpdicttype='01' and hpit.ake001=map.ake001 and hpit.del_flag='0'
+	left join INS_SZYB_ORDER insc  on cn.pk_pv=insc.pk_pv and cn.ordsn=insc.ordsn and insc.del_flag='0' and insc.code_hp=hpit.ake001
+	where pres.pk_pv=#{pkPv,jdbcType=CHAR}
+	  AND pres.pk_pres=#{pkPres,jdbcType=CHAR}
+      AND pres.del_flag = '0'
+      and nvl(pres.flag_insu,'0')='0'
+      and (insc.pk_insord is null or insc.flag_valid='1')
+</select>
+
+<select id="qryUploadDetailZeroAmount" resultType="java.lang.String" parameterType="java.util.Map" >
+	select pk_item from bl_ip_dt bl
+	where bl.pk_pv=#{pkPv,jdbcType=CHAR}
+	  AND (bl.flag_settle = '0' OR bl.PK_SETTLE IS NULL)
+      AND bl.flag_insu = '0'
+      AND bl.del_flag = '0'
+      <if test='flagMidway!=null and flagMidway!="" and flagMidway.equals("1")'>
+      	<if test='dateEnd!=null and dateEnd!=""'>
+      		and bl.date_hap <![CDATA[<=]]> to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+      	</if>
+      </if>
+    group by pk_item having sum(amount)=0
+</select>
+
+
+<select id="qryPresNo" resultType="DynaBean" parameterType="java.util.Map" >
+	select distinct name_itemset as presno
+		from bl_ip_dt bl
+	where bl.pk_pv=#{pkPv,jdbcType=CHAR}
+	  AND (bl.flag_settle = '0' OR bl.PK_SETTLE IS NULL)
+      AND bl.flag_insu = '1'
+      AND bl.del_flag = '0'
+</select>
+
+<select id="qryBlStatistical" resultType="DynaBean" parameterType="java.util.Map" >
+	select sum(bl.Amount) as ylfyze
+		from bl_ip_dt bl
+	where bl.pk_pv=#{pkPv,jdbcType=CHAR}
+	  AND (bl.flag_settle = '0' OR bl.PK_SETTLE IS NULL)
+      AND bl.flag_insu = '1'
+      AND bl.del_flag = '0'
+</select>
+
+<update id="updateFlagInsuByPk" parameterType="java.util.Map" >
+	update bl_ip_dt set flag_insu= '${flagInsu}'
+	<if test='presNo != null and presNo != "" '>
+		  , name_itemset =  #{presNo,jdbcType=CHAR}
+	</if>
+	 where pk_pv=#{pkPv,jdbcType=CHAR}
+	   AND (flag_settle = '0' OR PK_SETTLE IS NULL)
+       AND del_flag = '0'
+
+	<if test='FlagInsuWhere != null and FlagInsuWhere != "" '>
+			and flag_insu=#{FlagInsuWhere,jdbcType=VARCHAR}
+	</if>
+	<if test='PresNoWhere != null and PresNoWhere != "" '>
+			and name_itemset=#{PresNoWhere,jdbcType=VARCHAR}
+	</if>
+	<if test='PresDetailNoWhere != null and PresDetailNoWhere != "" '>
+			and code_cg+sortno=#{PresDetailNoWhere,jdbcType=VARCHAR}
+	</if>
+	<if test="pkCgipList != null">
+		 and pk_cgip IN
+		<foreach collection="pkCgipList" item="pkCgip" index="index" open="(" close=")" separator=",">
+				#{pkCgip,jdbcType=VARCHAR}
+		</foreach>
+	</if>
+	<if test='flagMidway!=null and flagMidway!="" and flagMidway.equals("1")'>
+      	<if test='dateEnd!=null and dateEnd!=""'>
+      		and date_hap <![CDATA[<=]]> to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+      	</if>
+      </if>
+</update>
+
+<select id="qryPvDiag" resultType="DynaBean" parameterType="java.util.Map" >
+	select  hpDg.aka121 DESC_DIAG,
+		 	hpDg.aka120 CODE_ICD,
+			pvDg.FLAG_MAJ,
+			pvDg.DT_DIAGTYPE,
+			pvDg.SORT_NO,
+			pvDg.PK_DIAG,
+			pvDg.PK_EMP_DIAG,
+			pvDg.NAME_EMP_DIAG,
+			pvDg.NAME_DIAG name_diag_st,
+			pvDg.CODE_ICD code_icd_st
+	from PV_DIAG pvDg
+  left join INS_SZYB_DISE hpDg on trim(pvDg.code_icd)=trim(hpDg.aka120) and hpDg.DEL_FLAG='0'
+	where pvDg.DEL_FLAG='0'
+	  and PK_PV=#{pkPv,jdbcType=VARCHAR}
+	  order by FLAG_MAJ,sort_no desc
+</select>
+
+<select id="qryInsSzybSt" resultType="DynaBean" parameterType="java.util.Map" >
+	select *
+	from ins_szyb_st
+	where DEL_FLAG='0' and
+	PK_PV=#{pkPv,jdbcType=VARCHAR}
+	<if test='pkSettle != null and pkSettle != "" '>
+			and pk_settle=#{pkSettle,jdbcType=VARCHAR}
+	</if>
+	<if test='pkVisit != null and pkVisit != "" '>
+			and pk_visit=#{pkVisit,jdbcType=VARCHAR}
+	</if>
+	<if test='codeInsst != null and codeInsst != "" '>
+			and code_serialno=#{codeInsst,jdbcType=VARCHAR}
+	</if>
+</select>
+
+ 	<select id="qryBdPdInfo" resultType="com.zebone.nhis.common.module.scm.pub.BdPd" parameterType="com.zebone.nhis.common.module.compay.ins.shenzhen.PageSzYbQryParam" >
+	 	select DISTINCT
+			bd.pk_pd,bd.pk_org,bd.code,bd.name,bd.name_chem,bd.name_gen,bd.short_name,bd.eu_labeltype,bd.spec,bd.barcode,bd.spcode,bd.concent,bd.weight,bd.pk_unit_wt,bd.vol,bd.pk_unit_vol,bd.pack_size,bd.pack_size_max,bd.eu_muputype,
+			bd.dt_pdtype,bd.eu_drugtype,bd.appr_no,bd.eu_pdprice,bd.price,bd.eu_pap,bd.amt_pap,bd.pap_rate,bd.dt_abrd,bd.eu_source,bd.dt_made,bd.dt_dosage,bd.dt_pharm,bd.dt_pois,bd.dt_anti,bd.flag_precious,bd.eu_usecate,bd.dt_storetype,
+			fac.name pk_factory,
+			(select name from bd_unit where pk_unit =pk_unit_min) pk_unit_min,
+			(select name from bd_unit where pk_unit =pk_unit_pack) pk_unit_pack,
+			bd.dt_base,bd.eu_herbtype,bd.flag_rm,bd.flag_reag,bd.flag_vacc,bd.flag_st,bd.flag_gmp,bd.flag_tpn,bd.flag_ped,bd.flag_chrt,bd.dt_injtype,bd.valid_cnt,bd.eu_valid_unit,bd.note,bd.eu_sex,bd.age_min,bd.age_max,bd.quota_dos,bd.dosage_def,
+			bd.pk_unit_def,bd.code_supply,bd.dt_usagenote,bd.code_freq,bd.dt_chcate,bd.pk_ordtype,bd.pk_pdind,bd.flag_stop,bd.eu_stockmode,bd.reg_no,bd.date_valid_reg,bd.pk_pdcate,bd.code_costitem,bd.pk_item,bd.flag_single,bd.flag_imp,bd.flag_use,
+			bd.code_hp,bd.code_std,bd.pk_pdgn,bd.creator,bd.create_time,bd.modifier,bd.del_flag,bd.ts,
+			hpit.ake001
+			from  bd_pd  bd
+			left join bd_factory  fac on  fac.pk_factory = bd.pk_factory
+
+			left join ins_szyb_itemmap map on map.eu_hpdicttype='${eunmMedicalInsurance}' and  map.del_flag='0'  and map.pk_item=bd.pk_pd and map.flag_state='0'
+				and sysdate &gt;= map.date_begin and sysdate &lt;= map.date_end
+			left join ins_szyb_item hpit   on hpit.eu_hpdicttype='${eunmMedicalInsurance}' and hpit.ake001=map.ake001 and hpit.del_flag='0'
+
+			where  bd.del_flag = '0'  and fac.del_flag = '0'
+	  	<if test='qryItemParam != null and  "" != qryItemParam'>
+	  	  and ( bd.name like #{qryItemParam} or bd.spcode like #{qryItemParam})
+	  	</if>
+	  	<if test='qryApprovalNumParam != null and  "" != qryApprovalNumParam'>
+	  	  and  bd.appr_no like #{qryApprovalNumParam}
+	  	</if>
+	  	<if test='qryFactoryNameParam != null and  "" != qryFactoryNameParam'>
+	  	  and  fac.name like #{qryFactoryNameParam}
+	  	</if>
+
+		<if test='flagActive != null  and  "1" == flagActive '>
+			and  fac.flag_stop ='1'
+		</if>
+		<if test='flagActive != null  and  "0" == flagActive '>
+			and  fac.flag_stop ='0'
+		</if>
+
+	  	<choose>
+	        <when test='flagNoMap != null and  "1" == flagNoMap'>
+	            and  hpit.ake001 is  null
+	        </when>
+	        <otherwise>
+	            and  hpit.ake001 is not null
+	        </otherwise>
+        </choose>
+ 	</select>
+
+ 	<select id="qryDrugInsSzybItemInfo" resultType="com.zebone.nhis.common.module.compay.ins.shenzhen.InsSzybItem" parameterType="com.zebone.nhis.common.module.compay.ins.shenzhen.PageSzYbQryParam" >
+ 		select * from  INS_SZYB_ITEM  where del_flag = '0'
+ 		<choose>
+		    <when test='projectCatalogue2 != null and  "" != projectCatalogue2'>
+		    	<if test='projectCatalogue != null and  "" != projectCatalogue'>
+	 			AND (AKE003 = #{projectCatalogue} or AKE003 = #{projectCatalogue2} )
+		  		</if>
+		    </when>
+		    <otherwise>
+		    	<if test='projectCatalogue != null and  "" != projectCatalogue '>
+	 			 AND AKE003 = #{projectCatalogue}
+		  		</if>
+		    </otherwise>
+	    </choose>
+	  	<if test='qryInsuNameParam != null and  "" != qryInsuNameParam'>
+	  	   and  (AKE002 like #{qryInsuNameParam} or AKE001 like #{qryInsuNameParam} or spcode like #{qryInsuNameParam} )
+	  	</if>
+	  	<if test='eunmMedicalInsurance != null  and  "" != eunmMedicalInsurance '>
+	  	   and EU_HPDICTTYPE = #{eunmMedicalInsurance}
+	  	</if>
+	  	<if test='qryApprovalNumParam != null  and  "" != qryApprovalNumParam '>
+	  	  and bkm007 like  #{qryApprovalNumParam}
+	  	</if>
+	  	<if test='qryFactoryNameParam != null  and  "" != qryFactoryNameParam '>
+	  	  and bka053 like  #{qryFactoryNameParam}
+	  	</if>
+
+ 	</select>
+
+ 	<select id="qryBdItemInfo" resultType="DynaBean" parameterType="com.zebone.nhis.common.module.compay.ins.shenzhen.PageSzYbQryParam" >
+			select bdIt.*, unit.name  unitName, bdItCa.name ItemCateName,emp.name_emp nameemp,hpit.ake001
+			,(select name  from  bd_defdoc where code = bdIt.dt_itemtype and code_defdoclist='030005'  and del_flag='0') nameItemType
+			,(select name  from  bd_defdoc where code = bdIt.dt_chcate and code_defdoclist='030800' and del_flag='0') namechcateType
+			  from bd_item bdIt
+			  left join bd_unit unit on bdit.pk_unit = unit.pk_unit
+			  left join bd_itemcate bdItCa on bdItCa.Pk_Itemcate = bdIt.Pk_Itemcate
+			  left join bd_ou_employee emp on emp.pk_emp =bdIt.creator and  emp.del_flag = '0'
+
+			  left join ins_szyb_itemmap map on map.eu_hpdicttype='${eunmMedicalInsurance}' and  map.del_flag='0' and  map.pk_item=bdIt.pk_item
+				and sysdate &gt;= map.date_begin and sysdate &lt;= map.date_end
+			  left join ins_szyb_item hpit   on hpit.eu_hpdicttype='${eunmMedicalInsurance}' and hpit.ake001=map.ake001 and hpit.del_flag='0'
+
+			where bdIt.del_flag = '0'   and unit.del_flag = '0'  and  bdItCa.del_flag = '0'
+ 		<if test='qryItemParam != null  and  "" != qryItemParam '>
+	  	   and  (bdIt.name like #{qryItemParam} or bdit.spcode like #{qryItemParam})
+	  	</if>
+
+		<if test='flagActive != null  and  "1" == flagActive '>
+			and  bdIt.flag_active ='1'
+		</if>
+		<if test='flagActive != null  and  "0" == flagActive '>
+			and  bdIt.flag_active ='0'
+		</if>
+
+		<choose>
+	  		<when test='projectCatalogue != null and  "07" == projectCatalogue'>
+	            and  bdIt.dt_itemtype like '07%'
+	        </when>
+	        <otherwise>
+	            and  bdIt.dt_itemtype not like '07%'
+	        </otherwise>
+	  	</choose>
+	  	<choose>
+	        <when test='flagNoMap != null and  "1" == flagNoMap'>
+	            and  hpit.ake001 is  null
+	        </when>
+	        <otherwise>
+	            and  hpit.ake001 is not null
+	        </otherwise>
+        </choose>
+
+  	</select>
+
+
+  	<select id="qryNoDrugInsSzybItemInfo" resultType="com.zebone.nhis.common.module.compay.ins.shenzhen.InsSzybItem" parameterType="com.zebone.nhis.common.module.compay.ins.shenzhen.PageSzYbQryParam" >
+ 		select * from  INS_SZYB_ITEM where  del_flag = '0'
+ 		<choose>
+		    <when test='projectCatalogue2 != null and  "" != projectCatalogue2'>
+		    	<if test='projectCatalogue != null and  "" != projectCatalogue'>
+	 			AND (AKE003 = #{projectCatalogue} or AKE003 = #{projectCatalogue2} )
+		  		</if>
+		    </when>
+		    <otherwise>
+		    	<if test='projectCatalogue != null and  "" != projectCatalogue '>
+	 			 AND AKE003 = #{projectCatalogue}
+		  		</if>
+		    </otherwise>
+	    </choose>
+	  	<if test='qryInsuNameParam != null  and  "" != qryInsuNameParam '>
+	  	   and  (AKE002 like #{qryInsuNameParam} or AKE001 like #{qryInsuNameParam} or spcode like #{qryInsuNameParam})
+	  	</if>
+	  	<if test='eunmMedicalInsurance != null  and  "" != eunmMedicalInsurance '>
+	  	  and EU_HPDICTTYPE = #{eunmMedicalInsurance}
+	  	</if>
+ 	</select>
+
+
+ 	<select id="qrySzybItem" resultType="com.zebone.nhis.common.module.compay.ins.shenzhen.InsSzybItem" parameterType="java.util.Map" >
+	 	select * from  INS_SZYB_ITEM where del_flag = '0'
+	 	<if test='eunmMedicalInsurance != null  and  "" != eunmMedicalInsurance '>
+	  	  and EU_HPDICTTYPE = #{eunmMedicalInsurance}
+	  	</if>
+	 	<if test='insCode != null and  insCode != "" '>
+	 	 and ake001 = #{insCode}
+	 	</if>
+	 	<if test='insName != null and  insName != "" '>
+	 	 and ake002 = #{insName}
+	 	</if>
+		and rownum = 1
+ 	</select>
+
+ 	<select id="qryBdPd" resultType="com.zebone.nhis.common.module.scm.pub.BdPd" parameterType="java.util.Map" >
+		SELECT
+			PK_PD,
+			pd.CODE,
+			pd.NAME,
+			SPEC,
+			SHORT_NAME,
+			BARCODE,
+			CONCENT,
+			WEIGHT,
+			PK_UNIT_WT,
+			VOL,
+			unitVol.name PK_UNIT_VOL,
+			PK_UNIT_MIN,
+			PACK_SIZE,
+			PK_UNIT_PACK,
+			EU_MUPUTYPE,
+			EU_PDTYPE,
+			EU_DRUGTYPE,
+			NAME_CHEM,
+			PK_FACTORY,
+			APPR_NO,
+			EU_PDPRICE,
+			EU_PAP,
+			AMT_PAP,
+			PAP_RATE,
+			DT_ABRD,
+			DT_MADE,
+			DT_DOSAGE,
+			DT_PHARM,
+			DT_POIS,
+			DT_ANTI,
+			FLAG_PRECIOUS,
+			EU_USECATE,
+			DT_STORETYPE,
+			DT_BASE,
+			FLAG_RM,
+			FLAG_REAG,
+			FLAG_VACC,
+			FLAG_ST,
+			FLAG_GMP,
+			FLAG_TPN,
+			FLAG_PED,
+			NOTE,
+			DOSAGE_DEF,
+			PK_UNIT_DEF,
+			CODE_SUPPLY,
+			CODE_FREQ,
+			DT_CHCATE,
+			PK_ITEMCATE,
+			PK_ORDTYPE,
+			PRICE,
+			VALID_CNT,
+			EU_VALID_UNIT,
+			FLAG_STOP,
+			EU_SOURCE,
+			PK_PDIND,
+			PK_PDCATE,
+			REG_NO,
+			DATE_VALID_REG,
+			EU_STOCKMODE,
+			CODE_COSTITEM,
+			PK_ITEM,
+			FLAG_SINGLE,
+			FLAG_IMP,
+			FLAG_USE,
+			PK_PDGN,
+			DT_PDTYPE,
+			PACK_SIZE_MAX,
+			DT_USAGENOTE,
+			DT_INJTYPE,
+			FLAG_CHRT,
+			EU_HERBTYPE,
+			OLD_YB_ID,
+			OLD_ID,
+			AGE_MIN,
+			AGE_MAX,
+			EU_SEX,
+			OLD_CODE,
+			QUOTA_DOS,
+			EU_HPTYPE,
+			CODE_HP,
+			CODE_STD,
+			NAME_GEN,
+			EU_LABELTYPE,
+			PK_AUDIT,
+			CODE_EXT,
+			VAL_DDD,
+			DT_DRUGEFFECT,
+			EU_MUPUTYPE_OP,
+			REMARK,
+			DT_UNIFY,
+			DT_RAY,
+			DT_HERBUSAGE
+		FROM bd_pd pd
+		left join bd_unit unitVol on unitVol.pk_unit = pd.pk_unit_vol
+		WHERE pd.del_flag = '0'
+		<if test='hosCode != null and  hosCode != "" '>
+	 	 and pd.code = #{hosCode}
+	 	</if>
+	 	<if test='hosName != null and  hosName != "" '>
+	 	 and pd.name = #{hosName}
+	 	</if>
+ 		and rownum = 1
+ 	</select>
+
+ 	<select id="qryBdItem" resultType="com.zebone.nhis.common.module.base.bd.srv.BdItem" parameterType="java.util.Map" >
+ 		select * from  bd_item where del_flag = '0'
+ 		<if test='hosCode != null and  hosCode != "" '>
+	 	 and code = #{hosCode}
+	 	</if>
+	 	<if test='hosName != null and  hosName != "" '>
+	 	 and name = #{hosName}
+	 	</if>
+ 		and rownum = 1
+ 	</select>
+
+ 	<select id="qryNoDrugMapInfo" resultType="DynaBean" parameterType="com.zebone.nhis.common.module.compay.ins.shenzhen.PageSzYbQryParam">
+ 	  select
+		insItem.ake001 ,
+		insItem.ake002 ,
+		insItem.ake003 ,
+		insItem.aka111 ,
+		insItem.aka036 ,
+		insItem.bke111 ,
+		insItem.aka074 ,
+		insItem.aka031 ,
+		insItem.bkm031 ,
+		nvl(insItem.bkm032,'99') as bkm032,
+		insItem.ckm099 ,
+		insItem.ckm108 ,
+		insItem.bka956 ,
+		insItem.aka070 ,
+		insItem.aka068 ,
+		bdItem.code ,
+		bdItem.name ,
+		(select name  from bd_unit where pk_unit = bdItem.pk_unit AND del_flag = '0') unit1,
+		bdItem.Spec ,
+		bdItem.Price ,
+		map.eu_hpdicttype as euType,
+		map.flag_audit as flagAudit,
+	    map.date_audit as dateAudit,
+	    map.eu_apply as  euApply,
+		map.PK_ITEMMAP
+		from ins_szyb_itemmap map
+		left join bd_item bdItem on map.pk_item = bdItem.Pk_Item
+		left join ins_szyb_item insItem on insItem.ake001 = map.ake001
+      where map.del_flag = '0'  and insItem.del_flag = '0'  and  bdItem.del_flag = '0'
+      and sysdate &gt;= map.date_begin and sysdate &lt;= map.date_end
+      <if test='eunmMedicalInsurance != null  and  "" != eunmMedicalInsurance '>
+      	  and  map.eu_hpdicttype =  #{eunmMedicalInsurance,jdbcType=CHAR}
+		  and  insItem.eu_hpdicttype =  #{eunmMedicalInsurance,jdbcType=CHAR}
+       </if>
+      <if test='qryItemParam != null  and  "" != qryItemParam '>
+      and ( bdItem.name  like  #{qryItemParam,jdbcType=VARCHAR} or bdItem.spcode  like  #{qryItemParam,jdbcType=VARCHAR})
+       </if>
+ 	 <choose>
+		    <when test='projectCatalogue2 != null and  "" != projectCatalogue2'>
+		    	<if test='projectCatalogue != null and  "" != projectCatalogue'>
+	 			AND (insItem.AKE003 = #{projectCatalogue} or insItem.AKE003 = #{projectCatalogue2} )
+		  		</if>
+		    </when>
+		    <otherwise>
+		    	<if test='projectCatalogue != null and  "" != projectCatalogue '>
+	 			 AND insItem.AKE003 = #{projectCatalogue}
+		  		</if>
+		    </otherwise>
+	    </choose>
+
+
+ 	</select>
+
+
+ 	<select id="qryDrugMapInfo" resultType="DynaBean" parameterType="com.zebone.nhis.common.module.compay.ins.shenzhen.PageSzYbQryParam">
+ 	  select DISTINCT insItem.ake001,
+	        insItem.ake002,
+	        insItem.ake003,
+	        insItem.aka111,
+	        insItem.aka036,
+	        insItem.bke111,
+	        insItem.aka074,
+	        insItem.aka031,
+	        insItem.bkm031,
+	        nvl(insItem.bkm032,'99') as bkm032,
+	        insItem.ckm099,
+	        insItem.ckm108,
+	        insItem.bka956,
+	        insItem.aka070,
+			insItem.aka068,
+	        bd.code,
+	        bd.name,
+	        bd.spec,
+	        (select name from bd_unit where pk_unit = bd.pk_unit_min  AND del_flag = '0') minUnit,
+	        bd.pack_size,
+	        (select name from bd_unit where pk_unit = bd.pk_unit_pack  AND del_flag = '0') packUnit,
+	        bd.pack_size_max,
+	        bd.eu_muputype,
+	        bd.dt_pdtype,
+	        bd.eu_drugtype,
+	        fac.name pk_factory,
+	        bd.appr_no,
+	        bd.price,
+	        bd.eu_stockmode,
+	        bd.code_hp,
+	        map.eu_hpdicttype as euType,
+	        map.flag_audit as flagAudit,
+	        map.date_audit as dateAudit,
+	        map.eu_apply as  euApply,
+		    map.PK_ITEMMAP,
+		    bd.eu_source
+	   from ins_szyb_itemmap map
+	   left join bd_pd bd
+	     on bd.pk_pd = map.pk_item
+	   left join ins_szyb_item insItem
+	     on insItem.ake001 = map.ake001
+	   left join bd_factory  fac
+	   	 on fac.pk_factory = bd.pk_factory
+	  where map.del_flag = '0'  and bd.del_flag = '0'  and  fac.del_flag = '0'  and  insItem.del_flag = '0'
+	  and sysdate &gt;= map.date_begin and sysdate &lt;= map.date_end
+      <if test='eunmMedicalInsurance != null  and  "" != eunmMedicalInsurance '>
+      	 and  map.eu_hpdicttype =  #{eunmMedicalInsurance,jdbcType=CHAR}
+		 and  insItem.EU_HPDICTTYPE=#{eunmMedicalInsurance,jdbcType=CHAR}
+		<if test='eunmMedicalInsurance.equals("02")'>
+			and insItem.PK_INSITEM = map.PK_INSITEM
+		</if>
+      </if>
+      <if test='qryItemParam != null  and  "" != qryItemParam '>
+     	 and  (bd.name like  #{qryItemParam,jdbcType=VARCHAR}  or bd.spcode like #{qryItemParam,jdbcType=VARCHAR})
+      </if>
+      <if test='qryApprovalNumParam != null and  "" != qryApprovalNumParam'>
+	  	  and  bd.appr_no like #{qryApprovalNumParam}
+  	  </if>
+  	  <if test='qryFactoryNameParam != null and  "" != qryFactoryNameParam'>
+  	     and  fac.name like #{qryFactoryNameParam}
+  	  </if>
+ 	  <choose>
+	    <when test='projectCatalogue2 != null and  "" != projectCatalogue2'>
+	    	<if test='projectCatalogue != null and  "" != projectCatalogue'>
+ 			AND (insItem.AKE003 = #{projectCatalogue} or insItem.AKE003 = #{projectCatalogue2} )
+	  		</if>
+	    </when>
+	    <otherwise>
+	    	<if test='projectCatalogue != null and  "" != projectCatalogue '>
+ 			 AND insItem.AKE003 = #{projectCatalogue}
+	  		</if>
+	    </otherwise>
+	   </choose>
+ 	</select>
+
+
+
+ <select id="qryInsDictmap" resultType="DynaBean" parameterType="java.util.Map" >
+	select pk_his,code_his,name_his,code_insur,name_insur
+	 from ins_szyb_dictmap
+	where DEL_FLAG='0'
+	  and eu_hpdicttype='01'
+	  and flag_chd='1'
+	  and code_type=#{codeType,jdbcType=VARCHAR}
+	<if test='pkHis != null and pkHis != "" '>
+			and pk_his=#{pkHis,jdbcType=VARCHAR}
+	</if>
+	<if test='codeHis != null and codeHis != "" '>
+			and code_his=#{codeHis,jdbcType=VARCHAR}
+	</if>
+ </select>
+
+ <select id="queryPreSettlePat" resultType="DynaBean" parameterType="java.util.Map" >
+	SELECT
+		pv.pk_pv,
+		pv.name_pi,
+		pv.date_begin,
+		hp.pk_hp,
+		hp. NAME as name_hp,
+		hp.dt_exthp,
+		dic. NAME AS name_exthp,
+		pv.pk_dept,
+		pv.pk_dept_ns,
+		dept.name_dept,
+		deptns.name_dept name_dept_ns
+	FROM
+		pv_encounter pv
+	INNER JOIN bd_hp hp ON pv.pk_insu = hp.pk_hp AND hp.del_flag = '0'
+	INNER JOIN bd_defdoc dic ON dic.code_defdoclist = '040006' AND dic.code = hp.dt_exthp AND dic.del_flag = '0'
+	left join bd_ou_dept dept on pv.pk_dept=dept.pk_dept and dept.del_flag='0'
+    left join bd_ou_dept deptns on pv.pk_dept_ns=deptns.pk_dept and deptns.del_flag='0'
+    left join bl_settle_budget bl on pv.pk_pv=bl.pk_pv and to_char(SYSDATE,'yyyy-mm-dd')=to_char(date_bud,'yyyy-mm-dd')
+	WHERE pv.del_flag='0'
+		and pv.eu_status IN ('1', '2')
+		and bl.pk_budget is null
+		AND hp.dt_exthp IN
+		<foreach collection="extHpList" item="exthp" index="index" open="("
+				close=")" separator=",">
+				#{exthp,jdbcType=VARCHAR}
+		</foreach>
+ </select>
+
+  <select id="queryInsItem" resultType="DynaBean" parameterType="java.util.Map" >
+	select cno.*,item.name as itname,item.code as itcode,item.price as itprice,orit.quan as quan_oritem,
+		visit.persontype,visit.dt_exthp,city.aac999,city.aae140,pres.PRES_NO,
+		empSign.code_emp as emp_Sign,empStop.code_emp as emp_Stop,deptSign.code_dept,deptSign.name_dept Dept_Name,
+		       hpit.ake001,case when map.bkm017 is null then hpit.bkm017 else map.bkm017 end bkm017,ifreq.code_insur as ifreq,
+	  nvl(idosUnit.code_insur,idosUnitItem.CODE_INSUR) as idosUnit,nvl(iQuanUnit.code_insur,iQuanUnitItem.CODE_INSUR) as iQuanUnit,
+					iSupply.name_insur Name_Supply,iSupply.code_insur as iSupply,iPackUnit.code_insur as iPackUnit,ris.desc_body
+		 from cn_order cno
+		 inner join ins_szyb_visit visit on visit.pk_pv=cno.pk_pv and visit.del_flag='0'
+         inner join ins_szyb_visit_city city on visit.pk_visit=city.pk_visit and city.del_flag='0'
+		  left join bd_ou_employee empSign on cno.Pk_Emp_Ord=empSign.pk_emp and empSign.del_flag='0'
+		  left join bd_ou_dept deptSign on cno.Pk_Dept=deptSign.Pk_Dept and deptSign.del_flag='0'
+		  left join bd_ou_employee empStop on cno.Pk_Emp_Stop=empStop.pk_emp and empStop.del_flag='0'
+		  left join cn_ris_apply ris on RIS.pk_cnord=CNO.pk_cnord and ris.del_flag='0'
+			left join bd_pd pd on cno.flag_durg='1' and cno.pk_ord=pd.pk_pd and pd.del_flag='0'
+		  left join bd_ord ord on cno.flag_durg='0' and cno.pk_ord=ord.pk_ord and ord.del_flag='0'
+		  left join bd_ord_item orit on orit.pk_ord=cno.pk_ord and orit.del_flag='0'
+			left join bd_item item on item.pk_item=orit.pk_item and item.del_flag='0'
+	  		left join CN_PRESCRIPTION pres on pres.PK_PRES=cno.PK_PRES
+
+			left join ins_szyb_itemmap map on map.eu_hpdicttype='01' and  map.del_flag='0' and ((cno.flag_durg='1' and map.pk_item=pd.pk_pd and map.flag_state='0') or (cno.flag_durg='0' and map.pk_item=item.pk_item ))
+			left join ins_szyb_item hpit   on hpit.eu_hpdicttype='01' and hpit.ake001 = map.ake001 and hpit.del_flag='0'
+		  left join ins_szyb_dictmap ifreq on ifreq.code_type='HpCkFreq' and cno.code_freq=ifreq.code_his and ifreq.del_flag='0' and ifreq.flag_stop='0'
+			left join ins_szyb_dictmap idosUnit on idosUnit.code_type='HpCkUnit' and cno.Pk_Unit_Dos=idosUnit.pk_his and idosUnit.del_flag='0' and idosUnit.flag_stop='0'
+		  left join ins_szyb_dictmap idosUnitItem on idosUnitItem.code_type = 'HpCkUnit' and item.pk_unit = idosUnitItem.pk_his and idosUnitItem.del_flag = '0' and idosUnitItem.flag_stop = '0'
+		  left join ins_szyb_dictmap iQuanUnit on iQuanUnit.code_type = 'HpCkUnit' and cno.Pk_Unit = iQuanUnit.pk_his and iQuanUnit.del_flag = '0' and iQuanUnit.flag_stop = '0'
+		  left join ins_szyb_dictmap iQuanUnitItem on iQuanUnitItem.code_type = 'HpCkUnit' and item.pk_unit = iQuanUnitItem.pk_his and iQuanUnitItem.del_flag = '0' and iQuanUnitItem.flag_stop = '0'
+		  left join ins_szyb_dictmap iSupply on iSupply.code_type='HpCkSupply' and cno.Code_Supply=iSupply.code_his and iSupply.del_flag='0' and iSupply.flag_stop='0'
+		  left join ins_szyb_dictmap iPackUnit on iPackUnit.code_type='HpCkUnit' and pd.pk_unit_pack=iPackUnit.pk_his and iPackUnit.del_flag='0' and iPackUnit.flag_stop='0'
+	where cno.del_flag='0'
+	  	and map.DATE_BEGIN &lt;=sysdate
+		and map.DATE_END &gt;=sysdate
+      and cno.ordsn in
+		<foreach collection="ordsnList" item="item" index="index" open="("
+				close=")" separator=",">
+				#{item,jdbcType=VARCHAR}
+		</foreach>
+		 order by cno.ordsn_parent,cno.ordsn
+ </select>
+
+ <select id="queryInsOrd" resultType="DynaBean" parameterType="java.util.Map" >
+	select cno.*,pi.id_no,pi.name_pi,pi.code_ip,pv.code_pv,visit.persontype,visit.dt_exthp,city.aac999,city.aae140,
+		   empSign.code_emp as emp_Sign,empStop.code_emp as emp_Stop,deptSign.code_dept,deptSign.name_dept Dept_Name
+		 from cn_order cno
+		 inner join pv_encounter pv on CNO.pk_pv=PV.pk_pv and pv.del_flag='0'
+     		inner join pi_master pi on pv.pk_pi=pi.pk_pi and pi.del_flag='0'
+     		inner join ins_szyb_visit visit on visit.pk_pv=pv.pk_pv and visit.del_flag='0'
+     		inner join ins_szyb_visit_city city on visit.pk_visit=city.pk_visit and city.del_flag='0'
+		    left join bd_ou_employee empSign on cno.Pk_Emp_Ord=empSign.pk_emp and empSign.del_flag='0'
+		    left join bd_ou_dept deptSign on cno.Pk_Dept=deptSign.Pk_Dept and deptSign.del_flag='0'
+		    left join bd_ou_employee empStop on cno.Pk_Emp_Stop=empStop.pk_emp and empStop.del_flag='0'
+	where cno.del_flag='0'
+      and cno.ordsn in
+		<foreach collection="ordsnList" item="item" index="index" open="("
+				close=")" separator=",">
+				#{item,jdbcType=VARCHAR}
+		</foreach>
+		 order by cno.ordsn_parent,cno.ordsn
+ </select>
+
+
+ <select id="queryPresInfo" resultType="DynaBean" parameterType="java.util.Map" >
+	select pres.*, diag.name_cd diagname from cn_prescription pres
+	left join bd_cndiag diag on diag.pk_cndiag=pres.pk_diag and diag.del_flag='0'
+	 where pk_pv=#{pkPv,jdbcType=CHAR}
+	 <if test='pkPres != null and pkPres != "" '>
+			and pk_pres=#{pkPres,jdbcType=VARCHAR}
+	</if>
+</select>
+
+ <select id="queryFitInfo" resultType="DynaBean" parameterType="java.util.Map" >
+ select * from
+ (
+	select ins.pk_insord,cn.pk_ord,cn.pk_cnord,cn.ordsn,cn.date_start,cn.name_ord,ins.desc_fit,ins.flag_fit,INS.code_hp,INS.flag_valid, eu_hp
+		from INS_SZYB_ORDER ins
+		INNER JOIN cn_order cn on ins.pk_pv=cn.pk_pv and ins.ordsn=CN.ordsn and CN.del_flag='0'
+		where CN.pk_pv=#{pkPv,jdbcType=CHAR}
+		<if test='ordsn != null and ordsn != "" '>
+			and cn.ordsn=#{ordsn,jdbcType=VARCHAR}
+		</if>
+
+	union ALL
+
+	select null as pk_insord,map.pk_item as pk_ord,null as pk_cnord,null as ordsn,null as date_start,PD.name as name_ord,
+			map.ckm099 as desc_fit,map.aka036 as flag_fit,map.ake001 as code_hp,'0' as flag_valid,map.bkm032 as eu_hp
+		from ins_szyb_itemmap map
+   		inner join bd_pd pd on  map.pk_item=pd.pk_pd and map.flag_state='0'
+		where map.ake003='1'
+		  and map.del_flag='0'
+		  and map.pk_item =#{pkOrd,jdbcType=VARCHAR}
+		  and sysdate <![CDATA[>=]]>  map.date_begin and sysdate <![CDATA[<]]>  map.date_end
+	 	  and map.eu_hpdicttype=#{hpRefDirectory}
+		  <!--<choose>
+	        <when test='dtExthp == "04" '>
+	            and map.eu_hpdicttype='02'
+	        </when>
+	        <when test='dtExthp == "05" '>
+	            and map.eu_hpdicttype='02'
+	        </when>
+	        <when test='dtExthp == "06" '>
+	            and map.eu_hpdicttype='01'
+	        </when>
+	        <otherwise>
+	            and map.eu_hpdicttype='01'
+	        </otherwise>
+        </choose>-->
+
+	) order by ordsn
+</select>
+
+ <select id="qryDiseListByCode" resultType="com.zebone.nhis.common.module.compay.ins.shenzhen.InsSzybDise">
+ 	select * from ins_szyb_dise where
+         <if test="codeList != null and codeList.size > 0">
+		    aka120 IN
+		        <!-- 处理in的集合超过1000条时Oracle不支持的情况 -->
+		        <trim suffixOverrides=" OR aka120 IN()">    <!-- 表示删除最后一个条件 -->
+		          <foreach collection="codeList" item="Id" index="index" open="(" close=")">
+		            <if test="index != 0">
+		              <choose>
+		                 <when test="index % 1000 == 999">) OR aka120 IN (</when>
+		                     <otherwise>,</otherwise>
+		              </choose>
+		            </if>
+		            #{Id}
+		          </foreach>
+		       </trim>
+		 </if>
+ </select>
+
+	<select id="disePageHospitalQuery" resultType="DynaBean">
+		select * from ins_szyb_dise where del_flag = '0'
+		<if test='searchParam!=null and searchParam!=""'>
+			and (
+				aka120 like '%${searchParam}%'
+				or aka121 like '%${searchParam}%'
+				or aka020 like '%${searchParam}%'
+			)
+		</if>
+	</select>
+
+	<select id="queryPresClassInfo" resultType="DynaBean">
+		select C14,N40 from VIEW_SZ_RPT110_YJS WHERE C50 = #{pKPV,jdbcType=CHAR}
+	</select>
+
+	<select id="queryPvHistory" resultType="DynaBean" parameterType="java.util.Map" >
+	SELECT
+		pv.pk_pv,
+		pv.date_begin,
+		pv.date_end,
+		HP.dt_exthp
+		FROM
+		pv_encounter pv
+		inner join bd_hp hp on PV.pk_insu=HP.pk_hp
+	WHERE pv.eu_pvtype = '3'
+		AND pv.del_flag = '0'
+		AND pv.flag_in = '0'
+		AND pv.eu_status != '9'
+		AND pv.pk_pi = #{pkPi,jdbcType=CHAR}
+		 <if test='dtExthp != null and dtExthp != "" '>
+				and HP.dt_exthp= #{dtExthp,jdbcType=CHAR}
+		</if>
+	</select>
+
+	<select id="qryUploadInfoByPkItem" resultType="DynaBean" parameterType="java.util.Map" >
+		select to_char(sysdate,'hh24missSSS')||round(dbms_random.value,2)*100||rownum as code_cg,
+		        itemmap.ake001 as code_hp,
+		        itemmap.code_hosp as Yyxmbm,
+		        item.name as Yyxmmc,
+		        item.pk_item as Yyxm_Pk
+		from bd_item item
+		  inner join ins_szyb_itemmap itemmap on itemmap.pk_item = item.pk_item
+		where item.del_flag = '0' and itemmap.del_flag = '0' and itemmap.EU_HPDICTTYPE = '01'
+		<if test="pkList != null and pkList.size > 0">
+		    and (item.pk_item IN
+		        <!-- 处理in的集合超过1000条时Oracle不支持的情况 -->
+		        <trim suffixOverrides=" OR item.pk_item IN()">    <!-- 表示删除最后一个条件 -->
+		          <foreach collection="pkList" item="Id" index="index" open="(" close=")">
+		            <if test="index != 0">
+		              <choose>
+		                 <when test="index % 1000 == 999">) OR item.pk_item IN (</when>
+						  <otherwise>,</otherwise>
+		              </choose>
+		            </if>
+		            #{Id}
+		          </foreach>
+		       </trim>
+			)
+		 </if>
+	</select>
+
+	<select id="qryOpVisitInfo" resultType="DynaBean" parameterType="java.util.Map" >
+		select pi.id_no  idno,visit.*,pv.code_pv,PV.date_begin,PV.pk_dept,PV.pk_dept_ns,PV.bed_no,diag.code_icd,diag.desc_diag,
+	       city.aae140,city.aac999,city.alc005,city.aka120,city.akc196,hpDg.aka121 as name_akc196,city.cme320,city.amc021,city.cme331,city.bcc334,city.cka303,city.cka304,city.cka304,dict.name as persontype_name
+	       ,pv.pk_emp_phy,pv.name_emp_phy,visit.date_reg
+	  from ins_szyb_visit visit
+	    inner join ins_szyb_visit_city city on visit.pk_visit=city.pk_visit and city.del_flag='0'
+		inner join pv_encounter pv on VISIT.pk_pv=pv.pk_pv and PV.del_flag='0'
+		inner join pi_master pi on pi.pk_pi=pv.pk_pi and pi.del_flag='0'
+		left join pv_diag diag on diag.pk_pv = visit.pk_pv and diag.flag_maj = '1' and diag.del_flag = '0'
+		left join INS_SZYB_DISE hpDg on city.akc196=hpDg.aka120 and hpDg.DEL_FLAG='0'
+		left join ins_szyb_dict dict on dict.code = visit.persontype and dict.eu_hpdicttype='01' and dict.flag_chd='1' and dict.code_type = 'AKA130' and dict.del_flag='0'
+		<if test="pkSettle != null and pkSettle !=''">
+			inner join ins_szyb_st szSt on szSt.pk_visit = visit.pk_visit
+		</if>
+		where visit.pk_pv=#{pkPv,jdbcType=CHAR} and visit.del_flag='0'
+			<if test="pkSettle != null and pkSettle !=''">
+				and szSt.pk_settle = #{pkSettle,jdbcType=CHAR}
+			</if>
+		order by visit.date_reg desc
+	</select>
+
+	<select id="qryOpStUploadDetail" resultType="DynaBean" parameterType="java.util.Map" >
+		select bl.pk_cgop as pk_cgip,
+			bl.pk_item,
+			bl.flag_pd,
+			cate.code as code_cate,
+		    pv.code_pv,
+		    nvl(BL.sortno,0) as aae072,
+		    '1' as bkc369,
+			bl.code_cg || bl.sortno as bkf500,
+			hpit.ake001,
+			hpit.ake002,
+			case when map.bkm017 is null then hpit.bkm017 else map.bkm017 end bkm017,
+			hpit.aka064,
+			hpit.ala026,
+			hpit.aka070,
+			case when  bl.flag_pd='1' then case when map.bkm032='02' then  pd.code||'d' when map.bkm032='03' then  pd.code||'j' else pd.code end
+			else item.code end as ake005,
+			BL.name_cg as ake006,
+			bl.spec as aka074,
+			case when ('${flagState}'='1' and pd.eu_source='4') or hpit.ckm102='1' then bl.Price/bl.pack_size else bl.Price  end as akc225,
+			case when ('${flagState}'='1' and pd.eu_source='4') or hpit.ckm102='1'  then bl.pack_size * bl.Quan else bl.Quan  end as akc226,
+			case when ('${flagState}'='1' and pd.eu_source='4') or hpit.ckm102='1' then minUnit.name else UNIT.name  end as aka067,
+			bl.Amount as akc264,
+			to_char(bl.date_hap ,'yyyyMMdd') as akc271,
+			cgemp.code_insur as bkc320,
+			nvl(nvl(cnor.name_emp_ord,bl.name_emp_cg),'空') as name_emp_cg,
+			case when bl.eu_additem is not null and bl.eu_additem = '1' then null else case when nvl(cnor.desc_fit,'xx')!='xx' and cnor.flag_fit='0' and cnor.desc_fit='自费' then '91' else null end end as cke400,
+			case when cnor.dt_hpprop is null then '11' else cnor.dt_hpprop end as dt_hpprop,
+			bl.name_cg
+			from bl_op_dt bl
+			inner join pv_encounter pv on BL.pk_pv=pv.pk_pv and pv.del_flag='0'
+
+			left join (
+				select * from (
+				select rownum,a.* from  pv_staff a where  dt_role='0001' and pk_pv=#{pkPv,jdbcType=CHAR}
+				order by date_begin desc
+				) where rownum=1
+				) stf
+			ON  pv.pk_pv = stf.pk_pv
+			AND stf.pk_dept = pv.pk_dept
+			AND stf.del_flag = '0'
+
+			left join bd_itemcate cate on bl.pk_itemcate=cate.pk_itemcate and cate.del_flag='0'
+			left join bd_unit unit on unit.pk_unit=BL.pk_unit and unit.del_flag='0'
+			left join cn_order cnor on cnor.pk_cnord=bl.pk_cnord and cnor.del_flag='0'
+			left join cn_prescription pres on pres.pk_pres=cnor.pk_pres and pres.del_flag='0'
+			left join ins_szyb_dictmap cgemp on cgemp.eu_hpdicttype='01' and cgemp.flag_chd='1' and cgemp.code_type='YS001' and cgemp.pk_his=nvl(cnor.pk_emp_ord,bl.pk_emp_cg) and cgemp.del_flag='0'
+			left join bd_pd pd on bl.flag_pd='1' and BL.pk_item=pd.pk_pd and pd.del_flag='0'
+			left join bd_unit packUnit on packUnit.pk_unit=pd.pk_unit_pack and packUnit.del_flag='0'
+			left join bd_unit minUnit on minUnit.pk_unit=pd.pk_unit_min and minUnit.del_flag='0'
+			left join bd_item item on bl.flag_pd='0' and BL.pk_item=item.pk_item and item.del_flag='0'
+			left join ins_szyb_itemmap map on map.eu_hpdicttype='01' and  map.del_flag='0' and ((bl.flag_pd='1' and map.pk_item=pd.pk_pd and map.flag_state='0') or (bl.flag_pd='0' and map.pk_item=item.pk_item ))
+										  and bl.date_hap <![CDATA[>=]]>  to_date(to_char(map.date_begin,'yyyy-MM-dd'),'yyyy-MM-dd') and bl.date_hap <![CDATA[<]]>  to_date(to_char(map.date_end,'yyyy-MM-dd'),'yyyy-MM-dd')
+			left join ins_szyb_item hpit   on hpit.eu_hpdicttype='01' and hpit.ake001=map.ake001 and hpit.del_flag='0'
+			left join INS_SZYB_ORDER insc  on cnor.pk_pv=insc.pk_pv and cnor.ordsn=insc.ordsn and insc.del_flag='0' and insc.code_hp=hpit.ake001
+		where bl.pk_pv=#{pkPv,jdbcType=CHAR}
+		  AND (bl.flag_settle = '0' OR bl.PK_SETTLE IS NULL)
+	      AND nvl(bl.flag_insu,'0') = '0'
+	      AND bl.del_flag = '0'
+	      and nvl(pres.dt_prestype,'00')!='07'
+	      and (insc.pk_insord is null or insc.flag_valid='1')
+	      <if test="pkList != null and pkList.size > 0">
+		    AND (bl.pk_cgop IN
+		        <!-- 处理in的集合超过1000条时Oracle不支持的情况 -->
+		        <trim suffixOverrides=" OR bl.pk_cgop IN()">    <!-- 表示删除最后一个条件 -->
+		          <foreach collection="pkList" item="Id" index="index" open="(" close=")">
+		            <if test="index != 0">
+		              <choose>
+		                 <when test="index % 1000 == 999">) OR bl.pk_cgop IN (</when>
+		                     <otherwise>,</otherwise>
+		              </choose>
+		            </if>
+		            #{Id}
+		          </foreach>
+		       </trim>
+			)
+		 </if>
+
+
+	    <!-- 基本医疗保险患者不收取自费的60元诊查费，需求号：3802
+	    <if test='aae140 != null and aae140 == "310" '>
+				and nvl(item.code,' ') !='F00000000013'
+		</if>
+		-->
+
+	</select>
+
+	<select id="qryOpDtUpDtlsZeroAmount" resultType="java.lang.String" parameterType="java.util.Map" >
+		select pk_item from bl_op_dt bl
+		where bl.pk_pv=#{pkPv,jdbcType=CHAR}
+		  AND (bl.flag_settle = '0' OR bl.PK_SETTLE IS NULL)
+	      AND bl.flag_insu = '0'
+	      AND bl.del_flag = '0'
+
+	    <if test="pkList != null and pkList.size > 0">
+		    AND (bl.pk_cgop IN
+		        <!-- 处理in的集合超过1000条时Oracle不支持的情况 -->
+		        <trim suffixOverrides=" OR bl.pk_cgop IN()">    <!-- 表示删除最后一个条件 -->
+		          <foreach collection="pkList" item="Id" index="index" open="(" close=")">
+		            <if test="index != 0">
+		              <choose>
+		                 <when test="index % 1000 == 999">) OR bl.pk_cgop IN (</when>
+		                     <otherwise>,</otherwise>
+		              </choose>
+		            </if>
+		            #{Id}
+		          </foreach>
+		       </trim>
+			)
+		 </if>
+		 group by pk_item having sum(amount)=0
+	</select>
+
+	<update id="updateOpdtFlagInsuByPk" parameterType="java.util.Map" >
+		update bl_op_dt set flag_insu= '${flagInsu}'
+		<if test='presNo != null and presNo != "" '>
+			  , name_itemset =  #{presNo,jdbcType=CHAR}
+		</if>
+		 where pk_pv=#{pkPv,jdbcType=CHAR}
+		   AND (flag_settle = '0' OR PK_SETTLE IS NULL)
+	       AND del_flag = '0'
+
+		<if test='FlagInsuWhere != null and FlagInsuWhere != "" '>
+				and flag_insu=#{FlagInsuWhere,jdbcType=VARCHAR}
+		</if>
+		<if test='PresNoWhere != null and PresNoWhere != "" '>
+				and name_itemset=#{PresNoWhere,jdbcType=VARCHAR}
+		</if>
+		<if test='PresDetailNoWhere != null and PresDetailNoWhere != "" '>
+				and code_cg+sortno=#{PresDetailNoWhere,jdbcType=VARCHAR}
+		</if>
+		<if test="pkCgipList != null">
+			 and pk_cgop IN
+			<foreach collection="pkCgipList" item="pkCgip" index="index" open="(" close=")" separator=",">
+					#{pkCgip,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+	</update>
+
+	<select id="qryOpdtPresNo" resultType="DynaBean" parameterType="java.util.Map" >
+		select distinct name_itemset as presno
+			from bl_op_dt bl
+		where bl.pk_pv=#{pkPv,jdbcType=CHAR}
+		  AND (bl.flag_settle = '0' OR bl.PK_SETTLE IS NULL)
+	      AND bl.flag_insu = '1'
+	      AND bl.del_flag = '0'
+	      <if test="pkList != null and pkList.size > 0">
+		    AND (bl.pk_cgop IN
+		        <!-- 处理in的集合超过1000条时Oracle不支持的情况 -->
+		        <trim suffixOverrides=" OR bl.pk_cgop IN()">    <!-- 表示删除最后一个条件 -->
+		          <foreach collection="pkList" item="Id" index="index" open="(" close=")">
+		            <if test="index != 0">
+		              <choose>
+		                 <when test="index % 1000 == 999">) OR bl.pk_cgop IN (</when>
+		                     <otherwise>,</otherwise>
+		              </choose>
+		            </if>
+		            #{Id}
+		          </foreach>
+		       </trim>
+				)
+		 </if>
+	</select>
+
+	<select id="qryOpdtBlStatistical" resultType="DynaBean" parameterType="java.util.Map" >
+		select sum(bl.Amount) as ylfyze
+			from bl_op_dt bl
+		where bl.pk_pv=#{pkPv,jdbcType=CHAR}
+		  AND (bl.flag_settle = '0' OR bl.PK_SETTLE IS NULL)
+	      AND bl.flag_insu = '1'
+	      AND bl.del_flag = '0'
+	      <if test="pkList != null and pkList.size > 0">
+		    AND (bl.pk_cgop IN
+		        <!-- 处理in的集合超过1000条时Oracle不支持的情况 -->
+		        <trim suffixOverrides=" OR bl.pk_cgop IN()">    <!-- 表示删除最后一个条件 -->
+		          <foreach collection="pkList" item="Id" index="index" open="(" close=")">
+		            <if test="index != 0">
+		              <choose>
+		                 <when test="index % 1000 == 999">) OR bl.pk_cgop IN (</when>
+		                     <otherwise>,</otherwise>
+		              </choose>
+		            </if>
+		            #{Id}
+		          </foreach>
+		       </trim>
+				)
+		 </if>
+	</select>
+
+	<select id="qrySrvDictInfo" resultType="java.lang.String">
+		select CODE_INSUR from INS_SZYB_DICTMAP dict
+		  inner join SCH_SRV srv on srv.code = dict.code_his and srv.del_flag = '0'
+		where dict.del_flag = '0' and EU_HPDICTTYPE = '01' and CODE_TYPE = 'BKC368' and srv.pk_schsrv = #{pkSchSrv,jdbcType=CHAR}
+	</select>
+
+	<select id="qryOpListByPkSettle" resultType="DynaBean" >
+		select * from bl_op_dt where PK_SETTLE = #{pkSettle,jdbcType=CHAR}
+	</select>
+
+	<select id="qryBackOpStUploadDetail" resultType="DynaBean" parameterType="java.util.Map" >
+		select bl.pk_cgop as pk_cgip,
+			bl.pk_item,
+			bl.flag_pd,
+			cate.code as code_cate,
+		    pv.code_pv,
+		    nvl(BL.sortno,0) as aae072,
+		    '1' as bkc369,
+			bl.code_cg || bl.sortno as bkf500,
+
+			<!--
+			case when '${flagState}'='1' and pd.eu_source='4' then hpit2.ake001 else hpit.ake001 end as ake001,
+			case when '${flagState}'='1' and pd.eu_source='4' then hpit2.ake002 else hpit.ake002 end as ake002,
+			case when '${flagState}'='1' and pd.eu_source='4' then hpit2.bkm017 else hpit.bkm017 end as bkm017,
+			case when '${flagState}'='1' and pd.eu_source='4' then hpit2.aka064 else hpit.aka064 end as aka064,
+			case when '${flagState}'='1' and pd.eu_source='4' then hpit2.ala026 else hpit.ala026 end as ala026,
+			case when '${flagState}'='1' and pd.eu_source='4' then hpit2.aka070 else hpit.aka070 end as aka070,
+			-->
+			hpit.ake001,
+			hpit.ake002,
+			case when map.bkm017 is null then hpit.bkm017 else map.bkm017 end bkm017,
+			hpit.aka064,
+			hpit.ala026,
+			hpit.aka070,
+
+			<!-- case when  bl.flag_pd='1' then pd.code else item.code end as ake005,  先注释掉，等与老系统并行期过后启用 -->
+			case when  bl.flag_pd='1' then case when map.bkm032='02' then  pd.code||'d' when map.bkm032='03' then  pd.code||'j' else pd.code end
+			else item.code end as ake005,
+
+			BL.name_cg as ake006,
+			bl.spec as aka074,
+			<!--
+			case when '${flagState}'='1' and pd.eu_source='4' then pd.pack_size/con.pack_size * bl.Price else bl.Price  end as akc225,
+			case when '${flagState}'='1' and pd.eu_source='4' then con.pack_size/pd.pack_size * bl.Quan else bl.Quan  end as akc226,
+			case when '${flagState}'='1' and pd.eu_source='4' then packUnit.name else UNIT.name  end as aka067,
+			-->
+			case when ('${flagState}'='1' and pd.eu_source='4') or hpit.ckm102='1' then bl.Price/bl.pack_size else bl.Price  end as akc225, <!-- 单价 -->
+			case when ('${flagState}'='1' and pd.eu_source='4') or hpit.ckm102='1'  then bl.pack_size * bl.Quan else bl.Quan  end as akc226, <!-- 数量 -->
+			case when ('${flagState}'='1' and pd.eu_source='4') or hpit.ckm102='1' then minUnit.name else UNIT.name  end as aka067, <!-- 单位 -->
+			bl.Amount as akc264, <!-- 金额 -->
+			to_char(bl.date_hap ,'yyyyMMdd') as akc271,
+			cgemp.code_insur as bkc320,
+			nvl(nvl(cnor.name_emp_ord,bl.name_emp_cg),'空') as name_emp_cg,
+			case when bl.eu_additem is not null and bl.eu_additem = '1' then null else case when nvl(cnor.desc_fit,'xx')!='xx' and cnor.flag_fit='0' and cnor.desc_fit='自费' then '91' else null end end as cke400,
+			case when pd.eu_source='4' or hpit.ckm102='1' then '1' else '0' end eu_source,
+			bl.pack_size
+			from bl_op_dt bl
+			inner join pv_encounter pv on BL.pk_pv=pv.pk_pv and pv.del_flag='0'
+
+			left join (
+				select * from (
+				select rownum,a.* from  pv_staff a where  dt_role='0001' and pk_pv=#{pkPv,jdbcType=CHAR}
+				order by date_begin desc
+				) where rownum=1
+				) stf
+			ON  pv.pk_pv = stf.pk_pv
+			AND stf.pk_dept = pv.pk_dept
+			AND stf.del_flag = '0'
+
+			left join bd_itemcate cate on bl.pk_itemcate=cate.pk_itemcate and cate.del_flag='0'
+			left join bd_unit unit on unit.pk_unit=BL.pk_unit and unit.del_flag='0'
+			left join cn_order cnor on bl.flag_pd='1' and cnor.pk_cnord=bl.pk_cnord and cnor.del_flag='0'
+			left join cn_prescription pres on pres.pk_pres=cnor.pk_pres and pres.del_flag='0'
+			left join ins_szyb_dictmap cgemp on cgemp.eu_hpdicttype='01' and cgemp.flag_chd='1' and cgemp.code_type='YS001' and cgemp.pk_his=nvl(cnor.pk_emp_ord,bl.pk_emp_cg) and cgemp.del_flag='0'
+
+			left join bd_pd pd on bl.flag_pd='1' and BL.pk_item=pd.pk_pd and pd.del_flag='0'
+			left join bd_unit packUnit on packUnit.pk_unit=pd.pk_unit_pack and packUnit.del_flag='0'
+			left join bd_unit minUnit on minUnit.pk_unit=pd.pk_unit_min and minUnit.del_flag='0'
+			<!--
+	 		left join bd_pd_store pds on pds.pk_pd = pd.pk_pd and pds.flag_stop = '0' and pds.pk_dept=cnor.pk_dept_exec
+	 		left join bd_pd_convert con on con.pk_pdconvert = pds.pk_pdconvert and con.del_flag = '0'
+	 		-->
+			left join bd_item item on bl.flag_pd='0' and BL.pk_item=item.pk_item and item.del_flag='0'
+
+			left join ins_szyb_itemmap map on map.eu_hpdicttype='01' and  map.del_flag='0' and ((bl.flag_pd='1' and map.pk_item=pd.pk_pd and map.flag_state='0') or (bl.flag_pd='0' and map.pk_item=item.pk_item ))
+										  and bl.date_hap <![CDATA[>=]]>  to_date(to_char(map.date_begin,'yyyy-MM-dd'),'yyyy-MM-dd') and bl.date_hap <![CDATA[<]]>  to_date(to_char(map.date_end,'yyyy-MM-dd'),'yyyy-MM-dd')
+			left join ins_szyb_item hpit   on hpit.eu_hpdicttype='01' and hpit.ake001=map.ake001 and hpit.del_flag='0'
+			left join INS_SZYB_ORDER insc  on cnor.pk_pv=insc.pk_pv and cnor.ordsn=insc.ordsn and insc.del_flag='0' and insc.code_hp=hpit.ake001
+
+			<!-- 4+7特殊药品处理##begin##
+			left join ins_szyb_itemmap map2 on map2.eu_hpdicttype='01' and  map2.del_flag='0' and ((bl.flag_pd='1' and map2.pk_item=pd.pk_pd and map2.flag_state='1') or (bl.flag_pd='0' and map2.pk_item=item.pk_item ))
+			left join ins_szyb_item hpit2   on hpit2.eu_hpdicttype='01' and hpit2.ake001=map2.ake001 and hpit2.del_flag='0'
+			-->
+
+		where
+	      nvl(pres.dt_prestype,'00')!='07'
+	      and (insc.pk_insord is null or insc.flag_valid='1')
+	      <if test="pkList != null and pkList.size > 0">
+		    AND (bl.pk_cgop IN
+		        <!-- 处理in的集合超过1000条时Oracle不支持的情况 -->
+		        <trim suffixOverrides=" OR bl.pk_cgop IN()">    <!-- 表示删除最后一个条件 -->
+		          <foreach collection="pkList" item="Id" index="index" open="(" close=")">
+		            <if test="index != 0">
+		              <choose>
+		                 <when test="index % 1000 == 999">) OR bl.pk_cgop IN (</when>
+		                     <otherwise>,</otherwise>
+		              </choose>
+		            </if>
+		            #{Id}
+		          </foreach>
+		       </trim>
+			)
+		 </if>
+
+	</select>
+
+	<select id="qryQuePvInfo" resultType="DynaBean">
+		Select
+		   pv.name_pi, --姓名
+		   pv.dt_sex,  --性别
+		   pv.height,  --身高
+		   pv.weight,  --体重
+		   op.sbp,     --收缩压
+		   op.dbp,     --舒张压
+		   op.temperature,--体温
+		   op.pulse,--脉搏
+		   op.breathe,--呼吸
+		   op.heart_Rate,
+		   pv.pk_insu, --主医保
+		   visit.persontype,  --医疗类别
+		   city.cka303,  --大病类别
+		   city.cka304,  --特检类别
+		   city.cme320,  --孕周
+		   city.amc021,  --计生证号
+		   city.cme331,  --建册日期
+		   city.alc005,   --工伤事故编号
+		   city.cka305,
+		   pi.code_op
+		From pv_encounter pv inner join pi_master pi on pv.pk_pi = pi.pk_pi
+		Left Outer Join INS_SZYB_VISIT_CITY city On pv.pk_pv=city.pk_pv
+		Left Outer Join ins_szyb_visit visit On city.pk_visit=visit.pk_visit
+		Left Outer Join cn_emr_op op On pv.pk_pv=op.pk_pv
+		Where pv.pk_pv=#{pkPv,jdbcType=CHAR}
+		order by visit.date_reg asc
+	</select>
+
+	<update id="updateOpVisitInfo" parameterType="com.zebone.nhis.common.module.compay.ins.shenzhen.InsSzybVisit">
+		Update INS_SZYB_VISIT Set persontype=#{persontype,jdbcType=VARCHAR},pk_hp=#{pkHp,jdbcType=CHAR},password=#{password,jdbcType=VARCHAR}
+			<if test='codeMedino!=null and codeMedino!=""'>
+				,code_medino=#{codeMedino,jdbcType=VARCHAR}
+			</if>
+		 Where pk_visit=#{pkVisit,jdbcType=CHAR}
+	</update>
+
+	<update id="updateOpVisitCityInfo" parameterType="com.zebone.nhis.common.module.compay.ins.shenzhen.InsSzybVisitCity">
+		Update INS_SZYB_VISIT_CITY
+		 Set cka303=#{cka303,jdbcType=VARCHAR},cka304=#{cka304,jdbcType=VARCHAR},
+		 	cme320=#{cme320,jdbcType=NUMERIC},amc021=#{amc021,jdbcType=VARCHAR},
+		 	cme331=#{cme331,jdbcType=NUMERIC},cka305=#{cka305,jdbcType=VARCHAR},
+		 	alc005=#{alc005,jdbcType=VARCHAR},AKC196 = #{akc196,jdbcType=VARCHAR}
+		 Where pk_visit=#{pkVisit,jdbcType=CHAR}
+	</update>
+
+	<select id="qryOrdAttrByPkCgop" resultType="java.lang.String">
+		select DISTINCT attr.VAL_ATTR from BD_ORD ord
+		  inner join CN_ORDER cnord on cnord.pk_ord = ord.pk_ord
+		  inner join bl_op_dt dt on dt.PK_CNORD = cnord.pk_cnord
+		  INNER JOIN bd_dictattr attr ON attr.pk_dict = ord.pk_ord AND attr.del_flag = '0'
+			INNER JOIN bd_dictattr_temp rtemp ON rtemp.pk_dictattrtemp = attr.pk_dictattrtemp AND rtemp.del_flag = '0'
+		WHERE rtemp.code_attr = '0205' and attr.VAL_ATTR is not null
+			<if test="pkList != null and pkList.size > 0">
+				AND (dt.pk_cgop in
+				<!-- 处理in的集合超过1000条时Oracle不支持的情况 -->
+				<trim suffixOverrides=" OR dt.pk_cgop IN()">    <!-- 表示删除最后一个条件 -->
+					<foreach collection="pkList" item="Id" index="index" open="(" close=")">
+						<if test="index != 0">
+							<choose>
+								<when test="index % 1000 == 999">) OR dt.pk_cgop in (</when>
+								<otherwise>,</otherwise>
+							</choose>
+						</if>
+						#{Id}
+					</foreach>
+				</trim>
+			)
+			</if>
+	</select>
+
+	<select id="qrySpecSuByPkPv" resultType="java.lang.String">
+		select DISTINCT attr.VAL_ATTR from BD_ORD ord
+		  inner join CN_ORDER cnord on cnord.pk_ord = ord.pk_ord
+		  inner join bl_op_dt dt on dt.PK_CNORD = cnord.pk_cnord
+		  INNER JOIN bd_dictattr attr ON attr.pk_dict = ord.pk_ord AND attr.del_flag = '0'
+			INNER JOIN bd_dictattr_temp rtemp ON rtemp.pk_dictattrtemp = attr.pk_dictattrtemp AND rtemp.del_flag = '0'
+		WHERE rtemp.code_attr = '0205' and attr.VAL_ATTR is not null and dt.FLAG_SETTLE = '0' and dt.PK_SETTLE is null and cnord.DT_HPPROP = '16'
+		 and cnord.pk_pv = #{pkPv,jdbcType=CHAR}
+	</select>
+
+	<select id="qryCodeOpByAaz500" resultType="DynaBean">
+		select cy.AAZ500,pi.code_op from PI_MASTER pi
+		inner join (
+			SELECT
+				res.AAZ500,res.AAC002
+			FROM
+				(SELECT row_number() OVER ( PARTITION BY city.AAZ500 ORDER BY city.AAZ500 desc) cnt,
+					 city.AAZ500,city.aac002
+					FROM INS_SZYB_VISIT_CITY city
+					where city.aaz500 in
+					<trim suffixOverrides=" OR city.aaz500 IN()">
+						<foreach collection="insuNoList" item="Id" index="index" open="(" close=")">
+							<if test="index != 0">
+								<choose>
+									<when test="index % 1000 == 999">) OR city.aaz500 in (</when>
+									<otherwise>,</otherwise>
+								</choose>
+							</if>
+							#{Id}
+						</foreach>
+					</trim>
+				) res
+			WHERE res.cnt = 1
+		) cy on cy.aac002 = pi.ID_NO
+	</select>
+
+	<select id="qryHisStInfoByBkc384" resultType="DynaBean">
+		select st.code_st,st.amount_st,ybst.CODE_SERIALNO  from bl_settle st
+			inner join ins_szyb_st ybst on ybst.pk_settle = st.pk_settle
+		where ybst.CODE_SERIALNO in
+			<trim suffixOverrides=" ybst.CODE_SERIALNO IN()">
+				<foreach collection="bkc384List" item="Id" index="index" open="(" close=")">
+					<if test="index != 0">
+						<choose>
+							<when test="index % 1000 == 999">) OR ybst.CODE_SERIALNO in (</when>
+							<otherwise>,</otherwise>
+						</choose>
+					</if>
+					#{Id}
+				</foreach>
+			</trim>
+		union all
+		select canl.code_st,canl.amount_st,ybst.CODE_SERIALNO from bl_settle canl
+			inner join ins_szyb_st ybst on ybst.pk_settle = canl.PK_SETTLE_CANC
+		where (ybst.CODE_SERIALNO in
+			<trim suffixOverrides=" ybst.CODE_SERIALNO IN()">
+				<foreach collection="bkc384List" item="Id" index="index" open="(" close=")">
+					<if test="index != 0">
+						<choose>
+							<when test="index % 1000 == 999">) OR ybst.CODE_SERIALNO in (</when>
+							<otherwise>,</otherwise>
+						</choose>
+					</if>
+					#{Id}
+				</foreach>
+			</trim>
+			)
+			and canl.PK_SETTLE_CANC is not null and amount_st &lt;= 0
+	</select>
+
+	<select id="qryQgybOpVisitInfo" resultType="DynaBean" parameterType="java.util.Map" >
+		select pi.id_no  idno,visit.*,pv.code_pv,PV.date_begin,PV.pk_dept,PV.pk_dept_ns,PV.bed_no,diag.code_icd,diag.desc_diag
+		,pv.pk_emp_phy,pv.name_emp_phy
+		,case when pvop.pk_pv is not null then pvop.pk_schsrv else pver.pk_schsrv end pk_schsrv
+		,case when pvop.pk_pv is not null then pvop.pk_sch else pver.pk_sch end pk_sch
+		from ins_qgyb_visit visit
+		inner join pv_encounter pv on VISIT.pk_pv=pv.pk_pv and PV.del_flag='0'
+		inner join pi_master pi on pi.pk_pi=pv.pk_pi and pi.del_flag='0'
+		left join pv_diag diag on diag.pk_pv = visit.pk_pv and diag.flag_maj = '1' and diag.del_flag = '0'
+		left join pv_op pvop on pvop.pk_pv = pv.pk_pv
+		left join pv_er pver on pver.pk_pv = pv.pk_pv
+		<if test="pkSettle != null and pkSettle !=''">
+			inner join ins_qgyb_st szSt on szSt.pk_visit = visit.pk_visit
+		</if>
+		where
+			visit.pk_pv=#{pkPv,jdbcType=CHAR}
+			<if test="pkVisit != null and pkVisit !=''">
+				and visit.pk_visit = #{pkVisit,jdbcType=CHAR}
+			</if>
+			<if test="pkSettle != null and pkSettle !=''">
+				and szSt.pk_settle = #{pkSettle,jdbcType=CHAR}
+			</if>
+			<if test="insutype != null and insutype !=''">
+				and visit.insutype = #{insutype,jdbcType=VARCHAR}
+			</if>
+		 and visit.del_flag='0'
+		order by visit.create_time desc
+	</select>
+
+	<select id="qryVisitCityByPkPi" resultType="com.zebone.nhis.common.module.compay.ins.shenzhen.InsSzybVisitCity">
+	  select city.* from ins_szyb_visit_city city
+		inner join INS_SZYB_VISIT visit on visit.pk_visit = city.pk_visit
+	  where visit.pk_pi = #{pkPi,jdbcType=CHAR}
+		<if test="cka303 != null and cka303 !=''">
+			and city.cka303 is not null
+		</if>
+		<if test="cka305 != null and cka305 !=''">
+			and city.cka305 is not null
+		</if>
+		<if test="cme320 != null and cme320 !=''">
+			and city.cme320 is not null
+		</if>
+		<if test="amc021 != null and amc021 !=''">
+			and city.amc021 is not null
+		</if>
+		<if test="cme331 != null and cme331 !=''">
+			and city.cme331 is not null
+		</if>
+	  order by visit.CREATE_TIME desc
+	</select>
+
+	<select id="qryVisitInfoByPkPi" resultType="com.zebone.nhis.common.module.compay.ins.shenzhen.InsSzybVisit">
+		select * from (
+			select * from INS_SZYB_VISIT where pk_pi = #{pkPi,jdbcType=CHAR} and CODE_MEDINO is not null and length(CODE_MEDINO)>15
+			  order by CREATE_TIME desc
+		) where rownum=1
+	</select>
+
+	<select id="qryQgybVisitInfo" resultType="DynaBean" >
+		select
+			<if test="pkPv!=null and pkPv!= ''">
+				pv.pk_dept,
+				case when op.pk_pv is not null then op.pk_sch else er.pk_sch end pk_sch,
+			</if>
+			visit.* from ins_qgyb_visit visit
+			<if test="pkPv!=null and pkPv!= ''">
+				inner join pv_encounter pv on pv.pk_pv = visit.pk_pv
+				left join pv_op op on op.pk_pv = pv.pk_pv
+				left join pv_er er on er.pk_pv = pv.pk_pv
+			</if>
+		 where PK_VISIT = #{pkVisit,jdbcType=CHAR}
+		<if test="mdtrtId!=null and mdtrtId!= ''">
+			and visit.mdtrt_Id = #{mdtrtId,jdbcType=VARCHAR}
+		</if>
+	</select>
+
+	<select id="qryInsuPvInfo" resultType="DynaBean">
+		select * from ins_qgyb_pv visit
+		  where  visit.del_flag = '0'
+		   <if test="pkPv!=null and pkPv!= ''">
+			   and visit.pk_pv = #{pkPv,jdbcType=CHAR}
+			   and not exists (
+			   	select 1 from ins_qgyb_st st where st.pk_pv = #{pkPv,jdbcType=CHAR} and st.pk_inspv = visit.pk_inspv
+			   )
+		   </if>
+		   <if test="mdtrtId!=null and mdtrtId!= ''">
+			   and visit.mdtrt_Id = #{mdtrtId,jdbcType=VARCHAR}
+		   </if>
+			<if test="pkPi!=null and pkPi!= '' ">
+				and visit.pk_pi = #{pkPi,jdbcType=CHAR}
+			</if>
+			<if test="medType!=null and medType!= '' ">
+				and visit.med_type = #{medType,jdbcType=VARCHAR}
+			</if>
+			<if test='medType!=null and medType!= "" and medType.equals("51")'>
+				and visit.GESO_VAL is not null
+			</if>
+			<if test='pkInspv!=null and pkInspv!=""'>
+				and visit.pk_inspv = #{pkInspv,jdbcType=CHAR}
+			</if>
+
+	</select>
+
+	<select id="qryInsuPvByPkPi" resultType="com.zebone.nhis.common.module.pi.InsQgybPV">
+		select * from ins_qgyb_pv where pk_pi = #{pkPi,jdbcType=CHAR} order by create_time desc
+	</select>
+
+	<select id="queryQgFitInfo" resultType="DynaBean" parameterType="java.util.Map" >
+		select
+			itemmap.pk_item pk_ord,
+			pd.name as Name_Ord,
+			ybitem.Desc_Fit
+		from ins_qgyb_itemmap itemmap
+			inner join ins_qgyb_item ybitem on ybitem.pk_insitem = itemmap.pk_insitem and ybitem.del_flag = '0'
+			inner join bd_pd pd on pd.pk_pd = itemmap.pk_item
+		where itemmap.pk_item = #{pkOrd,jdbcType=CHAR} and ybitem.flag_fit='1' and itemmap.del_flag = '0'
+	</select>
+
+	<select id="querySavedQgFitInfo" resultType="DynaBean" parameterType="java.util.Map" >
+		select
+			itemmap.pk_item pk_ord,
+			pd.name as Name_Ord,
+			ybitem.desc_fit,
+			cnord.DESC_FIT Approval_Text
+		from  cn_order cnord
+			inner join ins_qgyb_itemmap itemmap on cnord.pk_ord = itemmap.pk_item
+			inner join ins_qgyb_item ybitem on ybitem.pk_insitem = itemmap.pk_insitem and ybitem.del_flag = '0'
+			inner join bd_pd pd on pd.pk_pd = itemmap.pk_item
+		where cnord.pk_cnord = #{pkCnord,jdbcType=CHAR} and itemmap.del_flag = '0'
+	</select>
+
+	<select id="qryQgybVisitRegInfo" resultType="DynaBean">
+		select
+			ybpv.*
+		from ins_qgyb_visit visit
+			inner join ins_qgyb_pv ybpv on ybpv.MDTRT_ID = visit.MDTRT_ID and ybpv.pk_pv = #{pkPv,jdbcType=CHAR}
+		where visit.pk_pv = #{pkPv,jdbcType=CHAR} and visit.DEL_FLAG = '0' and ybpv.DEL_FLAG = '0'
+		order by visit.CREATE_TIME,ybpv.CREATE_TIME desc
+	</select>
+</mapper>

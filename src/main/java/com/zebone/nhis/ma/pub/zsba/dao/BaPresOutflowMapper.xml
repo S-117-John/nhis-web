@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.zsba.dao.BaPresOutflowMapper">
+    <select id="getPatient" resultType="com.zebone.nhis.ma.pub.zsba.vo.outflow.VisitInfo">
+        select pi.NAME_PI                                                    patient_Name
+             , pi.BIRTH_DATE                                                 birthday
+             , (case pi.DT_SEX when '02' then 1 when '03' then 2 else 1 end) sex
+             , pi.TEL_NO                                                     patient_Phone
+             , pi.DT_IDTYPE                                                  idcard_Type
+             , pi.ID_NO                                                      idcard
+             , org.CODE_ORG                                                  org_Id_Outter
+             , org.NAME_ORG                                                  org_Name_Outter
+             , dept.CODE_DEPT                                                dept_Id_Outter
+             , dept.NAME_DEPT                                                dept_Name_Outter
+             , emp.CODE_EMP                                                  local_Doctor_Id
+             , pv.CODE_PV                                                    visit_Id_Outter
+             , pv.DATE_BEGIN                                                 visit_Time
+             , 0                                                             payStatus
+        from PV_ENCOUNTER pv
+                     inner join PI_MASTER pi on pv.PK_PI = pi.PK_PI
+                     inner join bd_ou_org org on pv.PK_ORG = org.PK_ORG
+                     inner join bd_ou_dept dept on pv.PK_DEPT = dept.PK_DEPT
+                     inner join bd_ou_employee emp on pv.PK_EMP_PHY = emp.PK_EMP
+        where PK_PV = #{pkPv,jdbcType=VARCHAR}
+          and pv.EU_STATUS != '9'
+    </select>
+
+    <select id="getPresInfo" resultType="com.zebone.nhis.ma.pub.zsba.vo.outflow.PresInfo">
+        select emp.IDNO                                                                      doctorIdcard
+        , '00000'                                                                       doctor_Id_Outter
+        , emp.MOBILE                                                                    doctor_Phone
+        , pres.DATE_PRES
+        prescription_Time
+        , PRES_NO                                                                       recipe_Id_Outter
+        , 1                                                                             medicine_Count
+        , (case pres.dt_prestype when '01' then '21' when '02' then '23' else '21' end) recipe_Type_Code
+        , emp.NAME_EMP doctor_name_outter
+        from CN_PRESCRIPTION pres
+        inner join bd_ou_employee emp on pres.PK_EMP_ORD=emp.PK_EMP
+        where pres.PK_PRES in
+        <foreach collection="list" item="pkPres" open="(" separator="," close=")">
+            #{pkPres,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+    <select id="getPresDetail" resultType="com.zebone.nhis.ma.pub.zsba.vo.outflow.PresDetail">
+        select ord.dosage drug_Dose,
+        pd.NAME general_Name,
+        ord.QUAN_CG pack_Qty_Outter,
+        unit.name pack_Unit_Outter_Txt,
+        pd.SPEC spec_Desc,
+        concat(freq.NAME,freq.NOTE) drug_Rate_Txt,
+        sup.name drug_Pathways_Txt,
+        ord.DAYS drug_Days,
+        ord.NOTE_ORD remark,
+        drug.code drug_Id,
+        pres.PRES_NO,
+        BU1.NAME dose_unit_txt
+        from cn_order ord
+        inner join cn_prescription pres on ord.pk_pv = pres.pk_pv and ord.pk_pres = pres.pk_pres
+        inner join bd_unit unit on ord.pk_unit_cg = unit.pk_unit
+        inner join bd_term_freq freq on ord.code_freq = freq.code and freq.DEL_FLAG='0'
+        inner join bd_supply sup on ord.code_supply = sup.code and freq.DEL_FLAG='0'
+        inner join bd_pd pd on pd.pk_pd = ord.pk_ord
+        inner join OUTPRES_DRUG drug on drug.pk_pd = pd.PK_PD
+        INNER JOIN BD_UNIT BU1 ON BU1.PK_UNIT=ord.PK_UNIT_DOS
+        where ord.pk_pv =#{pkPv,jdbcType=VARCHAR}
+        and pres.PK_PRES in
+        <foreach collection="pkPresList" item="pkPres" open="(" separator="," close=")">
+            #{pkPres,jdbcType=VARCHAR}
+        </foreach>
+        and ord.eu_pvtype &lt; '3'
+    </select>
+</mapper>

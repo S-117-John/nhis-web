@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.sd.scm.dao.DrugAdminMapper">
+	<select id="getHospDrugList" parameterType="java.util.Map" resultType="DynaBean">
+		select
+		  pd.pk_pd,
+		  pd.code code_pd,
+		  pd.name name_pd,
+		  pd.code code_pd,
+		  pd.spec,
+		  pd.name_chem,
+		  pd.price,
+		  pd.eu_drugtype,
+		  pd.dt_dosage,
+		  dos.name name_dos,
+		  pd.appr_no,
+		  fac.name factory,
+		  pd.flag_stop
+		from bd_pd pd
+		inner join bd_defdoc dos on dos.code_defdoclist='030400' and dos.code=pd.dt_dosage
+		inner join bd_factory fac on fac.pk_factory=pd.pk_factory
+		<!-- where pd.pk_org=#{pkOrg,jdbcType=VARCHAR}-->
+	</select>
+	
+	<select id="getDrugAdminList" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+		  YPBM,
+		  tym,
+		  CPM,
+		  ywm,
+		  spm,
+		  JXMC,
+		  gg ,
+		  scqymc,
+		  PZWH,
+		  ZXYFL,
+		  BZCZ,
+		  BZDW,
+		  BZSL,
+		  BZGG,
+		  TZMS,
+		  SFGPO,
+		  gpobm,
+		  SFJY
+		from REG_SZYJ_PD
+	</select>
+	
+	<select id="getDrugAdminPrice" parameterType="java.util.Map" resultType="DynaBean">
+		select ypbm,gysbm,gysmc,zbj,cjj,sxrq,yxqqsrq,yxqjzrq,sfjy,bcgxsj from reg_szyj_pdprice 
+	</select>
+	
+	<select id="getInvSumDataList" parameterType="java.util.Map" resultType="DynaBean">
+		select
+		  inv.pk_pdinv,
+		  inv.fpbh,
+		  inv.fph,
+		  inv.fprq,
+		  inv.gysbm,
+		  inv.bhszje,
+		  inv.hszje,
+		  inv.sfch,
+		  inv.fpbz,
+		  inv.zt,
+		  inv.jls
+		from reg_szyj_pdinvoice inv
+		where 1=1 
+			<if test='fpbh!=null and fpbh!=""'>
+				and inv.fpbh=#{fpbh,jdbcType=VARCHAR}
+			</if>
+			<if test='cxkssj!=null and cxkssj!=""'>
+				and inv.fprq &gt;=to_date(#{cxkssj},'yyyyMMddhh24miss')
+			</if>
+			<if test='cxjssj!=null and cxjssj!=""'>
+				and inv.fprq &lt;=to_date(#{cxjssj},'yyyyMMddhh24miss')
+			</if>
+	</select>
+	
+	<select id="getInvDataDtList" parameterType="java.util.Map" resultType="DynaBean">
+		select
+		  dt.SXH,
+		  dt.FPBH,
+		  dt.FPMXBH,
+		  dt.YPBM,
+		  dt.DW,
+		  dt.spsl,
+		  dt.bhsdj,
+		  dt.hsdj,
+		  dt.bhsje,
+		  dt.hsje,
+		  dt.sl,
+		  dt.stdbh,
+		  dt.stdmxbh
+		from REG_SZYJ_PDINVOICEDT dt
+		where dt.PK_PDINV=#{pkPdInv,jdbcType=VARCHAR}
+		order by dt.SXH
+	</select>
+	
+	<select id="getDrugRefMapper" parameterType="java.lang.String" resultType="DynaBean">
+		select
+		  pd.code,
+		  pd.name ypmc,
+		  map.name_gen,
+		  ypbm,
+		  tym,
+		  map.PK_REGPDMAP
+		from reg_szyj_pdmap map
+		  inner join bd_pd pd on pd.pk_pd = map.pk_pd
+		where map.code like '%' || #{searchTxt} || '%'
+		      or map.name_gen like '%' || #{searchTxt} || '%'
+		      or map.ypbm like '%' || #{searchTxt} || '%'
+		      or map.tym like '%' || #{searchTxt} || '%'
+	</select>
+	
+	<select id="getDrugAdminContract" resultType="DynaBean">
+		select
+		   con.htbh,
+		   con.htmxbh,
+		   con.gysbm,
+		   con.yxqq,
+		   con.yxqz,
+		   con.ypbm,
+		   con.dj,
+		   con.sl,
+		   con.je,
+		   con.sysl,
+		   con.syje,
+	       pd.CPM,
+	       com.QYMC
+		from reg_szyj_pdcontract con
+	    left join REG_SZYJ_PD pd on pd.YPBM=con.YPBM
+	    left join REG_SZYJ_PDCOMPANY com on con.GYSBM=com.QYBM
+	</select>
+	
+	<select id="getDrugAdminPrepOrder" parameterType="java.util.Map" resultType="DynaBean">
+		select
+		  rsp.PK_PDDIV,
+		  rsp.PSDBH,
+		  com.QYMC,
+		  rsp.PSSMC,
+		  rsp.PSSJ,
+		  rsp.CGJHBH,
+		  rsp.psdbm,
+		  rsp.eu_status ,
+		  st.code_st
+		from REG_SZYJ_PDDELIVERY rsp
+		left join REG_SZYJ_PDCOMPANY com on com.QYBM=rsp.GYSBM and com.QYLX='2'
+		left join pd_st st on st.pk_pdst=rsp.pk_pdst
+		where 1=1
+		<if test='txm!=null and txm!=""'>
+			and rsp.PSDTXM=#{txm,jdbcType=VARCHAR}
+		</if>
+	</select>
+	
+	<select id="getDrugAdminPrepOrderDt" parameterType="java.util.Map" resultType="DynaBean">
+		select
+		  pdde.GYSBM,
+		  dt.YPBM ,
+		  regpd.cpm,
+		  regpd.gg,
+		  regpd.SCQYMC,
+		  dt.SCPH,
+		  dt.DJ,
+		  dt.PSSL,
+		  pd.PK_PD,
+		  pd.CODE code_pd,
+		  pd.NAME name_pd,
+		  pd.SPEC,
+		  pd.PK_FACTORY,
+		  fac.NAME factory,
+		  pd.PK_UNIT_PACK pk_unit,
+		  pack.NAME unit,
+		  pd.PACK_SIZE,
+		  dt.dj price_cost,
+		  dt.dj price ,
+		  dt.PSSL quan_pack,
+		  dt.PSSL*pd.PACK_SIZE quan_min ,
+		  dt.dj*dt.PSSL amount,
+		  dt.dj*dt.PSSL amount_cost,
+		  dt.SCPH batch_no,
+		  dt.SCRQ date_fac,
+		  dt.YXRQ date_expire,
+		  regpd.pzwh appr_no,
+  		  <!-- plandt.PK_SUPPLYER, -->
+  		  SUPPLYER.PK_SUPPLYER,
+  		  regpd.sfgpo,
+  		  dt.psdmxbh
+		from REG_SZYJ_PDDELIVERY_DT dt
+		inner join REG_SZYJ_PDDELIVERY pdde on pdde.PK_PDDIV=dt.PK_PDDIV
+		left join REG_SZYJ_PD regpd on regpd.YPBM=dt.YPBM
+		left join REG_SZYJ_PDMAP map on map.YPBM=dt.ypbm
+		left join bd_pd pd on pd.PK_PD=map.PK_PD
+		left join BD_FACTORY fac on fac.PK_FACTORY=pd.PK_FACTORY
+		left join BD_UNIT pack on pack.PK_UNIT=pd.PK_UNIT_PACK 
+		left join PD_PLAN  pla on pla.CODE_PLAN=pdde.CGJHBH
+  		<!-- left join PD_PLAN_DETAIL plandt on plandt.PK_PDPLAN=pla.PK_PDPLAN -->
+  		left join BD_SUPPLYER SUPPLYER on SUPPLYER.D_CODE = pdde.GYSBM
+		where dt.PK_PDDIV=#{pkPddiv,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getUpdateDate" resultType="java.lang.String" parameterType="java.util.Map">
+		select to_char(max(bcgxsj),'yyyy-MM-dd HH:mm:ss') scgxsj
+		from ${table} 
+	</select>
+</mapper>

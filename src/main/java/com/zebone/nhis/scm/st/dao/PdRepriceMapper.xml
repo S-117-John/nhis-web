@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.st.dao.PdRepriceMapper">
+<select id="queryRepriceList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdRepriceVo"> 
+select rep.pk_pdrep,
+       rep.code_rep,
+       rep.dt_reptype, 
+       reptype.name reptype,
+       rep.approval,  
+       rep.eu_status, 
+       rep.eu_repmode,
+       rep.date_input,
+       rep.name_emp_input,
+       rep.date_effe,
+       rep.date_chk, 
+       rep.name_emp_chk, 
+       rep.note 
+  from pd_reprice rep
+       inner join bd_defdoc reptype on rep.dt_reptype=reptype.code and reptype.code_defdoclist='080010'
+ where rep.pk_org = #{pkOrg,jdbcType=CHAR}
+       and exists(select 1 from pd_reprice_detail dt inner join bd_pd pd on pd.pk_pd=dt.pk_pd where dt.pk_pdrep=rep.pk_pdrep and pd.dt_pdtype like '0%')
+       <if test="dtReptype != null  and  dtReptype != ''">
+          and rep.dt_reptype = #{dtReptype,jdbcType=VARCHAR} 
+       </if>
+       <if test="codeRep != null  and  codeRep != ''">
+          and rep.code_rep = #{codeRep,jdbcType=VARCHAR} 
+       </if>
+       <if test="dateBeginE != null  and  dateBeginE != ''">
+          and rep.date_effe &gt;= to_date(#{dateBeginE},'YYYYMMDDHH24MISS') 
+       </if>
+       <if test="dateEndE != null  and  dateEndE != ''">
+          and rep.date_effe &lt;=  to_date(#{dateEndE},'YYYYMMDDHH24MISS')
+       </if>
+       <if test="dateBeginC != null  and  dateBeginC != ''">
+          and rep.date_chk &gt;= to_date(#{dateBeginC},'YYYYMMDDHH24MISS')  
+       </if>
+       <if test="dateEndC != null  and  dateEndC != ''">
+          and rep.date_chk &lt;= to_date(#{dateEndC},'YYYYMMDDHH24MISS')   
+       </if>
+       <if test="euStatus != null  and  euStatus != ''">
+          and rep.eu_status = #{euStatus,jdbcType=VARCHAR}  
+       </if>
+       order by rep.date_effe desc
+</select>
+<select id="queryRepriceDtList"  resultType="com.zebone.nhis.scm.pub.vo.PdRepriceDtVo">  
+      select dt.*,
+       pd.code pdcode,
+       pd.name pdname,
+       pd.spec,
+       pd.spcode,
+       unit.name unit,
+       fa.name factory  
+  from pd_reprice_detail dt
+       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+       inner join bd_unit unit on dt.pk_unit_pack=unit.pk_unit
+ where dt.pk_pdrep = #{pkPdrep,jdbcType=CHAR} and pd.dt_pdtype like '0%'
+</select>
+<select id="queryRepriceHistList"  parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdRepriceHistVo">
+select dept.name_dept,
+       sto.name name_store,
+       pd.name pdname,
+       pd.spec,
+       pd.spcode,
+       unit.name unit,
+       fa.name factory,
+       ht.quan_rep/ht.pack_size as quan_rep,
+       ht.price_org,
+       ht.price,
+       ht.amount_org,
+       ht.amount,
+       ht.amount_rep
+  from pd_reprice_hist ht
+       inner join bd_ou_dept dept on ht.pk_dept=dept.pk_dept
+       inner join bd_store sto on ht.pk_store=sto.pk_store
+       inner join bd_pd pd on ht.pk_pd=pd.pk_pd
+       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+       inner join bd_unit unit on ht.pk_unit_pack=unit.pk_unit
+ where ht.code_rep = #{codeRep,jdbcType=VARCHAR}
+       and pd.dt_pdtype like '0%'
+     <if test="flagAdd != null  and  flagAdd != ''">
+          and ht.amount_rep &gt; 0 
+       </if>
+       <if test="flagSub != null  and flagSub != ''">
+          and ht.amount_rep &lt; 0 
+       </if>
+       order by ht.date_reprice 
+</select>
+<select id="generateHistOracle"  resultType="com.zebone.nhis.scm.pub.vo.PdRepriceHistVo">
+select 
+	   stock.pk_org,
+       dt.pk_unit_pack,
+       dt.pack_size,
+       rep.dt_reptype,
+       rep.code_rep,
+       rep.eu_repmode,
+       rep.pk_pdrep,
+       rep.approval,
+       case eu_repmode when '0' then sysdate when '1' then rep.date_effe end as date_reprice,
+       fa.name as factory,
+       dt.pk_pdrepdt,
+       stor.pk_store,
+       stor.pk_dept,
+       stor.pack_size as pack_size_cvt,
+       stor.pk_unit as pk_unit_pack_cvt,
+       bdstore.name name_store,
+       dept.name_dept,
+       pd.pk_pd,
+       pd.name||'/'||pd.spec pdname ,
+       sum(stock.quan_min)/dt.pack_size as quan_rep,
+       stock.price as price_org,
+       dt.price,
+       sum(stock.quan_min)/dt.pack_size quan_pack,
+       stock.price/dt.pack_size*sum(stock.quan_min) amountOrg,
+       dt.price/dt.pack_size*sum(stock.quan_min) amount,
+       dt.price/dt.pack_size*sum(stock.quan_min)-stock.price/dt.pack_size*sum(stock.quan_min)  amountRep,
+       pd.pack_size pack_size_pd
+  from pd_stock stock 
+ inner join bd_pd_store stor on stor.pk_pd = stock.pk_pd and stock.pk_store = stor.pk_store 
+ inner join bd_pd pd on pd.pk_pd = stock.pk_pd 
+ inner join bd_factory fa  on pd.pk_factory = fa.pk_factory
+ inner join pd_reprice_detail dt on dt.pk_pd = stock.pk_pd
+ inner join pd_reprice rep on rep.pk_pdrep = dt.pk_pdrep
+ inner join bd_store bdstore on bdstore.pk_store = stor.pk_store
+ inner join bd_ou_dept dept on dept.pk_dept = stor.pk_dept 
+    where rep.pk_pdrep = #{pkPdrep,jdbcType=CHAR} and pd.dt_pdtype like '0%'
+    group by stock.pk_org,
+       dt.pk_unit_pack,
+       dt.pack_size,
+       rep.dt_reptype,
+       rep.code_rep,
+       rep.eu_repmode,
+       rep.pk_pdrep,
+       rep.approval,
+       eu_repmode,
+       rep.date_effe,
+       fa.name,
+       dt.pk_pdrepdt,
+       stor.pk_store,
+       stor.pk_dept,
+       stor.pack_size,
+       stor.pk_unit,
+       bdstore.name,
+       dept.name_dept,
+       pd.pk_pd,
+       pd.name,
+       pd.spec,
+       stock.price,
+       dt.price,
+       pd.pack_size
+</select>
+<select id="generateHistSqlServer" resultType="com.zebone.nhis.scm.pub.vo.PdRepriceHistVo">
+select stock.pk_org,
+       dt.pk_unit_pack,
+       dt.pack_size,
+       rep.dt_reptype,
+       rep.code_rep,
+       rep.eu_repmode,
+       rep.pk_pdrep,
+       rep.approval,
+       case eu_repmode when '0' then getdate() when '1' then rep.date_effe end as date_reprice,
+       fa.name as factory,
+       dt.pk_pdrepdt,
+       stor.pk_store,
+       stor.pk_dept,
+       stor.pack_size as pack_size_cvt,
+       stor.pk_unit as pk_unit_pack_cvt,
+       bdstore.name name_store,
+       dept.name_dept,
+       pd.pk_pd,
+       pd.name||'/'||pd.spec pdname ,
+       sum(stock.quan_min)/dt.pack_size as quan_rep,
+       stock.price as price_org,
+       dt.price,
+       sum(stock.quan_min)/dt.pack_size quan_pack,
+       stock.price/dt.pack_size*sum(stock.quan_min) amountOrg,
+       dt.price/dt.pack_size*sum(stock.quan_min) amount,
+       dt.price/dt.pack_size*sum(stock.quan_min)-stock.price/dt.pack_size*sum(stock.quan_min)  amountRep,
+       pd.pack_size pack_size_pd
+  from pd_stock stock 
+ inner join bd_pd_store stor on stor.pk_pd = stock.pk_pd and stock.pk_store = stor.pk_store 
+ inner join bd_pd pd on pd.pk_pd = stock.pk_pd 
+ inner join bd_factory fa  on pd.pk_factory = fa.pk_factory
+ inner join pd_reprice_detail dt on dt.pk_pd = stock.pk_pd
+ inner join pd_reprice rep on rep.pk_pdrep = dt.pk_pdrep
+ inner join bd_store bdstore on bdstore.pk_store = stor.pk_store
+ inner join bd_ou_dept dept on dept.pk_dept = stor.pk_dept 
+    where rep.pk_pdrep = #{pkPdrep,jdbcType=CHAR} and pd.dt_pdtype like '0%'
+    group by stock.pk_org,
+       dt.pk_unit_pack,
+       dt.pack_size,
+       rep.dt_reptype,
+       rep.code_rep,
+       rep.eu_repmode,
+       rep.pk_pdrep,
+       rep.approval,
+       eu_repmode,
+       rep.date_effe,
+       fa.name,
+       dt.pk_pdrepdt,
+       stor.pk_store,
+       stor.pk_dept,
+       stor.pack_size,
+       stor.pk_unit,
+       bdstore.name,
+       dept.name_dept,
+       pd.pk_pd,
+       pd.name,
+       pd.spec,
+       stock.price,
+       dt.price,
+       pd.pack_size
+</select>
+<select id="generateHistByPd"  resultType="com.zebone.nhis.scm.pub.vo.PdRepriceHistVo">
+        select
+               stock.pk_org,
+               fa.name as factory,
+               stor.pk_store,
+               stor.pk_dept,
+               stor.pack_size as pack_size_cvt,
+               stor.pk_unit as pk_unit_pack_cvt,
+               bdstore.name name_store,
+               dept.name_dept,
+               pd.pk_pd,
+               pd.name||'/'||pd.spec pdname,
+               sum(stock.quan_min)/${packSize} as quan_rep,
+               stock.price as price_org,
+               ${price} as price,
+               sum(stock.quan_min)/${packSize} quan_pack,
+               stock.price/${packSize}*sum(stock.quan_min) amountOrg,
+               ${price}/${packSize}*sum(stock.quan_min) amount,
+               ${price}/${packSize}*sum(stock.quan_min)-stock.price/${packSize}*sum(stock.quan_min)  amountRep,
+               pd.pack_size pack_size_pd
+          from pd_stock stock
+         inner join bd_pd_store stor on stor.pk_pd = stock.pk_pd and stock.pk_store = stor.pk_store
+         inner join bd_pd pd on pd.pk_pd = stock.pk_pd
+         inner join bd_factory fa  on pd.pk_factory = fa.pk_factory
+         inner join bd_store bdstore on bdstore.pk_store = stor.pk_store
+         inner join bd_ou_dept dept on dept.pk_dept = stor.pk_dept
+            where pd.pk_pd = #{pkPd,jdbcType=CHAR} and pd.dt_pdtype like '0%'
+            group by 
+	   stock.pk_org,  
+       fa.name,
+       stor.pk_store,
+       stor.pk_dept,
+       stor.pack_size,
+       stor.pk_unit,
+       bdstore.name,
+       dept.name_dept,
+       pd.pk_pd,
+       pd.name,
+       pd.spec,      
+       stock.price,       
+       pd.pack_size 
+</select>
+
+</mapper>

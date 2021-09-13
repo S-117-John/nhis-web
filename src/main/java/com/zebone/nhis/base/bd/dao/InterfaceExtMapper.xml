@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.InterfaceExtMapper">
+
+	<select id="qryInf" resultType="com.zebone.nhis.common.module.base.bd.wf.BdInterfaceExt" parameterType="java.util.Map">
+		select * from BD_INTERFACE_EXT bix where bix.DEL_FLAG='0' 
+		<if test="pkOrg != null and pkOrg !=''">
+			 and pk_Org=#{pkOrg}
+		</if>
+	</select>
+	
+	<update id="delInf" parameterType="java.lang.String">
+		update BD_INTERFACE_EXT set DEL_FLAG='1' where PK_INTERFACE =#{pkInterface}
+	</update>
+</mapper>

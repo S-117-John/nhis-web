@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.HpStdivMapper">
+
+	<select id="qryBdHpStdiv" resultType="com.zebone.nhis.base.bd.vo.BdHpStdivVo" parameterType="java.lang.String">
+		select stdiv.pk_hpstdiv,
+        stdiv.code_div,
+        stdiv.NAME_DIV,
+        '['|| stdiv.code_div || ']' || stdiv.name_div AS tlname_div,
+        stdiv.eu_divtype,
+        stdiv.spcode,
+        stdiv.d_code,
+        stdiv.desc_defdiv,
+        stdiv.note
+        from bd_hp_stdiv stdiv
+		where stdiv.del_flag='0' 
+		  <if test="nameDiv != null and nameDiv != ''">
+				and stdiv.name_div like '%${nameDiv}%'
+		  </if>
+		  <if test="spcodeDiv != null and spcodeDiv != ''">
+		 		and stdiv.spcode like '%${spcodeDiv}%'
+		  </if>
+		  order by stdiv.CODE_DIV
+	</select>
+	
+</mapper>

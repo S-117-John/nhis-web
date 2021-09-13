@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.compay.ins.lb.dao.szyb.InsSzybItemMapMapper">
+	<!-- 查询宿州医保药品与医院药品信息比对 -->
+	<select id="qrySzybPdDicWithInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select DISTINCT
+  			bp.pk_pd pk_item,bp.name,bp.short_name,bp.spcode,bf.name factory_name,bp.spec,bp.code,
+  			bp.dt_dosage,bp.price,bp.pk_unit_pack,bp.dt_abrd,isim.pk_insitemmap,
+			isy.GJMLBM,isy.ypbm,isy.tymc,isf.FYLBBM as sflb,isy.dw,isy.ptmzzfbl,isy.zyzfbl,
+  			isy.xfxj,isy.yxbz,isy.ycmc,isy.gg,isy.gyzz,
+  			isy.ckjg,isy.sfxmdj,isy.cfybz,isim.create_time,bp.appr_no,isy.jx,isy.zgjg
+		from bd_pd bp
+ 			inner join bd_factory bf on bf.pk_factory=bp.pk_factory
+ 			inner join bd_pd_store bps on bp.pk_pd=bps.pk_pd
+  			left join ins_szyb_item_map isim on bp.pk_pd=isim.pk_item
+  			left join ins_szyb_yp isy on isim.code=isy.ypbm
+  			LEFT JOIN INS_SZYB_FYLB isf on isy.sflb = isf.FYLBBM
+  		where 1=1 
+			 and isim.del_flag='0'
+			<if test="pkHp!=null and pkHp!=''">and isim.pk_hp=#{pkHp,jdbcType=VARCHAR}</if>
+			<if test="xmlb!=null">and isim.xmlb=#{xmlb,jdbcType=VARCHAR}</if>
+			<if test="info!=null and info!=''">and bp.code=#{info,jdbcType=VARCHAR} or bp.name=#{info,jdbcType=VARCHAR}</if>
+			<if test="euActive != null and euActive != '' ">
+			  and bp.flag_stop=#{euActive,jdbcType=VARCHAR}
+			</if>
+			<if test="text != null and text != '' ">
+			    and (bp.code like '%${text}%' or bp.name like '%${text}%' or bp.spcode like '%${text}%' or bp.appr_no like '%${text}%' or bf.name like '%${text}%')
+			</if>
+	</select>
+	
+	
+	<select id="qrySzybItemDicWithInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select DISTINCT map.pk_hp,map.xmlb,
+			item.pk_item,item.code,item.name,item.name_prt,item.pk_unit,
+			item.spec,map.pk_insitemmap, item.price,zlxm.GJMLBM,zlxm.xmbm,zlxm.xmmc,
+			zlxm.fylb,zlxm.sfxmdj,map.categoryid,map.itemclass,item.spcode,map.create_time,
+			bf.PK_FACTORY,bf.Name as factory_name
+		from bd_item item
+		    LEFT JOIN BD_FACTORY bf on bf.PK_FACTORY = item.PK_FACTORY
+			inner join ins_szyb_item_map map on map.pk_item=item.pk_item
+			inner join ins_szyb_zlxm zlxm on zlxm.xmbm=map.code
+		where map.del_flag='0'
+			and map.pk_hp=#{pkHp,jdbcType=VARCHAR}
+			and map.xmlb = '2'
+			<if test="euActive != null and euActive != '' ">
+			  and item.flag_active=#{euActive,jdbcType=VARCHAR}
+			</if>
+			<if test="text != null and text != '' ">
+			    and (item.code like '%${text}%' or item.name like '%${text}%' or item.spcode like '%${text}%')
+			</if>
+		union
+		select DISTINCT map.pk_hp,map.xmlb,
+			item.pk_item,item.code,item.name,item.name_prt,item.pk_unit,item.spec,
+			map.pk_insitemmap, item.price,'' GJMLBM,fwss.fwssbm as xmbm,fwss.fwssmc as xmmc,
+			fwss.fylb,null as sfxmdj,map.categoryid,map.itemclass,item.spcode,map.create_time,
+			bf.PK_FACTORY,bf.Name as factory_name
+		from bd_item item
+		     LEFT JOIN BD_FACTORY bf on bf.PK_FACTORY = item.PK_FACTORY
+			inner join ins_szyb_item_map map on map.pk_item=item.pk_item
+			inner join ins_szyb_fwss fwss on fwss.fwssbm=map.code
+		where map.del_flag='0'
+			and map.pk_hp=#{pkHp,jdbcType=VARCHAR}
+			and map.xmlb = '3'
+			<if test="euActive != null and euActive != '' ">
+			  and item.flag_active=#{euActive,jdbcType=VARCHAR}
+			</if>
+			<if test="text != null and text != '' ">
+			    and (item.code like '%${text}%' or item.name like '%${text}%' or item.spcode like '%${text}%')
+			</if>
+	</select>
+</mapper>

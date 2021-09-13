@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pv.pub.dao.RegPubMapper">
+
+	<!-- 根据主键获取就诊记录 -->
+	<select id="getPvEncounterByPkPv" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.pv.PvEncounter">
+		Select * 
+		from pv_encounter
+		where del_flag = '0' and pk_pv = #{pkPv,jdbcType=VARCHAR}
+	</select>
+
+	<!-- 根据患者主键查询患者信息（不包含照片） -->
+	<select id="getPiMasterNoPhoto" resultType="com.zebone.nhis.common.module.pi.PiMaster">
+		select pk_pi,pk_org,code_pi,code_op,code_ip,barcode,pk_picate,name_pi,dt_idtype,id_no
+		,hic_no,insur_no,mpi,flag_ehr,dt_sex,birth_date,place_birth,dt_marry,dt_occu,dt_edu
+		,dt_country,dt_nation,tel_no,mobile,wechat_no,email,unit_work,tel_work,address,name_rel
+		,tel_rel,dt_blood_abo,dt_blood_rh,creator,create_time,modifier,del_flag,ts
+		,ADDRCODE_CUR,ADDR_CUR,ADDR_CUR_DT,POSTCODE_CUR, ADDRCODE_ORIGIN,ADDR_ORIGIN
+		,ADDRCODE_REGI,ADDR_REGI,ADDR_REGI_DT,POSTCODE_REGI, ADDRCODE_BIRTH,ADDR_BIRTH
+		from pi_master 
+		where del_flag = '0' and pk_pi = #{pkPi,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 根据患者主键获取最大的就诊次数 -->
+	<select id="getMaxOpTimes" resultType="java.lang.Integer">
+		select nvl(max(i.op_times),0) 
+		from pv_op i
+		inner join pv_encounter e on i.pk_pv = e.pk_pv and e.del_flag = '0'
+		where i.del_flag = '0' and e.pk_pi = #{pkPi,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 根据排班主键获取可使用的最小的票号 -->
+    <select id="getMinNoTicketnoByPkSch" resultType="com.zebone.nhis.common.module.sch.plan.SchTicket">
+		select t.* from 
+		(select * from sch_ticket
+		where flag_used = '0' and flag_stop = '0' and pk_sch = #{0} and pk_org = #{1}
+		order by cast(case when ticketno is null then '0' else ticketno end as int)
+		) t
+		where rownum = 1
+	</select>
+	
+	<!-- 根据排班主键获取可使用的最小的票号（sqlserver） -->
+    <select id="getMinNoTicketnoByPkSchForSql" resultType="com.zebone.nhis.common.module.sch.plan.SchTicket">
+		select top 1 * from sch_ticket
+		where flag_used = '0' and flag_stop = '0' and pk_sch = #{0} and pk_org = #{1}
+		order by cast(case when ticketno is null then 0 else ticketno end as int)
+	</select>   
+	
+	<select id="getArrearsPi" resultType="java.lang.Integer">
+	select count(1)
+	  from pv_encounter pv
+	       left outer join bl_settle st on pv.pk_pv=st.pk_pv
+	 where pv.pk_pi=#{pkPi,jdbcType=VARCHAR} 
+	 and pv.EU_PVTYPE = '3' 
+	 and pv.FLAG_CANCEL='0' 
+	 and pv.del_flag='0'
+	 	AND (pv.flag_settle='0' or   
+	        (pv.flag_settle='1' and
+	        st.eu_stresult='1' and
+	        st.flag_arclare='0'))
+	</select>
+	
+	<!-- 根据患者主键获取最大的就诊次数[住院-不包含急诊留观] -->
+	<select id="getMaxIpTimes" resultType="java.lang.Integer">
+		select nvl(max(ip.ip_times),0) 
+		from pv_ip ip
+		inner join pv_encounter pv on ip.pk_pv = pv.pk_pv and pv.del_flag = '0' and pv.flag_cancel = '0'
+		where ip.del_flag = '0' 
+		  and pv.pk_pi = #{pkPi,jdbcType=VARCHAR} 
+		  and pv.eu_pvmode != '11'
+	</select>
+
+	<select id="getMaxOpTimesFromPiMaster" resultType="java.lang.Integer">
+		select nvl(max(PM.CNT_OP),0)
+		from PI_MASTER PM
+		where PM.pk_pi = #{pkPi,jdbcType=VARCHAR}
+
+	</select>
+</mapper>

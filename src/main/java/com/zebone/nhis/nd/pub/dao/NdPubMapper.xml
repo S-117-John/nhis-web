@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.nd.pub.dao.NdPubMapper">
+   <select id="queryRecordList" parameterType="java.lang.String"
+		resultType="DynaBean">
+		 select ct.pk_doctype,
+		       ct.code typecode,
+		       ct.name typename,
+		       ct.parent_type,
+		       tp.pk_tmp,
+		       tp.code tmpcode,
+		       tp.name tmpname,
+		       rec.pk_record,
+		       rec.create_time 
+		  from ND_RECORD rec
+		       inner join EMR_TEMPLATE tp on rec.PK_TEMPLATE=tp.PK_TMP
+		       inner join EMR_DOC_TYPE ct on tp.TYPE_CODE =  ct.CODE
+		 where rec.pk_pv = #{pkPv,jdbcType=CHAR}
+		   and nvl(rec.del_flag,'0')='0'
+		 order by rec.create_time 
+	</select>
+	 <select id="queryRecordTemp" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.nd.pub.vo.EmrTemplateVo">
+		 select code,name,doc_xml 
+		  from  EMR_TEMPLATE 
+		 where pk_tmp = #{pkTmp,jdbcType=CHAR} 
+	</select>
+	<select id="queryRecordXml" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.nd.pub.vo.EmrTemplateVo">
+		 select tmp.code,tmp.name,rec.doc_xml 
+		  from  ND_RECORD rec
+		  inner join EMR_TEMPLATE  tmp on rec.PK_TEMPLATE=tmp.PK_TMP
+		 where tmp.pk_tmp = #{pkTmp,jdbcType=CHAR} and rec.pk_record = #{pkRecord,jdbcType=CHAR}
+	</select>
+	<select id="queryRecordDcList" parameterType="java.lang.String"
+		resultType="DynaBean">
+		 select colno as id,colname as name
+		  from nd_record_dc  
+		 where pk_record = #{pkRecord,jdbcType=CHAR}
+	</select>
+	<select id="queryRecordRowList" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.nd.pub.vo.NdRecordRowVo">
+		select 
+			roww.*,
+			emr.eu_qc_level pkEmpQcLevel,
+			emr1.eu_qc_level pkEmpChkQcLevel
+		from nd_record_row roww
+		left join emr_nurse emr on emr.pk_emp=roww.pk_emp
+		left join emr_nurse emr1 on emr1.pk_emp=roww.pk_emp_chk
+        where roww.pk_record = #{pkRecord,jdbcType=CHAR}  and roww.del_flag = '0' 
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and roww.date_entry &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        </if>		
+		<if test="dateEnd != null  and  dateEnd != ''">
+            and roww.date_entry &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        </if>
+        order by date_entry 
+	</select>
+	<select id="queryRecordColDtList" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.common.module.nd.record.NdRecordDt">
+		 select dt.*
+    	from nd_record_dt dt,nd_record_row rw
+		where rw.pk_record = #{pkRecord,jdbcType=CHAR}
+		and rw.del_flag = '0'
+		and rw.pk_record=dt.pk_record
+		and rw.pk_recordrow=dt.pk_recordrow
+		and dt.del_flag='0'
+		<if test=" pkRecordRow!=null and pkRecordRow !='' ">
+			and dt.pk_recordrow = #{pkRecordRow,jdbcType=CHAR}
+		</if>
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and rw.date_entry &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        </if>		
+		<if test="dateEnd != null  and  dateEnd != ''">
+            and rw.date_entry &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        </if>
+		order by rw.pk_recordrow,dt.colno
+	</select>
+</mapper>

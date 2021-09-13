@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.syx.dao.QryOldSysPiMapper">
+
+	<select id="queryPiInfo" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.ma.pub.syx.vo.OldPiInfo">
+		select
+		pi.PatientID as code_pi,
+		pi.PatientName as name_pi,
+		pi.Phone as mobile,
+		pi.Birthday as birth_date,
+		pi.IdentityCardNo as id_no,
+		case pi.MedicareCardNo when 'null' then ''
+		else pi.MedicareCardNo end as insur_no,
+		no.IPTimes as ip_times,
+		CASE pi.SexFlag WHEN 1 THEN '02'
+		WHEN 2 THEN '03'
+		ELSE '04' END as dt_sex,
+		no.IPSeqNoText as code_ip,
+		'01' as dt_idtype,
+		'1' as is_old_pi
+		from tPatient pi
+		INNER JOIN tIPPatientSeqNO no ON no.PatientID=pi.PatientID
+		where 1=1
+		<if test="namePi != null and namePi != ''">
+			AND pi.PatientName =#{namePi}
+		</if>
+		<if test="idNo != null and idNo != ''">
+			AND pi.IdentityCardNo=#{idNo}
+		</if>
+		<if test="codePi != null and codePi != ''">
+			AND pi.PatientID=#{codePi}
+		</if>
+		<if test="mobile != null and mobile != ''">
+			AND pi.Phone=#{mobile}
+		</if>
+		<if test="dtSex != null and dtSex != ''">
+			AND pi.SexFlag=#{dtSex}
+		</if>
+		<if test="codeIp != null and codeIp != ''">
+			AND no.IPSeqNo=#{codeIp}
+		</if>
+	</select>
+
+	<select id="qrypiCount" parameterType="java.util.Map"
+		resultType="java.lang.Integer">
+		select count(1) from pi_master pi
+		inner join pv_encounter pv on pv.pk_pi=pi.pk_pi
+		<!-- inner join pv_ip ip on ip.pk_pv=pv.pk_pv -->
+		where 1=1
+		<if test="namePi != null and namePi != ''">
+			and pi.name_pi=#{namePi}
+		</if>
+		<if test="idNo != null and idNo != ''">
+			and pi.id_no=#{idNo}
+		</if>
+		<if test="mobile != null and mobile != ''">
+			AND pi.mobile=#{mobile}
+		</if>
+		<if test="codeIp != null and codeIp != ''">
+			AND pi.code_ip=#{codeIp}
+		</if>
+		<if test="dtSex != null and dtSex != ''">
+			AND pi.dt_sex=#{dtSex}
+		</if>
+		<if test="codePi != null and codePi != ''">
+			AND pi.code_pi=#{codePi}
+		</if>
+	</select>
+
+	<select id="cancelInhospital" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.common.module.pi.PiMaster">
+		select pi.* from pi_master pi inner join pv_encounter pv on
+		pv.pk_pi=pi.pk_pi where pk_pv=#{pkPv}
+	</select>
+
+</mapper>

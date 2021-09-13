@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.CpExpMapper" >
+
+  <select id="getDictCpExp" resultType="com.zebone.nhis.common.module.cn.cp.BdCpExp" parameterType="java.util.Map" >
+	select * 
+	from bd_cp_exp
+	where code_exp like #{pkExp,jdbcType=VARCHAR} or name_exp like #{pkExp,jdbcType=VARCHAR} and PK_ORG = '~' ORDER BY CODE_EXP
+  </select>  
+
+  <insert id= "saveDictCpExp">
+  
+  </insert>
+
+</mapper>

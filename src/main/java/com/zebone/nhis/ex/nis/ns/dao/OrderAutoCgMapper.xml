@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.ns.dao.OrderAutoCgMapper">
+<!-- 查询自动执行设置列表-->
+<select id="queryAutoExec" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.base.bd.wf.BdOrdAutoexec">
+  select * from bd_ord_autoexec  where pk_org = #{pkOrg,jdbcType=CHAR} and flag_active='1' 
+</select> 
+<!-- 根据医嘱查询医嘱执行单 -->
+<select id="queryExecListByOrd" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.pub.vo.ExlistPubVo">
+	select pv.pk_pv,
+	       pv.bed_no,
+	       pv.name_pi,
+	       pv.pk_pi,
+	       pv.eu_pvtype ,
+	       pv.pk_dept as pk_dept_pv,
+	       exlist.pk_exocc,
+	       exlist.date_plan,
+	       exlist.date_occ,
+	       exlist.quan_occ,
+	       exlist.name_emp_occ,
+	       exlist.name_emp_occ2,
+	       exlist.pk_emp_occ,
+	       exlist.pk_emp_occ2,
+	       exlist.pk_unit,
+	       exlist.eu_status,
+	       case when exlist.pk_pdapdt is not null then '1' else '0' end as flag_ap,
+	       case when exlist.pk_pdback is not null then '1' else '0' end as flag_back,
+	       exlist.flag_self,
+	       exlist.flag_base,
+	       ord.flag_durg,
+	       ord.name_ord,
+	       ord.flag_bl,
+	       ord.infant_no,
+	       ord.pk_cnord,
+	       ord.pk_ord,
+	       ord.pk_pres,
+	       ord.pk_org,
+	       ord.pk_dept,
+	       ord.pk_dept_exec,
+	       ord.pk_dept_ns,
+	       exlist.pk_org_occ,
+	       exlist.pack_size,
+	       ord.code_supply,
+	       ord.ordsn,
+	       ord.flag_fit,
+	       ord.note_ord,
+	       ord.pk_emp_ord,
+	       ord.name_emp_ord,
+	       ord.ordsn_parent,
+	       ord.eu_always,    
+	       ord.eu_st 
+	  from ex_order_occ exlist
+	 inner join cn_order ord on ord.pk_cnord = exlist.pk_cnord
+	 inner join pv_encounter pv on pv.pk_pv = exlist.pk_pv
+	 where  ord.pk_cnord in 
+		       <foreach item="pkOrd" index="index" collection="pkOrds" open="(" separator="," close=")">
+            	#{pkOrd}   
+               </foreach>
+     order by pv.bed_no,ord.ordsn_parent,exlist.date_plan,ord.ordsn
+</select>
+<select id="queryOrdItem" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.nis.ns.vo.AutoExOrdItemVo">
+  select ord.pk_cnord,item.pk_item
+  from cn_order ord
+  inner join bd_ord_item orditem on orditem.pk_ord = ord.pk_ord
+  inner join bd_item item on item.pk_item = orditem.pk_item
+  where item.del_flag='0' and item.flag_active = '1' and orditem.del_flag='0' and orditem.del_flag='0'
+  and ord.pk_cnord in
+  <foreach item="pkOrd" index="index" collection="pkOrds" open="(" separator="," close=")">
+       #{pkOrd}   
+  </foreach>
+</select>
+
+</mapper>

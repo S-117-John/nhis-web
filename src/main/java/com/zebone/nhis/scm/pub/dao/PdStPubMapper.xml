@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.pub.dao.PdStPubMapper">
+<select id="queryPkPdStoreByCon" parameterType="java.util.Map" resultType="DynaBean">
+ select stk.pk_pdstock,stk.quan_min,stk.quan_prep,stk.price,stk.price_cost  from  pd_stock stk
+ where stk.pk_pd = #{pkPd,jdbcType=CHAR}
+		<choose>
+			<when test="batchNo != null">
+				and stk.batch_no = #{batchNo,jdbcType=VARCHAR}
+			</when>
+			<otherwise>
+				and stk.batch_no  is null
+			</otherwise>
+		</choose>
+
+       <choose>
+	        <when test="dateExpire != null  and  dateExpire != ''">
+	           AND to_date(to_char(stk.DATE_EXPIRE,'yyyy-MM-dd'),'yyyy-MM-dd') =  to_date(#{dateExpire},'yyyy-MM-dd')
+	        </when>
+	        <otherwise>
+	            and stk.date_expire  is null   
+	        </otherwise>
+        </choose>
+        <if test="flagStop != null  and  flagStop != ''">
+          and stk.flag_stop = #{flagStop,jdbcType=CHAR} 
+       </if>
+       <if test="price != null">
+         and abs(stk.price-#{price,jdbcType=DECIMAL}) &lt; 0.01
+       </if>
+       <if test='priceCost!=null'>
+		 and abs(stk.price_cost-#{priceCost,jdbcType=DECIMAL}) &lt; 0.01
+	   </if>
+       and stk.pk_store = #{pkStore,jdbcType=CHAR}
+       and stk.quan_min-stk.QUAN_PREP &gt; 0
+</select>
+<select id="queryPdStDetailList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdStDtVo">
+select dt.*,
+       pd.code pdcode,
+       pd.name pdname,
+       pd.spec,
+       pd.pack_size pack_size_pd,
+       fa.name factory,
+       unit.name unit,
+       un.name unit_pd,
+       plansto.quan quan_pack_q , <!-- 请领数（用来比较和实发数是否相等） -->
+       pd.appr_no,
+       pd.eu_source 
+  from pd_st_detail dt
+       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+       inner join bd_unit un on un.pk_unit = pd.pk_unit_pack 
+       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+       inner join bd_unit unit on dt.pk_unit_pack=unit.pk_unit 
+       left outer join (select st.pk_pdst,
+                               pldt.pk_pd,
+                               pldt.quan_min/pldt.pack_size quan
+                          from pd_plan_detail pldt
+                               inner join pd_st st on pldt.pk_pdplan=st.pk_pdplan
+                       ) plansto on dt.pk_pdst=plansto.pk_pdst and dt.pk_pd=plansto.pk_pd 
+ where dt.pk_pdst=#{pkPdst,jdbcType=CHAR}
+order by dt.sort_no
+</select>
+<select id="queryPdStByCon" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdStDtVo">
+select dt.pk_pdstdt,
+       dt.pk_pd,
+       st.date_chk,  
+       dt.date_fac,   
+       dt.date_expire,
+       dt.batch_no,  
+       (dt.quan_min-dt.quan_outstore)/dt.pack_size quan_use,
+       dt.price_cost, 
+       dt.price 
+  from pd_st_detail dt
+       inner join pd_st st on dt.pk_pdst=st.pk_pdst
+ where st.pk_store_st=#{pkStore,jdbcType=CHAR} and dt.pk_pd=#{pkPd,jdbcType=CHAR}
+       and st.eu_direct = 1 
+       and dt.flag_finish = '0'
+       <if test=' euOuttype = "0" '  >
+          order by st.date_chk 
+       </if>
+       <if test=' euOuttype = "1" '  >
+          order by dt.date_fac 
+       </if>
+       <if test=' euOuttype = "2" '  >
+          order by st.date_chk  desc
+       </if>
+</select>
+<select id="queryPdByStore" parameterType="java.util.Map" resultType="DynaBean">
+    select pd.pk_pd 
+    from  bd_pd_store  store 
+    inner join bd_pd pd on pd.pk_pd = store.pk_pd 
+    where store.pk_store=#{pkStore,jdbcType=CHAR} and store.pk_dept = #{pkDept,jdbcType=CHAR} and 
+    store.pk_pd in 
+    <foreach item="pkpd" index="index" collection="pdlist" open="(" separator="," close=")">
+            #{pkpd}    
+    </foreach> 
+</select>
+<select id="queryRepriceHist" parameterType="java.util.Map" resultType="DynaBean">
+	select dt_reptype from pd_reprice_hist 
+	where pk_store = #{pkStore,jdbcType=CHAR} and pk_pd = #{pkPd,jdbcType=CHAR} 
+	order by date_reprice desc
+</select>
+
+<select id="getWaitInStdtDataList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdOutDtParamVo">
+	SELECT
+	  dt.pk_pd,
+	  st.date_chk,
+	  dt.date_fac,
+	  store.pack_size,
+	  pd.pack_size                                 pack_size_pd,
+	  pd.pack_size_max,
+	  store.pk_unit                             AS pk_unit_pack,
+	  store.posi_no,
+	  dt.date_expire,
+	  dt.batch_no,
+	  sum(dt.quan_min) quan_min,
+	  sum(dt.quan_outstore) quan_outstore,
+	  dt.price_cost,
+	  dt.price,
+	  dt.price / pd.pack_size * store.pack_size AS price_store
+	FROM pd_st_detail dt INNER JOIN bd_pd pd ON pd.pk_pd = dt.pk_pd
+	  INNER JOIN bd_pd_store store ON store.pk_pd = pd.pk_pd AND store.flag_stop = '0'
+	  INNER JOIN pd_st st ON dt.pk_pdst = st.pk_pdst
+	  LEFT JOIN pd_stock stk ON stk.pk_pd = dt.pk_pd 
+	  						AND stk.batch_no = dt.batch_no 
+	  						AND stk.price = dt.price 
+	  						AND stk.price_cost = dt.price_cost 
+	  						AND nvl(to_char(stk.date_expire, 'YYYYMMDD'), '~') =nvl(to_char(dt.date_expire, 'YYYYMMDD'), '~') 
+	  						AND stk.pk_store = #{pkStore,jdbcType=VARCHAR}
+	WHERE st.pk_store_st = #{pkStore,jdbcType=VARCHAR}
+		  AND store.pk_store =#{pkStore,jdbcType=VARCHAR}
+		  AND dt.pk_pd = #{pkPd,jdbcType=VARCHAR}
+		  AND st.eu_direct = 1
+		  and  dt.quan_min -dt.quan_outstore > 0 
+		  and dt.flag_finish = '0' 
+	  GROUP BY  
+		  dt.pk_pd,
+		  st.date_chk,
+		  dt.date_fac,
+		  store.pack_size,
+		  pd.pack_size,
+		  pd.pack_size_max,
+		  store.pk_unit,
+		  store.posi_no,
+		  dt.date_expire,
+		  dt.batch_no,
+		  dt.price_cost,
+		  dt.price,
+		  dt.price / pd.pack_size * store.pack_size
+	<if test='euOuttype!=null and euOuttype=="0"'>
+		 ORDER BY st.date_chk
+	</if>
+	<if test='euOuttype!=null and euOuttype=="2"'>
+		 order by st.date_chk  desc
+	</if>
+	<if test='euOuttype!=null and (euOuttype=="1" or euOuttype=="3")'>
+		 order by dt.date_expire 
+	</if>
+</select>
+
+<select id="getUnHaveInStdtList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdOutDtParamVo">
+	SELECT
+	  pd.pk_pd,
+	  store.pack_size,
+	  pd.pack_size                                 pack_size_pd,
+	  pd.pack_size_max,
+	  store.pk_unit                             AS pk_unit_pack,
+	  store.posi_no,
+	  '' as  batch_no,
+	  0 quan_min,
+	  0 quan_outstore,
+	  pd.price  price_cost,
+	  pd.price,
+	  pd.price / pd.pack_size * store.pack_size AS price_store
+	  from BD_PD_STORE store
+	inner join bd_pd pd on pd.pk_pd=store.pk_pd
+	where pd.PK_PD=#{pkPd,jdbcType=VARCHAR} and store.PK_STORE=#{pkStore,jdbcType=VARCHAR}
+</select>
+
+	<!-- 查询当前仓库是否做过初始建账 -->
+	<select id="verfyPdIsStRecord" parameterType="java.util.Map" resultType="int">
+		Select count(1) from pd_inv_init
+        where flag_cc='1'
+		<if test="pkStore != null  and  pkStore != ''">
+			and PK_STORE = #{pkStore,jdbcType=VARCHAR}
+		</if>
+		<if test="pkDept != null and pkDept != ''">
+			and pk_dept = #{pkDept,jdbcType=VARCHAR}
+		</if>
+	</select>
+
+	<select id="qryStockNum" resultType="DynaBean">
+		select sum(stk.quan_min-stk.quan_prep) as quan_min ,stk.pk_pd,min(cvt.pack_size) pack_size,max(str.EU_OUTTYPE) EU_OUTTYPE
+		from pd_stock stk
+		inner join BD_STORE str on str.PK_STORE=stk.PK_STORE
+		left join bd_pd_store sto on stk.PK_STORE=sto.PK_STORE and stk.PK_PD=sto.PK_PD
+		left join  bd_pd_convert cvt on cvt.pk_pdconvert = sto.pk_pdconvert
+		<where>
+			<choose>
+				<when test="pkPd!=null and pkPd.size()>0">
+					stk.pk_pd in
+					<foreach collection="pkPd" item="item" open="(" separator="," close=")">
+						#{item,jdbcType=VARCHAR}
+					</foreach>
+				</when>
+				<otherwise>
+					1!=1
+				</otherwise>
+			</choose>
+			and stk.pk_store=#{pkStore,jdbcType=VARCHAR}
+			and stk.flag_stop_op='0'
+		</where>
+		group by stk.pk_pd
+	</select>
+
+	<select id="queryBatchInStDtByOp" resultType="com.zebone.nhis.scm.pub.vo.PdOutDtParamVo">
+		select pd.name,
+		pd.spec,
+		pd.pk_itemcate,
+		dt.pk_pdstdt,
+		dt.pk_pd,
+		st.date_chk,
+		dt.date_fac,
+		store.pack_size,
+		pd.pack_size                                 pack_size_pd,
+		store.pk_unit                             as pk_unit_pack,
+		dt.date_expire,
+		dt.batch_no,
+		dt.quan_min,
+		dt.quan_outstore,
+		dt.price_cost,
+		dt.price,
+		dt.price / pd.pack_size * store.pack_size AS price_store
+		from pd_st_detail dt
+		left join bd_pd pd on pd.pk_pd = dt.pk_pd
+		left join bd_pd_store store on store.pk_pd = pd.pk_pd and store.flag_stop = '0'
+		left join pd_st st on dt.pk_pdst = st.pk_pdst
+		inner join pd_stock stk on stk.pk_pd = dt.pk_pd and nvl(stk.batch_no, '~') = nvl(dt.batch_no, '~') and
+		abs(stk.price - dt.price) &lt; 0.01 and abs(stk.price_cost - dt.price_cost) &lt; 0.01 and
+		nvl(to_char(stk.date_expire, 'YYYYMMDD'), '~') =
+		nvl(to_char(dt.date_expire, 'YYYYMMDD'), '~')
+		<choose>
+			<when test="pkDept!=null and pkDept !=''">
+				and stk.pk_dept = #{pkDept,jdbcType=VARCHAR}
+				where st.pk_dept_st = #{pkDept,jdbcType=VARCHAR}
+				and store.pk_dept =#{pkDept,jdbcType=VARCHAR}
+			</when>
+		    <otherwise>
+				stk.pk_store = #{pkStore,jdbcType=VARCHAR}
+				where st.pk_store_st = #{pkStore,jdbcType=VARCHAR}
+				and store.pk_store = #{pkStore,jdbcType=VARCHAR}
+			</otherwise>
+		</choose>
+		<choose>
+			<when test="pkPds!=null and pkPds.size()>0">
+				and dt.pk_pd in
+				<foreach collection="pkPds" index="index" item="item" open="(" separator="," close=")">
+					#{item,jdbcType=VARCHAR}
+				</foreach>
+			</when>
+			<otherwise>
+				1!=1
+			</otherwise>
+		</choose>
+		and st.eu_direct = 1
+		and dt.quan_min - nvl(dt.quan_outstore, 0) > 0
+		and dt.flag_finish = '0'
+		<choose>
+			<when test="euOuttype=='0'">
+				order by dt.pk_pd,st.date_chk
+			</when>
+			<when test="euOuttype=='1' or euOuttype=='3'">
+				order by dt.pk_pd,dt.date_expire
+			</when>
+			<when test="euOuttype=='2'">
+				order by dt.pk_pd,st.date_chk desc
+			</when>
+		</choose>
+	</select>
+</mapper>

@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.compay.ins.pub.dao.InsPubBlPrePayMapper">
+	
+			<!--预交金票据的数据-->
+	<select id="getDepositFormData" parameterType="java.util.Map" resultType="java.util.Map">
+		select
+			t7.name as payMode, t3.code_pi as codePi, t3.name_pi as namePi, t3.code_ip as codeIp, t4.ip_times as ipTimes,
+			t1.rept_no as reptNo, t1.amount, t8.name_dept as nameDept, t6.name as sex, t3.birth_date as birthDate, 
+			t1.name_emp_pay as nameEmpPay, t10.diagname as diagName, t9.desc_diag as diagDesc
+		from bl_deposit t1 
+			INNER JOIN PI_MASTER t3 on t1.pk_pi = t3.PK_PI 
+			INNER JOIN pv_ip t4 on t4.pk_pv = t1.pk_pv 
+			INNER JOIN pv_encounter t5 on t5.pk_pv = t1.pk_pv 
+			INNER JOIN bd_defdoc t6 on t6.code = t3.DT_SEX and t6.code_defdoclist = '000000' 
+			INNER JOIN bd_defdoc t7 on t7.code = t1.dt_paymode and t7.code_defdoclist = '110100' 
+			INNER JOIN bd_ou_dept t8 on t8.pk_dept = t5.pk_dept 
+			LEFT JOIN pv_diag t9 on t9.pk_pv = t1.pk_pv and t9.flag_maj = '1' 
+			LEFT JOIN bd_term_diag t10 on t10.pk_diag = t9.pk_diag 
+		where 
+			t1.eu_dptype = '9' and t1.pk_depo = #{pkDepo,jdbcType=VARCHAR} ORDER BY t1.ts desc
+	</select>
+	
+		<!--重打预交金票据的数据-->
+	<select id="getDepositFormDataWham" parameterType="java.util.Map" resultType="java.util.Map">
+		select t7.name as paymode, t3.code_pi as codePi, t3.name_pi as namePi, t3.code_ip as codeIp, t4.ip_times as ipTimes, t1.rept_no as reptNo, 
+				t1.amount, t8.name_dept as nameDept, t6.name as sex, t3.birth_date as birthDate, t1.name_emp_pay as nameEmpPay, t10.diagname, 
+				t1.pk_empinvoice as pkEmpinvoice, t9.desc_diag as diagDesc 
+				from bl_deposit t1 
+				INNER JOIN PI_MASTER t3 on t1.pk_pi = t3.PK_PI 
+				INNER JOIN pv_ip t4 on t4.pk_pv = t1.pk_pv 
+				INNER JOIN pv_encounter t5 on t5.pk_pv = t1.pk_pv 
+				LEFT JOIN bd_defdoc t6 on t6.code = t3.DT_SEX and t6.code_defdoclist = '000000' 
+				INNER JOIN bd_defdoc t7 on t7.code = t1.dt_paymode and t7.code_defdoclist = '110100' 
+				INNER JOIN bd_ou_dept t8 on t8.pk_dept = t5.pk_dept 
+				LEFT JOIN pv_diag t9 on t9.pk_pv = t1.pk_pv and t9.flag_maj = '1' 
+				LEFT JOIN bd_term_diag t10 on t10.pk_diag = t9.pk_diag 
+				where t1.eu_dptype = '9' and t1.pk_depo = #{pkDepo,jdbcType=VARCHAR} ORDER BY t1.ts desc
+	</select>
+	
+	
+	
+	
+	<!-- 根据条件查询机构下的患者信息 -->
+	<select id="qryStRecords" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.SettleRecord">
+		  select pv.pk_pv,st.dt_sttype,st.pk_settle,st.eu_pvtype, sttype.name sttype, st.date_st,pi.code_pi, 
+		       pi.name_pi, hp.name hp,st.amount_st, st.amount_pi,dept.name_dept,st.name_emp_st,st.eu_stresult,st.reason_canc   
+		  from pi_master pi
+		       inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+		       inner join bl_settle st on pv.pk_pv=st.pk_pv
+		       inner join bd_hp hp on st.pk_insurance=hp.pk_hp
+		       inner join bd_ou_dept dept on st.pk_dept_st=dept.pk_dept
+		       inner join bd_defdoc sttype on st.dt_sttype=sttype.code and sttype.code_defdoclist='110102'
+		 where st.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		 <if test="dtSttype != null  and  dtSttype != ''">
+		 	and st.dt_sttype = #{dtSttype,jdbcType=VARCHAR}
+		 </if>
+		 <if test="codePi != null  and  codePi != ''">
+		 	and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+		 </if>
+		 <if test="namePi != null  and  namePi != ''">
+		 	and pi.name_pi like '%' || #{namePi,jdbcType=VARCHAR} || '%' 
+		 </if>
+		 <if test="codePv != null  and  codePv != ''">
+		 	and  pv.code_pv = #{codePv,jdbcType=VARCHAR}
+		 </if>
+		 <if test="dateBegin != null  and  dateBegin != ''">
+		 	and st.date_st &gt;= to_date(substr(#{dateBegin,jdbcType=VARCHAR} ,1,8)||'000000', 'yyyymmddhh24miss')
+		 </if>
+		 <if test="dateEnd != null  and  dateEnd != ''">
+		 	and st.date_st &lt;= to_date( substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'yyyymmddhh24miss')
+		 </if>
+		  <if test="euStresult != null  and  euStresult != ''">
+		 	and st.eu_stresult= #{euStresult,jdbcType=VARCHAR} 
+		 </if>
+		 <if test="nameEmpSt != null  and  nameEmpSt != ''">
+		 	and st.name_emp_st like '%' || #{nameEmpSt,jdbcType=VARCHAR} || '%' 
+		 </if>
+		 <if test="codeInv != null  and  codeInv != ''">
+		 	and  exists (select 1
+                 from bl_st_inv stinv 
+                      inner join bl_invoice inv on stinv.pk_invoice=inv.pk_invoice
+                where stinv.pk_settle=st.pk_settle and
+                      inv.code_inv=#{codeInv,jdbcType=VARCHAR})
+		 </if>
+	</select>
+	<!-- 查询某个结算主键所对应的结算记录并且发票主键相等-->
+	<select id="qryInvInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.StQryInvInfo">
+		  select inv.pk_invoice, inv.code_inv,inv.date_inv,inv.amount_inv, inv.amount_pi,  
+		       inv.name_emp_inv,inv.flag_cancel,inv.date_cancel,inv.name_emp_cancel 
+		  from bl_st_inv stinv
+		       inner join bl_invoice inv on stinv.pk_invoice=inv.pk_invoice
+		 where stinv.pk_settle=#{pkSettle,jdbcType=VARCHAR}	 
+	</select>
+	<!-- 查询 交款记录并且付款类型为非住院预交金-->
+	<select id="qryDepoInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.StQryDepoInfo">
+		  select depo.amount,paymode.name paymode, bank.name bank,depo.bank_no 
+		  from bl_deposit depo
+		       inner join bd_defdoc paymode on depo.dt_paymode=paymode.code and paymode.code_defdoclist='110100'
+		       left outer join bd_defdoc bank on depo.dt_bank=bank.code and bank.code_defdoclist='040005'
+		 where depo.eu_dptype&lt;9 
+		       and depo.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+	</select>
+	<!-- 根据结算主键查询结算记录 -->
+	<select id="qryInsuSt" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.StQryInsuSt">
+		  select hp.name hp,  payer.name payer,stdt.amount
+		  from bl_settle_detail stdt
+		       left outer join bd_payer payer on stdt.pk_payer=payer.pk_payer
+		       left outer join bd_hp hp on stdt.pk_insurance=hp.pk_hp
+		 where stdt.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+	</select>
+	<!-- 查询门急诊收费明细 -->
+	<select id="qryCgStOp" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.StQryCharge">
+		<!--  以下语句关联了bd_invcate_item，但是却没有传pk_invate参数，会导致查询数据重复，故注释掉
+		select dt.name_cg,bi.name nameBill,bi.pk_invcateitem pkBill,dt.code_bill codeBill, 
+		 dt.spec,unit.name unit,dt.price,sum(dt.quan) quan,sum(dt.amount) amount,sum
+		 (dt.amount_pi) amountPi
+		 from bl_op_dt dt
+		       left join bd_unit unit on dt.pk_unit=unit.pk_unit
+		       left join bd_invcate_item bi on dt.code_bill=bi.code
+		 where dt.pk_settle=#{pkSettle,jdbcType=VARCHAR} and bi.del_flag='0' and bi.pk_org=#{pkOrg,jdbcType=VARCHAR}
+		 group by 
+			dt.name_cg,dt.spec,unit.name,dt.price,bi.name,bi.pk_invcateitem,dt.code_bill
+		 union all
+		 select dt.name_cg,bi.name nameBill,bi.pk_invcateitem pkBill,dt.code_bill codeBill,
+         dt.spec,unit.name unit,dt.price,sum(dt.quan) quan,sum(dt.amount) amount,sum
+         (dt.amount_pi) amountPi
+		 from bl_op_dt_b dt
+		       left join bd_unit unit on dt.pk_unit=unit.pk_unit
+		       left join bd_invcate_item bi on dt.code_bill=bi.code
+		 where dt.pk_settle=#{pkSettle,jdbcType=VARCHAR} and bi.del_flag='0' and bi.pk_org=#{pkOrg,jdbcType=VARCHAR}
+		 group by 
+            dt.name_cg,dt.spec,unit.name,dt.price,bi.name,bi.pk_invcateitem,dt.code_bill
+           -->
+         select dt.name_cg, dt.spec,unit.name unit,dt.price,sum(dt.quan) quan,sum(dt.amount) amount,sum(dt.amount_pi) amount_pi
+		 from bl_op_dt dt
+		       left join bd_unit unit on dt.pk_unit=unit.pk_unit
+		 where dt.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+		 group by dt.name_cg,dt.spec,unit.name,dt.price
+		 union all
+		 select dt.name_cg,dt.spec, unit.name unit,dt.price,sum(dt.quan) quan,sum(dt.amount) amount,sum(dt.amount_pi) amount_pi
+		 from bl_op_dt_b dt
+		       left join bd_unit unit on dt.pk_unit=unit.pk_unit
+		 where dt.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+		 group by dt.name_cg, dt.spec,unit.name, dt.price
+	</select>
+	<!-- 查询住院收费明细 -->
+	<select id="qryCgStIp" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.StQryCharge">
+		 select dt.name_cg, dt.spec,unit.name unit,dt.price,sum(dt.quan) quan,sum(dt.amount) amount,sum(dt.amount_pi) amount_pi
+		 from bl_ip_dt dt
+		       inner join bd_unit unit on dt.pk_unit=unit.pk_unit
+		 where dt.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+		 group by dt.name_cg,dt.spec,unit.name,dt.price
+		 union all
+		 select dt.name_cg,dt.spec, unit.name unit,dt.price,sum(dt.quan) quan,sum(dt.amount) amount,sum(dt.amount_pi) amount_pi
+		 from bl_ip_dt_b dt
+		       inner join bd_unit unit on dt.pk_unit=unit.pk_unit
+		 where dt.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+		 group by dt.name_cg, dt.spec,unit.name, dt.price
+	</select>
+	<!-- 查询发票明细 根据发票主键-->
+	<select id="qyrInvDt" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.StQryInvDt">
+      select dt.pk_bill,dt.code_bill,dt.name_bill,dt.amount from bl_invoice_dt dt where dt.pk_invoice=#{pkInvoice,jdbcType=VARCHAR}
+	</select>
+	<!-- 查询结算记录，根据就诊主键-->
+	<select id="querySettleRecordByPv"  parameterType="java.util.Map" resultType="Dynabean">
+      select st.pk_settle,st.date_st,doc.name as name_sttype,st.amount_st,st.amount_pi,st.amount_insu,st.name_emp_st
+	  from bl_settle st 
+	  left join bd_defdoc doc on doc.code = st.dt_sttype and doc.code_defdoclist = '110102' 
+	  where st.del_flag = '0' and  st.pk_pv = #{pkPv,jdbcType=CHAR}
+	  order by st.date_st
+	</select>
+</mapper>

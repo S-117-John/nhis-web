@@ -1,0 +1,665 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.pub.dao.BdDumpMapper">
+	<!-- 查询患者信息列表 -->
+	<select id="queryPiMaster" resultType="DynaBean">
+		 select 
+		 	  <choose>
+		       		<!-- 住院 -->
+	                <when test="euPvtype !=null and euPvtype != '' and 3== euPvtype ">
+	                    pv.pk_pv,pi.code_ip,pi.name_pi,to_char(pv.date_end, 'yyyy-mm-dd hh24:mi:ss') date_end,ip.ip_times cnt,count(1) 
+	                </when>
+	                <!-- 门诊 -->
+	                <otherwise>
+	                    pv.pk_pv,pi.code_op code_ip,pi.name_pi,to_char(pv.date_begin, 'yyyy-mm-dd hh24:mi:ss') date_end,count(1) cnt
+	                </otherwise>
+               </choose>
+		  from pv_encounter pv
+		       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		       <!-- 住院 -->
+               <if test="euPvtype !=null and euPvtype != '' and 3== euPvtype ">
+                   inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+               </if>
+		       inner join cn_order ord on pv.pk_pv=ord.pk_pv
+		 where 1=1
+		       <choose>
+		       		<!-- 住院 -->
+	                <when test="euPvtype !=null and euPvtype != '' and 3== euPvtype ">
+	                    and pv.flag_settle='1' 
+	                    and pv.date_end&lt;=to_date(#{endDate}, 'yyyy-mm-dd hh24:mi:ss')
+				        <if test="codeIp !=null and codeIp != ''">
+				       		and pi.code_ip like '%' || #{codeIp,jdbcType=VARCHAR} || '%'
+				        </if>
+	                </when>
+	                <!-- 门诊 -->
+	                <otherwise>
+	                    and pv.date_begin&lt;=to_date(#{endDate}, 'yyyy-mm-dd hh24:mi:ss')
+	                    <if test="codeIp !=null and codeIp != '' ">
+				       		and pi.code_op like '%' || #{codeIp,jdbcType=VARCHAR} || '%'
+				        </if>
+	                </otherwise>
+               </choose>
+		       <if test="euPvtype !=null and euPvtype != ''">
+		       		and pv.EU_PVTYPE=#{euPvtype,jdbcType=VARCHAR}
+		       </if>
+		       <if test="pkDept !=null and pkDept != ''">
+		       		and pv.pk_dept=#{pkDept,jdbcType=VARCHAR}
+		       </if>
+		       <if test="namePi !=null and namePi != ''">
+       				and pi.name_pi like '%' || #{namePi,jdbcType=VARCHAR} || '%'
+       		   </if>
+		group by 
+		         <choose>
+		       		<!-- 住院 -->
+	                <when test="euPvtype !=null and euPvtype != '' and 3== euPvtype ">
+	                    pv.pk_pv,pi.code_ip,pi.name_pi,pv.date_end,ip.ip_times
+	                </when>
+	                <!-- 门诊 -->
+	                <otherwise>
+	                    pv.pk_pv,pi.code_op,pi.name_pi,pv.date_begin
+	                </otherwise>
+               </choose>
+				 
+	</select>
+	<!-- 查询转存表可以恢复的患者信息 -->
+	<select id="queryPiMasterByDump" resultType="DynaBean">
+		 select 
+				<choose>
+		       		<!-- 住院 -->
+	                <when test="euPvtype !=null and euPvtype != '' and 3== euPvtype ">
+	                    pv.pk_pv,pi.code_ip,pi.name_pi,to_char(pv.date_end, 'yyyy-mm-dd hh24:mi:ss') date_end,ip.ip_times cnt,count(1) 
+	                </when>
+	                <!-- 门诊 -->
+	                <otherwise>
+	                    pv.pk_pv,pi.code_op code_ip,pi.name_pi,to_char(pv.date_begin, 'yyyy-mm-dd hh24:mi:ss') date_end,count(1) cnt 
+	                </otherwise>
+               </choose>
+		  from pv_encounter pv
+		       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		       <!-- 住院 -->
+               <if test="euPvtype !=null and euPvtype != '' and 3== euPvtype ">
+                   inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+               </if>
+		       inner join cn_order_b ord on pv.pk_pv=ord.pk_pv
+		 where 1=1
+		       <choose>
+		       		<!-- 住院 -->
+	                <when test="euPvtype !=null and euPvtype != '' and 3== euPvtype ">
+	                    <if test="pkPv ==null or pkPv == ''">
+	                    	and pv.flag_settle='1' 
+	                    </if>
+	                    <if test="endDate !=null and endDate != ''">
+	                    	and pv.date_end&lt;=to_date(#{endDate}, 'yyyy-mm-dd hh24:mi:ss')
+	                    </if>
+				        <if test="codeIp !=null and codeIp != ''">
+				       		and pi.code_ip like '%' || #{codeIp,jdbcType=VARCHAR} || '%'
+				        </if>
+	                </when>
+	                <!-- 门诊 -->
+	                <otherwise>
+	                    <if test="endDate !=null and endDate != ''">
+	                    	and pv.date_begin&lt;=to_date(#{endDate}, 'yyyy-mm-dd hh24:mi:ss')
+	                    </if>
+	                    <if test="codeIp !=null and codeIp != '' ">
+				       		and pi.code_op like '%' || #{codeIp,jdbcType=VARCHAR} || '%'
+				        </if>
+	                </otherwise>
+               </choose>
+		       <if test="euPvtype !=null and euPvtype != ''">
+		       		and pv.EU_PVTYPE=#{euPvtype,jdbcType=VARCHAR}
+		       </if>
+		       <if test="namePi !=null and namePi != ''">
+       				and pi.name_pi like '%' || #{namePi,jdbcType=VARCHAR} || '%'
+       		   </if>
+       		   <if test="pkPv !=null and pkPv != ''">
+		       		and pv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+		       </if>
+		group by 
+				<choose>
+		       		<!-- 住院 -->
+	                <when test="euPvtype !=null and euPvtype != '' and 3== euPvtype ">
+	                    pv.pk_pv,pi.code_ip,pi.name_pi,pv.date_end,ip.ip_times
+	                </when>
+	                <!-- 门诊 -->
+	                <otherwise>
+	                    pv.pk_pv,pi.code_op,pi.name_pi,pv.date_begin
+	                </otherwise>
+               </choose>
+	</select>
+	<!-- 根据pkpv批量转存医嘱 -->
+	<insert id="batInsertCnOrderByPkPv" parameterType="java.util.List">
+        insert into cn_order_b select * from cn_order where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量转存检查申请-->
+    <insert id="batInsertRisApplyByPkPv" parameterType="java.util.List">
+        insert into cn_ris_apply_b
+  				  select a.* from cn_ris_apply a
+                  inner join cn_order b on a.pk_cnord=b.pk_cnord where b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量转存检验申请 -->
+    <insert id="batInsertLabApplyByPkPv" parameterType="java.util.List">
+        insert into cn_lab_apply_b
+  				select a.* from cn_lab_apply a
+                inner join cn_order b on a.pk_cnord=b.pk_cnord where b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量转存医嘱-处方 -->
+    <insert id="batInsertPrescriptionByPkPv" parameterType="java.util.List">
+       insert into cn_prescription_b select * from cn_prescription where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+	<!-- 根据pkpv批量转存医嘱-打印 -->
+	<insert id="batInsertOrderPrintByPkPv" parameterType="java.util.List">
+       insert into cn_order_print_b select * from cn_order_print where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量转存医嘱-输血申请 -->
+    <insert id="batInsertTransApplyByPkPv" parameterType="java.util.List">
+       insert into cn_trans_apply_b
+  			select * from cn_trans_apply a
+            inner join cn_order b on a.pk_cnord=b.pk_cnord where b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量转存医嘱-会诊申请 -->
+    <insert id="batInsertConsultApplyByPkPv" parameterType="java.util.List">
+       insert into cn_consult_apply_b
+  			select * from cn_consult_apply a
+            inner join cn_order b on a.pk_cnord=b.pk_cnord where b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量转存医嘱-会诊应答 -->
+    <insert id="batInsertConsultResponseByPkPv" parameterType="java.util.List">
+      insert into cn_consult_response_b
+  			select * from cn_consult_response a
+            inner join cn_consult_apply b on a.pk_cons=b.pk_cons
+            inner join cn_order c on b.pk_cnord=c.pk_cnord where c.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量转存医嘱-手术申请 -->
+    <insert id="batInsertOpApplyByPkPv" parameterType="java.util.List">
+      insert into cn_op_apply_b
+  			select * from cn_op_apply a
+            inner join cn_order b on a.pk_cnord=b.pk_cnord where b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量转存执行单 -->
+    <insert id="batInsertOrderOccByPkPv" parameterType="java.util.List">
+      insert into ex_order_occ_b select * from ex_order_occ where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量转存执行单打印 -->
+    <insert id="batInsertOrderOccPrtByPkPv" parameterType="java.util.List">
+      insert into ex_order_occ_prt_b
+ 			 select * from ex_order_occ_prt a
+             inner join ex_order_occ b on a.pk_exocc=b.pk_exocc where b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量转存领药申请 -->
+    <insert id="batInsertPdApplyByPkPv" parameterType="java.util.List">
+      insert into ex_pd_apply_detail_b select * from ex_pd_apply_detail where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量转存发药记录 -->
+    <insert id="batInsertPdDeByPkPv" parameterType="java.util.List">
+      insert into ex_pd_de_b select * from ex_pd_de where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量转存记费明细 -->
+    <insert id="batInsertIpDtByPkPv" parameterType="java.util.List">
+      insert into bl_ip_dt_b select * from bl_ip_dt where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量转存记费明细————————门诊 -->
+    <insert id="batInsertOpDtByPkPv" parameterType="java.util.List">
+      insert into BL_OP_DT_B select * from BL_OP_DT where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量转存排班预约-排班————门诊 -->
+    <insert id="batInsertSchSchByDate" parameterType="string">
+      insert into SCH_SCH_B select * from SCH_SCH where DATE_WORK>=to_date(#{endDate}, 'yyyy-mm-dd hh24:mi:ss')
+    </insert>
+    
+    
+    
+    
+    
+    
+    
+    
+    <!-- 根据pkpv批量删除已转存检查申请-->
+    <delete id="batDelRisApplyByPkPv" parameterType="java.util.List">
+       delete from cn_ris_apply a
+		 where exists (select * from cn_order b where a.pk_cnord=b.pk_cnord and b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+         ) 
+    </delete>
+    <!-- 根据pkpv批量删除已转存检验申请 -->
+    <delete id="batDelLabApplyByPkPv" parameterType="java.util.List">
+       delete from cn_lab_apply a
+ 		where exists (select * from cn_order b where a.pk_cnord=b.pk_cnord and b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+         )
+    </delete>
+    <!-- 根据pkpv批量删除已转存医嘱-处方 -->
+    <delete id="batDelPrescriptionByPkPv" parameterType="java.util.List">
+       delete from cn_prescription where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </delete>
+	<!-- 根据pkpv批量删除已转存医嘱-打印 -->
+	<delete id="batDelOrderPrintByPkPv" parameterType="java.util.List">
+       delete from cn_order_print where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </delete>
+    <!-- 根据pkpv批量删除已转存医嘱-输血申请 -->
+    <delete id="batDelTransApplyByPkPv" parameterType="java.util.List">
+       delete from cn_trans_apply a
+ 			where exists (select * from cn_order b where a.pk_cnord=b.pk_cnord and b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+         )
+    </delete>
+    <!-- 根据pkpv批量删除已转存医嘱-会诊申请 -->
+    <delete id="batDelConsultApplyByPkPv" parameterType="java.util.List">
+       delete from cn_consult_apply a
+ 		where exists (select * from cn_order b where a.pk_cnord=b.pk_cnord and b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+         )
+    </delete>
+    <!-- 根据pkpv批量删除已转存医嘱-会诊应答 -->
+    <delete id="batDelConsultResponseByPkPv" parameterType="java.util.List">
+      delete from cn_consult_response a
+ 		where exists (select * from cn_consult_apply b
+                             inner join cn_order c on b.pk_cnord=c.pk_cnord
+                       where a.pk_cons=b.pk_cons and c.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+         )
+    </delete>
+    <!-- 根据pkpv批量删除已转存医嘱-手术申请 -->
+    <delete id="batDelOpApplyByPkPv" parameterType="java.util.List">
+      delete from cn_op_apply a
+ 		where exists (select * from cn_order b where a.pk_cnord=b.pk_cnord and b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+         )
+    </delete>
+    <!-- 根据pkpv批量删除已转存执行单 -->
+    <delete id="batDelOrderOccByPkPv" parameterType="java.util.List">
+       delete from ex_order_occ where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </delete>
+    <!-- 根据pkpv批量删除已转存执行单打印 -->
+    <delete id="batDelOrderOccPrtByPkPv" parameterType="java.util.List">
+      delete from ex_order_occ_prt a
+	  where exists (select * from ex_order_occ b
+	                             inner join cn_order c on b.pk_cnord=c.pk_cnord
+	                       where a.pk_exocc=b.pk_exocc and c.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+         )
+    </delete>
+    <!-- 根据pkpv批量删除已转存领药申请 -->
+    <delete id="batDelPdApplyByPkPv" parameterType="java.util.List">
+      delete from ex_pd_apply_detail where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </delete>
+    <!-- 根据pkpv批量删除已转存发药记录 -->
+    <delete id="batDelPdDeByPkPv" parameterType="java.util.List">
+      delete from ex_pd_de where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </delete>
+    <!-- 根据pkpv批量删除已转存记费明细 -->
+    <delete id="batDelIpDtByPkPv" parameterType="java.util.List">
+      delete from bl_ip_dt where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </delete>
+    <!-- 根据pkpv批量删除已转存记费明细-门诊 -->
+    <delete id="batDelOpDtByPkPv" parameterType="java.util.List">
+      delete from BL_OP_DT where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </delete>
+    
+    <!-- 根据pkpv批量删除已转存医嘱 -->
+	<delete id="batDelCnOrderByPkPv" parameterType="java.util.List">
+        delete from cn_order where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+         ) 
+    </delete>
+    
+    
+    
+    <!-- ___________________________________________________以下为恢复代码___________________________-->
+    <!-- 根据pkpv批量恢复医嘱 -->
+	<insert id="batInsertCnOrderByPkPvR" parameterType="java.util.List">
+        insert into cn_order select * from cn_order_b where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量恢复检查申请-->
+    <insert id="batInsertRisApplyByPkPvR" parameterType="java.util.List">
+        insert into cn_ris_apply
+  				  select a.* from cn_ris_apply_b a
+                  inner join cn_order_b b on a.pk_cnord=b.pk_cnord where b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量恢复检验申请 -->
+    <insert id="batInsertLabApplyByPkPvR" parameterType="java.util.List">
+        insert into cn_lab_apply
+  				select a.* from cn_lab_apply_b a
+                inner join cn_order_b b on a.pk_cnord=b.pk_cnord where b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量恢复医嘱-处方 -->
+    <insert id="batInsertPrescriptionByPkPvR" parameterType="java.util.List">
+       insert into cn_prescription select * from cn_prescription_b where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+	<!-- 根据pkpv批量恢复医嘱-打印 -->
+	<insert id="batInsertOrderPrintByPkPvR" parameterType="java.util.List">
+       insert into cn_order_print select * from cn_order_print_b where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量恢复医嘱-输血申请 -->
+    <insert id="batInsertTransApplyByPkPvR" parameterType="java.util.List">
+       insert into cn_trans_apply
+  			select * from cn_trans_apply_b a
+            inner join cn_order_b b on a.pk_cnord=b.pk_cnord where b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量恢复医嘱-会诊申请 -->
+    <insert id="batInsertConsultApplyByPkPvR" parameterType="java.util.List">
+       insert into cn_consult_apply
+  			select * from cn_consult_apply_b a
+            inner join cn_order_b b on a.pk_cnord=b.pk_cnord where b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量恢复医嘱-会诊应答 -->
+    <insert id="batInsertConsultResponseByPkPvR" parameterType="java.util.List">
+      insert into cn_consult_response
+  			select * from cn_consult_response_b a
+            inner join cn_consult_apply_b b on a.pk_cons=b.pk_cons
+            inner join cn_order_b c on b.pk_cnord=c.pk_cnord where c.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量恢复医嘱-手术申请 -->
+    <insert id="batInsertOpApplyByPkPvR" parameterType="java.util.List">
+      insert into cn_op_apply
+  			select * from cn_op_apply_b a
+            inner join cn_order_b b on a.pk_cnord=b.pk_cnord where b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量恢复执行单 -->
+    <insert id="batInsertOrderOccByPkPvR" parameterType="java.util.List">
+      insert into ex_order_occ select * from ex_order_occ_b where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量恢复执行单打印 -->
+    <insert id="batInsertOrderOccPrtByPkPvR" parameterType="java.util.List">
+      insert into ex_order_occ_prt
+ 			 select * from ex_order_occ_prt_b a
+             inner join ex_order_occ_b b on a.pk_exocc=b.pk_exocc where b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量恢复领药申请 -->
+    <insert id="batInsertPdApplyByPkPvR" parameterType="java.util.List">
+      insert into ex_pd_apply_detail select * from ex_pd_apply_detail_b where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量恢复发药记录 -->
+    <insert id="batInsertPdDeByPkPvR" parameterType="java.util.List">
+      insert into ex_pd_de select * from ex_pd_de_b where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    <!-- 根据pkpv批量恢复记费明细 -->
+    <insert id="batInsertIpDtByPkPvR" parameterType="java.util.List">
+      insert into bl_ip_dt select * from bl_ip_dt_b where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    
+    <!-- 根据pkpv批量恢复记费明细————————门诊 -->
+    <insert id="batInsertOpDtByPkPvR" parameterType="java.util.List">
+      insert into BL_OP_DT select * from BL_OP_DT_B where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </insert>
+    
+    
+    
+    
+    
+    
+    
+    
+    <!-- 根据pkpv批量删除已恢复检查申请-->
+    <delete id="batDelRisApplyByPkPvR" parameterType="java.util.List">
+       delete from cn_ris_apply_b a
+		 where exists (select * from cn_order_b b where a.pk_cnord=b.pk_cnord and b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+         ) 
+    </delete>
+    <!-- 根据pkpv批量删除已恢复检验申请 -->
+    <delete id="batDelLabApplyByPkPvR" parameterType="java.util.List">
+       delete from cn_lab_apply_b a
+ 		where exists (select * from cn_order_b b where a.pk_cnord=b.pk_cnord and b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+         )
+    </delete>
+    <!-- 根据pkpv批量删除已恢复医嘱-处方 -->
+    <delete id="batDelPrescriptionByPkPvR" parameterType="java.util.List">
+       delete from cn_prescription_b where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </delete>
+	<!-- 根据pkpv批量删除已恢复医嘱-打印 -->
+	<delete id="batDelOrderPrintByPkPvR" parameterType="java.util.List">
+       delete from cn_order_print_b where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </delete>
+    <!-- 根据pkpv批量删除已恢复医嘱-输血申请 -->
+    <delete id="batDelTransApplyByPkPvR" parameterType="java.util.List">
+       delete from cn_trans_apply_b a
+ 			where exists (select * from cn_order_b b where a.pk_cnord=b.pk_cnord and b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+         )
+    </delete>
+    <!-- 根据pkpv批量删除已恢复医嘱-会诊申请 -->
+    <delete id="batDelConsultApplyByPkPvR" parameterType="java.util.List">
+       delete from cn_consult_apply_b a
+ 		where exists (select * from cn_order_b b where a.pk_cnord=b.pk_cnord and b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+         )
+    </delete>
+    <!-- 根据pkpv批量删除已恢复医嘱-会诊应答 -->
+    <delete id="batDelConsultResponseByPkPvR" parameterType="java.util.List">
+      delete from cn_consult_response_b a
+ 		where exists (select * from cn_consult_apply_b b
+                             inner join cn_order_b c on b.pk_cnord=c.pk_cnord
+                       where a.pk_cons=b.pk_cons and c.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+         )
+    </delete>
+    <!-- 根据pkpv批量删除已恢复医嘱-手术申请 -->
+    <delete id="batDelOpApplyByPkPvR" parameterType="java.util.List">
+      delete from cn_op_apply_b a
+ 		where exists (select * from cn_order_b b where a.pk_cnord=b.pk_cnord and b.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+         )
+    </delete>
+    <!-- 根据pkpv批量删除已恢复执行单 -->
+    <delete id="batDelOrderOccByPkPvR" parameterType="java.util.List">
+       delete from ex_order_occ_b where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </delete>
+    <!-- 根据pkpv批量删除已恢复执行单打印 -->
+    <delete id="batDelOrderOccPrtByPkPvR" parameterType="java.util.List">
+      delete from ex_order_occ_prt_b a
+	  where exists (select * from ex_order_occ_b b
+	                             inner join cn_order_b c on b.pk_cnord=c.pk_cnord
+	                       where a.pk_exocc=b.pk_exocc and c.pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+         )
+    </delete>
+    <!-- 根据pkpv批量删除已恢复领药申请 -->
+    <delete id="batDelPdApplyByPkPvR" parameterType="java.util.List">
+      delete from ex_pd_apply_detail_b where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </delete>
+    <!-- 根据pkpv批量删除已恢复发药记录 -->
+    <delete id="batDelPdDeByPkPvR" parameterType="java.util.List">
+      delete from ex_pd_de_b where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </delete>
+    <!-- 根据pkpv批量删除已恢复记费明细 -->
+    <delete id="batDelIpDtByPkPvR" parameterType="java.util.List">
+      delete from bl_ip_dt_b where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </delete>
+    <!-- 根据pkpv批量删除已转存记费明细-门诊 -->
+    <delete id="batDelOpDtByPkPvR" parameterType="java.util.List">
+      delete from BL_OP_DT_b where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+    </delete>
+    <!-- 根据pkpv批量删除已恢复医嘱 -->
+	<delete id="batDelCnOrderByPkPvR" parameterType="java.util.List">
+        delete from cn_order_b where pk_pv in 
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+        </foreach>
+         ) 
+    </delete>
+    <!-- 查询符合条件的病区列表 -->
+	<select id="queryDeptList" resultType="DynaBean">
+		select  distinct pv.PK_DEPT,bo.name_dept
+		from pv_encounter pv
+		left join BD_OU_DEPT bo on bo.pk_dept=pv.pk_dept
+		where 1=1
+	        <if test="euPvtype !=null and euPvtype != '' ">
+	       		and pv.EU_PVTYPE=#{euPvtype,jdbcType=VARCHAR}
+	        </if>
+			<choose>
+	       		<!-- 住院 -->
+                <when test="euPvtype !=null and euPvtype != '' and 3== euPvtype ">
+                    and pv.flag_settle='1' 
+                    and pv.date_end&lt;=to_date(#{endDate}, 'yyyy-mm-dd hh24:mi:ss')
+                </when>
+                <!-- 门诊 -->
+                <otherwise>
+                    and pv.date_begin&lt;=to_date(#{endDate}, 'yyyy-mm-dd hh24:mi:ss')
+                </otherwise>
+              </choose>
+		group by pv.PK_DEPT,bo.name_dept		 
+	</select>
+</mapper>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.pub.dao.SerialNoMapper">
+
+    <select id="getList" resultType="com.zebone.nhis.base.pub.vo.SerialNoVO">
+        select sn.pk_serialno,
+           sn.name_tb,
+           sn.name_fd,
+           sn.length,
+           sn.val_init,
+           sn.val,
+           sn.prefix
+        from bd_serialno sn
+    </select>
+
+    <delete id="delete">
+        delete from bd_serialno where pk_serialno=#{id}
+    </delete>
+
+
+    <select id="getSerialVal" parameterType="java.util.Map" resultType="com.zebone.nhis.base.pub.vo.SerialNoVO">
+        select val
+        from bd_serialno
+        where name_tb=#{map.nameTb} and name_fd=#{map.nameFd}
+    </select>
+</mapper>

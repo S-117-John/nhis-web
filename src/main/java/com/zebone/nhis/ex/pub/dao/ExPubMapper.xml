@@ -1,0 +1,791 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.pub.dao.ExPubMapper">
+
+	<select id="queryBdSupplyPivas" parameterType="java.util.Map" resultType="string">
+		select sup.code from bd_supply sup where sup.flag_pivas ='1' 
+	</select>
+	
+   <select id="getPatiInfo"  parameterType="java.util.Map" resultType="com.zebone.nhis.ex.pub.vo.PatiInfoVo">
+				   select 
+				   bed.code as bedno,
+		           bed.name,
+		           bed.dt_bedtype,
+				   pvBed.eu_hold,
+				   pvBed.flag_maj,
+				   bed.pk_bed,
+		           pv.pk_pi,
+		           pv.name_pi,
+		           pv.code_pv,
+		           def_sex.name as sex,
+		           pv.age_pv as age,
+		           pi.addr_cur as addr,
+		           pi.name_rel,
+		           pi.tel_rel,
+		           pi.code_pi,
+		           pi.code_ip,
+		           ip.ip_times,
+		           pv.pk_dept_ns,
+		           deptns.name_dept as dept_name_ns,
+		           pv.pk_dept,
+		           dept.name_dept,
+		           pv.name_emp_phy,
+		           pv.name_emp_ns,
+		           pv.pk_pv,
+		           pv.date_admit,
+		           hp.name as hpname,
+		           diag.desc_diag,
+		           ip.dt_level_ns,
+		           ip.dt_level_dise,
+		           ip.dt_level_nutr,
+		           ip.flag_infant,
+		           pv.date_begin ,
+		           def_dise.name level_dise_hint,
+		           ord_ns.name level_ns_hint,
+		           ord_nutr.name level_nutr_hint 
+				   from pv_encounter pv 
+				   inner join  bd_res_bed bed on pv.pk_pi = bed.pk_pi 
+				   inner join pv_ip ip on ip.pk_pv = pv.pk_pv 
+				   inner join pi_master pi on pi.pk_pi = pv.pk_pi 
+				   left join bd_ou_dept deptns on pv.pk_dept_ns = deptns.pk_dept 
+				   left join bd_ou_dept dept on pv.pk_dept = dept.pk_dept 
+				   left join bd_hp hp on pv.pk_insu = hp.pk_hp 
+				   left join pv_diag diag on diag.pk_pv = pv.pk_pv and diag.flag_maj = '1' and diag.del_flag = '0'
+				   left join bd_defdoc def_dise on ip.dt_level_dise = def_dise.code and def_dise.code_defdoclist = '000202'
+				   left join bd_defdoc def_sex on pv.dt_sex = def_sex.code and def_sex.code_defdoclist='000000' 
+				   left join bd_ord ord_ns on ip.dt_level_ns = ord_ns.code and ord_ns.code_ordtype = '06'
+				   left join bd_ord ord_nutr on ip.dt_level_nutr = ord_nutr.code and ord_nutr.code_ordtype = '13'
+				   left join pv_bed pvBed on bed.code = pvBed.Bedno   and pv.pk_pv = pvBed.pk_pv  and  pv.PK_DEPT = pvBed.PK_DEPT and pvBed.Date_End is null    
+				   where bed.flag_ocupy = '1' and pv.pk_dept = #{pkDept,jdbcType=CHAR}  
+				     and bed.pk_org = #{pkOrg,jdbcType=CHAR}  
+				     and bed.del_flag = '0' and bed.flag_active = '1' 
+				     and pv.eu_status = '1' and pv.eu_pvtype = '3'
+				     <if test="pkEmp != null  and  pkEmp != ''">
+			            and  pv.pk_emp_phy = #{pkEmp,jdbcType=CHAR}  
+			          </if> 
+	                order by bed.code 
+	</select>
+	 <select id="getYjFee"  parameterType="java.util.Map" resultType="java.math.BigDecimal">
+		   select sum(amount) amt 
+		   from bl_deposit
+		   where eu_dptype='9' and pk_pv=#{pkPv,jdbcType=CHAR} and flag_settle='0'	
+	</select>
+	<select id="getYjFactor"  parameterType="java.util.Map" resultType="DynaBean">
+		    select fac.factor_prep,fac.amt_cred
+            from pv_encounter pv
+            inner join bd_hp_factor fac on  pv.eu_pvtype = fac.eu_pvtype  
+            and (fac.pk_hp = pv.pk_insu or fac.pk_hp is null)  
+            and pv.pk_dept = fac.pk_dept 
+		    where pv.pk_pv=#{pkPv,jdbcType=CHAR} and fac.del_flag = '0' 
+		    order by fac.PK_HP desc 	
+	</select>
+	 <select id="getDbFee"  parameterType="java.util.Map" resultType="java.math.BigDecimal">
+				 select sum(amt_credit) as amt
+ 				from pv_ip_acc  where flag_canc='0' and pk_pv = #{pkPv,jdbcType=CHAR} 
+	</select>
+	 <select id="getTotalFee"  parameterType="java.util.Map" resultType="java.math.BigDecimal">
+				select sum(cg.amount) as amt
+  				from bl_ip_dt cg 
+ 				where cg.pk_pv  = #{pkPv,jdbcType=CHAR} and cg.flag_settle = '0'
+ 				<if test='dateBegin!=null and dateSt!=null'>
+ 					and cg.date_cg &lt;= to_date(#{dateSt}, 'YYYYMMDDHH24MISS')
+ 					and cg.date_cg &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+ 				</if>
+	</select>
+	 <select id="getZtPdFee"  parameterType="java.util.Map" resultType="java.math.BigDecimal">
+				select sum(dt.amount) as amt 
+  				from ex_pd_apply_detail dt
+      	 		inner join ex_pd_apply ap on ap.pk_pdap=dt.pk_pdap
+ 				where dt.flag_finish = '0' 
+ 				  and dt.flag_stop = '0' 
+ 				  and dt.flag_self = '0'
+ 				  and ap.eu_status != '9' 
+ 				  and dt.pk_pv =  #{pkPv,jdbcType=CHAR} 
+	</select>
+	 <select id="getZtNPdFee"  parameterType="java.util.Map" resultType="java.math.BigDecimal">
+				select sum(exlist.quan_occ * item.price * orditem.quan ) as amt 
+  				from cn_order ord 
+       			inner join ex_order_occ exlist on ord.pk_cnord=exlist.pk_cnord
+      			inner join bd_ord_item orditem on ord.pk_ord = orditem.pk_ord 
+       			inner join bd_item item on orditem.pk_item=item.pk_item
+ 				where exlist.eu_status = '0' 
+ 				  and exlist.flag_self = '0'
+ 				  and ord.pk_pv = #{pkPv,jdbcType=CHAR}
+	</select>
+	 <select id="getGdFee"  parameterType="java.util.Map" resultType="java.math.BigDecimal">
+				select sum(item.price) as price 
+  				from pv_daycg dc 
+      			inner join pv_daycg_detail dt on dc.pk_daycg=dt.pk_daycg
+       			inner join bd_item item on dt.pk_item=item.pk_item
+ 				where dc.pk_pv=#{pkPv,jdbcType=CHAR} and
+       			dt.flag_active='1' 
+	</select>
+	<!-- 患者自付金额 -->
+	<select id="getZfFee"  parameterType="java.util.Map" resultType="java.math.BigDecimal">
+				select sum(cg.amount_pi) as amount
+  				from bl_ip_dt cg
+ 				where cg.pk_pv=#{pkPv,jdbcType=CHAR} 
+ 				<if test="pkDept != null  and  pkDept != ''">
+		          and cg.pk_dept_app = #{pkDept,jdbcType=VARCHAR}
+                 </if>
+	</select>
+	<select id="queryPdBasePrice" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.pub.vo.PdPriceVo">
+	  select dt.price,dt.price_cost,dt.batch_no,dt.date_expire,pd.pack_size,dt.pk_pd   
+	 from pd_st st 
+	 inner join pd_st_detail dt on st.pk_pdst = dt.pk_pdst 
+	 inner join bd_pd_base base on base.pk_pd = dt.pk_pd and base.del_flag='0' 
+	 inner join bd_pd pd on pd.pk_pd = base.pk_pd and pd.del_flag='0' and pd.flag_stop='0'
+	 where st.eu_status = '1' and st.pk_dept_lk = #{pkDeptAp,jdbcType=CHAR} 
+	 and dt.pk_pd in  
+	 <foreach item="pkPd" index="index" collection="pkPds" open="(" separator="," close=")">
+				#{pkPd}
+	 </foreach> 
+	 order by st.date_chk desc 
+ </select>
+	 <select id="queryPivasDept" parameterType="java.util.Map" resultType="DynaBean">
+	 select bus.pk_dept,dept.name_dept 
+	        from bd_dept_bus  bus
+	        inner join bd_dept_bu bu on bus.pk_deptbu = bu.pk_deptbu 
+	        inner join bd_ou_dept dept on dept.pk_dept = bus.pk_dept 
+	        where bu.dt_butype='08' and bus.dt_depttype='0402' and
+	        exists ( select 1 from  bd_dept_bus bus1 where bus1.pk_dept = #{pkDept,jdbcType=CHAR} 
+	        and bus1.dt_depttype='01' and bu.pk_deptbu = bus1.pk_deptbu)  and bus.flag_def='1'  
+	 </select>
+ 
+ 	 <!-- 根据科室主键，获取临床-护理单元业务线相关科室 -->
+	 <select id="queryCnOrNsDept" parameterType="java.util.Map" resultType="DynaBean">
+	 	select dept.* 
+	      from bd_dept_bus bus
+	     inner join bd_dept_bu bu on bus.pk_deptbu = bu.pk_deptbu and bu.del_flag = '0' 
+	     inner join bd_ou_dept dept on dept.pk_dept = bus.pk_dept and dept.del_flag = '0' 
+	     where bu.dt_butype='01' 
+	       and bus.dt_depttype = #{dtDepttype,jdbcType=CHAR}
+	       and exists ( select 1 from  bd_dept_bus bus1 
+	                       where bus1.del_flag = '0'
+	                         and bus1.pk_dept = #{pkDept,jdbcType=CHAR} 
+	        				 and bu.pk_deptbu = bus1.pk_deptbu
+	        				 and bus1.dt_depttype != #{dtDepttype,jdbcType=CHAR} )  
+	       and bus.del_flag = '0'  
+	 </select>
+ 
+	<!-- 根据科室查询在院未完成任务 -->
+	<select id="queryUnExTaskList"  parameterType="java.util.Map" resultType="DynaBean">
+	 	select sum(ap) cnt_ap, sum(ex) cnt_ex,  sum(op) cnt_op, sum(sign) cnt_ord_sign ,sum(chk) cnt_ord_chk
+	 	      ,sum(occap) cnt_occ_ap,sum(occrtn) cnt_occ_rtn,sum(occex) cnt_occ_ex
+			 , pi.NAME_PI,BED_NO,PK_PV,pi.code_ip, pk_dept , pk_dept_ns
+		 from (
+  				<!-- 药品请领未发放 -->
+				select count(1) ap , null op , null sign , null chk , null occap ,null occrtn, null occex, null ex
+					, pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+				  from ex_pd_apply ap
+				inner join ex_pd_apply_detail dt on ap.pk_pdap=dt.pk_pdap
+				inner join pv_encounter pv on dt.pk_pv=pv.pk_pv
+				 where ap.flag_cancel='0' and dt.flag_finish='0' and dt.flag_self='0'
+				   and pv.eu_pvtype = '3' and pv.flag_in = '1'
+			<if test="pkDeptNs != null  and  pkDeptNs != ''">
+			       and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	    	</if> 
+	    	<if test="dateEnd != null  and  dateEnd != ''">
+				   and ap.date_ap &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	    	</if> 
+				 group by pv.pk_pv,pv.bed_no, pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+				 
+				 union all<!-- 检查|检验 -->
+				select null ap , null op , null sign , null chk , null occap ,null occrtn, null occex, count(1) ex
+					, pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+				  from cn_order ord
+                inner join ex_order_occ occ on occ.pk_cnord = ord.pk_cnord
+				inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+				where (ord.code_ordtype like '02%' or ord.code_ordtype like '03%')
+				  and ord.flag_erase='0' and occ.eu_status = '0'
+				  and pv.eu_pvtype = '3' and pv.flag_in = '1'
+		    <if test="pkDeptNs != null  and  pkDeptNs != ''">
+			       and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	    	</if> 
+	    	<if test="dateEnd != null  and  dateEnd != ''">
+				   and ord.date_enter &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	    	</if>
+				group by pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+				
+				 union all<!--未完成手术-->
+				select null ap , count(1) op , null sign , null chk , null occap ,null occrtn, null occex, null ex
+					, pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+				  from cn_order ord
+				 inner join ex_order_occ occ on occ.pk_cnord = ord.pk_cnord
+				 inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+				 where ord.flag_erase='0' and ord.code_ordtype like '04%' and occ.eu_status = '0'
+				   and pv.eu_pvtype = '3' and pv.flag_in = '1'
+		    <if test="pkDeptNs != null  and  pkDeptNs != ''">
+			       and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	    	</if>
+	    	<if test="dateEnd != null  and  dateEnd != ''">
+				   and ord.date_enter &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	    	</if>
+				group by pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+				
+			    union all<!--未签署的医嘱-->
+				select null ap , null op , count(1) sign , null chk , null occap ,null occrtn, null occex, null ex
+				  , pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+				  from cn_order ord
+				 inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+				 where ord.flag_erase='0' 
+				   and ord.eu_status_ord = '0' <!-- 开立 -->
+				   and pv.eu_pvtype = '3' and pv.flag_in = '1'
+			<if test="pkDeptNs != null  and  pkDeptNs != ''">
+			       and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	    	</if>
+	    	<if test="dateEnd != null  and  dateEnd != ''">
+				   and ord.date_enter &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	    	</if>
+				group by pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+				
+				union all<!--未核对的医嘱-->
+				select null ap , null op , null sign ,count(1) chk , null occap ,null occrtn, null occex, null as ex
+				  , pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+				  from cn_order ord
+				 inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+				 where ord.del_flag='0' and ord.pk_dept_ns = pv.pk_dept_ns<!-- 就诊科室开立的医嘱 -->
+				   and (ord.flag_doctor='1' or (ord.flag_doctor='0' and ord.ordsn_parent != ord.ordsn )) <!-- 医嘱 -->
+				   and ((ord.eu_status_ord = '1' and ord.flag_erase = '0') <!--新开待核对 -->
+				      or((ord.eu_status_ord = '3' or ord.eu_status_ord = '2') and ord.eu_always = '0' and ord.flag_stop = '1' and ord.flag_stop_chk = '0')<!-- 长期未停止 -->
+				      or(ord.eu_status_ord = '9' and ord.flag_erase = '1' and ord.flag_erase_chk = '0' )) <!-- 作废未核对 -->
+				   and pv.eu_pvtype = '3' and pv.flag_in = '1'
+			<if test="pkDeptNs != null  and  pkDeptNs != ''">
+			       and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	    	</if>
+	    	<if test="dateEnd != null  and  dateEnd != ''">
+				   and ord.date_enter &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	    	</if>
+				group by pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+				
+				union all<!--未执行 + 已请领|已发药-->
+				select null ap , null op , null sign , null chk , null occap ,null occrtn, count(1) occex, null ex
+					, pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+				  from ex_order_occ occ
+				 inner join cn_order ord on ord.pk_cnord = occ.pk_cnord
+				 inner join pv_encounter pv on ord.pk_pv=pv.pk_pv 
+				 where occ.eu_status = '0' and occ.flag_canc = '0' 
+				   and pv.eu_pvtype = '3' and pv.flag_in = '1'
+				   and (occ.pk_dept_occ = pv.pk_dept_ns 
+				    or (ord.flag_durg = '1' and (1=0
+			<if test='flagAp == "1"'>
+			        or (occ.flag_base = '0' and occ.flag_self = '0' and occ.pk_pdapdt is not null )
+	    	</if>
+			        or (occ.flag_base = '0' and occ.flag_self = '0' and occ.pk_pdapdt is not null
+			       and exists (select count(1) from ex_pd_apply_detail dt where dt.pk_pdapdt = occ.pk_pdapdt and dt.flag_finish = '1'))
+				 	)))
+			<if test="pkDeptNs != null  and  pkDeptNs != ''">
+			       and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	    	</if>
+	    	<if test="dateEnd != null  and  dateEnd != ''">
+				   and occ.date_plan &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	    	</if>
+				group by pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+				
+				union all<!--未请领的执行单-->
+				select null ap , null op , null sign , null chk , count(1) occap , null occrtn , null occex, null ex
+					, pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+				  from ex_order_occ occ
+				 inner join cn_order ord on ord.pk_cnord = occ.pk_cnord
+				 inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+				  left join bd_supply sup on sup.code = ord.code_supply and sup.del_flag = '0'
+				 where occ.eu_status = '0' and ord.flag_durg ='1' and occ.flag_base = '0' and occ.flag_self = '0' 
+             	   and occ.pk_pdapdt is null 
+				   and pv.eu_pvtype = '3' and pv.flag_in = '1'
+			<if test="pkDeptNs != null  and  pkDeptNs != ''">
+			       and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	    	</if>
+	    	<if test="dateEnd != null  and  dateEnd != ''">
+				   and occ.date_plan &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	    	</if>
+				group by pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+				
+				union all<!-- 取消待请退的执行单 -->
+				select null ap , null op , null sign , null chk , null occap , count(1) occrtn, null occex, null ex
+					, pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+				  from ex_order_occ occ
+				 inner join cn_order ord on ord.pk_cnord = occ.pk_cnord
+				 inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+				  left join bd_supply sup on sup.code = ord.code_supply and sup.del_flag = '0'
+				 where occ.eu_status = '9'and occ.flag_canc = '1' and ord.flag_durg ='1' and occ.flag_base = '0' and occ.flag_self = '0' 
+             	   and sup.dt_excardtype &lt;&gt; '2' and occ.pk_pdapdt is not null and occ.pk_pdback is null 
+				   and pv.eu_pvtype = '3' and pv.flag_in = '1'
+			<if test="pkDeptNs != null  and  pkDeptNs != ''">
+			       and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	    	</if>
+	    	<if test="dateEnd != null  and  dateEnd != ''">
+				   and occ.date_plan &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	    	</if>
+				group by pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+		) cnt 
+		 inner join pi_master pi on pi.pk_pi = cnt.PK_PI
+		 GROUP BY NAME_PI,BED_NO,PK_PV, pk_dept , pk_dept_ns,pi.code_ip
+	</select>
+	
+	<!-- 根据科室查询在院未完成任务 -->
+	<select id="queryUnExTaskList1"  parameterType="java.util.Map" resultType="DynaBean">
+	 	select pt.*,pi.name_pi ,pv.pk_pv ,pv.bed_no, pv.pk_dept from  pv_encounter pv, (
+        select sum(ap) cnt_ap, sum(ex) cnt_ex, sum(op) cnt_op, sum(sign) cnt_ord_sign,
+               sum(chk) cnt_ord_chk, sum(occap) cnt_occ_ap, sum(occrtn) cnt_occ_rtn,
+               sum(occex) cnt_occ_ex, pk_pv
+         from (
+         select 1 ap, 0 op, 0 sign, 0 chk, 0 occap, 0 occrtn, 0 occex, 0 ex, dt.pk_pv pk_pv
+          from ex_pd_apply ap
+          inner join ex_pd_apply_detail dt on ap.pk_pdap=dt.pk_pdap
+        inner join pv_encounter pv on dt.pk_pv=pv.pk_pv
+         where ap.flag_cancel='0' and dt.flag_finish='0' and dt.flag_self='0'
+           and pv.eu_pvtype = '3' and pv.flag_in = '1'
+       <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		   and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	   </if>
+       <if test="dateEnd != null  and  dateEnd != ''">
+		   and ap.date_ap &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	   </if>
+     union all
+        select 0 ap, 0 op, 0 sign, 0 chk, 0 occap, 0 occrtn, 0 occex, 1  ex, ord.pk_pv pk_pv
+          from cn_order ord
+         inner join ex_order_occ occ on occ.pk_cnord = ord.pk_cnord
+         where (ord.code_ordtype like '02%' or ord.code_ordtype like '03%')
+           and ord.flag_erase = '0'
+           and occ.eu_status = '0'
+       <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		   and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	   </if>
+       <if test="dateEnd != null  and  dateEnd != ''">
+		   and ord.date_enter &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	   </if>
+        union all
+        select 0 ap, 1 op, 0 sign, 0 chk, 0 occap, 0 occrtn, 0 occex, 0 ex, ord.pk_pv pk_pv
+          from cn_order ord
+         inner join ex_order_occ occ
+            on occ.pk_cnord = ord.pk_cnord
+         where ord.flag_erase = '0'
+           and ord.code_ordtype like '04%'
+           and occ.eu_status = '0'
+       <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		   and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	   </if>
+       <if test="dateEnd != null  and  dateEnd != ''">
+		   and ord.date_enter &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	   </if>   
+              union all
+        select 0 ap, 0 op, 1 sign, 0 chk, 0 occap, 0 occrtn, 0 occex, 0 ex, ord.pk_pv pk_pv
+          from cn_order ord
+         where ord.flag_erase = '0'
+           and ord.eu_status_ord = '0' 
+       <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		   and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	   </if>
+       <if test="dateEnd != null  and  dateEnd != ''">
+		   and ord.date_enter &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	   </if>
+        union all
+        select 0 ap, 0 op, 0 sign, 1 chk, 0 occap, 0 occrtn, 0 occex, 0 as ex, ord.pk_pv pk_pv
+          from cn_order ord
+         where ord.del_flag = '0'
+           and (ord.flag_doctor = '1' or
+               (ord.flag_doctor = '0' and ord.ordsn_parent != ord.ordsn))
+           and ((ord.eu_status_ord = '1' and ord.flag_erase = '0') or
+               ((ord.eu_status_ord = '3' or ord.eu_status_ord = '2') and
+               ord.eu_always = '0' and ord.flag_stop = '1' and
+               ord.flag_stop_chk = '0') or
+               (ord.eu_status_ord = '9' and ord.flag_erase = '1' and
+               ord.flag_erase_chk = '0'))                      
+       <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		   and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	   </if>
+       <if test="dateEnd != null  and  dateEnd != ''">
+		   and ord.date_enter &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	   </if>
+       union all
+        select 0 ap, 0 op, 0 sign, 0 chk, 0 occap, 0 occrtn, 1 occex, 0 ex, ord.pk_pv pk_pv
+          from ex_order_occ occ
+         inner join cn_order ord
+            on ord.pk_cnord = occ.pk_cnord
+         where occ.eu_status = '0'
+           and occ.flag_canc = '0'
+             and (occ.pk_dept_occ = ord.pk_dept_ns or
+               (ord.flag_durg = '1' and
+               (1 = 0 or (occ.flag_base = '0' and occ.flag_self = '0' and
+               occ.pk_pdapdt is not null and exists
+                (select count(1) from ex_pd_apply_detail dt
+                  where dt.pk_pdapdt = occ.pk_pdapdt
+                    and dt.flag_finish = '1')))))
+       <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		   and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	   </if>
+       <if test="dateEnd != null  and  dateEnd != ''">
+		   and occ.date_plan &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	   </if>
+          union all
+        select 0 ap, 0 op, 0 sign, 0 chk, 1 occap, 0 occrtn, 0 occex, 0 ex, ord.pk_pv pk_pv
+          from ex_order_occ occ
+         inner join cn_order ord
+            on ord.pk_cnord = occ.pk_cnord
+          left join bd_supply sup
+            on sup.code = ord.code_supply
+           and sup.del_flag = '0'
+         where occ.eu_status = '0'
+           and ord.flag_durg = '1'
+           and occ.flag_base = '0'
+           and occ.flag_self = '0'
+           and occ.pk_pdapdt is null           
+       <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		   and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	   </if>
+       <if test="dateEnd != null  and  dateEnd != ''">
+		   and occ.date_plan &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	   </if>          
+        union all
+        select 0 ap, 0 op, 0 sign, 0 chk, 0 occap, 1 occrtn, 0 occex, 0 ex, ord.pk_pv pk_pv
+          from ex_order_occ occ
+         inner join cn_order ord
+            on ord.pk_cnord = occ.pk_cnord
+          left join bd_supply sup
+            on sup.code = ord.code_supply
+           and sup.del_flag = '0'
+         where occ.eu_status = '9'
+           and occ.flag_canc = '1'
+           and ord.flag_durg = '1'
+           and occ.flag_base = '0'
+           and occ.flag_self = '0'
+           and sup.dt_excardtype &lt;&gt; '2'
+           and occ.pk_pdapdt is not null
+           and occ.pk_pdback is null       
+	   <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		   and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	   </if>
+       <if test="dateEnd != null  and  dateEnd != ''">
+		   and occ.date_plan &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	   </if>
+  ) group by PK_PV) pt ,   pi_master pi   
+  where 1=1
+ <if test="pkDeptNs != null  and  pkDeptNs != ''">
+	and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+ </if>
+    and pv.eu_pvtype = '3' 
+	and pv.flag_in = '1'
+    and pt.pk_pv = pv.pk_pv and  pi.pk_pi = pv.PK_PI
+	</select>
+	
+ 	 <!-- 根据字典主键，获取附加属性-->
+	 <select id="queryDictAttrByType" parameterType="java.util.Map" resultType="DynaBean">
+	 	SELECT temp.NAME_ATTR,temp.CODE_ATTR, dict.VAL_ATTR
+          FROM BD_DICTATTR dict
+         INNER JOIN BD_DICTATTR_TEMP temp ON temp.PK_DICTATTRTEMP = dict.PK_DICTATTRTEMP AND temp.DEL_FLAG = '0'
+         WHERE dict.DEL_FLAG = '0'
+ 		<if test="codeAttr != null and codeAttr != ''">
+		   AND temp.CODE_ATTR = #{codeAttr,jdbcType=CHAR}
+ 		</if>
+  		<if test="pkDict != null and pkDict != ''">
+		   AND dict.PK_DICT = #{pkDict,jdbcType=CHAR}
+ 		</if>          
+	 </select>
+
+	<!-- 统计产房未执行的相关任务 -->
+	<select id="queryUnExTaskListForLabor"  parameterType="java.util.Map" resultType="DynaBean">
+		select sum(ex) cnt_ex,  sum(op) cnt_op, sum(sign) cnt_ord_sign ,sum(chk) cnt_ord_chk
+		,sum(occex) cnt_occ_ex, pi.NAME_PI,BED_NO,PK_PV,pi.code_ip, pk_dept , pk_dept_ns
+		from (
+		<!-- 检查|检验 -->
+		select null op , null sign , null chk , null occex, count(1) ex
+		, pv.pk_pv , pv.bed_no , pe.pk_pi, pv.pk_dept , pv.pk_dept_ns
+		from cn_order ord
+		inner join ex_order_occ occ on occ.pk_cnord = ord.pk_cnord
+		inner join pv_labor pv on ord.pk_pv=pv.pk_pv
+		INNER JOIN PV_ENCOUNTER pe on pe.pk_pv = pv.pk_pv
+		where (ord.code_ordtype like '02%' or ord.code_ordtype like '03%')
+		and ord.flag_erase='0' and occ.eu_status = '0'
+		and pe.eu_pvtype = '3' and pv.flag_in = '1'
+		<if test="pkDeptNs != null  and  pkDeptNs != ''">
+			and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+			and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+			and ord.date_enter &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		</if>
+		group by pv.pk_pv , pv.bed_no , pe.pk_pi, pv.pk_dept , pv.pk_dept_ns
+
+		union all<!--未完成手术-->
+		select count(1) op , null sign , null chk , null occex, null ex
+		, pv.pk_pv , pv.bed_no , pe.pk_pi, pv.pk_dept , pv.pk_dept_ns
+		from cn_order ord
+		inner join ex_order_occ occ on occ.pk_cnord = ord.pk_cnord
+		inner join pv_labor pv on ord.pk_pv=pv.pk_pv
+		INNER JOIN PV_ENCOUNTER pe on pe.pk_pv = pv.pk_pv
+		where ord.flag_erase='0' and ord.code_ordtype like '04%' and occ.eu_status = '0'
+		and pe.eu_pvtype = '3' and pv.flag_in = '1'
+		<if test="pkDeptNs != null  and  pkDeptNs != ''">
+			and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+			and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+			and ord.date_enter &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		</if>
+		group by pv.pk_pv , pv.bed_no , pe.pk_pi, pv.pk_dept , pv.pk_dept_ns
+
+		union all<!--未签署的医嘱-->
+		select null op , count(1) sign , null chk , null occex, null ex
+		, pv.pk_pv , pv.bed_no , pe.pk_pi, pv.pk_dept , pv.pk_dept_ns
+		from cn_order ord
+		inner join pv_labor pv on ord.pk_pv=pv.pk_pv
+		INNER JOIN PV_ENCOUNTER pe on pe.pk_pv = pv.pk_pv
+		where ord.flag_erase='0'
+		and ord.eu_status_ord = '0' <!-- 开立 -->
+		and pe.eu_pvtype = '3' and pv.flag_in = '1'
+		<if test="pkDeptNs != null  and  pkDeptNs != ''">
+			and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+			and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+			and ord.date_enter &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		</if>
+		group by pv.pk_pv , pv.bed_no , pe.pk_pi, pv.pk_dept , pv.pk_dept_ns
+
+		union all<!--未核对的医嘱-->
+		select null op , null sign ,count(1) chk , null occex, null as ex
+		, pv.pk_pv , pv.bed_no , pe.pk_pi, pv.pk_dept , pv.pk_dept_ns
+		from cn_order ord
+		inner join pv_labor pv on ord.pk_pv=pv.pk_pv
+		INNER JOIN PV_ENCOUNTER pe on pe.pk_pv = pv.pk_pv
+		where ord.del_flag='0' and ord.pk_dept_ns = pv.pk_dept_ns<!-- 就诊科室开立的医嘱 -->
+		and (ord.flag_doctor='1' or (ord.flag_doctor='0' and ord.ordsn_parent != ord.ordsn )) <!-- 医嘱 -->
+		and ((ord.eu_status_ord = '1' and ord.flag_erase = '0') <!--新开待核对 -->
+		or((ord.eu_status_ord = '3' or ord.eu_status_ord = '2') and ord.eu_always = '0' and ord.flag_stop = '1' and ord.flag_stop_chk = '0')<!-- 长期未停止 -->
+		or(ord.eu_status_ord = '9' and ord.flag_erase = '1' and ord.flag_erase_chk = '0' )) <!-- 作废未核对 -->
+		and pe.eu_pvtype = '3' and pv.flag_in = '1'
+		<if test="pkDeptNs != null  and  pkDeptNs != ''">
+			and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+			and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+			and ord.date_enter &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		</if>
+		group by pv.pk_pv , pv.bed_no , pe.pk_pi, pv.pk_dept , pv.pk_dept_ns
+
+		union all<!--未执行 + 已请领|已发药-->
+		select null op , null sign , null chk , count(1) occex, null ex
+		, pv.pk_pv , pv.bed_no , pe.pk_pi, pv.pk_dept , pv.pk_dept_ns
+		from ex_order_occ occ
+		inner join cn_order ord on ord.pk_cnord = occ.pk_cnord
+		inner join pv_labor pv on ord.pk_pv=pv.pk_pv
+		INNER JOIN PV_ENCOUNTER pe on pe.pk_pv = pv.pk_pv
+		where occ.eu_status = '0' and occ.flag_canc = '0'
+		and pe.eu_pvtype = '3' and pv.flag_in = '1'
+		and (occ.pk_dept_occ = pv.pk_dept_ns
+		or (ord.flag_durg = '1' and (1=0
+		<if test='flagAp == "1"'>
+			or (occ.flag_base = '0' and occ.flag_self = '0' and occ.pk_pdapdt is not null )
+		</if>
+		or (occ.flag_base = '0' and occ.flag_self = '0' and occ.pk_pdapdt is not null
+		and exists (select count(1) from ex_pd_apply_detail dt where dt.pk_pdapdt = occ.pk_pdapdt and dt.flag_finish = '1'))
+		)))
+		<if test="pkDeptNs != null  and  pkDeptNs != ''">
+			and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+			and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+			and occ.date_plan &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		</if>
+		group by pv.pk_pv , pv.bed_no , pe.pk_pi, pv.pk_dept , pv.pk_dept_ns
+		) cnt
+		inner join pi_master pi on pi.pk_pi = cnt.PK_PI
+		GROUP BY NAME_PI,BED_NO,PK_PV, pk_dept , pk_dept_ns,pi.code_ip
+	</select>
+
+	<!-- 统计产房外的职能科室未执行的相关任务 -->
+	<select id="queryUnExTaskListForFunDept"  parameterType="java.util.Map" resultType="DynaBean">
+		select sum(ex) cnt_ex,  sum(op) cnt_op, sum(sign) cnt_ord_sign ,sum(chk) cnt_ord_chk
+		,sum(occex) cnt_occ_ex, pi.NAME_PI,BED_NO,PK_PV,pi.code_ip, pk_dept , pk_dept_ns
+		from (
+		<!-- 检查|检验 -->
+		select null op , null sign , null chk , null occex, count(1) ex
+		, pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+		from cn_order ord
+		inner join ex_order_occ occ on occ.pk_cnord = ord.pk_cnord
+		INNER JOIN PV_ENCOUNTER pv on ord.pk_pv = pv.pk_pv
+		inner join PV_FUNCTION pf on pf.pk_pv=pv.pk_pv
+		where (ord.code_ordtype like '02%' or ord.code_ordtype like '03%')
+		and ord.flag_erase='0' and occ.eu_status = '0'
+		and pv.eu_pvtype = '3' and pv.flag_in = '1'
+		<if test="pkDeptNs != null  and  pkDeptNs != ''">
+			and pf.pk_dept = #{pkDeptNs,jdbcType=CHAR}
+			and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+			and ord.date_enter &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		</if>
+		group by pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+
+		union all<!--未完成手术-->
+		select count(1) op , null sign , null chk , null occex, null ex
+		, pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+		from cn_order ord
+		inner join ex_order_occ occ on occ.pk_cnord = ord.pk_cnord
+		INNER JOIN PV_ENCOUNTER pv on ord.pk_pv = pv.pk_pv
+		inner join PV_FUNCTION pf on pf.pk_pv=pv.pk_pv
+		where ord.flag_erase='0' and ord.code_ordtype like '04%' and occ.eu_status = '0'
+		and pv.eu_pvtype = '3' and pv.flag_in = '1'
+		<if test="pkDeptNs != null  and  pkDeptNs != ''">
+			and pf.pk_dept = #{pkDeptNs,jdbcType=CHAR}
+			and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+			and ord.date_enter &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		</if>
+		group by pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+
+		union all<!--未签署的医嘱-->
+		select null op , count(1) sign , null chk , null occex, null ex
+		, pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+		from cn_order ord
+		INNER JOIN PV_ENCOUNTER pv on pv.pk_pv = ord.pk_pv
+		inner join PV_FUNCTION pf on pf.pk_pv=pv.pk_pv
+		where ord.flag_erase='0'
+		and ord.eu_status_ord = '0'
+		and pv.eu_pvtype = '3' and pv.flag_in = '1'
+		<if test="pkDeptNs != null  and  pkDeptNs != ''">
+			and pf.pk_dept = #{pkDeptNs,jdbcType=CHAR}
+			and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+			and ord.date_enter &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		</if>
+		group by pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+
+		union all<!--未核对的医嘱-->
+		select null op , null sign ,count(1) chk , null occex, null as ex
+		, pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+		from cn_order ord
+		INNER JOIN PV_ENCOUNTER pv on pv.pk_pv = ord.pk_pv
+		inner join PV_FUNCTION pf on pf.pk_pv=pv.pk_pv
+		where ord.del_flag='0' and ord.pk_dept_ns = pv.pk_dept_ns<!-- 就诊科室开立的医嘱 -->
+		and (ord.flag_doctor='1' or (ord.flag_doctor='0' and ord.ordsn_parent != ord.ordsn )) <!-- 医嘱 -->
+		and ((ord.eu_status_ord = '1' and ord.flag_erase = '0') <!--新开待核对 -->
+		or((ord.eu_status_ord = '3' or ord.eu_status_ord = '2') and ord.eu_always = '0' and ord.flag_stop = '1' and ord.flag_stop_chk = '0')<!-- 长期未停止 -->
+		or(ord.eu_status_ord = '9' and ord.flag_erase = '1' and ord.flag_erase_chk = '0' )) <!-- 作废未核对 -->
+		and pv.eu_pvtype = '3' and pv.flag_in = '1'
+		<if test="pkDeptNs != null  and  pkDeptNs != ''">
+			and pf.pk_dept = #{pkDeptNs,jdbcType=CHAR}
+			and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+			and ord.date_enter &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		</if>
+		group by pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+
+		union all<!--未执行 + 已请领|已发药-->
+		select null op , null sign , null chk , count(1) occex, null ex
+		, pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+		from ex_order_occ occ
+		inner join cn_order ord on ord.pk_cnord = occ.pk_cnord
+		INNER JOIN PV_ENCOUNTER pv on pv.pk_pv = ord.pk_pv
+		inner join PV_FUNCTION pf on pf.pk_pv=pv.pk_pv
+		where occ.eu_status = '0' and occ.flag_canc = '0'
+		and pv.eu_pvtype = '3' and pv.flag_in = '1'
+		and (occ.pk_dept_occ = pv.pk_dept_ns
+		or (ord.flag_durg = '1' and (1=0
+		<if test='flagAp == "1"'>
+			or (occ.flag_base = '0' and occ.flag_self = '0' and occ.pk_pdapdt is not null )
+		</if>
+		or (occ.flag_base = '0' and occ.flag_self = '0' and occ.pk_pdapdt is not null
+		and exists (select count(1) from ex_pd_apply_detail dt where dt.pk_pdapdt = occ.pk_pdapdt and dt.flag_finish = '1'))
+		)))
+		<if test="pkDeptNs != null  and  pkDeptNs != ''">
+			and pf.pk_dept = #{pkDeptNs,jdbcType=CHAR}
+			and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+			and occ.date_plan &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		</if>
+		group by pv.pk_pv , pv.bed_no , pv.pk_pi, pv.pk_dept , pv.pk_dept_ns
+		) cnt
+		inner join pi_master pi on pi.pk_pi = cnt.PK_PI
+		GROUP BY NAME_PI,BED_NO,PK_PV, pk_dept , pk_dept_ns,pi.code_ip
+	</select>
+
+	<!-- 统计产房未执行的相关任务 -->
+	<select id="queryUnExTaskListForFunLabor"  parameterType="java.util.Map" resultType="DynaBean">
+		select sum(sign) cnt_ord_sign ,sum(chk) cnt_ord_chk,sum(occex) cnt_occ_ex, pi.NAME_PI,PK_PV,pi.code_ip
+		from (
+		<!--未签署的医嘱-->
+		select count(1) sign,null chk,null occex,pv.pk_pv,pe.pk_pi
+		from cn_order ord
+		inner join PV_FUNCTION pv on ord.pk_pv=pv.pk_pv
+		INNER JOIN PV_ENCOUNTER pe on pe.pk_pv = pv.pk_pv
+		where ord.flag_erase='0'
+		and ord.eu_status_ord = '0' <!-- 开立 -->
+		and pe.eu_pvtype = '3' and pe.flag_in = '1'
+		<if test="pkDeptNs != null  and  pkDeptNs != ''">
+			and pv.pk_dept = #{pkDeptNs,jdbcType=CHAR}
+			and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+			and ord.date_enter &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		</if>
+		group by pv.pk_pv, pe.pk_pi
+
+		union all<!--未核对的医嘱-->
+		select null sign,count(1) chk,null occex,pv.pk_pv,pe.pk_pi
+		from cn_order ord
+		inner join PV_FUNCTION pv on ord.pk_pv=pv.pk_pv
+		INNER JOIN PV_ENCOUNTER pe on pe.pk_pv = pv.pk_pv
+		where ord.del_flag='0' and ord.pk_dept_ns = pe.pk_dept_ns<!-- 就诊科室开立的医嘱 -->
+		and (ord.flag_doctor='1' or (ord.flag_doctor='0' and ord.ordsn_parent != ord.ordsn )) <!-- 医嘱 -->
+		and ((ord.eu_status_ord = '1' and ord.flag_erase = '0') <!--新开待核对 -->
+		or((ord.eu_status_ord = '3' or ord.eu_status_ord = '2') and ord.eu_always = '0' and ord.flag_stop = '1' and ord.flag_stop_chk = '0')<!-- 长期未停止 -->
+		or(ord.eu_status_ord = '9' and ord.flag_erase = '1' and ord.flag_erase_chk = '0' )) <!-- 作废未核对 -->
+		and pe.eu_pvtype = '3' and pe.flag_in = '1'
+		<if test="pkDeptNs != null  and  pkDeptNs != ''">
+			and pv.pk_dept = #{pkDeptNs,jdbcType=CHAR}
+			and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+			and ord.date_enter &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		</if>
+		group by pv.pk_pv,pe.pk_pi
+
+		union all<!--未执行 + 已请领|已发药-->
+		select null sign ,null chk,count(1) occex,pv.pk_pv,pe.pk_pi
+		from ex_order_occ occ
+		inner join cn_order ord on ord.pk_cnord = occ.pk_cnord
+		inner join PV_FUNCTION pv on ord.pk_pv=pv.pk_pv
+		INNER JOIN PV_ENCOUNTER pe on pe.pk_pv = pv.pk_pv
+		where occ.eu_status = '0' and occ.flag_canc = '0'
+		and pe.eu_pvtype = '3' and pe.flag_in = '1'
+		and (occ.pk_dept_occ = pe.pk_dept_ns
+		or (ord.flag_durg = '1' and (1=0
+		<if test='flagAp == "1"'>
+			or (occ.flag_base = '0' and occ.flag_self = '0' and occ.pk_pdapdt is not null )
+		</if>
+		or (occ.flag_base = '0' and occ.flag_self = '0' and occ.pk_pdapdt is not null
+		and exists (select count(1) from ex_pd_apply_detail dt where dt.pk_pdapdt = occ.pk_pdapdt and dt.flag_finish = '1'))
+		)))
+		<if test="pkDeptNs != null  and  pkDeptNs != ''">
+			and pv.pk_dept = #{pkDeptNs,jdbcType=CHAR}
+			and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+			and occ.date_plan &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		</if>
+		group by pv.pk_pv,pe.pk_pi
+		) cnt
+		inner join pi_master pi on pi.pk_pi = cnt.PK_PI
+		GROUP BY NAME_PI,PK_PV,pi.code_ip
+	</select>
+
+	<!-- 根据字典主键，获取附加属性-批量-->
+	<select id="queryDictAttrByTypes" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT dict.pk_dict pkPd, temp.NAME_ATTR name_att,temp.CODE_ATTR code_att, dict.VAL_ATTR val_att
+		FROM BD_DICTATTR dict
+		INNER JOIN BD_DICTATTR_TEMP temp ON temp.PK_DICTATTRTEMP = dict.PK_DICTATTRTEMP AND temp.DEL_FLAG = '0'
+		WHERE dict.DEL_FLAG = '0'
+		<if test="codeAttr != null and codeAttr != ''">
+			AND temp.CODE_ATTR = #{codeAttr,jdbcType=CHAR}
+		</if>
+		AND dict.PK_DICT in
+		<foreach collection="pkPds" index="index" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</select>
+</mapper>

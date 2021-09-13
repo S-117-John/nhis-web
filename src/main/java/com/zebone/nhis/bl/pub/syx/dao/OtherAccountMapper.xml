@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.bl.pub.syx.dao.OtherAccountMapper">
+
+	<!--查询关联医嘱 -->
+	<select id="qryRelatedOrdersList" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.bl.pub.syx.vo.OtherRelatedOrdersVo">
+		select ord.pk_cnord,
+		ord.name_ord,
+		ord.pk_dept,
+		ord.name_emp_ord,
+		ord.date_start
+		from cn_order ord
+		where
+		ord.pk_pv=#{pkpv,jdbcType=VARCHAR} and
+		ord.flag_durg='0' and
+		ord.eu_always='1' and
+		ord.flag_erase='0' and
+		ord.eu_status_ord>'1' and
+		ord.pk_dept_exec=#{pkdept,jdbcType=VARCHAR}
+	</select>
+	<!-- 获取药品和收费项目参照 -->
+	<select id="qryReferencePdAndItemList" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.bl.pub.syx.vo.OtherReferencePdAndItemVo">
+		select pd.pk_pd,
+		pd.name,
+		pd.spec,
+		pd.pk_unit_min,
+		pd.price/pd.pack_size
+		price,
+		pd.dosage_def,
+		pd.pk_unit_def,
+		pd.code_supply,
+		pd.code_freq
+		from
+		bd_pd pd
+		inner join bd_pd_as als on pd.pk_pd=als.pk_pd
+		where
+		pd.flag_stop='0' and
+		pd.del_flag='0'
+		<if test="keyword != null and keyword != '' ">
+			and als.spcode like '%'||#{keyword}||'%' or
+			pd.name like
+			'%'||#{keyword}||'%'
+		</if>
+		union all
+		select item.pk_item,
+		item.name,
+		item.spec,
+		item.pk_unit,
+		item.price,
+		'' as dosage_def,
+		'' as pk_unit_def,
+		'' as code_supply,
+		'' as
+		code_freq
+		from bd_item item
+		inner join bd_item_price pre on
+		item.pk_item=pre.pk_item
+		inner join bd_pricetype_cfg cfg on
+		pre.eu_pricetype=cfg.eu_pricetype and
+		cfg.pk_hp=#{pkhp,jdbcType=VARCHAR}
+		where item.flag_active='1' and
+		item.del_flag='0' and
+		pre.pk_org=#{pkOrg,jdbcType=VARCHAR} and
+		pre.flag_stop='0' and
+		pre.del_flag='0'
+		<if test="keyword != null and keyword != '' ">
+			and item.spcode like '%'||#{keyword}||'%' or
+			item.name like
+			'%'||#{keyword}||'%'
+		</if>
+	</select>
+
+	<!-- 查询收费记录 -->
+	<select id="qryOtherChargeRecordList" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.bl.pub.syx.vo.OtherChargeRecordVo">
+		select cg.pk_cgip,
+		pi.name_pi,
+		cg.name_cg,
+		cg.spec,
+		cg.price,
+		cg.quan,
+		cg.amount,
+		cg.pk_unit,
+		cg.name_emp_ex,
+		cg.date_cg,
+		cg.name_emp_cg,
+		cg.pk_dept_cg,
+		cg.pk_pv,
+		u.name as unitname,
+		cg.barcode,
+		cate.name cate_name,
+		dept.name_dept name_dept_ex
+		from bl_ip_dt cg left join bd_unit u on cg.pk_unit =
+		u.pk_unit
+		inner join pv_encounter pv on cg.pk_pv=pv.pk_pv
+		inner join
+		pi_master pi on pv.pk_pi=pi.pk_pi
+		left join bd_itemcate cate on cate.pk_itemcate = cg.pk_itemcate
+		left join bd_ou_dept dept on dept.pk_dept = cg.pk_dept_ex
+		where cg.eu_bltype='9' and
+		cg.flag_settle='0' and
+		cg.pk_dept_cg=#{pkDeptCg,jdbcType=VARCHAR}
+		<if test="codeIp != null and codeIp != '' ">
+			and pi.code_ip = #{codeIp}
+		</if>
+		<if test="dateCg != null and dateCg != '' ">
+		and cg.date_cg &gt; to_date(#{dateCg,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss') 
+		</if>
+		<if test="dateCgEnd != null and dateCgEnd != '' ">
+		and cg.date_cg &lt; to_date(#{dateCgEnd,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="namePi != null and namePi != '' ">
+			and pi.name_pi like '%' || #{namePi} || '%'
+		</if>
+		<if test="nameEmpCg != null and nameEmpCg != '' ">
+			and cg.name_emp_cg like '%' || #{nameEmpCg} || '%'
+		</if>
+		<if test="nameCg != null and nameCg != '' ">
+			and cg.name_cg like '%' || #{nameCg} || '%'
+		</if>
+		<if test='pkItemcate != null and pkItemcate.size()>0'>
+			and cg.pk_itemcate in
+			<foreach collection="pkItemcate" item="pkitemcate" index="no"
+				open="(" separator="," close=")">
+				#{pkitemcate}
+			</foreach>
+		</if>
+		<if test="pkPv != null and pkPv != '' ">
+			and pv.pk_pv = #{pkPv,jdbcType=CHAR}
+		</if>
+		order by cate.code
+	</select>
+	
+	<select id="qryComItemList" resultType="DynaBean">
+		select dt.eu_itemtype flag_pd, 
+		       dt.pk_item,     
+		       case when dt.eu_itemtype='0' then '项目' else '药品' end itemtype_name,
+		       case when dt.eu_itemtype='0' then item.name else pd.name end name_item,
+		       case when dt.eu_itemtype='0' then item.spec else pd.spec end spec,   
+		       case when dt.eu_itemtype='0' then item.price else pd.price/pd.pack_size end price, 
+		       dt.dosage dosage_def,     
+		       dt.unit_dos,   
+		       su.name as name_supply,
+		       freq.NAME name_freq,
+		       dt.quan,       
+		       '1' as pack_size,
+		       case when dt.eu_itemtype='0' then item.pk_unit else pd.pk_unit_min end unit, 
+		       case when dt.eu_itemtype='0' then '' else pd.pk_unit_min end pk_unit_pd,
+		       pd.PK_UNIT_DEF,
+		       item.DT_ITEMTYPE,
+		       dt.NAME_SUPPLY code_supply,
+               dt.NAME_FREQ code_freq
+		  from bl_cgset cs
+		       inner join bl_cgset_dt dt on cs.pk_cgset=dt.pk_cgset
+		       left outer join bd_pd pd on dt.pk_item=pd.pk_pd and dt.eu_itemtype='1'
+		       left outer join bd_item item on dt.pk_item=item.pk_item and dt.eu_itemtype='0'
+		       left outer join BD_SUPPLY su on su.code = dt.NAME_SUPPLY and su.DEL_FLAG = '0'
+           	   left outer join bd_term_freq freq on freq.code = dt.name_freq and freq.DEL_FLAG = '0'
+		 where cs.pk_dept=#{pkDept,jdbcType=CHAR} AND (item.flag_active = '1' or  item.flag_active is NULL)
+		 
+		 group by dt.eu_itemtype,
+		       dt.pk_item,
+		       case when dt.eu_itemtype='0' then '项目' else '药品' end,
+		       case when dt.eu_itemtype='0' then item.name else pd.name end ,
+		       case when dt.eu_itemtype='0' then item.spec else pd.spec end ,
+		       case when dt.eu_itemtype='0' then item.price else pd.price/pd.pack_size end ,
+		       dt.dosage ,
+		       dt.unit_dos,
+		       su.name,
+		       freq.NAME,
+		       dt.quan,
+		       case when dt.eu_itemtype='0' then item.pk_unit else pd.pk_unit_min end ,
+		       case when dt.eu_itemtype='0' then '' else pd.pk_unit_min end ,
+		       pd.PK_UNIT_DEF,
+		       item.DT_ITEMTYPE,
+		       dt.NAME_SUPPLY,
+               dt.NAME_FREQ
+	</select>
+
+
+	<!-- 查询收费记录 -->
+	<select id="qryOpOtherChargeRecordList" parameterType="java.lang.String"
+			resultType="com.zebone.nhis.bl.pub.syx.vo.OtherChargeRecordVo">
+		select cg.PK_CGOP,
+		pi.name_pi,
+		cg.name_cg,
+		cg.spec,
+		cg.price,
+		cg.quan,
+		cg.amount,
+		cg.pk_unit,
+		cg.name_emp_ex,
+		cg.date_cg,
+		cg.name_emp_cg,
+		cg.pk_dept_cg,
+		cg.pk_pv,
+		u.name as unitname,
+		cg.barcode,
+		cg.pk_cnord,
+		cg.flag_settle,
+		cate.name cate_name,
+		dept.name_dept name_dept_ex
+		from bl_op_dt cg
+		left join bd_unit u on cg.pk_unit = u.pk_unit
+		inner join pv_encounter pv on cg.pk_pv=pv.pk_pv
+		inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		left join bd_itemcate cate on cate.pk_itemcate = cg.pk_itemcate
+		left join bd_ou_dept dept on dept.pk_dept = cg.pk_dept_ex
+		where cg.pk_dept_cg=#{pkDeptCg,jdbcType=VARCHAR}
+		<if test="codeOp != null and codeOp != '' ">
+			and pi.code_op = #{codeOp}
+		</if>
+		<if test="dateCg != null and dateCg != '' ">
+			and cg.date_cg &gt; to_date(#{dateCg,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="dateCgEnd != null and dateCgEnd != '' ">
+			and cg.date_cg &lt; to_date(#{dateCgEnd,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="namePi != null and namePi != '' ">
+			and pi.name_pi like '%' || #{namePi} || '%'
+		</if>
+		<if test="nameEmpCg != null and nameEmpCg != '' ">
+			and cg.name_emp_cg like '%' || #{nameEmpCg} || '%'
+		</if>
+		<if test="nameCg != null and nameCg != '' ">
+			and cg.name_cg like '%' || #{nameCg} || '%'
+		</if>
+		<if test='pkItemcate != null and pkItemcate.size()>0'>
+			and cg.pk_itemcate in
+			<foreach collection="pkItemcate" item="pkitemcate" index="no"
+					 open="(" separator="," close=")">
+				#{pkitemcate}
+			</foreach>
+		</if>
+		<if test="pkPv != null and pkPv != '' ">
+			and pv.pk_pv = #{pkPv,jdbcType=CHAR}
+		</if>
+		order by cate.code
+	</select>
+</mapper>

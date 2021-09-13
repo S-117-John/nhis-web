@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.compay.pub.syx.dao.QryCostForecastMapper">
+	<select id="qryAmtVo" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.compay.pub.syx.vo.CostForecastAmtVo">
+		select sum(cg.amount) AMT,
+		sum(case when cg.flag_settle='0'
+		then cg.amount else 0 end ) AMT_NOSETTLE ,
+		sum(case when
+		cg.flag_settle='0' then cg.AMOUNT_PI else 0 end ) AMT_PI
+		from
+		pv_encounter pv
+		inner join bl_ip_dt cg on pv.pk_pv=cg.pk_pv
+		where
+		pv.pk_pv=#{pkpv,jdbcType=VARCHAR}
+	</select>
+
+	<select id="qryCostItemVo" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.compay.pub.syx.vo.CostForecastItemVo">
+		select
+		rat.CODE as RATCODE, 
+		rat.NAME as RATNAME,
+		
+		bl.AMOUNT as AMOUNT,
+		bl.QUAN,case when rat.eu_staple is null then
+		'2' else rat.eu_staple
+		end EUSTAPLE,
+		case when
+		rat.RATIO is null then 1 else rat.RATIO end RATIO, 
+		bl.NAME_CG as
+		NAMECG
+		from view_bl_ip_dtall bl
+		left join (select ins.RATIO,
+		ins.NAME_ITEM,
+		case
+		when ins.EU_STAPLE is null and RATIO = 0 then '0'
+		when ins.EU_STAPLE is
+		null and RATIO = 1 then '2'
+		when ins.EU_STAPLE is
+		not null then
+		ins.EU_STAPLE
+		else '1' end eu_staple,
+		cate.CODE,
+		cate.NAME,
+		item.PK_ITEM
+		from INS_GZYB_ITEM ins
+		inner join INS_GZYB_ITEMMAP map on
+		map.CODE_CENTER = ins.CODE_ITEM and
+		map.FLAG_AUDIT = '1'
+		and
+		ins.DEL_FLAG = '0' and map.DEL_FLAG = '0' and ins.eu_hpdicttype='1'
+		and map.eu_hpdicttype='1'
+		inner join (select PK_ITEM PK_ITEM, a.CODE,
+		a.NAME, a.CODE_HP, a.PRICE,
+		a.PK_ITEMCATE
+		from BD_ITEM a
+		union all
+		select
+		b.PK_PD PK_ITEM, b.CODE, b.NAME, b.CODE_HP, b.PRICE, b.PK_ITEMCATE
+		from BD_PD b) item on item.CODE_HP = map.CODE_HOSP
+		left join (select
+		a.PK_ITEMCATE, b.CODE, b.NAME
+		from BD_CATE_ITEM a
+		inner join
+		bd_cate_cont b on a.PK_CATECONT = b.PK_CATECONT
+		inner join bd_cate_def
+		c on c.PK_CATEDEF = b.PK_CATEDEF
+		inner join bd_itemcate d on
+		a.PK_ITEMCATE = d.PK_ITEMCATE
+		where c.CODE = '00003'
+		and a.DEL_FLAG =
+		'0'
+		and b.DEL_FLAG = '0'
+		and c.DEL_FLAG = '0') cate on item.PK_ITEMCATE
+		= cate.PK_ITEMCATE) rat
+		on bl.PK_ITEM=rat.PK_ITEM 
+		where bl.PK_PV=#{pkpv,jdbcType=VARCHAR} and bl.flag_settle='0'
+	</select>
+
+	<select id="queryHpDictAttr" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.compay.pub.syx.vo.CostHpDictAttrVo">
+		select null as pk_dictattr,
+		tmp.pk_dictattrtemp,
+		tmp.code_attr,
+		tmp.name_attr,
+		tmp.val_attr,
+		tmp.desc_attr
+		from
+		bd_dictattr_temp tmp
+		where tmp.dt_dicttype='03' and
+		(tmp.pk_org_use=
+		#{pkOrgUse,jdbcType=VARCHAR} or tmp.pk_org_use is null) and
+		tmp.del_flag='0' and
+		not exists (select 1
+		from bd_dictattr att
+		where
+		att.pk_dictattrtemp=tmp.pk_dictattrtemp and
+		att.pk_dict=
+		#{pkDict,jdbcType=VARCHAR} )
+		union all
+		select att.pk_dictattr,
+		att.pk_dictattrtemp,
+		tmp.code_attr,
+		tmp.name_attr,
+		att.val_attr,
+		tmp.desc_attr
+		from bd_dictattr att
+		inner join bd_dictattr_temp tmp on
+		att.pk_dictattrtemp=tmp.pk_dictattrtemp
+		where att.pk_dict=
+		#{pkDict,jdbcType=VARCHAR}
+
+	</select>
+
+	<select id="getYjFactor" parameterType="java.lang.String"
+		resultType="DynaBean">
+		select fac.factor_prep,fac.amt_cred
+		from pv_encounter pv
+		inner join bd_hp_factor fac on pv.eu_pvtype = fac.eu_pvtype
+		and
+		(fac.pk_hp = pv.pk_insu or fac.pk_hp is null)
+		and pv.pk_dept =
+		fac.pk_dept
+		where pv.pk_pv=#{pkpv,jdbcType=VARCHAR} and fac.del_flag =
+		'0'
+		order by fac.PK_HP desc
+	</select>
+
+	<select id="getZtNPdFee" parameterType="java.lang.String"
+		resultType="java.lang.Double">
+		select sum(exlist.quan_occ * item.price * orditem.quan ) as
+		amt
+		from cn_order ord
+		inner join ex_order_occ exlist on
+		ord.pk_cnord=exlist.pk_cnord
+		inner join bd_ord_item orditem on
+		ord.pk_ord = orditem.pk_ord and
+		orditem.del_flag='0'
+		inner join bd_item
+		item on orditem.pk_item=item.pk_item
+		where exlist.eu_status='0' and
+		ord.pk_pv = #{pkpv,jdbcType=VARCHAR}
+	</select>
+
+	<select id="getZtPdFee" parameterType="java.lang.String"
+		resultType="java.lang.Double">
+		select sum(dt.amount) as amt
+		from ex_pd_apply_detail dt
+		inner join ex_pd_apply ap on ap.pk_pdap=dt.pk_pdap
+		where dt.flag_finish
+		= '0' and
+		dt.flag_stop = '0' and
+		ap.eu_status != '9' and
+		dt.pk_pv =
+		#{pkpv,jdbcType=VARCHAR}
+	</select>
+
+	<select id="qryZtFeeVo" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.compay.pub.syx.vo.CostZtFeeVo">
+		select item.name NAME, --非药品
+		exlist.quan_occ QUAN,
+		item.price PRICE,
+		exlist.quan_occ * item.price AMOUNT,
+		exlist.date_plan DATEPLAN
+		from cn_order ord
+		inner join ex_order_occ exlist on ord.pk_cnord=exlist.pk_cnord
+		inner join bd_ord_item orditem on ord.pk_ord = orditem.pk_ord
+		inner join bd_item item on orditem.pk_item=item.pk_item
+		where exlist.eu_status='0' and ord.pk_pv =#{pkpv,jdbcType=VARCHAR}
+		union all
+		select pd.name name, --已提交未发放药品
+		dt.quan_pack quan,
+		dt.price price,
+		dt.amount amt,
+		ap.date_ap date_plan
+		from ex_pd_apply_detail dt
+		inner join ex_pd_apply ap on ap.pk_pdap=dt.pk_pdap
+		inner join bd_pd pd on dt.pk_pd = pd.pk_pd
+		where dt.flag_finish = '0' and
+		dt.flag_stop = '0' and
+		ap.eu_status != '9' and
+		dt.pk_pv =#{pkpv,jdbcType=VARCHAR}
+	</select>
+</mapper>

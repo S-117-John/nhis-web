@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.sd.dao.RisLisReportMapper">
+
+	<select id="qryPatientList" parameterType="java.util.Map"
+		resultType="DynaBean">
+		SELECT
+		DISTINCT
+		pv.name_pi,
+		pv.bed_no,
+		pi.code_ip,
+		pi.code_pi,
+		pv.pk_pv,
+		pi.dt_idtype,
+		pi.id_no
+		FROM
+		pv_encounter pv
+		INNER join pv_ip ip ON ip.pk_pv = pv.pk_pv
+		INNER join pi_master pi ON pi.pk_pi = pv.pk_pi
+		WHERE
+		pv.flag_in = '1'
+		AND pv.eu_pvtype = '3'
+		AND pv.pk_org = #{pkOrg}
+		AND pv.eu_status = '1'
+		AND pv.del_flag = '0'
+		<if test="pkDept != null and pkDept != ''">
+			AND (pv.pk_dept = #{pkDept} or pv.PK_DEPT_NS=#{pkDept})
+		</if>
+		<if test="pkDeptNs != null and pkDeptNs != ''">
+			AND pv.pk_dept_ns = #{pkDeptNs}
+		</if>
+		<if test="pkPv != null and pkPv != ''">
+			AND pv.PK_PV = #{pkPv}
+		</if>
+	</select>
+
+	<select id="qryLeavePatientList" parameterType="java.util.Map"
+		resultType="DynaBean">
+		SELECT DISTINCT
+		pv.name_pi,
+		pv.bed_no,
+		pi.code_ip,
+		pi.code_pi,
+		pv.pk_pv,
+		pi.dt_idtype,
+		pi.id_no
+		FROM
+		pv_encounter pv
+		INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi AND pi.del_flag = '0'
+		INNER JOIN pv_adt upd ON upd.pk_pv = pv.pk_pv AND upd.del_flag = '0'
+		WHERE
+		pv.flag_cancel != '1'
+		AND pv.del_flag = '0'
+		AND pv.eu_pvtype = '3'
+		AND pv.eu_status > 0
+		AND pv.flag_in = '0'
+		<if test="pkDept != null and pkDept != ''">
+			AND (upd.pk_dept = #{pkDept} or upd.pk_dept_ns = #{pkDept})
+		</if>
+		<if test="pkDeptNs != null and pkDeptNs != ''">
+			AND (upd.pk_dept_ns = #{pkDeptNs} or upd.pk_dept = #{pkDeptNs})
+		</if>
+		
+		<if test="(dateBegin != null and dateBegin != '') or (dateEnd !=null and dateEnd != '')">
+			and
+			(
+			1=1
+			<if test="dateBegin != null and dateBegin != ''">
+				and pv.date_end &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyy-MM-dd
+				hh24:mi:ss')
+			</if>
+			<if test="dateEnd !=null and dateEnd != ''">
+				and pv.date_end &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-MM-dd
+				hh24:mi:ss')
+			</if>
+			<if test="pkPv != null and pkPv != ''">
+				or pv.pk_pv = #{pkPv}
+			</if>
+			)
+		</if>
+		
+		
+	</select>
+
+	<select id="qryChangePatientList" parameterType="java.util.Map"
+		resultType="DynaBean">
+		SELECT
+		DISTINCT
+		pv.name_pi,
+		pv.bed_no,
+		pi.code_ip,
+		pi.code_pi,
+		pv.pk_pv,
+		pi.dt_idtype,
+		pi.id_no
+		FROM
+		pv_encounter pv
+		INNER join pv_ip ip ON ip.pk_pv = pv.pk_pv
+		INNER join pi_master pi ON pi.pk_pi = pv.pk_pi
+		INNER join pv_adt adt ON adt.pk_pv = pv.pk_pv
+		INNER join pv_adt adt1 ON adt.pk_adt_source = adt1.pk_adt
+		WHERE
+		pv.flag_in = '1'
+		AND pv.eu_pvtype = '3'
+		AND pv.pk_org = #{pkOrg}
+		AND pv.eu_status = '1'
+		AND pv.del_flag = '0'
+		AND adt.del_flag = '0'
+		<if test="pkDept != null and pkDept != ''">
+			AND (adt1.pk_dept = #{pkDept} or adt1.pk_dept_ns = #{pkDept})
+		</if>
+		<if test="pkDeptNs != null and pkDeptNs != ''">
+			AND (adt1.pk_dept_ns = #{pkDeptNs} or adt1.pk_dept = #{pkDeptNs})
+		</if>
+	</select>
+	
+	<select id="qrySughLisReportCommon" parameterType="java.util.Map" resultType="DynaBean">
+		
+		select occ.sort_no,
+			occ.name_index,
+			occ.val,
+			occ.val1,
+			occ.unit,
+			occ.val_max,
+			occ.val_min,
+			occ.eu_result 
+		from ex_lab_occ occ 
+		where 1=1
+			and occ.DEL_FLAG='0'
+		   <if test="codeApply != null and codeApply != ''">
+				AND occ.code_apply = #{codeApply} 
+			</if>
+			<if test="codeSamp != null and codeSamp != ''">
+				AND occ.code_samp = #{codeSamp} 
+			</if>
+			order by occ.sort_no
+	</select>
+	
+	<select id="qrySughLisReportWsw" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			bact.sort_no,
+			bact.name_bact,
+			bact.name_pd,
+			bact.mic,
+			bact.eu_allevel,
+			bact.val_lab 
+		from ex_lab_occ occ 
+		inner join ex_lab_occ_bact bact on occ.pk_labocc=bact.pk_labocc 
+		where 1=1
+		and occ.DEL_FLAG='0'
+		<if test="codeApply != null and codeApply != ''">
+			AND occ.code_apply = #{codeApply} 
+		</if>
+		<if test="codeSamp != null and codeSamp != ''">
+			AND occ.code_samp = #{codeSamp} 
+		</if>
+		order by bact.sort_no
+	</select>
+</mapper>

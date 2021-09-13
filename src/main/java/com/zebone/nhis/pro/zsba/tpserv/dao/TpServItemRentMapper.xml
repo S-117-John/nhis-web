@@ -1,0 +1,474 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.tpserv.dao.TpServItemRentMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.pro.zsba.tpserv.vo.TpServItemRent">
+        <id column="PK_RENT" jdbcType="CHAR" property="pkRent"/>
+        <result column="FK_DEPT" jdbcType="CHAR" property="fkDept"/>
+        <result column="FK_PATIENT" jdbcType="CHAR" property="fkPatient"/>
+        <result column="PATIENT_NAME" jdbcType="VARCHAR" property="patientName"/>
+        <result column="PHONE" jdbcType="VARCHAR" property="phone"/>
+        <result column="ADDRESS" jdbcType="VARCHAR" property="address"/>
+        <result column="EXPRESS_COMPANY" jdbcType="VARCHAR" property="expressCompany"/>
+        <result column="TRACKING_NUMBER" jdbcType="VARCHAR" property="trackingNumber"/>
+        <result column="FK_ITEM" jdbcType="CHAR" property="fkItem"/>
+        <result column="ITEM_NAME" jdbcType="VARCHAR" property="itemName"/>
+        <result column="FK_ITEM_DEVICE" jdbcType="CHAR" property="fkItemDevice"/>
+        <result column="PRICE" jdbcType="DECIMAL" property="price"/>
+        <result column="NUM" jdbcType="INTEGER" property="num"/>
+        <result column="DATE_NUM" jdbcType="INTEGER" property="dateNum"/>
+        <result column="RENT_METHOD" jdbcType="CHAR" property="rentMethod"/>
+        <result column="PLEDGE_STATE" jdbcType="CHAR" property="pledgeState"/>
+        <result column="CASH_PLEDGE" jdbcType="DECIMAL" property="cashPledge"/>
+        <result column="RENT_STATE" jdbcType="CHAR" property="rentState"/>
+        <result column="SJ_DATE_NUM" jdbcType="INTEGER" property="sjDateNum"/>
+        <result column="AMOUNT_TOTAL" jdbcType="DECIMAL" property="amountTotal"/>
+        <result column="DIFFER_AMOUNT" jdbcType="DECIMAL" property="differAmount"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="CREATOR" jdbcType="CHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="MODIFIER" jdbcType="CHAR" property="modifier"/>
+        <result column="MODITY_TIME" jdbcType="TIMESTAMP" property="modityTime"/>
+        <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+    </resultMap>
+    <select id="getTpServItemRentById" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+             tp_serv_item_rent
+        WHERE            
+            PK_RENT = #{pkRent,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllTpServItemRent" resultMap="BaseResultMap">
+          SELECT * FROM tp_serv_item_rent 
+    </select>
+    
+    <delete id="deleteTpServItemRent">
+        DELETE
+        FROM
+             tp_serv_item_rent
+        WHERE            
+            PK_RENT = #{pkRent,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveTpServItemRent" parameterType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServItemRent" >
+        INSERT INTO tp_serv_item_rent
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkRent != null" >
+                PK_RENT,
+            </if>
+            <if test="fkDept != null" >
+                FK_DEPT,
+            </if>
+            <if test="fkPatient != null" >
+                FK_PATIENT,
+            </if>
+            <if test="patientName != null" >
+                PATIENT_NAME,
+            </if>
+            <if test="phone != null" >
+                PHONE,
+            </if>
+            <if test="address != null" >
+                ADDRESS,
+            </if>
+            <if test="expressCompany != null" >
+                EXPRESS_COMPANY,
+            </if>
+            <if test="trackingNumber != null" >
+                TRACKING_NUMBER,
+            </if>
+            <if test="fkItem != null" >
+                FK_ITEM,
+            </if>
+            <if test="itemName != null" >
+                ITEM_NAME,
+            </if>
+            <if test="fkItemDevice != null" >
+                FK_ITEM_DEVICE,
+            </if>
+            <if test="price != null" >
+                PRICE,
+            </if>
+            <if test="num != null" >
+                NUM,
+            </if>
+            <if test="dateNum != null" >
+                DATE_NUM,
+            </if>
+            <if test="rentMethod != null" >
+                RENT_METHOD,
+            </if>
+            <if test="pledgeState != null" >
+                PLEDGE_STATE,
+            </if>
+            <if test="cashPledge != null" >
+                CASH_PLEDGE,
+            </if>
+            <if test="rentState != null" >
+                RENT_STATE,
+            </if>
+            <if test="sjDateNum != null" >
+                SJ_DATE_NUM,
+            </if>
+            <if test="amountTotal != null" >
+                AMOUNT_TOTAL,
+            </if>
+            <if test="differAmount != null" >
+                DIFFER_AMOUNT,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="modifier != null" >
+                MODIFIER,
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkRent != null" >
+                #{pkRent,jdbcType=CHAR},
+            </if> 
+            <if test="fkDept != null" >
+                #{fkDept,jdbcType=CHAR},
+            </if> 
+            <if test="fkPatient != null" >
+                #{fkPatient,jdbcType=CHAR},
+            </if> 
+            <if test="patientName != null" >
+                #{patientName,jdbcType=VARCHAR},
+            </if> 
+            <if test="phone != null" >
+                #{phone,jdbcType=VARCHAR},
+            </if> 
+            <if test="address != null" >
+                #{address,jdbcType=VARCHAR},
+            </if> 
+            <if test="expressCompany != null" >
+                #{expressCompany,jdbcType=VARCHAR},
+            </if> 
+            <if test="trackingNumber != null" >
+                #{trackingNumber,jdbcType=VARCHAR},
+            </if> 
+            <if test="fkItem != null" >
+                #{fkItem,jdbcType=CHAR},
+            </if> 
+            <if test="itemName != null" >
+                #{itemName,jdbcType=VARCHAR},
+            </if> 
+            <if test="fkItemDevice != null" >
+                #{fkItemDevice,jdbcType=CHAR},
+            </if> 
+            <if test="price != null" >
+                #{price,jdbcType=DECIMAL},
+            </if> 
+            <if test="num != null" >
+                #{num,jdbcType=INTEGER},
+            </if> 
+            <if test="dateNum != null" >
+                #{dateNum,jdbcType=INTEGER},
+            </if> 
+            <if test="rentMethod != null" >
+                #{rentMethod,jdbcType=CHAR},
+            </if> 
+            <if test="pledgeState != null" >
+                #{pledgeState,jdbcType=CHAR},
+            </if> 
+            <if test="cashPledge != null" >
+                #{cashPledge,jdbcType=DECIMAL},
+            </if> 
+            <if test="rentState != null" >
+                #{rentState,jdbcType=CHAR},
+            </if> 
+            <if test="sjDateNum != null" >
+                #{sjDateNum,jdbcType=INTEGER},
+            </if> 
+            <if test="amountTotal != null" >
+                #{amountTotal,jdbcType=DECIMAL},
+            </if> 
+            <if test="differAmount != null" >
+                #{differAmount,jdbcType=DECIMAL},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=CHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="modifier != null" >
+                #{modifier,jdbcType=CHAR},
+            </if> 
+            <if test="modityTime != null" >
+                #{modityTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=TIMESTAMP},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateTpServItemRent" parameterType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServItemRent" >
+        UPDATE tp_serv_item_rent
+        <set>
+            <if test="pkRent != null" >
+                PK_RENT = #{pkRent,jdbcType=CHAR},
+            </if>
+            <if test="fkDept != null" >
+                FK_DEPT = #{fkDept,jdbcType=CHAR},
+            </if>
+            <if test="fkPatient != null" >
+                FK_PATIENT = #{fkPatient,jdbcType=CHAR},
+            </if>
+            <if test="patientName != null" >
+                PATIENT_NAME = #{patientName,jdbcType=VARCHAR},
+            </if>
+            <if test="phone != null" >
+                PHONE = #{phone,jdbcType=VARCHAR},
+            </if>
+            <if test="address != null" >
+                ADDRESS = #{address,jdbcType=VARCHAR},
+            </if>
+            <if test="expressCompany != null" >
+                EXPRESS_COMPANY = #{expressCompany,jdbcType=VARCHAR},
+            </if>
+            <if test="trackingNumber != null" >
+                TRACKING_NUMBER = #{trackingNumber,jdbcType=VARCHAR},
+            </if>
+            <if test="fkItem != null" >
+                FK_ITEM = #{fkItem,jdbcType=CHAR},
+            </if>
+            <if test="itemName != null" >
+                ITEM_NAME = #{itemName,jdbcType=VARCHAR},
+            </if>
+            <if test="fkItemDevice != null" >
+                FK_ITEM_DEVICE = #{fkItemDevice,jdbcType=CHAR},
+            </if>
+            <if test="price != null" >
+                PRICE = #{price,jdbcType=DECIMAL},
+            </if>
+            <if test="num != null" >
+                NUM = #{num,jdbcType=INTEGER},
+            </if>
+            <if test="dateNum != null" >
+                DATE_NUM = #{dateNum,jdbcType=INTEGER},
+            </if>
+            <if test="rentMethod != null" >
+                RENT_METHOD = #{rentMethod,jdbcType=CHAR},
+            </if>
+            <if test="pledgeState != null" >
+                PLEDGE_STATE = #{pledgeState,jdbcType=CHAR},
+            </if>
+            <if test="cashPledge != null" >
+                CASH_PLEDGE = #{cashPledge,jdbcType=DECIMAL},
+            </if>
+            <if test="rentState != null" >
+                RENT_STATE = #{rentState,jdbcType=CHAR},
+            </if>
+            <if test="sjDateNum != null" >
+                SJ_DATE_NUM = #{sjDateNum,jdbcType=INTEGER},
+            </if>
+            <if test="amountTotal != null" >
+                AMOUNT_TOTAL = #{amountTotal,jdbcType=DECIMAL},
+            </if>
+            <if test="differAmount != null" >
+                DIFFER_AMOUNT = #{differAmount,jdbcType=DECIMAL},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=CHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="modifier != null" >
+                MODIFIER = #{modifier,jdbcType=CHAR},
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME = #{modityTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        WHERE 
+            PK_RENT = #{pkRent,jdbcType=CHAR}
+    </update>
+    
+    	<!-- 获取第三方服务项目出租列表 -->
+	<select id="getServItemRentList" parameterType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServItemRent" resultType="com.zebone.nhis.pro.zsba.tpserv.vo.TpServItemRent">
+		select t1.pk_rent,t1.fk_dept,t1.fk_patient,t1.patient_name,t1.phone,t1.address,t1.express_company,t1.tracking_number,t1.fk_item,
+		t1.item_name,t1.fk_item_device,t1.price,t1.num,t1.date_num,t1.rent_method,t1.pledge_state,t1.cash_pledge,t1.rent_state,
+		t1.sj_date_num,t1.amount_total,t1.differ_amount,t1.del_flag,t1.creator,to_char(t1.create_time,'yyyy-MM-DD HH24:MI:SS') as create_time,t1.modifier,t1.modity_time,
+		t1.ts 
+		from tp_serv_item_rent t1
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+				and del_flag = '0'
+		  	<if test="pkRent != null and pkRent != ''">
+		  		and t1.pk_rent = #{pkRent,jdbcType=VARCHAR} 
+		  	</if> 
+		  	<if test="pkPv != null and pkPv != ''">
+		  		and t1.pk_pv = #{pkPv,jdbcType=VARCHAR} 
+		  	</if> 
+		  	<if test="rentState != null and rentState != ''">
+		  		and t1.rent_state = #{rentState,jdbcType=VARCHAR} 
+		  	</if> 
+		  	<!-- <if test="name != null and name != ''">
+		  		and t1.name like '%'||#{name,jdbcType=VARCHAR} or name like #{name,jdbcType=VARCHAR}||'%'
+		  	</if> -->
+  		</trim>
+	</select>
+	
+<!-- 	<select id="getHgfInfo" parameterType="java.util.Map" resultType="java.util.Map">
+		select a.pk_pv, (a.num+b.num) num, a.price 
+		from 
+			(select bid.pk_pv, sum(bid.quan) num, bi.price 
+			 from BL_IP_DT bid join BD_ITEM  bi on bid.pk_item = bi.pk_item 
+			 where bi.name = '住院诊查费' and bid.pk_pv = #{pkPv,jdbcType=VARCHAR} 
+			 group by bid.pk_pv, bi.price) a,
+			(select bid.pk_pv, sum(bid.quan) num 
+			 from BL_IP_DT_B bid join BD_ITEM  bi on bid.pk_item = bi.pk_item 
+			 where bi.name = '住院诊查费' and bid.pk_pv = #{pkPv,jdbcType=VARCHAR} 
+			 group by bid.pk_pv) b
+		where a.pk_pv = b.pk_pv
+	</select> -->
+	
+	<select id="getHgfInfo" parameterType="java.util.Map" resultType="java.util.Map">
+		select pk_pv, num, price
+		from view_hgf
+		where pk_pv = #{pkPv,jdbcType=VARCHAR} 
+	</select>
+	
+	<select id="getHgfNum" parameterType="java.util.Map" resultType="java.util.Map">
+		select sum(num) as num from tp_serv_item_rent 
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and del_flag = '0'
+			and rent_state = '1'
+			and pk_pv = #{pkPv,jdbcType=VARCHAR} 
+			<if test="itemName != null and itemName != ''">
+				and item_name = #{itemName,jdbcType=VARCHAR} 
+			</if>
+			<if test="pkItem != null and pkItem != ''">
+				and fk_item = #{pkItem,jdbcType=VARCHAR} 
+			</if>
+		</trim>
+	</select>
+	
+	<select id="getPatientInfo" parameterType="java.util.Map" resultType="java.util.Map">
+		select pi.pk_pvip, pe.pk_pv, pi.pk_dept_admit, pi.ip_times, po.op_times, pm.pk_pi, pm.name_pi, pm.mobile, pe.pk_dept_ns
+		from pv_encounter pe INNER JOIN  pi_master pm ON pe.pk_pi = pm.pk_pi
+		INNER JOIN pv_ip pi ON pe.pk_pv = pi.pk_pv
+		LEFT JOIN pv_ip_notice pin ON pi.pk_ip_notice = pin.pk_in_notice
+		LEFT JOIN pv_encounter pe2 ON pin.pk_pv_op = pe2.pk_pv
+		LEFT JOIN pv_op po ON pe2.pk_pv = po.pk_pv
+		
+		where pe.pk_pv=#{pkPv,jdbcType=VARCHAR} 
+	</select>
+	
+		<!-- 根据患者就诊信息查询诊断信息vo列表 -->
+	<select id="getPibaseVoList" parameterType="com.zebone.nhis.common.module.pv.PvEncounter" resultType="com.zebone.nhis.pi.pub.vo.PibaseVo">
+		select e.CODE_PV,m.code_ip,e.EU_PVTYPE,e.PK_PI,e.PK_PV,e.BED_NO,e.PK_DEPT,e.PK_DEPT_NS,e.DATE_BEGIN,e.DATE_END,case when e.DATE_CLINIC is null then e.DATE_BEGIN else e.DATE_CLINIC end as DATE_CLINIC,
+			m.CODE_PI,m.NAME_PI,m.DT_SEX,m.BIRTH_DATE,m.ID_NO,m.MOBILE,m.INSUR_NO,
+			c.NAME as namePicate,
+			c.pk_picate ,
+			h.NAME as nameInsu,e.eu_status,
+			M.DT_IDTYPE
+		from PV_ENCOUNTER e
+		left join PI_MASTER m on m.PK_PI = e.PK_PI and m.DEL_FLAG = '0'
+		left join PI_CATE c on c.PK_PICATE = m.PK_PICATE and c.DEL_FLAG = '0'
+		left join BD_HP h on h.pk_hp = e.PK_INSU
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and e.del_flag = '0' 
+			and e.pk_org =	#{pkOrg,jdbcType=VARCHAR}
+			<!-- 0-不判断就诊状态，查全部；1-判断就诊状态，查0、1、3，再根据参数euStatus过滤；默认1 -->		
+			<if test="flagStatus == 1">
+				and (e.eu_status = '0' or e.eu_status = '1' or e.eu_status = '3')
+			</if>
+		    <if test="euPvtype != null and euPvtype != ''">
+		  		and e.EU_PVTYPE = #{euPvtype,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="codePv != null and codePv != ''">
+		  		and e.CODE_PV = #{codePv,jdbcType=VARCHAR}
+		  	</if> 	
+		  	<if test="codePi != null and codePi != ''">
+		  		and m.CODE_PI = #{codePi,jdbcType=VARCHAR}
+		  	</if>	
+		  	<if test="codeIp != null and codeIp != ''">
+		  		and m.CODE_IP like '%'||#{codeIp,jdbcType=VARCHAR}||'%'
+		  	</if>	
+		  	<if test="namePi != null and namePi != ''">
+		  		and m.NAME_PI like '%'||#{namePi,jdbcType=VARCHAR}||'%'
+		  	</if>  	
+		  	<if test="dateClinic != null and dateClinic != ''">
+		  		and to_char(e.DATE_CLINIC,'yyyy-MM-DD') = to_char(#{dateClinic,jdbcType=TIMESTAMP},'yyyy-MM-DD')
+		  	</if> 
+		  	<if test="dateBegin != null and dateBegin != ''">
+		  		and to_char(e.DATE_BEGIN,'yyyy-MM-DD') = to_char(#{dateBegin,jdbcType=TIMESTAMP},'yyyy-MM-DD')
+		  	</if> 
+		  	<if test="pkPi != null and pkPi != ''">
+		  		and m.PK_PI = #{pkPi,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="bedNo != null and bedNo != ''">
+		  		and e.BED_NO = #{bedNo,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="pkDept != null and pkDept != ''">
+		  		and e.PK_DEPT = #{pkDept,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="pkDeptNs != null and pkDeptNs != ''">
+		  		and e.PK_DEPT_NS = #{pkDeptNs,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="euStatus != null and euStatus != ''">
+		  		and e.eu_status = #{euStatus,jdbcType=VARCHAR}
+		  	</if>		  		  	
+  		</trim>
+  		order by e.CODE_PV desc
+	</select>
+	
+	<select id="getNewbornPediatricsData" parameterType="java.util.Map" resultType="java.util.Map">
+		select t1.pk_rent, t2.name as itemName, t3.name as unit, t2.price, t1.num, t1.amount_total as amountTotal,t1.rent_state as rentState
+		from tp_serv_item_rent t1 inner join tp_serv_item t2 on t1.fk_item = t2.pk_item 
+		and t1.del_flag = '0' and t2.del_flag = '0' and t2.use_flag = '0'
+		inner join tp_serv_item_unit t3 on t2.fk_item_unit = t3.pk_item_unit
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+		    and t1.rent_state = '0'
+			and t2.fk_item_type = #{pkItemType,jdbcType=VARCHAR}
+			and t1.pk_pv = #{pkPv,jdbcType=VARCHAR} 
+		    and to_char(t1.create_time, 'YYYYMMDDHH24MISS') >= #{dateBegin,jdbcType=VARCHAR}||'000000' 
+		    <if test="dateEnd != null and dateEnd != ''">
+		  		and to_char(t1.create_time, 'YYYYMMDDHH24MISS') &lt;= #{dateEnd,jdbcType=VARCHAR}||'235959'
+		  	</if>		
+		</trim>
+	</select>
+	
+	<select id="getNewbornPediatricsTotalCost" parameterType="java.util.Map" resultType="java.util.Map">
+		select t3.name, sum(t1.amount_total) as amountTotal
+		from tp_serv_item_rent t1 inner join tp_serv_item t2 on t1.fk_item = t2.pk_item 
+		and t1.del_flag = '0' and t2.del_flag = '0' and t2.use_flag = '0'
+		inner join TP_SERV_ITEM_TYPE t3 on t3.pk_item_type = t2.fk_item_type
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+		    and t1.rent_state = '0'
+			and t2.fk_item_type = #{pkItemType,jdbcType=VARCHAR}
+			and t1.pk_pv = #{pkPv,jdbcType=VARCHAR} 
+		    and to_char(t1.create_time, 'YYYYMMDDHH24MISS') >= #{dateBegin,jdbcType=VARCHAR}||'000000' 
+		    <if test="dateEnd != null and dateEnd != ''">
+		  		and to_char(t1.create_time, 'YYYYMMDDHH24MISS') &lt;= #{dateEnd,jdbcType=VARCHAR}||'235959'
+		  	</if>		
+		</trim>
+		group by t3.name
+	</select>
+</mapper>

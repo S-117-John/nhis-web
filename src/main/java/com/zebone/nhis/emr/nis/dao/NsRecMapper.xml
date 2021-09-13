@@ -1,0 +1,619 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.emr.nis.dao.NsRecMapper">
+	<select id="qryCnOrder" parameterType="java.util.Map"
+		resultType="DynaBean">
+		select cn.pk_cnord,
+		cn.eu_st,
+		cn.last_num,
+		cn.pk_pv,
+		cn.pk_dept_ns,
+		cn.pk_org,
+		cn.flag_emer,
+		cn.eu_always,
+		cn.date_start,
+		cn.code_ord,
+		cn.name_ord,
+		cn.dosage,
+		cn.pk_unit_dos,
+		cn.quan,
+		cn.pk_unit,
+		cn.code_supply,
+		sup.flag_pivas,
+		cn.code_freq,
+		freq.cnt,
+		cn.drip_speed,
+		cn.flag_first,
+		cn.pk_emp_ord,
+		cn.name_emp_ord,
+		cn.pk_dept_exec,
+		cn.pk_dept,
+		cn.pk_org_exec,
+		cn.date_chk,
+		cn.date_stop,
+		cn.spec,
+		cn.flag_medout,
+		cn.flag_self,
+		cn.flag_thera,
+		cn.flag_prev,
+		cn.flag_fit,
+		cn.note_ord,
+		cn.note_supply,
+		cn.eu_status_ord,
+		cn.code_ordtype,
+		cn.ordsn,
+		cn.ordsn_parent,
+		cn.pk_ord,
+		cn.date_enter,
+		cn.flag_stop_chk,
+		cn.flag_erase,
+		cn.flag_durg,
+		cn.flag_stop,
+		cn.flag_sign,
+		cn.pk_emp_stop,
+		cn.name_emp_stop,
+		cn.date_stop,
+		cn.pk_pres,
+		cn.infant_no,
+		cn.ts,
+		pd.pk_unit_min,
+		pd.pk_unit_vol,
+		pd.pk_unit_wt,
+		pd.vol,
+		cn.name_emp_chk,
+		cn.name_emp_stop_chk,
+		cn.flag_cp,
+		pd.weight,
+		pd.dt_pois,
+		pd.dt_anti,
+		stk.quan_min,
+		cn.eu_exctype,
+		cn.name_emp_input,
+		cn.pk_emp_input,
+		cn.eu_intern,
+		ord.pk_unit as srv_pk_unit,
+		ris.desc_body,
+		lab.dt_samptype
+		from cn_order cn
+		left join bd_pd pd on cn.pk_ord = pd.pk_pd and
+		pd.del_flag='0'
+		left outer join (select sum(quan_min - quan_prep)
+		quan_min, pk_pd
+		from pd_stock
+		where del_flag = '0'
+		and pk_dept =
+		#{pkDeptExec,jdbcType=VARCHAR}
+		group by pk_pd) stk
+		on pd.pk_pd =
+		stk.pk_pd
+		left join bd_ord ord on ord.pk_ord = cn.pk_ord and
+		ord.del_flag='0'
+		left join bd_supply sup on cn.code_supply = sup.code
+		and sup.del_flag='0'
+		left join bd_term_freq freq on freq.code =
+		cn.code_freq and
+		freq.del_flag='0'
+		left join cn_ris_apply ris on
+		ris.pk_cnord = cn.pk_cnord and
+		ris.del_flag='0'
+		left join cn_lab_apply
+		lab on lab.pk_cnord = cn.pk_cnord and
+		lab.del_flag='0'
+		where cn.pk_pv =
+		#{pkPv,jdbcType=VARCHAR}
+		and cn.flag_doctor='1'
+		and cn.del_flag='0'
+		<!-- and cn.CODE_SUPPLY like '09%' -->
+		<if test="pkDept!=null">
+			and cn.pk_dept=#{pkDept,jdbcType=VARCHAR}
+		</if>
+		<if test="pkDeptNs!=null">
+			and cn.pk_dept_ns=#{pkDeptNs,jdbcType=VARCHAR}
+		</if>
+		<if test="dateBegin != null and dateBegin != ''">
+			AND cn.date_start
+			&gt;=to_date(#{dateBegin,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			AND cn.date_start
+			&lt;=to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		order by cn.ordsn_parent,cn.ordsn
+	</select>
+
+	<select id="qryCnPatiOrder" parameterType="java.lang.String"
+		resultType="DynaBean">
+		select cn.pk_cnord,
+		cn.pk_org,
+		cn.eu_always,
+		cn.date_start,
+		cn.code_ord,
+		cn.name_ord,
+		cn.dosage,
+		cn.pk_unit_dos,
+		cn.quan,
+		cn.pk_unit,
+		cn.code_supply,
+		cn.code_freq,
+		cn.drip_speed,
+		cn.flag_first,
+		cn.pk_emp_ord,
+		cn.name_emp_ord,
+		cn.pk_dept_exec,
+		cn.pk_dept,
+		cn.pk_org_exec,
+		cn.date_chk,
+		cn.date_stop,
+		cn.spec,
+		cn.flag_medout,
+		cn.flag_self,
+		cn.flag_thera,
+		cn.flag_prev,
+		cn.flag_fit,
+		cn.note_ord,
+		cn.note_supply,
+		cn.eu_status_ord,
+		cn.code_ordtype,
+		cn.ordsn,
+		cn.ordsn_parent,
+		cn.pk_ord,
+		cn.date_enter,
+		cn.flag_stop_chk,
+		cn.flag_erase,
+		cn.flag_durg,
+		cn.flag_stop,
+		cn.flag_sign,
+		cn.pk_emp_stop,
+		cn.name_emp_stop,
+		cn.date_stop,
+		cn.pk_pres,
+		cn.infant_no,
+		cn.ts,
+		cn.name_emp_chk,
+		cn.name_emp_stop_chk,
+		cn.flag_cp,
+		cn.eu_exctype,
+		pv.name_pi,
+		pv.age_pv as agepv,
+		doc.name as sexname,
+		dept.name_dept as
+		dept_name,
+		ns.name_dept as dept_ns_name,
+		pv.bed_no as bedno,
+		pi.code_pi
+		as pvcode
+		from cn_order cn
+		inner join pv_encounter pv on
+		pv.pk_pv=cn.pk_pv and pv.del_flag='0'
+		inner join pi_master pi on
+		pi.pk_pi = pv.pk_pi and pi.del_flag='0'
+		INNER JOIN BD_OU_DEPT dept ON
+		dept.PK_DEPT = cn.PK_DEPT AND
+		dept.DEL_FLAG='0'
+		INNER JOIN BD_OU_DEPT ns
+		ON ns.PK_DEPT = cn.PK_DEPT_NS AND ns.DEL_FLAG='0'
+		LEFT JOIN BD_DEFDOC
+		doc ON doc.CODE = pi.DT_SEX AND
+		doc.CODE_DEFDOCLIST='000000' AND
+		doc.del_flag='0'
+		where cn.pk_pv = #{pkPv,jdbcType=VARCHAR} and
+		cn.flag_doctor='1'
+		<if test="dateBegin != null and dateBegin != ''">
+			AND cn.date_start
+			&gt;=to_date(#{dateBegin,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			AND cn.date_start
+			&lt;=to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		and cn.del_flag='0'
+		and cn.CODE_SUPPLY like '09%'
+		order by
+		cn.ordsn_parent,cn.ordsn
+	</select>
+
+	<select id="queryOutValSqlServer" parameterType="java.util.Map"
+		resultType="DynaBean">
+		select sum(ISNULL(CONVERT(NUMERIC, case when val.val = '' then 0
+		else val.val end),0)) outval
+		from (
+		select rw.pk_recordrow,dt.val
+		from
+		nd_record_row rw
+		inner join
+		nd_record_dt dt on
+		rw.pk_recordrow=dt.pk_recordrow
+		where
+		rw.pk_record=#{pkRecord,jdbcType=CHAR} and
+		dt.dt_ndcoltype='clz' and
+		rw.date_entry &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') and
+		rw.date_entry &lt;=to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		) val
+	</select>
+	<select id="queryOutValOracle" parameterType="java.util.Map"
+		resultType="DynaBean">
+		select ti.val,sum(val.val) outval
+		from ( select
+		rw.pk_recordrow,dt.val
+		from nd_record_row rw
+		inner join nd_record_dt dt
+		on rw.pk_recordrow=dt.pk_recordrow
+		where
+		rw.pk_record=#{pkRecord,jdbcType=CHAR} and
+		dt.dt_ndcoltype='rlz' and
+		rw.date_entry &gt;=to_date(#{dateBegin},'YYYYMMDDHH24MISS') and
+		rw.date_entry &lt;=to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		) ti left
+		outer join (
+		select rw.pk_recordrow,dt.val
+		from nd_record_row rw
+		inner
+		join nd_record_dt dt on rw.pk_recordrow=dt.pk_recordrow
+		where
+		rw.pk_record=#{pkRecord,jdbcType=CHAR} and
+		dt.dt_ndcoltype='clz' and
+		rw.date_entry &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') and
+		rw.date_entry &lt;=to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		) val on
+		ti.pk_recordrow=val.pk_recordrow and (val.val is not null and
+		val.val
+		!='')
+		group by ti.val
+	</select>
+
+
+	<select id="queryInValSqlServer" parameterType="java.util.Map"
+		resultType="DynaBean">
+		select sum(ISNULL(CONVERT(NUMERIC, case when dt.val = '' then 0
+		else dt.val end),0)) inval
+		from
+		nd_record_row rw
+		inner join nd_record_dt dt on
+		rw.pk_recordrow=dt.pk_recordrow
+		where
+		rw.pk_record=#{pkRecord,jdbcType=CHAR} and dt.dt_ndcoltype='02' and
+		dt.val is not null and
+		rw.date_entry &gt;=
+		to_date(#{dateBegin},'YYYYMMDDHH24MISS') and
+		rw.date_entry
+		&lt;=to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	</select>
+	<select id="queryInValOracle" parameterType="java.util.Map"
+		resultType="DynaBean">
+		select sum(dt.val) inval
+		from nd_record_row rw
+		inner join
+		nd_record_dt dt on rw.pk_recordrow=dt.pk_recordrow
+		where
+		rw.pk_record=#{pkRecord,jdbcType=CHAR} and dt.dt_ndcoltype='rlz' and
+		dt.val is not null and
+		rw.date_entry &gt;=
+		to_date(#{dateBegin},'YYYYMMDDHH24MISS') and
+		rw.date_entry
+		&lt;=to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	</select>
+	
+	<select id="queryToValOracle" parameterType="java.util.Map"
+		resultType="DynaBean">
+		select sum(dt.val) inval
+		from nd_record_row rw
+		inner join
+		nd_record_dt dt on rw.pk_recordrow=dt.pk_recordrow
+		where
+		rw.pk_record=#{pkRecord,jdbcType=CHAR} and dt.dt_ndcoltype='clz' and
+		dt.val is not null and
+		rw.date_entry &gt;=
+		to_date(#{dateBegin},'YYYYMMDDHH24MISS') and
+		rw.date_entry
+		&lt;=to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	</select>
+	
+		<select id="queryTwValOracle" parameterType="java.util.Map"
+		resultType="DynaBean">
+		select min(VAL)||'-'||MAX(VAL) AS tw
+		from nd_record_row rw
+		inner join
+		nd_record_dt dt on rw.pk_recordrow=dt.pk_recordrow
+		where
+		rw.pk_record in(SELECT PK_RECORD FROM ND_RECORD WHERE PK_PV=#{pkpv,jdbcType=CHAR})  and dt.COLNAME='tw' and
+		dt.val is not null and
+		rw.date_entry &gt;=
+		to_date(#{dateBegin},'YYYYMMDDHH24MISS') and
+		rw.date_entry
+		&lt;=to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	</select>
+	
+		<select id="queryHxValOracle" parameterType="java.util.Map"
+		resultType="DynaBean">
+		select min(VAL)||'-'||MAX(VAL) AS hx
+		from nd_record_row rw
+		inner join
+		nd_record_dt dt on rw.pk_recordrow=dt.pk_recordrow
+		where
+		rw.pk_record in(SELECT PK_RECORD FROM ND_RECORD WHERE PK_PV=#{pkpv,jdbcType=CHAR}) and dt.COLNAME='hx' and
+		dt.val is not null and
+		rw.date_entry &gt;=
+		to_date(#{dateBegin},'YYYYMMDDHH24MISS') and
+		rw.date_entry
+		&lt;=to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	</select>
+		<select id="queryXlValOracle" parameterType="java.util.Map"
+		resultType="DynaBean">
+		select min(VAL)||'-'||MAX(VAL) AS xl
+		from nd_record_row rw
+		inner join
+		nd_record_dt dt on rw.pk_recordrow=dt.pk_recordrow
+		where
+		rw.pk_record in(SELECT PK_RECORD FROM ND_RECORD WHERE PK_PV=#{pkpv,jdbcType=CHAR}) and dt.COLNAME='mb' and
+		dt.val is not null and
+		rw.date_entry &gt;=
+		to_date(#{dateBegin},'YYYYMMDDHH24MISS') and
+		rw.date_entry
+		&lt;=to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	</select>
+		<select id="querySpoValOracle" parameterType="java.util.Map"
+		resultType="DynaBean">
+		select min(VAL)||'-'||MAX(VAL) AS spo
+		from nd_record_row rw
+		inner join
+		nd_record_dt dt on rw.pk_recordrow=dt.pk_recordrow
+		where
+		rw.pk_record in(SELECT PK_RECORD FROM ND_RECORD WHERE PK_PV=#{pkpv,jdbcType=CHAR})  and dt.COLNAME='spo2' and
+		dt.val is not null and
+		rw.date_entry &gt;=
+		to_date(#{dateBegin},'YYYYMMDDHH24MISS') and
+		rw.date_entry
+		&lt;=to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	</select>
+
+	
+	<select id="queryRecordRowList" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.emr.nis.vo.NdRecordRowsVo">
+		select * from nd_record_row
+		where pk_record = #{pkRecord,jdbcType=CHAR}
+		and del_flag = '0'
+		<if test="dateBegin != null and dateBegin != ''">
+			AND date_entry
+			&gt;=to_date(#{dateBegin,jdbcType=VARCHAR},
+			'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			AND date_entry &lt;=to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		order by pk_recordrow
+	</select>
+	<select id="queryRecordColDtList" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.common.module.nd.record.NdRecordDt">
+		select dt.*
+		from nd_record_dt dt
+		where dt.pk_record =
+		#{pkRecord,jdbcType=CHAR}
+		and dt.del_flag='0'
+		<if test=" pkRecordRow!=null and pkRecordRow !='' ">
+			and dt.pk_recordrow = #{pkRecordRow,jdbcType=CHAR}
+		</if>
+		order by dt.colno
+	</select>
+<select id="queryRecordColDtListNew" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.common.module.nd.record.NdRecordDt">
+		select dt.*
+    	from nd_record_dt dt,nd_record_row rw
+		where rw.pk_record = #{pkRecord,jdbcType=CHAR}
+		  and rw.del_flag = '0'
+		<if test="dateBegin != null and dateBegin != ''">
+			AND rw.date_entry &gt;=to_date(#{dateBegin,jdbcType=VARCHAR},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			AND rw.date_entry &lt;=to_date(#{dateEnd,jdbcType=VARCHAR},	'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		and rw.pk_record=dt.pk_record
+		and rw.pk_recordrow=dt.pk_recordrow
+		and dt.del_flag='0'
+		<if test=" pkRecordRow!=null and pkRecordRow !='' ">
+			and dt.pk_recordrow = #{pkRecordRow,jdbcType=CHAR}
+		</if>
+		order by rw.pk_recordrow,dt.colno
+	</select>
+	<!-- 根据Pkpv查询挂号信息 -->
+	<select id="queryRegisInfo" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.emr.nis.vo.RegisInfoParam">
+		select pv.*,pt.dt_tglevel,pi.code_pi,er.date_end as outDate
+		from pv_encounter pv
+		left join em_pt pt on pt.pk_pv=pv.pk_pv
+		left join
+		pv_er er on er.pk_pv=pv.pk_pv
+		left join pi_master pi on
+		pi.pk_pi=pv.pk_pi
+		where
+		pv.del_flag='0'
+		and pv.pk_pv =
+		#{pkPv,jdbcType=VARCHAR}
+	</select>
+
+
+	<resultMap id="ResultMapMedDoc"
+		type="com.zebone.nhis.common.module.emr.rec.rec.EmrMedDoc">
+		<id column="PK_DOC" jdbcType="CHAR" property="pkDoc" />
+		<result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg" />
+		<result column="DOC_DATA" jdbcType="BLOB" property="docData" />
+		<result column="DOC_XML" jdbcType="CLOB" property="docXml" />
+		<result column="DOC_DATA_BAK" jdbcType="BLOB" property="docDataBak" />
+		<result column="DOC_XML_BAK" jdbcType="CLOB" property="docXmlBak" />
+		<result column="DEL_FLAG" jdbcType="CHAR" property="delFlag" />
+		<result column="CREATOR" jdbcType="VARCHAR" property="creator" />
+		<result column="CREATE_TIME" jdbcType="DATE" property="createTime" />
+		<result column="TS" jdbcType="DATE" property="ts" />
+		<result column="FILE_NAME" jdbcType="VARCHAR" property="fileName" />
+		<result column="FILE_PATH" jdbcType="VARCHAR" property="filePath" />
+		<result column="FILE_TYPE" jdbcType="VARCHAR" property="fileType" />
+	</resultMap>
+	<select id="queryEmrMedDoc" resultMap="ResultMapMedDoc">
+		SELECT
+		*
+		FROM
+		EMR_MED_DOC
+		WHERE
+		PK_DOC = #{pkDoc,jdbcType=CHAR}
+	</select>
+	<select id="queryNdRecordAndColText" resultType="com.zebone.nhis.emr.nis.vo.RecordDtAndColTextVo">
+		select
+		dt.*,design.CONTRAST_FIELD
+		from nd_record_dt dt
+		left join
+		EMR_NS_ADDREC_DESIGN design on
+		dt.colname=design.FIELD
+		where
+		dt.pk_record=#{pkRecord,jdbcType=VARCHAR}
+		and
+		dt.pk_recordrow=#{pkRecordrow,jdbcType=VARCHAR} and dt.del_flag='0'
+	</select>
+	
+	<select id="queryPatListByLaborDept" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrPatList">
+		select pat.* from view_emr_pat_list pat
+		inner join PV_LABOR pvLabor on pvLabor.PK_PV=pat.PK_PV
+		where 1=1 and pat.CODE_IP not like '%B%'
+		<if test="flagIn != null and flagIn != ''">
+			and pat.FLAG_IN=#{flagIn,jdbcType=VARCHAR} 
+		</if>
+		<if test="euStatus != null and euStatus != ''">
+			${euStatus}
+		</if>
+		<if test="dateBegin != null and dateBegin != ''">
+			and pat.date_end &gt;=#{dateBegin,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and pat.date_end &lt;=#{dateEnd,jdbcType=VARCHAR}
+		</if>
+		 union all
+		 SELECT
+		  pv.*
+		FROM
+		pv_function fun
+		INNER JOIN view_emr_pat_list pv ON pv.pk_pv = fun.pk_pv
+		WHERE
+		pv.eu_status_pv = '1'
+		and fun.pk_dept = 'af419e39a2a14b3fa7b50518e495e637' and pv.CODE_IP not like '%B%'
+		<if test="flagIn != null and flagIn != ''">
+			and pv.FLAG_IN=#{flagIn,jdbcType=VARCHAR} 
+		</if>
+		<if test="dateBegin != null and dateBegin != ''">
+			and pv.date_end &gt;=#{dateBegin,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			and pv.date_end &lt;=#{dateEnd,jdbcType=VARCHAR}
+		</if>
+	</select>
+	
+	<select id="queryPvLaborRec" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			 pk_laborrec,
+			  pk_org,
+			  pk_pv,
+			  pre_weeks,
+			  date_labor,
+			  flag_lc,
+			  break_mode,
+			  date_allbreak,
+			  am_fluid,
+			  other_fluid,
+			  date_pla,
+			  pla_out_mode2,
+			  pla_out_mode,
+			  pla_out_reason,
+			  dur_first,
+			  dur_second,
+			  dur_thrid,
+			  dur_all,
+			  per_about,
+			  per_other,
+			  per_stit,
+			  per_stit_other,
+			  per_stit_num,
+			  upc_break,
+			  upc_break_part,
+			  upc_break_deep,
+			  upc_other,
+			  other_fnum,
+			  name_oper,
+			  spec_oper,
+			  num_vg,
+			  num_oper,
+			  num_day,
+			  pk_diag,
+			  note,
+			  dt_excep,
+			  eu_hb,
+			  pk_emp_oper,
+			  name_emp_oper,
+			  pk_emp_js,
+			  name_emp_js,
+			  pk_emp_hy,
+			  name_emp_hy,
+			  eu_place,
+			  place_oth,
+			  eu_fetus,
+			  flag_risk,
+			  flag_comp,
+			  desc_comp,
+			  flag_ligation,
+			  date_tolocal,
+			  tel_spouse,
+			  creator,
+			  create_time,
+			  modifier,
+			  modify_time,
+			  del_flag,
+			  ts
+		 from pv_labor_rec where pk_pv = #{pkPv,jdbcType=CHAR} and del_flag = '0' 
+	</select>
+	<select id="queryPvInfant" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			  inf.*,
+		      piLabor.name_hus fa_name,<!-- 丈夫名字 -->
+		      defOccuH.name fa_occu,<!-- 丈夫职业 -->
+		      defBloodH.name fa_blood,<!-- 丈夫血型 -->
+		      piLabor.addr_cur_hus fa_addr,<!-- 丈夫地址 -->
+		      pimas.NAME_PI ma_name,<!-- 妈妈姓名 -->
+		      defOccu.NAME ma_occu,<!-- 妈妈职业 -->
+		      defBlood.name ma_blood,<!-- 妈妈血型 -->
+		      pimas.ADDR_CUR ma_addr <!-- 妈妈地址 -->
+		from pv_infant inf
+		left join pv_encounter pv on pv.pk_pv=inf.pk_pv_infant
+		left outer join pi_labor piLabor on inf.pk_pi=piLabor.pk_pi
+    	left outer join PI_MASTER pimas on inf.PK_PI=pimas.PK_PI
+    	left join bd_defdoc defOccu on defOccu.code = pimas.dt_occu and defOccu.code_defdoclist = '000010'
+		left join bd_defdoc defBlood on defBlood.code = pimas.dt_blood_abo and defBlood.code_defdoclist = '000004'
+		left join bd_defdoc defOccuH on defOccuh.code = piLabor.dt_occu_hus and defOccuH.code_defdoclist = '000010'
+		left join bd_defdoc defBloodH on defBloodH.code = piLabor.dt_blood_hus and defBloodH.code_defdoclist = '000004'
+		where 1=1 
+		<if test="pkLaborrec != null  and  pkLaborrec != ''">
+			 and inf.pk_laborrec = #{pkLaborrec,jdbcType=CHAR}
+		</if>
+		<if test="pkInfant != null  and  pkInfant != ''">
+			 and inf.pk_infant = #{pkInfant,jdbcType=CHAR}
+		</if>
+		     and inf.del_flag = '0' 
+		   order by inf.sort_no
+	</select>
+	
+	<select id="queryPvInfantGrade" parameterType="java.util.Map" resultType="DynaBean">
+		select
+		  doc.pk_defdoc as pk_item,
+		  doc.name,
+		  doc.memo,
+		  gra.pk_infant,
+		  gra.pk_infantgrade,
+		  gra.pk_pv,
+		  gra.score_five,
+		  gra.score_one,
+		  gra.score_ten
+		from bd_defdoc doc left join pv_infant_grade gra on doc.pk_defdoc = gra.pk_item and gra.pk_infant = #{pkInfant,jdbcType=CHAR}
+		where doc.code_defdoclist = '140006'
+		order by doc.code
+	</select>
+</mapper>

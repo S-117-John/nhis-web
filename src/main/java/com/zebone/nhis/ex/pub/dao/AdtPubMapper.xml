@@ -1,0 +1,1250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ex.pub.dao.AdtPubMapper">
+    <!-- 查询未停未作废医嘱 -->
+    <select id="queryOrdByPkPv" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.bed_no,
+        pv.name_pi,
+        pi.code_ip,
+        ord.pk_cnord,
+        ord.eu_always,
+        ord.date_start,
+        ord.name_ord,
+        ord.name_emp_input,
+        ord.date_chk,
+        ord.date_last_ex,
+        ord.date_stop,
+        ord.flag_stop_chk,
+        ord.flag_erase_chk,
+        ord.pk_dept_exec,
+        ord.pk_dept,
+        ord.pk_dept_ns,
+        ord.eu_status_ord,
+        ord.ordsn,
+        ord.ordsn_parent,
+        dept.name_dept   name_dept_ord,
+        deptEx.name_dept name_dept_ex,
+        deptNs.name_dept name_dept_ns,
+        type.name        ordtype
+        from cn_order ord
+        inner join pv_encounter pv on pv.pk_pv = ord.pk_pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        left join bd_ou_dept dept on dept.pk_dept = ord.pk_dept
+        left join bd_ou_dept deptNs on deptNs.pk_dept = ord.pk_dept_ns
+        left join bd_ou_dept deptEx on deptEx.pk_dept = ord.pk_dept_exec
+        left join bd_ordtype type on type.code = ord.code_ordtype
+        where ord.flag_erase = '0'
+        and ord.del_flag = '0'
+        <!-- isDeptChg 是否为转科校验，不允许医嘱类型为出院或死亡的患者转科-->
+        and ((ord.eu_always = '0' and ord.flag_stop_chk = '0')
+        <if test="isNoStop != 1">
+            or (ord.eu_always = '1' and ord.date_last_ex is null)
+        </if>
+        <if test="isDeptChg == 1">
+            or (ord.CODE_ORDTYPE in ('1102', '1103'))
+        </if>
+        )
+        <if test="pkPv != null  and pkPv != ''">
+            and ord.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="isDeptChg == 1">
+            and dept.DT_DEPTTYPE != '0310'
+        </if>
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and ord.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        <if test="pkDeptNs != null  and pkDeptNs != ''">
+            and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+    </select>
+
+
+    <!-- 查询作废未核对的医嘱 -->
+    <select id="queryOrdReaseByPkPv" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.bed_no,
+        pv.name_pi,
+        pi.code_ip,
+        ord.pk_cnord,
+        ord.eu_always,
+        ord.date_start,
+        ord.name_ord,
+        ord.name_emp_input,
+        ord.date_chk,
+        ord.date_last_ex,
+        ord.date_stop,
+        ord.flag_stop_chk,
+        ord.flag_erase_chk,
+        ord.pk_dept_exec,
+        ord.pk_dept,
+        ord.pk_dept_ns,
+        ord.eu_status_ord,
+        ord.ordsn,
+        ord.ordsn_parent,
+        dept.name_dept   name_dept_ord,
+        deptEx.name_dept name_dept_ex,
+        deptNs.name_dept name_dept_ns,
+        type.name        ordtype
+        from cn_order ord
+        inner join pv_encounter pv on pv.pk_pv = ord.pk_pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        left join bd_ou_dept dept on dept.pk_dept = ord.pk_dept
+        left join bd_ou_dept deptNs on deptNs.pk_dept = ord.pk_dept_ns
+        left join bd_ou_dept deptEx on deptEx.pk_dept = ord.pk_dept_exec
+        left join bd_ordtype type on type.code = ord.code_ordtype
+        where ord.flag_erase = '1'
+        and ord.del_flag = '0'
+        and ((ord.eu_always = '1' and flag_erase_chk = '0') and
+        (ord.CODE_ORDTYPE = '03' or CODE_ORDTYPE like '02%'))
+        <if test="pkPv != null  and pkPv != ''">
+            and ord.pk_pv = #{pkPv,jdbcType=VARCHAR}
+        </if>
+        <if test="isDeptChg == 1">
+            and dept.DT_DEPTTYPE != '0310'
+        </if>
+
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and ord.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+    </select>
+
+    <!-- 查询未停未作废检查检验 -->
+    <select id="queryRisByPkPv" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.bed_no,
+        pv.name_pi,
+        pi.code_ip,
+        ord.name_ord,
+        ord.code_apply,
+        ord.date_start,
+        ord.name_emp_input,
+        ord.ordsn,
+        ord.note_ord,
+        ord.pk_dept_ns,
+        ord.eu_status_ord status_ord,
+        exlist.pk_org_occ,
+        exlist.pk_dept_occ,
+        exlist.eu_status,
+        exlist.date_plan,
+        org.name_org      org_ex,
+        dept.name_dept    dept_ex,
+        deptNs.name_dept  dept_ns,
+        deptOrd.name_dept dept_ord,
+        type.name         ordtype,
+        lab.eu_status     status_lab,
+        ris.eu_status     status_ris,
+        trans.eu_status   status_trans,
+        cons.eu_status    status_cons
+        from ex_order_occ exlist
+        inner join cn_order ord on ord.pk_cnord = exlist.pk_cnord
+        inner join pv_encounter pv on pv.pk_pv = ord.pk_pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        inner join bd_ou_org org on exlist.pk_org_occ = org.pk_org
+        inner join bd_ou_dept dept on exlist.pk_dept_occ = dept.pk_dept
+        left join bd_ou_dept deptOrd on ord.pk_dept = deptOrd.pk_dept
+        left join bd_ou_dept deptNs on deptNs.pk_dept = ord.pk_dept_ns
+        left join cn_lab_apply lab on lab.pk_cnord = exlist.pk_cnord
+        left join cn_ris_apply ris on ris.pk_cnord = exlist.pk_cnord
+        left join cn_trans_apply trans on trans.pk_cnord = exlist.pk_cnord
+        left join cn_consult_apply cons on cons.pk_cnord = exlist.pk_cnord
+        left join bd_ordtype type on type.code = ord.code_ordtype
+        where ord.flag_durg = '0'
+        and ord.code_ordtype not like '04%'
+        and exlist.eu_status = '0'
+        and not exlist.pk_dept_occ = #{pkDeptOcc,jdbcType=CHAR}
+        <if test="pkPv != null  and pkPv != ''">
+            and exlist.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and exlist.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        <if test="pkDeptNs != null  and pkDeptNs != ''">
+            and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+    </select>
+
+    <!-- 查询未完成手术-->
+    <select id="queryOpByPkPv" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.bed_no,
+        pv.name_pi,
+        pi.code_ip,
+        ord.name_ord,
+        ord.ordsn,
+        ord.code_apply,
+        ord.date_start,
+        ord.pk_org_exec,
+        ord.pk_dept_exec,
+        ord.eu_status_ord,
+        ord.pk_dept,
+        ord.pk_dept_ns,
+        ord.pk_cnord,
+        op.eu_status,
+        op.flag_finish_anae,
+        op.dt_anae,
+        org.name_org      org_ex,
+        dept.name_dept    dept_ex,
+        deptOrd.name_dept dept_ord,
+        deptNs.name_dept  dept_ns
+        from cn_op_apply op
+        inner join cn_order ord on ord.pk_cnord = op.pk_cnord
+        inner join pv_encounter pv on pv.pk_pv = ord.pk_pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        inner join bd_ou_org org on ord.pk_org_exec = org.pk_org
+        inner join bd_ou_dept dept on ord.pk_dept_exec = dept.pk_dept
+        inner join bd_ou_dept deptOrd on ord.pk_dept = deptOrd.pk_dept
+        left join bd_ou_dept deptNs on deptNs.pk_dept = ord.pk_dept_ns
+        where ord.code_ordtype = '04'
+        <!-- 1908 【中山博爱】-【住院护士站-出院】出院时，如果手术申请的麻醉方式=999（不麻醉）不做限制 -->
+        and (op.eu_status != '5' or (op.flag_finish_anae = '0' and op.dt_anae != '999'))
+        and ord.eu_status_ord != '9'
+        <if test="pkPv != null  and pkPv != ''">
+            and ord.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="isDeptChg == 1">
+            and dept.DT_DEPTTYPE != '0310'
+        </if>
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and ord.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        <if test="pkDeptNs != null  and pkDeptNs != ''">
+            and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+    </select>
+    <!-- 根据就诊主键查询未执行的药品请领单 -->
+    <select id="queryPdapByPkPv" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.bed_no,
+        pv.name_pi,
+        pi.code_ip,
+        ap.date_ap,
+        ap.code_apply,
+        ap.name_emp_ap,
+        ap.pk_dept_ap,
+        ord.ordsn,
+        deptNs.name_dept                             name_dept_ap,
+        dt.pk_pd,
+        dt.flag_pivas,
+        dt.eu_direct,
+        dt.flag_stop || dt.EU_RESULT || dt.eu_direct eu_status,
+        pd.name,
+        pd.spec,
+        dept.name_dept                               name_dept_ex,
+        sum(dt.quan_pack)                            quan,
+        unit.name                                    unitname
+        from ex_pd_apply ap
+        inner join ex_pd_apply_detail dt on dt.pk_pdap = ap.pk_pdap
+        inner join cn_order ord on ord.pk_cnord = dt.pk_cnord
+        inner join pv_encounter pv on pv.pk_pv = ord.pk_pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        inner join bd_pd pd on pd.pk_pd = dt.pk_pd
+        left join bd_unit unit on unit.pk_unit = dt.pk_unit
+        left join bd_ou_dept dept on dept.pk_dept = ap.pk_dept_de
+        left join bd_ou_dept deptNs on deptNs.pk_dept = ap.pk_dept_ap
+        where ap.eu_aptype = '0'
+        and ap.flag_cancel = '0'
+        and dt.flag_finish = '0'
+        and dt.flag_self = '0'
+        and dt.flag_base = '0'
+        and ((dt.flag_stop = '0' and dt.flag_canc = '0')
+        or (dt.flag_stop = '1' and dt.eu_result = '0' and dt.eu_direct = '1'))
+        <if test="pkPv != null  and pkPv != ''">
+            and ord.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and ord.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        <if test="pkDeptNs != null  and pkDeptNs != ''">
+            and ap.pk_dept_ap = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        group by pv.bed_no, pv.name_pi, pi.code_ip, ap.date_ap, ap.code_apply, ap.name_emp_ap, dt.pk_pd, dt.flag_pivas
+        , pd.name
+        , ap.pk_dept_ap, deptNs.name_dept, ord.ordsn, pd.spec, dept.name_dept, unit.name, dt.EU_RESULT
+        , dt.flag_stop, dt.eu_direct
+    </select>
+
+    <!-- 根据就诊主键查询包床记录,不含婴儿床位记录 -->
+    <select id="queryPacketBedByPv" parameterType="java.util.Map" resultType="DynaBean">
+        select bed.code, bed.name, dept.name_dept
+        from bd_res_bed bed
+        inner join bd_ou_dept dept
+        on dept.pk_dept = bed.pk_ward
+        where exists(select 1
+        from pv_encounter pv
+        where pv.pk_pi = bed.pk_pi
+        and not pv.bed_no = bed.code
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            and pv.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        <if test="pkPv != null and pkPv != ''">
+            and pv.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        )
+        and bed.dt_bedtype != '09'
+        <if test="isDeptChg == 1">
+            and dept.DT_DEPTTYPE != '0310'
+        </if>
+
+        and bed.pk_ward = #{pkDeptOcc,jdbcType=CHAR}
+    </select>
+
+    <!-- 根据就诊主键，当前病区，查询未执行执行单 -->
+    <select id="queryExlistByPv" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.pub.vo.ExlistPubVo">
+        select pv.pk_pv,
+        pv.bed_no,
+        pv.name_pi,
+        pi.code_ip,
+        pv.pk_pi,
+        pv.eu_pvtype,
+        pv.pk_dept                                                   as pk_dept_pv,
+        exlist.pk_exocc,
+        exlist.date_plan,
+        exlist.date_occ,
+        exlist.quan_occ,
+        exlist.name_emp_occ,
+        exlist.pk_unit,
+        exlist.eu_status,
+        unit.name                                                    as name_unit,
+        dept.name_dept                                               as name_dept_occ,
+        org.name_org                                                 as name_org_occ,
+        exlist.flag_self,
+        exlist.flag_base,
+        exlist.flag_pivas,
+        ord.date_start,
+        ord.date_stop,
+        ord.first_num,
+        ord.last_num,
+        ord.flag_durg,
+        ord.name_ord,
+        ord.flag_bl,
+        ord.infant_no,
+        ord.pk_cnord,
+        ord.pk_ord,
+        ord.pk_pres,
+        ord.pk_org,
+        ord.pk_dept,
+        namedept.name_dept,
+        ord.pk_dept_exec,
+        ord.pk_dept_ns,
+        exlist.pk_org_occ,
+        exlist.pack_size,
+        ord.code_supply,
+        ord.ordsn,
+        ord.eu_st,
+        ord.pk_emp_ord,
+        ord.name_emp_ord,
+        ord.ordsn_parent,
+        supply.flag_st,
+        freq.name                                                    as name_freq,
+        supply.name                                                  as name_supply,
+        ord.eu_always,
+        case when exlist.pk_pdapdt is not null then '1' else '0' end as flag_ap,
+        case when dt.flag_de = '1' then '1' else '0' end             as flag_de,
+        case when exlist.pk_pdback is not null then '1' else '0' end as flag_back,
+        case when dtBk.flag_de = '1' then '1' else '0' end           as flag_rtn,
+        type.name                                                       ordtype
+        from ex_order_occ exlist
+        inner join cn_order ord on ord.pk_cnord = exlist.pk_cnord
+        inner join pv_encounter pv on pv.pk_pv = exlist.pk_pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        left join bd_unit unit on unit.pk_unit = exlist.pk_unit
+        left join bd_ou_dept dept on dept.pk_dept = exlist.pk_dept_occ
+        left join bd_ou_dept namedept on namedept.pk_dept = ord.pk_dept
+        left join bd_ou_org org on org.pk_org = exlist.pk_org_occ
+        left join bd_term_freq freq on freq.code = ord.code_freq
+        left join bd_supply supply on supply.code = ord.code_supply
+        left join ex_pd_apply_detail dt on dt.pk_pdapdt = exlist.pk_pdapdt and dt.del_flag = '0'
+        left join ex_pd_apply_detail dtBk on dtBk.pk_pdapdt = exlist.pk_pdback and dtBk.del_flag = '0'
+        left join bd_ordtype type on type.code = ord.code_ordtype
+        where exlist.del_flag = '0'
+        and ((ord.flag_durg = '0' and
+        exlist.pk_dept_occ = #{pkDeptOcc,jdbcType=CHAR} <!-- 非药品，执行科室为当前科室，未执行、未作废、提前执行 -->
+        and exlist.flag_canc = '0'
+        and (exlist.eu_status = '0'
+        ))
+        or (ord.flag_durg = '1'
+        and ( (exlist.flag_canc = '0' and exlist.eu_status = '0') <!-- 药品，未执行、未取消 -->
+        or(exlist.flag_canc = '1' and exlist.eu_status = '9' <!--非基数、非自备药品，取消、未退药 -->
+        and (ord.code_supply not like '01%' and supply.dt_excardtype &lt;&gt; '2')
+        and exlist.flag_base = '0' and exlist.flag_self = '0'
+        and exlist.pk_pdapdt is not null and exlist.pk_pdback is null)))
+        <if test="dateEndDay != null  and dateEndDay != ''">
+            <!-- 出院时校验是否存在超出住院日执行单 -->
+            or (to_char(exlist.date_plan, 'YYYYMMDD') &gt; #{dateEndDay} and exlist.eu_status = '1')
+        </if>
+        )
+        <if test="pkPv != null  and pkPv != ''">
+            and exlist.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and exlist.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        <if test="pkDeptNs != null  and pkDeptNs != ''">
+            and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        order by pv.bed_no, ord.ordsn_parent, exlist.date_plan, ord.ordsn
+    </select>
+    <!-- 根据就诊主键查询临床路径记录 -->
+    <select id="queryCpByPv" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.bed_no,
+        pv.name_pi,
+        pi.code_ip,
+        cp.*
+        from cp_rec cp
+        inner join pv_encounter pv on pv.pk_pv = cp.pk_pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        where cp.eu_status = 1
+        and cp.del_flag = 0
+        <if test="pkPv != null  and pkPv != ''">
+            and cp.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and cp.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+    </select>
+
+    <!-- 根据就诊主键查询未退诊同病区的母亲 -->
+    <select id="queryInfByPv" parameterType="java.util.Map" resultType="DynaBean">
+        select inf.*
+        from PV_INFANT inf
+        inner join PV_ENCOUNTER pvMa on pvMa.PK_PV = inf.PK_PV
+        inner join PV_ENCOUNTER pvInf
+        on pvInf.PK_PV = inf.PK_PV_INFANT and pvInf.FLAG_IN = '1' and pvInf.EU_STATUS = '1'
+        <!-- and pvInf.PK_DEPT_NS = pvMa.PK_DEPT_NS -->
+        where inf.PK_PV = #{pkPv,jdbcType=CHAR}
+    </select>
+
+
+    <!-- 根据就诊主键查询不符合医保规范的护理费用 -->
+    <select id="queryNsCgChkByPv" parameterType="java.util.Map" resultType="DynaBean">
+        with
+        nursing as(
+        select case name_unit when '日' then quan else case when quan >= 13 then 1 else 0 end end quan_day,
+        * from (
+        select bl.PK_PV,
+        pv.bed_no,
+        pv.name_pi,
+        pi.code_ip,
+        m.code,
+        convert(varchar (10), bl.DATE_HAP, 120) date_hap,
+        sum(bl.QUAN)                            quan,
+        sum(bl.AMOUNT)                          amount,
+        bl.name_cg,
+        bl.spec,
+        bl.price_org,
+        u.NAME                                  name_unit,
+        '不符合医保规范的护理费用'                          note
+        from bd_ord_exclu_dt dt
+        inner join bd_ord_exclu m on m.PK_EXCLU = dt.PK_EXCLU
+        inner join BD_ORD_ITEM item on item.PK_ORD = dt.PK_ORD and item.DEL_FLAG = '0'
+        inner join BL_IP_DT bl on bl.PK_ITEM = item.PK_ITEM
+        inner join BD_UNIT u on u.PK_UNIT = bl.PK_UNIT
+        inner join pv_encounter pv on bl.pk_pv = pv.pk_pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        left join BL_SETTLE st on st.PK_SETTLE = bl.PK_SETTLE
+        left join BL_SETTLE stb on stb.PK_SETTLE_CANC = st.PK_SETTLE
+        where bl.QUAN &gt; 0
+        and not exists(select 1 from bl_ip_dt b where bl.pk_cgip = b.pk_cgip_back)
+        and ( st.FLAG_CANC = '0' or (stb.PK_SETTLE is null and st.PK_SETTLE_CANC is NULL ) )
+        <if test="pkPv != null  and pkPv != ''">
+            and bl.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and bl.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        group by bl.PK_PV, m.code, convert(varchar (10), bl.DATE_HAP, 120), bl.name_cg, u.NAME, pv.bed_no, pv.name_pi,
+        pi.code_ip, bl.spec, bl.price_org) t)
+        select bed_no,
+        name_pi,
+        code_ip,
+        name_cg,
+        date_hap,
+        spec,
+        quan,
+        amount,
+        price_org,
+        name_unit,
+        note
+        from nursing
+        where date_hap in
+        (select date_hap from nursing where CODE = '0202' group by pk_pv,date_hap having sum(quan_day) > 1)
+        and CODE = '0202'
+        union
+        select bed_no,
+        name_pi,
+        code_ip,
+        name_cg,
+        date_hap,
+        spec,
+        quan,
+        amount,
+        price_org,
+        name_unit,
+        note
+        from nursing
+        where date_hap in
+        (select date_hap from nursing where CODE = '0206' group by pk_pv,date_hap having count(quan_day) > 1)
+        and CODE = '0206'
+    </select>
+
+    <select id="queryNsCgChkByPvForOrcl" parameterType="java.util.Map" resultType="DynaBean">
+        with
+        nursing as(
+        select case name_unit when '日' then quan else case when quan >= 13 then 1 else 0 end end quan_day,
+        t.* from (
+        select bl.PK_PV,
+        pv.bed_no,
+        pv.name_pi,
+        pi.code_ip,
+        m.code,
+        to_date(bl.DATE_HAP, 'yyyy-MM-dd') date_hap,
+        sum(bl.QUAN)                       quan,
+        sum(bl.AMOUNT)                     amount,
+        bl.name_cg,
+        bl.spec,
+        bl.price_org,
+        u.NAME                             name_unit,
+        '不符合医保规范的护理费用'                     note
+        from bd_ord_exclu_dt dt
+        inner join bd_ord_exclu m on m.PK_EXCLU = dt.PK_EXCLU
+        inner join BD_ORD_ITEM item on item.PK_ORD = dt.PK_ORD and item.DEL_FLAG = '0'
+        inner join BL_IP_DT bl on bl.PK_ITEM = item.PK_ITEM
+        inner join BD_UNIT u on u.PK_UNIT = bl.PK_UNIT
+        inner join pv_encounter pv on bl.pk_pv = pv.pk_pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        left join BL_SETTLE st on st.PK_SETTLE = bl.PK_SETTLE
+        left join BL_SETTLE stb on stb.PK_SETTLE_CANC = st.PK_SETTLE
+        where bl.QUAN &gt; 0
+        and not exists(select 1 from bl_ip_dt b where bl.pk_cgip = b.pk_cgip_back)
+        and ( st.FLAG_CANC = '0' or (stb.PK_SETTLE is null and st.PK_SETTLE_CANC is NULL ) )
+        <if test="pkPv != null  and pkPv != ''">
+            and bl.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and bl.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        group by bl.PK_PV, m.code, to_date(bl.DATE_HAP, 'yyyy-MM-dd'), bl.name_cg, u.NAME, pv.bed_no, pv.name_pi,
+        pi.code_ip, bl.spec, bl.price_org) t)
+        select bed_no,
+        name_pi,
+        code_ip,
+        name_cg,
+        date_hap,
+        spec,
+        quan,
+        amount,
+        price_org,
+        name_unit,
+        note
+        from nursing
+        where date_hap in
+        (select date_hap from nursing where CODE = '0202' group by date_hap having sum(quan_day) > 1)
+        and CODE = '0202'
+        union
+        select bed_no,
+        name_pi,
+        code_ip,
+        name_cg,
+        date_hap,
+        spec,
+        quan,
+        amount,
+        price_org,
+        name_unit,
+        note
+        from nursing
+        where date_hap in
+        (select date_hap from nursing where CODE = '0206' group by date_hap having count(quan_day) > 1)
+        and CODE = '0206'
+    </select>
+    <!-- 根据就诊主键、当前日期，查询医保费用核查信息 -->
+    <select id="queryHpCgChkByPv" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.bed_no,
+        pv.name_pi,
+        pi.code_ip,
+        bl.name_cg,
+        bl.date_cg,
+        bl.date_hap,
+        bl.spec,
+        <!-- bl.quan,bl.amount,-->
+        (bl.quan + nvl(backq.quan, 0))     quan,
+        (bl.amount + nvl(backq.amount, 0)) amount,
+        bl.price_org,
+        ut.name                            name_unit,
+        bl.pk_cgip,
+        '出院日不可收取该费用'                       note
+        from bl_ip_dt bl
+        inner join pv_encounter pv on pv.pk_pv = bl.pk_pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        inner join bd_item item on bl.pk_item = item.pk_item
+        inner join bd_unit ut on bl.pk_unit = ut.pk_unit
+        inner join bd_dictattr attr on item.pk_item = attr.pk_dict
+        inner join bd_dictattr_temp tmp
+        on attr.pk_dictattrtemp = tmp.pk_dictattrtemp and tmp.dt_dicttype = '01'
+        left join (select sum(back.quan) quan, sum(back.amount) amount, back.pk_cgip_back
+        from bl_ip_dt back
+        where back.del_flag = '0'
+        and back.pk_cgip_back is not null
+        group by back.pk_cgip_back) backq on backq.pk_cgip_back = bl.pk_cgip
+        where bl.del_flag = '0'
+        and bl.flag_settle = '0'
+        and to_char(pv.date_begin, 'yyyyMMdd') &lt;&gt; to_char(bl.date_hap, 'yyyyMMdd')
+        and tmp.code_attr = '0103'
+        and attr.val_attr = '1'
+        and bl.pk_cgip_back is null
+        and bl.quan + nvl(backq.quan, 0) > 0
+        and bl.date_hap &gt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        <if test="pkPv != null  and pkPv != ''">
+            and bl.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and bl.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+
+        union
+
+
+        SELECT pv.bed_no,
+        pv.name_pi,
+        pi.code_ip,
+        cg.name_cg,
+        cg.date_cg,
+        cg.date_hap,
+        cg.spec,
+        (cg.quan + nvl(backq.quan, 0))     quan,
+        (cg.amount + nvl(backq.amount, 0)) amount,
+        cg.price_org,
+        ut.NAME                            name_unit,
+        cg.pk_cgip,
+        '医保限制费用'
+        FROM bl_ip_dt cg
+        inner join bd_unit ut on cg.pk_unit = ut.pk_unit
+        inner join pv_encounter pv on cg.pk_pv = pv.pk_pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        inner join bd_hp hp on pv.pk_insu = hp.pk_hp
+        inner join bd_dictattr att on cg.pk_item = att.pk_dict and att.code_attr = '0111'
+        left join (select sum(back.quan) quan, sum(back.amount) amount, back.pk_cgip_back
+        from bl_ip_dt back
+        where back.del_flag = '0'
+        and back.pk_cgip_back is not null
+        group by back.pk_cgip_back) backq on backq.pk_cgip_back = cg.pk_cgip
+
+        where cg.del_flag = '0'
+        and cg.flag_settle = '0'
+        and cg.pk_pv = #{pkPv,jdbcType=CHAR}
+        <if test='dbType == "oracle"'>
+            and instr(att.val_attr, ',' || hp.code || ',') > 0
+        </if>
+        <if test='dbType == "sqlserver"'>
+            and charindex(',' || hp.code || ',', att.val_attr) > 0
+        </if>
+
+        and cg.pk_cgip_back is null
+        and cg.quan + nvl(backq.quan, 0) > 0
+    </select>
+
+    <!-- 根据就诊主键、收费控制，查询费用多收明细 -->
+    <select id="queryGroupCgChkByPv" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.bed_no,
+        pv.name_pi,
+        pi.code_ip,
+        dt.NAME_CG,
+        dt.SPEC,
+        dt.PRICE,
+        u.NAME       name_unit,
+        t.SORTNO,
+        t.NAME_BLC,
+        t.NOTE,
+        t.EU_TYPE,
+        t.CNT,
+        t.DAYS,
+        t.INC,
+        sum(dt.QUAN) quan
+        from BL_IP_DT dt
+        inner join PV_ENCOUNTER pv on pv.PK_PV = dt.PK_PV
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        inner join BD_BL_CTRL ctrl on ctrl.PK_ITEM = dt.PK_ITEM and dt.DEL_FLAG = '0'
+        inner join (select cg.pk_pv,
+        bcf.note,
+        bcf.sortno,
+        bcf.inc,
+        bcf.eu_type,
+        bcf.name_blc,
+        (case bcf.EU_TYPE
+        when '0' then (case to_date(#{dateEndDay}, 'yyyymmdd') -
+        <if test='isChkNs == null  or isChkNs=="" or isChkNs!="2"'>
+            to_date(to_char(pv.date_begin, 'yyyymmdd'), 'yyyymmdd')
+        </if>
+        <if test='isChkNs != null and "2".equals(isChkNs)'>
+            to_date(to_char(pv.date_admit, 'yyyymmdd'), 'yyyymmdd')
+        </if>
+        when 0 then 1
+        else to_date(#{dateEndDay}, 'yyyymmdd') -
+        <if test='isChkNs == null  or isChkNs=="" or isChkNs!="2"'>
+            to_date(to_char(pv.date_begin, 'yyyymmdd'), 'yyyymmdd') end)
+        </if>
+        <if test='isChkNs != null and "2".equals(isChkNs)'>
+            to_date(to_char(pv.date_admit, 'yyyymmdd'), 'yyyymmdd') end)
+        </if>
+        else 0 end) + nvl(bcf.inc, 0) CNT,
+        case to_date(#{dateEndDay}, 'yyyymmdd') -
+        <if test='isChkNs == null  or isChkNs=="" or isChkNs!="2"'>
+            to_date(to_char(pv.date_begin, 'yyyymmdd'), 'yyyymmdd')
+        </if>
+        <if test='isChkNs != null and "2".equals(isChkNs)'>
+            to_date(to_char(pv.date_admit, 'yyyymmdd'), 'yyyymmdd')
+        </if>
+        when 0 then 1
+        else to_date(#{dateEndDay}, 'yyyymmdd') -
+        <if test='isChkNs == null  or isChkNs=="" or isChkNs!="2"'>
+            to_date(to_char(pv.date_begin, 'yyyymmdd'), 'yyyymmdd') end DAYS,
+        </if>
+        <if test='isChkNs != null and "2".equals(isChkNs)'>
+            to_date(to_char(pv.date_admit, 'yyyymmdd'), 'yyyymmdd') end DAYS,
+        </if>
+        sum(cg.quan)  QUAN
+        from bl_ip_dt cg
+        inner join pv_encounter pv on pv.pk_pv = cg.pk_pv
+        inner join bd_bl_ctrl bc
+        on cg.pk_item = bc.pk_item and bc.flag_chd = '1' and bc.del_flag = '0'
+        inner join bd_bl_ctrl bcf
+        on bcf.sortno = bc.sortno and bcf.flag_chd = '0' and bcf.del_flag = '0'
+        where cg.del_flag = '0'
+        <if test="pkPv != null  and pkPv != ''">
+            and cg.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and cg.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        <if test='isChkNs == null  or isChkNs=="" or isChkNs!="2"'>
+            group by cg.pk_pv, bcf.name_blc, bcf.note, bcf.sortno, bcf.inc, bcf.eu_type, pv.date_begin
+        </if>
+        <if test='isChkNs != null and "2".equals(isChkNs)'>
+            group by cg.pk_pv, bcf.name_blc, bcf.note, bcf.sortno, bcf.inc, bcf.eu_type, pv.date_admit
+        </if>
+        ) t on t.SORTNO = ctrl.SORTNO and t.QUAN &gt; t.CNT
+        left join bd_unit u on dt.pk_unit = u.pk_unit
+        where dt.del_flag = '0'
+        <if test="pkPv != null  and pkPv != ''">
+            and dt.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and dt.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        group by pv.bed_no, pv.name_pi, pi.code_ip, dt.NAME_CG, dt.SPEC, dt.PRICE, u.NAME, t.SORTNO, t.NAME_BLC, t.NOTE,
+        t.EU_TYPE, t.CNT, t.INC, t.DAYS
+    </select>
+
+    <select id="queryGroupCgChkByPvForSql" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.bed_no,
+        pv.name_pi,
+        pi.code_ip,
+        dt.NAME_CG,
+        dt.SPEC,
+        dt.PRICE,
+        u.NAME       name_unit,
+        t.SORTNO,
+        t.NAME_BLC,
+        t.NOTE,
+        t.EU_TYPE,
+        t.CNT,
+        t.DAYS,
+        t.INC,
+        sum(dt.QUAN) quan
+        from BL_IP_DT dt
+        inner join PV_ENCOUNTER pv on pv.PK_PV = dt.PK_PV
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        inner join BD_BL_CTRL ctrl on ctrl.PK_ITEM = dt.PK_ITEM and dt.DEL_FLAG = '0'
+        inner join (select cg.pk_pv,
+        bcf.note,
+        bcf.sortno,
+        bcf.inc,
+        bcf.eu_type,
+        bcf.name_blc,
+        (case bcf.EU_TYPE
+        when '0' then
+        <if test='isChkNs == null  or isChkNs=="" or isChkNs!="2"'>
+            (case datediff(day, CONVERT(datetime, pv.date_begin, 112),))
+        </if>
+        <if test='isChkNs != null and "2".equals(isChkNs)'>
+            (case datediff(day, CONVERT(datetime, pv.date_admit, 112),
+        </if>
+        CONVERT(datetime, #{dateEndDay}, 112))
+        when 0 then 1
+        <if test='isChkNs == null  or isChkNs=="" or isChkNs!="2"'>
+            else datediff(day, CONVERT(datetime, pv.date_begin, 112),
+        </if>
+        <if test='isChkNs != null and "2".equals(isChkNs)'>
+            else datediff(day, CONVERT(datetime, pv.date_admit, 112),
+        </if>
+        CONVERT(datetime, #{dateEndDay}, 112)) end)
+        else 0 end) + nvl(bcf.inc, 0)                            CNT,
+        <if test='isChkNs == null  or isChkNs=="" or isChkNs!="2"'>
+            case datediff(day, CONVERT(datetime, pv.date_begin, 112),
+        </if>
+        <if test='isChkNs != null and "2".equals(isChkNs)'>
+            case datediff(day, CONVERT(datetime, pv.date_admit, 112),
+        </if>
+        CONVERT(datetime, #{dateEndDay}, 112))
+        when 0 then 1
+        <if test='isChkNs == null  or isChkNs=="" or isChkNs!="2"'>
+            else datediff(day, CONVERT(datetime, pv.date_begin, 112),
+        </if>
+        <if test='isChkNs != null and "2".equals(isChkNs)'>
+            else datediff(day, CONVERT(datetime, pv.date_admit, 112),
+        </if>
+        CONVERT(datetime, #{dateEndDay}, 112)) end DAYS,
+        sum(cg.quan) QUAN
+        from bl_ip_dt cg
+        inner join pv_encounter pv on pv.pk_pv = cg.pk_pv
+        inner join bd_bl_ctrl bc
+        on cg.pk_item = bc.pk_item and bc.flag_chd = '1' and bc.del_flag = '0'
+        inner join bd_bl_ctrl bcf
+        on bcf.sortno = bc.sortno and bcf.flag_chd = '0' and bcf.del_flag = '0'
+        where cg.del_flag = '0'
+        <if test="pkPv != null  and pkPv != ''">
+            and cg.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and cg.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        <if test='isChkNs == null  or isChkNs=="" or isChkNs!="2"'>
+            group by cg.pk_pv, bcf.name_blc, bcf.note, bcf.sortno, bcf.inc, bcf.eu_type, pv.date_begin
+        </if>
+        <if test='isChkNs != null and "2".equals(isChkNs)'>
+            group by cg.pk_pv, bcf.name_blc, bcf.note, bcf.sortno, bcf.inc, bcf.eu_type, pv.date_admit
+        </if>
+        ) t on t.SORTNO = ctrl.SORTNO and t.QUAN &gt; t.CNT
+        left join bd_unit u on dt.pk_unit = u.pk_unit
+        where dt.del_flag = '0'
+        <if test="pkPv != null  and pkPv != ''">
+            and dt.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and dt.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        group by pv.bed_no, pv.name_pi, pi.code_ip, dt.NAME_CG, dt.SPEC, dt.PRICE, u.NAME, t.SORTNO, t.NAME_BLC, t.NOTE,
+        t.EU_TYPE, t.CNT, t.INC, t.DAYS
+    </select>
+
+    <!-- 查询数量大于50的收费项目 -->
+    <select id="queryNumByPk" parameterType="java.util.Map" resultType="DynaBean">
+        select dt.NAME_CG,
+        sum(dt.QUAN) NUM,
+        unit.NAME,
+        dt.PK_ITEM,
+        dt.PK_PV
+        from BL_IP_DT dt
+        inner join BD_UNIT unit on unit.PK_UNIT = dt.PK_UNIT
+        where dt.FLAG_PD = '0'
+        <if test="pkPv != null  and pkPv != ''">
+            and dt.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and dt.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        group by dt.NAME_CG, unit.NAME, dt.PK_ITEM, dt.PK_PV
+        having sum(dt.quan) >= 50
+    </select>
+
+
+    <!-- 查询未停未作废检查检验以及计费未做执行单 -->
+    <select id="queryRisByPkPvForBoAi" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.bed_no,
+        pv.name_pi,
+        pi.code_ip,
+        '' eu_status_apply,
+        '' val_attr,
+        ord.name_ord,
+        ord.code_apply,
+        ord.date_start,
+        ord.name_emp_input,
+        ord.ordsn,
+        ord.note_ord,
+        ord.pk_dept_ns,
+        ord.eu_status_ord status_ord,
+        exlist.pk_org_occ,
+        exlist.pk_dept_occ,
+        exlist.eu_status,
+        exlist.date_plan,
+        org.name_org      org_ex,
+        dept.name_dept    dept_ex,
+        deptNs.name_dept  dept_ns,
+        deptOrd.name_dept dept_ord,
+        type.name         ordtype,
+        lab.eu_status     status_lab,
+        ris.eu_status     status_ris,
+        trans.eu_status   status_trans,
+        cons.eu_status    status_cons,
+        '0'               flag_ris
+        from ex_order_occ exlist
+        inner join cn_order ord on ord.pk_cnord = exlist.pk_cnord
+        inner join pv_encounter pv on pv.pk_pv = ord.pk_pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        inner join bd_ou_org org on exlist.pk_org_occ = org.pk_org
+        inner join bd_ou_dept dept on exlist.pk_dept_occ = dept.pk_dept
+        left join bd_ou_dept deptOrd on ord.pk_dept = deptOrd.pk_dept
+        left join bd_ou_dept deptNs on deptNs.pk_dept = ord.pk_dept_ns
+        left join cn_lab_apply lab on lab.pk_cnord = exlist.pk_cnord
+        left join cn_ris_apply ris on ris.pk_cnord = exlist.pk_cnord
+        left join cn_trans_apply trans on trans.pk_cnord = exlist.pk_cnord
+        left join cn_consult_apply cons on cons.pk_cnord = exlist.pk_cnord
+        left join bd_ordtype type on type.code = ord.code_ordtype
+        where ord.flag_durg = '0'
+        and ord.code_ordtype not like '04%'
+        and exlist.eu_status = '0'
+        and not exlist.pk_dept_occ = #{pkDeptOcc,jdbcType=CHAR}
+        <if test="pkPv != null  and pkPv != ''">
+            and exlist.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and exlist.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        <if test="pkDeptNs != null  and pkDeptNs != ''">
+            and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        union all
+        select pv.bed_no,
+        pv.name_pi,
+        pi.code_ip,
+        app.eu_status eu_status_apply,
+        dict.val_attr,
+        cnord.NAME_ORD,
+        cnord.CODE_APPLY,
+        cnord.date_start,
+        cnord.name_emp_input,
+        cnord.ORDSN,
+        cnord.note_ord,
+        cnord.pk_dept_ns,
+        cnord.eu_status_ord status_ord,
+        occ.pk_org_occ,
+        occ.pk_dept_occ,
+        occ.eu_status,
+        occ.date_plan,
+        org.name_org        org_ex,
+        dept.name_dept      dept_ex,
+        deptNs.name_dept    dept_ns,
+        deptOrd.name_dept   dept_ord,
+        type.name           ordtype,
+        null                status_lab,
+        null                status_ris,
+        trans.eu_status     status_trans,
+        cons.eu_status      status_cons,
+        '1'                 flag_ris
+        from CN_ORDER cnord
+        inner join CN_LAB_APPLY app on app.PK_CNORD = cnord.PK_CNORD
+        INNER JOIN BD_ORD ord ON ord.pk_ord = cnord.pk_ord
+        inner join EX_ORDER_OCC occ on occ.PK_CNORD = cnord.PK_CNORD
+        INNER JOIN pv_encounter pv ON pv.pk_pv = cnord.pk_pv
+        INNER JOIN pi_master pi ON pi.pk_pi = pv.pk_pi
+        INNER JOIN bd_ou_org org ON occ.pk_org_occ = org.pk_org
+        INNER JOIN bd_ou_dept dept ON occ.pk_dept_occ = dept.pk_dept
+        LEFT JOIN bd_ou_dept deptOrd ON cnord.pk_dept = deptOrd.pk_dept
+        LEFT JOIN bd_ou_dept deptNs ON deptNs.pk_dept = cnord.pk_dept_ns
+        LEFT JOIN bd_ordtype type ON type.code = cnord.code_ordtype
+        LEFT JOIN cn_trans_apply trans ON trans.pk_cnord = occ.pk_cnord
+        LEFT JOIN cn_consult_apply cons ON cons.pk_cnord = occ.pk_cnord
+        LEFT JOIN bd_dictattr dict ON dict.pk_dict = cnord.pk_ord and dict.code_attr = 'BA001'
+        where occ.EU_STATUS = '1'
+        and ord.EU_ARCHTYPE > 0
+        <if test="pkPv != null  and pkPv != ''">
+            and occ.PK_PV = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and occ.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        union all
+        select pv.bed_no,
+        pv.name_pi,
+        pi.code_ip,
+        app.eu_status eu_status_apply,
+        dict.val_attr,
+        cnord.NAME_ORD,
+        cnord.CODE_APPLY,
+        cnord.date_start,
+        cnord.name_emp_input,
+        cnord.ORDSN,
+        cnord.note_ord,
+        cnord.pk_dept_ns,
+        cnord.eu_status_ord status_ord,
+        occ.pk_org_occ,
+        occ.pk_dept_occ,
+        occ.eu_status,
+        occ.date_plan,
+        org.name_org        org_ex,
+        dept.name_dept      dept_ex,
+        deptNs.name_dept    dept_ns,
+        deptOrd.name_dept   dept_ord,
+        type.name           ordtype,
+        null                status_lab,
+        null                status_ris,
+        trans.eu_status     status_trans,
+        cons.eu_status      status_cons,
+        '1'                 flag_ris
+        from CN_ORDER cnord
+        inner join CN_RIS_APPLY app on app.PK_CNORD = cnord.PK_CNORD
+        INNER JOIN BD_ORD ord ON ord.pk_ord = cnord.pk_ord
+        inner join EX_ORDER_OCC occ on occ.PK_CNORD = cnord.PK_CNORD
+        INNER JOIN bd_ou_org org ON occ.pk_org_occ = org.pk_org
+        INNER JOIN pv_encounter pv ON pv.pk_pv = cnord.pk_pv
+        INNER JOIN pi_master pi ON pi.pk_pi = pv.pk_pi
+        INNER JOIN bd_ou_dept dept ON occ.pk_dept_occ = dept.pk_dept
+        LEFT JOIN bd_ou_dept deptOrd ON cnord.pk_dept = deptOrd.pk_dept
+        LEFT JOIN bd_ou_dept deptNs ON deptNs.pk_dept = cnord.pk_dept_ns
+        LEFT JOIN bd_ordtype type ON type.code = cnord.code_ordtype
+        LEFT JOIN cn_trans_apply trans ON trans.pk_cnord = occ.pk_cnord
+        LEFT JOIN cn_consult_apply cons ON cons.pk_cnord = occ.pk_cnord
+        LEFT JOIN bd_dictattr dict ON dict.pk_dict = cnord.pk_ord and dict.code_attr = 'BA001'
+        where occ.EU_STATUS = '1'
+        and ord.EU_ARCHTYPE > 0
+        <if test="pkPv != null  and pkPv != ''">
+            and occ.PK_PV = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and occ.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+    </select>
+    <select id="getCnlabApplyVoNotDone" resultType="com.zebone.nhis.ex.nis.pub.vo.CnLabApplyVo">
+        select pv.PK_PV,
+        pi.CODE_IP,
+        pv.PK_PI,
+        app.SAMP_NO,
+        app.PK_CNORD,
+        app.PK_ORDLIS,
+        app.EU_STATUS,
+        cnord.CODE_APPLY ,
+        occ.PK_DEPT_OCC,
+        occ.PK_ORG_OCC
+        from CN_ORDER cnord
+        inner join CN_LAB_APPLY app on app.PK_CNORD = cnord.PK_CNORD
+        INNER JOIN BD_ORD ord ON ord.pk_ord = cnord.pk_ord
+        inner join EX_ORDER_OCC occ on occ.PK_CNORD = cnord.PK_CNORD
+        INNER JOIN pv_encounter pv ON pv.pk_pv = cnord.pk_pv
+        INNER JOIN pi_master pi ON pi.pk_pi = pv.pk_pi
+        where occ.EU_STATUS = '1'
+        and app.EU_STATUS &lt;= 3
+        and ord.EU_ARCHTYPE &gt; 0
+        and SAMP_NO is not null
+        <if test="pkPv != null  and pkPv != ''">
+            and occ.PK_PV = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and occ.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        <if test="pkPvs != null  and pkPvs != ''">
+            <!-- 传入 待处理患者就诊-->
+            and occ.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvs" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+    </select>
+    <select id="getCnRisApplyVoNotDone" resultType="com.zebone.nhis.pro.zsba.adt.vo.CnRisApplyBaVo">
+        select pv.PK_PV,
+        pi.CODE_IP,
+        pv.PK_PI,
+        app.PK_CNORD,
+        app.PK_ORDRIS,
+        app.EU_STATUS,
+        cnord.CODE_APPLY,
+        occ.PK_DEPT_OCC,
+        occ.PK_ORG_OCC
+        from CN_ORDER cnord
+        inner join CN_RIS_APPLY app on app.PK_CNORD = cnord.PK_CNORD
+        INNER JOIN BD_ORD ord ON ord.pk_ord = cnord.pk_ord
+        inner join EX_ORDER_OCC occ on occ.PK_CNORD = cnord.PK_CNORD
+        INNER JOIN bd_ou_org org ON occ.pk_org_occ = org.pk_org
+        INNER JOIN pv_encounter pv ON pv.pk_pv = cnord.pk_pv
+        INNER JOIN pi_master pi ON pi.pk_pi = pv.pk_pi
+        where occ.EU_STATUS = '1'
+        and app.EU_STATUS &lt;= 3
+        and ord.EU_ARCHTYPE &gt; 0
+        and ord.CODE_ORDTYPE != '0206'
+        <if test="pkPv != null  and pkPv != ''">
+            and occ.PK_PV = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and occ.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        <if test="pkPvs != null  and pkPvs != ''">
+            <!-- 传入 待处理患者就诊-->
+            and occ.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvs" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+    </select>
+    <select id="getLabTripartiteSystemVos" resultType="com.zebone.nhis.pro.zsba.adt.vo.LabAndRisTripartiteSystemVo">
+        select *
+        from view_apply_status_for_nhis
+        <where>
+            samp_no in
+            <foreach item="lab" collection="list" separator="," open="(" close=")" index="">
+                #{lab.sampNo,jdbcType=VARCHAR}
+            </foreach>
+            and patient_id  in
+            <foreach item="lab" collection="list" separator="," open="(" close=")" index="">
+                #{lab.codeIp,jdbcType=VARCHAR}
+            </foreach>
+            and EU_STATU >= 3
+        </where>
+    </select>
+    <select id="getRisTripartiteSystemVos" resultType="com.zebone.nhis.pro.zsba.adt.vo.LabAndRisTripartiteSystemVo">
+        select *
+        from v_pacs_state
+        <where>
+            CODE_APPLY in
+            <foreach item="lab" collection="list" separator="," open="(" close=")" index="">
+                #{lab.codeApply,jdbcType=VARCHAR}
+            </foreach>
+            and EU_STATU >= 3
+        </where>
+    </select>
+
+
+    <!-- 根据就诊主键、收费控制，查询费用多收明细 -->
+    <select id="queryGroupByPvForSql" parameterType="java.util.Map" resultType="DynaBean">
+        SELECT
+        pv.bed_no,
+        pv.name_pi,
+        pi.code_ip,
+        dt.NAME_CG,
+        dt.SPEC,
+        dt.PRICE,
+        u.NAME name_unit,
+        gru.SORTNO,
+        gru.NAME_BLC,
+        gru.NOTE,
+        gru.EU_TYPE,
+        gru.CNT,
+        gru.DAYS,
+        gru.INC,
+        gru.quan,
+        sum(dt.quan) sumQuan
+        FROM BL_IP_DT dt
+        INNER JOIN PV_ENCOUNTER pv ON pv.PK_PV = dt.PK_PV
+        INNER JOIN pi_master pi ON pi.pk_pi = pv.pk_pi
+        INNER JOIN BD_BL_CTRL ctrl ON ctrl.PK_ITEM = dt.PK_ITEM AND dt.DEL_FLAG = '0'
+        INNER JOIN (select t.SORTNO,t.NAME_BLC,t.NOTE,t.pk_pv,t.EU_TYPE,CASE t.EU_TYPE WHEN '0' THEN t.DAYS ELSE t.DAYS + t.inc END CNT,t.DAYS,t.INC,sum(t.quan) quan
+        from (SELECT cg.pk_item,cg.date_hap,cg.name_cg,cg.pk_pv,case when sum(cg.quan)/bc.ratio > 0 then 1 else 0 end quan,
+        CASE datediff(DAY, CONVERT(datetime,pv.date_begin,112), CONVERT(datetime, #{dateEndDay},112))
+        WHEN 0 THEN 1
+        ELSE datediff(DAY,CONVERT(datetime, pv.date_begin,112),CONVERT(datetime, #{dateEndDay}, 112)) END DAYS,
+        bcf.note,bcf.sortno,bcf.inc,bcf.eu_type,bcf.name_blc
+        FROM bl_ip_dt cg
+        INNER JOIN pv_encounter pv ON pv.pk_pv = cg.pk_pv
+        INNER JOIN bd_bl_ctrl bc ON cg.pk_item = bc.pk_item AND bc.flag_chd = '1' AND bc.del_flag = '0'
+        INNER JOIN bd_bl_ctrl bcf ON bcf.sortno = bc.sortno AND bcf.flag_chd = '0' AND bcf.del_flag = '0'
+        WHERE cg.del_flag = '0'
+        <if test="pkPv != null  and pkPv != ''">
+            and cg.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and cg.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        GROUP BY cg.pk_item,cg.date_hap,cg.name_cg,cg.pk_pv,bcf.note,bcf.sortno,bcf.inc,bc.ratio,pv.date_begin,bcf.eu_type,bcf.name_blc)t
+        GROUP BY t.SORTNO,t.NAME_BLC,t.NOTE,t.pk_pv,t.EU_TYPE,t.DAYS,t.INC) gru ON gru.SORTNO = ctrl.SORTNO  AND gru.QUAN &gt; gru.CNT
+        LEFT JOIN bd_unit u ON dt.pk_unit = u.pk_unit
+        WHERE dt.del_flag = '0'
+        <if test="pkPv != null  and pkPv != ''">
+            and dt.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="pkPvMa != null  and pkPvMa != ''">
+            <!-- 传入母亲及婴儿就诊主键，同步校验同病区的婴儿是否数据处理完毕 -->
+            and dt.pk_pv in
+            <foreach item="pkPv" index="index" collection="pkPvMa" open="(" separator="," close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        GROUP BY pv.bed_no,pv.name_pi,pi.code_ip,dt.NAME_CG,dt.SPEC,dt.PRICE,u.NAME,gru.SORTNO,gru.NAME_BLC,gru.NOTE,gru.EU_TYPE,gru.CNT,gru.DAYS,
+        gru.INC,gru.quan
+    </select>
+    <select id="countBlIpDtAfterDateEnd" resultType="DynaBean" parameterType="java.lang.String">
+        select nvl(sum(AMOUNT_PI),0.00) amout,count(*) cou from bl_ip_dt
+        where pk_pv = #{pkPv}  and date_hap &gt; to_date(#{dateEnd},'yyyy-MM-dd hh24:mi:ss')
+    </select>
+
+</mapper>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.webservice.pskq.dao.PskqSchPubForWsMapper">
+	<resultMap id="OpBaseResultMap" type="com.zebone.nhis.webservice.pskq.model.ReserveOutpatient">
+        <id column="empi_id" jdbcType="VARCHAR" property="empiId" />
+        
+        <result column="PK_PATIENT" jdbcType="VARCHAR" property="pkPatient" />
+        <result column="ORG_CODE" jdbcType="VARCHAR" property="orgCode" />
+        <result column="ORG_NAME" jdbcType="VARCHAR" property="orgName" />
+        <result column="PATIENT_NAME" jdbcType="VARCHAR" property="patientName" />
+        <result column="GENDER_CODE" jdbcType="VARCHAR" property="genderCode" />
+        <result column="GENDER_NAME" jdbcType="VARCHAR" property="genderName" />
+        <result column="DATE_OF_BIRTH" jdbcType="VARCHAR" property="dateOfBirth" />
+        <result column="ID_TYPE_CODE" jdbcType="VARCHAR" property="idTypeCode" />
+        <result column="ID_TYPE_NAME" jdbcType="VARCHAR" property="idTypeName" />
+        <result column="ID_NO" jdbcType="VARCHAR" property="idNo" />
+        <result column="PHONE_NO" jdbcType="VARCHAR" property="phoneNo" />
+        <result column="MED_INSURANCE_NO" jdbcType="VARCHAR" property="medInsuranceNo" />
+        <result column="IS_INSURANCE" jdbcType="VARCHAR" property="isInsurance" />
+        <result column="RESERVE_ID" jdbcType="VARCHAR" property="reserveId" />
+        <result column="HIS_TAKE_NO" jdbcType="VARCHAR" property="hisTakeNo" />
+        
+        <result column="RESERVE_CAHANNEL_CODE" jdbcType="VARCHAR" property="reserveCahannelCode" />
+        <result column="RESERVE_CAHANNEL_NAME" jdbcType="VARCHAR" property="reserveCahannelName" />
+        <result column="RESERVE_DATE_TIME" jdbcType="VARCHAR" property="reserveDateTime" />
+        <result column="SCHEDULE_ID" jdbcType="VARCHAR" property="scheduleId" />
+        <result column="RESERVE_SOURCE_ID" jdbcType="VARCHAR" property="reserveSourceId" />
+        <result column="RESERVE_STATE" jdbcType="VARCHAR" property="reserveState" />
+        <result column="PAY_STATE" jdbcType="VARCHAR" property="payState" />
+        <result column="PAY_METHOD_CODE" jdbcType="VARCHAR" property="payMethodCode" />
+        <result column="PAY_METHOD_NAME" jdbcType="VARCHAR" property="payMethodName" />
+        <result column="PAY_DATE_TIME" jdbcType="VARCHAR" property="payDateTime" />
+        <result column="Total_Payment" jdbcType="VARCHAR" property="totalPayment" />
+        <result column="Medical_Insurance_Expenses" jdbcType="VARCHAR" property="Medical_Insurance_Expenses" />
+        <result column="Personal_Expenses" jdbcType="VARCHAR" property="personalExpenses" />
+        <result column="RESERVE_Order_No" jdbcType="VARCHAR" property="hisOrderNo" />
+        <result column="Payment_Order_No" jdbcType="VARCHAR" property="paymentOrderNo" />
+        <result column="Transaction_Serial_No" jdbcType="VARCHAR" property="transactionSerialNo" />
+        <result column="Pay_Terminal_No" jdbcType="VARCHAR" property="payTerminalNo" />
+        <result column="Machine_No" jdbcType="VARCHAR" property="machineNo" />
+        <result column="EHEALTH_CARD_NO" jdbcType="VARCHAR" property="ehealthCardNo" />
+        <result column="RESERVE_OUTPATIENT_ID" jdbcType="VARCHAR" property="reserveOutpatientId" />
+        
+    </resultMap>
+    <select id="queryOrders" parameterType = "java.util.Map" resultMap="OpBaseResultMap">
+         SELECT 
+	        		pi.mpi EMPI_ID,pi.code_pi pk_patient,pi.code_ip encounter_id,oe.CODE_ORG org_code,oe.NAME_ORG org_name,
+					pi.NAME_PI patient_name,
+					def.code gender_code,def.name gender_name,
+					pi.birth_date date_of_birth,
+					defdoc.code as id_type_code,
+	        		defdoc.name as id_type_name,
+					pi.ID_NO,
+					pi.MOBILE PHONE_NO,
+					pi.INSUR_NO MED_INSURANCE_NO,
+					appt.TICKET_NO RESERVE_ID,'' HIS_TAKE_NO,
+					defdoc1.code as RESERVE_CAHANNEL_CODE,defdoc1.name as RESERVE_CAHANNEL_NAME,
+					appt.DATE_APPT RESERVE_DATE_TIME,appt.PK_SCH SCHEDULE_ID,
+					(select PK_SCHTICKET from SCH_TICKET where PK_SCH=appt.PK_SCH and TICKETNO=appt.TICKET_NO) RESERVE_SOURCE_ID,
+					(case appt.EU_STATUS when '0' then '1' when '9' then '2' end) RESERVE_STATE,
+					(case appt.FLAG_PAY when '1' then '1' when '0' then '0' end) PAY_STATE,
+					'' PAY_METHOD_CODE,'' PAY_METHOD_NAME,
+					bs.DATE_ST PAY_DATE_TIME,bs.AMOUNT_ST Total_Payment,bs.AMOUNT_INSU Medical_Insurance_Expenses,
+					bs.AMOUNT_PI Personal_Expenses,appt.CODE RESERVE_Order_No,
+					appt.PK_SCHAPPT RESERVE_OUTPATIENT_ID
+	    FROM sch_appt appt
+			left join PI_MASTER pi on pi.PK_PI=appt.PK_PI
+			left join PV_OP po on po.DEL_FLAG='0' and po.PK_SCHAPPT=appt.PK_SCHAPPT
+			left join BL_SETTLE bs on bs.pk_pi=pi.PK_PI and bs.EU_PVTYPE='1' and bs.DT_STTYPE='00' and bs.pk_pv=po.pk_pv
+			left join bd_ou_org oe on oe.pk_org=pi.pk_org
+			left join bd_defdoc def on pi.dt_sex = def.CODE and def.code_defdoclist='000000'
+			left join bd_defdoc defdoc on defdoc.code = pi.dt_idtype and defdoc.code_defdoclist='000007'
+			left join bd_defdoc defdoc1 on defdoc1.code = appt.DT_APPTYPE and defdoc1.code_defdoclist='020100'
+	    where 1=1
+			and pi.mpi=#{empiId}
+			and appt.CODE=#{hisOrderNo}
+	    ORDER BY appt.date_appt
+    </select>
+</mapper>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.platform.send.impl.sd.dao.SDBdSendMapper" >
+	 <!-- 查询科室和病区关系 （业务线） -->
+	 <!-- 查询科室类型 
+	 join (select d.name,d.code from bd_defdoc d where d.code_defdoclist in 
+	 ( select code from bd_defdoclist where name = '部门类型')) c on c.code = db.dt_depttype  
+	 -->
+	 <select id="queryBdDeptBus" parameterType="java.util.Map" resultType="DynaBean">
+		select
+			bu.pk_deptbu,bu.code,bu.name,bu.dt_butype,bu.spcode,bu.d_code,
+			bus.pk_deptbus,bus.pk_org,bus.pk_deptbu,bus.pk_dept,bus.sort,bus.dt_depttype,
+			dept.name_dept,dept.code_dept
+			<if test="control != null">
+				, #{control,jdbcType=VARCHAR} as control
+			</if>
+			from bd_dept_bu bu left join bd_dept_bus bus  on bus.pk_deptbu=bu.pk_deptbu
+			left join bd_ou_dept dept on dept.pk_dept = bus.pk_dept 
+			where bus.del_flag='0' and bu.del_flag='0'
+			<if test="pkOrg != null ">
+				and bus.pk_org = #{pkOrg,jdbcType=VARCHAR} 
+			</if> 
+			<if test="pkDeptbu != null">
+				and bus.pk_deptbu = #{pkDeptbu,jdbcType=VARCHAR} 
+			</if>
+	 </select>
+	<!--  查询医嘱组套数据 -->
+	 <select id="queryBdItem" parameterType="java.util.Map" resultType="DynaBean">
+		select oi.pk_orditem,oi.pk_ord,oi.pk_item,oi.flag_pd,oi.flag_union,item.flag_set,
+			d.CODE_DEPT,d.NAME_DEPT,item.DT_ITEMTYPE,
+       		case when oi.flag_pd='0' then item.spec else pd.spec end spec,
+       		case when oi.flag_pd='0' then item.code else pd.code end code,
+       		case when oi.flag_pd='0' then item.name else pd.name end name, oi.quan,
+      		case when oi.flag_pd='0' then item.price else pd.price/pd.pack_size end price
+		from bd_ord_item oi left outer join bd_item item on oi.pk_item=item.pk_item and oi.flag_pd='0'
+		left outer join bd_pd pd on oi.pk_item=pd.pk_pd and oi.flag_pd='1'
+		inner join bd_ord_dept od on od.PK_ORD=oi.PK_ORD
+		inner join BD_OU_DEPT d on d.PK_DEPT=od.PK_DEPT
+		where oi.del_flag = '0'  and oi.pk_ord = #{pkOrd,jdbcType=VARCHAR} 
+			
+	 </select>
+	 
+	 
+	 <!-- 查询收费项目总价格 -->
+	 <select id="queryBdItemPrice" parameterType="java.util.Map" resultType="DynaBean">
+		select nvl(sum(PRICE),0) price,EU_PRICETYPE from bd_item_price p
+		where p.DEL_FLAG='0' and p.FLAG_STOP='0' and p.PK_ITEM= #{pkItem,jdbcType=VARCHAR} 		
+		group by EU_PRICETYPE,PK_ORG
+			
+	 </select>
+	 
+	 
+	 <!--  查询医嘱项目数据 -->
+	 <select id="queryBdOrd" parameterType="java.util.Map" resultType="DynaBean">
+		select distinct
+	       ord.PK_ORD,ord.PK_ORDTYPE,ord.CODE_ORDTYPE,ord.CODE,ord.NAME,ord.NAME_PRT,ord.SPEC,ord.SPCODE,ord.D_CODE,
+	       ord.EU_EXCLUDE,ord.FLAG_NS,ord.FLAG_DR,ord.CODE_FREQ,ord.QUAN_DEF,ord.FLAG_IP,ord.FLAG_OP,ord.FLAG_ER,
+	       ord.FLAG_HM,ord.FLAG_PE,ord.FLAG_EMR,ord.FLAG_CG,ord.FLAG_PD,ord.FLAG_ACTIVE,ord.NOTE,ord.CREATOR,
+	       ord.MODIFIER,ord.DEL_FLAG,ord.FLAG_UNIT,ord.PK_UNIT,ord.EU_SEX,ord.FLAG_PED,ord.OLD_TYPE,
+	       ord.DT_ORDCATE,ord.OLD_ID,ord.AGE_MIN,ord.AGE_MAX,ord.ITEM_ID,ord.DESC_ORD,ord.EXCEPT_ORD,
+	       ord.YB_ID,ord.FLAG_NOC,ord.CODE_EXT,ord.EU_ORDTYPE,ord.EU_ARCHTYPE,dept.CODE_DEPT,dept.NAME_DEPT,
+           u.NAME,u.CODE,ord.DEL_FLAG,
+    		nvl((select sum(item.price*oi.quan) from bd_ord_item oi left join BD_ITEM item on oi.PK_ITEM=item.PK_ITEM
+     		where oi.DEL_FLAG='0' and item.DEL_FLAG='0' and ord.PK_ORD=oi.PK_ORD  group by ord.PK_ORD),0) price
+		from BD_ORD ord 
+		<!-- left join bd_ord_item oi on ord.PK_ORD=oi.PK_ORD
+			 left join BD_ITEM item on oi.PK_ITEM=item.PK_ITEM
+		 -->
+		left join bd_ord_dept od on ord.PK_ORD=od.PK_ORD 
+		left join BD_UNIT u on u.PK_UNIT=ord.PK_UNIT 
+		left join BD_OU_DEPT dept on dept.PK_DEPT=od.PK_DEPT																				
+		where ord.PK_ORD= #{pkOrd,jdbcType=VARCHAR} 		
+	 </select>
+	 
+</mapper>

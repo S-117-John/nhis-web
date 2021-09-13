@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.mz.opcg.dao.ZsbaOpCgQueryMapper">
+
+	<!-- 根据患者的主键查询患者未结算的收费信息 
+	<select id="queryPatiCgInfoNotSettle" parameterType="com.zebone.nhis.pro.zsba.mz.opcg.vo.OpCgTransforVo" resultType="DynaBean">
+	
+	</select>-->
+	
+	<select id="getDrawDocName" resultType="com.zebone.nhis.common.module.pv.PvEncounter" parameterType="java.lang.String">
+	SELECT * FROM pv_encounter WHERE PK_PV = #{pkPv,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getBdOrdDepts" resultType="com.zebone.nhis.common.module.base.bd.srv.BdOrdDept" parameterType="java.util.Map">
+		SELECT * FROM BD_ORD_DEPT dept ,BD_ORD_ORG org  
+			WHERE org.PK_ORD = dept.PK_ORD AND org.PK_ORG = #{pkOrg,jdbcType=VARCHAR} 
+			AND org.PK_ORDORG = dept.PK_ORDORG AND dept.FLAG_DEF = '1' AND dept.PK_ORD = #{pkOrd,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getStocks" resultType="com.zebone.nhis.scm.pub.vo.PdStockVo" parameterType="java.util.Map">
+		SELECT a.* ,c.PACK_SIZE FROM PD_STOCK a ,BD_PD_STORE b ,BD_PD_CONVERT c 
+		WHERE a.PK_PD = #{pkPd,jdbcType=VARCHAR}
+ 			AND a.PK_DEPT = #{pkDept,jdbcType=VARCHAR} AND a.PK_PD = b.PK_PD AND a.PK_DEPT = b.PK_DEPT 
+ 			AND b.PK_PDCONVERT = c.PK_PDCONVERT AND a.DEL_FLAG = '0'
+	</select>
+	
+	<select id="getIsStopOp" resultType="int" parameterType="java.util.Map">
+		SELECT count(*) FROM PD_STOCK stock 
+ 			LEFT JOIN BD_PD pd
+  			ON pd.CODE = #{code,jdbcType=VARCHAR}
+  		WHERE stock.PK_ORG = #{pkOrg,jdbcType=VARCHAR} 
+  		AND stock.PK_DEPT = #{pkDept,jdbcType=VARCHAR} 
+  		AND stock.PK_PD = pd.PK_PD  
+  		AND stock.FLAG_STOP_OP = '1'
+	</select>
+	<select id="queryPvAndHpInof"  parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.pv.PvEncounter">
+		select pv.pk_pv,pv.pk_insu 
+         from pv_encounter pv
+         inner join bd_hp hp on hp.pk_hp = pv.pk_insu 
+         where pv.eu_pvtype = '3' and pv.eu_status in ('0','1','2') and pv.pk_pi=#{pkPi,jdbcType=VARCHAR}  and hp.flag_ipnoop='1'
+	</select>
+	
+	<select id="qryCnOrderList"  parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOrder">
+		SELECT
+			pk_cnord,
+			code_ordtype 
+		FROM
+			CN_ORDER 
+		WHERE
+			PK_CNORD in
+			<foreach collection="pkCnords" index="index" item="pkCnord" open="(" separator="," close=")">  
+               #{pkCnord}    
+            </foreach>
+	</select>
+	
+	<select id="querySettleCgDetail"  parameterType="java.util.Map" resultType="Dynabean">
+		select 
+			dt.pk_pv,dt.date_cg,(select invitem.name from bd_invcate_item invitem where invitem.pk_invcateitem=(select top 1 cate.pk_invcateitem from bd_invcate_itemcate cate where cate.PK_ITEMCATE=dt.PK_ITEMCATE)) as name_bill,
+			dt.name_cg, dt.spec,unit.name unit,dt.price,sum(dt.quan) quan,sum(dt.amount) amount,sum(dt.amount_pi) amount_pi,
+			dt.name_emp_app,deptapp.name_dept as name_dept_app,orgex.name_org as name_org_ex,deptex.name_dept as name_dept_ex,su.name as name_supply,dt.name_emp_cg
+			from bl_op_dt dt
+			left join bd_unit unit on dt.pk_unit=unit.pk_unit
+			left join bd_ou_dept deptex on deptex.pk_dept = dt.pk_dept_ex 
+			left join bd_ou_dept deptapp on deptapp.pk_dept = dt.pk_dept_app 
+			left join bd_ou_org orgex on orgex.pk_org = dt.pk_org_ex
+			left join cn_order cnord on cnord.pk_cnord = dt.pk_cnord
+			left join bd_supply su on su.code = cnord.code_supply and su.del_flag = '0'
+			left join ex_pres_occ occ on occ.pk_pres = dt.pk_pres 
+			where dt.pk_settle=#{pkSettle,jdbcType=CHAR} 
+			group by dt.PK_PV,dt.date_cg,dt.pk_itemcate,dt.name_cg,dt.spec,unit.name,dt.price,dt.name_emp_app,deptapp.name_dept,orgex.name_org,deptex.name_dept,su.name,dt.name_emp_cg
+		union all
+		select 
+			dt.pk_pv,dt.date_cg,(select invitem.name from bd_invcate_item invitem where invitem.pk_invcateitem=(select top 1 cate.pk_invcateitem from bd_invcate_itemcate cate where cate.pk_itemcate=dt.pk_itemcate)) as name_bill,
+			dt.name_cg, dt.spec,unit.name unit,dt.price,sum(dt.quan) quan,sum(dt.amount) amount,sum(dt.amount_pi) amount_pi,
+			dt.name_emp_app,deptapp.name_dept as name_dept_app,orgex.name_org as name_org_ex,deptex.name_dept as name_dept_ex,su.name as name_supply,dt.name_emp_cg
+			from bl_op_dt_b dt
+			left join bd_unit unit on dt.pk_unit=unit.pk_unit
+			left join bd_ou_dept deptex on deptex.pk_dept = dt.pk_dept_ex 
+			left join bd_ou_dept deptapp on deptapp.pk_dept = dt.pk_dept_app 
+			left join bd_ou_org orgex on orgex.pk_org = dt.pk_org_ex
+			left join cn_order cnord on cnord.pk_cnord = dt.pk_cnord
+			left join bd_supply su on su.code = cnord.code_supply and su.del_flag = '0'
+			left join ex_pres_occ occ on occ.pk_pres = dt.pk_pres 
+			where dt.pk_settle=#{pkSettle,jdbcType=CHAR} 
+			group by dt.pk_pv,dt.date_cg,dt.pk_itemcate,dt.name_cg,dt.spec,unit.name,dt.price,dt.name_emp_app,deptapp.name_dept,orgex.name_org,deptex.name_dept,su.name,dt.name_emp_cg
+	</select>
+	
+	<select id="querySettleInfo" resultType="DynaBean">
+		select convert(varchar(16), pv.date_begin, 120) date_begin,pv.name_pi,doc.name,pv.age_pv,pi.code_op,hp.name,dept.name_dept 
+		from PV_ENCOUNTER pv 
+		inner join PI_MASTER pi on pi.PK_PI=pv.PK_PI 
+		left join BD_HP hp on hp.PK_HP=pv.PK_INSU 
+		inner join BD_OU_DEPT dept on dept.PK_DEPT=pv.PK_DEPT 
+		left join bd_defdoc doc on doc.code=pv.dt_sex and doc.code_defdoclist='000000'
+		where pv.PK_PV=#{pkPv,jdbcType=CHAR} 
+	</select>
+	
+	<select id="queryPatientSettleList"  parameterType="java.util.Map" resultType="java.util.Map">
+		select CONVERT(VARCHAR(19), settle.DATE_ST, 120) as DATE_ST,settle.PK_SETTLE,settle.AMOUNT_ST,
+		settle.AMOUNT_PI,settle.AMOUNT_ADD,settle.AMOUNT_DISC,settle.AMOUNT_INSU 
+		from BL_SETTLE settle 
+		INNER JOIN PI_MASTER pi on settle.PK_PI=pi.PK_PI 
+		LEFT JOIN BD_HP hp on settle.PK_INSURANCE=hp.PK_HP 
+		where PK_SETTLE_CANC is null 
+		and (hp.DT_EXTHP is not null and hp.DT_EXTHP!='') and settle.EU_PVTYPE in ('1','2','4') 
+		<if test="startDate != null and startDate != ''">
+			and settle.DATE_ST &gt;= #{startDate,jdbcType=VARCHAR}+' 00:00:00' 
+		</if>
+		<if test="endDate != null and endDate != ''">
+			and settle.DATE_ST &lt;= #{endDate,jdbcType=VARCHAR}+' 23:59:59' 
+		</if>
+		<if test="codeOp != null and codeOp != ''">
+			and pi.CODE_OP = #{codeOp,jdbcType=VARCHAR} 
+		</if>
+		<if test="cardNo != null and cardNo != ''">
+			and pi.P_CAR_CODE = #{cardNo,jdbcType=VARCHAR} 
+		</if>
+		<if test="thirdSocialNo != null and thirdSocialNo != ''">
+			and pi.THIRD_SOCIAL_NO = #{thirdSocialNo,jdbcType=VARCHAR} 
+		</if>
+		<if test="insurNo != null and insurNo != ''">
+			and pi.INSUR_NO = #{insurNo,jdbcType=VARCHAR} 
+		</if>
+		<if test="idNo != null and idNo != ''">
+			and pi.ID_NO = #{idNo,jdbcType=VARCHAR} 
+		</if>
+		<if test="icCardId != null and icCardId != ''">
+			and pi.IC_CARD_ID = #{icCardId,jdbcType=VARCHAR} 
+		</if>
+		order by settle.DATE_ST desc
+	</select>
+	
+	<select id="queryQgybSettleDetail"  parameterType="java.util.Map" resultType="DynaBean">
+		select cg.FEEDETL_SN,dt.NAME_CG,cg.CNT,cg.PRIC,cg.PRIC_UPLMT_AMT,cg.DET_ITEM_FEE_SUMAMT, 
+		cg.SELFPAY_PROP,cg.FULAMT_OWNPAY_AMT,cg.OVERLMT_AMT,cg.PRESELFPAY_AMT,cg.INSCP_SCP_AMT,cg.CHRGITM_LV 
+		from BL_OP_DT dt 
+		INNER JOIN INS_QGYB_CG cg on cg.PK_PV=dt.PK_PV and cg.PK_CGOP=dt.PK_CGOP 
+		and cg.CREATE_TIME=(select max(t.CREATE_TIME) CREATE_TIME from INS_QGYB_CG t where t.PK_CGOP=cg.PK_CGOP) 
+		where CHARINDEX('-', cg.FEEDETL_SN)&lt;=0 
+		<if test="pkSettle != null and pkSettle != ''">
+			and dt.PK_SETTLE = #{pkSettle,jdbcType=VARCHAR} 
+		</if>
+		order by cg.FEEDETL_SN asc
+	</select>
+	
+	<select id="getPibaseVoList" parameterType="com.zebone.nhis.common.module.pv.PvEncounter" resultType="com.zebone.nhis.pro.zsba.mz.opcg.vo.PibaseVo">
+		select distinct e.CODE_PV, e.EU_PVTYPE, e.PK_PI, e.PK_PV, e.BED_NO, e.PK_DEPT, e.PK_DEPT_NS,e.eu_pvmode,
+			   e.DATE_BEGIN, e.DATE_END,e.eu_status,e.eu_locked,e.pk_emp_phy,e.name_emp_phy,e.pk_insu,
+		  case when e.DATE_CLINIC is null then e.DATE_BEGIN else e.DATE_CLINIC end as DATE_CLINIC,
+			   m.code_ip,m.code_pi,m.name_pi,m.dt_sex,m.birth_date,m.id_no,m.mobile,m.insur_no,
+			   m.code_op,m.barcode,m.pk_picate,m.dt_idtype,m.hic_no, m.mpi,m.flag_ehr,
+			   m.place_birth,m.dt_marry,m.dt_occu,m.dt_edu,m.dt_country,m.dt_nation,m.tel_no,
+			   m.wechat_no,m.email,m.name_rel,m.tel_rel,m.dt_ralation,m.addr_rel,m.dt_blood_abo,m.dt_blood_rh,
+			   m.addrcode_birth,m.addr_birth,m.addrcode_origin,m.addr_origin,
+			   m.addrcode_regi ,m.addr_regi ,m.addr_regi_dt,m.postcode_regi,
+			   m.addrcode_cur ,m.addr_cur ,m.addr_cur_dt,m.postcode_cur ,
+			   m.unit_work,m.tel_work,m.address,m.postcode_work,
+			   c.name as namePicate,
+			   (case when op.pk_emp_pv is null then er.pk_emp_pv else op.pk_emp_pv end) pk_emp_pv,(case when op.name_emp_pv is null then er.name_emp_pv else op.name_emp_pv end) name_emp_pv,
+			   h.name as name_insu,
+			   diag.name_diag
+			   ,diag.pk_diag
+			   ,GETPVAGE(m.BIRTH_DATE,e.DATE_BEGIN) as age_format
+			   ,e.dt_disease
+			   ,nvl(dt.amount_pi,0) as not_settle
+			   <if test="flagRefundModular  == 1"><!-- 退费模块按已结算查询 -->
+			   	   ,st.pk_settle 
+				   ,st.code_st
+				   ,case when inv.ebillno is not null then inv.ebillno else inv.code_inv end code_inv
+				   ,nvl(st.amount_st,0) as amount_st
+				   ,convert(varchar(19), st.date_st, 120) as date_st
+			   </if>
+			   <if test="flagSettleDate == 1">
+				   ,bs.date_st as date_settle,bs.code_st
+			   </if>
+			   <if test="flagChDise == 1">
+				   ,iqp.DISE_NAME as ch_dise_name,iqp.DISE_CODG as ch_dise_code
+			   </if>
+		  from PV_ENCOUNTER e
+		 inner join pi_master m on m.pk_pi = e.pk_pi and m.del_flag = '0'
+		  left join pi_cate c on c.pk_picate = m.pk_picate and c.del_flag = '0'
+		  left join bd_hp h on h.pk_hp = e.PK_INSU and h.del_flag = '0'
+		  left join pv_op op on op.pk_pv = e.pk_pv and op.del_flag = '0'
+		  left join pv_er er on er.pk_pv = e.pk_pv and er.del_flag = '0'
+		  left join pv_ip ip on ip.pk_pv = e.pk_pv and ip.del_flag = '0'
+		  left join pv_diag diag on diag.pk_pv = e.pk_pv and diag.flag_maj='1' and diag.del_flag='0' 
+		  left join (select dt.PK_PV,sum(dt.amount_pi) amount_pi from BL_OP_DT dt
+  				where dt.flag_settle='0' and dt.flag_acc='0' group by dt.PK_PV) dt on dt.PK_PV = e.PK_PV
+		  <if test="dialysisFlag  == 1"><!-- 透析患者过滤未建档患者 -->
+		      inner join pi_hd hd on hd.pk_pi = m.pk_pi and hd.del_flag = '0'  
+		  </if>
+		  <if test="flagRefundModular  == 1"><!-- 退费模块按已结算查询 -->
+		      left join bl_settle st on st.pk_pv = e.pk_pv 
+		      	and not exists (select 1 from bl_settle back 
+					 where st.pk_settle=back.pk_settle_canc 
+					 and st.pk_pi=back.pk_pi)
+			  left join bl_st_inv stinv on stinv.pk_settle = st.pk_settle
+			  left join bl_invoice inv on inv.pk_invoice = stinv.pk_invoice
+		  </if>
+		  <if test="flagSettleDate == 1">
+			  left join bl_settle bs on e.pk_pv=bs.pk_pv and bs.flag_canc='0' and bs.del_flag='0'
+		  </if>
+		  <if test="flagChDise == 1"><!-- 查询患者的慢病信息-->
+			  left join ins_qgyb_pv iqp on e.pk_pv=iqp.pk_pv and iqp.med_type='14'
+		  </if>
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and e.del_flag = '0'  
+			and e.flag_cancel = '0'  
+			and e.pk_org =	#{pkOrg,jdbcType=VARCHAR}
+			<!-- 0-不判断就诊状态，查全部；1-判断就诊状态，查0、1、3，再根据参数euStatus过滤；默认1 -->		
+			<if test="flagStatus == 1">
+				and (e.eu_status = '0' or e.eu_status = '1' or e.eu_status = '3')
+			</if>
+			<!-- 门急诊诊就诊状态=2结束状态 -->	
+			<if test="flagStatusEnd == 1">
+				 and  e.eu_status = '2' 
+			</if>
+			<!-- 判断就诊状态，过滤退诊和登记状态 -->	
+			<if test="flagStatusCancel == 1">
+				 and e.eu_status not in ('9','0')
+			</if>
+		    <if test="euPvtype != null and euPvtype != ''">
+		  		and e.EU_PVTYPE = #{euPvtype,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="euPvtype == 1 or euPvtype == 2 ">
+		  	    <!--  yangxue注释
+		  	    and (e.eu_status = '0' or e.eu_status = '1')  
+		  		and to_char(op.date_end,'yyyy-MM-DD') &gt;= to_char(#{dateEnd,jdbcType=TIMESTAMP},'yyyy-MM-DD')
+		  		-->
+		  	</if> 
+		  	<if test="pkPv != null and pkPv != ''">
+		  		and e.PK_PV = #{pkPv,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="codePv != null and codePv != ''">
+		  		and e.CODE_PV = #{codePv,jdbcType=VARCHAR}
+		  	</if> 	
+		  	<if test="codePi != null and codePi != ''">
+		  		and m.CODE_PI = #{codePi,jdbcType=VARCHAR}
+		  	</if>	
+		  	<if test="hicNo != null and hicNo != ''">
+		  		and m.HIC_NO = #{hicNo,jdbcType=VARCHAR}
+		  	</if>	
+		  	<if test="codeIp != null and codeIp != ''">
+		  		and m.CODE_IP = #{codeIp,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="codeOp != null and codeOp != ''">
+		  		and m.CODE_OP = #{codeOp,jdbcType=VARCHAR}
+		  	</if>	
+		  	<if test="namePi != null and namePi != ''">
+		  		and m.NAME_PI like '%'||#{namePi,jdbcType=VARCHAR}||'%'
+		  	</if>  	
+		  	<if test="dateClinic != null and dateClinic != ''">
+		  		and ( (e.eu_status = '0' and to_char(e.DATE_BEGIN,'yyyy-MM-DD') = to_char(#{dateClinic,jdbcType=TIMESTAMP},'yyyy-MM-DD') )  
+		  		   or (e.eu_status != '0' and to_char(e.DATE_CLINIC,'yyyy-MM-DD') = to_char(#{dateClinic,jdbcType=TIMESTAMP},'yyyy-MM-DD') )  
+		  		) 
+		  	</if> 
+		  	<if test="dateBegin != null and dateBegin != ''">
+		  		and to_char(e.DATE_BEGIN,'yyyy-MM-DD') = to_char(#{dateBegin,jdbcType=TIMESTAMP},'yyyy-MM-DD')
+		  	</if> 
+		  	<if test="dateEnd != null and dateEnd != ''">
+		  		and to_char(op.date_end,'yyyy-MM-DD') &gt;= to_char(#{dateEnd,jdbcType=TIMESTAMP},'yyyy-MM-DD')
+		  	</if> 
+		  	<if test="pkPi != null and pkPi != ''">
+		  		and m.PK_PI = #{pkPi,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="bedNo != null and bedNo != ''">
+		  		and e.BED_NO = #{bedNo,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="pkDept != null and pkDept != ''">
+		  		and e.PK_DEPT = #{pkDept,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="pkDeptNs != null and pkDeptNs != ''">
+		  		and e.PK_DEPT_NS = #{pkDeptNs,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="euStatus != null and euStatus != ''">
+		  		and e.eu_status = #{euStatus,jdbcType=VARCHAR}
+		  	</if>	
+		  	<if test="idNo != null and idNo != ''"><!--【门急诊】 证件号码 -->
+		  		and m.id_no = #{idNo,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="insurNo != null and insurNo != ''"><!--【门急诊】 医保卡号 -->
+		  		and m.insur_no = #{insurNo,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="cardNo != null and cardNo != ''"><!--【门急诊】 卡号 -->
+				AND EXISTS(
+				SELECT 1 FROM PI_CARD PC WHERE m.PK_PI=PC.PK_PI AND    PC.DEL_FLAG = '0'
+				AND PC.EU_STATUS = '0'
+				AND PC.FLAG_ACTIVE = '1'
+				and PC.card_no = #{cardNo,jdbcType=VARCHAR}
+				)
+
+		  	</if>
+		  	<if test="pkEmpPhy !=null and pkEmpPhy !=''"><!--接诊医生-->
+				and e.pk_emp_phy =  #{pkEmpPhy,jdbcType=VARCHAR}
+			</if>
+
+		  	<if test="euPvtypes != null and euPvtypes != ''"><!--【门急诊】就诊状态组 -->
+	  		  	and e.EU_PVTYPE in 
+        		<foreach item="euPvtype" index="index" collection="euPvtypes" open="(" separator="," close=")">
+            		#{euPvtype}    
+        		</foreach>
+		  	</if> 
+  		</trim>
+  		order by e.DATE_BEGIN desc
+	</select>
+</mapper>

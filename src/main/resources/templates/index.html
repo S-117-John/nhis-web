@@ -1,0 +1,103 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>NHIS系统界面 </title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="${ctx}/ui/boot.js" type="text/javascript"></script> 
+	<link href="${ctx}/ui/css/demo.css" rel="stylesheet" type="text/css" />
+	<link href="${ctx}/ui/css/custom_icons.css" rel="stylesheet" type="text/css" />
+	<style type="text/css">
+   body{
+        margin:0;padding:0;border:0;width:100%;height:100%;overflow:hidden;
+    }    
+    .header
+    {
+        background:url(${ctx}/ui/header.gif) repeat-x 0 -1px;
+    }
+   
+    
+    </style>
+	
+</head>
+<body>
+    
+<!--Layout-->
+<div id="layout1" class="zbui-layout" style="width:100%;height:100%;">
+    <div class="header" region="north" height="70" showSplit="false" showHeader="false" splitSize="2">
+        <h1 style="margin:0;padding:10px;cursor:default;font-family:'Trebuchet MS',Arial,sans-serif;">NHIS管理系统 </h1>
+        <div style="position:absolute;top:18px;right:10px;">
+            <a class="zbui-button zbui-button-iconTop" iconCls="icon-add" onclick="onQuickClick" plain="true">快捷</a>    
+            <a class="zbui-button zbui-button-iconTop" iconCls="icon-edit" onclick="onClick"  plain="true" >首页</a>        
+            <a class="zbui-button zbui-button-iconTop" iconCls="icon-date" onclick="onClick"  plain="true" >消息</a>        
+            <a class="zbui-button zbui-button-iconTop" iconCls="icon-edit" onclick="onClick"  plain="true" >设置</a>        
+            <a class="zbui-button zbui-button-iconTop" iconCls="icon-close" onclick="onClick"  plain="true" >关闭</a>        
+            
+        </div>
+        
+    </div>
+    <div  region="south" showSplit="false" showHeader="false" height="30" splitSize="2">
+        <div style="line-height:28px;text-align:center;cursor:default">Copyright © 江苏振邦智慧城市信息系统有限公司项目管理系统 </div>
+    </div>
+    <div title="center" region="center" style="border:0;" bodyStyle="overflow:hidden;">
+        <!--Splitter-->
+        <div class="zbui-splitter" style="width:100%;height:100%;" borderStyle="border:0;">
+            <div size="180" maxSize="250" minSize="100" showCollapseButton="true" style="border:0;">
+
+                <div id="leftTree" class="zbui-outlookmenu" url="${ctx}/ui/outlookmenu.txt" onitemselect="onItemSelect"
+                    textField="text" idField="id" parentField="pid"    onitemclick="onItemSelect"                   
+                >
+                </div>
+                
+            </div>
+            <div showCollapseButton="false" style="border:0;">
+                <!--Tabs-->
+                <div id="mainTabs" class="zbui-tabs" activeIndex="2" style="width:100%;height:100%;"   border="0" bodyStyle="padding:3px"  
+                     plain="false" onactivechanged="onTabsActiveChanged"
+                >
+				
+                </div>
+            </div>        
+        </div>
+    </div>
+</div>
+
+    
+
+    <script type="text/javascript">
+        zbui.parse();
+
+        //init iframe src
+        
+        //iframe.src = "${ctx}/view?page=transcode/transcode"
+
+        function onItemSelect(e) {
+        	//var iframe = document.getElementById("mainframe");
+        	//var aa=zbui.get("mainframe");
+            var item = e.item;
+            //iframe.src = item.url;
+            showTab(item);
+            
+        }
+
+
+      	function showTab(item){
+      		var tabs = zbui.get("mainTabs");
+			var id=item.id;
+			
+            var tab = tabs.getTab(item.id);
+            if (!tab) {
+                tab = {};
+                tab.url='${ctx}/'+item.url;
+                tab.name = id;
+                tab.title = item.text;
+                tab.showCloseButton = true;
+                tabs.addTab(tab);
+                
+            }
+            tabs.activeTab(tab);
+           
+      	}
+    </script>
+</body>
+</html>

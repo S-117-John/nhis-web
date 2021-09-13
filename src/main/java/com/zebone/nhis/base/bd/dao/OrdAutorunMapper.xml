@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.OrdAutorunMapper">
+
+	<select id="qryOrdAutoexec" resultType="com.zebone.nhis.common.module.base.bd.wf.BdOrdAutoexec">
+		select ae.pk_ordautoexec, 
+		       ae.pk_dept,        
+		       ae.eu_type,        
+		       ae.code_ordtype,   
+		       ae.pk_ord,         
+		       ae.note,           
+		       ae.flag_active     
+		  from bd_ord_autoexec ae
+		 where ae.pk_org=#{pkOrg,jdbcType=CHAR}
+	</select>
+
+</mapper>

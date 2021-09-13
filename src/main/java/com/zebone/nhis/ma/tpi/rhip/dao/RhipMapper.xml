@@ -1,0 +1,951 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ma.tpi.rhip.dao.RhipMapper">
+	<resultMap id="ResultMapPatList" type="com.zebone.nhis.ma.tpi.rhip.vo.PatListVo">
+        <result column="PK_PI" jdbcType="CHAR" property="pkPi"/>
+        <result column="CODE_PI" jdbcType="VARCHAR" property="codePi"/>
+        <result column="CODE_OP" jdbcType="VARCHAR" property="codeOp"/>
+        <result column="CODE_IP" jdbcType="VARCHAR" property="codeIp"/>
+        <result column="PAT_NO" jdbcType="VARCHAR" property="patNo"/>
+        <result column="BARCODE" jdbcType="VARCHAR" property="barcode"/>
+        <result column="PK_PICATE" jdbcType="CHAR" property="pkPicate"/>
+        <result column="NAME_PI" jdbcType="VARCHAR" property="namePi"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="DT_IDTYPE" jdbcType="VARCHAR" property="dtIdtype"/>
+        <result column="ID_NO" jdbcType="VARCHAR" property="idNo"/>
+        <result column="HIC_NO" jdbcType="VARCHAR" property="hicNo"/>
+        <result column="INSUR_NO" jdbcType="VARCHAR" property="insurNo"/>
+        <result column="MPI" jdbcType="VARCHAR" property="mpi"/>
+        <result column="FLAG_EHR" jdbcType="CHAR" property="flagEhr"/>
+        <result column="DT_SEX" jdbcType="VARCHAR" property="dtSex"/>
+        <result column="SEX_SPCODE" jdbcType="VARCHAR" property="sexSpcode"/>
+        <result column="SEX_NAME" jdbcType="VARCHAR" property="sexName"/>
+        <result column="BIRTH_DATE" jdbcType="DATE" property="birthDate"/>
+        <result column="AGE_TXT" jdbcType="VARCHAR" property="ageTxt"/>
+        <result column="PLACE_BIRTH" jdbcType="VARCHAR" property="placeBirth"/>
+        <result column="DT_MARRY" jdbcType="VARCHAR" property="dtMarry"/>
+        <result column="MARRY_SPCODE" jdbcType="VARCHAR" property="marrySpcode"/>
+        <result column="MARRY_NAME" jdbcType="VARCHAR" property="marryName"/>
+        <result column="DT_OCCU" jdbcType="VARCHAR" property="dtOccu"/>
+        <result column="OCCU_SPCODE" jdbcType="VARCHAR" property="occuSpcode"/>
+        <result column="OCCU_NAME" jdbcType="VARCHAR" property="occuName"/>
+        <result column="DT_EDU" jdbcType="VARCHAR" property="dtEdu"/>
+        <result column="EDU_SPCODE" jdbcType="VARCHAR" property="eduSpcode"/>
+        <result column="DT_COUNTRY" jdbcType="VARCHAR" property="dtCountry"/>
+        <result column="COUNTRY_SPCODE" jdbcType="VARCHAR" property="countrySpcode"/>
+        <result column="DT_NATION" jdbcType="VARCHAR" property="dtNation"/>
+        <result column="NATION_SPCODE" jdbcType="VARCHAR" property="nationSpcode"/>
+        <result column="NATION_NAME" jdbcType="VARCHAR" property="nationName"/>
+        <result column="TEL_NO" jdbcType="VARCHAR" property="telNo"/>
+        <result column="MOBILE" jdbcType="VARCHAR" property="mobile"/>
+        <result column="WECHAT_NO" jdbcType="VARCHAR" property="wechatNo"/>
+        <result column="EMAIL" jdbcType="VARCHAR" property="email"/>
+        <result column="UNIT_WORK" jdbcType="VARCHAR" property="unitWork"/>
+        <result column="TEL_WORK" jdbcType="VARCHAR" property="telWork"/>
+        <result column="ADDRESS" jdbcType="VARCHAR" property="address"/>
+        <result column="NAME_REL" jdbcType="VARCHAR" property="nameRel"/>
+        <result column="TEL_REL" jdbcType="VARCHAR" property="telRel"/>
+        <result column="DT_BLOOD_ABO" jdbcType="VARCHAR" property="dtBloodAbo"/>
+        <result column="ABO_SPCODE" jdbcType="VARCHAR" property="abo_spcode"/>
+        <result column="BLOOD_ABO_NAME" jdbcType="VARCHAR" property="bloodAboName"/>
+        <result column="DT_BLOOD_RH" jdbcType="VARCHAR" property="dtBloodRh"/>
+        <result column="RH_SPCODE" jdbcType="VARCHAR" property="rhSpcode"/>
+        <result column="BLOOD_RH_NAME" jdbcType="VARCHAR" property="bloodRhName"/>
+        <result column="PK_PV" jdbcType="CHAR" property="pkPv"/>
+        <result column="PK_ORG" jdbcType="CHAR" property="pkOrg"/>
+        <result column="CODE_PV" jdbcType="VARCHAR" property="codePv"/>
+        <result column="EU_PVTYPE" jdbcType="VARCHAR" property="euPvtype"/>
+        <result column="DATE_BEGIN" jdbcType="DATE" property="dateBegin"/>
+        <result column="DATE_END" jdbcType="DATE" property="dateEnd"/>
+        <result column="EU_STATUS_PV" jdbcType="VARCHAR" property="euStatusPv"/>
+        <result column="FLAG_IN" jdbcType="CHAR" property="flagIn"/>
+        <result column="FLAG_SETTLE" jdbcType="CHAR" property="flagSettle"/>
+        <result column="NAME_PI_PV" jdbcType="VARCHAR" property="namePiPv"/>
+        <result column="DT_SEX_PV" jdbcType="VARCHAR" property="dtSexPv"/>
+        <result column="AGE_PV" jdbcType="VARCHAR" property="agePv"/>
+        <result column="ADDRESS_PV" jdbcType="VARCHAR" property="addressPv"/>
+        <result column="DT_MARRY_PV" jdbcType="VARCHAR" property="dtMarryPv"/>
+        <result column="PK_DEPT" jdbcType="CHAR" property="pkDept"/>
+        <result column="DEPT_NAME" jdbcType="VARCHAR" property="deptName"/>
+        <result column="DEPT_CODE_ORIG" jdbcType="VARCHAR" property="deptCodeOrig"/>
+        <result column="PK_DEPT_NS" jdbcType="CHAR" property="pkDeptNs"/>
+        <result column="DEPT_NS_CODE_ORIG" jdbcType="CHAR" property="deptNsCodeOrig"/>
+        <result column="DEPT_NS_NAME" jdbcType="VARCHAR" property="deptNsName"/>
+        <result column="DATE_CLINIC" jdbcType="DATE" property="dateClinic"/>
+        <result column="DATE_ADMIT" jdbcType="DATE" property="dateAdmit"/>
+        <result column="PK_WG" jdbcType="CHAR" property="pkWg"/>
+        <result column="BED_NO" jdbcType="VARCHAR" property="bedNo"/>
+        <result column="PK_EMP_TRE" jdbcType="CHAR" property="pkEmpTre"/>
+        <result column="NAME_EMP_TRE" jdbcType="VARCHAR" property="nameEmpTre"/>
+        <result column="PK_EMP_PHY" jdbcType="CHAR" property="pkEmpPhy"/>
+        <result column="NAME_EMP_PHY" jdbcType="VARCHAR" property="nameEmpPhy"/>
+        <result column="PK_EMP_NS" jdbcType="CHAR" property="pkEmpNs"/>
+        <result column="NAME_EMP_NS" jdbcType="VARCHAR" property="nameEmpNs"/>
+        <result column="PK_INSU" jdbcType="CHAR" property="pkInsu"/>
+        <result column="INSU_NAME" jdbcType="VARCHAR" property="insuName"/>
+        <result column="PK_PATICATE" jdbcType="VARCHAR" property="pkPaticate"/>
+        <result column="PK_EMP_REG" jdbcType="CHAR" property="pkEmpReg"/>
+        <result column="NAME_EMP_REG" jdbcType="VARCHAR" property="nameEmpReg"/>
+        <result column="DATE_REG" jdbcType="DATE" property="dateReg"/>
+        <result column="FLAG_CANCEL" jdbcType="CHAR" property="flagCancel"/>
+        <result column="PK_EMP_CANCEL" jdbcType="CHAR" property="pkEmpCancel"/>
+        <result column="NAME_EMP_CANCEL" jdbcType="VARCHAR" property="nameEmpCancel"/>
+        <result column="DATE_CANCEL" jdbcType="DATE" property="dateCancel"/>
+        <result column="EU_STATUS_FP" jdbcType="VARCHAR" property="euStatusFp"/>
+        <result column="CREATOR" jdbcType="CHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="MODIFIER" jdbcType="CHAR" property="modifier"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+        <result column="PK_PVIP" jdbcType="CHAR" property="pkPvip"/>
+        <result column="PK_IP_NOTICE" jdbcType="CHAR" property="pkIpNotice"/>
+        <result column="IP_TIMES" jdbcType="DECIMAL" property="ipTimes"/>
+        <result column="DATE_NOTICE" jdbcType="DATE" property="dateNotice"/>
+        <result column="FLAG_OPT" jdbcType="CHAR" property="flagOpt"/>
+        <result column="DT_LEVEL_NS" jdbcType="VARCHAR" property="dtLevelNs"/>
+        <result column="LEVEL_NS_NAME" jdbcType="VARCHAR" property="levelNsName"/>
+        <result column="DT_LEVEL_DISE" jdbcType="VARCHAR" property="dtLevelDise"/>
+        <result column="LEVEL_DISE_NAME" jdbcType="VARCHAR" property="levelDiseName"/>
+        <result column="DT_LEVEL_NUTR" jdbcType="VARCHAR" property="dtLevelNutr"/>
+        <result column="DT_OUTCOMES" jdbcType="VARCHAR" property="dtOutcomes"/>
+        <result column="FLAG_INFANT" jdbcType="CHAR" property="flagInfant"/>
+        <result column="QUAN_INFANT" jdbcType="DECIMAL" property="quanInfant"/>
+        <result column="EU_STATUS_DOC" jdbcType="VARCHAR" property="euStatusDoc"/>
+        <result column="DATE_COMMIT_DOC" jdbcType="DATE" property="dateCommitDoc"/>
+        <result column="FLAG_GA" jdbcType="CHAR" property="flagGa"/>
+        <result column="FLAG_GA_NS" jdbcType="CHAR" property="flagGaNs"/>
+        <result column="DT_INTYPE" jdbcType="VARCHAR" property="dtIntype"/>
+        <result column="DT_OUTTYPE" jdbcType="VARCHAR" property="dtOuttype"/>
+        <result column="PK_DEPT_ADMIT" jdbcType="CHAR" property="pkDeptAdmit"/>
+        <result column="DEPT_CODE_ADMIT_ORIG" jdbcType="VARCHAR" property="deptCodeAdmitOrig"/>
+        <result column="PK_DEPT_NS_ADMIT" jdbcType="CHAR" property="pkDeptNsAdmit"/>
+        <result column="DEPT_NS_CODE_ADMIT_ORIG" jdbcType="VARCHAR" property="deptNsCodeAdmitOrig"/>
+        <result column="PK_DEPT_DIS" jdbcType="CHAR" property="pkDeptDis"/>
+        <result column="PK_DEPT_NS_DIS" jdbcType="CHAR" property="pkDeptNsDis"/>
+        <result column="FLAG_PREST" jdbcType="VARCHAR" property="flagPrest"/>
+        <result column="DATE_PREST" jdbcType="DATE" property="datePrest"/>
+        <result column="PK_EMP_PREST" jdbcType="CHAR" property="pkEmpPrest"/>
+        <result column="NAME_EMP_PREST" jdbcType="VARCHAR" property="nameEmpPrest"/>
+        <result column="PK_PATREC" jdbcType="CHAR" property="pkPatrec"/>
+        <result column="DIAG_ADMIT_TXT" jdbcType="VARCHAR" property="diagAdmitTxt"/>
+        <result column="DIAG_DIS_TXT" jdbcType="VARCHAR" property="diagDisTxt"/>
+        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+        <result column="PK_EMP_REFER" jdbcType="VARCHAR" property="pkEmpRefer"/>
+        <result column="REFER_NAME" jdbcType="VARCHAR" property="referName"/>
+        <result column="PK_EMP_CONSULT" jdbcType="VARCHAR" property="pkEmpConsult"/>
+        <result column="CONSULT_NAME" jdbcType="VARCHAR" property="consultName"/>
+        <result column="PK_EMP_DIRECTOR" jdbcType="VARCHAR" property="pkEmpDirector"/>
+        <result column="DIRECTOR_NAME" jdbcType="VARCHAR" property="directorName"/>
+        <result column="PK_EMP_NS_CHARGE" jdbcType="VARCHAR" property="pkEmpNsCharge"/>
+        <result column="NS_CHARGE_NAME" jdbcType="VARCHAR" property="nsChargeName"/>
+        <result column="PK_EMP_NS_HEAD" jdbcType="VARCHAR" property="pkEmpNsHead"/>
+        <result column="NS_HEAD_NAME" jdbcType="VARCHAR" property="nsHeadName"/>
+        <result column="PK_EMP_QC_DIS" jdbcType="VARCHAR" property="pkEmpQcDis"/>
+        <result column="QC_DIS_NAME" jdbcType="VARCHAR" property="qcDisName"/>
+        <result column="IN_HOS_DAYS" jdbcType="INTEGER" property="inHosDays"/>
+        <result column="TEMPE" jdbcType="VARCHAR" property="tempe"/>
+        <result column="PLUSE" jdbcType="VARCHAR" property="pluse"/>
+        <result column="BREATH" jdbcType="VARCHAR" property="breath"/>
+        <result column="SYSTOLIC" jdbcType="VARCHAR" property="systolic"/>
+        <result column="DIASTOLIC" jdbcType="VARCHAR" property="diastolic"/>
+        <result column="FLAG_AUDIT" jdbcType="CHAR" property="flagAudit"/>
+        <result column="LEAVE_HOS_CODE" jdbcType="VARCHAR" property="leaveHosCode"/>
+    </resultMap>
+    
+    <select id="queryPatList" resultMap="ResultMapPatList">
+        SELECT
+            *
+        FROM
+              view_pat_list_tpi 
+        WHERE pk_pv is not null 
+     	   <if test="pkPv != null" >
+              and PK_PV = #{pkPv,jdbcType=VARCHAR}
+           </if>
+   		<if test="beginDateB != null" >
+            and date_begin &gt;= to_date(#{beginDateB,jdbcType=VARCHAR},'yyyymmddhh24miss')
+        </if>           
+   		<if test="endDateB != null" >
+            and date_begin  &lt; to_date(#{endDateB,jdbcType=VARCHAR},'yyyymmddhh24miss')
+        </if>           
+     	   <if test="euStatus != null" >
+              and eu_status = #{euStatus,jdbcType=CHAR}
+           </if>
+     	   <if test="euStatusPvNot != null" >
+              and eu_status_pv != #{euStatusPvNot,jdbcType=CHAR}
+           </if>
+
+   		<if test="orderBy != null" >
+            ${orderBy}
+        </if>           
+    </select>
+    <select id="queryPatListOp" resultMap="ResultMapPatList">
+        SELECT
+            *
+        FROM
+              view_pat_list_op_tpi 
+        WHERE pk_pv is not null 
+     	   <if test="pkPv != null" >
+              and PK_PV = #{pkPv,jdbcType=VARCHAR}
+           </if>
+   		<if test="beginDateB != null" >
+            and date_begin &gt;= to_date(#{beginDateB,jdbcType=VARCHAR},'yyyymmddhh24miss')
+        </if>           
+   		<if test="endDateB != null" >
+            and date_begin  &lt; to_date(#{endDateB,jdbcType=VARCHAR},'yyyymmddhh24miss')
+        </if>           
+     	   <if test="euStatus != null" >
+              and eu_status = #{euStatus,jdbcType=CHAR}
+           </if>
+     	   <if test="euStatusPvNot != null" >
+              and eu_status_pv != #{euStatusPvNot,jdbcType=CHAR}
+           </if>
+
+   		<if test="orderBy != null" >
+            ${orderBy}
+        </if>           
+    </select>    
+	<resultMap id="ResultMapEmrMedRecAll" type="com.zebone.nhis.ma.tpi.rhip.vo.MedRecVo">
+        <id column="PK_REC" jdbcType="CHAR" property="pkRec"/>
+        <result column="PK_PATREC" jdbcType="VARCHAR" property="pkPatrec"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="SEQ_NO" jdbcType="DECIMAL" property="seqNo"/>
+        <result column="REC_DATE" jdbcType="TIMESTAMP" property="recDate" />
+        <result column="DESCRIBE" jdbcType="VARCHAR" property="describe"/>
+        <result column="PK_PI" jdbcType="VARCHAR" property="pkPi"/>
+        <result column="TIMES" jdbcType="DECIMAL" property="times"/>
+        <result column="PK_PV" jdbcType="VARCHAR" property="pkPv"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="PK_WARD" jdbcType="VARCHAR" property="pkWard"/>
+        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+        <result column="PK_TMP" jdbcType="VARCHAR" property="pkTmp"/>
+        <result column="PK_DOC" jdbcType="VARCHAR" property="pkDoc"/>
+        <result column="FLAG_AUDIT" jdbcType="CHAR" property="flagAudit"/>
+        <result column="EU_AUDIT_LEVEL" jdbcType="DECIMAL" property="euAuditLevel"/>
+        <result column="EU_DOC_STATUS" jdbcType="CHAR" property="euDocStatus"/>
+        <result column="EU_AUDIT_STATUS" jdbcType="CHAR" property="euAuditStatus"/>
+        <result column="PK_EMP_REFER" jdbcType="VARCHAR" property="pkEmpRefer"/>
+        <result column="REFER_EMP_CODE" jdbcType="VARCHAR" property="referEmpCode"/>
+        <result column="REFER_SIGN_DATE" jdbcType="DATE" property="referSignDate"/>
+        <result column="PK_EMP_CONSULT_ACT" jdbcType="VARCHAR" property="pkEmpConsultAct"/>
+        <result column="PK_EMP_CONSULT" jdbcType="VARCHAR" property="pkEmpConsult"/>
+        <result column="CONSULT_AUDIT_DATE" jdbcType="DATE" property="consultAuditDate"/>
+        <result column="CONSULT_SIGN_DATE" jdbcType="DATE" property="consultSignDate"/>
+        <result column="PK_EMP_DIRECTOR_ACT" jdbcType="VARCHAR" property="pkEmpDirectorAct"/>
+        <result column="PK_EMP_DIRECTOR" jdbcType="VARCHAR" property="pkEmpDirector"/>
+        <result column="DIRECTOR_AUDIT_DATE" jdbcType="DATE" property="directorAuditDate"/>
+        <result column="DIRECTOR_SIGN_DATE" jdbcType="DATE" property="directorSignDate"/>
+        <result column="DOC_DATA" jdbcType="BLOB" property="docData"/>
+        <result column="DOC_XML" jdbcType="CLOB" property="docXml"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+        <association property="template" javaType="com.zebone.nhis.common.module.emr.rec.tmp.EmrTemplate">
+	        <id column="PK_TMP" jdbcType="CHAR" property="pkTmp"/>
+	        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+	        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+	        <result column="DESCRIBE" jdbcType="VARCHAR" property="describe"/>
+	        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+	        <result column="EU_TMP_LEVEL" jdbcType="DECIMAL" property="euTmpLevel"/>
+	        <result column="TMP_TITLE" jdbcType="VARCHAR" property="tmpTitle"/>
+	        <result column="TEXT_TITLE" jdbcType="VARCHAR" property="textTitle"/>
+	        <result column="SORT_CODE" jdbcType="DECIMAL" property="sortCode"/>
+	        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+	        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+	        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+	        <result column="PK_WARD" jdbcType="VARCHAR" property="pkWard"/>
+	        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+	        <result column="FLAG_AUDIT" jdbcType="CHAR" property="flagAudit"/>
+	        <result column="AUDIT_LEVEL" jdbcType="DECIMAL" property="auditLevel"/>
+	        <result column="AUDIT_LEVEL_SET" jdbcType="VARCHAR" property="auditLevelSet"/>
+	        <result column="LIMIT_NUM" jdbcType="DECIMAL" property="limitNum"/>
+	        <result column="FLAG_DEFAULT" jdbcType="CHAR" property="flagDefault"/>
+	        <result column="FLAG_OPEN" jdbcType="CHAR" property="flagOpen"/>
+	        <result column="FLAG_MERGE" jdbcType="CHAR" property="flagMerge"/>
+	        <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp"/>
+	        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+	        <result column="DOC_DATA" jdbcType="BLOB" property="docData"/>
+	        <result column="DOC_XML" jdbcType="CLOB" property="docXml"/>
+	        <result column="ASSOCIATION_RULES" jdbcType="CLOB" property="associationRules"/>
+	        <result column="TMP_PATH" jdbcType="VARCHAR" property="tmpPath"/>
+	        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+	        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+	        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+	        <result column="TS" jdbcType="DATE" property="ts"/>
+        </association>   
+        <association property="docType" javaType="com.zebone.nhis.common.module.emr.rec.dict.EmrDocType">  
+            <id column="PK_DOCTYPE" jdbcType="CHAR" property="pkDoctype"/>
+	        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+	        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+	        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+	        <result column="PARENT_TYPE" jdbcType="VARCHAR" property="parentType"/>
+	        <result column="LEVELS" jdbcType="DECIMAL" property="levels"/>
+	        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+	        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+	        <result column="WS_CODE" jdbcType="VARCHAR" property="wsCode"/>
+	        <result column="EU_VISIT" jdbcType="CHAR" property="euVisit"/>
+	        <result column="EU_USED" jdbcType="CHAR" property="euUsed"/>
+	        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+	        <result column="TITLE" jdbcType="VARCHAR" property="title"/>
+	        <result column="FLAG_COURSE" jdbcType="CHAR" property="flagCourse"/>
+	        <result column="FLAG_FIRST" jdbcType="CHAR" property="flagFirst"/>
+	        <result column="FLAG_NEW_PAGE" jdbcType="CHAR" property="flagNewPage"/>
+	        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+	        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+	        <result column="PK_WARD" jdbcType="VARCHAR" property="pkWard"/>
+	        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+	        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+	        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+	        <result column="TS" jdbcType="DATE" property="ts"/> 
+        </association>
+        <association property="medDoc" javaType="com.zebone.nhis.common.module.emr.rec.rec.EmrMedDoc">  
+	        <id column="PK_DOC" jdbcType="CHAR" property="pkDoc"/>
+	        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+	        <result column="DOC_DATA" jdbcType="BLOB" property="docData"/>
+	        <result column="DOC_XML" jdbcType="CLOB" property="docXml"/>
+	        <result column="DOC_DATA_BAK" jdbcType="BLOB" property="docDataBak"/>
+	        <result column="DOC_XML_BAK" jdbcType="CLOB" property="docXmlBak"/>
+	        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+	        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+	        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+	        <result column="TS" jdbcType="DATE" property="ts"/>
+        </association>                           
+    </resultMap>          
+	<select id="queryPatMedRecDoc" resultMap="ResultMapEmrMedRecAll">
+        select doc.*,rec.*,tmp.*,typ.*,
+               emp.code_emp refer_emp_code,emp.name_emp refer_emp_name,
+               emp_consult.code_emp consult_emp_code,emp_consult.name_emp consult_emp_name,
+               emp_director.code_emp director_emp_code,emp_director.name_emp director_emp_name
+		  from emr_med_rec rec
+		  left outer join emr_template tmp
+		    on rec.pk_tmp = tmp.pk_tmp
+		  left outer join emr_doc_type typ
+		    on tmp.type_code = typ.code
+		  left outer join emr_med_doc doc
+		    on rec.pk_doc=doc.pk_doc
+		  left outer join bd_ou_employee emp
+		    on rec.pk_emp_refer=emp.pk_emp		    
+		  left outer join bd_ou_employee emp_consult
+		    on rec.pk_emp_consult=emp_consult.pk_emp		    
+		  left outer join bd_ou_employee emp_director
+		    on rec.pk_emp_director=emp_director.pk_emp		    
+        where rec.PK_PV = #{pkPv,jdbcType=CHAR} and nvl(rec.DEL_FLAG,'0')!='1'
+     	   <if test="typeCode != null" >
+              and rec.TYPE_CODE like #{typeCode,jdbcType=VARCHAR}
+           </if>
+		<if test="orderBy != null" >
+		       ${orderBy}
+		</if>         
+    </select>
+	<resultMap id="ResultMapMedDoc" type="com.zebone.nhis.common.module.emr.rec.rec.EmrMedDoc">
+        <id column="PK_DOC" jdbcType="CHAR" property="pkDoc"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="DOC_DATA" jdbcType="BLOB" property="docData"/>
+        <result column="DOC_XML" jdbcType="CLOB" property="docXml"/>
+        <result column="DOC_DATA_BAK" jdbcType="BLOB" property="docDataBak"/>
+        <result column="DOC_XML_BAK" jdbcType="CLOB" property="docXmlBak"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>    
+    <select id="getEmrMedDocById" resultMap="ResultMapMedDoc">
+        SELECT
+            *
+        FROM
+             EMR_MED_DOC
+        WHERE            
+            PK_DOC = #{pkDoc,jdbcType=CHAR}
+    </select>     
+   <select id="queryCnOrder" parameterType="java.util.Map" resultType="com.zebone.nhis.ma.tpi.rhip.vo.TOrderVo">
+		select cn.pk_cnord,
+		       cn.pk_org,
+		       cn.eu_always,
+		       cn.date_start,
+		       cn.code_ord,
+		       cn.name_ord,
+		       cn.dosage,
+		       cn.pk_unit_dos,
+		       cn.quan,
+		       cn.pk_unit,
+		       cn.code_supply,
+		       sup.flag_pivas,
+		       cn.code_freq,
+		       cn.drip_speed,
+		       cn.flag_first,
+		       cn.pk_emp_ord,
+		       cn.name_emp_ord,
+		       cn.pk_dept_exec,
+		       cn.pk_dept,
+		       cn.pk_org_exec,
+		       cn.date_chk,
+		       cn.date_stop,
+		       cn.spec,
+		       cn.flag_medout,
+	           cn.flag_self,
+	           cn.flag_thera,
+	           cn.flag_prev,
+	           cn.flag_fit,
+	           cn.note_ord,
+	           cn.note_supply,
+	           cn.eu_status_ord,
+	           cn.code_ordtype,
+	           cn.ordsn,
+	           cn.ordsn_parent,
+	           cn.pk_ord,
+	           cn.date_enter,
+	           cn.flag_stop_chk,
+	           cn.flag_erase,
+	           cn.flag_durg,
+	           cn.flag_stop,
+	           cn.flag_sign,
+	           cn.pk_emp_stop,
+	           cn.name_emp_stop,
+	           cn.date_stop,
+	           cn.pk_pres,
+	           cn.infant_no,
+		       cn.ts,
+		       pd.pk_unit_min,
+               pd.pk_unit_vol,
+               pd.pk_unit_wt,
+               pd.vol,
+               cn.name_emp_chk,
+               cn.name_emp_stop_chk,
+               cn.flag_cp,
+               pd.weight,
+               pd.dt_pois,
+               pd.dt_anti,
+               cn.eu_exctype,
+               unit.name unit_name,
+               sup.note supply_spcode,
+               unit_dos.name unit_name_dos,
+               emp.code_emp emp_code,
+               emp_chk.code_emp emp_code_chk,
+               dept.code_orig dept_code_orig,
+               dept.code_dept dept_code,
+               dept_exec.code_orig dept_code_exec_orig,
+               sc.code supply_cate          
+		  from cn_order cn    
+		  left join bd_pd pd on cn.pk_ord = pd.pk_pd and pd.del_flag='0'  
+		  left join bd_supply sup on cn.code_supply = sup.code and sup.del_flag='0'
+		  left join bd_supply_class sc on sc.pk_supplycate = sup.pk_supplycate
+		  left join bd_unit unit on cn.pk_unit = unit.pk_unit
+		  left join bd_unit unit_dos on cn.pk_unit_dos = unit_dos.pk_unit
+		  left join bd_ou_employee emp on cn.pk_emp_ord = emp.pk_emp
+		  left join bd_ou_employee emp_chk on cn.pk_emp_chk = emp_chk.pk_emp
+		  left join bd_ou_dept dept on cn.pk_dept=dept.pk_dept
+		  left join bd_ou_dept dept_exec on cn.pk_dept_exec=dept_exec.pk_dept
+		  where cn.pk_pv = #{pkPv,jdbcType=VARCHAR} 
+		    and cn.flag_doctor='1'  
+		    and cn.del_flag='0'  
+		  order by cn.ordsn 
+    </select>
+    <select id="queryHomePageByPv" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePage">
+        SELECT
+            *
+        FROM
+             EMR_HOME_PAGE
+        WHERE            
+            PK_PV = #{pkPv,jdbcType=VARCHAR}
+        AND DEL_FLAG!='1'
+    </select>
+    <select id="queryHomePageCharges" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePageCharges">
+        SELECT
+            *
+        FROM
+             EMR_HOME_PAGE_CHARGES
+        WHERE            
+            PK_PAGE = #{pkPage,jdbcType=VARCHAR}
+    </select>
+    <select id="queryHomePageOps" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePageOps">
+        SELECT
+            ops.*,
+            emp_op.code_emp emp_code_op,
+            emp_opi.code_emp emp_code_opi,
+            emp_opii.code_emp emp_code_opii,
+            emp_anes.code_emp emp_code_anes 
+        FROM
+             EMR_HOME_PAGE_OPS ops 
+             left outer join bd_ou_employee emp_op on ops.pk_emp_op=emp_op.pk_emp
+             left outer join bd_ou_employee emp_opi on ops.pk_emp_op=emp_opi.pk_emp
+             left outer join bd_ou_employee emp_opii on ops.pk_emp_op=emp_opii.pk_emp
+             left outer join bd_ou_employee emp_anes on ops.pk_emp_anes=emp_anes.pk_emp
+        WHERE            
+            ops.PK_PAGE = #{pkPage,jdbcType=VARCHAR}
+    </select>     
+    <select id="queryHomePageDiags" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePageDiags">
+        SELECT
+            *
+        FROM
+             EMR_HOME_PAGE_DIAGS
+        WHERE            
+            PK_PAGE = #{pkPage,jdbcType=VARCHAR}
+    </select>        
+    <select id="queryEmrHomePageBrsByPage" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePageBr">
+        SELECT
+            *
+        FROM
+             EMR_HOME_PAGE_BR
+        WHERE            
+            PK_PAGE = #{pkPage,jdbcType=VARCHAR}
+            and del_flag='0'
+    </select>
+  	<select id="queryEmrHomePageOrByPage" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePageOr">
+        SELECT
+           top 1  *
+        FROM
+             EMR_HOME_PAGE_OR
+        WHERE            
+            PK_PAGE = #{pkPage,jdbcType=VARCHAR}
+    </select>
+	<select id="queryEmrHomePageOrDtsByPage" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePageOrDt">
+        SELECT
+            *
+        FROM
+             EMR_HOME_PAGE_OR_DT
+        WHERE            
+            pk_pageor in (select pk_pageor from EMR_HOME_PAGE_OR where PK_PAGE = #{pkPage,jdbcType=CHAR})
+    </select>
+    
+    <select id="getOpApplyList" resultType="com.zebone.nhis.ma.tpi.rhip.vo.RhipCnOpApply" parameterType="java.lang.String" >
+	select op.*,ord.code_apply, ord.pk_pv, ord.pk_dept_exec, ord.pk_org_exec , 
+	       ord.eu_status_ord, ord.flag_cp,op.date_apply as date_start,ord.pk_dept,
+       typ.name as srv_type_name,oe.name_org as org_exec_name,de.name_dept as dept_exec_name, de.code_dept dept_code_exec,
+       (select diagname from bd_term_diag where rtrim(pk_diag)=rtrim(op.pk_diag_pre)) as diag_op_name,
+       (select diagname from bd_term_diag where rtrim(pk_diag)=rtrim(op.pk_op)) as op_name,
+       (case when op.dt_anae=null or op.dt_anae='~' then '99' else (select name from bd_defdoc where code_defdoclist='030300' and code=op.dt_anae) end) as anae_name,
+       (case when op.dt_asepsis=null or op.dt_asepsis='~'  then '-' else (select name from bd_defdoc where code_defdoclist='030307' and code=op.dt_asepsis) end) as asepsis_name,
+       (case when op.dt_posi=null or op.dt_posi='~' then '-'  else (select name from bd_defdoc where code_defdoclist='030301' and code=op.dt_posi) end) as posi_name,
+       (case when op.dt_opbody=null or op.dt_opbody='~' then '' else (select name from bd_defdoc where code_defdoclist='030302' and code=op.dt_opbody) end) as bodypart_name,
+       diag.diagcode as code_diag,
+       diag.diagname as name_diag,
+       diagop.diagcode as code_op,
+       diagop.diagname as name_op,
+       eop.code_emp as code_emp_phy_op,
+       def.spcode anae_spcode,
+       asis.code_emp emp_code_asis,
+       asis2.code_emp emp_code_asis2
+	from cn_order ord   
+    	inner join cn_op_apply op on ord.pk_cnord = op.pk_cnord
+     	inner join bd_ordtype typ on typ.code='04' and typ.pk_org in ('~', #{pkOrg,jdbcType=CHAR} )
+     	left outer join bd_ou_org oe on ord.pk_org_exec=oe.pk_org 
+     	left outer join bd_ou_dept de on ord.pk_dept_exec=de.pk_dept 
+     	left outer join bd_term_diag diag on op.pk_diag_pre=diag.pk_diag
+     	left outer join bd_term_diag diagop on op.pk_op=diagop.pk_diag 
+     	left outer join bd_ou_employee eop on eop.pk_emp=op.pk_emp_phy_op
+     	left outer join bd_defdoc def on op.dt_anae=def.pk_defdoc and def.code_defdoclist='030300'
+     	left outer join bd_ou_employee asis on op.pk_emp_asis=asis.pk_emp 
+     	left outer join bd_ou_employee asis2 on op.pk_emp_asis2=asis2.pk_emp 
+ 	where ord.pk_pv =  #{pkPv,jdbcType=CHAR} 
+ 	order by ord.ordsn ,ord.date_enter
+ 	
+  </select>	
+  <select id="getChildApplyList" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOpSubjoin" >
+    select op.*, dg.diagname as op_name 
+    from cn_op_subjoin op inner join bd_term_diag dg on op.pk_diag_sub= dg.pk_diag
+    where 
+  	<foreach collection="pkOpList" item="pkOp" open="" close="" separator="OR">  
+           pk_ordop = #{pkOp,jdbcType=VARCHAR}
+	</foreach>  
+  </select> 
+  <select id="queryVtsList" parameterType="java.util.Map" resultType="DynaBean">
+		select occ.*,dt.* 
+		 from ex_vts_occ occ 
+	   inner join ex_vts_occ_dt dt on occ.pk_vtsocc = dt.pk_vtsocc
+	   where occ.pk_pv = #{pkPv,jdbcType=VARCHAR} and dt.val_temp is not null
+  </select>
+  <select id="getChargeByCategory" resultType="DynaBean" parameterType="java.util.Map" >
+	select cate.code cate_code,
+			cate.name cate_name,
+	       sum(blip.amount) amount,
+	       sum(blip.amount_pi) amount_pi,
+	       min(cate.code) cate_code
+	 from bd_itemcate cate 
+	       right outer join bl_ip_dt blip on cate.pk_itemcate=blip.pk_itemcate
+	 where blip.pk_pv = #{pkPv,jdbcType=CHAR}	 
+	 group by cate.name
+  </select>
+  <select id="querySettleInvList" parameterType="java.util.Map" resultType="DynaBean">
+		select bs.*,bi.*,bid.*,hp.code hp_code,hp.name hp_name
+		  from bl_settle bs
+		 inner join bl_st_inv bsi
+		    on bs.pk_settle = bsi.pk_settle
+		 inner join bl_invoice bi 
+		    on bi.pk_invoice=bsi.pk_invoice
+		 inner join bl_invoice_dt bid
+		    on bi.pk_invoice=bid.pk_invoice
+		 left outer join bd_hp hp
+    		on hp.pk_hp=bs.pk_insurance   
+		where bs.pk_pv = #{pkPv,jdbcType=CHAR}
+		order by bi.code_inv,bid.code_bill
+  </select>
+  <select id="querySettleList" parameterType="java.util.Map" resultType="DynaBean">
+		select hp.code hp_code,
+		        hp.name hp_name,
+		       bs.pk_settle,
+			   bs.flag_canc,
+		       bs.date_st,
+		       bs.amount_st,
+		       bs.amount_pi,
+		       bs.amount_insu,
+		       bs.code_st,
+		       emp.code_emp code_emp_st,
+		       bs.name_emp_st,
+		       case  dt.code_bill when NULL then '0099' when '' then '0099' else dt.code_bill end bill_code,
+		       case  dt.code_bill when NULL then '其他费' when '' then '其他费' else bii.name end bill_name,
+		       inv_codes = (stuff((select ',' + bi.code_inv
+		                       from bl_st_inv bsi
+		                      inner join bl_invoice bi
+		                         on bsi.pk_invoice = bi.pk_invoice
+		                      where bsi.pk_settle = bs.pk_settle
+		                        and bi.flag_cancel='0' 
+		                        for xml path('')),
+		                     1,
+		                     1,
+		                     '')),
+		       SUM(dt.quan) quan,
+		       SUM(dt.amount) amount 
+		  from bl_settle bs
+		  left outer join bd_hp hp
+		    on hp.pk_hp = bs.pk_insurance
+		  inner join bl_ip_dt dt
+		    on bs.pk_settle=dt.pk_settle
+		  left outer join bd_invcate_item bii
+		    on dt.CODE_BILL=bii.code
+		  left outer join bd_ou_employee emp on emp.pk_emp=bs.pk_emp_st
+		 where bs.pk_pv = #{pkPv,jdbcType=CHAR}
+		 group by hp.code,hp.name,
+				  bs.pk_settle,bs.flag_canc,
+				  bs.date_st,bs.amount_st,bs.amount_pi,bs.amount_insu,bs.code_st,emp.code_emp,bs.name_emp_st,
+			      case  dt.code_bill when NULL then '0099' when '' then '0099' else dt.code_bill end,
+				  case  dt.code_bill when NULL then '其他费' when '' then '其他费' else bii.name end
+		 having SUM(dt.quan)!=0
+  </select>   
+  <select id="queryBlIpDtList" parameterType="java.util.Map" resultType="DynaBean">
+		select dt.pk_settle,
+			   cate.code cate_code, 
+			   cate.name cate_name,
+			   bs.flag_canc,
+			   dt.date_hap,
+			   dt.spec,
+			   dt.code_cg,
+			   dt.name_cg,
+			   dt.price,
+			   bu.code unit_code,
+			   bu.name unit_name,
+			   dt.flag_pd,
+			   dt.ratio_self,
+			   ord.ordsn,
+			   SUM(dt.quan) quan,
+			   SUM(dt.amount) amount,
+			   sum(dt.amount_hppi) amount_hppi,
+			   sum(dt.amount_pi) amount_pi 
+		  from bl_ip_dt dt
+		  left outer join bd_itemcate cate
+		    on dt.pk_itemcate = cate.pk_itemcate
+		 inner join bl_settle bs
+		    on dt.pk_settle = bs.pk_settle
+		 left outer join bd_unit bu
+		    on bu.pk_unit = dt.pk_unit
+		 left outer join cn_order ord
+		    on ord.pk_cnord=dt.pk_cnord
+		 where bs.pk_pv = #{pkPv,jdbcType=CHAR}
+		group by dt.pk_settle,cate.code, cate.name,
+			   dt.spec,
+			   dt.code_cg,
+			   dt.name_cg,
+			   dt.price,
+			   bu.code,
+			   bu.name,
+			   bs.flag_canc,
+			   dt.date_hap,
+			   dt.flag_pd,
+			   dt.ratio_self,
+			   ord.ordsn  
+  </select>
+  <select id="queryOpSettleList" parameterType="java.util.Map" resultType="DynaBean">
+		select hp.code hp_code,
+		        hp.name hp_name,
+		       bs.pk_settle,
+			   bs.flag_canc,
+		       bs.date_st,
+		       bs.amount_st,
+		       bs.amount_pi,
+		       bs.amount_insu,
+		       emp.code_emp code_emp_st,
+		       case  dt.code_bill when NULL then '0099' when '' then '0099' else dt.code_bill end bill_code,
+		       case  dt.code_bill when NULL then '其他费' when '' then '其他费' else bii.name end bill_name,
+		       inv_codes = (stuff((select ',' + bi.code_inv
+		                       from bl_st_inv bsi
+		                      inner join bl_invoice bi
+		                         on bsi.pk_invoice = bi.pk_invoice
+		                      where bsi.pk_settle = bs.pk_settle
+		                        for xml path('')),
+		                     1,
+		                     1,
+		                     '')),
+		       SUM(dt.quan) quan,
+		       SUM(dt.amount) amount 
+		  from bl_settle bs
+		  left outer join bd_hp hp
+		    on hp.pk_hp = bs.pk_insurance
+		  inner join bl_op_dt dt
+		    on bs.pk_settle=dt.pk_settle
+		  left outer join bd_invcate_item bii
+		    on dt.CODE_BILL=bii.code
+		  left outer join bd_ou_employee emp on pk_emp = bs.pk_emp_st 
+		 where bs.pk_pv = #{pkPv,jdbcType=CHAR}
+		 group by hp.code,hp.name,
+				  bs.pk_settle,bs.flag_canc,
+				  bs.date_st,bs.amount_st,bs.amount_pi,bs.amount_insu,
+				  emp.code_emp,
+			      case  dt.code_bill when NULL then '0099' when '' then '0099' else dt.code_bill end,
+				  case  dt.code_bill when NULL then '其他费' when '' then '其他费' else bii.name end
+		 having SUM(dt.quan)!=0
+  </select>    
+  <select id="queryBlOpDtList" parameterType="java.util.Map" resultType="DynaBean">
+		select dt.pk_settle,cate.code cate_code, cate.name cate_name,
+			   dt.spec,
+			   dt.code_cg,
+			   dt.name_cg,
+			   dt.price,
+			   bu.code unit_code,
+			   bu.name unit_name,
+			   bs.NAME_EMP_ST,
+			   bs.PK_EMP_ST,
+			   emp.code_emp code_emp_st,
+			   dt.pk_cgop,
+			   SUM(quan) quan,
+			   SUM(amount) amount
+		  from bl_op_dt dt
+		  left outer join bd_itemcate cate
+		    on dt.pk_itemcate = cate.pk_itemcate
+		 inner join bl_settle bs
+		    on dt.pk_settle = bs.pk_settle
+		 left outer join bd_unit bu
+		    on bu.pk_unit = dt.pk_unit
+	     left outer join bd_ou_employee emp on bs.PK_EMP_ST=emp.pk_emp
+	   where bs.pk_pv = #{pkPv,jdbcType=CHAR}  
+	    group by dt.pk_settle,cate.code, cate.name,
+	         dt.spec,
+	         dt.code_cg,
+	         dt.name_cg,
+	         dt.price,
+	         bu.code,
+	         bu.name,
+	         bs.NAME_EMP_ST,
+	         bs.PK_EMP_ST,
+	         emp.code_emp,
+	         dt.pk_cgop  
+  </select>  
+  <select id="queryPvDiagVos" resultType="com.zebone.nhis.ma.tpi.rhip.vo.PvDiagVo" parameterType="java.util.Map">
+      select d.* , z.dt_system,z.diagname as name_diag,z.diagcode as code_diag,emp.code_emp emp_code
+     from pv_diag d
+  left outer join bd_term_diag z on d.pk_diag = z.pk_diag  
+  left outer join bd_ou_employee emp on d.pk_emp_diag=emp.pk_emp 
+       where d.del_flag='0' 
+        and d.pk_pv = #{pkPv,jdbcType=VARCHAR}  
+    order by d.dt_diagtype,d.sort_no,z.diagcode,d.desc_diag,d.pk_pvdiag
+   </select>
+  <select id="queryPatEncInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select pv.*,pi.*,ip.*,hp.code hp_code,hp.eu_hptype,appt.code appt_code
+		  from pv_encounter pv
+		  inner join pi_master pi
+		    on pv.pk_pi=pi.pk_pi
+		  left outer join pv_ip ip
+		    on pv.pk_pv = ip.pk_pv
+		  left outer join bd_hp hp
+		    on hp.pk_hp = pv.pk_insu
+		 where pv.pk_pv = #{pkPv,jdbcType=CHAR}
+  </select>  
+  <select id="queryPatEncInfoOp" parameterType="java.util.Map" resultType="DynaBean">
+		select pv.*,pi.*,op.*,
+		       hp.code hp_code,hp.eu_hptype,appt.code appt_code,dept.code_orig dept_code_orig,
+		       dept.name_dept dept_name_gh,emp.code_emp code_emp_pv  
+		  from pv_encounter pv
+		  inner join pi_master pi
+		    on pv.pk_pi=pi.pk_pi
+		  inner join pv_op op
+		    on pv.pk_pv = op.pk_pv
+		  left outer join bd_hp hp
+		    on hp.pk_hp = pv.pk_insu
+		  left outer join sch_appt appt
+		    on op.pk_appo=appt.pk_schappt
+		  left outer join sch_srv schsrv
+		    on op.pk_schsrv=schsrv.pk_schsrv
+		  left outer join sch_resource res
+		    on op.pk_res=res.pk_schres
+		  left outer join bd_ou_dept dept
+		    on op.pk_dept_pv=dept.pk_dept
+		  left outer join bd_ou_employee emp
+		    on op.pk_emp_pv=emp.pk_emp 
+		 where pv.pk_pv = #{pkPv,jdbcType=CHAR}
+  </select>
+  <select id="queryPatEmrOp" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.cn.opdw.CnOpEmrRecord">
+		select
+			eo.*,
+			emp.code_emp
+		from cn_emr_op eo
+		left outer join bd_ou_employee emp on eo.pk_emp_emr=emp.pk_emp
+		where eo.pk_pv = #{pkPv,jdbcType=CHAR}
+		 
+  </select>
+
+  <select id="queryPatPresList" parameterType="java.util.Map" resultType="DynaBean">
+		select pres.*,ord.*,  
+		       unit.name unit_name,  --单位名称
+		       unit.code unit_code,
+		       unit_dos.name unit_dos,--单位名称
+		       sup.name supply, --用法名称
+		       freq.name freq,  --频次名称
+		       pd.pk_unit_min, 
+		       pd.pk_unit_wt,  
+		       pd.pk_unit_vol, 
+		       pd.vol,
+		       emp.name_emp name_emp,
+		       emp.code_emp code_emp,
+		       pd.dt_pharm,
+		       pd.dt_dosage,
+		       dp.ba_code pharm_bacode,
+		       dept.code_dept dept_code_exec,
+		       dept.name_dept dept_name_exec,
+		       fact.code factory_code,
+		       fact.name factory_name,
+		       pd.appr_no 
+		from cn_prescription pres
+		   inner join cn_order ord on pres.pk_pres=ord.pk_pres
+	       left outer join bd_unit unit on ord.pk_unit_cg=unit.pk_unit
+	       left outer join bd_unit unit_dos on ord.pk_unit_dos=unit_dos.pk_unit
+	       left outer join bd_term_freq freq on ord.code_freq=freq.code
+	       left outer join bd_supply sup on ord.code_supply=sup.code
+	       left outer join bd_pd pd on ord.pk_ord=pd.pk_pd 
+	       left outer join bd_ou_employee emp on pres.pk_emp_ord=emp.pk_emp 
+	       left outer join bd_defdoc dp on dp.code_defdoclist='030402' and pd.dt_pharm=dp.code 
+	       left outer join bd_ou_dept dept on ord.pk_dept_exec=dept.pk_dept
+	       left outer join bd_factory fact on fact.pk_factory=pd.pk_factory 
+    	 where pres.pk_pv=#{pkPv,jdbcType=VARCHAR}
+    	 order by pres.pres_no,pres.pk_pres,ord.ordsn
+  </select>            
+  
+  <!-- 查询出院患者列表 -->
+  <select id="queryOutPatiList" parameterType="java.util.Map" resultType="com.zebone.nhis.ma.tpi.rhip.vo.OutPvPatiVo">
+		select 
+		 pi.code_pi,
+		 pi.code_ip,
+		 pi.name_pi,
+		 pv.pk_pv,
+		 pv.pk_pi,
+		 pv.code_pv,
+		 pv.bed_no,
+		 pv.age_pv as age,
+		 pi.dt_sex,
+		 pi.birth_date,
+		 pv.pk_insu,
+		 hp.name as name_hp,
+		 pvip.ip_times,
+		 pv.pk_dept,
+		 dept.name_dept,
+		 pv.pk_dept_ns,
+		 deptns.name_dept as name_dept_ns,
+		 pv.eu_status,
+		 pv.date_begin,
+		 pv.date_end,
+		 pv.date_admit,
+		 pv.name_emp_phy,
+		 pv.pk_emp_phy,
+		 pv.name_emp_ns,
+		 pv.pk_emp_ns,
+		 pv.FLAG_CANCEL,
+		 pv.FLAG_IN,
+		 pv.FLAG_SETTLE,
+		 emr.FINAL_QC_DATE,
+		 emr.emr_archive_date as archive_date
+		 from pv_encounter pv
+		inner join pi_master pi on pi.pk_pi = pv.pk_pi
+		inner join bd_hp hp on hp.pk_hp = pv.pk_insu  
+		inner join pv_ip pvip on pvip.pk_pv = pv.pk_pv 
+		 left join emr_pat_rec emr on emr.pk_pv = pv.pk_pv
+		 left join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+		 left join bd_ou_dept deptns on deptns.pk_dept = pv.pk_dept_ns
+		where 1=1  and pv.flag_in='0' and pv.eu_pvtype='3'
+		  and (pv.eu_status = '2' or pv.eu_status = '3')
+		  and emr.eu_status &gt;= '6'
+		  and (emr.eu_status_rhip != '1' or emr.eu_status_rhip is null)
+	      <if test="dateEndIn != null  and  dateEndIn != ''">
+		    and pv.date_begin &lt;= to_date(#{dateEndIn}, 'YYYYMMDDHH24MISS') 
+	      </if>
+	      <if test="dateBeginIn != null  and  dateBeginIn != ''">
+		    and pv.date_begin &gt;= to_date(#{dateBeginIn}, 'YYYYMMDDHH24MISS')  
+	      </if>
+		 <if test="dateEndOut != null  and  dateEnd != ''">
+		    and pv.date_end &lt;= to_date(#{dateEndOut}, 'YYYYMMDDHH24MISS') 
+	      </if>
+	      <if test="dateBeginOut != null  and  dateBegin != ''">
+		    and pv.date_end &gt;= to_date(#{dateBeginOut}, 'YYYYMMDDHH24MISS')  
+	      </if>
+	      <if test="codeIp != null  and  codeIp != ''">
+			     and pi.code_ip like '%${codeIp}%'
+	      </if>
+	      <if test="namePi != null  and  namePi != ''">
+			     and pv.name_pi like '%${namePi}%' 
+	      </if>
+		  <if test="pkDept != null  and  pkDept != ''">
+			      and pv.pk_dept = #{pkDept,jdbcType=CHAR} 
+	      </if>
+	      <if test="pkPv != null  and  pkPv != ''">
+			      and pv.pk_pv = #{pkPv,jdbcType=CHAR} 
+	      </if>
+	      and not exists ( select 1
+	                     from emr_operate_logs logs
+	                    where logs.pk_pv=pv.pk_pv
+	                      and logs.code='rhip_upload' )
+	      order by pv.date_end desc,pi.code_ip,pvip.ip_times 
+  </select> 
+
+  <!-- 查询诊断信息诊断-->
+  <select id="queryDiagInfo" parameterType="java.lang.String" resultType="java.util.Map">
+  	select 
+  		p.CODE_ICD diagcode,
+	    p.NAME_DIAG diagname,
+		p.DT_DIAGTYPE as diagtype,
+		p.FLAG_MAJ as flag 
+  	from pv_diag p LEFT JOIN BD_TERM_DIAG b on p.PK_DIAG = b.PK_DIAG 
+  	WHERE p.PK_PV = #{pkPv,jdbcType=VARCHAR}
+  </select>
+    <select id="queryIptFeeCostList" parameterType="java.util.Map" resultType="com.zebone.nhis.ma.tpi.rhip.vo.IptFeeCostVo">
+        SELECT
+        doc.code_std as code,
+        doc.name,
+        SUM(dt.amount) amount
+        from bl_ip_dt dt
+		  left outer join bd_itemcate cate
+		    on dt.pk_itemcate = cate.pk_itemcate
+			left join BD_DEFDOC doc
+			on cate.NOTE = doc.code
+			inner join bl_settle bs
+		    on dt.pk_settle = bs.pk_settle
+			where  bs.pk_pv =#{pkPv,jdbcType=VARCHAR} and  doc.CODE_DEFDOCLIST='990200'
+			GROUP BY  doc.code_std, doc.name
+    </select>
+    <select id="queryPdstList" parameterType="java.util.Map" resultType="com.zebone.nhis.ma.tpi.rhip.vo.PdstDetail">
+        select top 3 * from PD_ST st 
+        inner join pd_st_detail de on st.pk_pdst=de.pk_pdst
+        where st.DEL_FLAG='0'
+        <if test="euDirect != null  and  euDirect != ''">
+			      and eu_direct = #{euDirect,jdbcType=CHAR} 
+	      </if>
+    </select>
+     <select id="queryPvList" parameterType="java.util.Map" resultType="string">
+        select top 1 pk_pv from view_pat_list_op_tpi where eu_status_pv!='9' and name not like '%测试%' and name not like '%赵云希%'   and name not like '%诸前前%'
+        and not exists(select 1 from rp_data_upload u where u.pk_pv= view_pat_list_op_tpi.pk_pv and u.del_flag='0') order by DATE_CLINIC
+    </select>
+    <select id="queryCardInfo" resultType="com.zebone.nhis.ma.tpi.rhip.vo.CardInfo">
+        SELECT
+            *
+        FROM
+             PI_CARD
+        WHERE            
+            PK_PI = #{pkPi,jdbcType=VARCHAR}
+    </select>    
+</mapper>

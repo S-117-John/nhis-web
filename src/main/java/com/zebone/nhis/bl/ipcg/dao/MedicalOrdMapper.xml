@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.bl.ipcg.dao.MedicalOrdMapper" >
+	<select id="qryAppInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.ipcg.vo.MedicalAppVo">
+		select ord.pk_cnord, 
+       pv.bed_no,  
+       pv.name_pi,
+       pv.pk_pi, 
+       pv.pk_pv,  
+       pi.code_ip,
+       ord.code_apply,
+       case when ord.flag_emer='1' then '急' else '' end flag_emer, 
+       ord.name_ord, 
+       ord.date_sign,
+       ord.name_emp_ord,
+       dept.name_dept,  
+       dept_ns.name_dept as name_dept_ns,
+       ord.infant_no,   
+       ord.ordsn_parent, 
+       case when ord.code_ordtype like '02%' then ris.eu_status
+            when ord.code_ordtype like '03%' then lab.eu_status
+       end eu_status  
+  from pi_master pi
+       inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+       inner join cn_order ord on pv.pk_pv=ord.pk_pv 
+       inner join ex_order_occ  occ on occ.pk_cnord = ord.pk_cnord 
+       inner join bd_ou_dept dept on ord.pk_dept=dept.pk_dept
+       inner join bd_ou_dept dept_ns on ord.pk_dept_ns=dept_ns.pk_dept
+       left outer join cn_ris_apply ris on ord.pk_cnord=ris.pk_cnord
+       left outer join cn_lab_apply lab on ord.pk_cnord=lab.pk_cnord
+where ord.flag_durg='0' and occ.eu_status='0' and ((ord.code_ordtype like '02%' and ris.eu_status=1) or
+       (ord.code_ordtype like '03%' and lab.eu_status=1)) and ord.pk_dept_exec = #{pkDeptExec,jdbcType=CHAR}
+       <if test=" codeip!=null and codeip!='' ">
+	    and pi.code_ip = #{codeip,jdbcType=VARCHAR}
+	  </if>
+	  <if test=" namepi!=null and namepi!='' ">
+	    and pv.name_pi like '%${namepi}%' 
+	  </if>
+	  <if test=" codeapp!=null and codeapp!='' ">
+	    and ord.code_apply like '%${codeapp}%' 
+	  </if>
+	  <if test=" dateBegin!=null and dateBegin!='' ">
+	      and ord.date_start &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+	  </if>
+	  <if test=" dateEnd!=null and dateEnd!='' ">
+	      and ord.date_start &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+	  </if>
+	</select>
+	
+	<select id="queryMedicalOrdList" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.ipcg.vo.CnOrderVo">
+	  select mt.pk_ord, 
+	      mt.pk_unit,
+		  mt.pk_unit_dos,
+		 <!--   pd.pk_unit_pack as pk_unit_cg,修改为按维护的单位计算价格-->
+		  mt.pk_unit as pk_unit_cg,
+		  pd.name as name_ord,
+		  ordtype.code as code_ordtype,
+		  pd.code as code_ord,
+		  pd.spec,
+		  pd.vol as dosquan,
+		  mt.price as price_cg,
+		  mt.dosage,
+		  mt.quan,
+		  mt.flag_pd as flag_durg,
+		  mt.code_freq,
+		  mt.code_supply,
+		  mt.note as note_ord,
+		  pd.pack_size
+	  from bd_ord_mt mt 
+	  inner join bd_pd pd on pd.pk_pd = mt.pk_ord and mt.flag_pd = '1' 
+	  inner join bd_ordtype ordtype on ordtype.pk_ordtype = pd.pk_ordtype  
+	  where mt.pk_dept = #{pkDept,jdbcType=CHAR} and mt.flag_stop = '0' and mt.del_flag='0' 
+	  <if test=" spcode!=null and spcode!='' ">
+	    and pd.spcode like '%${spcode}%' 
+	  </if>
+	  <if test=" ordname!=null and ordname!='' ">
+	    and pd.name like '%${ordname}%' 
+	  </if>
+	  union all 
+	  select mt.pk_ord,
+		  mt.pk_unit,
+		  mt.pk_unit as pk_unit_cg,
+		  mt.pk_unit_dos,
+		  ord.name as name_ord,
+		  ord.code_ordtype,
+		  ord.code as code_ord,
+		  ord.spec,
+		  1 as dosquan,
+		  mt.price as price_cg,
+		  mt.dosage,
+		  mt.quan,
+		  mt.flag_pd as flag_durg,
+		  mt.code_freq,
+		  mt.code_supply,
+		  mt.note as note_ord,
+		  1 as pack_size 
+	  from bd_ord_mt mt 
+	  inner join bd_ord ord on ord.pk_ord = mt.pk_ord and mt.flag_pd = '0' 
+	  where mt.pk_dept = #{pkDept,jdbcType=CHAR} and mt.flag_stop = '0' and mt.del_flag='0' 
+	  <if test=" spcode!=null and spcode!='' ">
+	    and ord.spcode like '%${spcode}%' 
+	  </if>
+	  <if test=" ordname!=null and ordname!='' ">
+	    and ord.name like '%${ordname}%' 
+	  </if>
+	</select>
+	
+	
+</mapper>

@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.bl.hd.dao.HdCgMapper">
+	<select id="queryHdPi" parameterType="java.util.Map" resultType="DynaBean">
+		select pi.pk_pi,     
+			pi.code_hd,    
+			pv.pk_pv,      
+			pv.name_pi,     
+			pv.dt_sex,       
+			pv.age_pv,      
+			pv.pk_insu,     
+			hd.pk_pvhd,     
+			hd.dt_hdtype,   
+			bed.name_bed,   
+			hd.pk_dateslot, 
+			hd.date_begin,   
+			hd.eu_status_hd,
+			pv.eu_pvtype,
+		  	bed.pk_hdbed,
+		  	hd.pk_dept,
+		  	hd.pk_dept_ns,
+	    	hd.pk_emp_hd,
+		  	hd.pk_emp_ns,
+		  	hp.NAME as insu_name,
+		  	dept.NAME_DEPT as dept_ns_name,
+		  	bed.code_bed   
+		from pv_encounter pv
+		inner join pi_hd pi on pv.pk_pi=pi.pk_pi
+		inner join pv_hd hd on pv.pk_pv=hd.pk_pv
+		inner join bd_res_hdbed bed on hd.pk_hdbed=bed.pk_hdbed
+		inner join bd_hp hp on hp.PK_HP=pv.PK_INSU
+		inner join BD_OU_DEPT dept on dept.PK_DEPT=hd.PK_DEPT_NS
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+		   	pv.PK_ORG=#{pkOrg,jdbcType=CHAR}   
+  		<if test=" pkDeptNs != null and  pkDeptNs != '' ">
+  			and bed.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR} 
+  		</if>
+  		<if test=" euStatusHd != null and  euStatusHd != '' ">
+  			and hd.eu_status_hd = #{euStatusHd,jdbcType=VARCHAR} 
+  		</if>
+  		<if test=" startDate != null ">
+  			and hd.date_begin &gt;= to_date(#{startDate,jdbcType=VARCHAR},'yyyy-mm-dd')  
+  		</if>
+  		<if test=" endDate != null ">
+  			and hd.date_begin &lt;= to_date(#{endDate,jdbcType=VARCHAR},'yyyy-mm-dd')
+  		</if>
+  		<if test=" namePi != null and  namePi != '' ">
+  			and pv.name_pi like '%${namePi}%'
+  		</if>
+  		<if test=" codeHd != null and  codeHd != '' ">
+  			and pi.code_hd = #{codeHd,jdbcType=VARCHAR}
+  		</if>  		
+		</trim>
+	</select>
+	<select id="queryAmtAcc" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			acc.amt_acc,          
+			sum(card.deposit) depo 
+		from pi_acc acc
+		left join pi_card card on acc.pk_pi=card.pk_pi
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+		<if test=" pkPi != null and  pkPi != '' ">
+  			acc.pk_pi = #{pkPi,jdbcType=CHAR} 
+  		</if>
+		</trim>
+		group by acc.amt_acc	
+	</select>
+	<select id="queryUseAmt" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			sum(cg.amount) amount
+		from bl_op_dt cg
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			cg.flag_settle = '0'	
+		<if test=" pkPv != null and  pkPv != '' ">
+  			and cg.pk_pv=#{pkPv,jdbcType=CHAR} 
+  		</if>
+		</trim>
+	</select>
+	<select id="querySchHd" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			sch.date_hd,  
+       		bed.name_bed,  
+       		ds.name_dateslot,
+       		sch.pk_schhd    
+  		from sch_sch_hd sch
+       	inner join bd_res_hdbed bed on sch.pk_hdbed=bed.pk_hdbed
+       	inner join bd_code_dateslot ds on sch.pk_dateslot=ds.pk_dateslot
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			sch.flag_confirm='0' and sch.flag_canc='0'	
+		<if test=" pkPi != null and  pkPi != '' ">
+  			and sch.pk_pi=#{pkPi,jdbcType=CHAR} 
+  		</if>
+  		<if test=" dateHd != null and  dateHd != '' ">
+  			and sch.date_hd &gt;= to_date(#{dateHd,jdbcType=VARCHAR},'yyyy-mm-dd') 
+  		</if>
+		</trim>	
+	</select>
+	<select id="queyrPiRecord" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			pi.code_hd,   
+       		pv.name_pi,   
+       		hd.pk_pvhd,  
+       		hd.pk_dept,   
+       		hd.pk_dept_ns, 
+       		hd.pk_hdbed,  
+       		hd.pk_dateslot,
+       		hd.pk_emp_hd,  
+       		hd.name_emp_hd,
+       		hd.pk_dept_ns,
+       		hd.name_emp_ns,
+       		hd.dt_hdtype,  
+       		hd.date_begin  
+  		from pv_hd hd
+       	inner join pv_encounter pv on hd.pk_pv=pv.pk_pv
+       	inner join pi_hd pi on pv.pk_pi=pi.pk_pi
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			1=1
+ 		<if test=" pkPvhd != null and  pkPvhd != '' ">
+  			and hd.pk_pvhd=#{pkPvhd,jdbcType=CHAR} 
+  		</if>
+  		<if test=" pkHdbed != null and  pkHdbed != '' ">
+  			and hd.pk_hdbed=#{pkHdbed,jdbcType=CHAR} 
+  		</if>
+		</trim>	
+	</select>
+	<select id="queryPiVis" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			pi.pk_pi,    
+       		hd.code_hd,  
+       		pi.name_pi,  
+       		pi.dt_idtype,
+       		pi.id_no,     
+       		pi.dt_sex,  
+       		pi.birth_date,
+       		pi.pk_picate, 
+       		pi.dt_country,
+       		pi.dt_nation,
+       		pi.dt_occu,  
+       		pi.dt_marry, 
+       		pi.mobile,   
+       		pi.addr_birth,
+       		pi.addr_origin,
+       		pi.addr_cur,    
+       		pi.addr_cur_dt, 
+       		pi.postcode_cur,
+       		pi.addr_regi,  
+       		pi.addr_regi_dt,
+       		pi.postcode_regi, 
+       		pi.unit_work, 
+       		pi.tel_work,    
+       		pi.postcode_work, 
+       		pi.name_rel, 
+       		pi.tel_rel,
+			pi.addrcode_birth,
+			pi.addrcode_cur,
+			pi.addrcode_origin,
+			pi.addrcode_regi,
+       		hd.dt_hdtype as hd_dt_hdtype,  
+       		hd.cnt_week,   
+       		pv.code_pv,   
+       		pv.pk_insu,    
+       		pv.pk_picate,  
+       		pv.date_begin,  
+       		pvhd.pk_dept,  
+       		pvhd.pk_dept_ns, 
+       		pvhd.pk_hdbed,  
+       		pvhd.pk_dateslot,
+       		pvhd.dt_hdtype as pvhd_dt_hdtype, 
+       		pvhd.name_emp_hd,
+       		pvhd.name_emp_ns,
+       		bed.code_bed,
+       		pv.pk_pv,
+       		hp.name as insu_name,
+       		dept.NAME_DEPT as dept_ns_name
+  		from pi_master pi
+       	inner join pi_hd hd on pi.pk_pi=hd.pk_pi
+       	inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+       	inner join pv_hd pvhd on pv.pk_pv=pvhd.pk_pv  
+       	inner join bd_res_hdbed bed on pvhd.pk_hdbed=bed.PK_HDBED 
+       	inner join bd_hp hp on hp.PK_HP=pv.PK_INSU
+       	inner join BD_OU_DEPT dept on dept.PK_DEPT=pvhd.PK_DEPT_NS
+ 		where 
+ 			1=1
+ 		<if test=" pkPvhd != null and  pkPvhd != '' ">
+  			and pvhd.pk_pvhd=#{pkPvhd,jdbcType=CHAR} 
+  		</if>
+  		<if test=" pkHdbed != null and  pkHdbed != '' ">
+  			and pvhd.pk_hdbed=#{pkHdbed,jdbcType=CHAR} 
+  		</if>			 
+	</select>
+	<select id="queryVisCost" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			cg.pk_itemcate,
+       		cate.name cate, 
+       		cg.code_cg,    
+       		cg.name_cg,  
+       		cg.spec,       
+       		cg.pk_unit,
+       		unit.name unit,
+       		cg.price_org, 
+       		cg.quan,      
+       		cg.amount,      
+       		cg.amount_pi  
+  		from bl_op_dt cg
+       	inner join bd_itemcate cate on cg.pk_itemcate=cate.pk_itemcate
+       	inner join bd_item item on item.pk_item=cg.pk_item
+       	inner join bd_unit unit on cg.pk_unit=unit.pk_unit
+       	where 
+ 			1=1
+ 		<if test=" pkPv != null and  pkPv != '' ">
+  			and cg.pk_pv=#{pkPv,jdbcType=CHAR} 
+  		</if>
+  		<if test=" value !=null and value !='' ">
+  			and (cg.name_cg like '%${value}%' or item.spcode  like '%${value}%')
+  		</if>
+  		union all
+      	select 
+	      	cg.pk_itemcate,
+	        cate.name cate, 
+	        cg.code_cg,    
+	        cg.name_cg,  
+	        cg.spec,       
+	        cg.pk_unit,
+	        unit.name unit,
+	        cg.price_org, 
+	        cg.quan,      
+	        cg.amount,      
+	        cg.amount_pi  
+      	from bl_op_dt cg
+        inner join bd_itemcate cate on cg.pk_itemcate=cate.pk_itemcate
+        inner join bd_pd pd on pd.pk_pd=cg.pk_item
+        inner join bd_unit unit on cg.pk_unit=unit.pk_unit
+        where 
+      		1=1
+    	<if test=" pkPv != null and  pkPv != '' ">
+        	and cg.pk_pv=#{pkPv,jdbcType=CHAR} 
+      	</if>
+      	<if test=" value !=null and value !='' ">
+       		and (cg.name_cg like '%${value}%' or pd.spcode  like '%${value}%')
+      	</if>
+	</select>
+	<select id="queryCostClassification" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			sum(amount) amt,  
+       		cg.pk_itemcate,   
+       		cate.name        
+  		from bl_op_dt cg 
+       	inner join bd_itemcate cate on cg.pk_itemcate=cate.pk_itemcate
+ 		where 
+ 			cg.flag_settle='0'
+ 		<if test=" pkPv != null and  pkPv != '' ">
+  			and cg.pk_pv=#{pkPv,jdbcType=CHAR} 
+  		</if>    		
+		group by cg.pk_itemcate,cate.name
+	</select>
+	<select id="queryCostDetailed" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			cg.name_cg, 
+       		cg.spec,    
+       		cg.pk_unit,  
+       		cg.price_org,
+       		cg.quan,   
+       		cg.amount,  
+       		cg.amount_pi 
+  		from bl_op_dt cg
+ 		where 
+ 			cg.flag_settle='0' 
+ 		<if test=" pkPv != null and  pkPv != '' ">
+  			and cg.pk_pv=#{pkPv,jdbcType=CHAR} 
+  		</if>
+  		<if test=" pkItemcate != null and  pkItemcate != '' ">
+  			and cg.pk_itemcate=#{pkItemcate,jdbcType=CHAR} 
+  		</if>
+	</select>
+    <select id="getBdItemsByCon" resultType="com.zebone.nhis.common.module.base.bd.srv.BdItem" parameterType="list">
+    select item.name as name ,item.pk_item,item.code,item.pk_unit,item.spec,item.pk_itemcate 
+    from bd_item item 
+  	left join bd_unit unit on item.pk_unit = unit.pk_unit
+  	where pk_item  in  
+  	<foreach collection="list" item="vo" index="index" open="(" close=")" separator=",">
+      	#{vo.pkItem} 
+  	</foreach>
+	</select>	
+	<select id="QryBlDtOpByRefunds" resultType="com.zebone.nhis.common.module.bl.opcg.BlOpDt" >
+          select * from bl_op_dt where del_flag = '0' and flag_settle='0' and pk_cgop in    
+        <foreach collection="list" item="vo" index="index"
+            open="(" close=")" separator=",">
+            #{vo.pkCgop} 
+        </foreach>
+    </select>
+    <select id="queryPvCost" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.hd.vo.CostVo">
+		select 
+			cg.pk_pv,
+        	sum(cg.amount) as amount,
+        	sum(cg.amount_pi) as amount_pi,
+        	sum(cg.amount_hppi) as amount_hppi,
+        	sum(cg.amount_add) as amount_add,
+        	sum(cg.amount_pi) as amount_pi
+  		from bl_op_dt cg
+ 		where 
+ 			cg.flag_settle='0' 
+ 		<if test=" pkPv != null and  pkPv != '' ">
+  			and cg.pk_pv=#{pkPv,jdbcType=CHAR} 
+  		</if>
+  		group by cg.pk_pv
+	</select>
+</mapper>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ma.pub.platform.zb.dao.MsgRecBdMapper">
+
+	<!-- 查询药品相关信息 -->
+	<select id="queryPdInfoList" parameterType="java.util.Map" resultType="DynaBean">
+          select pd.pk_pd ,pd.code ,pd.name ,spec ,pd.short_name ,barcode ,pd.spcode ,concent ,
+				 weight ,pk_unit_wt ,vol ,pk_unit_vol ,pk_unit_min ,pack_size ,
+				 pk_unit_pack ,eu_muputype ,eu_pdtype ,eu_drugtype ,name_chem ,
+				 pd.pk_factory ,appr_no ,eu_pdprice ,eu_pap ,amt_pap ,pap_rate ,
+				 dt_abrd ,dt_made ,dt_dosage ,defd.name as dt_dosage_name,dt_pharm ,dt_pois ,dt_anti ,
+				 flag_precious ,eu_usecate ,dt_storetype ,dt_base ,flag_rm ,flag_reag ,
+				 flag_vacc ,flag_st ,flag_gmp ,flag_tpn ,flag_ped ,pd.note ,
+				 dosage_def ,pk_unit_def ,code_supply ,code_freq ,dt_chcate ,pk_itemcate ,pk_ordtype ,
+				 pd.creator ,pd.create_time ,pd.modifier ,pd.del_flag ,pd.pk_org ,pd.price ,valid_cnt ,eu_valid_unit ,pd.flag_stop ,
+				 eu_source ,pd.ts ,pk_pdind ,pd.pk_pdgn, 
+				 supplyer.code company_code,<!-- 供应商编码 -->
+				 factory.code produce_code,<!-- 生产厂商-编码 -->
+				 factory."NAME" as produce_name,<!-- 生产厂商-名称 -->
+				 unitPack.name unit_pack_name,<!-- 包装单位名称 -->
+				 unitMin.name unit_min_name,<!-- 最小单位名称 -->
+				 unitVol.name unit_vol_name<!-- 剂量单位名称 -->
+			from bd_pd pd 
+			left join bd_factory factory on factory.pk_factory = pd.pk_factory
+			left join bd_pd_supplyer pdSupplyer on pdSupplyer.pk_pd = pd.pk_pd
+			left join BD_SUPPLYER supplyer on supplyer.pk_supplyer = pdSupplyer.pk_supplyer
+			left join bd_unit unitPack on unitPack.pk_unit = pd.pk_unit_pack
+			left join bd_unit unitMin on unitMin.pk_unit = pd.pk_unit_min 
+			left join bd_unit unitVol on unitVol.pk_unit = pd.pk_unit_vol 
+			LEFT JOIN BD_DEFDOC defd on defd.code = pd.dt_dosage
+		   where 1=1 
+   	    <if test="pkPd != null" >
+            and pd.pk_pd = #{pkPd,jdbcType=VARCHAR}
+        </if> 
+        <if test='opeType == "MDL"' >
+            and pd.del_flag = '1'
+        </if> 		
+   	   
+    </select>
+</mapper>	

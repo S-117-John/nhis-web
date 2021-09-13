@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ma.pub.platform.send.impl.yh.dao.SendMsgMapper" >
+	<select id="getCnoderNo" parameterType="java.util.List" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOrder">
+		select ordsn,pk_cnord from cn_order where pk_cnord in
+       <foreach item="pkCnord" index="index" collection="pkCnords" open="(" separator="," close=")">  
+            #{pkCnord}  
+        </foreach>
+	</select>
+	
+	<select id="getBlInfo" parameterType="string" resultType="DynaBean">
+	   SELECT
+			pi.code_pi,
+			epe.ip_times AS times,
+			oi.quan as charge_amount,
+		  case when oi.flag_pd='0' then item.price else pd.price/pd.pack_size end charge_price, <!--金额 -->
+			ord.*, pres.dt_prestype AS order_type,
+			(
+				CASE
+				WHEN ord.flag_durg = '1' THEN
+					CAST (
+						SUBSTRING (
+							pd.code,
+							0,
+							charindex('_', pd.code)
+						) AS VARCHAR
+					)
+				ELSE
+					item.code
+				END
+			) AS charge_code,
+			(
+				CASE
+				WHEN ord.flag_durg = '1' THEN
+					CAST (
+						SUBSTRING (
+							pd.code,
+							charindex('_', pd.code) + 1,
+							len(pd.code) - 1
+						) AS VARCHAR
+					)
+				ELSE
+					'**'
+				END
+			) AS serial_no,
+			dept.code_dept AS exec_sn,
+			em.code_emp AS enter_opera,
+			NULL AS confirm_date,
+			NULL AS confirm_opera,
+			(
+				CASE
+				WHEN pres.eu_hptype is null THEN
+					'1'
+				ELSE
+					pres.eu_hptype
+				END
+			) AS yb_flag,
+			ord.dosage,
+			(
+				CASE
+				WHEN ord.ordsn = '0' THEN
+					ord.code_apply
+				ELSE
+					ord.ordsn + 800000000
+				END
+			) AS charge_no,
+			item.CODE+900000000 AS jz_sn,
+			pres.pres_no AS order_no,
+			de.code_dept AS deptapp,<!--开立科室 -->
+		  dep.code_dept as deptex,<!--执行科室 -->
+			dept.code_dept AS deptnsdept,<!-- 开立病区 -->
+			pv.code_pv
+		FROM
+			cn_order AS ord
+		INNER JOIN pi_master AS pi ON pi.pk_pi = ord.pk_pi
+		INNER JOIN pv_encounter AS pv ON ord.pk_pv = pv.pk_pv
+		LEFT JOIN pv_ip epe ON ord.pk_pv = epe.pk_pv
+		LEFT OUTER JOIN cn_prescription AS pres ON pres.pk_pres = ord.pk_pres
+		inner join bd_ord_item oi on ord.pk_ord=oi.pk_ord
+		left outer join bd_item item on oi.pk_item=item.pk_item and oi.flag_pd='0'
+		left outer join bd_pd pd on oi.pk_item=pd.pk_pd and oi.flag_pd='1'
+		LEFT JOIN bd_ou_dept de ON ord.pk_dept = de.pk_dept<!--开立科室 -->
+		LEFT JOIN bd_ou_dept dep ON ord.pk_dept_exec = dep.pk_dept<!--执行科室 -->
+		LEFT JOIN bd_ou_dept dept ON ord.pk_dept_ns = dept.pk_dept<!--开立病区 -->
+		left join BD_OU_EMPLOYEE em on em.PK_EMP = ord.pk_emp_ord<!--开立医生 -->
+		where ord.pk_cnord=#{pkCnord,jdbcType=CHAR}
+	</select>
+	
+	<select id="queryPiInfo" parameterType="string" resultType="DynaBean">
+	   SELECT
+			pb.bedno,
+			pa.date_begin,
+			bo.code_emp,
+			pi.ip_times
+		FROM
+			pv_ip pi 
+		LEFT JOIN pv_adt pa ON pa.pk_pv = pi.pk_pv
+		LEFT JOIN pv_bed pb ON pb.pk_pv = pi.pk_pv
+		LEFT JOIN bd_ou_employee bo ON pa.pk_emp_begin = bo.pk_emp
+		WHERE pb.pk_pv=#{pkPv,jdbcType=CHAR}
+	</select>
+	
+	<select id="queryOutInfo" parameterType="string" resultType="DynaBean">
+	   select PI.ip_times,pm.code_pi,bd.code_dept, bod.code_dept AS ns_code_dept, pb.bedno,
+						boe.code_emp
+						from pv_encounter pe 
+						left join pi_master pm on pe.pk_pi=pm.pk_pi 
+						left join pv_ip pi on pe.pk_pv=pi.pk_pv 
+						left join (select TOP 1 * from pv_adt WHERE pk_pv = #{pkPv,jdbcType=CHAR} ORDER BY create_time DESC) pa on pa.pk_pv=pe.pk_pv 
+						left join (SELECT TOP 1 * FROM pv_bed  WHERE pv_bed.pk_pv = #{pkPv,jdbcType=CHAR}  ORDER BY create_time DESC ) pb ON pe.pk_pv = pb.pk_pv 
+						left join bd_ou_dept bd on pa.pk_dept = bd.pk_dept 
+						left join bd_ou_dept bod on pa.pk_dept_ns = bod.pk_dept 
+						left join bd_ou_employee boe on pb.pk_emp_end = boe.pk_emp 
+						left join bd_ou_employee boem on pa.pk_emp_begin = boem.pk_emp 
+						where pe.pk_pv = #{pkPv,jdbcType=CHAR}
+	</select>
+	
+	<select id="getCnoderBl" parameterType="java.util.List" resultType="com.zebone.nhis.common.module.bl.BlIpDt">
+		select pk_cgip from bl_ip_dt where pk_cnord in
+       <foreach item="pkCnord" index="index" collection="pkCnords" open="(" separator="," close=")">  
+            #{pkCnord}  
+        </foreach>
+        <!-- 根据该医嘱对应的费用去判断最好 -->
+        <!-- select sum(quan*price) as hj from bl_ip_dt  where pk_cnord='6d519c360f52403ebf8fcbcf20db633d' -->
+	</select>
+	<resultMap id="BdPdResultMap" type="com.zebone.nhis.ma.pub.platform.send.impl.yh.vo.BdPd.BdPd">
+		<id column="PK_PD" jdbcType="CHAR" property="pkPd" />
+		<result column="CODE" jdbcType="VARCHAR" property="code" />
+		<result column="NAME" jdbcType="VARCHAR" property="name" />
+		<result column="SPEC" jdbcType="VARCHAR" property="spec" />
+		<result column="SHORT_NAME" jdbcType="VARCHAR" property="shortName" />
+		<result column="BARCODE" jdbcType="VARCHAR" property="barcode" />
+		<result column="SPCODE" jdbcType="VARCHAR" property="spcode" />
+		<result column="CONCENT" jdbcType="NUMERIC" property="concent" />
+		<result column="WEIGHT" jdbcType="NUMERIC" property="weight" />
+		<result column="PK_UNIT_WT" jdbcType="CHAR" property="pkUnitWt" />
+		<result column="VOL" jdbcType="NUMERIC" property="vol" />
+		<result column="PK_UNIT_VOL" jdbcType="CHAR" property="pkUnitVol" />
+		<result column="PK_UNIT_MIN" jdbcType="CHAR" property="pkUnitMin" />
+		<result column="PACK_SIZE" jdbcType="NUMERIC" property="packSize" />
+		<result column="PK_UNIT_PACK" jdbcType="CHAR" property="pkUnitPack" />
+		<result column="EU_MUPUTYPE" jdbcType="VARCHAR" property="euMuputype" />
+		<result column="EU_PDTYPE" jdbcType="VARCHAR" property="euPdtype" />
+		<result column="EU_DRUGTYPE" jdbcType="VARCHAR" property="euDrugtype" />
+		<result column="NAME_CHEM" jdbcType="VARCHAR" property="nameChem" />
+		<result column="PK_FACTORY" jdbcType="CHAR" property="pkFactory" />
+		<result column="APPR_NO" jdbcType="VARCHAR" property="apprNo" />
+		<result column="EU_PDPRICE" jdbcType="VARCHAR" property="euPdprice" />
+		<result column="EU_PAP" jdbcType="VARCHAR" property="euPap" />
+		<result column="AMT_PAP" jdbcType="NUMERIC" property="amtPap" />
+		<result column="PAP_RATE" jdbcType="NUMERIC" property="papRate" />
+		<result column="DT_ABRD" jdbcType="VARCHAR" property="dtAbrd" />
+		<result column="DT_MADE" jdbcType="VARCHAR" property="dtMade" />
+		<result column="DT_DOSAGE" jdbcType="VARCHAR" property="dtDosage" />
+		<result column="DT_PHARM" jdbcType="VARCHAR" property="dtPharm" />
+		<result column="DT_POIS" jdbcType="VARCHAR" property="dtPois" />
+		<result column="DT_ANTI" jdbcType="VARCHAR" property="dtAnti" />
+		<result column="FLAG_PRECIOUS" jdbcType="CHAR" property="flagPrecious" />
+		<result column="EU_USECATE" jdbcType="VARCHAR" property="euUsecate" />
+		<result column="DT_STORETYPE" jdbcType="VARCHAR" property="dtStoretype" />
+		<result column="DT_BASE" jdbcType="VARCHAR" property="dtBase" />
+		<result column="FLAG_RM" jdbcType="CHAR" property="flagRm" />
+		<result column="FLAG_REAG" jdbcType="CHAR" property="flagReag" />
+		<result column="FLAG_VACC" jdbcType="CHAR" property="flagVacc" />
+		<result column="FLAG_ST" jdbcType="CHAR" property="flagSt" />
+		<result column="FLAG_GMP" jdbcType="CHAR" property="flagGmp" />
+		<result column="FLAG_TPN" jdbcType="CHAR" property="flagTpn" />
+		<result column="FLAG_PED" jdbcType="CHAR" property="flagPed" />
+		<result column="NOTE" jdbcType="VARCHAR" property="note" />
+		<result column="DOSAGE_DEF" jdbcType="NUMERIC" property="dosageDef" />
+		<result column="PK_UNIT_DEF" jdbcType="CHAR" property="pkUnitDef" />
+		<result column="CODE_SUPPLY" jdbcType="VARCHAR" property="codeSupply" />
+		<result column="CODE_FREQ" jdbcType="VARCHAR" property="codeFreq" />
+		<result column="DT_CHCATE" jdbcType="VARCHAR" property="dtChcate" />
+		<result column="PK_ITEMCATE" jdbcType="CHAR" property="pkItemcate" />
+		<result column="PK_ORDTYPE" jdbcType="CHAR" property="pkOrdtype" />
+		<result column="CREATOR" jdbcType="CHAR" property="creator" />
+		<result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime" />
+		<result column="MODIFIER" jdbcType="CHAR" property="modifier" />
+		<result column="DEL_FLAG" jdbcType="CHAR" property="delFlag" />
+		<result column="PK_ORG" jdbcType="CHAR" property="pkOrg" />
+		<result column="PRICE" jdbcType="NUMERIC" property="price" />
+		<result column="VALID_CNT" jdbcType="NUMERIC" property="validCnt" />
+		<result column="EU_VALID_UNIT" jdbcType="VARCHAR" property="euValidUnit" />
+		<result column="FLAG_STOP" jdbcType="CHAR" property="flagStop" />
+		<result column="EU_SOURCE" jdbcType="VARCHAR" property="euSource" />
+		<result column="TS" jdbcType="TIMESTAMP" property="ts" />
+		<result column="PK_PDIND" jdbcType="CHAR" property="pkPdind" />
+		<result column="REG_NO" jdbcType="VARCHAR" property="regNo" />
+		<result column="DATE_VALID_REG" jdbcType="TIMESTAMP" property="dateValidReg" />
+		<result column="EU_STOCKMODE" jdbcType="VARCHAR" property="euStockmode" />
+		<result column="PK_PDCATE" jdbcType="CHAR" property="pkPdcate" />
+		<result column="CODE_COSTITEM" jdbcType="VARCHAR" property="codeCostitem" />
+		<result column="PK_ITEM" jdbcType="VARCHAR" property="pkItem" />
+		<result column="FLAG_SINGLE" jdbcType="CHAR" property="flagSingle" />
+		<result column="FLAG_IMP" jdbcType="CHAR" property="flagImp" />
+		<result column="FLAG_USE" jdbcType="CHAR" property="flagUse" />
+		<result column="DT_USAGENOTE" jdbcType="VARCHAR" property="dtUsagenote" />
+		<result column="PK_PDGN" jdbcType="CHAR" property="pkPdgn" />
+		<result column="PACK_SIZE_MAX" jdbcType="NUMERIC" property="packSizeMax" />
+		<result column="DT_PDTYPE" jdbcType="VARCHAR" property="dtPdtype" />
+		<result column="EU_HERBTYPE" jdbcType="VARCHAR" property="euHerbtype" />
+		<result column="FLAG_CHRT" jdbcType="CHAR" property="flagChrt" />
+		<result column="DT_INJTYPE" jdbcType="VARCHAR" property="dtInjtype" />
+		<result column="EU_HPTYPE" jdbcType="VARCHAR" property="euHptype" />
+		<result column="EU_HPRATIO" jdbcType="VARCHAR" property="euHpratio" />
+		<result column="EU_RISK" jdbcType="VARCHAR" property="euRisk" />
+		<result column="CODE_HP" jdbcType="VARCHAR" property="codeHp" />
+		<result column="CODE_STD" jdbcType="VARCHAR" property="codeStd" />
+		<result column="AGE_MIN" jdbcType="NUMERIC" property="ageMin" />
+		<result column="AGE_MAX" jdbcType="NUMERIC" property="ageMax" />
+		<result column="EU_SEX" jdbcType="VARCHAR" property="euSex" />
+		<result column="QUOTA_DOS" jdbcType="NUMERIC" property="quotaDos" />
+		<result column="NAME_GEN" jdbcType="VARCHAR" property="nameGen" />
+		<result column="EU_LABELTYPE" jdbcType="VARCHAR" property="euLabeltype" />
+	</resultMap>
+	<resultMap id="ExPdApplyResultMap" type="com.zebone.nhis.ma.pub.platform.send.impl.yh.vo.BdPd.ExPdApply">
+		<id column="PK_PDAP" jdbcType="CHAR" property="pkPdap" />
+		<result column="PK_ORG" jdbcType="CHAR" property="pkOrg" />
+		<result column="EU_DIRECT" jdbcType="VARCHAR" property="euDirect" />
+		<result column="EU_APTYPE" jdbcType="VARCHAR" property="euAptype" />
+		<result column="CODE_APPLY" jdbcType="VARCHAR" property="codeApply" />
+		<result column="PK_DEPT_AP" jdbcType="CHAR" property="pkDeptAp" />
+		<result column="PK_EMP_AP" jdbcType="CHAR" property="pkEmpAp" />
+		<result column="NAME_EMP_AP" jdbcType="VARCHAR" property="nameEmpAp" />
+		<result column="DATE_AP" jdbcType="TIMESTAMP" property="dateAp" />
+		<result column="PK_ORG_DE" jdbcType="CHAR" property="pkOrgDe" />
+		<result column="PK_DEPT_DE" jdbcType="CHAR" property="pkDeptDe" />
+		<result column="DATE_DE" jdbcType="TIMESTAMP" property="dateDe" />
+		<result column="FLAG_CANCEL" jdbcType="CHAR" property="flagCancel" />
+		<result column="PK_DEPT_CANCEL" jdbcType="CHAR" property="pkDeptCancel" />
+		<result column="PK_EMP_CANCEL" jdbcType="CHAR" property="pkEmpCancel" />
+		<result column="NAME_EMP_CANCEL" jdbcType="VARCHAR" property="nameEmpCancel" />
+		<result column="DATE_CANCEL" jdbcType="TIMESTAMP" property="dateCancel" />
+		<result column="FLAG_FINISH" jdbcType="CHAR" property="flagFinish" />
+		<result column="EU_STATUS" jdbcType="VARCHAR" property="euStatus" />
+		<result column="NOTE" jdbcType="VARCHAR" property="note" />
+		<result column="CREATOR" jdbcType="CHAR" property="creator" />
+		<result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime" />
+		<result column="MODIFIER" jdbcType="CHAR" property="modifier" />
+		<result column="MODITY_TIME" jdbcType="TIMESTAMP" property="modityTime" />
+		<result column="DEL_FLAG" jdbcType="CHAR" property="delFlag" />
+		<result column="TS" jdbcType="TIMESTAMP" property="ts" />
+		<result column="EU_PRINT" jdbcType="VARCHAR" property="euPrint" />
+	</resultMap>
+	<!--药品请领单ExPdApply-->
+	<sql id="ExPdApply_Column_List">
+    PK_PDAP, PK_ORG, EU_DIRECT, EU_APTYPE, CODE_APPLY, PK_DEPT_AP, PK_EMP_AP, NAME_EMP_AP,
+    DATE_AP, PK_ORG_DE, PK_DEPT_DE, DATE_DE, FLAG_CANCEL, PK_DEPT_CANCEL, PK_EMP_CANCEL,
+    NAME_EMP_CANCEL, DATE_CANCEL, FLAG_FINISH, EU_STATUS, NOTE, CREATOR, CREATE_TIME,
+    MODIFIER, MODITY_TIME, DEL_FLAG, TS, EU_PRINT
+  </sql>
+	<select id="getExPdApply" parameterType="java.lang.String" resultMap="ExPdApplyResultMap">
+		select
+		<include refid="ExPdApply_Column_List" />
+		from EX_PD_APPLY
+		where PK_PDAP = #{pkPdap,jdbcType=CHAR}
+	</select>
+	<!--药品信息-->
+	<sql id="BdPd_Column_List">
+    PK_PD, CODE, "NAME", SPEC, SHORT_NAME, BARCODE, SPCODE, CONCENT, WEIGHT, PK_UNIT_WT,
+    VOL, PK_UNIT_VOL, PK_UNIT_MIN, PACK_SIZE, PK_UNIT_PACK, EU_MUPUTYPE, EU_PDTYPE, EU_DRUGTYPE,
+    NAME_CHEM, PK_FACTORY, APPR_NO, EU_PDPRICE, EU_PAP, AMT_PAP, PAP_RATE, DT_ABRD, DT_MADE,
+    DT_DOSAGE, DT_PHARM, DT_POIS, DT_ANTI, FLAG_PRECIOUS, EU_USECATE, DT_STORETYPE, DT_BASE,
+    FLAG_RM, FLAG_REAG, FLAG_VACC, FLAG_ST, FLAG_GMP, FLAG_TPN, FLAG_PED, NOTE, DOSAGE_DEF,
+    PK_UNIT_DEF, CODE_SUPPLY, CODE_FREQ, DT_CHCATE, PK_ITEMCATE, PK_ORDTYPE, CREATOR,
+    CREATE_TIME, MODIFIER, DEL_FLAG, PK_ORG, PRICE, VALID_CNT, EU_VALID_UNIT, FLAG_STOP,
+    EU_SOURCE, TS, PK_PDIND, REG_NO, DATE_VALID_REG, EU_STOCKMODE, PK_PDCATE, CODE_COSTITEM,
+    PK_ITEM, FLAG_SINGLE, FLAG_IMP, FLAG_USE, DT_USAGENOTE, PK_PDGN, PACK_SIZE_MAX, DT_PDTYPE,
+    EU_HERBTYPE, FLAG_CHRT, DT_INJTYPE, EU_HPTYPE, EU_HPRATIO, EU_RISK, CODE_HP, CODE_STD,
+    AGE_MIN, AGE_MAX, EU_SEX, QUOTA_DOS, NAME_GEN, EU_LABELTYPE
+  </sql>
+	<select id="getBdPd" parameterType="java.lang.String" resultMap="BdPdResultMap">
+		select
+		<include refid="BdPd_Column_List" />
+		from BD_PD
+		where PK_PD = #{pkPd,jdbcType=CHAR}
+	</select>
+
+	<!--获取科室编码-->
+	<select id="getCodeDept" parameterType="java.lang.String" resultType="java.lang.String">
+		select code_dept from BD_OU_DEPT
+		where pk_dept = #{pkDept,jdbcType=CHAR}
+	</select>
+
+
+	<select id="queryCnOrder" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOrder">
+		select * from cn_order
+		<where>
+			pk_cnord = #{pk}
+		</where>
+
+	</select>
+
+	
+</mapper>

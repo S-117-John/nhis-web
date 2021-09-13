@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.compay.up.dao.ZsBlCgIpQueryMapper">
+    
+    <!-- 查询患者费用明细 （项目），实际记费 -->
+    <select id="queryCgIpDetailsByDateHap" parameterType="java.util.Map" resultType="DynaBean">
+        select pi.code_ip,
+        pv.bed_no,
+        pv.name_pi,
+        pv.code_pv,
+        pv.pk_pv,
+        pv.date_begin,
+        dept.name_dept as name_dept,
+        deptns.name_dept as name_dept_ns,
+        hp.name as name_hp,
+        case cg.flag_pd when '1' then pd.code else item.code end as code_cg,
+        cg.name_cg,
+        cg.spec,
+        cg.price,
+        sum(cg.quan) as quan,
+        sum(cg.amount_pi) as amount,
+        unit.name as unitname,
+        to_char(cg.date_hap,'yyyy-mm-dd') as date_hap,
+        insitem.eu_level jbzfbl,
+        bi.NAME as item_type
+        from bl_ip_dt cg
+        left outer join ex_order_occ occ on cg.pk_ordexdt=occ.pk_exocc
+        left join bd_pd pd on cg.pk_pd = pd.pk_pd
+        left join bd_item item on item.pk_item = cg.pk_item and cg.flag_pd='0'
+        inner join BD_ITEMCATE bi on bi.PK_ITEMCATE=cg.PK_ITEMCATE
+        inner join bd_unit unit on unit.pk_unit = cg.pk_unit
+        inner join pv_encounter pv on cg.pk_pv = pv.pk_pv
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi
+        inner join bd_ou_dept deptex on cg.pk_dept_ex=deptex.pk_dept
+        inner join bd_ou_dept dept on cg.pk_dept_app=dept.pk_dept
+        inner join bd_ou_dept deptns on cg.pk_dept_ns_app=deptns.pk_dept
+        inner join bd_hp hp on hp.pk_hp = pv.pk_insu
+        left join BD_ITEM_HP insitem on insitem.PK_ITEM = cg.PK_ITEM and insitem.PK_HP = pv.PK_INSU and
+        insitem.DT_HPDICTTYPE='1' and insitem.del_flag='0'   
+        where cg.date_cg &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+        and cg.date_cg &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+        <if test="type != null and type == '0'.toString()">  <!-- 查询诊疗 -->
+            and cg.flag_pd = '0'
+        </if>
+        <if test="type != null and type == '1'.toString()">  <!-- 查询物品 :处方和非基数药品 + 基数药-->
+            and cg.flag_pd = '1'
+        </if>
+        <if test="type ==null or type == '' "><!-- 查询全部 -->
+            and 1=1
+        </if>
+        and cg.pk_pv in
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            #{pkpv}
+        </foreach>
+        group by pi.code_ip, pv.bed_no, pv.name_pi, pv.code_pv, pv.pk_pv,
+        pv.date_begin, dept.name_dept,deptns.name_dept, hp.name,
+        case cg.flag_pd when '1' then pd.code else item.code end,bi.NAME,
+        cg.name_cg, cg.spec, cg.price, unit.name, insitem.eu_level ,to_char(cg.date_hap,'yyyy-mm-dd')
+    </select>
+
+
+    <!-- 查询患者费用汇总,实际发生 -->
+    <select id="queryCgIpSummerByDateHap" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.bed_no,
+        pv.name_pi,
+        pv.code_pv,
+        pi.code_ip,
+        pv.pk_pv,
+        pv.date_begin,
+        hp.rate_ip,
+        def.name sex,
+        deptns.name_dept as name_dept_ns,
+        cg.pk_pv,
+        cg.code_bill,
+        invitem.name as name_inv_item,
+        sum(cg.amount_pi) as amount
+        from bl_ip_dt cg
+        inner join bd_invcate_item invitem on invitem.code = cg.code_bill and invitem.pk_org = cg.pk_org
+        inner join bd_invcate invcate on invitem.pk_invcate = invcate.pk_invcate and invcate.eu_type = '1'
+        inner join pv_encounter pv on cg.pk_pv = pv.pk_pv
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi
+        inner join bd_defdoc def on def.code = pv.dt_sex and def.code_defdoclist = '000000'
+        left join bd_hp hp on hp.pk_hp = pv.pk_insu
+        left join bd_ou_dept deptns on deptns.pk_dept = pv.pk_dept_ns
+        where cg.date_cg &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        and cg.date_cg &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        and cg.pk_pv in
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            #{pkpv}
+        </foreach>
+        group by cg.pk_pv,cg.code_bill,hp.rate_ip,def.name,invitem.name,pv.bed_no,pv.name_pi,
+        pv.code_pv,pi.code_ip,pv.pk_pv,pv.date_begin,deptns.name_dept
+    </select>
+    
+</mapper>

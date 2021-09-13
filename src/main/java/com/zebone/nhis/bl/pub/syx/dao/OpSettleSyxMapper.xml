@@ -1,0 +1,630 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.bl.pub.syx.dao.OpSettleSyxMapper">
+  <select id="queryPiBannerInfo"  parameterType="java.util.Map"  resultType="DynaBean">
+		select DISTINCT
+	      pv.name_pi, 
+	      pv.pk_pv,
+	      pv.code_pv,
+	      pv.pk_pi, 
+	      pv.pk_insu,
+	      doc.name name_sex,  
+	      hp.DT_EXTHP,
+	      hp.name insu_name,  
+	      hp.name name_hp, 
+	      <!-- 添加诊断列 -->
+          <if test='dbType == "oracle"'>
+              (select to_char(wmsys.wm_concat(diag.name_diag)) from pv_diag diag  
+               where pv.pk_pv=diag.pk_pv and diag.del_flag='0'
+               group by diag.pk_pv  ) as name_diag,  
+          </if>
+          <if test='dbType == "sqlserver"'>
+            ( select name =(stuff((select ','+ diag.name_diag  
+              from  pv_diag diag  
+              where pv.pk_pv=diag.pk_pv and diag.del_flag='0' for xml path('')),1,1,''))
+              from pv_diag diagt  
+              where pv.pk_pv=diagt.pk_pv and diagt.del_flag='0' 
+              group by diagt.pk_pv) as name_diag,
+          </if> 
+	      case when pv.eu_pvtype='2' then hp.rate_er else hp.rate_op end rate,  
+	      hp.drugquota_op, 
+	      hp.eu_hptype,
+	      pi.mcno ,  
+	      pi.dt_specunit , 
+	      docunit.name as name_specunit, 
+	      pv.name_emp_phy,
+	      pv.pk_emp_phy,
+	      dept.name_dept, 
+	      dept.pk_dept,
+	      pi.mobile,  
+	      pv.eu_status,
+	      pv.eu_locked,
+	      pv.date_begin,
+	      gzyb.pvcode_ins, 
+	      pv.flag_spec,
+	      pv.dt_sex,
+	      case when  durgamt.jzamt is null or durgamt.jzamt ='' then 0.00 else durgamt.jzamt end as jzamt 
+		from  pv_encounter pv
+		left join pv_op op on op.pk_pv = pv.pk_pv
+		inner join bd_defdoc doc on doc.code= pv.dt_sex  and doc.code_defdoclist='000000' 
+		inner join bd_hp hp on pv.pk_insu=hp.pk_hp 
+		inner join pi_master pi on pv.pk_pi=pi.pk_pi 
+		left join pi_card card on card.pk_pi = pi.pk_pi and card.del_flag = '0' and card.dt_cardtype='01' 
+		left join bd_defdoc docunit on docunit.code = pi.dt_specunit and docunit.code_defdoclist='040008' 
+		inner join bd_ou_dept dept on pv.pk_dept=dept.pk_dept
+		left join ins_gzyb_visit gzyb on gzyb.pk_pv= pv.pk_pv
+		left  join (select
+		     sum(ins.amount_ins_drug) as jzamt ,st.pk_pv
+		from ins_gzgy_st ins
+		inner join bl_settle st on ins.pk_settle=st.pk_settle
+		where date_st like to_date(#{curDate,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+		group by st.pk_pv
+		              ) durgamt  on durgamt.pk_pv = pv.pk_pv
+		where pv.eu_status &lt;'9' and pv.flag_cancel='0' 
+		    <if test="pkPv != null and pkPv != ''">
+		  		and pv.pk_pv = #{pkPv,jdbcType=CHAR}
+		  	</if>
+		  	<if test="codePv != null and codePv != ''">
+		  		and pv.code_pv = #{codePv,jdbcType=VARCHAR} and pv.eu_pvtype in ('1','2','4')
+		  	</if>
+		  	<if test="cardNo!=null and cardNo!=''">
+		  		and pi.code_op = #{cardNo,jdbcType=VARCHAR}
+		  	</if>
+  </select>
+  <select id="queryPvInfoByCon"  parameterType="java.util.Map"  resultType="DynaBean">
+		select pv.pk_pv,
+		       pi.pk_pi,
+		       pv.code_pv, 
+		       pv.name_pi, 
+		       pv.dt_sex, 
+		       pv.pk_insu,
+		       docsex.name as name_sex,
+		       hp.name as name_hp, 
+		       pv.date_begin, 
+		       dept.name_dept,
+		       pv.eu_status,
+		       pv.AGE_PV,
+		       idtypeDoc.name idtype_name,
+        		pi.ID_NO,
+        		pi.TEL_NO,
+        		pv.flag_spec,
+        		pv.pk_emp_phy,
+        		pi.mobile
+		from pv_encounter pv 
+		inner join bd_hp hp on pv.pk_insu=hp.pk_hp 
+		inner join bd_defdoc docsex on docsex.code=pv.dt_sex and docsex.code_defdoclist='000000'
+		inner join bd_ou_dept dept on pv.pk_dept=dept.pk_dept
+		inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		left join bd_defdoc idtypeDoc on idtypeDoc.CODE = pi.DT_IDTYPE and idtypeDoc.CODE_DEFDOCLIST = '000007'
+		where pv.flag_cancel='0' 
+		 <if test="euPvtype != null and euPvtype != ''">
+		  		and pv.eu_pvtype = #{euPvtype,jdbcType=VARCHAR}
+		 </if>
+		 <if test="codePv!=null and codePv!=''">
+		 	and pv.code_pv = #{codePv,jdbcType=CHAR}
+		 </if>
+		 <if test="namePi != null and namePi != ''">
+		  		and pv.name_pi like '%${namePi}%'
+		 </if>
+		 <if test="mobile != null and mobile != ''">
+		  		and pi.mobile like '%${mobile}%'
+		 </if>
+		 <if test="idno != null and idno != ''">
+		  		and pi.id_no = #{idno,jdbcType=VARCHAR}
+		 </if>
+		 <if test="pkDept != null and pkDept != ''">
+		  		and pv.pk_dept = #{pkDept,jdbcType=CHAR}
+		 </if>
+		 <if test="codeOp != null and codeOp != ''">
+		  		and pi.code_op = #{codeOp,jdbcType=VARCHAR}
+		 </if>
+		 <if test="dateBegin != null and dateBegin != ''">
+		  		and pv.date_begin  &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+		 </if>
+		 <if test="dateEnd != null and dateEnd != ''">
+		  		and pv.date_begin   &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		 </if>  
+	    <if test='codePi!=null and codePi!=""'>
+	  		and pi.CODE_PI = #{codePi,jdbcType=VARCHAR}
+	  	</if>
+	  	<if test='pkList!=null and pkList.size()>0'>
+             and pv.pk_pv in 
+             <foreach collection="pkList" item="pkList" index="no" open="("
+                separator="," close=")">
+                #{pkList}
+            </foreach> 
+        </if>
+  </select>
+  
+  <select id="querySettleInfoForRefund" parameterType="java.util.Map"  resultType="com.zebone.nhis.bl.pub.syx.vo.BlSettleRefundVo">
+		  select
+		   st.pk_settle,  
+		   st.code_st,  
+		   st.date_st,  
+		   st.amount_st, 
+		   st.AMOUNT_PI,
+  		   st.AMOUNT_INSU,
+		   dep.dt_paymode,  
+		   defdoc.name as name_paymode,
+		   st.name_emp_st,  
+		   inv.code_inv,  
+		   inv.amount_inv,
+		   pv.pk_pv
+		from bl_settle st 
+		inner join pv_encounter pv on pv.pk_pv = st.pk_pv  
+		inner join pi_master pi on pi.pk_pi = pv.pk_pi and pi.del_flag='0' 
+		left join pi_card card on card.pk_pi = pi.pk_pi and card.dt_cardtype='01' and card.del_flag='0' 
+		inner join bl_deposit dep on dep.pk_settle = st.pk_settle 
+		left join bd_ou_employee emp on emp.pk_emp = pi.pk_emp 
+		left join bd_defdoc defdoc on defdoc.code = dep.dt_paymode and defdoc.code_defdoclist = '110100'
+		inner join bl_st_inv stinv on stinv.pk_settle = st.pk_settle
+		inner join bl_invoice inv on inv.pk_invoice=stinv.pk_invoice
+		where  not exists (select 1
+		                  from bl_settle back
+		                  where st.pk_settle=back.pk_settle_canc
+		                   )
+		  <if test="pkPv != null and pkPv != ''">
+		  		and st.pk_pv=#{pkPv,jdbcType=CHAR} 
+		  </if>
+		  <if test="codeInv != null and codeInv != ''">
+		  		and inv.code_inv=#{codeInv,jdbcType=VARCHAR}
+		  </if>
+		  <if test="codePv != null and codePv != ''">
+		  		and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+		  </if>
+		  <if test="dateBegin != null and dateBegin != ''">
+		  		and st.date_st  &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+		  </if>
+		  <if test="dateEnd != null and dateEnd != ''">
+		  		and st.date_st  &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		  </if>
+		  <if test="namePi != null and namePi != ''">
+		  		and pv.name_pi=#{namePi,jdbcType=VARCHAR}
+		  </if>
+		  <if test="codeOp != null and codeOp != ''">
+		  		and pi.code_op = #{codeOp,jdbcType=VARCHAR}
+		  </if>
+		  <if test="idNo != null and idNo != ''">
+		  		and pi.id_no = #{idNo,jdbcType=VARCHAR}
+		  </if>  
+		  <if test="insurNo != null and insurNo != ''">
+		  		and pi.insur_no = #{insurNo,jdbcType=VARCHAR}
+		  </if>
+		  <if test="codeEmp != null and codeEmp != ''">
+		  		and emp.code_emp = #{codeEmp,jdbcType=VARCHAR}
+		  </if> 
+		  <if test="cardNo != null and cardNo != ''">
+		  		and card.card_no = #{cardNo,jdbcType=VARCHAR}
+		  </if> 
+  </select>
+  <select id="querySettleRefundDetail" parameterType="java.util.Map"  resultType="com.zebone.nhis.bl.pub.syx.vo.BlOpDtRefundVo">
+     SELECT
+	  pv.pk_pv,
+	  pv.pk_pi,
+	  opdt.flag_insu,
+	  opdt.flag_pd,
+	  opdt.pk_settle,
+	  pres.pk_pres,
+	  pres.pres_no,
+	  dept.name_dept,
+	  pres.date_pres,
+	  pres.name_emp_ord,
+	  pres.dt_prestype,
+	  ord.ords,
+	  CASE WHEN ord.name_ord = '' OR ord.name_ord IS NULL
+	    THEN '其他'
+	  ELSE ord.name_ord END               AS                              name_ord,
+	  (SELECT Sum(bldt.amount)
+	   FROM bl_op_dt bldt
+	   WHERE bldt.PK_PRES = pres.PK_PRES) AS                              pres_amount,
+	  opdt.pk_cnord,
+	  opdt.pk_cgop,
+	  opdt.name_cg,
+	  opdt.spec,
+	  opdt.quan,
+	  unit.name                                                           unit,
+	  opdt.price,
+	  opdt.amount,
+	  dt.pk_presoccdt,
+	  opdt.flag_pv,
+	  case when opdt.flag_pd='1'
+	    then (dt.quan_cg - dt.quan_ret - dt.quan_de + dt.quan_back)
+	    else opdt.quan end quan_back,
+	  (case when opdt.flag_pd='1'
+	    then (dt.quan_cg - dt.quan_ret - dt.quan_de + dt.quan_back)
+	    else opdt.quan end) * opdt.price amount_back,
+	  CASE WHEN (case when opdt.flag_pd='1'
+	    then (dt.quan_cg - dt.quan_ret - dt.quan_de + dt.quan_back)
+	    else opdt.quan end) &gt; 0
+	    THEN '可退'
+	  ELSE '不可退' END                      AS                              status
+	FROM bl_op_dt opdt
+	  inner join pv_encounter pv ON pv.pk_pv = opdt.pk_pv
+	  inner join bd_unit unit ON opdt.pk_unit = unit.pk_unit
+	  inner join cn_order ord ON opdt.pk_cnord = ord.pk_cnord
+	  LEFT JOIN ex_pres_occ_dt dt ON dt.PK_CNORD = opdt.PK_CNORD and dt.pk_pd = opdt.pk_item
+	  left JOIN EX_PRES_OCC occ ON occ.PK_PRESOCC = dt.PK_PRESOCC AND occ.FLAG_CANC != '1'
+	  LEFT JOIN cn_prescription pres ON pres.pk_pres = opdt.pk_pres
+	  LEFT JOIN bd_ou_dept dept ON pres.pk_dept = dept.pk_dept
+	WHERE opdt.flag_settle = 1  AND opdt.flag_pv='0' and opdt.PK_PRES is not null AND  opdt.pk_settle=#{pkSettle,jdbcType=CHAR} 
+	 union
+	select
+	 pv.pk_pv,
+     pv.pk_pi,
+    opdt.flag_insu,
+	opdt.flag_pd,
+	opdt.pk_settle,
+   '' as pk_pres, 
+   '' as pres_no,  
+    dept.name_dept, 
+    ord.date_start as  date_pres, 
+    ord.name_emp_ord, 
+    '' as dt_prestype,
+    ord.ords ,   
+    case when ord.name_ord='' or ord.name_ord is null then '其他' else ord.name_ord end as name_ord,
+    (select Sum(bldt.amount)  from bl_op_dt bldt where bldt.pk_cnord = ord.pk_cnord) as pres_amount,  
+       opdt.pk_cnord, 
+       opdt.pk_cgop,  
+       opdt.name_cg, 
+       opdt.spec,  
+       opdt.quan,  
+       unit.name unit, 
+       opdt.price,  
+       opdt.amount,   
+       '' as pk_presoccdt,
+       opdt.flag_pv,
+       (SELECT
+	    sum(opdt.quan / occ.quan_occ * occ.quan_occ)
+	   FROM ex_assist_occ occ
+	   WHERE occ.pk_cnord = opdt.pk_cnord AND
+	         occ.eu_status &lt;&gt; 1 AND
+	         occ.flag_refund = '0')              quan_back,
+	  (SELECT
+	    sum(opdt.quan / occ.quan_occ * occ.quan_occ)
+	   FROM ex_assist_occ occ
+	   WHERE occ.pk_cnord = opdt.pk_cnord AND
+	         occ.eu_status &lt;&gt; 1 AND
+	         occ.flag_refund = '0') * opdt.price amount_back,
+       case when (select sum(occ.quan_occ)
+                  from ex_assist_occ occ
+                  where occ.pk_cnord=opdt.pk_cnord and
+                  occ.eu_status&lt;&gt;1 and
+                  occ.flag_refund='0')&gt;0 then '可退' else '不可退' end status 
+	from bl_op_dt opdt
+	inner join cn_order ord on ord.pk_cnord = opdt.pk_cnord
+	left join bd_unit unit on opdt.pk_unit=unit.pk_unit
+	inner join pv_encounter pv on pv.pk_pv=opdt.pk_pv and pv.eu_pvtype in('1','2','4')
+	inner join bd_ou_dept dept on ord.pk_dept=dept.pk_dept
+	where  opdt.flag_settle='1'and opdt.flag_pd='0'and opdt.flag_pv='0' And opdt.pk_pres Is Null and opdt.pk_settle =#{pkSettle,jdbcType=CHAR} 
+	union
+	select
+	 pv.pk_pv,
+     pv.pk_pi,
+    opdt.flag_insu,
+	opdt.flag_pd,
+	opdt.pk_settle,
+    '' as pk_pres, 
+    '' as pres_no,  
+    dept.name_dept,  
+    pv.date_clinic as date_pres,  
+    op.name_emp_pv as name_emp_ord, 
+    '' as dt_prestype,
+    0 as ords ,  
+    '就诊诊查' name_ord,
+    opdt.amount as pres_amount,  
+     opdt.pk_cnord, 
+	opdt.pk_cgop, 
+	opdt.name_cg, 
+	opdt.spec,    
+	opdt.quan, 
+	unit.name unit, 
+	opdt.price, 
+	opdt.amount, 
+     '' as pk_presoccdt,
+     opdt.flag_pv,
+	 0 quan_back, 
+     0.00 amount_bace, 
+    '不可退'  
+	from bl_op_dt opdt
+	inner join pv_encounter pv on opdt.pk_pv=pv.pk_pv and pv.eu_pvtype in('1','2','4')
+	left join pv_op op on pv.pk_pv=op.pk_pv
+	left join bd_unit unit on opdt.pk_unit=unit.pk_unit
+	left join bd_ou_dept dept on opdt.pk_dept_ex=dept.pk_dept
+	where  opdt.flag_pv='1' and  opdt.flag_settle='1' and opdt.pk_settle=#{pkSettle,jdbcType=CHAR} 
+	union
+	select
+	 pv.pk_pv,
+     pv.pk_pi,
+    opdt.flag_insu,
+	opdt.flag_pd,
+	opdt.pk_settle,
+    '' as pk_pres,  
+    '' as pres_no,  
+    dept.name_dept,  
+    pv.date_clinic as date_pres,  
+    pv.name_emp_phy as name_emp_ord,  
+    '' as dt_prestype,
+    0 as ords ,   
+    '其他' name_ord,
+    opdt.amount as pres_amount,  
+    opdt.pk_cnord,  
+	opdt.pk_cgop,  
+	opdt.name_cg,  
+	opdt.spec,    
+	opdt.quan,  
+	unit.name unit, 
+	opdt.price,  
+	opdt.amount, 
+    '' as pk_presoccdt,
+    opdt.flag_pv,
+	opdt.quan quan_back, 
+    opdt.amount amount_back,  
+    '可退' status     
+	from bl_op_dt opdt
+	inner join pv_encounter pv on opdt.pk_pv=pv.pk_pv and pv.eu_pvtype in('1','2','4')
+	left join bd_unit unit on opdt.pk_unit=unit.pk_unit
+	left join bd_ou_dept dept on opdt.pk_dept_ex=dept.pk_dept
+	where opdt.flag_pv='0' and (opdt.pk_cnord is null or opdt.pk_cnord='') 
+      and opdt.flag_settle='1' and opdt.pk_settle =#{pkSettle,jdbcType=CHAR} 
+      union
+      	SELECT
+        pv.pk_pv,
+        pv.pk_pi,
+        opdt.flag_insu,
+        opdt.flag_pd,
+        opdt.pk_settle,
+        ''              AS pk_pres,
+        ''              AS pres_no,
+        dept.name_dept,
+        pv.date_clinic  AS date_pres,
+        pv.name_emp_phy AS name_emp_ord,
+        ''              AS dt_prestype,
+        0               AS ords,
+        '其他'               name_ord,
+        opdt.amount     AS pres_amount,
+        opdt.pk_cnord,
+        opdt.pk_cgop,
+        opdt.name_cg,
+        opdt.spec,
+        opdt.quan,
+        unit.name          unit,
+        opdt.price,
+        opdt.amount,
+        ''              AS pk_presoccdt,
+        opdt.flag_pv,
+        opdt.quan          quan_back,
+        opdt.amount        amount_back,
+        '可退'               status
+      FROM bl_op_dt opdt
+        INNER JOIN pv_encounter pv ON opdt.pk_pv = pv.pk_pv AND pv.eu_pvtype IN ('1', '2', '4')
+        LEFT JOIN bd_unit unit ON opdt.pk_unit = unit.pk_unit
+        LEFT JOIN bd_ou_dept dept ON opdt.pk_dept_ex = dept.pk_dept
+      WHERE opdt.flag_pv = '0' and opdt.flag_pd='1'  AND opdt.EU_ADDITEM='1' AND opdt.flag_settle = '1' AND opdt.pk_settle = #{pkSettle,jdbcType=CHAR} 
+  </select>
+  <select id="queryCgDetailsByPk"  parameterType="java.util.List"  resultType="com.zebone.nhis.common.module.bl.opcg.BlOpDt">
+    select *  from bl_op_dt 
+    where  pk_cgop in 
+    <foreach collection="list" item="refund" open="(" separator="," close=")">
+      			#{refund.pkCgop,jdbcType=VARCHAR}
+     </foreach>
+  </select>
+  <select id="queryInvoiceDtByCode"  parameterType="java.lang.String"  resultType="Dynabean">
+	  select dt.* ,stinv.pk_settle from  bl_invoice_dt  dt
+	  inner join bl_invoice  inv  on inv.pk_invoice = dt.pk_invoice
+	  inner join bl_st_inv stinv on stinv.pk_invoice = inv.pk_invoice
+	  where inv.code_inv =  #{codeInv,jdbcType=CHAR} 
+  </select>
+  <update id="updatePiMaster" parameterType="com.zebone.nhis.bl.pub.syx.vo.PiParamVo">
+  update pi_master  
+        <set>
+            <if test="spcaNo != null" >
+                spca_no = #{spcaNo,jdbcType=VARCHAR},
+            </if>
+            <if test="senNo != null" >
+                sen_no = #{senNo,jdbcType=VARCHAR},
+            </if>
+            <if test="citizenNo != null" >
+                citizen_no = #{citizenNo,jdbcType=VARCHAR},
+            </if>
+            <if test="dtSpecunit != null" >
+                dt_specunit = #{dtSpecunit,jdbcType=VARCHAR},
+            </if>
+            <if test="dtSource != null" >
+                dt_source = #{dtSource,jdbcType=VARCHAR},
+            </if>
+            <if test="hicNo != null" >
+                hic_no = #{hicNo,jdbcType=VARCHAR},
+            </if>
+            <if test="mobile != null" >
+                mobile = #{mobile,jdbcType=VARCHAR},
+            </if>
+            <if test="dtSex != null" >
+                dt_sex = #{dtSex,jdbcType=VARCHAR},
+            </if>
+            <if test="birthDate != null" >
+                birth_date = #{birthDate,jdbcType=DATE},
+            </if>
+            <if test="modifier != null" >
+                modifier = #{modifier,jdbcType=VARCHAR},
+            </if>
+            <if test="ts != null" >
+                ts = #{ts,jdbcType=DATE},
+            </if>
+            <if test="dtIdtypeRel != null" >
+                dt_idtype_rel = #{dtIdtypeRel,jdbcType=VARCHAR},
+            </if>
+            <if test="idnoRel != null" >
+                idno_rel = #{idnoRel,jdbcType=VARCHAR},
+            </if>
+            <if test="telRel != null" >
+                tel_rel = #{telRel,jdbcType=VARCHAR},
+            </if>
+            <if test="addrCur != null" >
+                addr_cur = #{addrCur,jdbcType=VARCHAR},
+            </if>
+            <if test="mcno != null" >
+                mcno = #{mcno,jdbcType=VARCHAR},
+            </if>
+            <if test="insurNo != null" >
+                insur_no = #{insurNo,jdbcType=VARCHAR},
+            </if>
+            <if test="addrCurDt != null" >
+                addr_cur_dt = #{addrCurDt,jdbcType=VARCHAR},
+            </if>
+            <if test="nameRel != null" >
+                name_rel = #{nameRel,jdbcType=VARCHAR},
+            </if>
+            <if test="note != null" >
+                note = #{note,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmp != null" >
+                pk_emp = #{pkEmp,jdbcType=VARCHAR},
+            </if>
+            <if test="address != null" >
+                address = #{address,jdbcType=VARCHAR},
+            </if>
+            <if test="flagRealname != null" >
+                flag_realname = #{flagRealname,jdbcType=VARCHAR},
+            </if>
+            <if test="idNo != null and idNo!=''" >
+                id_no = #{idNo,jdbcType=VARCHAR},
+            </if>
+            <if test="dtIdtype != null and dtIdtype !=''" >
+                dt_idtype = #{dtIdtype,jdbcType=VARCHAR},
+            </if>
+            <if test="namePi != null and namePi !=''" >
+                name_pi = #{namePi,jdbcType=VARCHAR},
+            </if>
+            <if test="pkPicate != null and pkPicate !=''" >
+                pk_picate = #{pkPicate,jdbcType=VARCHAR},
+            </if>
+            
+        </set>
+        WHERE 
+            pk_pi = #{pkPi,jdbcType=CHAR}
+</update>
+<update id="updatePvEncounter" parameterType="com.zebone.nhis.bl.pub.syx.vo.PiParamVo">
+  update pv_encounter   
+        <set>
+             <if test="pkInsu != null" >
+                pk_insu = #{pkInsu,jdbcType=VARCHAR},
+            </if>
+            <if test="namePi != null and namePi !=''" >
+                name_pi = #{namePi,jdbcType=VARCHAR},
+            </if>
+            <if test="dtSex != null" >
+                dt_sex = #{dtSex,jdbcType=VARCHAR},
+            </if>
+            <if test="addrCurDt != null" >
+                addr_cur_dt = #{addrCurDt,jdbcType=VARCHAR},
+            </if>
+            <if test="dtIdtypeRel != null" >
+                dt_idtype_rel = #{dtIdtypeRel,jdbcType=VARCHAR},
+            </if>
+            <if test="idnoRel != null" >
+                idno_rel = #{idnoRel,jdbcType=VARCHAR},
+            </if>
+            <if test="telRel != null" >
+                tel_rel = #{telRel,jdbcType=VARCHAR},
+            </if>
+            <if test="nameRel != null" >
+                name_rel = #{nameRel,jdbcType=VARCHAR},
+            </if>
+            <if test="ts != null" >
+                ts = #{ts,jdbcType=DATE},
+            </if>
+            <if test="modifier != null" >
+                modifier = #{modifier,jdbcType=VARCHAR},
+            </if>
+            <if test="agePv != null" >
+                age_pv = #{agePv,jdbcType=VARCHAR},
+            </if>
+            <if test="pkPicate != null and pkPicate !=''" >
+                pk_picate = #{pkPicate,jdbcType=VARCHAR},
+            </if>
+        </set>
+        WHERE 
+            pk_pv = #{pkPv,jdbcType=CHAR}
+</update>
+  <select id="queryPiInfo"  parameterType="java.util.Map"  resultType="com.zebone.nhis.bl.pub.syx.vo.PiParamVo">
+	    SELECT
+    		pv.pk_pv,
+    		pi.pk_pi,
+    		pv.name_pi,
+    		pi.dt_idtype,
+    		pi.id_no,
+    		pi.hic_no,
+    		pi.insur_no,
+    		pv.pk_insu,
+    		pi.dt_sex,
+    		pi.birth_date,
+    		pi.mobile,
+    		pv.name_rel,
+    		pv.tel_rel,
+    		pi.idno_rel,
+    		pv.addr_cur_dt,
+    		pi.spca_no,
+    		pi.sen_no,
+    		pi.mcno,
+    		pi.citizen_no,
+    		pi.dt_specunit,
+    		pi.dt_source,
+    		pi.code_op,
+    		hp.PK_PARENT as pk_hp,
+    		pi.note,
+    		pi.address,
+    		pv.AGE_PV,
+    		pi.code_pi,
+    		pv.pk_picate
+    	FROM
+    		pv_encounter pv
+    	INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+    	LEFT JOIN bd_hp hp ON hp.pk_hp = pv.pk_insu
+    		AND hp.del_flag = '0'
+		where pv.pk_pv = #{pkPv,jdbcType=CHAR} and pi.pk_pi = #{pkPi,jdbcType=CHAR}
+  </select>
+  
+  <select id="qryZfDiagByPv" parameterType="java.lang.String"  resultType="java.lang.String">
+  	select name_diag from pv_diag diag
+	  where diag.pk_pv = #{pkPv,jdbcType=CHAR}
+	    and exists (
+	      select 1 from bd_defdoc doc where code_defdoclist = '060020' and diag.code_icd = doc.code
+	    )
+  </select>
+  
+  <select id="qryStInfoByPv" parameterType="java.util.Map"  resultType="com.zebone.nhis.bl.pub.syx.vo.OpStInfoVo">
+  	select st.pk_settle,
+           st.pk_pv,
+           st.pk_pi,
+	       st.date_st,
+	       st.amount_st,
+	       st.amount_pi,
+	       st.amount_insu,
+	       st.DT_STTYPE,
+	       sttypeDoc.NAME as type_name,
+	       pv.code_pv
+	  from bl_settle st
+	    inner join bd_defdoc sttypeDoc on sttypeDoc.CODE = st.DT_STTYPE and sttypeDoc.CODE_DEFDOCLIST = '110102'
+	    inner join pv_encounter pv on pv.pk_pv=st.pk_pv
+	 where
+	       pv.pk_pv = #{pkPv,jdbcType=CHAR}
+	       and DATE_ST &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+	       and date_st &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	       and st.dt_sttype &lt; '10'
+	       and not exists (select 1 from bl_st_inv si where st.pk_settle=si.pk_settle)
+	       and not exists (select canlSt.PK_SETTLE_CANC from bl_settle canlSt where canlSt.pk_settle_canc = st.pk_settle)
+  </select>
+  
+  <select id="qryStDurgDeptEx" parameterType="java.util.Map" resultType="Dynabean">
+  	select DISTINCT occ.WINNO_CONF as window_no,deptEx.NAME_DEPT from EX_PRES_OCC occ
+	  inner join bd_ou_dept deptEx on deptEx.PK_DEPT = occ.PK_DEPT_EX
+	where occ.PK_SETTLE = #{pkSettle,jdbcType=CHAR}
+  </select>
+  
+  <select id="qryStInfoByCodeInv" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.bl.BlSettle">
+  	select st.* from BL_SETTLE st 
+	  inner join bl_st_inv stInv on stInv.PK_SETTLE = st.PK_SETTLE
+	  inner join BL_INVOICE inv on inv.PK_INVOICE = stInv.PK_INVOICE
+	where inv.CODE_INV = #{codeInv,jdbcType=VARCHAR}
+  </select>
+</mapper>

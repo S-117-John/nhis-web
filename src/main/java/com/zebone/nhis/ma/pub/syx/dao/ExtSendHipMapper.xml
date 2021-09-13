@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.syx.dao.ExtSendHipMapper">
+	<select id="qrySendDispMap" parameterType="java.lang.String" resultType="DynaBean" >
+		SELECT
+		  pv.PK_PV,
+		  sysdate                                                         order_time,
+		  pi.code_pi                                                      treat_card,
+		  ap.code_apply                                                AS reg_num,
+		  NULL                                                         AS addr_str,
+		  org.NAME_ORG                                                 AS consignee,
+		  exdept.TELNO_DEPT                                            AS con_tel,
+		  NULL                                                         AS send_goods_time,
+		  '1'                                                          AS is_hos_addr,
+		  pv.name_pi                                                   AS user_name,
+		  substr(pv.age_pv, -length(pv.age_pv), length(pv.age_pv) - 1) AS age,
+		  CASE WHEN pv.dt_sex = '02'
+		    THEN '1'
+		  ELSE '0' END                                                    gender,
+		  pi.mobile                                                       tel,
+		  CASE WHEN pres.eu_boil = '2' THEN CASE WHEN ord.CODE_SUPPLY='541' THEN '0' ELSE '1'END ELSE '0' END is_suffering,
+		  CASE WHEN ord.CODE_SUPPLY='541' THEN 1 ELSE dt.ords END   amount,
+		  CASE WHEN pres.eu_boil = '2' THEN CASE WHEN ord.CODE_SUPPLY='541' THEN 0 ELSE dt.ords * pres.fried_num END ELSE 0 END    suffering_num,
+		  CASE WHEN pres.eu_boil = '2' THEN CASE WHEN ord.CODE_SUPPLY='541' THEN 0 ELSE pres.fried_num END ELSE 0 END           ji_fried,
+		  CASE WHEN ord.CODE_SUPPLY='541' THEN '2' ELSE '0' END        AS type,
+		  NULL                                                         AS wj_type,
+		  CASE WHEN ord.CODE_SUPPLY='700' THEN '1' ELSE '0' END   AS is_within,
+		  pres.pres_no                                                    other_pres_num,
+		  diag.diagname                                                   special_instru,
+		  pv.bed_no                                                       bed_num,
+		  dept.name_dept                                                  hos_depart,
+		  pi.code_ip                                                      hospital_num,
+		  ward.code_dept                                                  disease_code,
+		  ord.name_emp_ord                                                doctor,
+		  NULL                                                         AS paste_desc_file,
+		  ord.NOTE_ORD                                                 AS prescript_remark,
+		  pres.dosage_pack                                                package_dose,
+		  sup.name                                                        medication_methods,
+		  '每日'||pres.USAGE_COUNT||'次'                               AS medication_instruction,
+		  '2'                                                          AS is_hos,
+		  pres.usage_count                                                per_pack_num,
+		  pres.dosage_pack                                                per_pack_dose,
+		  NULL                                                         AS images,
+		  NULL                                                         AS money,
+		  NULL                                                         AS is_pregnant,
+		  pd.name                                                         medicines,
+		  CASE WHEN ord.CODE_SUPPLY='541' THEN dt.ords * herb.quan ELSE herb.quan END dose,
+		  unit.name                                                       unit,
+		  dt.price                                                        herb_unit_price,
+		  pd.code                                                         goods_num,
+		  NULL                                                         AS dose_that,
+		  pd.note                                                         remark,
+		  hu.name                                                         m_usage,
+		  NULL                                                         AS goods_norms,
+		  NULL                                                         AS goods_orgin,
+		  NULL                                                         AS medperdos,
+		  NULL                                                         AS medperday,
+		  pi.BIRTH_DATE,
+		  pv.AGE_PV,
+		  ord.ordsn
+		FROM ex_pd_apply ap INNER JOIN ex_pd_apply_detail dt ON ap.pk_pdap = dt.pk_pdap
+		  INNER JOIN cn_prescription pres ON dt.pk_pres = pres.pk_pres
+		  INNER JOIN pv_encounter pv ON dt.pk_pv = pv.pk_pv
+		  INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+		  LEFT OUTER JOIN pv_diag pdiag ON pv.pk_pv = pdiag.pk_pv AND pdiag.flag_maj = '1'
+		  LEFT OUTER JOIN bd_term_diag diag ON pdiag.pk_diag = diag.pk_diag
+		  INNER JOIN bd_ou_dept dept ON pres.pk_dept = dept.pk_dept
+		  INNER JOIN bd_ou_dept ward ON ap.pk_dept_ap = ward.pk_dept
+		  INNER JOIN BD_OU_DEPT exdept on exdept.PK_DEPT=ap.PK_DEPT_DE
+		  INNER JOIN bd_ou_dept deptnow ON pv.pk_dept = deptnow.pk_dept
+		  INNER JOIN bd_ou_dept nurse ON pv.PK_DEPT_NS = nurse.pk_dept
+		  INNER JOIN BD_OU_EMPLOYEE emp ON emp.PK_EMP = pv.PK_EMP_NS
+		  INNER JOIN cn_order ord ON dt.pk_cnord = ord.pk_cnord
+		  INNER JOIN CN_ORD_HERB herb ON herb.PK_CNORD=ord.PK_CNORD AND herb.PK_PD=dt.PK_PD
+		  INNER JOIN BD_TERM_FREQ freq ON ord.CODE_FREQ = freq.CODE
+		  INNER JOIN bd_supply sup ON ord.code_supply = sup.code
+		  INNER JOIN bd_pd pd ON pd.pk_pd = dt.pk_pd
+		  INNER JOIN bd_unit unit ON herb.pk_unit = unit.pk_unit
+		  LEFT OUTER JOIN bd_defdoc hu ON herb.dt_herbusage = hu.code AND hu.code_defdoclist = '030410'
+		  LEFT JOIN BD_OU_ORG org ON org.PK_ORG = ap.PK_ORG
+	 where pres.pres_no=#{presNo} and
+	       pres.eu_boil>'1'
+	</select>
+	
+	<select id="selectDispensingMap" parameterType="java.util.Map" resultType="DynaBean">
+		 SELECT DISTINCT
+						dept.code_dept ward_sn, 
+						pdde.code_de , 
+						pdde.flag_sendtofa, 
+						pdde.name_decate,
+						pv.code_pv,  
+						pi.code_pi, 
+						pi.name_pi, 
+					  	pv.age_pv, 
+						dept.name_dept,
+						ord.name_emp_ord,
+						pv.bed_no,
+						sup.name sup_name, 
+						pd.code pd_code,
+						pd.name pd_name,
+						pd.spec pd_spec,
+						ord.dosage, 
+						unit.name unit_name, 
+						ord.quan ord_quan, 
+						pdde.quan_min,
+					  	occ.date_plan,
+					    ord.ordsn  						
+			from EX_PD_DE pdde
+						inner join EX_PD_APPLY_DETAIL detail on pdde.PK_PDAPDT = detail.PK_PDAPDT
+						inner join PV_ENCOUNTER pv on pdde.PK_PV = pv.PK_PV
+						inner join PI_MASTER pi on pv.PK_PI = pi.PK_PI
+						inner join BD_OU_DEPT dept on pdde.pk_dept_ap = dept.pk_dept
+						inner join cn_order ord on pdde.pk_cnord = ord.pk_cnord
+						inner join bd_pd pd on pdde.pk_pd=pd.pk_pd
+						inner join bd_supply sup on ord.code_supply=sup.code
+						inner join bd_unit unit on ord.pk_unit_dos=unit.pk_unit
+						inner join ex_order_occ occ on pdde.pk_pdapdt = occ.pk_pdapdt
+						where pdde.code_de = #{codeDe,jdbcType=VARCHAR} and pdde.eu_direct ='1'
+	</select>
+	
+	<select id="selectNotDispensingMap" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT DISTINCT
+			de.pk_dept_de,
+			de.code_de,
+			de.pk_pddecate
+		FROM
+			ex_pd_de de
+		WHERE 
+			de.pk_dept_de = #{pkDeptDe,jdbcType=VARCHAR}
+			AND de.code_de = #{codeDe,jdbcType=VARCHAR} 
+			AND de.pk_pddecate = #{pkPddecate,jdbcType=VARCHAR} 
+			AND de.flag_sendtofa = '0'
+	</select>
+	
+</mapper>

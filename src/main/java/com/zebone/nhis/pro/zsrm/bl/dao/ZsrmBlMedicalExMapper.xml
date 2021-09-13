@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsrm.bl.dao.ZsrmBlMedicalExMapper">
+    <!-- 门急诊医技申请单查询 -->
+    <select id="qryOpMedAppInfo" parameterType="java.util.Map" resultType="DynaBean">
+        select * from (
+        select ord.pk_cnord,
+        ord.pk_pi,
+        ord.pk_pv,
+        ord.ordsn,
+        ord.PK_DEPT_AREAAPP as PkDeptAreaapp,
+        ord.PK_DEPT_JOB as PkDeptJob,
+        ord.ordsn_parent,
+        pv.code_pv,
+        pv.name_pi,
+        pv.dt_sex,
+        ord.code_apply,
+        ord.flag_emer,
+        ord.name_ord,
+        ord.quan_cg as quan,
+        ord.price_cg,
+        ord.date_start,
+            ord.days,
+            bod.name_dept as pk_dept,
+        ord.name_emp_ord,
+        ord.note_ord,
+        pi.code_op,
+        ris.pk_ordris,
+        freq.name name_freq,
+        pi.code_pi,
+        exocc.num,
+        pv.pk_org,
+        ris.date_begin_appo,
+        ris.eu_status_appo,
+        (CASE WHEN exocc.EU_STATUS='1' and exocc.num > 0 THEN '已执行' ELSE '未执行' END) euStatusName,
+        case when exocc.num>0 then '1' else '0' end flag_settle,
+        (select sum(dt.amount) from bl_op_dt dt where dt.pk_cnord = ord.pk_cnord) amount
+        from cn_order ord
+        inner join pv_encounter pv on ord.pk_pv = pv.pk_pv
+        INNER JOIN PI_MASTER pi ON pi.PK_PI = pv.PK_PI
+        left outer join bd_ou_dept bod on ord.pk_dept = bod.pk_dept
+        left join cn_ris_apply ris ON ris.PK_CNORD = ord.PK_CNORD
+        left join (SELECT occ.pk_cnord, COUNT(1) num,occ.EU_STATUS
+        from ex_assist_occ occ
+        GROUP BY occ.pk_cnord,EU_STATUS) exocc
+        on exocc.pk_cnord = ord.pk_cnord
+        left join bd_term_freq freq on freq.code = ord.code_freq
+        where ord.eu_pvtype &lt;'3' and ord.flag_durg = '0'
+        <if test="codeApply != null  and  codeApply != ''">
+            and ord.code_apply = #{codeApply,jdbcType=VARCHAR}
+        </if>
+        <if test="codeOp != null  and  codeOp != ''">
+            and pi.CODE_OP = #{codeOp,jdbcType=VARCHAR}
+        </if>
+        <if test="codePv != null  and  codePv != ''">
+            and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDept != null  and  pkDept != ''">
+            and ord.pk_dept = #{pkDept,jdbcType=VARCHAR}
+        </if>
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and ord.date_start &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        </if>
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and ord.date_start &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        </if>
+        <if test="pkCnord != null  and  pkCnord != ''">
+            and ord.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDeptArea != null and pkDeptArea != '' ">
+            and ord.pk_dept_area=#{pkDeptArea,jdbcType=VARCHAR}
+        </if>
+        <if test="ordtype != null and ordtype != '' ">
+            and ord.code_ordtype  like #{ordtype,jdbcType=VARCHAR}||'%'
+        </if>
+        <if test="pkDeptExec != null and pkDeptExec != '' ">
+            and ord.PK_DEPT_EXEC=#{pkDeptExec,jdbcType=VARCHAR}
+        </if>
+
+        ) t where 1=1 and t.amount>0
+        <if test='exStatus!=null and exStatus!="" and exStatus.equals("0")'>
+            and exists(select 1 from ex_assist_occ where  (EU_STATUS = '0' or EU_STATUS is null ) and t.PK_CNORD = PK_CNORD )
+        </if>
+        <if test='exStatus!=null and exStatus!="" and exStatus.equals("1")'>
+            and exists(select 1 from ex_assist_occ where  EU_STATUS = '1' and t.PK_CNORD = PK_CNORD )
+        </if>
+        order by t.code_op
+
+
+    </select>
+
+    <!-- 医技执行 -->
+    <update id="medExeOcc" parameterType="java.util.Map">
+        update ex_assist_occ
+        set flag_occ=1,
+        <if test="dateOcc != null  and  dateOcc != ''">
+            date_occ=to_date(#{dateOcc,jdbcType=VARCHAR}, 'yyyy-MM-dd hh24:mi:ss'),
+        </if>
+        <if test="pkEmpOcc != null  and  pkEmpOcc != ''">
+            pk_emp_occ=#{pkEmpOcc,jdbcType=VARCHAR},
+        </if>
+        <if test="nameEmpOcc != null  and  nameEmpOcc != ''">
+            name_emp_occ=#{nameEmpOcc,jdbcType=VARCHAR},
+        </if>
+        <if test="pkOrgOcc != null  and  pkOrgOcc != ''">
+            pk_org_occ=#{pkOrgOcc,jdbcType=VARCHAR},
+        </if>
+        <if test="pkDeptOcc != null  and  pkDeptOcc != ''">
+            pk_dept_occ=#{pkDeptOcc,jdbcType=VARCHAR},
+        </if>
+        <if test="pkDeptArea != null  and  pkDeptArea != ''">
+            pk_dept_area=#{pkDeptArea,jdbcType=VARCHAR},
+        </if>
+        <if test="pkDeptJob != null  and  pkDeptJob != ''">
+            pk_dept_job=#{pkDeptJob,jdbcType=VARCHAR},
+        </if>
+        <if test="pkEmpConf != null  and  pkEmpConf != ''">
+            pk_emp_conf=#{pkEmpConf,jdbcType=VARCHAR},
+        </if>
+        <if test="nameEmpConf != null  and  nameEmpConf != ''">
+            name_emp_conf=#{nameEmpConf,jdbcType=VARCHAR},
+        </if>
+        <if test="pkMsp != null  and  pkMsp != ''">
+            pk_msp=#{pkMsp,jdbcType=VARCHAR},
+        </if>
+        eu_status=1
+        where flag_occ = 0
+          and flag_canc = '0'
+          and flag_refund = '0'
+          and pk_assocc = #{pkAssocc,jdbcType=VARCHAR}
+    </update>
+
+    <!-- 查询医技申请单-执行记录 -->
+    <select id="queryExAssistOccList" parameterType="java.util.Map" resultType="DynaBean">
+        select occ.pk_assocc,
+        occ.code_occ,
+        occ.quan_occ,
+        occ.date_appt,
+        occ.date_plan,
+        occ.date_occ,
+        occ.name_emp_occ,
+        occ.note,
+        occ.flag_occ,
+        occ.flag_prt,
+        occ.pk_msp,
+        occ.pk_cnord,
+        1 is_checked,
+        (case when occ.EU_STATUS = '1' then '已执行' when occ.EU_STATUS = '9' then '取消执行' else '未执行' end) euStatusName
+        from ex_assist_occ occ
+        where occ.flag_canc='0'
+        <if test="pkCnord != null  and  pkCnord != ''">
+            and occ.pk_cnord = #{pkCnord,jdbcType=VARCHAR}
+        </if>
+        <if test="pkExocc != null  and  pkExocc != ''">
+            and occ.pk_exocc = #{pkExocc,jdbcType=VARCHAR}
+        </if>
+        and (occ.flag_refund ='0' or occ.flag_refund is null)
+    </select>
+
+    <!-- 门诊数据校验 -->
+    <select id="opDataCheck" parameterType="string" resultType="int">
+        select count(1)
+        from bl_op_dt
+        where pk_cnord = #{pkCnord,jdbcType=VARCHAR} and flag_settle='0'
+    </select>
+
+
+    <select id="qeryDeptAreaZsrm" resultType="java.lang.String">
+        select bus.pk_dept from bd_dept_bus bus
+        Inner join bd_dept_bus buss on bus.pk_deptbu=buss.pk_deptbu
+        Inner Join bd_dept_bu bu On bus.pk_deptbu=bu.pk_deptbu And bu.dt_butype='12'
+        Where bus.dt_depttype='16' and buss.pk_dept = #{pkDeptExec,jdbcType=VARCHAR}
+    </select>
+
+    <select id="qeryDeptOperationZsrm" resultType="java.lang.String">
+        select dept.pk_dept
+        from bd_ou_dept dept
+        inner join bd_dictattr att on dept.pk_dept = att.pk_dict
+        inner join bd_dictattr_temp tmp on att.pk_dictattrtemp = tmp.pk_dictattrtemp
+        where tmp.code_attr='0601' and att.val_attr='1'
+          and pk_dept = #{pkDept,jdbcType=VARCHAR}
+    </select>
+
+    <select id="getPvOrdInfo" resultType="com.zebone.nhis.pro.zsrm.bl.vo.CnOrderVo">
+        select ord.pk_cnord,
+               ord.ordsn,
+               ord.ordsn_parent,
+               ord.groupno,
+               ord.name_ord,
+               ord.PK_PI,
+               ord.PK_PV,
+               ord.spec,
+               ord.dosage,
+               ord.PK_EMP_ORD,
+               ord.NAME_EMP_ORD,
+               ord.PK_DEPT,
+               ord.PK_EMP_EX,
+               ord.PK_DEPT_EXEC,
+               ord.PK_DEPT_AREAAPP,
+               ord.PK_DEPT_JOB,
+               undos.NAME name_unit_dos,
+               sup.NAME   name_supply,
+               supa.NAME  name_supply_add,
+               ord.code_freq,
+               ord.days,
+               ord.eu_st,
+               pres.pres_no,
+               ord.note_ord,
+               sup.flag_st,
+               supa.flag_st,
+               cls.CODE cls_code
+        from ex_pres_occ pres
+                     inner join ex_pres_occ_dt dt on pres.pk_presocc = dt.pk_presocc
+                     inner join cn_order ord on dt.pk_cnord = ord.pk_cnord
+                     inner join bd_supply sup on ord.code_supply = sup.code
+                     inner join bd_supply_class cls on sup.pk_supplycate = cls.pk_supplycate
+                     inner join BD_UNIT undos on undos.PK_UNIT = PK_UNIT_DOS
+                     left join bd_supply supa on ord.code_supply_add = supa.code
+                     left join bd_supply_class supacls on supa.pk_supplycate = supacls.pk_supplycate
+        where pres.pk_pv = #{pkPv,jdbcType=VARCHAR}
+          and (cls.code in (${sysParam}) or supacls.code in (${sysParam}))
+          and pres.flag_canc = '0'
+          and dt.quan_de - dt.quan_back > 0
+        order by ord.ORDSN_PARENT,ord.GROUPNO
+    </select>
+
+    <!-- 排序规则：按照执行时间排序，已执行放在最后 -->
+    <select id="getExtCostByOrd" parameterType="java.util.List" resultType="com.zebone.nhis.pro.zsrm.bl.vo.ExtCostOccVo">
+        select cg.pk_cgop,
+               cg.name_cg,
+               cg.PK_ITEM,
+               cg.spec,
+               cg.quan,
+               cg.amount,
+               cg.PK_PV,
+               cg.PK_PI,
+               cg.FLAG_SETTLE,
+               cg.PK_CNORD,
+               cgocc.pk_emp_occ,
+               cgocc.NAME_EMP_OCC,
+               occdp.NAME_DEPT name_dept_occ,
+               cgocc.date_occ,
+               cgocc.PK_CGOPOCC,
+               cgocc.eu_status
+        from bl_op_dt cg
+                     left join ex_cgop_occ cgocc on cg.pk_cgop = cgocc.PK_OPCG
+                     left join BD_OU_DEPT occdp on occdp.PK_DEPT = cgocc.PK_DEPT_OCC
+        where cg.pk_cnord in
+        <foreach collection="pkCnords" item="pkCnord" index="index" open="(" close=")" separator=",">
+            #{pkCnord,jdbcType=VARCHAR}
+        </foreach>
+          and cg.eu_additem in ('1','2')
+        order by  cgocc.DATE_OCC, cgocc.EU_STATUS desc, cg.FLAG_SETTLE desc
+    </select>
+
+</mapper>

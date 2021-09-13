@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pv.adt.dao.AdtRegMapper">
+	
+	<!-- 根据患者主键获取最大的就诊次数 -->
+	<select id="getMaxIpTimes" resultType="java.lang.Integer">
+		select nvl(max(i.ip_times),0) 
+		from pv_ip i
+		inner join pv_encounter e on i.pk_pv = e.pk_pv and e.del_flag = '0'
+		where i.del_flag = '0' and e.pk_pi = #{pkPi,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 根据就诊主键查询就诊记录 -->
+	<select id="getPvEncounterByPkPv" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.pv.PvEncounter">
+		select * 
+		from pv_encounter
+		where del_flag = '0' and pk_pv = #{pkPv,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 根据患者主键查询患者信息 -->
+	<select id="getPiMasterByPkPi" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.pi.PiMaster">
+		select * 
+		from pi_master
+		where del_flag = '0' and pk_pi = #{pkPi,jdbcType=VARCHAR}
+	</select>
+	   <select id="getYjFee"  parameterType="java.util.Map" resultType="java.math.BigDecimal">
+		   select sum(amount) amt 
+		   from bl_deposit
+		   where eu_dptype='9' and pk_pi=#{pkPi,jdbcType=CHAR} and flag_settle='0'	
+	</select>
+	<select id="getYjFactor"  parameterType="java.util.Map" resultType="DynaBean">
+		    select fac.factor_prep,fac.amt_cred
+            from pv_encounter pv
+            inner join bd_hp_factor fac on  pv.eu_pvtype = fac.eu_pvtype  
+            and (fac.pk_hp = pv.pk_insu or fac.pk_hp is null)  
+            and pv.pk_dept = fac.pk_dept 
+		    where pv.pk_pi=#{pkPi,jdbcType=CHAR} and fac.del_flag = '0' 
+		    order by fac.PK_HP desc 	
+	</select>
+	 <select id="getTotalFee"  parameterType="java.util.Map" resultType="java.math.BigDecimal">
+				select sum(cg.amount) as amt
+  				from bl_ip_dt cg 
+ 				where cg.pk_pi  = #{pkPi,jdbcType=CHAR} and cg.flag_settle = '0' 				
+	</select>
+		 <select id="getZtNPdFee"  parameterType="java.util.Map" resultType="java.math.BigDecimal">
+				select sum(exlist.quan_occ * item.price * orditem.quan ) as amt 
+  				from cn_order ord 
+       			inner join ex_order_occ exlist on ord.pk_cnord=exlist.pk_cnord
+      			inner join bd_ord_item orditem on ord.pk_ord = orditem.pk_ord 
+       			inner join bd_item item on orditem.pk_item=item.pk_item
+ 				where exlist.eu_status = '0' 
+ 				  and exlist.flag_self = '0'
+ 				  and ord.pk_pi = #{pkPi,jdbcType=CHAR}
+	</select>
+	<select id="getZtPdFee"  parameterType="java.util.Map" resultType="java.math.BigDecimal">
+				select sum(dt.amount) as amt 
+  				from ex_pd_apply_detail dt
+      	 		inner join ex_pd_apply ap on ap.pk_pdap=dt.pk_pdap
+ 				where dt.flag_finish = '0' 
+ 				  and dt.flag_stop = '0' 
+ 				  and dt.flag_self = '0'
+ 				  and ap.eu_status != '9' 
+ 				  <if test="pkList != null and  pkList != ''">
+			and (dt.pk_cgip in
+			<trim suffixOverrides=" OR dt.pk_pv in()">    <!-- 表示删除最后一个条件 -->
+				<foreach collection="pvList" item="pvList" index="index"
+					open="(" close=")">
+					<if test="index != 0">
+						<choose>
+							<when test="index % 1000 == 999">) OR dt.pk_pv in (</when>
+							<otherwise>,</otherwise>
+						</choose>
+					</if>
+					#{pvList}
+				</foreach>
+			</trim>
+			)
+		</if>
+	</select>
+</mapper>

@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pi.fix.dao.PibaseMapper">
+	
+	<!-- 获取患者基本信息列表 -->
+	<select id="getPiMasterListNoPhoto" parameterType="java.util.Map"  
+	resultType="com.zebone.nhis.pi.pub.vo.PiMasterVo">
+		select pi.pk_pi,pi.pk_org,pi.code_pi,pi.code_op,pi.code_ip,pi.barcode,pi.pk_picate,pi.name_pi,pi.dt_idtype,pi.id_no,pi.hic_no,pi.insur_no,pi.mpi,pi.flag_ehr,
+    		pi.dt_sex,pi.birth_date,pi.place_birth,pi.dt_marry,pi.dt_occu,pi.dt_edu,pi.dt_country,pi.dt_nation,pi.tel_no,pi.mobile,pi.wechat_no,pi.email,pi.unit_work,
+    		pi.tel_work,pi.address,pi.name_rel,pi.tel_rel,pi.dt_blood_abo,pi.dt_blood_rh,pi.creator,pi.create_time,pi.modifier,pi.del_flag,pi.ts,pi.FLAG_REALNAME
+			<if test="ageFormatFlag == null or ageFormatFlag=='1'">
+				,GETPVAGE(pi.BIRTH_DATE,null) as age_format
+			</if>
+    	from PI_MASTER pi
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+		<choose>
+			<when test="delFlag != null and delFlag !=''">
+				and pi.del_flag = #{delFlag,jdbcType=VARCHAR}
+			</when>
+			<otherwise>
+				and pi.del_flag = '0'
+			</otherwise>
+		</choose>
+		    <if test="birthBegin != null and birthBegin != ''">
+		  		and to_char(pi.BIRTH_DATE,'yyyy-MM-DD') &gt;= to_char(#{birthBegin,jdbcType=TIMESTAMP},'yyyy-MM-DD')
+		  	</if> 
+		  	<if test="birthEnd != null and birthEnd != ''">
+		  		and to_char(pi.BIRTH_DATE,'yyyy-MM-DD') &lt;= to_char(#{birthEnd,jdbcType=TIMESTAMP},'yyyy-MM-DD')
+		  	</if> 
+		
+		    <if test="codePi != null and codePi != ''">
+		  		and code_pi = #{codePi,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="codeOp != null and codeOp != ''">
+		  		and code_op = #{codeOp,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="codeIp != null and codeIp != ''">
+		  		and code_ip = #{codeIp,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="namePi != null and namePi != ''">
+		  		and name_pi = #{namePi,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="dtSex != null and dtSex != ''">
+		  		and dt_sex = #{dtSex,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="idNo != null and idNo != ''">
+		  		and (id_no = upper(#{idNo,jdbcType=VARCHAR}) or id_no = upper(#{idNo,jdbcType=VARCHAR}))
+		  	</if>
+		  	<if test="pkPi != null and pkPi != ''">
+		  		and pi.PK_PI = #{pkPi,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="insurNo != null and insurNo != ''">
+		  		and insur_no = #{insurNo,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="mobile != null and mobile != ''">
+		  		and mobile = #{mobile,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="dialysisFlag  == 1"><!-- 透析患者过滤未建档患者 -->
+		      	and exists (select 1 from pi_hd where pi_hd.pk_pi=pi.pk_pi) 
+			</if>
+			<if test="cardNo != null and cardNo != ''"><!--【门急诊】 卡号 -->
+			    AND EXISTS(
+                 SELECT 1 FROM PI_CARD PC WHERE pi.PK_PI=PC.PK_PI AND    PC.DEL_FLAG = '0'
+                 AND PC.EU_STATUS = '0'
+                 and PC.card_no = #{cardNo,jdbcType=VARCHAR}
+                  )
+		  	</if>
+			<if test="hicNo != null and hicNo != ''"><!--健康 卡号 -->
+				and pi.hic_no = #{hicNo,jdbcType=VARCHAR}
+			</if>
+  		</trim>
+       order by pi.code_pi
+	</select>	
+	
+	<!-- 根据保险计划主键获取保险计划信息 -->
+	<select id="getPiInsuranceById" resultType="com.zebone.nhis.common.module.pi.PiInsurance">
+		select * 
+		from PI_INSURANCE
+		where del_flag = '0' and PK_INSURANCE = #{pkInsurance,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 根据患者就诊信息查询诊断信息vo列表 -->
+	<select id="getPibaseVoList" parameterType="com.zebone.nhis.common.module.pv.PvEncounter" resultType="com.zebone.nhis.pi.pub.vo.PibaseVo">
+		select distinct e.CODE_PV, e.EU_PVTYPE, e.PK_PI, e.PK_PV, e.BED_NO, e.PK_DEPT, e.PK_DEPT_NS,e.eu_pvmode,
+			   e.DATE_BEGIN, e.DATE_END,e.eu_status,e.eu_locked,e.pk_emp_phy,e.name_emp_phy,e.pk_insu,
+		  case when e.DATE_CLINIC is null then e.DATE_BEGIN else e.DATE_CLINIC end as DATE_CLINIC,
+			   m.code_ip,m.code_pi,m.name_pi,m.dt_sex,m.birth_date,m.id_no,m.mobile,m.insur_no,
+			   m.code_op,m.barcode,m.pk_picate,m.dt_idtype,m.hic_no, m.mpi,m.flag_ehr,
+			   m.place_birth,m.dt_marry,m.dt_occu,m.dt_edu,m.dt_country,m.dt_nation,m.tel_no,
+			   m.wechat_no,m.email,m.name_rel,m.tel_rel,m.dt_ralation,m.addr_rel,m.dt_blood_abo,m.dt_blood_rh,
+			   m.addrcode_birth,m.addr_birth,m.addrcode_origin,m.addr_origin,
+			   m.addrcode_regi ,m.addr_regi ,m.addr_regi_dt,m.postcode_regi,
+			   m.addrcode_cur ,m.addr_cur ,m.addr_cur_dt,m.postcode_cur ,
+			   m.unit_work,m.tel_work,m.address,m.postcode_work,m.pk_emp,
+			   c.name as namePicate,
+			   (case when op.pk_emp_pv is null then er.pk_emp_pv else op.pk_emp_pv end) pk_emp_pv,(case when op.name_emp_pv is null then er.name_emp_pv else op.name_emp_pv end) name_emp_pv,
+			   h.name as name_insu,
+			   diag.name_diag
+			   ,diag.pk_diag
+			   ,GETPVAGE(m.BIRTH_DATE,e.DATE_BEGIN) as age_format
+			   ,e.dt_disease
+			   <if test="flagRefundModular  == 1"><!-- 退费模块按已结算查询 -->
+			   	   ,st.pk_settle 
+				   ,st.code_st
+				   ,case when inv.ebillno is not null then inv.ebillno else inv.code_inv end code_inv
+				   ,nvl(st.amount_st,0) as amount_st
+			   </if>
+			   <if test="flagSettleDate == 1">
+				   ,bs.date_st as date_settle,bs.code_st
+			   </if>
+			   <if test="flagChDise == 1">
+				   ,iqp.DISE_NAME as ch_dise_name,iqp.DISE_CODG as ch_dise_code
+			   </if>
+		  from PV_ENCOUNTER e
+		 inner join pi_master m on m.pk_pi = e.pk_pi and m.del_flag = '0'
+		  left join pi_cate c on c.pk_picate = m.pk_picate and c.del_flag = '0'
+		  left join bd_hp h on h.pk_hp = e.PK_INSU and h.del_flag = '0'
+		  left join pv_op op on op.pk_pv = e.pk_pv and op.del_flag = '0'
+		  left join pv_er er on er.pk_pv = e.pk_pv and er.del_flag = '0'
+		  left join pv_ip ip on ip.pk_pv = e.pk_pv and ip.del_flag = '0'
+		  left join pv_diag diag on diag.pk_pv = e.pk_pv and diag.flag_maj='1' and diag.del_flag='0'
+		  <if test="dialysisFlag  == 1"><!-- 透析患者过滤未建档患者 -->
+		      inner join pi_hd hd on hd.pk_pi = m.pk_pi and hd.del_flag = '0'  
+		  </if>
+		  <if test="flagRefundModular  == 1"><!-- 退费模块按已结算查询 -->
+		      left join bl_settle st on st.pk_pv = e.pk_pv 
+		      	and not exists (select 1 from bl_settle back 
+					 where st.pk_settle=back.pk_settle_canc 
+					 and st.pk_pi=back.pk_pi)
+			  left join bl_st_inv stinv on stinv.pk_settle = st.pk_settle
+			  left join bl_invoice inv on inv.pk_invoice = stinv.pk_invoice
+		  </if>
+		  <if test="flagSettleDate == 1">
+			  left join bl_settle bs on e.pk_pv=bs.pk_pv and bs.flag_canc='0' and bs.del_flag='0'
+		  </if>
+		  <if test="flagChDise == 1"><!-- 查询患者的慢病信息-->
+			  left join ins_qgyb_pv iqp on e.pk_pv=iqp.pk_pv and iqp.med_type='14'
+		  </if>
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and e.del_flag = '0'  
+			and e.flag_cancel = '0'  
+			and e.pk_org =	#{pkOrg,jdbcType=VARCHAR}
+			<!-- 0-不判断就诊状态，查全部；1-判断就诊状态，查0、1、3，再根据参数euStatus过滤；默认1 -->		
+			<if test="flagStatus == 1">
+				and (e.eu_status = '0' or e.eu_status = '1' or e.eu_status = '3')
+			</if>
+			<!-- 门急诊诊就诊状态=2结束状态 -->	
+			<if test="flagStatusEnd == 1">
+				 and  e.eu_status = '2' 
+			</if>
+			<!-- 判断就诊状态，过滤退诊和登记状态 -->	
+			<if test="flagStatusCancel == 1">
+				 and e.eu_status not in ('9','0')
+			</if>
+		    <if test="euPvtype != null and euPvtype != ''">
+		  		and e.EU_PVTYPE = #{euPvtype,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="euPvtype == 1 or euPvtype == 2 ">
+		  	    <!--  yangxue注释
+		  	    and (e.eu_status = '0' or e.eu_status = '1')  
+		  		and to_char(op.date_end,'yyyy-MM-DD') &gt;= to_char(#{dateEnd,jdbcType=TIMESTAMP},'yyyy-MM-DD')
+		  		-->
+		  	</if> 
+		  	<if test="pkPv != null and pkPv != ''">
+		  		and e.PK_PV = #{pkPv,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="codePv != null and codePv != ''">
+		  		and e.CODE_PV = #{codePv,jdbcType=VARCHAR}
+		  	</if> 	
+		  	<if test="codePi != null and codePi != ''">
+		  		and m.CODE_PI = #{codePi,jdbcType=VARCHAR}
+		  	</if>	
+		  	<if test="hicNo != null and hicNo != ''">
+		  		and m.HIC_NO = #{hicNo,jdbcType=VARCHAR}
+		  	</if>	
+		  	<if test="codeIp != null and codeIp != ''">
+		  		and m.CODE_IP = #{codeIp,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="codeOp != null and codeOp != ''">
+		  		and m.CODE_OP = #{codeOp,jdbcType=VARCHAR}
+		  	</if>	
+		  	<if test="namePi != null and namePi != ''">
+		  		and m.NAME_PI like '%'||#{namePi,jdbcType=VARCHAR}||'%'
+		  	</if>  	
+		  	<if test="dateClinic != null and dateClinic != ''">
+		  		and ( (e.eu_status = '0' and to_char(e.DATE_BEGIN,'yyyy-MM-DD') = to_char(#{dateClinic,jdbcType=TIMESTAMP},'yyyy-MM-DD') )  
+		  		   or (e.eu_status != '0' and to_char(e.DATE_CLINIC,'yyyy-MM-DD') = to_char(#{dateClinic,jdbcType=TIMESTAMP},'yyyy-MM-DD') )  
+		  		) 
+		  	</if> 
+		  	<if test="dateBegin != null and dateBegin != ''">
+		  		and to_char(e.DATE_BEGIN,'yyyy-MM-DD') = to_char(#{dateBegin,jdbcType=TIMESTAMP},'yyyy-MM-DD')
+		  	</if> 
+		  	<if test="dateEnd != null and dateEnd != ''">
+		  		and to_char(op.date_end,'yyyy-MM-DD') &gt;= to_char(#{dateEnd,jdbcType=TIMESTAMP},'yyyy-MM-DD')
+		  	</if> 
+		  	<if test="pkPi != null and pkPi != ''">
+		  		and m.PK_PI = #{pkPi,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="bedNo != null and bedNo != ''">
+		  		and e.BED_NO = #{bedNo,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="pkDept != null and pkDept != ''">
+		  		and e.PK_DEPT = #{pkDept,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="pkDeptNs != null and pkDeptNs != ''">
+		  		and e.PK_DEPT_NS = #{pkDeptNs,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="euStatus != null and euStatus != ''">
+		  		and e.eu_status = #{euStatus,jdbcType=VARCHAR}
+		  	</if>	
+		  	<if test="idNo != null and idNo != ''"><!--【门急诊】 证件号码 -->
+		  		and m.id_no = #{idNo,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="insurNo != null and insurNo != ''"><!--【门急诊】 医保卡号 -->
+		  		and m.insur_no = #{insurNo,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="cardNo != null and cardNo != ''"><!--【门急诊】 卡号 -->
+				AND EXISTS(
+				SELECT 1 FROM PI_CARD PC WHERE m.PK_PI=PC.PK_PI AND    PC.DEL_FLAG = '0'
+				AND PC.EU_STATUS = '0'
+				AND PC.FLAG_ACTIVE = '1'
+				and PC.card_no = #{cardNo,jdbcType=VARCHAR}
+				)
+
+		  	</if>
+		  	<if test="pkEmpPhy !=null and pkEmpPhy !=''"><!--接诊医生-->
+				and e.pk_emp_phy =  #{pkEmpPhy,jdbcType=VARCHAR}
+			</if>
+
+		  	<if test="euPvtypes != null and euPvtypes != ''"><!--【门急诊】就诊状态组 -->
+	  		  	and e.EU_PVTYPE in 
+        		<foreach item="euPvtype" index="index" collection="euPvtypes" open="(" separator="," close=")">
+            		#{euPvtype}    
+        		</foreach>
+		  	</if> 
+  		</trim>
+  		order by e.DATE_BEGIN desc
+	</select>
+	   
+	<!-- 查询当前机构下的患者分类 -->  
+	<select id="findAllCates" resultType="com.zebone.nhis.common.module.pi.PiCate">
+		select * from pi_cate where del_flag='0'
+	</select>
+	
+	<!-- 查询可用的卡登记记录 --> 
+	<select id="getPiCardIssList" resultType="com.zebone.nhis.common.module.pi.acc.PiCardIss">
+		SELECT
+			iss.pk_cardiss,
+			iss.date_opera,
+			iss.DT_CARDTYPE dtcardtype,
+			cardtype. NAME name_cardtype,
+			iss.CNT_USE,
+			iss.flag_active,
+			iss.pk_emp_iss,
+			iss.name_machine,
+			H .pk_pc,
+			iss.begin_no,
+			iss.end_no,
+			iss.cur_no,
+			iss.flag_use,
+			iss.cnt_iss,
+			iss.eu_status
+		FROM
+			pi_card_iss iss
+		LEFT JOIN bd_defdoc cardtype ON iss.dt_cardtype = cardtype.code
+		AND cardtype.code_defdoclist = '000016'
+		LEFT JOIN bd_res_pc H ON H . NAME = iss.name_machine and h.pk_org = iss.pk_org and h.del_flag='0'
+	    <trim prefix="WHERE" prefixOverrides="AND |OR ">
+			iss.flag_active='1'		
+		<if test="pkOrg != null and pkOrg != ''">
+		  		and iss.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		  </if>
+		  	</trim>  
+	</select>
+	 
+	 <select id="getPiCardIssLists" resultType="com.zebone.nhis.common.module.pi.acc.PiCardIss">
+		SELECT
+			iss.pk_cardiss,
+			iss.date_opera,
+			iss.DT_CARDTYPE dtcardtype,
+			cardtype. NAME name_cardtype,
+			iss.CNT_USE,
+			iss.flag_active,
+			iss.pk_emp_iss,
+			iss.name_machine,
+			H .pk_pc,
+			iss.begin_no,
+			iss.end_no,
+			iss.cur_no,
+			iss.flag_use,
+			iss.cnt_iss,
+			iss.eu_status
+		FROM
+			pi_card_iss iss
+		LEFT JOIN bd_defdoc cardtype ON iss.dt_cardtype = cardtype.code
+		AND cardtype.code_defdoclist = '000016'
+		LEFT JOIN bd_res_pc H ON H . NAME = iss.name_machine and h.pk_org = iss.pk_org and h.del_flag='0'
+	    where iss.flag_active='1'	and iss.del_flag='0'
+	    <if test="pkCardIss !=null and pkCardIss !=''">
+		   and iss.pk_cardiss!= #{pkCardIss,jdbcType=VARCHAR} 
+		</if>	
+		  
+	</select>
+	<resultMap id="ResultMapPiCardIss" type="com.zebone.nhis.common.module.pi.acc.PiCardIss">
+		<id column="PK_CARDISS" jdbcType="CHAR" property="pkCardiss"/>
+		<result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="DATE_OPERA" jdbcType="DATE" property="dateOpera"/>
+        <result column="DT_CARDTYPE" jdbcType="VARCHAR" property="dtCardtype"/>
+        <result column="CNT_ISS" jdbcType="VARCHAR" property="cntIss"/>
+        <result column="FLAG_USE" jdbcType="VARCHAR" property="flagUse"/>
+        <result column="NAME_MACHINE" jdbcType="VARCHAR" property="nameMachine"/>
+        <result column="PK_EMP_ISS" jdbcType="VARCHAR" property="pkEmpIss"/>
+        <result column="PK_EMP_OPERA" jdbcType="VARCHAR" property="pkEmpOpera"/>
+        <result column="NAME_EMP_OPERA" jdbcType="VARCHAR" property="nameEmpOpera"/>
+        <result column="BEGIN_NO" jdbcType="CHAR" property="beginNo"/>
+        <result column="END_NO" jdbcType="CHAR" property="endNo"/>
+        <result column="CNT_USE" jdbcType="CHAR" property="cntUse"/>
+        <result column="CUR_NO" jdbcType="CHAR" property="curNo"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="FLAG_ACTIVE" jdbcType="CHAR" property="flagActive"/>
+        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>	
+	</resultMap>
+	
+	 <select id="queryPiCardIssList" parameterType="com.zebone.nhis.common.module.pi.acc.PiCardIss" resultMap="ResultMapPiCardIss">
+        SELECT
+            *
+        FROM
+            PI_CARD_ISS iss
+        
+         <trim prefix="WHERE" prefixOverrides="AND |OR ">
+           <if test="pkOrg != null and pkOrg != ''">
+		  		 iss.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		  </if>
+        <if test="pkEmpIss != null and pkEmpIss != ''">
+         and   iss.pk_emp_iss = #{pkEmpIss,jdbcType=VARCHAR} 
+        </if>
+        <if test="dtCardtype !=null and dtCardtype !=''">
+		   and iss.dt_cardtype = #{dtCardtype,jdbcType=VARCHAR} 
+		</if>
+		<if test="euStatus !=null and euStatus !=''">
+		   and iss.eu_status = #{euStatus,jdbcType=CHAR} 
+		</if>
+		<if test="dateBegin !=null and dateBegin !=''">
+		   and iss.create_time &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss') 
+		</if>
+		<if test="dateEnd !=null and dateEnd !=''" >
+		   and iss.create_time &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+		</if>
+   	    </trim>
+    </select>	
+ 
+     <select id="getPiMasterAndAddr" parameterType="java.util.Map" resultType="com.zebone.nhis.pi.pub.vo.PiMasterAndAddr">
+        select m.photo_pi,
+               m.pk_pi,m.pk_org,m.code_pi,m.code_op,m.code_ip,m.barcode,m.pk_picate,m.name_pi,m.dt_idtype,m.id_no,m.hic_no,m.insur_no,
+			   m.mpi,m.flag_ehr,m.dt_sex,m.birth_date,m.place_birth,m.dt_marry,m.dt_occu,m.dt_edu,m.dt_country,m.dt_nation,m.tel_no,m.mobile,
+			   m.wechat_no,m.email,m.name_rel,m.tel_rel,m.dt_ralation,m.addr_rel,m.dt_blood_abo,m.dt_blood_rh,m.creator,m.create_time,m.modifier,m.del_flag,m.ts,
+			   m.addrcode_birth,m.addr_birth,m.addrcode_origin,m.addr_origin,
+			   m.addrcode_regi ,m.addr_regi ,m.addr_regi_dt,m.postcode_regi,
+			   m.addrcode_cur ,m.addr_cur ,m.addr_cur_dt,m.postcode_cur ,
+			   birProv.name_div addr_prov_birth ,birCity.name_div addr_city_birth, birDist.name_div addr_dist_birth,
+			   orignProv.name_div addr_prov_origin ,orignCity.name_div addr_city_origin, orignDist.name_div addr_dist_origin,
+			   curProv.name_div addr_prov_cur ,curCity.name_div addr_city_cur, curDist.name_div addr_dist_cur,curVillage.name_div addr_village_cur,curStre.name_div addr_stre_cur,
+			   rignProv.name_div addr_prov_regi ,rignCity.name_div addr_city_regi, rignDist.name_div addr_dist_regi,
+			   m.unit_work,m.tel_work,m.address,m.postcode_work,m.FLAG_REALNAME,m.FLAG_REALMOBILE,m.DT_IDTYPE_REL,m.IDNO_REL,m.FLAG_TEAM,m.pk_emp
+		  from pi_master m 
+	   	  left join bd_admin_division birProv on birProv.code_div = (substr(m.addrcode_birth,0,2) || '0000000000') and birProv.del_flag = '0' 
+		  left join bd_admin_division birCity on birCity.code_div = (substr(m.addrcode_birth,0,4) || '00000000') and birCity.del_flag = '0' 
+		  left join bd_admin_division birDist on birDist.code_div = (substr(m.addrcode_birth,0,6) || '000000') and birDist.del_flag = '0'
+		  left join bd_admin_division orignProv on orignProv.code_div = (substr(m.addrcode_origin,0,2) || '0000000000') and orignProv.del_flag = '0'
+		  left join bd_admin_division orignCity on orignCity.code_div = (substr(m.addrcode_origin,0,4) || '00000000') and orignCity.del_flag = '0'
+		  left join bd_admin_division orignDist on orignDist.code_div = (substr(m.addrcode_origin,0,6) || '000000')  and orignDist.del_flag = '0'
+		  left join bd_admin_division curProv on curProv.code_div = (substr(m.addrcode_cur,0,2) || '0000000000') and curProv.del_flag = '0'
+		  left join bd_admin_division curCity on curCity.code_div = (substr(m.addrcode_cur,0,4) || '00000000') and curCity.del_flag = '0'
+		  left join bd_admin_division curDist on curDist.code_div = (substr(m.addrcode_cur,0,6) || '000000') and curDist.del_flag = '0'
+		  left join bd_admin_division curStre on curStre.code_div = (substr(m.addrcode_cur,0,9) || '000') and curStre.del_flag = '0'
+		 left join bd_admin_division curVillage on curVillage.code_div =  m.addrcode_cur and curStre.del_flag = '0'
+		  left join bd_admin_division rignProv on rignProv.code_div = (substr(m.addrcode_regi,0,2) || '0000000000') and rignProv.del_flag = '0'
+		  left join bd_admin_division rignCity on rignCity.code_div = (substr(m.addrcode_regi,0,4) || '00000000') and rignCity.del_flag = '0'
+		  left join bd_admin_division rignDist on rignDist.code_div = (substr(m.addrcode_regi,0,6) || '000000') and rignDist.del_flag = '0'
+           <if test="pk_pi != null and pk_pi != ''">
+		  		where m.del_flag = '0' and m.pk_pi = #{pk_pi,jdbcType=VARCHAR}
+		   </if>
+           <if test="code_pi != null and code_pi != ''">
+            	where m.del_flag = '0' and m.code_pi = #{code_pi,jdbcType=VARCHAR} 
+           </if>
+           <if test="code_ip !=null and code_ip !=''">
+		   		where m.del_flag = '0' and m.code_ip = #{code_ip,jdbcType=VARCHAR} 
+		   </if>
+		   <if test="id_no !=null and id_no !=''">
+		   		where m.del_flag = '0' and m.id_no = #{id_no,jdbcType=VARCHAR} 
+		   </if>
+		   <if test="insur_no !=null and insur_no !=''">
+		   		where m.del_flag = '0' and m.insur_no = #{insur_no,jdbcType=VARCHAR} 
+		   </if>
+		   <if test="card_no !=null and card_no !=''"><!-- 查状态为：0-在用, -->
+		   		inner join pi_card c on c.del_flag = '0' and c.pk_pi = m.pk_pi and c.eu_status = '0' and c.card_no = #{card_no,jdbcType=VARCHAR}
+		   </if>
+     </select>
+    <select id="queryPiMasterList" resultType="com.zebone.nhis.pi.pub.vo.PiMasterVo">
+        select pi.pk_pi,pi.pk_org,pi.code_pi,pi.code_op,pi.code_ip,pi.barcode,pi.pk_picate,pi.name_pi,pi.dt_idtype,pi.id_no,pi.hic_no,pi.insur_no,pi.mpi,pi.flag_ehr,
+        pi.dt_sex,pi.birth_date,pi.place_birth,pi.dt_marry,pi.dt_occu,pi.dt_edu,pi.dt_country,pi.dt_nation,pi.tel_no,pi.mobile,pi.wechat_no,pi.email,pi.unit_work,
+        pi.tel_work,pi.address,pi.name_rel,pi.tel_rel,pi.dt_blood_abo,pi.dt_blood_rh,pi.creator,pi.create_time,pi.modifier,pi.del_flag,pi.ts,pi.FLAG_REALNAME
+        from PI_MASTER pi where DEL_FLAG=0
+        <if test="params.teNamePi !=  null and params.teNamePi!=''">
+            and  NAME_PI =#{params.teNamePi}
+
+        </if>
+        <if test="params.teCardNo !=  null and params.teCardNo!=''">
+           or  ID_NO = #{params.teCardNo}
+
+        </if>
+
+        <if test="params.teMobile !=  null and params.teMobile!=''">
+            or mobile =#{params.teMobile}
+
+        </if>
+
+    </select>
+
+</mapper>

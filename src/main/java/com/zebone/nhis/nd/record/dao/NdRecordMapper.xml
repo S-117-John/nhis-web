@@ -1,0 +1,401 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.nd.record.dao.NdRecordMapper">
+	
+	 <insert id="saveRecordFd" parameterType="com.zebone.nhis.common.module.nd.record.NdRecordFd" >
+        INSERT INTO  ND_RECORD_FD
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkRecordfd != null" >
+                PK_RECORDFD,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="pkRecord != null" >
+                PK_RECORD,
+            </if>
+            <if test="dataFd != null" >
+                DATA_FD,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkRecordfd != null" >
+                #{pkRecordfd,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=CHAR},
+            </if> 
+            <if test="pkRecord != null" >
+                #{pkRecord,jdbcType=CHAR},
+            </if> 
+            <if test="dataFd != null" >
+                #{dataFd,jdbcType=BLOB},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+        <update id="updateRecordFd" parameterType="com.zebone.nhis.common.module.nd.record.NdRecordFd" >
+        UPDATE ND_RECORD_FD
+        <set>
+            <if test="dataFd != null" >
+                DATA_FD = #{dataFd,jdbcType=BLOB},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME = #{modityTime,jdbcType=DATE},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_RECORDFD = #{pkRecordfd,jdbcType=CHAR}
+    </update> 
+     <insert id="saveRecord" parameterType="com.zebone.nhis.common.module.nd.record.NdRecord" >
+        INSERT INTO  ND_RECORD
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkRecord != null" >
+                PK_RECORD,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="pkTemplate != null" >
+                PK_TEMPLATE,
+            </if>
+            <if test="content != null" >
+                CONTENT,
+            </if>
+            <if test="docData != null" >
+                DOC_DATA,
+            </if>
+            <if test="docXml != null" >
+                DOC_XML,
+            </if>
+            <if test="pkPv != null" >
+                PK_PV,
+            </if>
+            <if test="note != null" >
+                NOTE,
+            </if>
+            <if test="dateBegin != null" >
+                DATE_BEGIN,
+            </if>
+            <if test="pkEmp != null" >
+                PK_EMP,
+            </if>
+            <if test="nameEmp != null" >
+                NAME_EMP,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+            <if test="dateChk != null" >
+                DATE_CHK,
+            </if>
+            <if test="flagChk != null" >
+                FLAG_CHK,
+            </if>
+            <if test="pkEmpChk != null" >
+                PK_EMP_CHK,
+            </if>
+            <if test="nameEmpChk != null" >
+                NAME_EMP_CHK,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkRecord != null" >
+                #{pkRecord,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=CHAR},
+            </if> 
+            <if test="pkTemplate != null" >
+                #{pkTemplate,jdbcType=CHAR},
+            </if> 
+            <if test="content != null" >
+                #{content,jdbcType=VARCHAR},
+            </if> 
+             <if test="docData != null" >
+                #{docData,jdbcType=BLOB},
+            </if>
+            <if test="docXml != null" >
+                #{docXml,jdbcType=VARCHAR},
+            </if>
+            <if test="pkPv != null" >
+                #{pkPv,jdbcType=CHAR},
+            </if> 
+            <if test="note != null" >
+                #{note,jdbcType=VARCHAR},
+            </if> 
+            <if test="dateBegin != null" >
+                #{dateBegin,jdbcType=DATE},
+            </if> 
+            <if test="pkEmp != null" > 
+                #{pkEmp,jdbcType=CHAR},
+            </if> 
+            <if test="nameEmp != null" > 
+                #{nameEmp,jdbcType=VARCHAR},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if>
+            <if test="dateChk != null" >
+                #{dateChk,jdbcType=DATE},
+            </if>
+            <if test="flagChk != null" >
+                #{flagChk,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmpChk != null" >
+                #{pkEmpChk,jdbcType=VARCHAR},
+            </if>
+            <if test="nameEmpChk != null" >
+                #{nameEmpChk,jdbcType=VARCHAR},
+            </if> 
+        </trim>
+    </insert>
+        <update id="updateRecord" parameterType="com.zebone.nhis.common.module.nd.record.NdRecord" >
+        UPDATE ND_RECORD
+        <set>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=CHAR},
+            </if>
+            <if test="pkTemplate != null" >
+                PK_TEMPLATE = #{pkTemplate,jdbcType=CHAR},
+            </if>
+            <if test="content != null" >
+                CONTENT = #{content,jdbcType=VARCHAR},
+            </if>
+            <if test="docData != null" >
+                DOC_DATA = #{docData,jdbcType=BLOB},
+            </if>
+            <if test="docXml != null" >
+                DOC_XML = #{docXml,jdbcType=VARCHAR},
+            </if>
+            <if test="pkPv != null" >
+                PK_PV = #{pkPv,jdbcType=CHAR},
+            </if>
+            <if test="note != null" >
+                NOTE = #{note,jdbcType=VARCHAR},
+            </if>
+            <if test="dateBegin != null" >
+                DATE_BEGIN = #{dateBegin,jdbcType=DATE},
+            </if>
+            <if test="pkEmp != null" >
+                PK_EMP = #{pkEmp,jdbcType=CHAR},
+            </if>
+            <if test="nameEmp != null" >
+                NAME_EMP = #{nameEmp,jdbcType=VARCHAR},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME = #{modityTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+            <if test="dateChk != null" >
+                DATE_CHK = #{dateChk,jdbcType=DATE},
+            </if>
+            <if test="flagChk != null" >
+                FLAG_CHK = #{flagChk,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmpChk != null" >
+                PK_EMP_CHK = #{pkEmpChk,jdbcType=VARCHAR},
+            </if>
+            <if test="nameEmpChk != null" >
+                NAME_EMP_CHK = #{nameEmpChk,jdbcType=VARCHAR},
+            </if> 
+        </set>
+        WHERE 
+            PK_RECORD = #{pkRecord,jdbcType=CHAR}
+    </update> 
+   <select id="queryRecordContent" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.nd.record.vo.NdRecordVo">
+		 select rec.pk_record,
+		 		rec.pk_org,
+		 		rec.pk_template,
+		 		rec.content,
+		 		rec.pk_pv,
+		 		rec.note,
+		 		rec.date_begin,
+		 		rec.pk_emp,
+		 		rec.name_emp,
+		 		rec.creator,
+		 		rec.create_time,
+		 		rec.modifier,
+		 		rec.modity_time,
+		 		rec.del_flag,
+		 		rec.ts,
+		 		rec.doc_data,
+		 		rec.doc_xml,
+		 		rec.date_chk,
+		 		rec.flag_chk,
+		 		rec.pk_emp_chk,
+		 		rec.name_emp_chk,
+		 		rec.REVIEW_NOTE,
+		 		rec.CHK_STATUS
+		 from nd_record rec 
+		 where rec.pk_record = #{pkRecord,jdbcType=CHAR}	 
+	</select>
+	<select id="queryRecordContentNoDocData" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.nd.record.vo.NdRecordVo">
+		 select rec.pk_record,
+		 		rec.pk_org,
+		 		rec.pk_template,
+		 		rec.content,
+		 		rec.pk_pv,
+		 		rec.note,
+		 		rec.date_begin,
+		 		rec.pk_emp,
+		 		rec.name_emp,
+		 		rec.creator,
+		 		rec.create_time,
+		 		rec.modifier,
+		 		rec.modity_time,
+		 		rec.del_flag,
+		 		rec.ts,
+		 		rec.doc_xml,
+		 		rec.date_chk,
+		 		rec.flag_chk,
+		 		rec.pk_emp_chk,
+		 		rec.name_emp_chk
+		 from nd_record rec 
+		 where rec.pk_record = #{pkRecord,jdbcType=CHAR}	 
+	</select>
+	<select id="queryRecordTitleData" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.common.module.nd.record.NdRecordTitle">
+		 select tl.pk_recordtitle,
+		       tl.rowno,
+		       tl.colno,
+		       tl.colname,
+		       tl.val,
+		       tl.val2
+		  from nd_record_title tl
+		 where tl.pk_record = #{pkRecord,jdbcType=CHAR}
+	</select>
+	<select id="queryRecordRowListOracle" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.nd.pub.vo.NdRecordRowVo">
+		select * from 
+		(select rownum rid,ro.* from nd_record_row ro  
+         where ro.pk_record = #{pkRecord,jdbcType=CHAR} and rownum &lt;= #{pageEnd,jdbcType=NUMERIC} order by ro.date_entry,ro.flag_note,ro.rowno_parent,ro.rowno)
+          where rid &gt; #{pageBegin,jdbcType=NUMERIC}
+	</select>
+	<select id="queryRecordRowListSqlServer" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.nd.pub.vo.NdRecordRowVo">
+		select top ${pageSize} *
+        from ( select row_number() over(order by date_entry,flag_note,rowno_parent,rowno) as rid,* from nd_record_row where pk_record = #{pkRecord,jdbcType=CHAR}) A
+        where rid &gt; #{pageBegin,jdbcType=NUMERIC} 
+	</select>
+	 <select id="queryOutValSqlServer" parameterType="java.util.Map"
+		resultType="DynaBean">
+		select t.VAL,
+			       sum(cnt) sum_cnt
+			from (
+			select dt.pk_record,
+			      dt.pk_recordrow,
+			    rw.DATE_ENTRY,
+			       dt.COLNAME,
+			    dt.VAL,
+			       (select sum(cast((case ISNUMERIC(nd_record_dt.val)
+                          when '1'
+                            then nd_record_dt.val
+                          else '0' end) as float)) from nd_record_dt where nd_record_dt.pk_record = dt.pk_record and nd_record_dt.pk_recordrow=dt.pk_recordrow and nd_record_dt.dt_ndcoltype='01' and nd_record_dt.del_flag='0') cnt
+			  from nd_record_row rw
+			    inner join nd_record_dt dt on rw.pk_recordrow=dt.pk_recordrow
+			    where rw.pk_record=#{pkRecord,jdbcType=CHAR}   and
+			    rw.date_entry &gt;= #{dateBeginDate}  and
+	        	rw.date_entry &lt; #{dateEndDate} and
+			 dt.COLNAME='EBU001255' and
+			 len(dt.VAL) > 0
+			group by dt.pk_record,dt.pk_recordrow,rw.DATE_ENTRY,dt.COLNAME,dt.VAL
+			) t
+			group by t.VAL
+		 <!-- select sum(cast((case ISNUMERIC(dt.val) when '1' then dt.VAL else '0' end) as numeric(10,2))) outval
+         from nd_record_row rw
+         inner join nd_record_dt dt on rw.pk_recordrow=dt.pk_recordrow
+         where rw.pk_record=#{pkRecord,jdbcType=CHAR} and dt.dt_ndcoltype='01' and 
+         rw.date_entry &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')  and
+        rw.date_entry &lt;to_date(#{dateEnd},'YYYYMMDDHH24MISS')  -->
+	</select>
+	<select id="queryOutValOracle" parameterType="java.util.Map"
+		resultType="DynaBean">
+		   select sum(dt.val) outval
+         from nd_record_row rw
+         inner join nd_record_dt dt on rw.pk_recordrow=dt.pk_recordrow
+         where rw.pk_record=#{pkRecord,jdbcType=CHAR} and dt.dt_ndcoltype='01' and
+         rw.date_entry &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')  and
+        rw.date_entry &lt;to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+	</select>
+	<select id="queryInValOracle" parameterType="java.util.Map"
+		resultType="DynaBean">
+		 select sum(dt.val) inval
+         from nd_record_row rw
+         inner join nd_record_dt dt on rw.pk_recordrow=dt.pk_recordrow
+         where rw.pk_record=#{pkRecord,jdbcType=CHAR} and dt.dt_ndcoltype='02' and
+         rw.date_entry &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')  and
+        rw.date_entry &lt;to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+	</select>
+	<select id="queryInValSqlServer" parameterType="java.util.Map"
+		resultType="DynaBean">
+		 select sum(cast((case ISNUMERIC(dt.val) when '1' then dt.VAL else '0' end) as numeric(10,2))) inval
+         from nd_record_row rw
+         inner join nd_record_dt dt on rw.pk_recordrow=dt.pk_recordrow
+         where rw.pk_record=#{pkRecord,jdbcType=CHAR} and dt.dt_ndcoltype='02' and 
+         (dt.val is not null and dt.val !='') and 
+         rw.date_entry &gt;= #{dateBeginDate}  and
+        rw.date_entry &lt; #{dateEndDate}
+	</select>
+	
+</mapper>

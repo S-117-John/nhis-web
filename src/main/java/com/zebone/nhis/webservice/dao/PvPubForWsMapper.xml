@@ -1,0 +1,740 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.webservice.dao.PvPubForWsMapper">
+
+	<select id="getPvInfoByIp" parameterType="java.util.Map" resultType="DynaBean">
+		select pv.date_begin,
+		pm.CODE_pi,
+		pm.CODE_IP in_patient_No,
+		pm.CODE_IP,
+        pm.DT_SEX sex,
+        pm.CODE_IP mr_id,
+        pm.BIRTH_DATE birthday,
+        pv.tel_rel phone_no,
+        pm.ID_NO id_card_no,
+		pv.name_pi name,
+		pv.code_pv,
+		pv.eu_status status,
+		pv.date_admit,
+		pv.date_begin in_date,
+		pv.date_end out_date,
+		pv.pk_insu,
+		hp.code as code_insu,
+		hp.name as name_insu,
+		hp.name as insure_type,
+		pv.pk_picate,
+		pv.pk_dept,
+		pv.date_admit,
+		dept.code_dept,
+		dept.name_dept,
+		dept.name_dept dept_name,
+		pv.pk_dept_ns,
+		deptns.name_dept as name_dept_ns,
+		deptns.CODE_DEPT as code_dept_ns,
+        deptns.CODE_DEPT area_no,
+		pv.bed_no,
+		pv.pk_emp_phy,
+		emp.code_emp as code_emp_phy,
+		pv.name_emp_phy,
+		pv.pk_emp_ns,
+		empns.code_emp as code_emp_ns,
+		pv.name_emp_ns,
+		pv.pk_pv,
+		pv.code_pv,
+		pv.eu_status,
+		card.EU_STATUS card_status,
+	    card.dt_cardtype dt_card_type,
+	    card.CARD_NO dtcard_no,
+		pv.age_pv as age,
+		ipdt.amount,
+		ipdt.amount_pi,
+		ip.ip_times 
+		from
+		pv_encounter pv
+		left join pv_ip ip on ip.pk_pv=pv.pk_pv 
+		left join bd_ou_dept dept on pv.pk_dept = dept.pk_dept
+		left join bd_ou_dept deptns on deptns.pk_dept= pv.pk_dept_ns
+		left join bd_ou_employee emp on pv.pk_emp_phy = emp.pk_emp
+		left join bd_ou_employee empns on empns.pk_emp= pv.pk_emp_ns
+		left join pi_master pm on pv.pk_pi=pm.pk_pi
+		left join bd_hp hp on pv.pk_insu=hp.pk_hp
+		LEFT JOIN pi_card card ON pm.pk_pi = card.pk_pi and card.eu_status='0'
+		left join 
+			(select sum(dt.amount) as amount,sum(dt.amount_pi) as amount_pi,dt.pk_pv from bl_ip_dt dt 
+			inner join pi_master pi on pi.pk_pi=dt.pk_pi where 1=1 
+			<if test="pkPi!=null and pkPi!=''">
+	            and dt.pk_pi =#{pkPi,jdbcType=CHAR}
+	        </if>
+	        <if test="patientId!=null and patientId!=''">
+	            and dt.pk_pi =#{patientId,jdbcType=CHAR}
+	        </if>
+	        <if test="codePi!=null and codePi!=''">
+	            and pi.code_pi =#{codePi,jdbcType=CHAR}
+	        </if>
+		 	group by dt.pk_pv) ipdt on ipdt.pk_pv = pv.pk_pv
+		left join 
+			(select sum(depo.amount) as amount,depo.pk_pv from BL_DEPOSIT depo 
+			inner join pi_master pimas on pimas.pk_pi=depo.pk_pi where EU_DIRECT=1
+			<if test="pkPi!=null and pkPi!=''">
+	            and depo.pk_pi =#{pkPi,jdbcType=CHAR}
+	        </if>
+	        <if test="patientId!=null and patientId!=''">
+	            and depo.pk_pi =#{patientId,jdbcType=CHAR}
+	        </if>
+	        <if test="codePi!=null and codePi!=''">
+	            and pimas.code_pi =#{codePi,jdbcType=CHAR}
+	        </if>
+		 	group by depo.pk_pv) bldepo on bldepo.pk_pv = pv.pk_pv
+		where 
+		pv.eu_pvtype= '3' and (pv.eu_status = '0' or pv.eu_status = '1')
+		<if test="pkPi!=null and pkPi!=''">
+            and pv.pk_pi =#{pkPi,jdbcType=CHAR}
+        </if>
+        <if test="patientId!=null and patientId!=''">
+            and pm.pk_pi =#{patientId,jdbcType=CHAR}
+        </if>
+        <if test="codePi!=null and codePi!=''">
+            and pm.code_pi =#{codePi,jdbcType=CHAR}
+	    </if>
+        <if test="inPatientNo!=null and inPatientNo!=''">
+            and pm.CODE_IP =#{inPatientNo,jdbcType=CHAR}
+        </if>		
+		<if test="settleFlag!=null and settleFlag!=''">
+            and pv.flag_settle =#{settleFlag,jdbcType=CHAR}
+        </if>
+		<if test="cardType!=null and cardType!=''">
+			and pm.dt_idtype =#{cardType}
+		</if>
+		<if test="cardNo!=nul and cardNo!=''">
+			and pm.id_no =#{cardNo}
+		</if>
+		<if test="codeIp!=nul and codeIp!=''">
+			and pm.code_ip =#{codeIp}
+		</if>
+        <if test="dtCardType!=nul and dtCardType!=''">
+			and card.dt_cardtype =#{dtCardType,jdbcType=CHAR}
+		</if>
+		<if test="dtCardNo!=nul and dtCardNo!=''">
+			and card.card_no =#{dtCardNo,jdbcType=CHAR}
+		</if>
+		<if test="dateBegin!=null and dateBegin!=''">
+		    and pv.date_begin &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+		</if>
+		<if test="dateEnd!=null and dateEnd!=''">
+		    and pv.date_end &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+		</if>
+
+	</select>
+
+
+    <select id="getPvInfoByOp" parameterType="java.util.Map" resultType="DynaBean">
+	    select 
+	    pm.pk_pi,
+	    pm.CODE_IP in_patient_No,
+	    pv.CODE_PV,
+		pv.name_pi as name,
+		pv.pk_pi patient_id,
+		pi.DT_SEX sex,
+		pv.addr_cur as address,
+		pv.tel_rel as phone_no,
+		pv.pk_dept as code_dept,
+		org.name_org as area_Name,
+		pv.pk_emp_tre as code_doctor,
+		pv.name_emp_phy as doct_name,
+		pv.date_clinic,
+		org.name_org,
+		diag.desc_diags diagnosis,
+		diag.note,
+		pv.date_begin visit_Date,
+		pv.date_end,
+		pv.pk_pv as visit_Id,
+		pv.pk_org,
+		pv.pk_insu,
+		hp.name as name_insu,
+		pv.pk_picate,
+		pv.pk_dept,
+		pv.note,
+		dept.name_dept dept_name,
+		pv.pk_emp_phy,
+		pm.birth_date as birthday,
+		zd_idtype.name as id_card_type,
+		pm.id_no as id_card_no,
+		zd_nat.name as nation,
+		card.EU_STATUS card_status,
+	    card.dt_cardtype dt_card_type,
+	    card.CARD_NO dtcard_no,
+		pv.age_pv as age
+		from pv_encounter pv
+		left join bd_ou_dept dept on pv.pk_dept = dept.pk_dept
+		left join pi_master pm on pv.pk_pi=pm.pk_pi
+		left join cn_diag diag on pv.pk_pv = diag.pk_pv
+		left join bd_hp hp on pv.pk_insu=hp.pk_hp
+		LEFT JOIN pi_card card ON pm.pk_pi = card.pk_pi and card.eu_status='0'
+		left join bd_ou_org org on pv.pk_org=org.pk_org
+		left join bd_defdoc zd_idtype on pm.dt_idtype =zd_idtype.code and
+		zd_idtype.code_defdoclist='000007'
+		left join bd_defdoc zd_nat on pm.dt_nation =zd_nat.code and
+		zd_nat.code_defdoclist='000003' 
+		<!-- left join bd_ou_dept dept on pv.pk_dept = dept.pk_dept
+		left join pi_master pm on pv.pk_pi=pm.pk_pi
+		left join bd_hp hp on pv.pk_insu=hp.pk_hp
+		left join pi_card card on pm.pk_pi=card.pk_pi
+		left join pi_cate cate on pv.pk_picate=cate.pk_picate -->
+		where 
+		  pv.eu_pvtype= '1'
+		 and pm.del_flag = '0' and pv.eu_status = '1'
+		<if test="pkPi!=null and pkPi!=''">
+            and pv.pk_pi =#{pkPi,jdbcType=CHAR}
+        </if>		
+		<if test="settleFlag!=null and settleFlag!=''">
+            and pv.flag_settle =#{settleFlag,jdbcType=CHAR}
+        </if>
+		<if test="cardType!=null and cardType!=''">
+			and pm.dt_idtype =#{cardType,jdbcType=CHAR}
+		</if>
+		<if test="cardNo!=nul and cardNo!=''">
+			and pm.id_no =#{cardNo,jdbcType=CHAR}
+		</if>
+		<if test="codeIp!=nul and codeIp!=''">
+			and pm.code_ip =#{codeIp,jdbcType=CHAR}
+		</if>
+        <if test="dtCardType!=nul and dtCardType!=''">
+			and card.dt_cardtype =#{dtCardType,jdbcType=CHAR}
+		</if>
+		<if test="dtCardNo!=nul and dtCardNo!=''">
+			and card.card_no =#{dtCardNo,jdbcType=CHAR}
+		</if>
+		<if test="patientId!=null and patientId!=''">
+            and pv.pk_pi =#{patientId,jdbcType=CHAR}
+        </if>
+        <if test="inPatientNo!=null and inPatientNo!=''">
+            and pm.CODE_IP =#{inPatientNo,jdbcType=CHAR}
+        </if>
+		<if test="endDate!=nul and endDate!=''">
+			and pv.date_begin&lt; to_date(#{endDate,jdbcType=CHAR}, 'YYYYMMDDHH24MISS') 
+		</if>
+		<if test="startDate!=nul and startDate!=''">
+			and pv.date_begin &gt;= to_date(#{startDate,jdbcType=CHAR}, 'YYYYMMDDHH24MISS') 
+		</if>
+	</select>
+	
+	<select id="getPvInfoByOpStatus" parameterType="java.util.Map" resultType="DynaBean">
+	    select 
+	    pm.pk_pi,
+	    pm.CODE_IP in_patient_No,
+	    pv.CODE_PV,
+		pv.name_pi as name,
+		pv.pk_pi patient_id,
+		pv.addr_cur as address,
+		pv.tel_rel as phone_no,
+		pv.pk_dept as code_dept,
+		org.name_org as area_Name,
+		pv.pk_emp_tre as code_doctor,
+		pv.name_emp_phy as doct_name,
+		pv.date_clinic,
+		org.name_org,
+		to_char(pv.date_begin,'YYYY-MM-DD' ) visit_Date,
+		pv.date_end,
+		pv.pk_pv as visit_Id,
+		pv.pk_org,
+		pv.pk_insu,
+		hp.name as name_insu,
+		pv.pk_picate,
+		cate.name as
+		name_picate,
+		pv.pk_dept,
+		pv.note,
+		dept.code_dept dept_code,
+		dept.name_dept dept_name,
+		pv.pk_emp_phy,
+		to_char(pm.birth_date,'YYYY-MM-DD' ) as birthday,
+		zd_idtype.name as id_card_type,
+		pm.id_no as id_card_no,
+		zd_nat.name as nation,
+		boe.name_emp as emp_name,
+		boe.code_emp as emp_code,
+		pv.age_pv as age
+		from pv_encounter pv
+		left join bd_ou_dept dept on pv.pk_dept = dept.pk_dept
+		left join pi_master pm on pv.pk_pi=pm.pk_pi
+		left join bd_hp hp on pv.pk_insu=hp.pk_hp
+		left join pi_cate cate on pv.pk_picate=cate.pk_picate
+		left join bd_ou_org org on pv.pk_org=org.pk_org
+		left join bd_defdoc zd_idtype on pm.dt_idtype =zd_idtype.code and
+		zd_idtype.code_defdoclist='000007'
+		left join bd_defdoc zd_nat on pm.dt_nation =zd_nat.code and
+		zd_nat.code_defdoclist='000003'
+		left join bd_ou_employee boe on pv.pk_emp_ns = boe.pk_emp
+		<!-- left join bd_ou_dept dept on pv.pk_dept = dept.pk_dept
+		left join pi_master pm on pv.pk_pi=pm.pk_pi
+		left join bd_hp hp on pv.pk_insu=hp.pk_hp
+		left join pi_card card on pm.pk_pi=card.pk_pi
+		left join pi_cate cate on pv.pk_picate=cate.pk_picate -->
+		where 
+		  pv.eu_pvtype != '3'
+		 and pm.del_flag = '0' and pv.eu_status = '2'
+		<if test="pkPi!=null and pkPi!=''">
+            and pv.pk_pi =#{pkPi,jdbcType=CHAR}
+        </if>		
+		<if test="settleFlag!=null and settleFlag!=''">
+            and pv.flag_settle =#{settleFlag,jdbcType=CHAR}
+        </if>
+		<if test="cardType!=null and cardType!=''">
+			and pm.dt_idtype =#{cardType,jdbcType=CHAR}
+		</if>
+		<if test="cardNo!=nul and cardNo!=''">
+			and pm.id_no =#{cardNo,jdbcType=CHAR}
+		</if>
+		<if test="codeIp!=nul and codeIp!=''">
+			and pm.code_ip =#{codeIp,jdbcType=CHAR}
+		</if>
+        <if test="dtCardType!=nul and dtCardType!=''">
+			and card.dt_cardtype =#{dtCardType,jdbcType=CHAR}
+		</if>
+		<if test="dtCardNo!=nul and dtCardNo!=''">
+			and card.card_no =#{dtCardNo,jdbcType=CHAR}
+		</if>
+		<if test="patientId!=null and patientId!=''">
+            and pv.pk_pi =#{patientId,jdbcType=CHAR}
+        </if>
+		<if test="endDate!=nul and endDate!=''">
+			and pv.date_begin&lt; to_date(#{endDate,jdbcType=CHAR}, 'YYYYMMDDHH24MISS') 
+		</if>
+		<if test="startDate!=nul and startDate!=''">
+			and pv.date_begin &gt;= to_date(#{startDate,jdbcType=CHAR}, 'YYYYMMDDHH24MISS') 
+		</if>
+	</select>
+	
+	<select id="queryPiMaster" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT
+			pi.id_no ,
+			pi.mobile,
+	        pi.pk_pi patientId,
+	        pi.CODE_PI,
+	        pi.pk_org,
+	        org.code_org,
+	        pi.code_op,
+	        pi.code_ip,
+	        card.EU_STATUS card_status,
+	        card.dt_cardtype dt_card_type,
+	        card.CARD_NO dtcard_no,
+	        pi.DT_SEX sex,
+	        pi.BIRTH_DATE birthday,
+	        pi.dt_idtype id_card_type,
+	        pi.ID_NO id_card_no,
+	        pi.mobile phone_no,
+	        pi.DT_NATION nation,
+	        pi.ADDRESS,
+	        pi.pk_picate,
+	        cate.code as codePicate,
+	        cate.NAME AS namePicate,
+	        pi.name_pi NAME,
+	        pi.hic_no,
+			(select amt_acc from pi_acc where PK_PI=pi.PK_PI and eu_status='1') amount
+        FROM
+	        pi_master pi
+	    LEFT JOIN bd_ou_org org ON org.pk_org = pi.pk_org
+        LEFT JOIN pi_cate cate ON pi.pk_picate = cate.pk_picate
+        LEFT JOIN pi_card card ON pi.pk_pi = card.pk_pi and eu_status='0'  AND card.EU_STATUS ='0' and card.DT_CARDTYPE ='01'
+        WHERE pi.del_flag = '0' 
+		<if test="pkPi != null  and  pkPi != ''">
+		and pi.pk_pi = #{pkPi,jdbcType=CHAR} 
+		</if>
+		<if test="patientId!=null and patientId!=''">
+            and pi.pk_pi =#{patientId,jdbcType=CHAR}
+        </if>
+		<if test="codePi != null  and  codePi != ''">
+		and pi.code_pi = #{codePi,jdbcType=VARCHAR} 
+		</if>
+		<if test="cardType !=null and cardType !=''">
+		and pi.dt_idtype =#{cardType,jdbcType=VARCHAR}
+		</if>
+		<if test="cardNo !=null and cardNo !=''">
+		and pi.id_no =#{cardNo,jdbcType=VARCHAR}
+		</if>
+		<if test="insurNo != null  and  insurNo != ''">
+			and pi.insur_no = #{insurNo,jdbcType=VARCHAR}
+		</if>
+		<if test="idno != null  and  idno != ''">
+		and pi.dt_idtype ='01' and pi.id_no = #{idno,jdbcType=VARCHAR}
+		</if>
+		<if test="codeIp != null  and  codeIp != ''">
+		and pi.code_ip = #{codeIp,jdbcType=VARCHAR} 
+		</if>
+		<if test="codeCard != null  and  codeCard != ''">
+			and card.dt_cardtype = '01' and card.card_no = #{codeCard,jdbcType=VARCHAR} 
+		</if>
+		<if test="hicNo != null  and  hicNo != ''">
+			and pi.hic_no = #{hicNo,jdbcType=VARCHAR} 
+		</if>
+        <if test="dtCardType!=nul and dtCardType!=''">
+			and card.dt_cardtype =#{dtCardType,jdbcType=CHAR}
+		</if>
+		<if test="dtCardNo!=nul and dtCardNo!=''">
+			and card.card_no =#{dtCardNo,jdbcType=CHAR}
+		</if>
+	</select>
+
+	<select id="queryLbzyPiMaster" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.pi.PiMaster">
+		SELECT
+		pi.*
+		FROM
+		pi_master pi
+		LEFT JOIN bd_ou_org org ON org.pk_org = pi.pk_org
+		LEFT JOIN pi_cate cate ON pi.pk_picate = cate.pk_picate
+		LEFT JOIN pi_card card ON pi.pk_pi = card.pk_pi and eu_status='0'  AND card.EU_STATUS ='0' and card.DT_CARDTYPE ='01' and card.FLAG_ACTIVE='1'
+		WHERE pi.del_flag = '0'
+		<if test="pkPi != null  and  pkPi != ''">
+			and pi.pk_pi = #{pkPi,jdbcType=CHAR}
+		</if>
+		<if test="patientId!=null and patientId!=''">
+			and pi.pk_pi =#{patientId,jdbcType=CHAR}
+		</if>
+		<if test="codePi != null  and  codePi != ''">
+			and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+		</if>
+		<if test="cardType !=null and cardType !=''">
+			and pi.dt_idtype =#{cardType,jdbcType=VARCHAR}
+		</if>
+		<if test="cardNo !=null and cardNo !=''">
+			and pi.id_no =#{cardNo,jdbcType=VARCHAR}
+		</if>
+		<if test="hicNo != null  and  hicNo != ''">
+			and pi.insur_no = #{hicNo,jdbcType=VARCHAR}
+		</if>
+		<if test="insurNo != null  and  insurNo != ''">
+			and pi.insur_no = #{insurNo,jdbcType=VARCHAR}
+		</if>
+		<if test="idno != null  and  idno != ''">
+			and pi.dt_idtype ='01' and pi.id_no = #{idno,jdbcType=VARCHAR}
+		</if>
+		<if test="codeIp != null  and  codeIp != ''">
+			and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+		</if>
+		<if test="codeCard != null  and  codeCard != ''">
+			and card.dt_cardtype = '01' and card.card_no = #{codeCard,jdbcType=VARCHAR}
+		</if>
+		<if test="hicNo != null  and  hicNo != ''">
+			and pi.hic_no = #{hicNo,jdbcType=VARCHAR}
+		</if>
+		<if test="dtCardType!=nul and dtCardType!=''">
+			and card.dt_cardtype =#{dtCardType,jdbcType=CHAR}
+		</if>
+		<if test="dtCardNo!=nul and dtCardNo!=''">
+			and card.card_no =#{dtCardNo,jdbcType=CHAR}
+		</if>
+	</select>
+
+	<select id="getPiCateInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select pk_picate,name from pi_cate where del_flag='0'
+	</select>
+	<select id="getPiCard" resultType="com.zebone.nhis.common.module.pi.PiCard" >
+		SELECT
+			card_no,
+			date_begin,
+			date_end,
+			flag_active,
+			eu_status 
+		 FROM 
+			 pi_card 
+		
+		where 
+			dt_cardtype='01'
+			and pk_pi = #{pkPi,jdbcType=VARCHAR}
+	</select>
+    
+    	<!-- 根据患者主键获取最大的就诊次数 -->
+	<select id="LbgetMaxOpTimes" resultType="java.lang.Integer">
+		select nvl(max(i.op_times),0) 
+		from pv_op i
+		inner join pv_encounter e on i.pk_pv = e.pk_pv and e.del_flag = '0'
+		where i.del_flag = '0' and e.pk_pi = #{pkPi,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getPvInfoByPv" parameterType="java.util.Map" resultType="DynaBean">
+		select
+		pv.name_pi,
+		pv.code_pv,
+		pv.date_admit,
+		pv.date_begin,
+		pv.date_end,
+		pv.pk_insu,
+		hp.name as name_insu,
+		pv.pk_picate,
+		cate.name as name_picate,
+		pv.pk_dept,
+		dept.code_dept,
+		dept.name_dept,
+		pv.pk_dept_ns,
+		deptns.code_dept as code_dept_ns,
+		deptns.name_dept as name_dept_ns,
+		pv.bed_no,
+		pv.pk_emp_phy,
+		pv.name_emp_phy,
+		pv.pk_emp_ns,
+		pv.name_emp_ns,
+		pm.name_pi as name,
+		to_char(pm.birth_date,'yyyy-MM-dd') as birthday,
+		pv.age_pv as age,
+		bd.name as sex,
+		bd1.name as nation,
+		bd2.name as contact_relationship,
+		pm.id_no as id_card,
+		pm.mobile as
+		phone_num,
+		pm.name_rel as contact_name,
+		pm.tel_rel as contact_phone_num,
+		brb.houseno as room_num,
+		brb.dt_bedtype as bed_type,
+		CASE WHEN (pv.flag_in = '0') THEN '1' ELSE '0' END AS is_leave_hospital,
+		boe.name_emp as responsible_nurse ,
+		boe.code_emp as responsible_nurse_num,
+		boe1.name_emp as responsible_doctor,
+		boe1.code_emp as responsible_doctor_num,
+		bh.name as expense_type,
+		pc.card_no as processed_card_num,
+		bd3.name as cardtype,
+		case ord.name when 'Ⅰ级护理' then 1 when 'Ⅱ级护理' then 2 when 'Ⅲ级护理' then 3
+		when '特级护理' then 4 end as doctor_advicel_code,
+		ord.name as doctor_advice,
+		pa.name_al as antihistamines,
+		pv.pk_pv,
+		pm.code_ip,
+		pv.pk_pi
+		from pv_encounter pv
+		left join pi_master pm on pv.pk_pi=pm.pk_pi
+		left join bd_ou_dept dept on pv.pk_dept = dept.pk_dept
+		left join bd_ou_dept deptns on deptns.pk_dept= pv.pk_dept_ns
+		left join bd_hp hp on pv.pk_insu=hp.pk_hp
+		left join pi_cate cate on pv.pk_picate=cate.pk_picate
+		left join bd_defdoc bd on pm.dt_sex = bd.code and bd.code_defdoclist = '000000'
+		left join bd_defdoc bd1 on pm.dt_nation = bd1.code and bd1.code_defdoclist = '000003'
+		left join bd_defdoc bd2 on pm.dt_ralation = bd2.code and bd2.code_defdoclist = '000013'
+		left join bd_res_bed brb on brb.code = pv.bed_no and brb.pk_ward = pv.pk_dept_ns
+		left join bd_ou_employee boe on pv.pk_emp_ns = boe.pk_emp
+		left join bd_ou_employee boe1 on pv.pk_emp_phy = boe1.pk_emp
+		left join bd_hp bh on bh.pk_hp = pv.pk_insu
+		left join pi_card pc on pc.pk_pi = pm.pk_pi and  pc.FLAG_ACTIVE = '1' AND pc.EU_STATUS ='0' and pc.DT_CARDTYPE ='01'
+		left join bd_defdoc bd3 on pc.dt_cardtype = bd3.code and bd3.code_defdoclist = '000016'
+		left join pv_ip pi on pi.pk_pv = pv.pk_pv
+		left join pi_allergic pa on pa.pk_pi = pm.pk_pi
+		left join bd_ord ord on ord.code = pi.dt_level_ns
+		left join bd_ord_org ordorg on ord.pk_ord = ordorg.pk_ord and pv.pk_org = ordorg.pk_org
+		where pv.eu_pvtype= '3' and pv.eu_status = '1'
+		<if test="pkPv != null and pkPv != ''">
+			and pv.pk_pv =#{pkPv,jdbcType=VARCHAR}
+		</if>
+		<if test="codePv !=null and codePv !=''">
+			and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+		</if>
+		<if test="pkDept !=null and pkDept !=''">
+			and pv.pk_dept = #{pkDept,jdbcType=CHAR} 
+		</if>
+		<if test="codeDept !=null and codeDept !=''">
+			and (dept.code_dept = #{codeDept} or deptns.code_dept = #{codeDept} )
+		</if>
+		<if test="bedNum !=null and bedNum !=''">
+			and pv.bed_no = #{bedNum,jdbcType=CHAR}
+		</if>
+
+	</select>
+	
+	<select id="queryPiListInHosp"  parameterType="java.util.Map" resultType="DynaBean">
+    select
+		pv.name_pi,
+		pv.code_pv,
+		pv.pk_insu,
+		hp.name as name_insu,
+		pv.pk_picate,
+		cate.name as name_picate,
+		pv.pk_dept_ns,
+		deptns.code_dept as code_dept_ns,
+		deptns.name_dept as name_dept_ns,
+		pv.pk_emp_phy,
+		pv.name_emp_phy,
+		pv.pk_emp_ns,
+		pv.name_emp_ns,
+	    pv.date_begin,
+  	    pv.date_end,
+        pv.pk_insu,
+	    hp.name as name_insu,
+	    pv.pk_dept,
+	    dept.code_dept,
+	    dept.name_dept,
+	    pv.pk_dept_ns,
+	    deptns.code_dept,
+	    deptns.name_dept,
+	    pv.bed_no,
+	    pv.pk_emp_phy,
+	    boe1.code_emp AS code_emp_phy,
+	    boe1.name_emp AS name_emp_phy,
+	    pv.pk_emp_ns,
+	    boe.code_emp as code_emp_ns,
+	    boe.name_emp as name_emp_ns,
+		bd2.name as contact_relationship,
+		pm.id_no as id_card,
+		pm.mobile as
+		phone_num,
+		pm.name_rel as contact_name,
+		pm.tel_rel as contact_phone_num,
+		brb.houseno as room_num,
+		brb.dt_bedtype as bed_type,
+		CASE WHEN (pv.flag_in = '0') THEN '1' ELSE '0' END AS is_leave_hospital,
+		boe.name_emp as responsible_nurse ,
+		boe.code_emp as responsible_nurse_num,
+		boe1.name_emp as responsible_doctor,
+		boe1.code_emp as responsible_doctor_num,
+		bh.name as expense_type,
+		pc.card_no as processed_card_num,
+		bd3.name as cardtype,
+        ord.code,
+		pa.name_al as antihistamines,
+		pm.code_ip,
+		pv.pk_pi,
+        pv.code_pv,
+	    pm.code_pi,
+	    pm.name_pi,
+	    pm.id_no,
+	    bd.name as sex,
+	    to_char(pm.birth_date,'yyyy-MM-dd') as birth_date,
+	    pv.age_pv,
+	    pm.mobile,
+	    pm.addr_cur,
+        pv.date_admit,
+        pi.ip_times,
+        ord.name as dt_level_ns,
+        bd5.name as dt_level_dise,
+        pv.pk_pv,
+        bd1.name as dt_nation,
+        bd4.name as dt_country,
+	    diag.code_icd as code_diag,
+  	    diag.name_diag as name_diag,
+  	    pv.eu_status
+		from pv_encounter pv
+		left join pi_master pm on pv.pk_pi=pm.pk_pi
+		left join bd_ou_dept dept on pv.pk_dept = dept.pk_dept
+		left join bd_ou_dept deptns on deptns.pk_dept= pv.pk_dept_ns
+		left join bd_hp hp on pv.pk_insu=hp.pk_hp
+		left join pi_cate cate on pv.pk_picate=cate.pk_picate
+		left join bd_defdoc bd on pm.dt_sex = bd.code and bd.code_defdoclist = '000000'
+		left join bd_defdoc bd1 on pm.dt_nation = bd1.code and bd1.code_defdoclist = '000003'
+		left join bd_defdoc bd2 on pm.dt_ralation = bd2.code and bd2.code_defdoclist = '000013'
+        left join bd_defdoc bd4 on pm.dt_country = bd4.code and bd4.code_defdoclist = '000009'
+		left join bd_res_bed brb on brb.code = pv.bed_no and brb.pk_ward = pv.pk_dept_ns
+		left join bd_ou_employee boe on pv.pk_emp_ns = boe.pk_emp 
+		left join bd_ou_employee boe1 on pv.pk_emp_phy = boe1.pk_emp
+		left join bd_hp bh on bh.pk_hp = pv.pk_insu
+		left join pi_card pc on pc.pk_pi = pm.pk_pi and pc.FLAG_ACTIVE = '1' AND pc.EU_STATUS ='0' and pc.FLAG_ACTIVE = '1' AND pc.EU_STATUS ='0'
+		left join bd_defdoc bd3 on pc.dt_cardtype = bd3.code and bd3.code_defdoclist = '000016'
+		left join pv_ip pi on pi.pk_pv = pv.pk_pv
+		left join pi_allergic pa on pa.pk_pi = pm.pk_pi
+		left join bd_ord ord on ord.code = pi.dt_level_ns
+        left join bd_defdoc bd5 on pi.dt_level_dise = bd5.code and bd5.code_defdoclist = '000202'
+		left join bd_ord_org ordorg on ord.pk_ord = ordorg.pk_ord and pv.pk_org = ordorg.pk_org
+        left join pv_diag diag on diag.pk_pv=pv.pk_pv  and diag.flag_maj='1' and diag.DEL_FLAG = '0' 
+		where pv.eu_pvtype= '3' 
+		<if test="euStatus!=nul and euStatus!=''">
+			and pv.eu_status =#{euStatus,jdbcType=VARCHAR}
+		</if> 
+		<if test="codePv!=nul and codePv!=''">
+			and pv.code_pv =#{codePv,jdbcType=VARCHAR}
+		</if> 
+		<if test="codeIp!=nul and codeIp!=''">
+			and pm.code_ip =#{codeIp,jdbcType=VARCHAR}
+		</if> 
+		<if test="pkPi!=nul and pkPi!=''">
+			and pm.pk_pi =#{pkPi,jdbcType=VARCHAR}
+		</if> 
+		<if test="codePi!=nul and codePi!=''">
+			and pm.code_pi =#{codePi,jdbcType=VARCHAR}
+		</if> 
+		<if test="codeDept!=nul and codeDept!=''">
+			and deptns.code_dept =#{codeDept,jdbcType=VARCHAR}
+		</if>
+		<if test="pkDept!=nul and pkDept!=''">
+			and pv.pk_dept =#{pkDept,jdbcType=VARCHAR}
+		</if> 
+		<if test="codeDeptNs!=nul and codeDeptNs!=''">
+			and deptns.code_dept =#{codeDeptNs,jdbcType=VARCHAR}
+		</if> 
+		<if test="pkDeptNs!=nul and pkDeptNs!=''">
+			and pv.pk_dept_ns =#{pkDeptNs,jdbcType=VARCHAR}
+		</if> 
+		<if test="pkOrg!=nul and pkOrg!=''">
+			and pv.pk_org =#{pkOrg,jdbcType=VARCHAR}
+		</if>
+		<if test="pkPvs != null  and  pkPvs != ''">
+		   and pv.pk_pv in 
+		       <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            	#{pkpv}   
+               </foreach>
+	     </if>
+	     <if test="codePvs!=nul and codePvs!=''">
+	      and pv.code_pv in 
+		       <foreach item="codePv" index="index" collection="codePvs" open="(" separator="," close=")">
+            	#{codePv}   
+               </foreach>
+		</if>
+		<if test="euStatus!=nul and euStatus!=''">
+			and pv.eu_status =#{euStatus,jdbcType=VARCHAR}
+		</if>
+		<if test="euStatuss!=nul and euStatuss!=''">
+	      and pv.eu_status in 
+		       <foreach item="euStatus" index="index" collection="euStatuss" open="(" separator="," close=")">
+            	#{euStatus}   
+               </foreach>
+		</if>
+	</select>
+	
+	<select id="LbgetPvHp" resultType="DynaBean">
+	  SELECT bdhps.code,pv.name_emp_phy,dept.name_dept,to_char(pv.date_begin,'YYYY-MM-DD') date_begin
+	     FROM pv_encounter pv 
+    INNER JOIN BD_OU_DEPT dept on dept.pk_dept=pv.pk_dept
+	  INNER JOIN bd_hp bdhp on bdhp.pk_hp=pv.pk_insu 
+	  INNER JOIN bd_hp bdhps on bdhps.pk_hp=bdhp.pk_parent
+	    WHERE eu_pvmode='21'
+	    <if test="visitId!=nul and visitId!=''">
+			and pv.pk_pv =#{visitId,jdbcType=VARCHAR}
+		</if> 
+	</select>
+	<select id="queryPiMasterByTmis" parameterType="java.util.Map" resultType="DynaBean">
+		select bo.code_ORG hosp_HIS_Code,pe.PK_PI id,pe.code_PV visit_id,pm.CODE_IP Case_Num,pe.EU_PVTYPE in_Hospital_ID,pm.NAME_PI name
+		,bod.code_dept Dept_HIS_Code,bodn.code_dept Bed_Area_Code,pe.BED_NO Bed_Number,pm.DT_SEX Sex_ID,pm.MOBILE Mobile_Phone
+		,pm.DT_COUNTRY Nationality_ID,pm.DT_NATION Nation_ID,pe.AGE_PV AgeText,pm.DT_IDTYPE Card_Type_ID,pm.id_no ID_Card 
+		,pm.DT_BLOOD_ABO ABO 	,pm.DT_BLOOD_RH RH,'' Blood_Remark ,'' History_ID
+		,pd.desc_diag Diagnosis_Describe,'' Anti_Screening_Result,to_char(pm.BIRTH_DATE, 'YYYY-MM-DD hh24:mi:ss')  Birthday ,pe.MODITY_TIME UpdateTime
+		,pe.flag_in,boe.code_emp Tube_Bed_Doctor_HIS_Code
+		 ,boe.name_emp Tube_Bed_Doctor_Name
+		from PV_ENCOUNTER pe 
+		left join PI_MASTER pm on pm.PK_PI=pe.PK_PI
+		left join BD_OU_ORG bo on bo.pk_org=pe.pk_org
+		left join BD_OU_DEPT bod on bod.pk_dept=pe.pk_dept
+		left join BD_OU_DEPT bodn on bodn.pk_dept=pe.PK_DEPT_NS
+		left join PV_DIAG pd on pd.pk_pv=pe.pk_pv and pd.FLAG_MAJ='1'
+		left join BD_OU_EMPLOYEE boe on boe.pk_emp=pe.PK_EMP_PHY
+		where pe.eu_status=1
+		and pe.DEL_FLAG='0'
+		<if test="codeIp !=nul and codeIp !=''">
+		    and pe.EU_PVTYPE='3'
+			and pm.CODE_IP=#{codeIp}
+		</if>
+		<if test="codeOp !=nul and codeOp !=''">
+			and pm.code_op=#{codeOp}
+		</if>
+	</select>
+	<select id="queryMasterBlood" parameterType="java.util.Map" resultType="DynaBean">
+		select pe.PK_DEPT,bod.code_dept,bod.name_dept,bod.SORTNO,bd.code abo_code,bd.name DT_BLOOD_ABO,bdr.code rh_code,bdr.name  DT_BLOOD_RH,COUNT(1) count
+		from PV_ENCOUNTER pe 
+		left join PI_MASTER pm on pm.PK_PI=pe.PK_PI
+		left join BD_OU_DEPT bod on bod.pk_dept=pe.pk_dept
+		left join BD_DEFDOC bd on  bd.CODE_DEFDOCLIST='000004' and pm.DT_BLOOD_ABO=bd.code
+		left join BD_DEFDOC bdr on bdr.CODE_DEFDOCLIST='000005' and pm.DT_BLOOD_RH=bdr.code
+		where pe.eu_status=1
+		and pe.flag_in=1  and pe.DEL_FLAG='0'
+		and pe.PK_DEPT in 
+		<foreach collection="list" index="index" item="item" open="(" separator="," close=")">  
+           #{item}  
+       </foreach>
+		group by pe.PK_DEPT,bod.code_dept,bod.name_dept,bod.SORTNO,bd.code ,bd.name ,bdr.code,bdr.name 
+	</select>
+</mapper>

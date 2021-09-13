@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.sd.cn.dao.CnPaitQryMapper" >
+    <select id="qryLabRis" resultType="DynaBean"  parameterType="java.util.Map">
+        Select
+            ord.pk_cnord,
+            ord.code_ordtype,
+            ord.code_apply,
+            ord.name_ord
+        From cn_order ord
+        inner join bd_ordtype ot on ord.code_ordtype=ot.code
+        Where ord.pk_pv=#{pkPv,jdbcType=VARCHAR} And (ord.code_ordtype Like '02%' Or ord.code_ordtype Like '03%')
+    </select>
+    <select id="qryLab" resultType="DynaBean"  parameterType="java.util.Map">
+        select
+            occ.sort_no,
+            occ.name_index,
+            occ.val,
+            occ.val1,
+            occ.unit,
+            occ.val_max,
+            occ.eu_result
+        from ex_lab_occ occ
+        where occ.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+        order by sort_no
+    </select>
+    <select id="qryRis" resultType="DynaBean"  parameterType="java.util.Map">
+        select
+            ris.pk_risocc,
+            ris.date_rpt,
+            ris.name_ord,
+            ris.pk_dept_occ,
+            ris.name_emp_occ,
+            ris.code_apply,
+            ris.addr_img,
+            ris.result_obj,
+            ris.result_sub,
+            ris.eu_result
+        from ex_ris_occ ris
+        where ris.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+    </select>
+    <select id="qryBact" resultType="DynaBean"  parameterType="java.util.Map">
+        select
+            bact.sort_no,
+            bact.name_bact,
+            bact.name_pd,
+            bact.mic,
+            bact.eu_allevel
+        from ex_lab_occ occ
+        inner join ex_lab_occ_bact bact on occ.pk_labocc=bact.pk_labocc
+        where occ.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+        order by bact.sort_no
+    </select>
+    <select id="qryAdmNotice" resultType="DynaBean"  parameterType="java.util.Map">
+            select
+                ipn.pk_in_notice,
+                ipn.pk_pi,
+                ipn.pk_hp,
+                ipn.pk_dept_op,
+                ipn.pk_emp_op,
+                ipn.NAME_EMP_OP,
+                ipn.pk_diag_maj,
+                ipn.desc_diag_maj,
+                ipn.dt_level_dise,
+                ipn.pk_dept_ip,
+                ipn.pk_dept_ns_ip,
+                ipn.bed_no,
+                ipn.date_admit,
+                ipn.amt_depo,
+                pi.code_pi,
+                pi.name_pi,
+                pi.dt_sex,
+                pi.dt_idtype,
+                pi.id_no,
+                pi.mobile,
+                ipn.contact_dept,
+                dise.name dise,
+                dept.name_dept,
+                ipn.dt_way_ip,
+                ipn.flag_readm,
+                ipn.DATE_VALID,
+                ipn.note
+            from pv_ip_notice ipn
+            inner join pi_master pi on ipn.pk_pi=pi.pk_pi
+            inner join bd_ou_dept dept on ipn.pk_dept_ip=dept.pk_dept
+            inner join bd_defdoc dise on ipn.dt_level_dise=dise.code and dise.code_defdoclist='000202'
+            where ipn.PK_PV_OP=#{pkPv,jdbcType=VARCHAR} or ipn.PK_PV_IP=#{pkPv,jdbcType=VARCHAR}
+    </select>
+    <select id="qryConsultApp" resultType="DynaBean"  parameterType="java.util.Map">
+        select
+            ord.pk_cnord,
+            ord.name_ord,
+            ord.code_ordtype,
+            ord.date_start,
+            ord.eu_status_ord,
+            ord.CODE_APPLY
+        from cn_order ord
+        where ord.pk_pv=#{pkPv,jdbcType=VARCHAR} and
+            ord.code_ordtype like '0903%' and
+            ord.code_apply is not null
+    </select>
+    <select id="qryConsultAppDetailed" resultType="DynaBean"  parameterType="java.util.Map">
+        select
+            cs.pk_cons,
+            cs.pk_cnord,
+            ord.code_apply,
+            ord.flag_emer,
+            cs.pk_dept,
+            cs.pk_dept_ns,
+            cs.date_cons,
+            ord.pk_org_exec,
+            ord.pk_dept_exec,
+            cs.dt_conlevel,
+            cs.eu_status,
+            cs.ill_summary,
+            cs.objective,
+            cs.examine,
+            cs.diagname,
+            cs.reason,
+            ord.code_ord
+        from cn_consult_apply cs
+            inner join cn_order ord on cs.pk_cnord=ord.pk_cnord
+            where cs.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+    </select>
+    <select id="qryBeInvited" resultType="DynaBean"  parameterType="java.util.Map">
+        select
+            rsp.pk_consrep,
+            rsp.pk_cons,
+            rsp.pk_org_rep,
+            rsp.name_org_rep,
+            rsp.pk_dept_rep,
+            rsp.name_dept_rep,
+            rsp.pk_emp_rep,
+            rsp.name_emp_rep,
+            rsp.date_rep,
+            rsp.con_reply,
+            rsp.con_advice,
+            rsp.place_dept_rep
+        from cn_consult_response rsp
+        where rsp.pk_cons=#{pkCons,jdbcType=VARCHAR}
+    </select>
+    <select id="qryConsultAnswer" resultType="DynaBean"  parameterType="java.util.Map">
+        select
+            rep.pk_consrep,
+            rep.name_dept_rep,
+            rep.name_emp_rep
+        from cn_consult_response rep
+        where rep.pk_cons=#{pkCons,jdbcType=VARCHAR}
+    </select>
+    <select id="qryResponseDetails" resultType="DynaBean"  parameterType="java.util.Map">
+        Select
+            rep.pk_consrep,
+            rep.con_reply,
+            rep.con_advice,
+            rep.name_emp_input,
+            rep.date_input
+        From cn_consult_response rep
+        Where rep.pk_consrep=#{consrep,jdbcType=VARCHAR}
+    </select>
+</mapper>

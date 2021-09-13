@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsrm.cn.dao.CnOpSchMapper" >
+    <select id = "qryClinicSchList"  parameterType="java.util.Map" resultType="DynaBean" >
+		 select sch.pk_sch,
+		       sch.pk_dateslot,
+		       def.NAME_DATESLOT,
+		       dept.name_dept,
+		       tk.begin_time,
+		       tk.end_time,
+		       TK.ticketno
+		 from sch_sch sch
+		       inner join sch_ticket tk on sch.pk_sch=tk.pk_sch
+		       inner join bd_ou_dept dept on sch.pk_dept=dept.pk_dept
+		       INNER JOIN BD_CODE_DATESLOT def on sch.pk_dateslot = def.pk_dateslot
+		 where sch.pk_schres = #{pkSchres,jdbcType=VARCHAR}
+		       and to_char(sch.date_work,'yyyy-MM-dd') = #{dateWork,jdbcType=VARCHAR}
+		       and sch.eu_status='8'
+               and sch.flag_stop='0'
+               and tk.flag_appt='1'
+               and tk.flag_used='0'
+               and tk.flag_stop='0'
+		order by dept.name_dept,def.SORTNO,tk.begin_time
+    </select>
+	<select id = "qrySchpv" parameterType="com.zebone.nhis.pro.zsrm.cn.vo.SchOrPv" resultType="DynaBean">
+		SELECT
+			appt.pk_schappt,
+			appt.pk_schres,
+			appt.pk_schsrv
+		FROM
+			sch_appt appt
+		INNER JOIN sch_resource res ON appt.pk_schres = res.pk_schres
+		WHERE
+			appt.pk_org =#{pkOrg,jdbcType=VARCHAR}<!--当前机构-->
+		AND appt.pk_dept_ex =#{pkDeptEx,jdbcType=VARCHAR} <!--当前科室-->
+		AND to_char(appt.date_appt,'yyyy-MM-dd')=#{dateAppt,jdbcType=VARCHAR} <!--就诊治疗日期-->
+		AND appt.pk_dateslot =#{pkDateslot,jdbcType=VARCHAR} <!--当前午别-->
+		AND res.pk_emp =#{pkEmp,jdbcType=VARCHAR} <!--当前医生-->
+		AND appt.pk_pi =#{pkPi,jdbcType=VARCHAR}
+	</select>
+	<select id = "qryPv" parameterType="com.zebone.nhis.pro.zsrm.cn.vo.SchOrPv" resultType="DynaBean">
+		SELECT
+			pv.*,
+			diag.pk_diag,
+      		diag.name_diag,
+      		case when pv.EU_PVTYPE='2' then  er.PK_SCHSRV else  op.PK_SCHSRV end PK_SCHSRV,
+      		case when pv.EU_PVTYPE='2' then  er.PK_RES else  op.PK_RES end PK_RES,
+      		case when pv.EU_PVTYPE='2' then  er.PK_SCHSRV_CN else  op.PK_SCHSRV_CN end PK_SCHSRV_CN,
+      		case when pv.EU_PVTYPE='2' then  er.PK_RES_CN else  op.PK_RES_CN end PK_RES_CN,
+      		qgyb.dise_name
+		FROM
+			pv_encounter pv
+		LEFT JOIN pv_op op ON pv.pk_pv = op.pk_pv
+		LEFT JOIN pv_er er ON pv.pk_pv = er.pk_pv
+		LEFT JOIN PV_DIAG diag ON pv.pk_pv=diag.pk_pv and diag.flag_maj='1'
+		left outer join ins_qgyb_pv qgyb on pv.pk_pv = qgyb.pk_pv
+		WHERE
+			pv.pk_pi =#{pkPi,jdbcType=VARCHAR}
+		AND ( op.date_end &gt;= SYSDATE OR er.date_end &gt;= SYSDATE )
+		AND pv.pk_dept =#{pkDeptEx,jdbcType=VARCHAR}
+		AND pv.pk_emp_phy = #{pkEmp,jdbcType=VARCHAR}
+		and pv.DATE_BEGIN &gt;= to_date(#{time,jdbcType=VARCHAR},'YYYY-MM-DD HH24:MI:SS')
+		and pv.EU_STATUS !='9'
+	</select>
+	<select id="qryPimaster" parameterType="java.util.Map" resultType="DynaBean" fetchSize="1000">
+		select pi.pk_pi,pi.pk_org,pi.code_pi,pi.code_op,pi.code_ip,pi.barcode,pi.pk_picate,pi.name_pi,pi.dt_idtype,pi.id_no,pi.hic_no,pi.insur_no,pi.mpi,pi.flag_ehr,
+		pi.dt_sex,pi.birth_date,pi.place_birth,pi.dt_marry,pi.dt_occu,pi.dt_edu,pi.dt_country,pi.dt_nation,pi.tel_no,pi.mobile,pi.wechat_no,pi.email,pi.unit_work,
+		pi.tel_work,pi.address,pi.name_rel,pi.tel_rel,pi.dt_blood_abo,pi.dt_blood_rh,pi.creator,pi.create_time,pi.modifier,pi.del_flag,pi.ts
+		,GETPVAGE(pi.BIRTH_DATE,null) as age_format,pi.pk_emp
+		from PI_MASTER pi
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and pi.del_flag = '0'
+			<if test="codePi != null and codePi != ''">
+				and code_pi = #{codePi,jdbcType=VARCHAR}
+			</if>
+			<if test="codeOp != null and codeOp != ''">
+				and code_op = #{codeOp,jdbcType=VARCHAR}
+			</if>
+			<if test="codeIp != null and codeIp != ''">
+				and code_ip = #{codeIp,jdbcType=VARCHAR}
+			</if>
+			<if test="namePi != null and namePi != ''">
+				and name_pi = #{namePi,jdbcType=VARCHAR}
+			</if>
+			<if test="dtSex != null and dtSex != ''">
+				and dt_sex = #{dtSex,jdbcType=VARCHAR}
+			</if>
+			<if test="idNo != null and idNo != ''">
+				and id_no = #{idNo,jdbcType=VARCHAR}
+			</if>
+			<if test="pkPi != null and pkPi != ''">
+				and pi.PK_PI = #{pkPi,jdbcType=VARCHAR}
+			</if>
+			<if test="insurNo != null and insurNo != ''">
+				and insur_no = #{insurNo,jdbcType=VARCHAR}
+			</if>
+			<if test="mobile != null and mobile != ''">
+				and mobile = #{mobile,jdbcType=VARCHAR}
+			</if>
+			<if test="dialysisFlag  == 1"><!-- 透析患者过滤未建档患者 -->
+				and exists (select 1 from pi_hd where pi_hd.pk_pi=pi.pk_pi)
+			</if>
+			<if test="cardNo != null and cardNo != ''"><!--【门急诊】 卡号 -->
+				AND EXISTS(
+				SELECT 1 FROM PI_CARD PC WHERE pi.PK_PI=PC.PK_PI AND    PC.DEL_FLAG = '0'
+				AND PC.EU_STATUS = '0'
+				AND PC.FLAG_ACTIVE = '1'
+				and PC.card_no =#{cardNo,jdbcType=VARCHAR}
+				)
+			</if>
+			<if test="hicNo != null and hicNo != ''"><!--健康 卡号 -->
+				and pi.hic_no = #{hicNo,jdbcType=VARCHAR}
+			</if>
+
+		</trim>
+		order by code_ip
+	</select>
+	<!-- 根据患者主键获取最大的就诊次数 -->
+	<select id="getMaxOpTimes" resultType="java.lang.Integer">
+		select nvl(max(i.op_times),0)
+		from pv_op i
+		inner join pv_encounter e on i.pk_pv = e.pk_pv and e.del_flag = '0'
+		where i.del_flag = '0' and e.pk_pi = #{pkPi,jdbcType=VARCHAR}
+	</select>
+	<select id="qryPvMode" parameterType="java.util.Map" resultType="DynaBean">
+	   select
+	          pv.pk_pv,
+	          pv.code_pv,
+			  pv.date_clinic,
+			  pv.eu_pvmode,
+			  pv.name_pi,
+			  pv.eu_pvtype,
+			  pv.eu_disetype,
+			  pv.pk_insu,
+			  hp.EU_HPTYPE,
+			  hp.name as  insu_name
+		from  pv_encounter pv
+			  left join bd_hp hp on pv.pk_insu = hp.pk_hp
+		where pv.pk_pv = #{pkPv,jdbcType=VARCHAR}
+
+    </select>
+
+    <select id="qryPvSql" resultType="DynaBean">
+		SELECT
+				pv.*,
+				diag.pk_diag,
+				diag.name_diag
+		FROM
+				pv_encounter pv
+						LEFT JOIN pv_op op ON pv.pk_pv = op.pk_pv
+						LEFT JOIN pv_er er ON pv.pk_pv = er.pk_pv
+						LEFT JOIN PV_DIAG diag ON pv.pk_pv=diag.pk_pv and diag.flag_maj='1'
+		WHERE
+				pv.pk_pi =#{pkPi,jdbcType=VARCHAR}
+		  AND ( op.date_end &gt;= getdate() OR er.date_end &gt;= getdate() )
+		  AND pv.pk_dept =#{pkDeptEx,jdbcType=VARCHAR}
+		  AND pv.pk_emp_phy = #{pkEmp,jdbcType=VARCHAR}
+		  and pv.DATE_BEGIN &gt;= to_date(#{time,jdbcType=VARCHAR},'YYYY-MM-DD HH24:MI:SS')
+		  and pv.EU_STATUS !='9'
+
+
+	</select>
+	<select id = "qryResSch" parameterType="com.zebone.nhis.pro.zsrm.cn.vo.SchOrPv" resultType="DynaBean">
+		SELECT
+			res.pk_schres,
+			res.pk_schsrv,
+			srv.EU_SRVTYPE,
+			res.dt_dateslottype,
+			res.pk_dept_area,
+			res.code,
+			res. NAME,
+			srv. NAME schsrv,
+			res.pk_dept,
+			area.name_area
+		FROM
+			sch_resource res
+		INNER JOIN sch_srv srv ON res.pk_schsrv = srv.pk_schsrv
+		LEFT JOIN sch_srv_ord ord ON ord.pk_schsrv = srv.pk_schsrv
+		INNER JOIN bd_ou_dept dept ON res.pk_dept_area = dept.pk_dept
+		INNER JOIN bd_ou_org_area area ON dept.pk_orgarea = area.pk_orgarea
+		WHERE
+		res.DEL_FLAG='0' and RES.FLAG_STOP='0' and SRV.DEL_FLAG='0' and SRV.FLAG_STOP='0'
+		and ord.DEL_FLAG='0'
+		and res.PK_DEPT_BELONG =#{pkDept,jdbcType=VARCHAR}
+		AND res.pk_emp =#{pkEmp,jdbcType=VARCHAR}
+		AND res.pk_org=#{pkOrg,jdbcType=VARCHAR}
+		<if test="schResourceSpecial != null and schResourceSpecial=='0'.toString()">
+			and srv.EU_SRVTYPE != '2'
+		</if>
+
+	</select>
+
+	<select id = "qryPvSeeOrd" parameterType="java.util.Map" resultType="DynaBean">
+			select  ord.pk_ord,bdord.name,bdord.code_ordtype,srv.PK_ITEM_SPEC  from SCH_SRV srv
+			INNER JOIN sch_srv_ord ord on ORD.PK_SCHSRV=SRV.PK_SCHSRV INNER JOIN bd_ord bdord on bdord.pk_ord = ord.pk_ord
+			where ord.del_flag='0' and srv.PK_SCHSRV=#{pkSchsrv,jdbcType=VARCHAR}
+	</select>
+	<select id = "qryPvSeeBl" parameterType="java.util.Map" resultType="DynaBean">
+		select orditem.pk_ord,orditem.quan,item.price from bd_ord_item orditem
+		INNER JOIN bd_item item on orditem.pk_item=item.pk_item
+		where orditem.del_flag='0' and item.del_flag='0'
+			and orditem.pk_ord in
+			<foreach collection="pkOrds" index="index" item="item" open="(" separator="," close=")">
+				#{item, jdbcType=VARCHAR}
+			</foreach>
+		union
+		select item.pk_item pk_ord,orditem.quan,item.price from bd_ord_item orditem
+		INNER JOIN bd_item item on orditem.pk_item=item.pk_item
+		where orditem.del_flag='0' and item.del_flag='0'
+		and item.PK_ITEM in
+		<foreach collection="pkOrds" index="index" item="item" open="(" separator="," close=")">
+			#{item, jdbcType=VARCHAR}
+		</foreach>
+	</select>
+
+    <select id="getMaxOpTimesFromPiMaster" resultType="java.lang.Integer">
+		select nvl(max(PM.CNT_OP),0)
+		from PI_MASTER PM
+		where PM.pk_pi = #{pkPi,jdbcType=VARCHAR}
+
+	</select>
+</mapper>

@@ -1,0 +1,538 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ex.nis.pub.dao.ExLabOccMapper">
+  <resultMap id="BaseResultMap" type="com.zebone.nhis.common.module.ex.nis.ns.ExLabOcc">
+    <!--@mbg.generated-->
+    <!--@Table EX_LAB_OCC-->
+    <id column="PK_LABOCC" jdbcType="CHAR" property="pkLabocc" />
+    <result column="PK_ORG" jdbcType="CHAR" property="pkOrg" />
+    <result column="PK_PI" jdbcType="CHAR" property="pkPi" />
+    <result column="PK_PV" jdbcType="CHAR" property="pkPv" />
+    <result column="PK_CNORD" jdbcType="CHAR" property="pkCnord" />
+    <result column="EU_TYPE" jdbcType="VARCHAR" property="euType" />
+    <result column="NAME_ORD" jdbcType="VARCHAR" property="nameOrd" />
+    <result column="CODE_APPLY" jdbcType="VARCHAR" property="codeApply" />
+    <result column="PK_ORG_OCC" jdbcType="CHAR" property="pkOrgOcc" />
+    <result column="PK_DEPT_OCC" jdbcType="CHAR" property="pkDeptOcc" />
+    <result column="PK_EMP_OCC" jdbcType="CHAR" property="pkEmpOcc" />
+    <result column="NAME_EMP_OCC" jdbcType="VARCHAR" property="nameEmpOcc" />
+    <result column="PK_MSP" jdbcType="CHAR" property="pkMsp" />
+    <result column="DATE_OCC" jdbcType="TIMESTAMP" property="dateOcc" />
+    <result column="DATE_RPT" jdbcType="TIMESTAMP" property="dateRpt" />
+    <result column="FLAG_CHK" jdbcType="CHAR" property="flagChk" />
+    <result column="DATE_CHK" jdbcType="TIMESTAMP" property="dateChk" />
+    <result column="PK_EMP_CHK" jdbcType="CHAR" property="pkEmpChk" />
+    <result column="NAME_EMP_CHK" jdbcType="VARCHAR" property="nameEmpChk" />
+    <result column="PK_ORD" jdbcType="CHAR" property="pkOrd" />
+    <result column="SORT_NO" jdbcType="DECIMAL" property="sortNo" />
+    <result column="CODE_SAMP" jdbcType="VARCHAR" property="codeSamp" />
+    <result column="CODE_INDEX" jdbcType="VARCHAR" property="codeIndex" />
+    <result column="NAME_INDEX" jdbcType="VARCHAR" property="nameIndex" />
+    <result column="PK_UNIT" jdbcType="CHAR" property="pkUnit" />
+    <result column="UNIT" jdbcType="VARCHAR" property="unit" />
+    <result column="VAL_MAX" jdbcType="VARCHAR" property="valMax" />
+    <result column="VAL_MIN" jdbcType="VARCHAR" property="valMin" />
+    <result column="VAL" jdbcType="VARCHAR" property="val" />
+    <result column="VAL1" jdbcType="VARCHAR" property="val1" />
+    <result column="VAL2" jdbcType="VARCHAR" property="val2" />
+    <result column="VAL3" jdbcType="VARCHAR" property="val3" />
+    <result column="VAL4" jdbcType="VARCHAR" property="val4" />
+    <result column="EU_RESULT" jdbcType="VARCHAR" property="euResult" />
+    <result column="CREATOR" jdbcType="CHAR" property="creator" />
+    <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="MODIFIER" jdbcType="CHAR" property="modifier" />
+    <result column="MODIFY_TIME" jdbcType="TIMESTAMP" property="modifyTime" />
+    <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag" />
+    <result column="TS" jdbcType="TIMESTAMP" property="ts" />
+    <result column="CODE_RPT" jdbcType="VARCHAR" property="codeRpt" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    PK_LABOCC, PK_ORG, PK_PI, PK_PV, PK_CNORD, EU_TYPE, NAME_ORD, CODE_APPLY, PK_ORG_OCC, 
+    PK_DEPT_OCC, PK_EMP_OCC, NAME_EMP_OCC, PK_MSP, DATE_OCC, DATE_RPT, FLAG_CHK, DATE_CHK, 
+    PK_EMP_CHK, NAME_EMP_CHK, PK_ORD, SORT_NO, CODE_SAMP, CODE_INDEX, NAME_INDEX, PK_UNIT, 
+    UNIT, VAL_MAX, VAL_MIN, VAL, VAL1, VAL2, VAL3, VAL4, EU_RESULT, CREATOR, CREATE_TIME, 
+    MODIFIER, MODIFY_TIME, DEL_FLAG, TS, CODE_RPT
+  </sql>
+  <select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="BaseResultMap">
+    <!--@mbg.generated-->
+    select 
+    <include refid="Base_Column_List" />
+    from EX_LAB_OCC
+    where PK_LABOCC = #{pkLabocc,jdbcType=CHAR}
+  </select>
+
+  <select id="selectAll" parameterType="com.zebone.nhis.common.module.ex.nis.ns.ExLabOcc" resultType="com.zebone.nhis.common.module.ex.nis.ns.ExLabOcc">
+    <!--@mbg.generated-->
+    select
+    <include refid="Base_Column_List" />
+    from EX_LAB_OCC
+    where  DEL_FLAG = '0'
+    <if test="codeApply != null">
+      And CODE_APPLY = #{codeApply,jdbcType=VARCHAR}
+    </if>
+  </select>
+
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+    <!--@mbg.generated-->
+    delete from EX_LAB_OCC
+    where PK_LABOCC = #{pkLabocc,jdbcType=CHAR}
+  </delete>
+  <insert id="insert" parameterType="com.zebone.nhis.common.module.ex.nis.ns.ExLabOcc">
+    <!--@mbg.generated-->
+    insert into EX_LAB_OCC (PK_LABOCC, PK_ORG, PK_PI, 
+      PK_PV, PK_CNORD, EU_TYPE, NAME_ORD, 
+      CODE_APPLY, PK_ORG_OCC, PK_DEPT_OCC, 
+      PK_EMP_OCC, NAME_EMP_OCC, PK_MSP, 
+      DATE_OCC, DATE_RPT, FLAG_CHK, 
+      DATE_CHK, PK_EMP_CHK, NAME_EMP_CHK, 
+      PK_ORD, SORT_NO, CODE_SAMP, 
+      CODE_INDEX, NAME_INDEX, PK_UNIT, 
+      UNIT, VAL_MAX, VAL_MIN, 
+      VAL, VAL1, VAL2, VAL3, 
+      VAL4, EU_RESULT, CREATOR, 
+      CREATE_TIME, MODIFIER, MODIFY_TIME, 
+      DEL_FLAG, TS, CODE_RPT
+      )
+    values (#{pkLabocc,jdbcType=CHAR}, #{pkOrg,jdbcType=CHAR}, #{pkPi,jdbcType=CHAR}, 
+      #{pkPv,jdbcType=CHAR}, #{pkCnord,jdbcType=CHAR}, #{euType,jdbcType=VARCHAR}, #{nameOrd,jdbcType=VARCHAR}, 
+      #{codeApply,jdbcType=VARCHAR}, #{pkOrgOcc,jdbcType=CHAR}, #{pkDeptOcc,jdbcType=CHAR}, 
+      #{pkEmpOcc,jdbcType=CHAR}, #{nameEmpOcc,jdbcType=VARCHAR}, #{pkMsp,jdbcType=CHAR}, 
+      #{dateOcc,jdbcType=TIMESTAMP}, #{dateRpt,jdbcType=TIMESTAMP}, #{flagChk,jdbcType=CHAR}, 
+      #{dateChk,jdbcType=TIMESTAMP}, #{pkEmpChk,jdbcType=CHAR}, #{nameEmpChk,jdbcType=VARCHAR}, 
+      #{pkOrd,jdbcType=CHAR}, #{sortNo,jdbcType=DECIMAL}, #{codeSamp,jdbcType=VARCHAR}, 
+      #{codeIndex,jdbcType=VARCHAR}, #{nameIndex,jdbcType=VARCHAR}, #{pkUnit,jdbcType=CHAR}, 
+      #{unit,jdbcType=VARCHAR}, #{valMax,jdbcType=VARCHAR}, #{valMin,jdbcType=VARCHAR}, 
+      #{val,jdbcType=VARCHAR}, #{val1,jdbcType=VARCHAR}, #{val2,jdbcType=VARCHAR}, #{val3,jdbcType=VARCHAR}, 
+      #{val4,jdbcType=VARCHAR}, #{euResult,jdbcType=VARCHAR}, #{creator,jdbcType=CHAR}, 
+      #{createTime,jdbcType=TIMESTAMP}, #{modifier,jdbcType=CHAR}, #{modifyTime,jdbcType=TIMESTAMP}, 
+      #{delFlag,jdbcType=CHAR}, #{ts,jdbcType=TIMESTAMP}, #{codeRpt,jdbcType=VARCHAR}
+      )
+  </insert>
+  <insert id="insertSelective" parameterType="com.zebone.nhis.common.module.ex.nis.ns.ExLabOcc">
+    <!--@mbg.generated-->
+    insert into EX_LAB_OCC
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="pkLabocc != null">
+        PK_LABOCC,
+      </if>
+      <if test="pkOrg != null">
+        PK_ORG,
+      </if>
+      <if test="pkPi != null">
+        PK_PI,
+      </if>
+      <if test="pkPv != null">
+        PK_PV,
+      </if>
+      <if test="pkCnord != null">
+        PK_CNORD,
+      </if>
+      <if test="euType != null">
+        EU_TYPE,
+      </if>
+      <if test="nameOrd != null">
+        NAME_ORD,
+      </if>
+      <if test="codeApply != null">
+        CODE_APPLY,
+      </if>
+      <if test="pkOrgOcc != null">
+        PK_ORG_OCC,
+      </if>
+      <if test="pkDeptOcc != null">
+        PK_DEPT_OCC,
+      </if>
+      <if test="pkEmpOcc != null">
+        PK_EMP_OCC,
+      </if>
+      <if test="nameEmpOcc != null">
+        NAME_EMP_OCC,
+      </if>
+      <if test="pkMsp != null">
+        PK_MSP,
+      </if>
+      <if test="dateOcc != null">
+        DATE_OCC,
+      </if>
+      <if test="dateRpt != null">
+        DATE_RPT,
+      </if>
+      <if test="flagChk != null">
+        FLAG_CHK,
+      </if>
+      <if test="dateChk != null">
+        DATE_CHK,
+      </if>
+      <if test="pkEmpChk != null">
+        PK_EMP_CHK,
+      </if>
+      <if test="nameEmpChk != null">
+        NAME_EMP_CHK,
+      </if>
+      <if test="pkOrd != null">
+        PK_ORD,
+      </if>
+      <if test="sortNo != null">
+        SORT_NO,
+      </if>
+      <if test="codeSamp != null">
+        CODE_SAMP,
+      </if>
+      <if test="codeIndex != null">
+        CODE_INDEX,
+      </if>
+      <if test="nameIndex != null">
+        NAME_INDEX,
+      </if>
+      <if test="pkUnit != null">
+        PK_UNIT,
+      </if>
+      <if test="unit != null">
+        UNIT,
+      </if>
+      <if test="valMax != null">
+        VAL_MAX,
+      </if>
+      <if test="valMin != null">
+        VAL_MIN,
+      </if>
+      <if test="val != null">
+        VAL,
+      </if>
+      <if test="val1 != null">
+        VAL1,
+      </if>
+      <if test="val2 != null">
+        VAL2,
+      </if>
+      <if test="val3 != null">
+        VAL3,
+      </if>
+      <if test="val4 != null">
+        VAL4,
+      </if>
+      <if test="euResult != null">
+        EU_RESULT,
+      </if>
+      <if test="creator != null">
+        CREATOR,
+      </if>
+      <if test="createTime != null">
+        CREATE_TIME,
+      </if>
+      <if test="modifier != null">
+        MODIFIER,
+      </if>
+      <if test="modifyTime != null">
+        MODIFY_TIME,
+      </if>
+      <if test="delFlag != null">
+        DEL_FLAG,
+      </if>
+      <if test="ts != null">
+        TS,
+      </if>
+      <if test="codeRpt != null">
+        CODE_RPT,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="pkLabocc != null">
+        #{pkLabocc,jdbcType=CHAR},
+      </if>
+      <if test="pkOrg != null">
+        #{pkOrg,jdbcType=CHAR},
+      </if>
+      <if test="pkPi != null">
+        #{pkPi,jdbcType=CHAR},
+      </if>
+      <if test="pkPv != null">
+        #{pkPv,jdbcType=CHAR},
+      </if>
+      <if test="pkCnord != null">
+        #{pkCnord,jdbcType=CHAR},
+      </if>
+      <if test="euType != null">
+        #{euType,jdbcType=VARCHAR},
+      </if>
+      <if test="nameOrd != null">
+        #{nameOrd,jdbcType=VARCHAR},
+      </if>
+      <if test="codeApply != null">
+        #{codeApply,jdbcType=VARCHAR},
+      </if>
+      <if test="pkOrgOcc != null">
+        #{pkOrgOcc,jdbcType=CHAR},
+      </if>
+      <if test="pkDeptOcc != null">
+        #{pkDeptOcc,jdbcType=CHAR},
+      </if>
+      <if test="pkEmpOcc != null">
+        #{pkEmpOcc,jdbcType=CHAR},
+      </if>
+      <if test="nameEmpOcc != null">
+        #{nameEmpOcc,jdbcType=VARCHAR},
+      </if>
+      <if test="pkMsp != null">
+        #{pkMsp,jdbcType=CHAR},
+      </if>
+      <if test="dateOcc != null">
+        #{dateOcc,jdbcType=TIMESTAMP},
+      </if>
+      <if test="dateRpt != null">
+        #{dateRpt,jdbcType=TIMESTAMP},
+      </if>
+      <if test="flagChk != null">
+        #{flagChk,jdbcType=CHAR},
+      </if>
+      <if test="dateChk != null">
+        #{dateChk,jdbcType=TIMESTAMP},
+      </if>
+      <if test="pkEmpChk != null">
+        #{pkEmpChk,jdbcType=CHAR},
+      </if>
+      <if test="nameEmpChk != null">
+        #{nameEmpChk,jdbcType=VARCHAR},
+      </if>
+      <if test="pkOrd != null">
+        #{pkOrd,jdbcType=CHAR},
+      </if>
+      <if test="sortNo != null">
+        #{sortNo,jdbcType=DECIMAL},
+      </if>
+      <if test="codeSamp != null">
+        #{codeSamp,jdbcType=VARCHAR},
+      </if>
+      <if test="codeIndex != null">
+        #{codeIndex,jdbcType=VARCHAR},
+      </if>
+      <if test="nameIndex != null">
+        #{nameIndex,jdbcType=VARCHAR},
+      </if>
+      <if test="pkUnit != null">
+        #{pkUnit,jdbcType=CHAR},
+      </if>
+      <if test="unit != null">
+        #{unit,jdbcType=VARCHAR},
+      </if>
+      <if test="valMax != null">
+        #{valMax,jdbcType=VARCHAR},
+      </if>
+      <if test="valMin != null">
+        #{valMin,jdbcType=VARCHAR},
+      </if>
+      <if test="val != null">
+        #{val,jdbcType=VARCHAR},
+      </if>
+      <if test="val1 != null">
+        #{val1,jdbcType=VARCHAR},
+      </if>
+      <if test="val2 != null">
+        #{val2,jdbcType=VARCHAR},
+      </if>
+      <if test="val3 != null">
+        #{val3,jdbcType=VARCHAR},
+      </if>
+      <if test="val4 != null">
+        #{val4,jdbcType=VARCHAR},
+      </if>
+      <if test="euResult != null">
+        #{euResult,jdbcType=VARCHAR},
+      </if>
+      <if test="creator != null">
+        #{creator,jdbcType=CHAR},
+      </if>
+      <if test="createTime != null">
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifier != null">
+        #{modifier,jdbcType=CHAR},
+      </if>
+      <if test="modifyTime != null">
+        #{modifyTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="delFlag != null">
+        #{delFlag,jdbcType=CHAR},
+      </if>
+      <if test="ts != null">
+        #{ts,jdbcType=TIMESTAMP},
+      </if>
+      <if test="codeRpt != null">
+        #{codeRpt,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.zebone.nhis.common.module.ex.nis.ns.ExLabOcc">
+    <!--@mbg.generated-->
+    update EX_LAB_OCC
+    <set>
+      <if test="pkOrg != null">
+        PK_ORG = #{pkOrg,jdbcType=CHAR},
+      </if>
+      <if test="pkPi != null">
+        PK_PI = #{pkPi,jdbcType=CHAR},
+      </if>
+      <if test="pkPv != null">
+        PK_PV = #{pkPv,jdbcType=CHAR},
+      </if>
+      <if test="pkCnord != null">
+        PK_CNORD = #{pkCnord,jdbcType=CHAR},
+      </if>
+      <if test="euType != null">
+        EU_TYPE = #{euType,jdbcType=VARCHAR},
+      </if>
+      <if test="nameOrd != null">
+        NAME_ORD = #{nameOrd,jdbcType=VARCHAR},
+      </if>
+      <if test="codeApply != null">
+        CODE_APPLY = #{codeApply,jdbcType=VARCHAR},
+      </if>
+      <if test="pkOrgOcc != null">
+        PK_ORG_OCC = #{pkOrgOcc,jdbcType=CHAR},
+      </if>
+      <if test="pkDeptOcc != null">
+        PK_DEPT_OCC = #{pkDeptOcc,jdbcType=CHAR},
+      </if>
+      <if test="pkEmpOcc != null">
+        PK_EMP_OCC = #{pkEmpOcc,jdbcType=CHAR},
+      </if>
+      <if test="nameEmpOcc != null">
+        NAME_EMP_OCC = #{nameEmpOcc,jdbcType=VARCHAR},
+      </if>
+      <if test="pkMsp != null">
+        PK_MSP = #{pkMsp,jdbcType=CHAR},
+      </if>
+      <if test="dateOcc != null">
+        DATE_OCC = #{dateOcc,jdbcType=TIMESTAMP},
+      </if>
+      <if test="dateRpt != null">
+        DATE_RPT = #{dateRpt,jdbcType=TIMESTAMP},
+      </if>
+      <if test="flagChk != null">
+        FLAG_CHK = #{flagChk,jdbcType=CHAR},
+      </if>
+      <if test="dateChk != null">
+        DATE_CHK = #{dateChk,jdbcType=TIMESTAMP},
+      </if>
+      <if test="pkEmpChk != null">
+        PK_EMP_CHK = #{pkEmpChk,jdbcType=CHAR},
+      </if>
+      <if test="nameEmpChk != null">
+        NAME_EMP_CHK = #{nameEmpChk,jdbcType=VARCHAR},
+      </if>
+      <if test="pkOrd != null">
+        PK_ORD = #{pkOrd,jdbcType=CHAR},
+      </if>
+      <if test="sortNo != null">
+        SORT_NO = #{sortNo,jdbcType=DECIMAL},
+      </if>
+      <if test="codeSamp != null">
+        CODE_SAMP = #{codeSamp,jdbcType=VARCHAR},
+      </if>
+      <if test="codeIndex != null">
+        CODE_INDEX = #{codeIndex,jdbcType=VARCHAR},
+      </if>
+      <if test="nameIndex != null">
+        NAME_INDEX = #{nameIndex,jdbcType=VARCHAR},
+      </if>
+      <if test="pkUnit != null">
+        PK_UNIT = #{pkUnit,jdbcType=CHAR},
+      </if>
+      <if test="unit != null">
+        UNIT = #{unit,jdbcType=VARCHAR},
+      </if>
+      <if test="valMax != null">
+        VAL_MAX = #{valMax,jdbcType=VARCHAR},
+      </if>
+      <if test="valMin != null">
+        VAL_MIN = #{valMin,jdbcType=VARCHAR},
+      </if>
+      <if test="val != null">
+        VAL = #{val,jdbcType=VARCHAR},
+      </if>
+      <if test="val1 != null">
+        VAL1 = #{val1,jdbcType=VARCHAR},
+      </if>
+      <if test="val2 != null">
+        VAL2 = #{val2,jdbcType=VARCHAR},
+      </if>
+      <if test="val3 != null">
+        VAL3 = #{val3,jdbcType=VARCHAR},
+      </if>
+      <if test="val4 != null">
+        VAL4 = #{val4,jdbcType=VARCHAR},
+      </if>
+      <if test="euResult != null">
+        EU_RESULT = #{euResult,jdbcType=VARCHAR},
+      </if>
+      <if test="creator != null">
+        CREATOR = #{creator,jdbcType=CHAR},
+      </if>
+      <if test="createTime != null">
+        CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifier != null">
+        MODIFIER = #{modifier,jdbcType=CHAR},
+      </if>
+      <if test="modifyTime != null">
+        MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="delFlag != null">
+        DEL_FLAG = #{delFlag,jdbcType=CHAR},
+      </if>
+      <if test="ts != null">
+        TS = #{ts,jdbcType=TIMESTAMP},
+      </if>
+      <if test="codeRpt != null">
+        CODE_RPT = #{codeRpt,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where PK_LABOCC = #{pkLabocc,jdbcType=CHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.zebone.nhis.common.module.ex.nis.ns.ExLabOcc">
+    <!--@mbg.generated-->
+    update EX_LAB_OCC
+    set PK_ORG = #{pkOrg,jdbcType=CHAR},
+      PK_PI = #{pkPi,jdbcType=CHAR},
+      PK_PV = #{pkPv,jdbcType=CHAR},
+      PK_CNORD = #{pkCnord,jdbcType=CHAR},
+      EU_TYPE = #{euType,jdbcType=VARCHAR},
+      NAME_ORD = #{nameOrd,jdbcType=VARCHAR},
+      CODE_APPLY = #{codeApply,jdbcType=VARCHAR},
+      PK_ORG_OCC = #{pkOrgOcc,jdbcType=CHAR},
+      PK_DEPT_OCC = #{pkDeptOcc,jdbcType=CHAR},
+      PK_EMP_OCC = #{pkEmpOcc,jdbcType=CHAR},
+      NAME_EMP_OCC = #{nameEmpOcc,jdbcType=VARCHAR},
+      PK_MSP = #{pkMsp,jdbcType=CHAR},
+      DATE_OCC = #{dateOcc,jdbcType=TIMESTAMP},
+      DATE_RPT = #{dateRpt,jdbcType=TIMESTAMP},
+      FLAG_CHK = #{flagChk,jdbcType=CHAR},
+      DATE_CHK = #{dateChk,jdbcType=TIMESTAMP},
+      PK_EMP_CHK = #{pkEmpChk,jdbcType=CHAR},
+      NAME_EMP_CHK = #{nameEmpChk,jdbcType=VARCHAR},
+      PK_ORD = #{pkOrd,jdbcType=CHAR},
+      SORT_NO = #{sortNo,jdbcType=DECIMAL},
+      CODE_SAMP = #{codeSamp,jdbcType=VARCHAR},
+      CODE_INDEX = #{codeIndex,jdbcType=VARCHAR},
+      NAME_INDEX = #{nameIndex,jdbcType=VARCHAR},
+      PK_UNIT = #{pkUnit,jdbcType=CHAR},
+      UNIT = #{unit,jdbcType=VARCHAR},
+      VAL_MAX = #{valMax,jdbcType=VARCHAR},
+      VAL_MIN = #{valMin,jdbcType=VARCHAR},
+      VAL = #{val,jdbcType=VARCHAR},
+      VAL1 = #{val1,jdbcType=VARCHAR},
+      VAL2 = #{val2,jdbcType=VARCHAR},
+      VAL3 = #{val3,jdbcType=VARCHAR},
+      VAL4 = #{val4,jdbcType=VARCHAR},
+      EU_RESULT = #{euResult,jdbcType=VARCHAR},
+      CREATOR = #{creator,jdbcType=CHAR},
+      CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+      MODIFIER = #{modifier,jdbcType=CHAR},
+      MODIFY_TIME = #{modifyTime,jdbcType=TIMESTAMP},
+      DEL_FLAG = #{delFlag,jdbcType=CHAR},
+      TS = #{ts,jdbcType=TIMESTAMP},
+      CODE_RPT = #{codeRpt,jdbcType=VARCHAR}
+    where PK_LABOCC = #{pkLabocc,jdbcType=CHAR}
+  </update>
+</mapper>

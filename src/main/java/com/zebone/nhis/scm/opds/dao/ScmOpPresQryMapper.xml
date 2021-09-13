@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.opds.dao.ScmOpPresQryMapper">
+<select id="queryPresOccDetail" parameterType="java.util.Map" resultType="DynaBean">
+ select pd.name,
+       pd.spec,
+       pddt.pk_unit,
+       unit.name                            unit,
+       pddt.quan_pack * pddt.eu_direct as quan_pack,
+       pddt.price,
+       pddt.amount * pddt.eu_direct    as amount,
+       pddt.batch_no,
+       pddt.date_expire,
+       pddt.date_de,
+       emp.name_emp                      as name_emp_rtn
+from ex_pres_occ_dt dt
+         inner join ex_pres_occ_pddt pddt on dt.pk_presoccdt=pddt.pk_presoccdt
+         inner join bd_pd pd on pddt.pk_pd=pd.pk_pd
+         inner join bd_unit unit on pddt.pk_unit=unit.pk_unit
+         left join bd_ou_employee emp on emp.pk_emp = pddt.creator
+ where dt.pk_presocc=#{pkPresocc,jdbcType=CHAR}
+ order by date_de 
+ 
+</select>
+<select id="qryPresDt" parameterType="java.util.Map" resultType="DynaBean">
+ select
+       dt.pk_presoccdt,
+       dt.pk_presocc,
+       dt.pk_pd,
+       pd.name,
+       pd.spec,
+       fa.name factory,
+       dt.pk_unit,
+       unit.name unit,
+       sto.pack_size,
+       round(dt.price/dt.pack_size*sto.PACK_SIZE,6) price,
+       dt.QUAN_CG,
+       dt.ords_de-dt.ords_back ords_de,
+       (dt.QUAN_MIN_DE-nvl(dt.QUAN_MIN_BACK,0))/sto.PACK_SIZE quan_de,
+       ord.ordsn,
+       ord.ordsn_parent,
+       ord.flag_erase,
+       sto.NUM_LIMIT,
+       pd.pack_size pack_size_pd
+from bd_pd pd
+    inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+    inner join ex_pres_occ_dt dt on pd.pk_pd=dt.pk_pd
+    inner join ex_pres_occ occ on occ.pk_presocc=dt.pk_presocc
+    inner join cn_order ord on ord.pk_cnord = dt.pk_cnord
+    inner join bd_pd_store sto on sto.pk_pd=pd.pk_pd and occ.pk_dept_ex=sto.pk_dept
+    inner join bd_unit unit on sto.pk_unit=unit.pk_unit
+ where dt.pk_presocc = #{pkPresocc,jdbcType=CHAR} 
+ order by ord.ordsn_parent,ord.ordsn  
+</select>
+<select id="qryPresInfoList" parameterType="java.util.Map" resultType="DynaBean">
+    select
+        <if test='ebillnoInfo !=null and ebillnoInfo !="" and ebillnoInfo =="1" '>
+   		   distinct
+           inv.ebillno,
+        </if>
+        pi.name_pi,
+        pres.pres_no,
+        dept.name_dept,
+        pres.name_emp_pres,
+        pres.eu_status,
+        pres.name_emp_prep,
+        pres.name_emp_conf,
+        pres.date_conf,
+        pres.name_emp_canc,
+        pres.date_canc,
+        pres.pk_presocc,
+        cn.DT_PRESTYPE,
+        pv.code_pv,
+        pres.winno_conf,
+        bl.date_st,
+        cn.pk_pres
+    from pi_master pi
+    inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+    inner join ex_pres_occ pres on pv.pk_pv=pres.pk_pv
+    inner join bd_ou_dept dept on pres.pk_dept_pres=dept.pk_dept
+    inner join BL_SETTLE bl on bl.PK_SETTLE = pres.PK_SETTLE
+    inner join CN_PRESCRIPTION cn on pres.PK_PRES=cn.PK_PRES
+    <if test='ebillnoInfo !=null and ebillnoInfo !="" and ebillnoInfo =="1" '>
+    LEFT JOIN bl_st_inv stinv  on stinv.pk_settle=bl.PK_SETTLE
+	LEFT JOIN bl_invoice inv on inv.pk_invoice=stinv.pk_invoice AND  inv.flag_cancel='0'
+	</if>
+   where 1=1
+    <if test='euStatus!=null and euStatus!=""'>
+        and pres.eu_status=#{euStatus,jdbcType=VARCHAR}
+    </if>
+   <if test='codePv!=null and codePv!=""'>
+   		and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+   </if>
+   <if test='codePi!=null and codePi!=""'>
+   		and pi.code_pi=#{codePi,jdbcType=VARCHAR}
+   </if>
+   <if test='namePi!=null and namePi!=""'>
+   		and pi.name_pi=#{namePi,jdbcType=VARCHAR}
+   </if>
+   <if test='presNo!=null and presNo!=""'>
+   		and pres.pres_no=#{presNo,jdbcType=VARCHAR}
+   </if>
+   <if test='dateBegin!=null and dateBegin!=""'>
+   		and bl.DATE_ST &gt;= to_date(substr(#{dateBegin,jdbcType=VARCHAR}, 1, 8)||'000000', 'yyyymmddhh24miss')
+   </if>
+   <if test='dateEnd!=null and dateEnd!=""'>
+   		and  bl.DATE_ST &lt;= to_date(substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'yyyymmddhh24miss')
+   </if>
+   <if test='pkEmpPrep!=null and pkEmpPrep!=""'>
+   		and pres.pk_emp_prep =#{pkEmpPrep,jdbcType=VARCHAR}
+   </if>
+   <if test='pkEmpConf!=null and pkEmpConf!=""'>
+   		and pres.pk_emp_conf =#{pkEmpConf,jdbcType=VARCHAR}
+   </if>
+   <if test='pkDeptPres!=null and pkDeptPres!=""'>
+   		and pres.pk_dept_pres =#{pkDeptPres,jdbcType=VARCHAR}
+   </if>
+   <if test='pkEmpPres!=null and pkEmpPres!=""'>
+   		and pres.pk_emp_pres=#{pkEmpPres,jdbcType=VARCHAR}
+   </if>
+   <if test='codeOp!=null and codeOp!=""'>
+   		and pi.code_op=#{codeOp,jdbcType=VARCHAR}
+   </if>
+   <if test='pdName!=null and pdName!=""'>
+   	   and	exists (select 1             
+                 from ex_pres_occ_dt dt
+                 inner join bd_pd pd on pd.pk_pd=dt.pk_pd
+                where pres.pk_presocc=dt.pk_presocc and
+                      pd.name like '%' || #{pdName,jdbcType=VARCHAR} || '%')
+   </if>
+   <if test='winnoConf!=null and winnoConf!=""'>
+       and pres.winno_conf=#{winnoConf,jdbcType=VARCHAR}
+   </if>
+    <if test='pkDeptEx!=null and pkDeptEx!=""' >
+        and pres.pk_dept_ex=#{pkDeptEx,jdbcType=VARCHAR}
+    </if>
+   order by  pres.winno_conf,pres.pres_no
+</select>
+
+<select id="queryPresOccList" parameterType="java.util.Map" resultType="DynaBean">
+    SELECT
+       	pres.pk_presocc,
+	    pres.pk_pres,
+	    pres.dt_prestype,
+	    pres.pres_no,
+	    pres.date_pres,
+	    dept.name_dept,
+	    pres.name_emp_pres,
+	    diag.desc_diag diagname,
+	    inv.code_inv,
+	    inv.ebillno
+    FROM ex_pres_occ pres
+	INNER JOIN bd_ou_dept dept ON pres.pk_dept_pres= dept.pk_dept
+	LEFT JOIN bl_st_inv stinv  on stinv.pk_settle=pres.PK_SETTLE
+    and EXISTS(select 1 from BL_OP_DT bl inner join CN_ORDER cn on cn.PK_CNORD = bl.PK_CNORD where stinv.
+    PK_INVOICE = bl.PK_INVOICE and cn.pk_pres=pres.pk_pres and cn.FLAG_DURG='1'
+    <if test='pkPi !=null and pkPi !=""'>
+        and bl.pk_pi =  #{pkPi,jdbcType=VARCHAR}
+    </if>
+    )
+	LEFT JOIN bl_invoice inv on inv.pk_invoice=stinv.pk_invoice AND  inv.flag_cancel='0'
+	LEFT JOIN pv_diag diag ON diag.PK_PV= pres.PK_PV and diag.FLAG_MAJ='1' and diag.DEL_FLAG='0'
+   WHERE  pres.flag_canc= 0 
+	  AND EXISTS ( SELECT 1 FROM EX_PRES_OCC_DT dt WHERE dt.PK_PRESOCC = pres.PK_PRESOCC AND dt.QUAN_DE- dt.QUAN_BACK> 0 )
+	  <if test='pkPi !=null and pkPi !=""'>
+         AND pres.pk_pi = #{pkPi,jdbcType=VARCHAR}
+      </if>
+	  <if test='pkDept !=null and pkDept !=""'>
+         AND pres.pk_dept_ex = #{pkDept,jdbcType=VARCHAR} 
+      </if>
+	  <if test='dateBegin !=null and dateBegin !=""'>
+         AND pres.date_conf &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+      </if>
+      <if test='dateEnd !=null and dateEnd !=""'>
+         AND pres.date_conf &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+      </if>
+</select>
+</mapper>

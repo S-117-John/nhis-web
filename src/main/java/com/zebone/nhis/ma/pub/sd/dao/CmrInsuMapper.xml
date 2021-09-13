@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.sd.dao.CmrInsuMapper">
+    <select id="getPimasterInfo" resultType="com.zebone.nhis.common.module.pi.PiMaster">
+        select pi.*
+        from pi_master pi
+                     left join PV_ENCOUNTER pv on pv.pk_pi = pi.pk_pi
+                where 1 = 1
+        <if test="pkPv != null and pkPv != ''">
+            and pv.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        <if test="pkPi != null and pkPi != ''">
+            and pi.pk_pi = #{pkPi,jdbcType=CHAR}
+        </if>
+    </select>
+
+    <select id="getDictMapInfo" resultType="com.zebone.nhis.common.module.compay.ins.shenzhen.InsSzybDictMap">
+        select *
+        from INS_SZYB_DICTMAP dictmap
+                where del_flag = '0'
+                  and CODE_TYPE = #{codeType,jdbcType=VARCHAR}
+        <if test="codeHis != null and codeHis != ''">
+            and CODE_HIS = #{codeHis,jdbcType=VARCHAR}
+        </if>
+        <if test="pkHis != null and pkHis != ''">
+            and pk_his = #{pkHis,jdbcType=VARCHAR}
+        </if>
+        <if test="codeInsur != null and codeInsur != ''">
+            and code_insur = #{codeInsur,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+    <select id="qryPvInfo" resultType="DynaBean">
+        select pv.code_pv                                 medical_Num,
+               pv.eu_pvtype                               medical_Type,
+               to_char(pv.DATE_BEGIN, 'YYYYMMDDHH24MISS') treat_Date,
+               dept.CODE_DEPT                             treat_Dept_Code,
+               dept.NAME_DEPT                             treat_Dept_Name,
+               deptns.NAME_DEPT                           endemic_Area,
+               pi.code_ip                                 in_Hospital_Num,
+               empphy.CODE_EMP                            in_Hos_Doctor_Code,
+               empphy.NAME_EMP                            in_Hos_Doctor_Name,
+               diag.NAME_DIAG                             in_Hos_Clinical_Diagnosis,
+               pi.DT_IDTYPE                               credential_Type,
+               pi.ID_NO                                   credential_Num,
+               pi.NAME_PI                                 name,
+               pi.DT_SEX                                  gender,
+               to_char(pi.BIRTH_DATE, 'YYYYMMDD')         birthday,
+               to_char(pv.DATE_END, 'YYYYMMDDHH24MISS')   disch_Date
+        from PV_ENCOUNTER pv
+                     inner join pi_master pi on pi.pk_pi = pv.pk_pi
+                     left join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+                     left join bd_ou_dept deptns on deptns.PK_DEPT = pv.PK_DEPT_NS
+                     left join PV_DIAG diag on diag.pk_pv = pv.pk_pv and diag.DT_DIAGTYPE = '0100'
+                     inner join BD_OU_EMPLOYEE empphy on empphy.PK_EMP = pv.PK_EMP_TRE
+        where pv.pk_pv = #{pkPv,jdbcType=CHAR}
+    </select>
+
+    <select id="qryDiagInfo" resultType="com.zebone.nhis.ma.pub.sd.vo.cmrInsu.CiIcdVo">
+        select code_icd                diagnosis_Code,
+               NAME_DIAG               diagnosis_Name,
+               DT_DIAGTYPE             dt_Diagtype,
+               case
+                       when flag_maj = '1' then
+                               '0'
+                       else
+                               '1' end diag_Sort
+        from pv_diag where del_flag = '0'
+                       and pk_pv = #{pkPv,jdbcType=CHAR}
+        <if test="dtDiagtype != null and dtDiagtype != ''">
+            and DT_DIAGTYPE = #{dtDiagtype,jdbcType=VARCHAR}
+        </if>
+        order by DT_DIAGTYPE
+    </select>
+
+    <select id="qrycnDiagInfo" resultType="com.zebone.nhis.ma.pub.sd.vo.cmrInsu.CiIcdVo">
+        select DESC_DIAGS as diagnosis_Name
+        from CN_DIAG
+        where del_flag = '0'
+          and pk_pv = #{pkPv,jdbcType=CHAR}
+    </select>
+
+    <select id="qryUpLoadDtList" resultType="com.zebone.nhis.ma.pub.sd.vo.cmrInsu.CiUploadDtl">
+        select pv.code_pv                                                 medical_Num,
+               case
+                       when dt.flag_pd = '1' then '1'
+                       else
+                               case
+                                       when cate.code like '09%' or cate.code like '11%' then '2'
+                                       when cate.code like '10%' then '4'
+                                       else '3' end
+                       end                                                list_Cat,
+               cate.code                                                  hospital_Item_Cat_Code,
+               cate.name                                                  hospital_Item_Cat_Name,
+               case when parhp.code = '07' then citycg.aka111 end         medical_Item_Cat_Code,
+               case when parhp.code = '07' then cate.name end             medical_Item_Cat_Name,
+               '3'                                                        fees_Grade,
+               null                                                       recipe_Num,
+               dt.code_cg || dt.sortno                                    recipe_Serial_Num,
+               to_char(dt.date_hap, 'YYYYMMDDHH24MISS')                   recipe_Date,
+               null                                                       relation_Num,
+               case when dt.flag_pd = '1' then pd.code else item.code end hospital_Charge_Code,
+               dt.name_cg                                                 hospital_Charge_NAME,
+               COALESCE(citycg.ake001, itemmap.AKE001)                    medicare_Feeitem_Code,
+               COALESCE(citycg.ake002, itemmap.AKE002)                    medicare_Feeitem_Name,
+               dt.ratio_self                                              self_Pay_Ratio,
+               trunc(dt.price, 4)                                         medlimited_Price,
+               trunc(dt.price, 4)                                         price,
+               dt.quan                                                    quantity,
+               dt.amount                                                  money,
+               citycg.CKA319                                              hos_Bear_Money,
+               dosageDoc.name                                             formulation,
+               dt.spec,
+               dept.CODE_DEPT                                             dept_Num,
+               dept.NAME_DEPT                                             dept_Name,
+               appemp.CODE_EMP                                            doctor_Code,
+               appemp.NAME_EMP                                            doctor_Name,
+               nvl(dictmap.CODE_INSUR, '99')                              platform_Item_Cat
+        from bl_ip_dt dt
+                     inner join PV_ENCOUNTER pv on pv.pk_pv = dt.pk_pv
+                     inner join bd_hp hp on hp.pk_hp = pv.pk_insu
+                     left join bd_hp parhp on parhp.pk_hp = hp.pk_parent
+                     left join bd_itemcate cate on cate.pk_itemcate = dt.pk_itemcate and cate.del_flag = '0'
+                     left join bd_item item on item.pk_item = dt.pk_item
+                     left join bd_pd pd on pd.pk_pd = dt.pk_item
+                     left join (
+                select pk_cgip, pk_pv, ake001, ake002, cka319, akc268, aka111
+                from INS_SZYB_CITYCG
+                where pk_pv = #{pkPv,jdbcType=CHAR}
+                group by pk_cgip, pk_pv, ake001, ake002, cka319, akc268, aka111
+                ) citycg on citycg.pk_pv = citycg.pk_pv and citycg.pk_cgip = dt.pk_cgip
+                     left join(
+                select *
+                from (
+                             select row_number() over (partition by pk_item order by CREATE_TIME desc) cnt, im.*
+                             from ins_szyb_itemmap im
+                             where EU_HPDICTTYPE = '01'
+                               and DEL_FLAG = '0'
+                               and sysdate &gt;= date_begin
+                               and sysdate &lt;= date_end
+                             ) items
+                where items.cnt = 1
+                ) itemmap on itemmap.pk_item = dt.pk_item
+                     left join bd_defdoc dosageDoc
+                on dosageDoc.code = pd.dt_dosage and dosageDoc.CODE_DEFDOCLIST = '030400' and
+                   dosageDoc.del_flag = '0'
+                     left join INS_SZYB_DICTMAP dictmap on dictmap.code_his = cate.code and dictmap.del_flag = '0' and
+                                                           dictmap.CODE_TYPE = 'platformItemCat'
+                     inner join bd_ou_dept dept on dept.pk_dept = dt.pk_dept_app
+                     inner join BD_OU_EMPLOYEE appemp on appemp.pk_emp = dt.pk_emp_app
+                where pv.pk_pv = #{pkPv,jdbcType=CHAR}
+        <if test="pkSettle != null and pkSettle != ''">
+            and PK_SETTLE = #{pkSettle,jdbcType=CHAR}
+        </if>
+    </select>
+
+    <select id="qryPvinfo" resultType="com.zebone.nhis.common.module.pv.PvEncounter">
+        select *
+        from pv_encounter
+        where pk_pv = #{pkPv,jdbcType=CHAR}
+    </select>
+
+    <select id="qryStdiffByPkPv" resultType="com.zebone.nhis.common.module.compay.ins.shenzhen.InsSzybStDiff">
+        select *
+        from (
+                     select diff.*
+                     from ins_szyb_st st
+                                  inner join ins_szyb_st_diff diff on diff.PK_INSST = st.pk_insst
+                     where pk_pv = #{pkPv,jdbcType=CHAR}
+                     order by st.date_st desc
+                     )
+        where rownum = '1'
+    </select>
+
+    <select id="qryStcityByPkPv" resultType="com.zebone.nhis.common.module.compay.ins.shenzhen.InsSzybStCity">
+        select *
+        from (
+                     select diff.*
+                     from ins_szyb_st st
+                                  inner join ins_szyb_st_city diff on diff.PK_INSST = st.pk_insst
+                     where pk_pv = #{pkPv,jdbcType=CHAR}
+                     order by st.date_st desc
+                     )
+        where rownum = '1'
+    </select>
+
+    <select id="qryInvDtList" resultType="com.zebone.nhis.ma.pub.sd.vo.cmrInsu.CiInvoiceFee">
+        select cateitem.name fee_Name, sum(dt.amount) fee_Value
+        from bl_ip_dt dt
+                     inner join BD_INVCATE_ITEM cateitem on cateitem.code = dt.code_bill and cateitem.DEL_FLAG = '0'
+                     inner join BD_INVCATE cate on cate.pk_invcate = cateitem.pk_invcate and cate.del_flag = '0'
+                where cate.EU_TYPE = '1'
+                  and dt.PK_pv = #{pkPv,jdbcType=CHAR}
+                  and dt.flag_settle = '0'
+        <if test="flagMidSt != null and flagMidSt != '' and flagMidSt == '1'.toString()">
+            and dt.date_hap &lt;= to_date(#{dateEnd}, 'YYYY-MM-dd HH24:MI:SS')
+        </if>
+        group by cateitem.name
+    </select>
+
+    <select id="qryTkStInfo" resultType="com.zebone.nhis.common.module.compay.ins.shenzhen.InsTkybSt">
+        select * from (
+                select SETTLE_SERIAL_NUM,
+                       MEDICAL_NUM,
+                       BILL_NUM
+                from ins_tkyb_st where del_flag = '0'
+                                   and pk_pv = #{pkPv,jdbcType=CHAR}
+        <if test="settleSerialNum != null and settleSerialNum != ''">
+            and SETTLE_SERIAL_NUM = #{settleSerialNum,jdbcType=VARCHAR}
+        </if>
+        order by CREATE_TIME desc
+                )
+                where rownum = '1'
+    </select>
+
+    <select id="qryHpInfoByPkpv" resultType="DynaBean">
+        select hp.pk_hp, hp.code, hp.name, hppar.code fa_code
+        from PV_ENCOUNTER pv
+                     inner join bd_hp hp on hp.pk_hp = pv.pk_insu
+                     inner join bd_hp hpPar on hpPar.pk_hp = hp.pk_parent
+        where pv.pk_pv = #{pkPv,jdbcType=CHAR}
+    </select>
+
+    <select id="qryPvIpinfo" resultType="com.zebone.nhis.common.module.pv.PvIp">
+        select *
+        from pv_ip
+        where pk_pv = #{pkPv,jdbcType=CHAR}
+    </select>
+
+    <select id="qryPvMedicalRecord" resultType="DynaBean">
+        select pv.CODE_PV                                          medical_num,
+               pi.CODE_IP                                          hospital_record_id,
+               diag.CODE_ICD                                       diagnosis_code,
+               diag.NAME_DIAG                                      diagnosis_name,
+               case when diag.FLAG_MAJ = '1' then '0' else '1' end diag_sort,
+               diag.DT_DIAGTYPE
+        from PV_ENCOUNTER pv
+                     inner join PI_MASTER pi on pi.PK_PI = pv.PK_PI
+                     left join PV_DIAG diag on diag.PK_PV = pv.PK_PV
+        where pv.pk_pv = #{pkPv,jdbcType=CHAR}
+    </select>
+    
+    <select id="qryMedFeeList" resultType="com.zebone.nhis.ma.pub.sd.vo.cmrInsu.CiMedFeeVo">
+        select
+            dict.name fee_Name,
+            amt_fee fee_Value
+        from INS_SZYB_ST_CITYDT dt
+            inner join INS_SZYB_ST_CITY city on dt.PK_INSSTCITY = city.PK_INSSTCITY
+            inner join INS_SZYB_dict dict on dict.CODE = dt.CATEGORY and  dict.CODE_TYPE ='AAA036' and dict.del_flag = '0'
+        where city.PK_INSST = (
+            select * from (
+                select pk_insst from ins_szyb_st ybst where ybst.DEL_FLAG = '0' and ybst.PK_SETTLE is null and ybst.pk_pv = #{pkPv,jdbcType=CHAR} order by create_time desc
+            ) where rownum = 1
+        ) and dt.TYPE_OUTPUT = 'AAA036'
+    </select>
+</mapper>

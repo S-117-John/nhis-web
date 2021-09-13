@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.bl.dao.ZsbaWinnoDrugMapper">
+
+    <select id="getPresPdUsecate" parameterType="java.util.List" resultType="com.zebone.nhis.pro.zsba.bl.vo.DrugPresPdUsecateVo">
+        select ord.PK_PRES,pd.eu_usecate,ord.ordsn from cn_prescription pres
+        inner join CN_ORDER ord on ord.PK_PRES=pres.PK_PRES
+        inner join BD_PD pd on ord.PK_ORD = pd.PK_PD
+        where pres.PK_PRES in
+        <foreach collection="list" close=")" open="(" index="index" item="item" separator="," >
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+        and nvl(pd.eu_usecate,'')!=''
+    </select>
+
+    <!-- 结合ex_pres_occ统计窗口流量,？ -->
+    <select id="getWino" resultType="com.zebone.nhis.pro.zsba.bl.vo.WinoConfVo">
+        SELECT  count(1) cnt, du.code wino,  dul.code wino_prep,
+                STUFF((select ','+t1.eu_usecate from  bd_dept_unit  t1 where  t1.code=du.code and t1.DEL_FLAG='0' FOR xml path ('')), 1, 1, '') as eu_usecate
+        ,min((case when ob.level_num is null then 0 else ob.level_num end)) level_num
+        FROM bd_dept_unit du
+        left JOIN bd_dept_unit_obj ob ON du.pk_deptunit = ob.pk_deptunit AND ob.pk_dept=#{pkDeptAp,jdbcType=VARCHAR}
+        <if test="euObjtype!=null and euObjtype!=''">
+            AND ob.eu_objtype=#{euObjtype,jdbcType=VARCHAR}
+        </if>
+        LEFT JOIN ex_pres_occ pres ON du.pk_dept = pres.pk_dept_ex AND du.code = pres.winno_conf AND pres.flag_reg = '1' AND pres.flag_conf = '0' AND  pres.flag_canc = '0'
+        and pres.flag_prep = '0'
+        LEFT JOIN bd_dept_unit dul ON du.pk_deptunit_rl = dul.pk_deptunit
+        WHERE du.pk_dept =#{pkDeptEx,jdbcType=VARCHAR} AND du.eu_unittype='1'
+          AND du.eu_butype='1' AND du.flag_online='1' AND du.del_flag='0'
+        group by du.code, dul.code
+        ORDER BY cnt
+    </select>
+
+</mapper>

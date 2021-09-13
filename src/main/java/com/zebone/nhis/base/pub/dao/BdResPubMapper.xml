@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.base.pub.dao.BdResPubMapper">
+  	
+  	<!-- 用于校验是否存在床位 -->
+  	<select id="qryInfBedByCode" resultType="com.zebone.nhis.common.module.base.bd.res.BdResBed" parameterType="java.util.Map" >
+	 	select bed.* from bd_res_bed bed  
+		 where bed.pk_ward = #{pkDeptNs,jdbcType=VARCHAR} 
+		   and bed.pk_org = #{pkOrg,jdbcType=VARCHAR} 
+		<if test="dtBedtype !=null and dtBedtype != ''">
+           and bed.dt_bedtype = #{dtBedtype,jdbcType=VARCHAR} 
+        </if>
+		<if test="code !=null and code != ''">
+           and bed.code = #{code,jdbcType=VARCHAR}
+        </if>
+        <if test="codeMa !=null and codeMa != ''">
+           and bed.code like #{codeMa,jdbcType=VARCHAR} || '%'
+        </if>		   
+		<if test="codes !=null and codes != ''">
+		   and bed.code in
+            <foreach item="code" index="index" collection="codes" open="(" separator="," close=")">
+            	#{code}    
+       		</foreach> 
+        </if>
+        order by bed.code
+  	</select>
+  	
+  	<!-- 用于校验该科室是否允许录入婴儿床位 -->
+  	<select id="chkDeptAbleAddInf" resultType="DynaBean" parameterType="java.util.Map" >
+	 	select count(1) cnt from bd_ou_dept dept   
+		 where dept.del_flag = '0' 
+		   and dept.pk_org = #{pkOrg,jdbcType=VARCHAR} 	   
+		<if test="codes !=null and codes != ''">
+		   and dept.code_dept in 
+            <foreach item="code" index="index" collection="codes" open="(" separator="," close=")">
+            	#{code,jdbcType=VARCHAR}    
+       		</foreach> 
+        </if>
+  	</select>
+
+	<!-- 获取母亲床位信息 -->
+	<select id="queMomBed" resultType="com.zebone.nhis.common.module.base.bd.res.BdResBed" parameterType="java.util.Map" >
+		SELECT bed.*
+		FROM BD_RES_BED bed
+	    INNER JOIN pv_bed pb on pb.PK_BED_WARD = bed.PK_WARD and pb.bedno = bed.code
+		WHERE pb.date_end IS NULL
+		<if test="pkDeptOld !=null">
+			and pb.pk_dept = #{pkDeptOld,jdbcType=VARCHAR}
+		</if>
+		<if test="pkDeptNsOld !=null">
+			AND pb.pk_dept_ns = #{pkDeptNsOld,jdbcType=VARCHAR}
+			AND pb.pk_bed_ward = #{pkDeptNsOld,jdbcType=VARCHAR}
+		</if>
+		<if test="pkPv !=null">
+			AND pb.pk_pv = #{pkPv,jdbcType=VARCHAR}
+		</if>
+	</select>
+</mapper>

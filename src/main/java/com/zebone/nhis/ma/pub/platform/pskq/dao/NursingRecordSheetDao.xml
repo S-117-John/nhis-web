@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ma.pub.platform.pskq.dao.NursingRecordSheetDao">
+
+
+    <select id="findRecord" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.nd.record.NdRecordDt">
+select dt.*
+from nd_record_dt dt,
+     nd_record_row rw
+where rw.pk_record = #{pkRecord}
+  and rw.del_flag = '0'
+  and rw.pk_record = dt.pk_record
+  and rw.pk_recordrow = dt.pk_recordrow
+  and dt.del_flag = '0'
+and rw.PK_RECORDROW = #{pkRow}
+order by rw.pk_recordrow, dt.colno
+    </select>
+</mapper>

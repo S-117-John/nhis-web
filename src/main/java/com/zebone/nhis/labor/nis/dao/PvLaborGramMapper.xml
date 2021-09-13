@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.labor.nis.dao.PvLaborGramMapper">
+
+	<select id="queryPvLaborGram" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.common.module.labor.nis.PvLaborGram">
+		select * from pv_labor_gram 
+		   where  pk_pv = #{pkPv,jdbcType=CHAR}
+		<if test="pkLaborrec != null  and  pkLaborrec != ''">
+			 and pk_laborrec = #{pkLaborrec,jdbcType=CHAR}
+		</if>
+		     and del_flag = '0' 
+		     order by date_entry 
+	</select>
+	<select id="queryNdRecordRow" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.common.module.nd.record.NdRecordRow">
+		select * from nd_record_row 
+		   where  pk_record = #{pkRecord,jdbcType=CHAR} 
+		     and del_flag = '0' 
+	</select>
+	<select id="queryNdRecordDt" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.common.module.nd.record.NdRecordDt">
+		select * from nd_record_dt 
+		where  pk_recordrow = #{pkRecordRow,jdbcType=CHAR} and del_flag = '0'      
+	</select>
+	<select id="queryLaborMode" parameterType="java.lang.String"
+		resultType="DynaBean">
+		select date_out,dt_out_mode from pv_labor_rec_dt where pk_laborrec = #{pkLaborrec,jdbcType=CHAR}  
+	</select>
+	
+
+</mapper>

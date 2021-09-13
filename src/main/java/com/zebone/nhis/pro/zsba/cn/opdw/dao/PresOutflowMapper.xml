@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.cn.opdw.dao.PresOutflowMapper">
+
+    <sql id="baseConditionSql">
+        <foreach collection="pkPresList" item="pkPres" open="(" separator="," close=")">
+            #{pkPres,jdbcType=VARCHAR}
+        </foreach>
+        and ord.PK_PV=#{pkPv,jdbcType=VARCHAR}
+    </sql>
+
+    <select id="qryNotExists" resultType="integer">
+        select count(*) from CN_ORDER ord
+            left join OUTPRES_DRUG od on ord.PK_ORD=od.PK_PD
+        where ord.PK_PRES in
+              <include refid="baseConditionSql"/>
+        and od.PK_DRUG is null
+    </select>
+
+    <select id="qryPresBd" resultType="DynaBean">
+        select ord.PK_ORD pk_pd,ord.QUAN_CG quan,ord.quan,1 quanf
+        from CN_PRESCRIPTION pres
+        inner join CN_ORDER ord on pres.PK_PRES=ord.PK_PRES
+        where ord.PK_PRES in
+        <include refid="baseConditionSql"/>
+    </select>
+</mapper>

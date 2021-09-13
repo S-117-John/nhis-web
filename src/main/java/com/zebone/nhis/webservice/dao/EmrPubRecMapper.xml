@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.dao.EmrPubRecMapper">
+	<resultMap id="ResultMapEmrMedRec"
+		type="com.zebone.nhis.common.module.emr.rec.rec.EmrMedRec">
+		<id column="PK_REC" jdbcType="CHAR" property="pkRec" />
+		<result column="PK_PATREC" jdbcType="VARCHAR" property="pkPatrec" />
+		<result column="NAME" jdbcType="VARCHAR" property="name" />
+		<result column="SEQ_NO" jdbcType="DECIMAL" property="seqNo" />
+		<result column="REC_DATE" jdbcType="TIMESTAMP" property="recDate" />
+		<result column="DESCRIBE" jdbcType="VARCHAR" property="describe" />
+		<result column="PK_PI" jdbcType="VARCHAR" property="pkPi" />
+		<result column="TIMES" jdbcType="DECIMAL" property="times" />
+		<result column="PK_PV" jdbcType="VARCHAR" property="pkPv" />
+		<result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept" />
+		<result column="PK_WARD" jdbcType="VARCHAR" property="pkWard" />
+		<result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode" />
+		<result column="PK_TMP" jdbcType="VARCHAR" property="pkTmp" />
+		<result column="PK_DOC" jdbcType="VARCHAR" property="pkDoc" />
+		<result column="FLAG_AUDIT" jdbcType="CHAR" property="flagAudit" />
+		<result column="EU_AUDIT_LEVEL" jdbcType="DECIMAL" property="euAuditLevel" />
+		<result column="AUDIT_LEVEL_SET" jdbcType="VARCHAR" property="auditLevelSet" />
+		<result column="EU_DOC_STATUS" jdbcType="CHAR" property="euDocStatus" />
+		<result column="EU_AUDIT_STATUS" jdbcType="CHAR" property="euAuditStatus" />
+		<result column="FLAG_AUDIT_FINISH" jdbcType="CHAR" property="flagAuditFinish" />
+		<result column="SUBMIT_DATE" jdbcType="TIMESTAMP" property="submitDate" />
+		<result column="PK_EMP_INTERN" jdbcType="VARCHAR" property="pkEmpIntern" />
+		<result column="INTERN_SIGN_DATE" jdbcType="DATE" property="internSignDate" />
+		<result column="PK_EMP_REFER_ACT" jdbcType="VARCHAR" property="pkEmpReferAct" />
+		<result column="PK_EMP_REFER" jdbcType="VARCHAR" property="pkEmpRefer" />
+		<result column="REFER_AUDIT_DATE" jdbcType="DATE" property="referAuditDate" />
+		<result column="REFER_SIGN_DATE" jdbcType="DATE" property="referSignDate" />
+		<result column="PK_EMP_CONSULT_ACT" jdbcType="VARCHAR"
+			property="pkEmpConsultAct" />
+		<result column="PK_EMP_CONSULT" jdbcType="VARCHAR" property="pkEmpConsult" />
+		<result column="CONSULT_AUDIT_DATE" jdbcType="DATE" property="consultAuditDate" />
+		<result column="CONSULT_SIGN_DATE" jdbcType="DATE" property="consultSignDate" />
+		<result column="PK_EMP_DIRECTOR_ACT" jdbcType="VARCHAR"
+			property="pkEmpDirectorAct" />
+		<result column="PK_EMP_DIRECTOR" jdbcType="VARCHAR" property="pkEmpDirector" />
+		<result column="DIRECTOR_AUDIT_DATE" jdbcType="DATE"
+			property="directorAuditDate" />
+		<result column="DIRECTOR_SIGN_DATE" jdbcType="DATE" property="directorSignDate" />
+		<result column="DEL_FLAG" jdbcType="CHAR" property="delFlag" />
+		<result column="REMARK" jdbcType="VARCHAR" property="remark" />
+		<result column="CREATOR" jdbcType="VARCHAR" property="creator" />
+		<result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime" />
+		<result column="TS" jdbcType="TIMESTAMP" property="ts" />
+		<result column="CREATE_NAME" jdbcType="VARCHAR" property="createName" />
+		<association property="docType"
+			javaType="com.zebone.nhis.common.module.emr.rec.dict.EmrDocType">
+			<result column="TYPE_NAME" jdbcType="VARCHAR" property="name" />
+			<result column="FLAG_NEW_PAGE" jdbcType="CHAR" property="flagNewPage" />
+			<result column="FLAG_COURSE" jdbcType="CHAR" property="flagCourse" />
+		</association>
+		<association property="medDoc" javaType="com.zebone.nhis.common.module.emr.rec.rec.EmrMedDoc">
+			<result column="FILE_NAME" jdbcType="VARCHAR" property="fileName" />
+			<result column="FILE_PATH" jdbcType="VARCHAR" property="filePath" />
+			<result column="FILE_TYPE" jdbcType="VARCHAR" property="fileType" />
+		</association>
+		<association property="template" javaType="com.zebone.nhis.common.module.emr.rec.tmp.EmrTemplate">
+			<result column="TEXT_TITLE" jdbcType="VARCHAR" property="textTitle" />
+			<result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode" />
+			<result column="TEMP_NAME" jdbcType="VARCHAR" property="name" />
+			<result column="TMP_TITLE" jdbcType="VARCHAR" property="tmpTitle" />
+			<result column="PK_TMP" jdbcType="CHAR" property="pkTmp" />
+		</association>
+	</resultMap>
+	
+	<select id="queryPatMedRecList" resultMap="ResultMapEmrMedRec">
+	 select rec.PK_REC,
+			rec.PK_PATREC,
+			rec.NAME,
+			rec.SEQ_NO,
+			rec.REC_DATE,
+			rec.DESCRIBE,
+			rec.PK_PI,
+			rec.TIMES,
+			rec.PK_PV,
+			rec.PK_DEPT,
+			rec.PK_WARD,
+			rec.TYPE_CODE,
+			rec.PK_TMP,
+			rec.PK_DOC,
+			rec.FLAG_AUDIT,
+			rec.EU_AUDIT_LEVEL,
+			rec.AUDIT_LEVEL_SET,
+			rec.EU_DOC_STATUS,
+			rec.EU_AUDIT_STATUS,
+			rec.FLAG_AUDIT_FINISH,
+			rec.SUBMIT_DATE,
+			rec.PK_EMP_INTERN,
+			rec.INTERN_SIGN_DATE,
+			rec.PK_EMP_REFER_ACT,
+			rec.PK_EMP_REFER,
+			rec.REFER_AUDIT_DATE,
+			rec.REFER_SIGN_DATE,
+			rec.PK_EMP_CONSULT_ACT,
+			rec.PK_EMP_CONSULT,
+			rec.CONSULT_AUDIT_DATE,
+			rec.CONSULT_SIGN_DATE,
+			rec.PK_EMP_DIRECTOR_ACT,
+			rec.PK_EMP_DIRECTOR,
+			rec.DIRECTOR_AUDIT_DATE,
+			rec.DIRECTOR_SIGN_DATE,
+			rec.DEL_FLAG,
+			rec.REMARK,
+			rec.CREATOR,
+			rec.CREATE_TIME,
+			rec.TS,
+			typ.name type_name,
+			typ.flag_course,
+			emp.name create_name,
+			doc.file_name,
+			doc.file_path,
+			doc.file_type 
+		from emr_med_rec rec inner join
+			 view_emr_pat_list pat on rec.pk_pv=pat.pk_pv inner join 
+			 emr_med_doc doc on rec.pk_doc=doc.pk_doc left outer join 
+			 emr_doc_type typ on rec.type_code=typ.code left outer join
+			 view_emr_emp_list emp on rec.creator=emp.pk_emp
+		WHERE rec.del_flag!='1'
+		<if test="codePv != null">
+			and pat.code_pv = #{codePv,jdbcType=VARCHAR}
+		</if>
+		<if test="codeIp != null">
+			and pat.code_ip = #{codeIp,jdbcType=VARCHAR}
+		</if>
+		<if test="codePi != null">
+			and pat.code_pi = #{codePi,jdbcType=VARCHAR}
+		</if>
+		<if test="ipTimes != null">
+			and pat.ip_times = #{ipTimes,jdbcType=VARCHAR}
+		</if>
+		<if test="pkPv != null">
+			and pat.pk_pv = #{pkPv,jdbcType=VARCHAR}
+		</if>
+		order by rec.rec_date,rec.seq_no,rec.pk_tmp
+	</select>
+
+	<select id="queryPatList" resultType="com.zebone.nhis.webservice.vo.EmrPatListVo" >
+	 select pi.pk_pi,
+	 		pi.name_pi name,
+	 		pi.code_ip,
+	 		pi.code_pi,
+	 		pi.code_op,
+	 		pi.dt_sex,
+	 		dtsex.name name_sex,
+	 		pv.age_pv age_txt,
+	 		pi.birth_date,
+	 		pi.addr_origin,
+	 		pi.tel_no,
+	 		pv.pk_pv,
+	 		pv.code_pv,
+	 		pv.bed_no,
+	 		pv.date_begin,
+	 		pv.date_end,
+	 		ip.ip_times,
+	 		ip.dt_level_dise,
+	 		dtdise.name level_dise_name,
+	 		(case when ip.dt_level_dise in ('01','02','03') then '1' else '0' end ) flag_level_dise,
+	 		dept.name_dept,
+	 		deptns.name_dept as name_dept_ns,
+	 		hp.name as hp_name,
+	 		pvdiag.name_diag name_diag,
+			(nvl((select sum(deposit.amount * deposit.eu_direct)
+               from bl_deposit deposit
+              where deposit.eu_dptype = '9'
+                and deposit.flag_settle != '1' and deposit.pk_pv = pv.pk_pv),0)
+             -
+             nvl((select sum(dt.amount)
+               from bl_ip_dt dt
+              where dt.flag_settle != '1' and dt.pk_pv = pv.pk_pv),0)) balance,
+              nvl((select sum(deposit.amount * deposit.eu_direct)
+               from bl_deposit deposit
+              where deposit.eu_dptype = '9'
+                and deposit.flag_settle != '1' and deposit.pk_pv = pv.pk_pv),0)  payment,
+              dept.code_dept dept_code,
+              dept.old_id dept_id    
+		from pi_master pi inner join
+		     pv_encounter pv on pi.pk_pi = pv.pk_pi inner join
+		     pv_ip ip on ip.pk_pv = pv.pk_pv inner join
+		     bd_ou_dept dept on pv.pk_dept = dept.pk_dept inner join 
+		     bd_ou_dept deptns	on deptns.pk_dept = pv.pk_dept_ns inner join
+		     bd_hp hp on hp.pk_hp = pv.pk_insu left join 
+		     pv_diag pvdiag  on pvdiag.pk_pv = pv.pk_pv and flag_maj = '1' and pvdiag.del_flag = '0' left outer join 
+		     bd_defdoc dtsex on dtsex.code_defdoclist = '000000' and dtsex.code = pv.dt_sex left outer join 
+		     bd_defdoc dtdise on dtdise.code_defdoclist = '000202' and dtdise.code = ip.dt_level_dise 
+		WHERE (pv.flag_in='1') 
+		<if test="deptCode != null">
+			and dept.code_dept = #{deptCode,jdbcType=VARCHAR}
+		</if>
+		<if test="deptId != null">
+			and dept.old_id = #{deptId,jdbcType=VARCHAR}
+		</if>
+		<if test="codeIp != null">
+			and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+		</if>
+		order by dept.name_dept,pv.bed_no,pv.code_pv
+	</select>
+	
+	<select id="queryOrdList" resultType="com.zebone.nhis.webservice.vo.EmrOrdListVo">
+	 SELECT ord.pk_pv,
+	 		ord.ordsn,
+		       ord.ordsn_parent,
+		       ord.groupno,
+		       pi.code_ip,
+		       ip.ip_times,
+		       pv.code_pv,
+		       pi.name_pi name,
+		       ord.name_ord,
+		       ord.spec,
+		       ord.date_start,
+		       ord.date_stop,
+		       ord.dosage,
+		       unit.name dosage_unit_name,
+		       ord.quan, 
+		       unit_quan.name unit_name,
+		       freq.NAME freqName,
+		       ord.flag_durg flag_drug,
+		       ord.note_ord,
+		       ord.name_emp_ord,
+		       ord.eu_always,
+		       sup.NAME supply_name,
+		       (case when op.pk_ordop is null then '0' else '1' end) flag_op,
+		       ord.flag_doctor   
+		  FROM pi_master pi
+		 INNER JOIN pv_encounter pv
+		    ON pi.pk_pi = pv.pk_pi
+		 INNER JOIN pv_ip ip
+		    ON ip.pk_pv=pv.pk_pv
+		 INNER JOIN cn_order ord
+		    ON pv.pk_pv = ord.pk_pv
+		 LEFT OUTER JOIN bd_supply sup
+		    ON ord.code_supply = sup.code
+		 LEFT OUTER JOIN bd_term_freq freq
+		    ON ord.code_freq = freq.code
+		 LEFT OUTER JOIN bd_unit unit
+		    ON ord.pk_unit_dos = unit.pk_unit
+		 LEFT OUTER JOIN bd_unit unit_quan
+		    ON ord.pk_unit = unit_quan.pk_unit
+		  LEFT OUTER JOIN cn_op_apply op
+		    ON ord.pk_cnord = op.pk_cnord 
+		WHERE ord.del_flag!='1'
+		<if test="codePv != null">
+			and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+		</if>
+		<if test="codeIp != null">
+			and pi.code_ip = #{codePv,jdbcType=VARCHAR}
+		</if>
+		<if test="codePi != null">
+			and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+		</if>
+		<if test="ipTimes != null">
+			and ip.ip_times = #{ipTimes,jdbcType=VARCHAR}
+		</if>
+		<if test="pkPv != null">
+			and pv.pk_pv = #{pkPv,jdbcType=VARCHAR}
+		</if>
+		order by ord.pk_pv,ord.ordsn 
+	</select>
+
+</mapper>

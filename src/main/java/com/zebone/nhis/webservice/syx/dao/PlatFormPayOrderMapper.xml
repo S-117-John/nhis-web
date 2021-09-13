@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.PlatFormPayOrderMapper">
+
+	<select id="qrySchApptInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.webservice.syx.vo.platForm.SchApptVo">
+		select  appt.pk_schappt,
+				appt.pk_org,
+				appt.pk_schsrv,
+		        appt.flag_cancel,
+		        appt.flag_pay,
+		        appt.pk_pi,
+		        appt.dt_apptype,
+        		doc.name apptype_name,
+        		sch.pk_dept,
+        		appt.date_appt,
+        		appt.date_reg,
+        		srv.EU_SRVTYPE,
+        		appt.pk_schres,
+        		appt.pk_dateslot,
+        		res.pk_emp,
+        		appt.ticket_no,
+        		appt.pk_sch,
+        		appt.pk_schappt,
+        		appt.orderid_ext,
+				apptpv.PK_APPTPV
+		  from sch_appt appt
+		       left join BD_DEFDOC doc on doc.code = appt.dt_apptype and doc.CODE_DEFDOCLIST = '020100'
+		       inner join sch_sch sch on sch.pk_sch = appt.pk_sch
+		       inner join sch_srv srv on srv.PK_SCHSRV = appt.PK_SCHSRV
+		       inner join SCH_RESOURCE res on res.PK_SCHRES = appt.PK_SCHRES
+			   inner join SCH_APPT_PV apptpv on apptpv.PK_SCHAPPT = appt.PK_SCHAPPT
+		 where appt.dt_apptype=#{dtApptype,jdbcType=VARCHAR} and  
+		       appt.orderid_ext=#{orderidExt,jdbcType=VARCHAR}
+	</select>
+
+	<select id="qryApptypeDocList" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.base.bd.code.BdDefdoc">
+		select code,name from BD_DEFDOC where CODE_DEFDOCLIST = '020100'
+	</select>
+	
+	<select id="qryPiInsu" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.pi.PiInsurance">
+		select * from PI_INSURANCE where pk_pi = #{pkPi,jdbcType=CHAR}
+	</select>
+	
+	<!-- 根据患者主键获取最大的就诊次数 -->
+	<select id="getMaxOpTimes" resultType="java.lang.Integer">
+		select nvl(max(i.op_times),0) 
+		from pv_op i
+		inner join pv_encounter e on i.pk_pv = e.pk_pv and e.del_flag = '0'
+		where i.del_flag = '0' and e.pk_pi = #{pkPi,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="qryHpInfo" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.base.bd.price.BdHp">
+		select * from bd_hp where pk_hp = #{pkHp,jdbcType=CHAR}  and (del_flag = '0' or del_flag is null) 
+	</select>
+	
+	<select id="qrySchApptPvInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.webservice.syx.vo.platForm.SchApptVo">
+		select appt.pk_schappt, 
+		       appt.flag_cancel,
+		       appt.date_appt,  
+		       pv.pk_pv,        
+		       pv.flag_cancel as flag_cancel_pv,  
+			   emp.flag_spec,
+		       appt.flag_pay,
+		       pv.eu_status pv_eu_status,
+		       appt.pk_sch,
+		       appt.ticket_no,
+		       appt.dt_apptype
+		  from sch_appt appt
+		       inner join sch_appt_pv apv on appt.pk_schappt=apv.pk_schappt
+			   inner join sch_resource res on appt.pk_schres=res.pk_schres
+			   left outer join bd_ou_employee emp on res.pk_emp=emp.pk_emp
+		       left outer join pv_encounter pv on apv.pk_pv=pv.pk_pv
+		       left outer join bl_settle st on pv.pk_pv=st.pk_pv
+		  <where>
+		 		<if test='dtApptype!=null and dtApptype!=""'>
+		       		and appt.dt_apptype=#{dtApptype,jdbcType=VARCHAR}
+		       </if>
+		       <if test='orderidExt!=null and orderidExt!=""'>
+		       		and appt.orderid_ext=#{orderidExt,jdbcType=VARCHAR}
+		       </if>
+		       <if test='pkPv!=null and pkPv!=""'>
+		       		and pv.pk_pv = #{pkPv,jdbcType=CHAR}
+		       </if>
+		  </where>
+	</select>
+	
+	<select id="qryHpValAttr" parameterType="java.util.Map" resultType="java.lang.String">
+		select attr.val_attr
+		  from bd_hp hp
+		       inner join bd_dictattr attr on hp.pk_hp=attr.pk_dict
+		       inner join bd_dictattr_temp tmp on attr.pk_dictattrtemp=tmp.pk_dictattrtemp and tmp.dt_dicttype='03'
+		 where hp.pk_hp = #{pkHp,jdbcType=CHAR} and
+		       tmp.code_attr=#{codeAttr,jdbcType=CHAR}
+	</select>
+	
+	<select id="qryCyCntByPv" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(1) from cn_order cnord
+		  inner join bl_op_dt dt on dt.PK_CNORD = cnord.PK_CNORD and FLAG_SETTLE = '0' and pk_pv = #{pkPv,jdbcType=CHAR}
+		where cnord.code_ordtype = '0301'
+		group by cnord.pk_cnord
+	</select>
+	
+	<select id="getReturnPayInfo" parameterType="java.util.Map" resultType="DynaBean">
+	     select appt.pk_schappt, 
+	       appt.flag_cancel,
+	       appt.date_appt,  
+	       emp.flag_spec,  
+	       pv.pk_pv,       
+	       pv.eu_status,   
+	       op.date_sign,  
+	       st.amount_st,  
+	       st.receipt_no,  
+	       back.amount_st back_amount_st 
+	  from sch_appt appt
+	       inner join sch_appt_pv apv on appt.pk_schappt=apv.pk_schappt
+	       inner join sch_resource res on appt.pk_schres=res.pk_schres
+	       left outer join bd_ou_employee emp on res.pk_emp=emp.pk_emp
+	       left outer join pv_encounter pv on apv.pk_pv=pv.pk_pv
+	       left outer join pv_op op on pv.pk_pv=op.pk_pv
+	       left outer join bl_settle st on pv.pk_pv=st.pk_pv and st.dt_sttype='00'
+	       left outer join bl_settle back on pv.pk_pv=st.pk_pv and st.dt_sttype='20'
+		  where 1=1
+		       <if test='orderType!=null and orderType!=""'>
+		       		and appt.dt_apptype=#{orderType,jdbcType=VARCHAR}
+		       </if>
+		       <if test='orderId!=null and orderId!=""'>
+		       		and appt.orderid_ext=#{orderId,jdbcType=VARCHAR}
+		       </if>		        		   
+
+	</select>
+
+	<!--查询标本采集地点-->
+	<select id="qryCodeAndDesc" parameterType="java.lang.String" resultType="DynaBean">
+		select ord.name_ord,
+			   dept.name_dept,
+			   col.collplace order_desc
+		from bl_settle st
+				 inner join bl_op_dt cg on st.pk_settle = cg.pk_settle
+				 inner join cn_order ord on cg.pk_cnord = ord.pk_cnord
+				 inner join bd_ou_dept dept on ord.pk_dept_exec = dept.pk_dept
+				 left outer join bd_ord_lab_col col on dept.pk_orgarea = col.pk_orgarea
+		where st.code_st = #{codeSt}
+	</select>
+
+</mapper>

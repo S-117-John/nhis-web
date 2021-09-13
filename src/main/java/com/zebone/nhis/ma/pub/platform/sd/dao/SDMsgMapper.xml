@@ -1,0 +1,792 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ma.pub.platform.sd.dao.SDMsgMapper">
+
+<!-- 根据就诊主键查询，费用分类 -->
+	<select id="queryZMRDataByPkPv" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT  CODE, name, SUM(AMOUNT) as amount FROM 
+		(
+              SELECT der.code AS CODE,der.name, SUM (bid.price * bid.quan) AS AMOUNT
+                FROM bl_ip_dt bid
+              INNER join bd_item bi on bid.pk_item =bi.pk_item
+              INNER JOIN bd_defdoc der on der.code=bi.dt_chcate AND der.code_defdoclist='030800'
+                WHERE bid.pk_pv=#{pkPv,jdbcType=VARCHAR}
+	          group by der.code,der.name
+        union ALL
+              SELECT der.code AS CODE,der.name,SUM (bid.price * bid.quan) AS AMOUNT
+                 FROM bl_ip_dt bid
+              INNER JOIN bd_pd bdpd on bdpd.pk_pd=bid.pk_item
+              INNER JOIN bd_defdoc der on der.code=bdpd.dt_chcate AND der.code_defdoclist='030800'
+                 WHERE bid.pk_pv=#{pkPv,jdbcType=VARCHAR}
+	          group by der.code,der.name
+       ) sd
+          GROUP BY sd.CODE,sd.name
+	</select>
+	<!-- 根据医嘱查询门诊收费信息 -->
+	<select id="queryOpBlInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select
+  			co.pk_pi,co.pk_pv,co.code_apply,co.eu_pvtype,pm.code_pi,bid.code_bill,co.code_ord,co.name_ord,bid.pk_emp_cg,
+  			bid.name_emp_cg,bid.pk_emp_app,bid.name_emp_app,bi.code,bi.name,bid.date_hap,co.code_ordtype,
+  			co.desc_ord,bid.amount,bid.pk_dept_ex,bid.pk_cgop,bic.code itemType
+		from cn_order co
+	 		left join bl_op_dt bid on co.pk_cnord=bid.pk_cnord
+			left join pi_master pm on pm.pk_pi=co.pk_pi
+	 	    left join bd_item bi on bi.pk_item=bid.pk_item
+	 	    left join bd_itemcate bic on bic.pk_itemcate=bid.pk_itemcate
+		where co.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+	</select>
+	<!-- 根据医嘱查询住院收费信息 -->
+	<select id="queryIpBlInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select
+  			co.pk_pi,co.pk_pv,co.code_apply,co.eu_pvtype,co.ordsn,pm.code_pi,bid.code_bill,co.code_ord,co.name_ord,co.price_cg,bid.pk_emp_cg,
+  			bid.name_emp_cg,bid.pk_emp_app,bid.name_emp_app,bi.code,bi.name,bid.date_hap,co.code_ordtype,
+  			co.desc_ord,bid.amount,bid.pk_dept_ex,bid.pk_cgip,bic.code itemType
+		from cn_order co
+	 		left join bl_ip_dt bid on co.pk_cnord=bid.pk_cnord
+			left join pi_master pm on pm.pk_pi=co.pk_pi
+	 	    left join bd_item bi on bi.pk_item=bid.pk_item
+	 	    left join bd_itemcate bic on bic.pk_itemcate=bid.pk_itemcate
+		where co.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+	</select>
+<!-- 查询住院医嘱信息 -->
+<select id="queryOrder" parameterType="java.util.Map" resultType="DynaBean">
+		select distinct
+			co.pk_cnord,co.eu_pvtype,co.pk_pv,co.pk_pi,co.code_ordtype,
+		  	co.eu_always,co.ordsn,co.ordsn_parent,co.pk_ord,co.code_ord,co.name_ord,
+		  	co.desc_ord,co.code_apply,co.code_freq,co.spec,co.dosage,co.pk_unit_dos,
+		  	co.quan,co.pk_unit,co.code_supply,co.quan_cg,co.pk_unit_cg,co.pack_size,
+		  	co.price_cg,co.note_supply,co.days,co.drip_speed,co.ords,co.flag_first,
+		  	co.last_num,co.pk_dept_exec,co.eu_status_ord,co.name_emp_ord,
+		  	co.flag_durg,co.flag_self,co.flag_note,co.flag_base,co.flag_bl,co.quan_bed,
+		  	co.pk_wg,co.pk_emp_input,co.name_emp_input,co.pk_emp_ord,co.note_ord,co.pk_dept_ns,
+			co.pk_emp_chk,co.name_emp_chk,co.pk_emp_stop,co.name_emp_stop,
+		  	co.flag_stop,co.pk_emp_stop_chk,co.name_emp_stop_chk,co.flag_stop_chk,
+			co.pk_emp_erase,co.name_emp_erase,co.flag_erase,co.pk_unit_dos,co.eu_st, 
+			co.pk_emp_erase_chk,co.name_erase_chk,co.flag_erase_chk,
+		  	co.flag_cp,co.flag_doctor,co.infant_no,co.pk_event,co.flag_print,co.flag_medout,
+		  	co.eu_exctype,co.pk_ord_exc,co.flag_emer,co.flag_thera,co.flag_prev,co.flag_fit,
+			to_char(co.date_effe,'YYYYMMDDHH24MISS') date_effe,
+			to_char(co.date_start,'YYYYMMDDHH24MISS') date_start,
+			to_char(co.date_chk,'YYYYMMDDHH24MISS') date_chk,
+		  	to_char(co.date_last_ex,'YYYYMMDDHH24MISS') date_last_ex,
+			to_char(co.date_plan_ex,'YYYYMMDDHH24MISS') date_plan_ex,
+			to_char(co.date_stop,'YYYYMMDDHH24MISS') date_stop,
+			to_char(co.date_enter,'YYYYMMDDHH24MISS') date_enter,
+			to_char(co.date_sign,'YYYYMMDDHH24MISS') date_sign,
+			to_char(co.date_stop_chk,'YYYYMMDDHH24MISS') date_stop_chk,
+			to_char(co.date_erase,'YYYYMMDDHH24MISS') date_erase,
+			to_char(co.date_erase_chk,'YYYYMMDDHH24MISS') date_erase_chk
+		  	
+		  	<!--pv.pk_dept,-->
+		  	<!-- epd.name_decate,epd.code_de,epd.flag_prt -->
+		  	
+		from cn_order co
+		where 
+		<!--left join pv_encounter pv on pv.pk_pv=co.pk_pv-->
+		<!-- left join ex_pd_de epd on epd.pk_cnord=co.pk_cnord  prefix="WHERE"-->
+
+		 <trim prefixOverrides="AND|or">
+		 (
+			 <if test ="ordsns != null">
+			 	co.ordsn in	
+				<foreach item="ordsns" collection="ordsns" separator=","  open="(" close=")" index="">
+					#{ordsns,jdbcType=VARCHAR}
+				</foreach>
+				or
+			 </if>
+			 <if test="pkCnords != null">
+				co.pk_cnord in 
+				<foreach item="pkCnords" collection="pkCnords" separator=","  open="(" close=")" index="">
+					#{pkCnords,jdbcType=VARCHAR}
+				</foreach>
+			 </if>
+			 <!-- 
+			 <if test="codeApply != null" >
+            	AND co.code_apply = #{codeApply,jdbcType=VARCHAR}
+        	</if>
+        	 -->
+		 )
+		 </trim>
+		 order by co.pk_pv
+	</select>
+	
+<!-- 查询住院医嘱信息   增加根据患者排序、实发数量字段  -->
+<select id="queryOrderPKPI" parameterType="java.util.HashMap" resultType="DynaBean">
+		select 
+			app.eu_aptype,epd.price,occ.pk_exocc,occ.quan_occ,co.pk_cnord,co.eu_pvtype,co.pk_pv,co.pk_pi,co.date_effe,co.code_ordtype,
+		  	co.eu_always,co.ordsn,co.ordsn_parent,co.pk_ord,co.code_ord,co.name_ord,
+		  	co.desc_ord,co.code_apply,co.code_freq,co.spec,co.dosage,co.pk_unit_dos,
+		  	co.quan,co.pk_unit,co.code_supply,co.quan_cg,co.pk_unit_cg,co.pack_size,
+		  	co.price_cg,co.note_supply,co.days,co.drip_speed,co.ords,co.flag_first,
+		  	co.last_num,co.pk_dept_exec,co.eu_status_ord,co.date_enter,
+		  	to_char(co.DATE_START,'YYYYMMDDHH24MISS') as DATE_START,
+		  	co.flag_durg,co.flag_self,co.flag_note,co.flag_base,co.flag_bl,co.quan_bed,
+		  	co.pk_wg,co.pk_emp_input,co.name_emp_input,co.pk_emp_ord,co.note_ord,co.pk_dept_ns,
+		  	co.name_emp_ord,co.date_sign,co.pk_emp_chk,co.name_emp_chk,co.date_chk,
+		  	co.date_last_ex,co.date_plan_ex,co.date_stop,co.pk_emp_stop,co.name_emp_stop,
+		  	co.flag_stop,co.date_stop_chk,co.pk_emp_stop_chk,co.name_emp_stop_chk,
+		  	co.flag_stop_chk,co.date_erase,co.pk_emp_erase,co.name_emp_erase,co.flag_erase,
+		  	co.date_erase_chk,co.pk_emp_erase_chk,co.name_erase_chk,co.flag_erase_chk,
+		  	co.flag_cp,co.flag_doctor,co.infant_no,co.pk_event,co.flag_print,co.flag_medout,
+		  	co.eu_exctype,co.pk_ord_exc,co.flag_emer,co.flag_thera,co.flag_prev,co.flag_fit,
+		  	co.pk_unit_dos,co.eu_st, 		  	
+		  	pv.pk_dept,
+		  	decat.code_decate,epd.name_decate,epd.code_de,epd.flag_prt,(select name from bd_unit where pk_unit= epd.pk_unit ) AS realUnit,epd.quan_pack,
+		  	unit.name unit_occ,round(epd.price/epd.pack_size,4) price_de
+		from cn_order co
+		
+		inner join pv_encounter pv on pv.pk_pv = co.pk_pv
+		inner join ex_pd_de epd on epd.pk_cnord = co.pk_cnord
+		left join bd_pd_decate decat on decat.pk_pddecate = epd.pk_pddecate
+		inner join EX_PD_APPLY_DETAIL appdet on appdet.pk_pdapdt =  epd.pk_pdapdt
+		inner join EX_PD_APPLY app on app.pk_pdap = appdet.pk_pdap
+		
+		<if test='euDirect == "1" ' >
+           left join ex_order_occ occ on occ.pk_pdapdt = epd.pk_pdapdt
+        </if> 
+        <if test='euDirect == "-1"' >
+           left join ex_order_occ occ on occ.pk_pdback = epd.pk_pdapdt
+        </if> 
+		inner join bd_unit unit on occ.pk_unit=unit.pk_unit
+	
+		where  epd.eu_direct = #{euDirect} 
+		 <if test='codeDes != null  and "" !=  codeDes ' >
+			and epd.code_de in 
+			<foreach item="codeDes" collection="codeDes" separator=","  open="(" close=")" index="">
+				#{codeDes,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+		 <if test='pkCnords != null ' >
+          	and co.pk_cnord in 
+			<foreach item="pkCnords" collection="pkCnords" separator=","  open="(" close=")" index="">
+				#{pkCnords,jdbcType=VARCHAR}
+			</foreach>
+        </if> 	
+	
+		
+		 order by co.pk_pi desc
+	</select>	
+
+   <!-- 查询药品相关信息 -->
+	<select id="queryPdInfoList" parameterType="java.util.Map" resultType="DynaBean">
+          select pd.pk_pd ,pd.code ,pd.name ,spec ,pd.short_name ,barcode ,pd.spcode ,concent ,
+				 weight ,pk_unit_wt ,vol ,pk_unit_vol ,pk_unit_min ,pack_size ,
+				 pk_unit_pack ,eu_muputype ,eu_pdtype ,eu_drugtype ,name_chem ,
+				 pd.pk_factory ,appr_no ,eu_pdprice ,eu_pap ,amt_pap ,pap_rate ,
+				 dt_abrd ,dt_made ,bd.dt_dosage ,defd.name as dt_dosage_name,bd.dt_pharm ,dt_pois ,dt_anti ,
+				 flag_precious ,eu_usecate ,dt_storetype ,dt_base ,flag_rm ,flag_reag ,
+				 flag_vacc ,flag_st ,flag_gmp ,flag_tpn ,flag_ped ,pd.note ,
+				 dosage_def ,pk_unit_def ,code_supply ,code_freq ,dt_chcate ,pk_itemcate ,pk_ordtype ,
+				 pd.creator ,pd.create_time ,pd.modifier ,pd.del_flag ,pd.pk_org ,pd.price ,valid_cnt ,eu_valid_unit ,pd.flag_stop ,
+				 eu_source ,pd.ts ,pk_pdind ,pd.pk_pdgn, 
+				 supplyer.code company_code,<!-- 供应商编码 -->
+				 pdGn.name name_pd_gn,<!-- 通用名-名称 -->
+				 pdGn.spcode spcode_pd_gn,<!-- 通用名-拼音码 -->
+				 pdGn.d_code d_code_pd_gn,<!-- 通用名-五笔码 -->
+				 factory.code produce_code,<!-- 生产厂商-编码 -->
+				 factory."NAME" as produce_name,<!-- 生产厂商-名称 -->
+				 unitPack.name unit_pack_name,<!-- 包装单位名称 -->
+				 unitMin.name unit_min_name,<!-- 最小单位名称 -->
+				 unitVol.name unit_vol_name<!-- 剂量单位名称 -->
+			from bd_pd pd 
+			left join bd_factory factory on factory.pk_factory = pd.pk_factory
+			left join BD_PD_GN pdGn on pdGn.pk_pdgn = pd.pk_pdgn
+			left join bd_pd_supplyer pdSupplyer on pdSupplyer.pk_pd = pd.pk_pd
+			left join BD_SUPPLYER supplyer on supplyer.pk_supplyer = pdSupplyer.pk_supplyer
+			left join bd_unit unitPack on unitPack.pk_unit = pd.pk_unit_pack
+			left join bd_unit unitMin on unitMin.pk_unit = pd.pk_unit_min 
+			left join bd_unit unitVol on unitVol.pk_unit = pd.pk_unit_vol 
+			LEFT JOIN BD_DEFDOC defd on defd.code = pd.dt_dosage
+		   where 1=1 
+   	    <if test="pkPd != null" >
+            and pd.pk_pd = #{pkPd,jdbcType=VARCHAR}
+        </if> 
+        <if test='opeType == "MDL"' >
+            and pd.del_flag = '1'
+        </if> 		
+   	   
+    </select>
+   
+   <!-- 查询hl7信息 -->
+     <select id="queryMsgList" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.ma.msg.SysMsgRec">
+        SELECT
+            rec.pk_msg,rec.pk_org,rec.msg_id,rec.msg_type,rec.trans_type,rec.trans_date,rec.msg_content,
+            rec.sys_code,rec.msg_status,rec.err_txt,rec.pk_emp,rec.del_flag,rec.remark,rec.creator,rec.create_time,rec.ts
+        FROM
+             sys_msg_rec rec
+        WHERE            
+            rec.del_flag !='1'
+		<if test="beginDate != null">
+			and rec.trans_date &gt;=
+			to_date(#{beginDate,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+		</if>
+		<if test="endDate != null">
+			and rec.trans_date &lt;
+			to_date(#{endDate,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+		</if>
+   	    <if test="msgType != null" >
+            and rec.msg_type like #{msgType,jdbcType=VARCHAR}
+        </if> 		
+   	    <if test="transType != null" >
+            and rec.trans_type = #{transType,jdbcType=VARCHAR}
+        </if> 		
+        <if test="msgContent != null" >
+		  	and rec.msg_content like '%${msgContent}%'
+		 </if>
+   	    <if test="msgStatus != null" >
+            and rec.msg_status = #{msgStatus,jdbcType=VARCHAR}
+        </if>
+        <if test="pkOrgStr != null">
+			${pkOrgStr}
+		</if> 		
+    </select>
+    
+    <!-- 查询患者基本信息+就诊信息 -->
+     <select id="queryPatList" parameterType="java.util.Map" resultType="DynaBean">
+         SELECT
+		  pi.pk_pi,
+		  pi.code_pi,
+		  pi.code_op,
+		  pi.code_ip,
+		  pv.code_pv                                      pat_no,
+		  pi.barcode,
+		  pi.pk_picate,
+		  pi.name_pi,
+		  pi.name_pi                                       name,
+		  pi.photo_pi,
+		  pi.dt_idtype,
+		  pi.hic_no,
+		  pi.insur_no,
+		  pi.id_no                                  		id_no,
+		  pi.mpi,
+		  pi.flag_ehr,
+		  pi.dt_sex,
+		  to_char(pi.birth_date, 'YYYYMMDDHH24MISS')        birth_date,
+		  pi.place_birth,
+		  pi.dt_marry,
+		  zd_marry.name                                      marry_name,
+		  zd_marry.spcode                                    marry_spcode,
+		  pi.dt_occu,
+		  zd_occu.name                                       occu_name,
+		  zd_occu.spcode                                     occu_spcode,
+		  pi.dt_country,
+		  zd_country.name                                    country_name,
+		  zd_country.spcode                                  country_spcode,
+		  zd_country.OLD_ID                                  country_Old_ID,
+          pi.dt_nation,
+		  zd_nation.name                                     nation_name,
+		  zd_nation.spcode                                   nation_spcode,
+          zd_nation.OLD_ID                                   nation_Old_ID,
+		  (CASE pi.dt_blood_abo
+		   WHEN NULL
+		     THEN ''
+		   ELSE substr(pi.dt_blood_abo, 0, 2) END)            dt_blood_abo,
+		  pi.dt_blood_rh,
+          pi.dt_edu,
+		  pi.tel_no,
+		  pi.mobile,
+		  pi.wechat_no,
+		  pi.email,
+		  pi.unit_work,
+		  pi.tel_work,
+		  pi.postcode_work,
+		  pi.address,
+		  pi.name_rel,
+		  pi.dt_ralation,
+		  zd_rel.NAME        								ralation_name,
+		  pi.tel_rel,
+		  nvl(pi.addr_rel,'未填写'),
+		  pi.dt_edu,
+		  pv.pk_pv,
+		  pv.pk_org,
+		  pv.code_pv,
+		  pv.eu_pvtype,
+		  to_char(pv.date_begin, 'YYYYMMDDHH24MISS')             date_begin,
+		  to_char(pv.date_end, 'YYYYMMDDHH24MISS')               date_end,
+		  to_char(pv.date_clinic, 'YYYYMMDDHH24MISS')            date_clinic,
+		  to_char(pv.date_admit, 'YYYYMMDDHH24MISS')              date_admit,
+		  to_char(pv.date_reg, 'YYYYMMDDHH24MISS')               date_reg,
+		  pv.eu_status                                           eu_status_pv,
+		  pv.flag_in,
+		  pv.name_pi                                              name_pi_pv,
+		  pv.dt_sex                                              dt_sex_pv,
+		  pv.age_pv,
+		  pv.pk_insu,
+		  bd_hp.code                                                          insu_code,
+		  bd_hp.name                                                          insu_name,
+		  bd_hp.PK_PARENT                                                     PK_PARENT,
+          (select code from BD_HP bdhp where bd_hp.PK_PARENT=bdhp.PK_HP)      code_parent,
+		  pv.pk_picate,
+		  nvl(bd_hp.eu_hptype, 0)                                             eu_hptype,
+		  pv.address                                                          address_pv,
+		  pv.dt_marry                                                         dt_marry,
+		  pv.pk_dept,
+		  dept.name_dept,
+		  dept.code_dept,
+		  pv.pk_dept_ns,
+		  ns.name_dept                                 name_dept_ns,
+		  ns.code_dept                                  code_dept_ns,
+		  pv.pk_wg,
+		  pv.bed_no,
+		  pv.pk_emp_ns,
+		  pv.name_emp_ns,
+		  (SELECT code_emp
+		   FROM bd_ou_employee e
+		   WHERE e.pk_emp = pv.pk_emp_ns)                     AS code_emp_ns,
+		  pv.pk_emp_tre,
+		  pv.name_emp_tre,
+		  emp_tre.code_emp                                     code_emp_tre,
+		  pv.pk_emp_phy,
+		  pv.name_emp_phy,
+		  emp_phy.code_emp                                    code_emp_phy,
+		  pv.pk_emp_reg,
+		  pv.name_emp_reg,
+		  pv.flag_settle,
+		  pv.eu_status_fp,
+		  pv.flag_cancel,
+		  pv.pk_emp_cancel,
+		  pv.name_emp_cancel,
+		  to_char(pv.date_cancel, 'YYYYMMDDHH24MISS')           date_cancel,
+		  pv.creator                                             creator_pv,
+		  to_char(pv.create_time, 'YYYYMMDDHH24MISS')            create_time_pv,
+		  pv.modifier                                            modifier_pv,
+		  pv.del_flag,
+		  pv.ts,
+		  pv_ip.pk_pvip,
+		  pv_ip.pk_ip_notice,
+		  pv_ip.ip_times,
+		  to_char(pv_ip.date_notice, 'YYYYMMDDHH24MISS')        date_notice,
+		  pv_ip.flag_opt,
+		  pv_ip.dt_level_ns,
+          pv_ip.dt_level_dise,
+          pv_ip.dt_level_nutr,
+		  pv_ip.dt_outcomes,
+		  pv_ip.flag_infant                                    flag_inf,
+		  pv_ip.quan_infant,
+		  pv_ip.eu_status_doc,
+		  to_char(pv_ip.date_commit_doc, 'YYYYMMDDHH24MISS')   date_commit_doc,
+		  pv_ip.flag_ga,
+		  pv_ip.flag_ga_ns,
+		  pv_ip.dt_intype,
+		  pv_ip.dt_outtype,
+		  pv_ip.pk_dept_admit,
+		  pv_ip.pk_dept_dis,
+		  pv_ip.pk_dept_ns_admit,
+		  pv_ip.pk_dept_ns_dis,
+		  to_char(pv_ip.date_prest, 'YYYYMMDDHH24MISS')      date_prest,
+		  pv_ip.flag_prest,
+		  pv_ip.pk_emp_prest,
+		  pv_ip.name_emp_prest,
+		  pi.addrcode_origin,
+		  pi.addr_origin,
+		  Coalesce(pi.addr_cur||pi.addr_cur_dt, pi.ADDRESS,'未填写')    addr_cur,
+		  pi.addrcode_cur,
+		  pi.addr_cur_dt,
+		  pi.postcode_cur,
+		  pi.addrcode_birth,
+		  pi.addr_birth,
+		  pi.postcode_regi,
+		  pi.addr_regi || nvl(pi.addr_regi_dt, '')                   addr_regi,
+		  pi.addr_regi_dt,
+		  (SELECT d.name
+		   FROM bd_defdoc d
+		   WHERE d.code_defdoclist = '000126' AND pv.dt_pvsource = d.code) AS dt_pvsource
+        FROM pi_master pi
+		  LEFT JOIN pv_encounter pv ON pv.pk_pi = pi.pk_pi
+		  LEFT JOIN bd_ou_dept dept ON pv.pk_dept = dept.pk_dept
+		  LEFT JOIN pv_ip ON pv.pk_pv = pv_ip.pk_pv
+		  LEFT JOIN bd_ou_dept ns ON pv.pk_dept_ns = ns.pk_dept
+		  LEFT JOIN bd_defdoc zd_nation ON pi.dt_nation = zd_nation.code AND zd_nation.code_defdoclist = '000003'
+		  LEFT JOIN bd_defdoc zd_country ON pi.dt_country = zd_country.code AND zd_country.code_defdoclist = '000009'
+		  LEFT JOIN bd_defdoc zd_occu ON pi.dt_occu = zd_occu.code AND zd_occu.code_defdoclist = '000010'
+		  LEFT JOIN bd_defdoc zd_marry ON pi.dt_marry = zd_marry.code AND zd_marry.code_defdoclist = '000006'
+		  LEFT JOIN bd_defdoc zd_rel ON pi.dt_ralation = zd_rel.code AND zd_rel.code_defdoclist = '000013'
+          LEFT JOIN bd_ou_employee emp_tre ON emp_tre.pk_emp = pv.pk_emp_tre
+		  LEFT JOIN bd_ou_employee emp_phy ON emp_phy.pk_emp = pv.pk_emp_phy
+		  LEFT JOIN bd_hp ON pv.pk_insu = bd_hp.pk_hp
+		where 
+		 <trim prefixOverrides="and|or">
+			 <if test="pkPv != null" >
+              pv.pk_pv = #{pkPv,jdbcType=VARCHAR}
+	        </if> 		
+	   	    <if test="pkPi != null" >
+	            and pi.pk_pi = #{pkPi,jdbcType=VARCHAR}
+	            <!--and (pv.eu_status = '0' or pv.eu_status = '1' or pv.eu_status='2' or pv.eu_status='3') -->
+	        </if> 		
+	   	    <if test="codePi != null" >
+	            and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+	        </if> 		
+	   	    <if test="codeIp != null" >
+	            and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+	        </if>
+	       	<if test="codePv != null" >
+	            and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+	        </if>
+		 </trim>
+   	    
+    </select>
+
+	<!-- 根据查询患者手术信息 -->
+    <select id="queryOperation" parameterType="java.util.Map" resultType="DynaBean">
+        select cn.PK_CNORD,cn.PK_ORG,cn.EU_PVTYPE,cn.PK_PV,cn.PK_PI,cn.CODE_ORDTYPE,cn.EU_ALWAYS,cn.ORDSN,cn.ORDSN_PARENT,cn.PK_ORD,
+	      cn.CODE_ORD,cn.PK_PRES,cn.NAME_ORD,cn.DESC_ORD,cn.CODE_APPLY,cn.CODE_FREQ,cn.SPEC,cn.DOSAGE,cn.PK_UNIT_DOS,cn.QUAN,cn.PK_UNIT,
+	      cn.CODE_SUPPLY,cn.QUAN_CG,cn.PK_UNIT_CG,cn.PACK_SIZE,cn.PRICE_CG,cn.NOTE_SUPPLY,cn.DAYS,cn.DRIP_SPEED,cn.ORDS,cn.FLAG_FIRST,cn.LAST_NUM,
+	      cn.FLAG_DURG,cn.FLAG_SELF,cn.FLAG_NOTE,cn.FLAG_BASE,cn.FLAG_BL,cn.PK_DEPT,cn.PK_DEPT_NS,cn.PK_WG,cn.PK_EMP_INPUT,
+	      cn.NAME_EMP_INPUT,cn.PK_EMP_ORD,cn.NAME_EMP_ORD,cn.PK_EMP_CHK,cn.PK_ORG_EXEC,cn.PK_DEPT_EXEC,cn.EU_STATUS_ORD,cn.NAME_EMP_CHK,
+	      cn.PK_EMP_STOP_CHK,cn.NAME_EMP_STOP_CHK,cn.FLAG_ERASE,cn.PK_EMP_ERASE,cn.NAME_EMP_ERASE,cn.FLAG_STOP_CHK,
+	      cn.PK_EMP_STOP,cn.NAME_EMP_STOP,cn.FLAG_STOP,cn.PK_EMP_ERASE_CHK,cn.NAME_ERASE_CHK,cn.FLAG_ERASE_CHK,cn.FLAG_CP,cn.FLAG_DOCTOR,
+	      cn.FLAG_PRINT,cn.FLAG_MEDOUT,cn.EU_EXCTYPE,cn.PK_ORD_EXC,cn.FLAG_EMER,cn.FLAG_THERA,cn.FLAG_PREV,cn.FLAG_FIT,cn.QUAN_BED,
+	      cn.CREATE_TIME,cn.MODIFIER,cn.MODITY_TIME,cn.DEL_FLAG,cn.FLAG_SIGN,cn.SORT_IV,cn.TS,cn.FLAG_ITC,cn.EU_INTERN,cn.EU_ST,cn.DT_USAGENOTE,
+	      cn.FIRST_NUM,cn.FLAG_PIVAS,cn.DT_HERBUSAGE,cn.PK_CNORD_RL,cn.GROUPNO,cn.NOTE_ORD,cn.CREATOR,cn.INFANT_NO,cn.PK_EVENT,
+	      cn.QUAN_DISP,cn.RATIO_HP,cn.DESC_FIT,cn.PK_EMP_EX,cn.NAME_EMP_EX,cn.ORDSN_CHK,cn.CODE_SUPPLY_ADD,
+	      to_char(cn.DATE_STOP,'YYYYMMDDHH24MISS') DATE_STOP,
+	      to_char(cn.DATE_CHK,'YYYYMMDDHH24MISS') DATE_CHK,
+	      to_char(cn.DATE_LAST_EX,'YYYYMMDDHH24MISS') DATE_LAST_EX,
+	      to_char(cn.DATE_PLAN_EX,'YYYYMMDDHH24MISS') DATE_PLAN_EX,
+	      to_char(cn.DATE_EFFE,'YYYYMMDDHH24MISS') DATE_EFFE,
+	      to_char(cn.DATE_START,'YYYYMMDDHH24MISS') DATE_START,
+	      to_char(cn.DATE_ENTER,'YYYYMMDDHH24MISS') DATE_ENTER,
+	      to_char(cn.DATE_SIGN,'YYYYMMDDHH24MISS') DATE_SIGN,
+	      to_char(cn.DATE_ERASE,'YYYYMMDDHH24MISS') DATE_ERASE,
+	      to_char(cn.DATE_ERASE_CHK,'YYYYMMDDHH24MISS') DATE_ERASE_CHK,
+	      to_char(cn.DATE_STOP_CHK,'YYYYMMDDHH24MISS') DATE_STOP_CHK,
+	     
+	      op.PK_ORDOP,op.PK_ORG,op.PK_CNORD,op.EU_OPTYPE,op.PK_DIAG_PRE,op.DESC_DIAG_PRE,op.DT_OPLEVEL,op.PK_OP,
+	      op.DESC_OP,op.DESC_OP_SUB,op.PK_EMP_PHY_OP,op.NAME_EMP_PHY_OP,op.duration,op.DT_ANAE,
+	      op.PK_EMP_ANAE,op.NAME_EMP_ANAE,op.PK_EMP_ASIS,op.NAME_EMP_ASIS,op.PK_EMP_ASIS2,op.NAME_EMP_ASIS2,
+	      op.PK_EMP_ASIS3,op.NAME_EMP_ASIS3,op.PK_EMP_SCRUB,op.NAME_EMP_SCRUB,op.PK_EMP_CIRCUL,op.NAME_EMP_CRICUL,
+	      op.DT_OPBODY,op.PK_OPT,op.EU_STATUS,op.NOTE,op.CREATOR,op.CREATE_TIME,op.MODIFIER,op.MODITY_TIME,
+	      op.DEL_FLAG,op.TS,op.TICKETNO,op.FLAG_HEAD,op.PK_EMP_HEAD,op.NAME_EMP_HEAD,op.FLAG_AGAIN,op.DESC_ICJD,
+	      op.DESC_UNICJD,op.PURP_AGAIN,op.WEIGHT,op.DT_BLOOD_ABO,op.DT_BLOOD_RH,op.DESC_INFEC,op.PK_DEPT_ANAE,
+	      op.DESC_CPB,op.SPEC_EQUIPMENT,op.DT_INCITYPE,op.CNT_OP,op.FLAG_ED,op.FLAG_FINISH_ANAE,op.name_op,
+	      op.flag_carm,op.flag_frozen,
+	      to_char(op.DATE_CONFIRM_DEPT,'YYYYMMDDHH24MISS') DATE_CONFIRM_DEPT,
+	      to_char(op.DATE_BEGIN,'YYYYMMDDHH24MISS') DATE_BEGIN,
+	      to_char(op.DATE_CONFIRM,'YYYYMMDDHH24MISS') DATE_CONFIRM,
+		  to_char(op.DATE_PLAN,'YYYYMMDDHH24MISS') DATE_PLAN,
+		  to_char(op.DATE_APPLY,'YYYYMMDDHH24MISS') DATE_APPLY,
+		  to_char(op.DATE_HEAD,'YYYYMMDDHH24MISS') DATE_HEAD,
+		  (select d.old_id from bd_defdoc d where d.code_defdoclist='030302' and d.code=op.DT_ASALEVEL) DT_ASALEVEL,
+		  (select d.name from bd_defdoc d where d.code_defdoclist='030300' and d.code=op.DT_ANAE) anae_name, 
+	      (select d.old_id from bd_defdoc d where d.code_defdoclist='030307' and d.code=op.DT_ASEPSIS) dt_asepsis,
+	      ((select d.name from bd_defdoc d where d.code_defdoclist='030301' and d.code=op.DT_POSI)||'###'||op.note)  remark,
+	      ( (select d.name from cn_op_infect i left join bd_defdoc d on d.code=i.dt_infresult where d.code_defdoclist='060607' and i.dt_infect='04'and i.pk_cnord=op.pk_cnord)||'-'||
+	      	(select d.name from cn_op_infect i left join bd_defdoc d on d.code=i.dt_infresult where d.code_defdoclist='060607' and i.dt_infect='03'and i.pk_cnord=op.pk_cnord)||'-'||
+	        (select d.name from cn_op_infect i left join bd_defdoc d on d.code=i.dt_infresult where d.code_defdoclist='060607' and i.dt_infect='05'and i.pk_cnord=op.pk_cnord)||'-'||
+	        (select d.name from cn_op_infect i left join bd_defdoc d on d.code=i.dt_infresult where d.code_defdoclist='060607' and i.dt_infect='01'and i.pk_cnord=op.pk_cnord)||'-'||
+	        (select d.name from cn_op_infect i left join bd_defdoc d on d.code=i.dt_infresult where d.code_defdoclist='060607' and i.dt_infect='02'and i.pk_cnord=op.pk_cnord)
+	      ) dt_infresult
+		from cn_order cn,cn_op_apply op		
+        where cn.pk_cnord=op.pk_cnord 
+        <if test="codeApply != null">
+        	and cn.code_apply = #{codeApply,jdbcType=VARCHAR}
+        </if>
+        <if test="pkOrdop != null">
+        	and op.pk_ordop = #{pkOrdop,jdbcType=VARCHAR}
+        </if>
+         <if test="pkCnList != null">
+        	and cn.pk_cnord in 
+        	<foreach  item="pkCnord" collection="pkCnList" separator=","  open="(" close=")" index="">
+        		#{pkCnord,jdbcType=VARCHAR}
+        	</foreach>
+        </if>
+        <if test="euStatusOrd != null">
+        	and cn.eu_status_ord in ('0','9')
+        </if> 
+        <if test="pkPv != null">
+        	and cn.pk_Pv = #{pkPv,jdbcType=VARCHAR}
+        </if>     
+    </select>
+    
+    <!-- 查询病人信息，后期发现缺少什么字段在补充 -->
+	<select id="queryPatListOut" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT * FROM PV_ENCOUNTER a, pi_master b 
+			WHERE a.PK_PV = #{pkPv,jdbcType=VARCHAR} 
+			AND a.PK_PI = b.PK_PI 
+	</select>   
+	
+	
+	
+	<select id="queryOrderByPkCnord" resultType="DynaBean" parameterType="java.util.List">
+		SELECT
+			co.pk_cnord,co.EU_PVTYPE,co.CODE_ORDTYPE,co.EU_ALWAYS,co.ORDSN,co.ORDSN_PARENT,co.PK_ORD,co.CODE_ORD,co.PK_PRES,co.NAME_ORD,
+			co.DESC_ORD,co.CODE_APPLY,co.CODE_FREQ,co.SPEC,co.DOSAGE,co.PK_UNIT_DOS,co.QUAN,co.CODE_SUPPLY,co.QUAN_CG,co.PK_UNIT_CG,
+			co.PRICE_CG,co.NOTE_SUPPLY,co.DAYS,co.DRIP_SPEED,co.ORDS,co.FLAG_FIRST,co.LAST_NUM,co.PK_ORG_EXEC,co.PK_DEPT_EXEC,
+			co.EU_STATUS_ORD,co.FLAG_DURG,co.FLAG_SELF,co.FLAG_NOTE,co.FLAG_BASE,co.FLAG_BL,co.PK_DEPT,co.PK_DEPT_NS,co.PK_WG,
+			co.PK_EMP_INPUT,co.NAME_EMP_INPUT,co.PK_EMP_ORD,co.NAME_EMP_ORD,co.PK_EMP_CHK,co.NAME_EMP_CHK,co.PK_EMP_STOP,co.NAME_EMP_STOP,
+			co.FLAG_STOP,co.PK_EMP_STOP_CHK,co.NAME_EMP_STOP_CHK,co.FLAG_STOP_CHK,co.PK_EMP_ERASE,co.NAME_EMP_ERASE,co.FLAG_ERASE,
+			co.PK_EMP_ERASE_CHK,co.NAME_ERASE_CHK,co.FLAG_ERASE_CHK,co.FLAG_CP,co.FLAG_DOCTOR,co.INFANT_NO,co.PK_EVENT,co.FLAG_PRINT,
+			co.FLAG_MEDOUT,co.EU_EXCTYPE,co.PK_ORD_EXC,co.FLAG_EMER,co.FLAG_THERA,co.FLAG_PREV,co.FLAG_FIT,co.QUAN_BED,co.NOTE_ORD,
+			co.FLAG_SIGN,co.SORT_IV,co.FLAG_ITC,co.EU_INTERN,co.EU_ST,co.DT_USAGENOTE,co.FIRST_NUM,co.FLAG_PIVAS,co.DT_HERBUSAGE,
+			co.PK_CNORD_RL,co.GROUPNO,co.QUAN_DISP,co.RATIO_HP,co.DESC_FIT,co.PK_EMP_EX,co.NAME_EMP_EX,co.ORDSN_CHK,co.CODE_SUPPLY_ADD,
+			to_char(co.DATE_EFFE, 'YYYYMMDDHH24MISS')      AS DATE_EFFE,
+			to_char(co.DATE_ENTER, 'YYYYMMDDHH24MISS')     AS DATE_ENTER,
+			to_char(co.DATE_START, 'YYYYMMDDHH24MISS')     AS DATE_START,
+			to_char(co.DATE_CHK, 'YYYYMMDDHH24MISS')       AS DATE_CHK,
+			to_char(co.DATE_LAST_EX, 'YYYYMMDDHH24MISS')   AS DATE_LAST_EX,
+			to_char(co.DATE_PLAN_EX, 'YYYYMMDDHH24MISS')   AS DATE_PLAN_EX,
+			to_char(co.DATE_ERASE, 'YYYYMMDDHH24MISS')     AS DATE_ERASE,
+			to_char(co.DATE_ERASE_CHK, 'YYYYMMDDHH24MISS') AS DATE_ERASE_CHK,
+			to_char(co.DATE_STOP, 'YYYYMMDDHH24MISS')      AS DATE_STOP,
+			to_char(co.DATE_SIGN, 'YYYYMMDDHH24MISS')      AS DATE_SIGN,
+			to_char(co.DATE_STOP_CHK, 'YYYYMMDDHH24MISS')  AS DATE_STOP_CHK,
+			pv.CODE_PV,pv.DT_MARRY,pv.PK_DEPT,pv.PK_DEPT_NS,pv.FLAG_IN,pv.FLAG_SETTLE,pv.NAME_PI,pv.DT_SEX,pv.AGE_PV,pv.ADDRESS,
+			pv.PK_WG,pv.BED_NO,pv.PK_EMP_TRE,pv.NAME_EMP_TRE,pv.PK_EMP_PHY,pv.NAME_EMP_PHY,pv.PK_EMP_NS,pv.NAME_EMP_NS,pv.PK_INSU,pv.PK_EMP_REG,
+			pv.NAME_EMP_REG,pv.FLAG_CANCEL,pv.PK_EMP_CANCEL,pv.NAME_EMP_CANCEL,pv.EU_STATUS_FP,pv.HEIGHT,pv.WEIGHT,pv.ADDRCODE_REGI,pv.ADDR_REGI,
+			pv.ADDR_REGI_DT,pv.POSTCODE_REGI,pv.ADDRCODE_CUR,pv.ADDR_CUR,pv.ADDR_CUR_DT,pv.POSTCODE_CUR,pv.UNIT_WORK,pv.DT_PVSOURCE,pv.EU_PVMODE,
+			pv.DT_HPREALTYPE,pv.DT_SPECUNIT,pv.FLAG_SPEC,pv.EU_LOCKED,pv.EU_DISETYPE,pv.FLAG_MI,pv.NAME_SPOUSE,pv.IDNO_SPOUSE,pv.DESC_SYMP,
+			pv.DESC_EPID,pv.DESC_TREAT,pv.PK_DEPT_DIST,
+			
+		  	pi.CODE_PI,pi.CODE_OP,pi.CODE_IP,pi.BARCODE,pi.PK_PICATE,pi.NAME_PI,pi.PHOTO_PI,pi.DT_IDTYPE,pi.ID_NO,
+			pi.HIC_NO,pi.INSUR_NO,pi.MPI,pi.FLAG_EHR,pi.DT_SEX,pi.BIRTH_DATE,pi.PLACE_BIRTH,pi.DT_MARRY,pi.DT_OCCU,pi.DT_EDU,pi.DT_COUNTRY,
+			pi.DT_NATION,pi.TEL_NO,pi.MOBILE,pi.WECHAT_NO,pi.EMAIL,pi.TEL_WORK,pi.ADDRESS,pi.NAME_REL,pi.TEL_REL,pi.DT_BLOOD_ABO,pi.DT_BLOOD_RH,
+			pi.DT_RALATION,pi.ADDRCODE_BIRTH,pi.ADDR_BIRTH,pi.ADDRCODE_ORIGIN,pi.ADDR_ORIGIN,pi.POSTCODE_WORK,pi.ADDR_REL,
+			pi.CODE_ER,pi.DT_IDTYPE_REL,pi.IDNO_REL,pi.FLAG_REALNAME,pi.PK_EMP,pi.SPCA_NO,pi.SEN_NO,pi.MCNO,pi.CITIZEN_NO,pi.DT_SOURCE,pi.NOTE,
+			to_char(pv.DATE_BEGIN, 'YYYYMMDDHH24MISS')     AS DATE_BEGIN,
+			to_char(pv.DATE_END, 'YYYYMMDDHH24MISS')       AS DATE_END,
+			to_char(pv.DATE_CLINIC, 'YYYYMMDDHH24MISS')    AS DATE_CLINIC,
+			to_char(pv.DATE_ADMIT, 'YYYYMMDDHH24MISS')     AS DATE_ADMIT,
+			to_char(pv.DATE_CANCEL, 'YYYYMMDDHH24MISS')    AS DATE_CANCEL,
+			to_char(pv.DATE_REG, 'YYYYMMDDHH24MISS')       AS DATE_REG
+		FROM  cn_order co
+		  LEFT JOIN pv_encounter pv ON pv.pk_pv = co.pk_pv
+		  LEFT JOIN pi_master pi ON pi.pk_pi = co.pk_pi
+		WHERE co.DEL_FLAG = '0' AND pi.DEL_FLAG = '0' AND pv.DEL_FLAG = '0' AND
+		      co.PK_CNORD in 
+		     <foreach collection="list" open="(" close=")" index="index" item="pkCnords" separator=",">
+		     	#{pkCnords,jdbcType=VARCHAR}
+		     </foreach>
+	</select>
+	
+	<select id="queryPddeExorderInfo" resultType="DynaBean" parameterType="java.lang.String">
+		select distinct
+			pi.pk_pi,ex.PK_EXOCC,ex.PK_ORG,ex.PK_PV,ex.PK_CNORD,
+			to_char(ex.DATE_PLAN,'YYYYMMDDHH24MISS') as DATE_PLAN,
+			to_char(ex.DATE_OCC,'YYYYMMDDHH24MISS') as DATE_OCC,
+			to_char(ex.DATE_CANC,'YYYYMMDDHH24MISS') as DATE_CANC,
+			ex.QUAN_OCC,ex.PK_UNIT,ex.PRICE_REF,ex.AMOUNT,ex.PACK_SIZE,
+			ex.EU_STATUS,ex.PK_ORG_OCC,ex.PK_DEPT_OCC,
+			ex.PK_EMP_OCC,ex.NAME_EMP_OCC,ex.FLAG_CANC,ex.PK_DEPT_CANC,ex.PK_EMP_CANC,
+			ex.NAME_EMP_CANC,ex.PK_PDAPDT,ex.PK_PDBACK,ex.PK_EXEVENT,ex.PK_PDDE,
+			ex.PK_CG,ex.PK_CG_CANCEL,ex.PK_EMP_OCC2,ex.NAME_EMP_OCC2,ex.FLAG_MODI,
+			co.EU_PVTYPE,
+			to_char(co.DATE_EFFE,'YYYYMMDDHH24MISS') as DATE_EFFE,
+			to_char(co.DATE_ENTER,'YYYYMMDDHH24MISS') as DATE_ENTER,
+			to_char(co.DATE_START,'YYYYMMDDHH24MISS') as DATE_START,
+			to_char(co.DATE_CHK,'YYYYMMDDHH24MISS') as DATE_CHK,
+			to_char(co.DATE_LAST_EX,'YYYYMMDDHH24MISS') as DATE_LAST_EX,
+			to_char(co.DATE_PLAN_EX,'YYYYMMDDHH24MISS') as DATE_PLAN_EX,
+			to_char(co.DATE_ERASE,'YYYYMMDDHH24MISS') as DATE_ERASE,
+			to_char(co.DATE_ERASE_CHK,'YYYYMMDDHH24MISS') as DATE_ERASE_CHK,
+			to_char(co.DATE_STOP,'YYYYMMDDHH24MISS') as DATE_STOP,
+			to_char(co.DATE_SIGN,'YYYYMMDDHH24MISS') as DATE_SIGN,
+			to_char(co.DATE_STOP_CHK,'YYYYMMDDHH24MISS') as DATE_STOP_CHK,
+			co.CODE_ORDTYPE,co.EU_ALWAYS,co.ORDSN,co.ORDSN_PARENT,
+			co.PK_ORD,co.CODE_ORD,co.PK_PRES,co.NAME_ORD,co.DESC_ORD,co.CODE_APPLY,co.CODE_FREQ	,
+			co.SPEC	,co.DOSAGE,co.PK_UNIT_DOS,co.QUAN,co.CODE_SUPPLY,co.QUAN_CG,
+			co.PK_UNIT_CG,co.PRICE_CG,co.NOTE_SUPPLY,co.DAYS,co.DRIP_SPEED,
+			co.ORDS,co.FLAG_FIRST,co.LAST_NUM,co.PK_ORG_EXEC,co.PK_DEPT_EXEC,co.EU_STATUS_ORD,
+			co.FLAG_DURG,co.FLAG_SELF,co.FLAG_NOTE,co.FLAG_BASE,
+			co.FLAG_BL,co.PK_DEPT,co.PK_DEPT_NS,co.PK_WG,co.PK_EMP_INPUT,co.NAME_EMP_INPUT,
+			co.PK_EMP_ORD,co.NAME_EMP_ORD,
+			co.PK_EMP_CHK,co.NAME_EMP_CHK,
+			co.PK_EMP_STOP,co.NAME_EMP_STOP,co.FLAG_STOP,
+			co.PK_EMP_STOP_CHK,co.NAME_EMP_STOP_CHK,
+			co.FLAG_STOP_CHK,co.PK_EMP_ERASE,co.NAME_EMP_ERASE,co.FLAG_ERASE,
+			co.PK_EMP_ERASE_CHK	,co.NAME_ERASE_CHK,co.FLAG_ERASE_CHK,co.FLAG_CP,co.FLAG_DOCTOR,
+			co.INFANT_NO,co.PK_EVENT,co.FLAG_PRINT,co.FLAG_MEDOUT,co.EU_EXCTYPE,co.PK_ORD_EXC,
+			co.FLAG_EMER,co.FLAG_THERA,co.FLAG_PREV,co.FLAG_FIT	,co.QUAN_BED,co.NOTE_ORD,
+			co.FLAG_SIGN,co.SORT_IV,co.FLAG_ITC,co.EU_INTERN,co.EU_ST,co.DT_USAGENOTE,
+			co.FIRST_NUM,co.FLAG_PIVAS,co.DT_HERBUSAGE,co.PK_CNORD_RL,co.GROUPNO,co.QUAN_DISP,
+			co.RATIO_HP,co.DESC_FIT,co.PK_EMP_EX,co.NAME_EMP_EX,co.ORDSN_CHK,co.CODE_SUPPLY_ADD,
+
+			pv.CODE_PV,pv.DT_MARRY,pv.PK_DEPT,pv.PK_DEPT_NS,
+			pv.FLAG_IN,pv.FLAG_SETTLE,pv.NAME_PI,pv.DT_SEX,pv.AGE_PV,pv.ADDRESS,
+			to_char(pv.DATE_BEGIN,'YYYYMMDDHH24MISS') as DATE_BEGIN,
+			to_char(pv.DATE_END,'YYYYMMDDHH24MISS') as DATE_END,
+			to_char(pv.DATE_CLINIC,'YYYYMMDDHH24MISS') as DATE_CLINIC,
+
+			to_char(pv.DATE_ADMIT,'YYYYMMDDHH24MISS') as DATE_ADMIT,
+			to_char(pv.DATE_CANCEL,'YYYYMMDDHH24MISS') as DATE_CANCEL,
+			to_char(pv.DATE_REG,'YYYYMMDDHH24MISS') as DATE_REG,
+			pv.PK_WG,pv.BED_NO,pv.PK_EMP_TRE,
+			pv.NAME_EMP_TRE,pv.PK_EMP_PHY,
+			pv.NAME_EMP_PHY,pv.PK_EMP_NS,
+			pv.NAME_EMP_NS,pv.PK_INSU,pv.PK_EMP_REG,pv.NAME_EMP_REG,
+			pv.FLAG_CANCEL,pv.PK_EMP_CANCEL,pv.NAME_EMP_CANCEL,
+			pv.EU_STATUS_FP,pv.HEIGHT,pv.WEIGHT,
+			pv.ADDRCODE_REGI,pv.ADDR_REGI,pv.ADDR_REGI_DT,pv.POSTCODE_REGI,
+			pv.ADDRCODE_CUR,pv.ADDR_CUR,pv.ADDR_CUR_DT,pv.POSTCODE_CUR,
+			pv.UNIT_WORK,pv.DT_PVSOURCE,pv.EU_PVMODE,pv.DT_HPREALTYPE,
+			pv.DT_SPECUNIT,pv.FLAG_SPEC,pv.EU_LOCKED,pv.EU_DISETYPE,
+			pv.FLAG_MI,pv.NAME_SPOUSE,pv.IDNO_SPOUSE,
+			pv.DESC_SYMP,pv.DESC_EPID,pv.DESC_TREAT,pv.PK_DEPT_DIST,
+
+			pi.CODE_PI,pi.CODE_OP,pi.CODE_IP,pi.BARCODE,
+			pi.PK_PICATE,pi.NAME_PI,pi.DT_IDTYPE,
+			pi.ID_NO,pi.HIC_NO,pi.INSUR_NO,pi.MPI,pi.FLAG_EHR,pi.DT_SEX,
+			to_char(pi.BIRTH_DATE,'YYYYMMDDHH24MISS') as BIRTH_DATE,
+			pi.PLACE_BIRTH,pi.DT_MARRY,pi.DT_OCCU,pi.DT_EDU,pi.DT_COUNTRY,
+			pi.DT_NATION,pi.TEL_NO,pi.MOBILE,pi.WECHAT_NO,pi.EMAIL,
+			pi.TEL_WORK,pi.ADDRESS,pi.NAME_REL,pi.TEL_REL,pi.DT_BLOOD_ABO,
+			pi.DT_BLOOD_RH,pi.DT_RALATION,pi.ADDRCODE_BIRTH,
+			pi.ADDR_BIRTH,pi.ADDRCODE_ORIGIN,pi.ADDR_ORIGIN,
+			pi.POSTCODE_WORK,pi.ADDR_REL,pi.CODE_ER,pi.DT_IDTYPE_REL,pi.IDNO_REL,
+			pi.FLAG_REALNAME,pi.PK_EMP,pi.SPCA_NO,pi.SEN_NO,pi.MCNO,
+			pi.CITIZEN_NO,pi.DT_SOURCE,pi.NOTE,
+
+			epd.name_decate,epd.code_de,epd.flag_prt
+	from EX_PD_DE epd
+	  inner join PV_ENCOUNTER pv on pv.PK_PV=epd.PK_PV
+	  inner join PI_MASTER pi on pi.PK_PI=pv.PK_PI
+	  inner join CN_ORDER co on co.PK_CNORD=epd.PK_CNORD
+	  inner join EX_ORDER_OCC ex on ex.PK_PDAPDT=epd.PK_PDAPDT
+	  where epd.code_de=#{codeDe,jdbcType=VARCHAR}
+	  order by pi.pk_pi
+	</select>
+	
+	<select id="queryHighvaluIpcg" parameterType="java.util.List" resultType="DynaBean">
+		select 
+			ip.pk_cgip,ip.code_cg, ip.pk_cgip_back, cgdept.code_dept code_dept_cg,
+	  		cgdept.name_dept name_dept_cg, cgemp.code_emp code_emp_cg, cgemp.name_emp name_emp_cg,
+	  		ip.barcode,  item.code code_item, item.name name_item, ip.quan quan_cg,
+	  		unit.name unit_cg, item.price , ip.pk_pv, ip.pk_pi from bl_ip_dt  ip
+		left join bd_ou_dept cgdept on cgdept.pk_dept=ip.pk_dept_cg
+		left join bd_ou_employee cgemp on cgemp.pk_emp=ip.pk_emp_cg
+		inner join bd_item item on item.pk_item=ip.pk_item
+		left join bd_unit unit on unit.pk_unit=ip.pk_unit
+		where ip.pk_cgip in
+		 <foreach collection="list" item="item" index="index" open="(" separator="," close=")">
+		 	#{item,jdbcType=VARCHAR}
+		 </foreach>  
+		and item.dt_itemtype='0701'
+	</select>
+	
+	<select id="queryHighvaluOpcg" parameterType="java.util.List" resultType="DynaBean">
+		select
+			op.pk_cgop pk_cgip,op.code_cg, op.pk_cgop_back pk_cgip_back, cgdept.code_dept code_dept_cg,
+	  		cgdept.name_dept name_dept_cg, cgemp.code_emp code_emp_cg, cgemp.name_emp name_emp_cg,
+	  		op.barcode,  item.code code_item, item.name name_item, op.quan quan_cg,
+	  		unit.name unit_cg, item.price , op.pk_pv, op.pk_pi from bl_op_dt  op
+		left join bd_ou_dept cgdept on cgdept.pk_dept=op.pk_dept_cg
+		left join bd_ou_employee cgemp on cgemp.pk_emp=op.pk_emp_cg
+		inner join bd_item item on item.pk_item=op.pk_item
+		left join bd_unit unit on unit.pk_unit=op.pk_unit
+		where op.pk_cgop in
+		 <foreach collection="list" item="item" index="index" open="(" separator="," close=")">
+		 	#{item,jdbcType=VARCHAR}
+		 </foreach>
+		and item.dt_itemtype='0701'
+	</select>
+	
+	<!-- 查询婴儿信息  -->
+	<select id="getInfantListByMother" parameterType="java.util.Map" resultType="DynaBean">
+	    select pvinf.pk_pv,pvinf.bed_no,pvinf.pk_pi,inf.sort_no
+	    from pv_infant inf
+	    inner join pv_encounter pvinf on pvinf.pk_pv = inf.pk_pv_infant
+	    where pvinf.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}  and inf.pk_pv = #{pkPv,jdbcType=CHAR} and pvinf.flag_in='1' 
+	     and pvinf.eu_status='1'  
+	     order by bed_no 
+	</select>
+	
+	<!-- 查询会诊申请和会诊应答 -->
+	<select id="queryConsultApply" parameterType="java.util.Map" resultType="DynaBean">
+	    
+    select
+            co.pk_cnord,co.eu_pvtype,co.pk_pv,co.pk_pi,co.code_ordtype,
+         	co.eu_always,co.ordsn,co.ordsn_parent,co.pk_ord,co.code_ord,co.name_ord,
+		  	co.desc_ord,co.code_apply,co.code_freq,co.spec,co.dosage,co.pk_unit_dos,
+		  	co.quan,co.pk_unit,co.code_supply,co.quan_cg,co.pk_unit_cg,co.pack_size,
+		  	co.price_cg,co.note_supply,co.days,co.drip_speed,co.ords,co.flag_first,
+		  	co.last_num,co.pk_dept_exec,co.eu_status_ord,co.name_emp_ord,
+		  	co.flag_durg,co.flag_self,co.flag_note,co.flag_base,co.flag_bl,co.quan_bed,
+		  	co.pk_wg,co.pk_emp_input,co.name_emp_input,co.pk_emp_ord,co.note_ord,co.pk_dept_ns,
+			(select emp.CODE_EMP from BD_OU_EMPLOYEE emp where emp.PK_EMP=co.PK_EMP_ORD) CODE_EMP_ORD,
+            co.pk_emp_chk,co.name_emp_chk,co.pk_emp_stop,co.name_emp_stop,
+		  	co.flag_stop,co.pk_emp_stop_chk,co.name_emp_stop_chk,co.flag_stop_chk,
+			co.pk_emp_erase,co.name_emp_erase,co.flag_erase,co.pk_unit_dos,co.eu_st,
+			co.pk_emp_erase_chk,co.name_erase_chk,co.flag_erase_chk,
+		  	co.flag_cp,co.flag_doctor,co.infant_no,co.pk_event,co.flag_print,co.flag_medout,
+		  	co.eu_exctype,co.pk_ord_exc,co.flag_emer,co.flag_thera,co.flag_prev,co.flag_fit,
+			to_char(co.date_effe,'YYYYMMDDHH24MISS') date_effe,
+			to_char(co.date_start,'YYYYMMDDHH24MISS') date_start,
+			to_char(co.date_chk,'YYYYMMDDHH24MISS') date_chk,
+		  	to_char(co.date_last_ex,'YYYYMMDDHH24MISS') date_last_ex,
+			to_char(co.date_plan_ex,'YYYYMMDDHH24MISS') date_plan_ex,
+			to_char(co.date_stop,'YYYYMMDDHH24MISS') date_stop,
+			to_char(co.date_enter,'YYYYMMDDHH24MISS') date_enter,
+			to_char(co.date_sign,'YYYYMMDDHH24MISS') date_sign,
+			to_char(co.date_stop_chk,'YYYYMMDDHH24MISS') date_stop_chk,
+			to_char(co.date_erase,'YYYYMMDDHH24MISS') date_erase,
+			to_char(co.date_erase_chk,'YYYYMMDDHH24MISS') date_erase_chk,
+
+	    	ccp.pk_cons,ccp.pk_dept,ccp.eu_type,
+            (select d.CODE_DEPT from BD_OU_DEPT d where d.PK_DEPT=ccp.pk_dept) code_dept,
+            (select d.NAME_DEPT from BD_OU_DEPT d where d.PK_DEPT=ccp.pk_dept) name_dept,
+			ccp.dt_conlevel,ccp.eu_status,ccp.reason,ccp.ill_summary,
+			ccp.code_consult,ccp.objective,ccp.examine,ccp.diagname,
+			to_char(ccp.date_cons,'YYYYMMDDHH24MISS') as date_cons,
+			to_char(ccp.date_apply,'YYYYMMDDHH24MISS') as date_apply,
+			(select name from bd_defdoc doc where doc.CODE_DEFDOCLIST='060106' and doc.CODE=ccp.dt_conlevel) name_conlevel
+
+	    from cn_order co
+        inner join cn_consult_apply ccp on co.PK_CNORD=ccp.PK_CNORD
+        where co.DEL_FLAG = 0
+        and ccp.DEL_FLAG = 0
+		and co.PK_CNORD in 
+		<foreach collection="pkCnords" item="pkCnord" index="" open="(" separator="," close=")">
+		 	#{pkCnord,jdbcType=VARCHAR}
+		 </foreach>  
+  		
+	</select>
+	
+	<!-- 查询会诊应答信息 -->
+	<select id="queryConsultResponse" parameterType="java.util.Map" resultType="DynaBean">
+    	select
+	    	ccp.pk_cons,ccp.eu_type,ccp.pk_dept,
+			ccp.dt_conlevel,ccp.eu_status,ccp.reason,ccp.ill_summary,
+			ccp.code_consult,ccp.objective,ccp.examine,ccp.diagname,
+			to_char(ccp.date_cons,'YYYYMMDDHH24MISS') as date_cons,
+			to_char(ccp.date_apply,'YYYYMMDDHH24MISS') as date_apply,
+			(select name from bd_defdoc doc where doc.CODE_DEFDOCLIST='060106' and doc.CODE=ccp.dt_conlevel) name_conlevel,
+
+			ccr.pk_consrep,ccr.pk_org_rep,ccr.flag_rep,ccr.pk_emp_input,
+			ccr.name_emp_rep,ccr.con_reply,ccr.con_advice,ccr.date_input,
+			ccr.name_emp_input,ccr.name_org_rep,ccr.name_dept_rep,
+            ccr.flag_finish,ccr.dt_conlevel,
+            ccr.pk_emp_rep, ccr.pk_dept_rep,
+            (select CODE_DEPT from BD_OU_DEPT dept where dept.PK_DEPT=ccr.pk_dept_rep) code_dept_rep,
+            (select CODE_EMP from BD_OU_EMPLOYEE emp where emp.PK_EMP=ccr.pk_emp_rep) code_emp_rep,
+			to_char(ccr.date_rep,'YYYYMMDDHH24MISS') as date_rep
+
+	    from cn_consult_apply ccp 
+		left join cn_consult_response ccr on ccp.PK_CONS=ccr.PK_CONS
+        where ccp.DEL_FLAG = 0
+        and ccr.DEL_FLAG = 0
+		and ccp.PK_CNORD = #{pkCnord,jdbcType=CHAR} 
+	</select>
+	
+	<select id="querySettleDataByPkSettle" parameterType="java.lang.String" resultType="DynaBean">
+		select distinct
+		  pi.code_op,
+		  pi.insur_no,
+		  pv.date_reg,
+		  pay.serial_no,
+		  pi.name_pi,
+		  pv.eu_pvtype,
+		  st.amount_insu,
+		  st.amount_pi,
+		  st.amount_st,
+		  vis.code_medino,
+		  pv.pk_pv,
+		  pi.pk_pi,
+		  to_char(pv.date_begin,'yyyyMMddHHmmss') date_begin,
+		  pay.dt_bank
+		from bl_settle st
+		inner join pv_encounter pv on pv.pk_pv=st.pk_pv
+		inner join pi_master pi on pi.pk_pi=pv.pk_pi
+		inner join bl_ext_pay pay on pay.pk_settle=st.pk_settle
+		left join ins_szyb_visit vis on vis.pk_pv=pv.pk_pv
+		where st.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+	</select>
+</mapper>

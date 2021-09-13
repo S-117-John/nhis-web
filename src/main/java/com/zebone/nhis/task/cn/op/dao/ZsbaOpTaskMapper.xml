@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.task.cn.op.dao.ZsbaOpTaskMapper">
+	
+	<!-- 博爱专用，查询门诊三天以上未交费门诊医嘱-需求8245_产品提供的sql -->
+	<select id="queryPkCnordTaskBa" resultType="java.lang.String">
+	   select 
+	        PK_CNORD
+       from CN_ORDER cnord
+       inner join PV_ENCOUNTER pv on pv.PK_PV=cnord.PK_PV
+       where DATE_START &lt; getdate() - 3
+           and cnord.DEL_FLAG = '0'
+           and exists(select
+                            1
+                      from BL_OP_DT
+                      where BL_OP_DT.PK_CNORD = cnord.PK_CNORD
+                            and FLAG_SETTLE = '0'
+                      ) <!-- 未交费的 -->
+
+            and not exists(select 
+                                  1
+                           from BD_DICTATTR dic
+                           where cnord.PK_ORD = dic.PK_DICT 
+                                 and PK_DICTATTRTEMP = 'add48fa6cf40465abe3affaff967c5cd'
+                                 and CODE_ATTR = 'BA004'
+                                 and  dic.VAL_ATTR = '1'
+                            ) <!-- 先治疗后交费医嘱不删除 -->
+            and not (
+                       cnord.PK_DEPT = '9e730029b7b243759bd33f6e80b1df36' 
+                       and  FLAG_DURG='0'
+                     )  <!-- 口腔科非药品不删除 -->
+            and pv.PK_PICATE != '1145533827f64fad90e7cdda58d5e2a6'  <!-- 绿色通道患者不删除 -->
+      </select>
+      
+      <select id="queryPkPresInfo" resultType="java.lang.String" >
+	   select 
+	       pk_pres
+	   from cn_order
+	   where pk_pres is not null
+	         and pk_cnord in 
+             <foreach collection="pkCnords" item="pkCnord" open="(" separator="," close=")">
+                #{pkCnord,jdbcType=VARCHAR}
+             </foreach>
+      </select>
+      
+      <update id="updateCnOrderDelFlag" >
+         update  cn_order 
+            set del_flag = '1'
+          where pk_cnord in 
+         <foreach collection="pkCnords" item="pkCnord" open="(" separator="," close=")">
+            #{pkCnord,jdbcType=VARCHAR}
+        </foreach>
+      </update>
+      
+      <update id="updateExAssistOccDelFlag" >
+         update  EX_ASSIST_OCC 
+            set del_flag = '1'
+          where pk_cnord in 
+         <foreach collection="pkCnords" item="pkCnord" open="(" separator="," close=")">
+            #{pkCnord,jdbcType=VARCHAR}
+        </foreach>
+      </update>
+      
+      <update id="updateBlOpDtDelFlag" >
+         update  BL_OP_DT 
+            set del_flag = '1'
+          where pk_cnord in 
+         <foreach collection="pkCnords" item="pkCnord" open="(" separator="," close=")">
+            #{pkCnord,jdbcType=VARCHAR}
+        </foreach>
+      </update>
+      
+      <update id="updateCnLabApplyDelFlag" >
+         update  CN_LAB_APPLY 
+            set del_flag = '1'
+          where pk_cnord in 
+         <foreach collection="pkCnords" item="pkCnord" open="(" separator="," close=")">
+            #{pkCnord,jdbcType=VARCHAR}
+        </foreach>
+      </update>
+      
+      <update id="updateCnRisApplyDelFlag" >
+         update  CN_RIS_APPLY 
+            set del_flag = '1'
+          where pk_cnord in 
+         <foreach collection="pkCnords" item="pkCnord" open="(" separator="," close=")">
+            #{pkCnord,jdbcType=VARCHAR}
+        </foreach>
+      </update>
+      
+       <update id="updateCnPrescriptionDelFlag" >
+         update  CN_PRESCRIPTION 
+            set del_flag = '1'
+          where pk_pres in 
+          <foreach collection="pkPress" item="pkPres" open="(" separator="," close=")">
+            #{pkPres,jdbcType=VARCHAR}
+          </foreach>
+      </update>
+      
+</mapper>

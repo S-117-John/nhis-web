@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.PlatFormDoctorPlanListMapper">
+    <select id="getDoctorPlanList" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.DoctorPlanListReq"
+            resultType="com.zebone.nhis.webservice.syx.vo.platForm.DoctorPlanListRes">
+        
+        SELECT
+			du.code roomCode,
+			dept.code_dept deptCode,
+			emp.code_emp doctorCode,
+			to_char(sch.date_work, 'yyyy-mm-dd') clinicDate,
+			CASE
+				WHEN ds.code_dateslot = '0101' THEN '2' ELSE '4' 
+			END clinicTime  
+		FROM
+			sch_sch sch 
+			INNER join bd_ou_dept dept ON sch.pk_dept = dept.pk_dept 
+			INNER join sch_resource res ON sch.pk_schres = res.pk_schres 
+			INNER join bd_code_dateslot ds ON sch.pk_dateslot = ds.pk_dateslot 
+			left outer join bd_ou_employee emp ON res.pk_emp = emp.pk_emp 
+			left outer join bd_dept_unit du ON sch.pk_deptunit = du.pk_deptunit 
+			AND du.eu_unittype = '0' 
+		WHERE 
+			du.eu_unittype = '0' 
+			AND sch.flag_stop='0' 
+			AND sch.cnt_total &gt; 0 
+			AND sch.date_work = to_date(#{dateWork,jdbcType=VARCHAR},'yyyy-MM-dd')
+			<if test = "clinicTime != null and clinicTime != ''">
+			 	AND ds.code_dateslot = #{clinicTime,jdbcType=VARCHAR} 
+			</if>
+    </select>
+</mapper>

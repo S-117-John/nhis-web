@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.zsba.dao.BaMedicinePackMapper">
+    <select id="qryPackPdVoList" resultType="com.zebone.nhis.ma.pub.zsba.vo.PackPdMedVo">
+        select
+        org.code_ext as hsptCd,
+        bds.code_ext as dptmtCd,
+        ward.CODE_ORIG as wardCd,
+        ord.ordsn as orderNum,
+        pv.bed_no as roomNum,
+        pi.name_pi as ptntNm,
+        pi.code_pi as ptntNum,
+        pi.pk_pi,
+        pi.ADDR_CUR+pi.ADDR_CUR_DT as ptntAddr,
+        doc.name as sex,
+        to_char(pi.birth_date,'YYYYMMDD') as birthday,
+        ord.name_emp_ord as doctorNm,
+        pd.CODE_EXT as medCd,
+        pd.name as medNm,
+        pd.NOTE as medNote,
+        pd.DT_POIS,
+        pd.PK_PD,
+        ord.NOTE_ORD as drtsCd,
+        B.SPEC as medSpec,
+        occ.quan_occ as dose,
+        unit.name as medUnit,
+        to_char(occ.date_plan,'YYYYMMDD') as takeDt,
+        substr(to_char(occ.date_plan,'YYYYMMDDHH24MISS'),9,4) as doseList,
+        occ.DATE_PLAN ,
+        ord.PK_CNORD,
+        ord.PK_PV,
+        pdde.CODE_DE,
+        pdde.pk_pdapdt,
+        occ.PK_EXOCC ,
+        case when attPd.VAL_ATT = '1' then '1' else '0' end as val,
+        ord.eu_always,
+        ord.PK_PRES,
+        ca.CODE_DECATE
+        from ex_order_occ occ (nolock )
+        inner join cn_order ord (nolock ) on occ.pk_cnord = ord.pk_cnord
+        inner join bd_pd pd (nolock ) on ord.pk_ord = pd.pk_pd
+        inner join bd_supply sup (nolock ) on ord.code_supply=sup.code
+        inner join bd_supply_class cla (nolock ) on cla.pk_supplycate = sup.pk_supplycate
+        inner join pv_encounter pv (nolock ) on occ.pk_pv = pv.pk_pv
+        inner join pi_master pi (nolock ) on pv.pk_pi = pi.pk_pi
+        inner join bd_unit unit (nolock ) on occ.pk_unit = unit.pk_unit
+        inner join bd_ou_org org (nolock ) on occ.pk_org = org.pk_org
+        inner join bd_ou_dept ward (nolock ) on pv.pk_dept = ward.pk_dept
+        inner join bd_defdoc doc (nolock ) on doc.code = pi.dt_sex and doc.code_defdoclist = '000000'
+        inner join (
+        select distinct PK_PDAPDT,CODE_DE,PK_STORE_DE,PK_PDDECATE,PK_PD
+        from EX_PD_DE EPD (nolock ) where PK_PDAPDT in
+        <foreach collection="pdDeDrugVos" index="index" open="(" close=")" item="pkPd" separator=",">
+            #{pkPd.pkPdapdt,jdbcType=VARCHAR}
+        </foreach>
+        ) pdde on occ.pk_pdapdt = pdde.pk_pdapdt
+        left JOIN BD_PD_DECATE ca (nolock ) ON ca.PK_PDDECATE = pdde.PK_PDDECATE
+        inner join BD_STORE bds (nolock ) on pdde.PK_STORE_DE=bds.PK_STORE
+        inner join BD_PD_CONVERT B  (nolock ) on pd.PK_PD=B.PK_PD and B.PK_UNIT=pd.PK_UNIT_MIN
+        left join (select att.VAL_ATT, att.PK_PD
+        from bd_pd_att att (nolock )
+        inner join bd_pd_att_define def (nolock )  on att.pk_pdattdef = def.pk_pdattdef
+        where def.CODE_ATT = '0504') attPd on attPd.PK_PD = pdde.PK_PD
+        where
+        ord.flag_durg='1' and
+        cla.code = '01'and
+        ((ord.PK_PRES is null and ca.CODE_DECATE !='0003') or(ord.PK_PRES is not null and ca.CODE_DECATE is null))
+        and occ.PK_PDAPDT in
+        <foreach collection="pdDeDrugVos" index="index" open="(" close=")" item="pkPd" separator=",">
+            #{pkPd.pkPdapdt,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+    <select id="queryPdDeDrugVo" resultType="com.zebone.nhis.scm.pub.vo.PdDeDrugVo">
+        select distinct de.PK_PDAPDT,
+                        de.CODE_DE
+        from EX_PD_DE de
+                     left join EX_MED_BAG med on de.code_de = med.code_de
+        where med.CODE_BAG is null
+          and de.code_de = #{codeDe}
+    </select>
+    <select id="queryExMedBag" resultType="com.zebone.nhis.ma.pub.zsba.vo.OrderExVo">
+        select pv.bed_no,
+        pi.name_pi,
+        pi.code_ip,
+        pi.pk_pi,
+        med.CODE_DE,
+        med.PK_MEDBAG,
+        med.CODE_BAG,
+        med.EU_BAG,
+        pv.PK_PV
+        from EX_MED_BAG med
+        inner join pv_encounter pv on med.pk_pv = pv.pk_pv
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi
+        left join BL_IP_DT bl on bl.PK_CGIP = med.PK_CGIP
+        left join EX_MED_BAG_DETAIL bag on bag.PK_MEDBAG = med.PK_MEDBAG
+	    left join ex_order_occ occ on occ.PK_EXOCC = bag.PK_EXOCC
+	    left join CN_ORDER cn on cn.PK_CNORD=occ.PK_CNORD
+        left join CN_PRESCRIPTION pres on pres.pk_pres=cn.PK_PRES
+        where med.CODE_DE=#{codeDe,jdbcType=VARCHAR}
+        <if test="val!= null and val !=''and val=='1'.toString() ">
+            and (bl.PK_CGIP is null or bl.PK_CGIP = '')
+        </if>
+
+        <choose>
+            <when test="euBag!= null and euBag !=''and euBag =='1'.toString() ">
+                and med.EU_BAG in('02','01')
+            </when>
+            <otherwise>
+                and med.EU_BAG ='02'
+            </otherwise>
+        </choose>
+
+        and med.DEL_FLAG='0'
+        <if test=" presNo !=null and presNo !='' ">
+           and pres.pres_no = #{presNo,jdbcType=VARCHAR}
+        </if>        
+    </select>
+    <select id="queryExMedBagDetial" resultType="com.zebone.nhis.ma.pub.zsba.vo.OrderExVo">
+        select dept.name_dept,
+               ward.name_dept                                                 as name_dept_ns,
+               ord.name_ord,
+               ord.spec,
+               ord.dosage,
+               ord.ORDSN,
+               dosun.name                                                     as unit_dos,
+               occ.quan_occ                                                   as quan,
+               occ.pk_pdde                                                    as pkPdDe,
+               unit.name                                                      as unit_pack,
+               occ.date_plan,
+               ord.eu_always,
+               ord.pk_cnord,
+               supply.name                                                    as name_supply,
+               freq.note                                                      as name_freq,
+               substr(to_char(occ.date_plan, 'yyyy-MM-DD HH24:MI:SS'), 1, 16) as date_plan_descr,
+               occ.pk_exocc
+        from EX_MED_BAG ex
+                     left join EX_MED_BAG_DETAIL exdetial on ex.PK_MEDBAG = exdetial.PK_MEDBAG
+                     inner join ex_order_occ occ on occ.PK_EXOCC = exdetial.PK_EXOCC
+                     inner join cn_order ord on occ.pk_cnord = ord.pk_cnord
+                     inner join bd_supply supply on supply.code = ord.code_supply
+                     inner join bd_term_freq freq on freq.code = ord.code_freq
+                     inner join bd_pd pd on ord.pk_ord = pd.pk_pd
+                     inner join pv_encounter pv on occ.pk_pv = pv.pk_pv
+                     inner join pi_master pi on pv.pk_pi = pi.pk_pi
+                     inner join bd_unit unit on occ.pk_unit = unit.pk_unit
+                     inner join bd_unit dosun on dosun.pk_unit = ord.pk_unit_dos
+                     inner join bd_ou_dept dept on ord.pk_dept = dept.pk_dept
+                     inner join bd_ou_dept ward on ord.pk_dept_ns = ward.pk_dept
+        where ex.CODE_BAG = #{codeBag,jdbcType=VARCHAR}
+        order by occ.DATE_PLAN
+    </select>
+
+    <select id="querySendDrugAgainData" parameterType="java.util.Map" resultType="DynaBean">
+        select distinct de.code_de as codeDe,
+        de.date_de as dateDe,
+        de.pk_dept_ap as pkDeptAp,
+        bod.NAME_DEPT as nameDept,
+        de.name_emp_de as nameEmpDe,
+        case when CO.PK_PRES is not null then '处方发药' else de.name_decate end as nameDecate,
+        de.pk_dept_de as pkDeptDe,
+        de.PK_PDDECATE as pkPddecate
+        from ex_pd_de de
+        inner join CN_ORDER CO on de.PK_CNORD = CO.PK_CNORD
+        inner join bd_supply sup on CO.code_supply = sup.code
+        inner join bd_supply_class cla on cla.pk_supplycate = sup.pk_supplycate
+        INNER JOIN BD_OU_DEPT bod ON bod.PK_DEPT = de.PK_DEPT_AP
+        left JOIN BD_PD_DECATE ca ON ca.PK_PDDECATE = de.PK_PDDECATE
+        LEFT JOIN EX_MED_BAG EMB on de.CODE_DE = EMB.CODE_DE
+        where CO.flag_durg = '1'
+        and EMB.code_bag is null
+        and cla.code = '01'
+        and ((CO.PK_PRES is null and ca.CODE_DECATE != '0003') or (CO.PK_PRES is not null and ca.CODE_DECATE is null))
+        and de.flag_sendtofa='0'
+        and de.pk_dept_de=#{pkDeptDe,jdbcType=VARCHAR}
+        <!-- and de.code_de=? -->
+        <if test='codeDe!=null and codeDe!=""'>
+            and de.code_de=#{codeDe,jdbcType=VARCHAR}
+        </if>
+        <if test="dateBegin != null and dateBegin !=''">
+            and de.date_de &gt;= to_date(#{dateBegin},'yyyy-MM-dd hh24:mi:ss')
+        </if>
+        <if test="dateEnd != null and dateEnd !=''">
+            and de.date_de &lt;= to_date(#{dateEnd},'yyyy-MM-dd hh24:mi:ss')
+        </if>
+        <if test="pkDeptAp != null and pkDeptAp !=''">
+            and de.pk_dept_ap = #{pkDeptAp,jdbcType=VARCHAR}
+        </if>
+        ORDER BY de.DATE_DE DESC
+    </select>
+</mapper>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.dao.ZsrmDictMapper" >
+
+
+	<select id="queryBedInfoByPk" resultType="DynaBean">
+		select bed.CODE,dept.CODE_DEPT,dept.NAME_DEPT,ward.CODE_DEPT code_ward,ward.NAME_DEPT name_ward,'active' status
+			 ,bed.NAME,bed.DT_BEDTYPE code_type,tp.NAME name_type,doct.CODE_EMP code_doctor,doct.NAME_EMP name_doctor
+			 ,nur.CODE_EMP code_nurse,nur.NAME_EMP name_nurse
+		from BD_RES_BED bed
+				 left join bd_ou_dept dept on bed.PK_DEPT=dept.PK_DEPT
+				 left join bd_ou_dept ward on bed.pk_ward=dept.PK_DEPT
+				 left join BD_DEFDOC tp on bed.DT_BEDTYPE=tp.CODE and tp.CODE_DEFDOCLIST='010400'
+				 left join bd_ou_employee doct on bed.PK_PHY_EMP=doct.PK_EMP
+				 left join bd_ou_employee nur on bed.PK_NS_EMP=nur.PK_EMP
+		where PK_BED= #{pkBed,jdbcType=VARCHAR}
+	</select>
+</mapper>

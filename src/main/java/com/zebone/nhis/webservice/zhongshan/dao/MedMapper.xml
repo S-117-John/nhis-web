@@ -1,0 +1,516 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.webservice.zhongshan.dao.MedMapper">
+    <!-- 查询其他系统中的【心电】申请单记录 -->
+    <select id="queryAppList" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.webservice.zhongshan.vo.PacsApplyRecord">
+        select pacs_apply_record.*
+        , case when birthday is not null then CONVERT(varchar(100), birthday, 23) else '' end birthday_txt
+        from pacs_apply_record
+        where send_type = #{send_type,jdbcType=CHAR}
+        and check_type = #{check_type,jdbcType=CHAR}
+        <if test="uid != null  and  uid != ''">
+            and uid = #{uid,jdbcType=CHAR}
+        </if>
+        <if test="patient_id != null  and  patient_id != ''">
+            and patient_id = #{patient_id,jdbcType=CHAR}
+        </if>
+        <if test="inpatient_no != null  and  inpatient_no != ''">
+            and inpatient_no = #{inpatient_no,jdbcType=CHAR}
+        </if>
+        <if test="start_time != null  and  start_time != ''">
+            and apply_date &gt;= #{start_time,jdbcType=CHAR}
+        </if>
+        <if test="end_time != null  and  end_time != ''">
+            and apply_date &lt;= #{end_time,jdbcType=CHAR}
+        </if>
+        order by apply_date desc
+    </select>
+
+    <!-- 查询NHIS中的【心电】申请单记录 -->
+    <select id="queryIpEcgAppListFromNHIS" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.webservice.zhongshan.vo.PacsApplyRecord">
+        select ord.code_apply as record_sn,
+        ord.code_apply as uid,
+        pi.code_pi as patient_id,
+        pi.code_ip as inpatient_no,
+        ip.ip_times as times,
+        pi.name_pi as name,
+        case pi.dt_sex when '03' then '0' else '1' end as sex,
+        pi.birth_date as birthday,
+        CONVERT(varchar(100), pi.birth_date, 23) as birthday_txt,
+        pi.address as address,
+        pi.mobile as telephone,
+        pi.unit_work as company,
+        pv.bed_no,
+        doc.shortname as check_type,
+        ord.name_ord as body_of_case,
+        '2' as send_type,
+        org.name_org as send_dw,
+        (case when deptNs.dt_depttype = '02' then dept.name_dept else deptNs.name_dept end) as send_dept,
+        ord.name_emp_ord as doc_name,
+        ord.date_start as apply_date,
+        replace(replace( replace(ris.note_dise,'|',''),''' || &gt; || ''' ,'＞'),''' || &lt; || ''' ,'＜') as description_b,
+        replace(replace( ('病情描述：' || replace(nvl(ris.note_dise ,''),'|','') || char(10)
+        || '临床诊断：' || replace(nvl(ris.name_diag ,''),'|','') || char(10)
+        || '检查目的：' || replace(nvl(ris.purpose ,''),'|','') || char(10)
+        || '注意事项：' || replace(nvl(ris.ris_notice,''),'|','')
+        || (case when ord.note_ord is not null and len(ord.note_ord) > 0
+        then char(10) || '备注：' || replace(nvl(ord.note_ord,''),'|','') else '' end)
+        ) ,''' || &gt; || ''' ,'＞'),''' || &lt; || ''' ,'＜') as description,
+        replace(replace( diag.desc_diag || ris.purpose ,''' || &gt; || ''' ,'＞'),''' || &lt; || ''' ,'＜') as diagnosis,
+        ord.price_cg price,
+        ord.flag_emer as emergency_flag
+        from cn_ris_apply ris
+        inner join cn_order ord on ord.pk_cnord = ris.pk_cnord
+        inner join pv_encounter pv on ord.pk_pv = pv.pk_pv
+        inner join pi_master pi on ord.pk_pi = pi.pk_pi
+        left join bd_ord bord on bord.pk_ord = ord.pk_ord
+        left join bd_defdoc doc on doc.code = substring(bord.dt_ordcate,1,2) and doc.code_defdoclist = '030000'
+        left join pv_diag diag on diag.pk_pv = pv.pk_pv and diag.flag_maj = '1' and diag.del_flag = '0'
+        left join pv_ip ip on ip.pk_pv = ord.pk_pv
+        left join bd_ou_org org on org.pk_org = ord.pk_org
+        left join bd_ou_dept dept on dept.pk_dept = ord.pk_dept
+        left join bd_ou_dept deptNs on deptNs.pk_dept = ord.pk_dept_ns
+        where ord.del_flag = '0'
+        and ord.eu_status_ord &gt; '1'
+        and ord.eu_status_ord &lt; '9'
+        and ris.eu_status = '1'
+        and doc.shortname = #{check_type,jdbcType=CHAR}            
+        and pv.pk_pv in
+            <foreach collection="pkPv" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        <if test="uid != null  and  uid != ''">
+            and ord.code_apply = #{uid,jdbcType=CHAR}
+        </if>
+        <if test="startTime != null  and  startTime != ''">
+            and ord.date_start &gt;= to_date(#{startTime},'YYYYMMDDHH24MISS')
+        </if>
+        <if test="endTime != null  and  endTime != ''">
+            and ord.date_start &lt;= to_date(#{endTime},'YYYYMMDDHH24MISS')
+        </if>
+        order by ord.date_start desc
+    </select>
+
+    <select id="qryLabApplyInfo" statementType="CALLABLE"
+            parameterType="java.util.Map" resultType="DynaBean">
+        {call
+                JY_GetZyInfo_Interface(#{beginDate,mode=IN,jdbcType=VARCHAR}, #{endDate,mode=IN,jdbcType=VARCHAR},
+                                       #{codeIp,mode=IN,jdbcType=VARCHAR}, #{pkDept,mode=IN,jdbcType=VARCHAR})}
+    </select>
+
+    <!-- 查询NHIS中的【非心电的Ris】医嘱有效的申请单记录 -->
+    <select id="queryRisAppFromNHIS" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.webservice.zhongshan.vo.PacsApplyRecordRisVo">
+        select ord.code_apply as record_sn,
+        ord.code_apply as uid,
+        pi.id_sn as id_sn,
+        pi.fy_pno as fy_pno,
+        case when ord.EU_STATUS_ORD = '9' then '3'
+        when ord.EU_STATUS_ORD != '9' and ris.eu_status + ris.flag_print2 = '02' then '3'
+        when ord.EU_STATUS_ORD != '9' and ris.eu_status + ris.flag_print2 = '12' then '2'
+        else '1' end as ope_type,
+        '2' as send_type,
+        'N' as sys_flag,
+        pi.code_pi as patient_id,
+        pi.code_ip as inpatient_no,
+        ip.ip_times as times,
+        pi.name_pi as name,
+        case pi.dt_sex when '03' then '0' else '1' end as sex,
+        pi.birth_date as birthday,
+        dbo.GetPatAge(pi.BIRTH_DATE,GETDATE()) as age,
+        pi.address as address,
+        pi.mobile as telephone,
+        pi.unit_work as company,
+        pv.bed_no,
+        doc.shortname as check_type,<!-- bdOrd.dt_ordcate as check_type, -->
+        ord.name_ord as body_of_case,
+        org.name_org as send_dw,
+        (case when deptNs.dt_depttype = '02' then dept.name_dept else deptNs.name_dept end) as send_dept,
+        ord.name_emp_ord as doc_name,
+        ord.date_start as apply_date,
+        replace(replace( replace(ris.note_dise,'|',''),''' || &gt; || ''' ,'＞'),''' || &lt; || ''' ,'＜') as description_b,
+        replace(replace( ('病情描述：' || replace(nvl(ris.note_dise ,''),'|','') || char(10)
+        || '临床诊断：' || replace(nvl(ris.name_diag ,''),'|','') || char(10)
+        || '检查目的：' || replace(nvl(ris.purpose ,''),'|','') || char(10)
+        || '注意事项：' || replace(nvl(ris.ris_notice,''),'|','')
+        || (case when ord.note_ord is not null and len(ord.note_ord) > 0
+        then char(10) || '备注：' || replace(nvl(ord.note_ord,''),'|','') else '' end)
+        ),''' || &gt; || ''' ,'＞'),''' || &lt; || ''' ,'＜') as description,
+        replace(replace( diag.desc_diag || ris.purpose,''' || &gt; || ''' ,'＞'),''' || &lt; || ''' ,'＜') as diagnosis,
+        ord.price_cg price,
+        ord.flag_emer as emergency_flag,
+        pi.id_no 
+        from cn_ris_apply ris
+        inner join cn_order ord on ris.PK_CNORD=ord.PK_CNORD
+        inner join pv_encounter pv on ord.pk_pv = pv.pk_pv
+        inner join pi_master pi on ord.pk_pi = pi.pk_pi
+        inner join bd_ord bdOrd on bdOrd.pk_ord = ord.pk_ord
+        left join bd_defdoc doc on doc.code = substring(bdOrd.dt_ordcate,1,2) and doc.code_defdoclist =
+        '030000'<!-- 医嘱分类-检查大类的shortname -->
+        left join pv_diag diag on diag.pk_pv = pv.pk_pv and diag.flag_maj = '1' and diag.del_flag = '0'
+        left join pv_ip ip on ip.pk_pv = ord.pk_pv
+        left join bd_ou_org org on org.pk_org = ord.pk_org
+        left join bd_ou_dept dept on dept.pk_dept = ord.pk_dept
+        left join bd_ou_dept deptNs on deptNs.pk_dept = ord.pk_dept_ns
+        where ord.del_flag = '0'
+        and ord.eu_status_ord &gt; '1'
+        and ord.eu_status_ord &lt;= '9'
+        and ((ris.eu_status in('1','2') and ris.flag_print2 = '0')
+        or (ris.eu_status = '0' and ris.flag_print2 = '2')
+        or (ord.eu_status_ord = '9' and ris.flag_print2 = '1'))
+        <if test="checkTypeOfRis != null  and  checkTypeOfRis != ''">
+            <!-- 传往pacs系统的检查类型 -->
+            and doc.shortname
+            <foreach collection="checkTypeOfRis" index="index" item="item" open=" in (" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <!-- 根据条形码 查询【NHIS】中的【相关执行单】 -->
+    <select id="querylisForCg" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.webservice.zhongshan.vo.BlCgVo">
+        select ord.PK_ORG,
+               ord.PK_PRES,
+               ord.EU_PVTYPE,
+               ord.SPEC,
+               ord.PK_PV,
+               ord.PK_PI,
+               ord.PK_ORD,
+               ord.PK_CNORD,
+               ord.QUAN         as quan_cg,
+               ord.PK_ORG       as pk_org_app,
+               ord.PK_DEPT      as pk_dept_app,
+               ord.PK_DEPT_NS   as pk_dept_ns_app,
+               ord.PK_EMP_ORD   as pk_emp_app,
+               ord.NAME_EMP_ORD as name_emp_app,
+               ord.PK_ORG       as pk_org_ex,
+               ord.PK_DEPT_EXEC as pk_dept_ex,
+               ord.FLAG_DURG    as flag_pd,
+               ord.INFANT_NO,
+               ord.PK_DEPT_EXEC as pk_dept_cg,
+               occ.PK_EXOCC     as pk_ordexdt,
+               occ.PK_CG,
+               '0'              as flag_pv
+        from CN_ORDER ord
+                     inner join CN_LAB_APPLY app on app.pk_cnord = ord.pk_cnord
+                     inner join EX_ORDER_OCC occ on occ.PK_CNORD = ord.PK_CNORD
+        where app.samp_no = #{sampNo,jdbcType=CHAR}
+          and ord.pk_pv = #{pkPv,jdbcType=CHAR}
+    </select>
+    <!-- 根据条形码 查询申请记录 -->
+    <select id="querylisForOrd" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.common.module.cn.ipdw.CnOrder">
+        select ord.*
+        from CN_ORDER ord
+                     inner join CN_LAB_APPLY app on app.pk_cnord = ord.pk_cnord
+        where app.samp_no = #{sampNo,jdbcType=CHAR}
+          and ord.pk_pv = #{pkPv,jdbcType=CHAR}
+    </select>
+    <select id="queryOrdRis" parameterType="java.util.Map" resultType="DynaBean">
+        select ord.pk_cnord,
+        ord.ordsn,
+        ord.ordsn_parent,
+        ord.pk_pi,
+        ord.pk_pv,
+        ord.pk_dept_ns,
+        pi.code_ip,
+        pv.code_pv,
+        pv.name_pi,
+        pv.dt_sex,
+        pv.BED_NO,
+        ris.eu_status Ris_Status,
+        lis.eu_status Lis_Status,
+        ord.code_apply,
+        ord.flag_emer,
+        ord.name_ord,
+        ord.quan,
+        ord.quan*ord.price_cg as price_cg,
+        ord.date_start,
+        ord.PK_DEPT_EXEC,
+        dept.name_dept as pk_dept,
+        dept.pk_dept as pk_dept_app,
+        nowde.NAME_DEPT now_dept,
+        ord.name_emp_ord,
+        case when cnt is null then 0 else cg.cnt end cnt,
+        ord.note_ord,
+        occ.pk_exocc,
+        ord.eu_pvtype,
+        ord.code_ordtype,
+        ord.pk_ord,
+        occ.PK_ORG_OCC,
+        occ.date_occ,
+        occ.PK_DEPT_OCC,
+        occ.date_plan,
+        occ.EU_STATUS eu_status_occ,
+        ris.DESC_BODY,
+        ris.PURPOSE,
+        bdia.name_cd as dmiss_diag,
+        cg.item_num,
+        ris.flag_print2,
+        ris.pk_ordris,
+        (select count(1)
+        from CN_ORDER
+        where PK_DEPT_EXEC = ord.pk_dept_exec
+        and PK_PV = pv.PK_PV
+        and ORDSN=ORDSN_PARENT
+        ) as recent_apply,
+        case when ord.ORDSN=ord.ORDSN_PARENT then '0' else '1' end is_father
+        from cn_order ord
+        inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+        inner join BD_OU_DEPT nowde on nowde.PK_DEPT=pv.PK_DEPT
+        left join pv_diag pdia on pdia.pk_pv=pv.pk_pv and pdia.FLAG_MAJ='1'
+        left join bd_cndiag bdia on bdia.pk_cndiag=pdia.pk_diag
+        inner join pi_master pi on pv.pk_pi=pi.pk_pi
+        inner join ex_order_occ occ on ord.pk_cnord=occ.pk_cnord and occ.flag_canc='0'
+        LEFT JOIN cn_ris_apply ris ON ris.PK_CNORD = ord.PK_CNORD
+        left outer join cn_lab_apply lis on ord.pk_cnord=lis.pk_cnord
+        left outer join cn_trans_apply trans on ord.pk_cnord = trans.pk_cnord
+        left outer join (select sum(dt.amount) cnt,
+        dt.pk_ordexdt,
+        dt.pk_dept_ex,
+        count(1) as item_num
+        from bl_ip_dt dt
+        group by dt.pk_ordexdt,dt.pk_dept_ex) cg on occ.pk_exocc=cg.pk_ordexdt
+
+        left outer join bd_ou_dept dept on ord.pk_dept = dept.pk_dept
+        where 1=0
+        <if test=" uid!=null and uid !='' ">
+            or ord.CODE_APPLY = #{uid,jdbcType=CHAR}
+        </if>
+        <if test=" record_sn!=null and record_sn !='' ">
+            or ord.CODE_APPLY = #{record_sn,jdbcType=CHAR}
+        </if>
+    </select>
+
+    <select id="getPkPvByOp" resultType="java.lang.String">
+        select PE.PK_PV
+        from PV_ENCOUNTER PE
+        inner join PI_MASTER PM on PM.PK_PI = PE.PK_PI
+        inner join PV_OP PO on PO.PK_PV = PE.PK_PV
+        <where>
+            EU_STATUS != '9'
+            <if test="patient_id != null  and  patient_id != ''">
+                and (PM.CODE_OP = #{patient_id,jdbcType=VARCHAR} or PM.CODE_PI= #{patient_id,jdbcType=VARCHAR})
+            </if>
+            <if test="start_time != null  and  start_time != ''">
+                and PE.DATE_BEGIN &gt;= #{start_time,jdbcType=DATE}
+            </if>
+            <if test="end_time != null  and  end_time != ''">
+                and (PE.DATE_END is null or PE.DATE_END &lt;= #{end_time,jdbcType=DATE})
+            </if>
+        </where>
+    </select>
+
+    <select id="getPkPvByIp" resultType="java.lang.String">
+        select pv.pk_pv
+        from pv_encounter pv
+        inner join pv_ip ip on ip.pk_pv = pv.pk_pv
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi
+        <where>
+            eu_status = '1'
+            and flag_in = '1'
+            <if test="inpatient_no != null  and  inpatient_no != ''">
+                and pi.code_ip = #{inpatient_no,jdbcType=VARCHAR}
+            </if>
+        </where>
+    </select>
+
+    <select id="queryOpEcgAppListFromNHIS" resultType="com.zebone.nhis.webservice.zhongshan.vo.PacsApplyRecord">
+        select ord.code_apply as record_sn,
+        ord.code_apply as uid,
+        pi.code_op as patient_id,
+        null as inpatient_no,
+        op.op_times as times,
+        pi.name_pi as name,
+        case pi.dt_sex when '03' then '0' else '1' end as sex,
+        pi.birth_date as birthday,
+        CONVERT(varchar(100), pi.birth_date, 23) as birthday_txt,
+        pi.address as address,
+        pi.mobile as telephone,
+        pi.unit_work as company,
+        pv.bed_no,
+        doc.shortname as check_type,
+        ord.name_ord as body_of_case,
+        '1' as send_type,
+        org.name_org as send_dw,
+        dept.NAME_DEPT as send_dept,
+        ord.name_emp_ord as doc_name,
+        ord.date_start as apply_date,
+        replace(replace( replace(ris.note_dise, '|', ''),''' || &gt; || ''' ,'＞'),''' || &lt; || ''' ,'＜') as description_b,
+        replace(replace( ('病情描述：' + replace(isnull(ris.note_dise, ''), '|', '') + char(10)
+        + '临床诊断：' + replace(isnull(ris.name_diag, ''), '|', '') + char(10)
+        + '检查目的：' + replace(isnull(ris.purpose, ''), '|', '') + char(10)
+        + '注意事项：' + replace(isnull(ris.ris_notice, ''), '|', '')
+        + (case when ord.note_ord is not null and len(ord.note_ord) > 0 then char(10) + '备注：' +
+        replace(isnull(ord.note_ord, ''), '|', '') else '' end)
+        ),''' || &gt; || ''' ,'＞'),''' || &lt; || ''' ,'＜') as description,
+        replace(replace( diag.desc_diag + ris.purpose,''' || &gt; || ''' ,'＞'),''' || &lt; || ''' ,'＜') as diagnosis,
+        ord.price_cg as price,
+        ord.flag_emer as emergency_flag
+        from cn_ris_apply ris
+        inner join cn_order ord on ord.pk_cnord = ris.pk_cnord
+        inner join pv_encounter pv on ord.pk_pv = pv.pk_pv
+        inner join pv_op op on op.pk_pv = pv.pk_pv
+        inner join pi_master pi on ord.pk_pi = pi.pk_pi
+        left join bd_ord bord on bord.pk_ord = ord.pk_ord
+        left join bd_defdoc doc on doc.code = substring(bord.dt_ordcate, 1, 2) and doc.code_defdoclist = '030000'
+        left join pv_diag diag on diag.pk_pv = pv.pk_pv and diag.flag_maj = '1' and diag.del_flag = '0'
+        left join bd_ou_org org on org.pk_org = ord.pk_org
+        left join bd_ou_dept dept on dept.pk_dept = ord.pk_dept
+        left join PI_CATE PC on PC.PK_PICATE = pv.PK_PICATE
+        <where>
+            ord.del_flag = '0'
+            and ris.eu_status = '1'
+            and doc.shortname = #{check_type,jdbcType=CHAR}
+            and pv.pk_pv in
+            <foreach collection="pkPv" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            and
+            ( PC.CODE = '100' or exists(
+            select 1 from BL_OP_DT BOD
+            inner join BL_SETTLE BS on BOD.PK_SETTLE = BS.PK_SETTLE
+            where BS.FLAG_CANC = '0' and BOD.PK_CNORD = ord.PK_CNORD ))
+            <if test="uid != null  and  uid != ''">
+                and ord.code_apply = #{uid,jdbcType=CHAR}
+            </if>
+            <if test="startTime != null  and  startTime != ''">
+                and ord.date_start &gt;= to_date(#{startTime},'YYYYMMDDHH24MISS')
+            </if>
+            <if test="endTime != null  and  endTime != ''">
+                and ord.date_start &lt;= to_date(#{endTime},'YYYYMMDDHH24MISS')
+            </if>
+        </where>
+        order by ord.date_start desc
+    </select>
+
+    <update id="updateExAssOccE">
+        update ex_assist_occ
+        set flag_occ=1,
+            date_occ = to_date(#{dateOcc,jdbcType=VARCHAR}, 'YYYY-MM-DD HH24:MI:SS'),
+            pk_emp_occ = #{pkEmpOcc,jdbcType=VARCHAR},
+            name_emp_occ = #{nameEmpOcc,jdbcType=VARCHAR},
+            eu_status=1,
+            pk_org_occ=#{pkOrgOcc,jdbcType=VARCHAR},
+            pk_dept_occ=#{pkDeptOcc,jdbcType=VARCHAR},
+            DATE_CANC=null,
+            PK_EMP_CANC=null,
+            NAME_EMP_CANC=null,
+            ts = GETDATE()
+        where flag_occ = 0
+          and flag_canc = '0'
+          and flag_refund = '0'
+          and PK_CNORD = #{pkCnord,jdbcType=VARCHAR}
+    </update>
+
+    <update id="cancelOpExtem" parameterType="java.util.Map">
+        update ex_assist_occ
+        set flag_occ='0',
+            date_occ=null,
+            pk_emp_occ=null,
+            name_emp_occ=null,
+            pk_msp=null,
+            eu_status='0',
+            date_canc=to_date(#{dateCanc,jdbcType=VARCHAR}, 'YYYY-MM-DD HH24:MI:SS'),
+            pk_emp_canc=#{pkEmpCanc,jdbcType=VARCHAR},
+            name_emp_canc=#{nameEmpCanc,jdbcType=VARCHAR},
+            ts = GETDATE()
+        where flag_occ = '1'
+          and flag_canc = '0'
+          and pk_assocc = #{pkAssOcc,jdbcType=VARCHAR}
+    </update>
+
+    <select id="queryOpRisAppFromNHIS" resultType="com.zebone.nhis.webservice.zhongshan.vo.PacsApplyRecordRisVo">
+        select ord.code_apply as record_sn,
+        ord.code_apply as uid,
+        pi.id_sn as id_sn,
+        pi.fy_pno as fy_pno,
+        case
+        when ord.EU_STATUS_ORD = '9' then '3'
+        when ord.EU_STATUS_ORD != '9' and ris.eu_status + ris.flag_print2 = '02' then '3'
+        when ord.EU_STATUS_ORD != '9' and ris.eu_status + ris.flag_print2 = '12' then '2'
+        else '1' end as ope_type,
+        '1' as send_type,
+        'N' as sys_flag,
+        pi.code_op as patient_id,
+        null inpatient_no,
+        op.op_times as times,
+        pi.name_pi as name,
+        case pi.dt_sex when '03' then '0' else '1' end as sex,
+        pi.birth_date as birthday,
+        dbo.GetPatAge(pi.BIRTH_DATE, getdate()) as age,
+        pi.address as address,
+        pi.mobile as telephone,
+        pi.unit_work as company,
+        pv.bed_no,
+        doc.shortname as check_type,
+        ord.name_ord as body_of_case,
+        org.name_org as send_dw,
+        dept.name_dept as send_dept,
+        ord.name_emp_ord as doc_name,
+        ord.date_start as apply_date,
+        replace(replace( replace(ris.note_dise, '|', ''),''' || &gt; || ''' ,'＞'),''' || &lt; || ''' ,'＜') as description_b,
+        replace(replace( ('病情描述：' + replace(nvl(ris.note_dise, ''), '|', '') + char(10)
+        + '临床诊断：' + replace(nvl(ris.name_diag, ''), '|', '') + char(10)
+        + '检查部位：' + replace(nvl(ris.DESC_BODY, ''), '|', '') + char(10)
+        + '检查目的：' + replace(nvl(ris.purpose, ''), '|', '') + char(10)
+        + '注意事项：' + replace(nvl(ris.ris_notice, ''), '|', '')
+        + (case when ord.note_ord is not null and len(ord.note_ord) > 0 
+                then char(10) + '备注：' + replace(nvl(ord.note_ord, ''), '|', '') else '' end) )
+                ,''' || &gt; || ''' ,'＞'),''' || &lt; || ''' ,'＜') as description,
+        replace(replace( diag.desc_diag + ris.purpose,''' || &gt; || ''' ,'＞'),''' || &lt; || ''' ,'＜') as diagnosis,
+        ord.price_cg price,
+        ord.flag_emer as emergency_flag,
+        pi.id_no 
+        from cn_ris_apply ris
+        inner join cn_order ord on ris.PK_CNORD = ord.PK_CNORD
+        inner join pv_encounter pv on ord.pk_pv = pv.pk_pv
+        inner join pv_op op on op.pk_pv = pv.pk_pv
+        inner join pi_master pi on ord.pk_pi = pi.pk_pi
+        inner join bd_ord bdOrd on bdOrd.pk_ord = ord.pk_ord
+        left join bd_defdoc doc on doc.code = substring(bdOrd.dt_ordcate, 1, 2) and doc.code_defdoclist = '030000'
+        left join pv_diag diag on diag.pk_pv = pv.pk_pv and diag.flag_maj = '1' and diag.del_flag = '0'
+        left join bd_ou_org org on org.pk_org = ord.pk_org
+        left join bd_ou_dept dept on dept.pk_dept = ord.pk_dept
+        left join PI_CATE PC on PC.PK_PICATE = pv.PK_PICATE
+        where ord.del_flag = '0'
+        and ((ris.eu_status in('0','1','2') and ris.flag_print2 = '0')
+          or (ris.eu_status = '0' and ris.flag_print2 = '2')
+          or (ord.eu_status_ord = '9' and ris.flag_print2 = '1'))
+        and( PC.CODE = '100'or exists(
+        select 1 from BL_OP_DT BOD
+        inner join BL_SETTLE BS on BOD.PK_SETTLE = BS.PK_SETTLE
+        where BS.FLAG_CANC = '0' and BOD.PK_CNORD = ord.PK_CNORD ))
+        <if test="checkTypeOfRis != null  and  checkTypeOfRis != ''">
+            <!-- 传往pacs系统的检查类型 -->
+            and doc.shortname
+            <foreach collection="checkTypeOfRis" index="index" item="item" open=" in (" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="getPvLab" resultType="com.zebone.nhis.webservice.zhongshan.vo.PvEncounterVo">
+        select pi.code_pi, pi.code_ip, pv.*
+        from pi_master pi
+        inner join pv_encounter pv on pv.pk_pi = pi.pk_pi and pv.del_flag = '0'
+        <where>
+            pv.eu_status in ('1', '2', '3')
+            <if test=" patient_id!=null and patient_id!=''">
+                and pi.code_pi = #{patient_id,jdbcType=VARCHAR}
+            </if>
+            <if test=" admiss_times!=null and admiss_times!=''">
+                and exists(
+                select 1 from pv_ip where pk_pv = pv.pk_pv and ip_times = #{admiss_times,jdbcType=VARCHAR} and del_flag
+                = '0' )
+            </if>
+            and PK_PV in (
+            select CO.PK_PV
+            from CN_ORDER CO where CO.CODE_APPLY= #{codeApply,jdbcType=VARCHAR}
+            )
+        </where>
+    </select>
+</mapper>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.HpCgdivMapper">
+
+<select id="exportsMed" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.base.bd.price.BdHpCgdivItem">
+					select 
+					'~' as pkOrg,        
+					#{pkHpcgdiv} as pkHpcgdiv,   
+					'1' as flagPd,       
+					pd.pk_pd as pkItem,     
+					pd.pk_itemcate as pkItemcate,
+					pd.name as itemname, 
+					pd.spcode,
+					pd.code,    
+					case when item1.eu_staple is null then '02' else item1.eu_staple end dtHptype,
+					'2' as euDivide,              
+					null as rate ,           
+					null as amount,            
+					null as spec             					 
+					from bd_pd pd
+					left join (select distinct im.eu_staple,imap.code_hosp from ins_gzyb_item im
+		            inner join ins_gzyb_itemmap imap on imap.code_center=im.code_item where im.flag_valid='1' and im.eu_hpdicttype='1' ) item1 on item1.code_hosp=pd.code_hp 
+					where not exists(select 1
+					from bd_hp_cgdiv_item div
+					where pd.pk_pd=div.pk_item and
+					div.pk_hpcgdiv=#{pkHpcgdiv,jdbcType=VARCHAR}) and pd.del_flag = '0'
+
+</select>
+
+<select id="exportsItem" resultType="com.zebone.nhis.common.module.base.bd.price.BdHpCgdivItem" parameterType="java.lang.String">
+		select 
+					'~' as pk_org,        
+					#{pkHpcgdiv} as pkHpcgdiv,          
+					'0' as flag_pd,        
+					item.pk_item as pkItem,     
+					item.pk_itemcate as pkItemcate, 
+					item.code, 
+					item.name  as itemname,   
+					item.spcode, 
+					case when item1.eu_staple is null then '02' else item1.eu_staple end dtHptype,
+					'2' as euDivide,              
+					null as rate ,           
+					null as amount,            
+					null as spec             			
+					from bd_item item 
+					left join (select distinct im.eu_staple,imap.code_hosp from ins_gzyb_item im
+		            inner join ins_gzyb_itemmap imap on imap.code_center=im.code_item where im.flag_valid='1' and im.eu_hpdicttype='1' ) item1 on item1.code_hosp=item.code_hp 
+					where not exists(select 1
+					from bd_hp_cgdiv_item div
+					where item.pk_item=div.pk_item and
+					div.pk_hpcgdiv=#{pkHpcgdiv,jdbcType=VARCHAR}) and item.del_flag = '0' and item.flag_active = '1'
+</select>
+
+<select id="qryPd" resultType="java.util.Map" parameterType="java.lang.String">
+ 			select item.pk_hpcgdivitem pkHpcgdivitem, item.pk_hpcgdiv, item.flag_pd, item.pk_item pkItem, pd.code as itemcode, pd.name as itemname, 
+ 					pd.spec as itemspec,pd.spcode, item.pk_itemcate pkItemcate, item.eu_divide euDivide, item.rate, 
+ 					item.amount, item.code, item.dt_hptype dtHptype ,0 isEdit,item.pk_payer pkPayer,item.max_quan maxQuan
+ 					from bd_hp_cgdiv_item item 
+ 					inner join bd_pd pd on item.pk_item=pd.pk_pd 
+ 					where item.pk_hpcgdiv=#{pkHpCgdiv,jdbcType=VARCHAR} 
+ 					and item.flag_pd='1' and item.del_flag='0'
+</select>
+
+<select id="qryItem" resultType="java.util.Map" parameterType="java.lang.String">
+			select item.pk_hpcgdivitem pkHpcgdivitem,item.pk_item pkItem, pd.code as itemcode, pd.name as itemname, pd.spec as itemspec,pd.spcode, 
+					item.pk_itemcate pkItemcate, item.eu_divide euDivide, item.rate, item.amount, item.code, item.dt_hptype dtHptype  ,0 isEdit,
+					item.pk_hpcgdiv pkHpcgdiv,item.flag_pd flagPd,item.pk_payer pkPayer,item.max_quan maxQuan
+					from bd_hp_cgdiv_item item 
+					inner join bd_item pd on item.pk_item=pd.pk_item 
+					where item.pk_hpcgdiv=#{pkHpCgdiv,jdbcType=VARCHAR} 
+					and item.flag_pd = '0' and item.del_flag = '0'
+</select>
+
+<select id="qryCate" resultType="java.util.Map" parameterType="java.lang.String">
+			select cate.pk_hpcgdivitemcate pkHpcgdivitemcate, cate.pk_itemcate pkItemcate, pd.code , pd.name , cate.eu_divide euDivide, cate.rate  ,0 isEdit,cate.pk_payer pkPayer
+						from bd_hp_cgdiv_itemcate cate 
+						inner join bd_itemcate pd on cate.pk_itemcate=pd.pk_itemcate 
+						where cate.pk_hpcgdiv=#{pkHpCgdiv,jdbcType=VARCHAR} and cate.del_flag='0'
+</select>
+</mapper>

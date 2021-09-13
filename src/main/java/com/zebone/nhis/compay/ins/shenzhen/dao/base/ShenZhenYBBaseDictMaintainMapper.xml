@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.compay.ins.shenzhen.dao.base.ShenZhenYBBaseDictMaintainMapper">
+	
+	<select id="querySZYBBaseDictType" resultType="DynaBean"  parameterType="java.lang.String">
+		select
+		  *
+		from ins_szyb_dict
+		where flag_chd = 0 and del_flag = 0 and eu_hpdicttype = #{euHpdicttype} order by code
+	</select>
+	<!-- flag_chd，父目录写0，子目录写1； -->
+	<select id="querySZYBBaseDictInfo" resultType="DynaBean" parameterType="java.util.Map">
+		select
+		 *
+		from ins_szyb_dict where del_flag = '0' 
+		and flag_chd = 1 and code_type = #{codeType,jdbcType=VARCHAR} 
+		and eu_hpdicttype = #{euHpdicttype, jdbcType=VARCHAR} 
+		 order by code
+	</select>
+	
+	<update id="batchUpdateSZYBBaseDict" parameterType="java.util.List">
+		<foreach collection="list" item="item" index="index" open="begin" close=";end;" separator=";">
+			update ins_szyb_dict
+			<set>
+				Del_flag = '1'
+			</set>
+			where pk_insdict = #{item.pkInsdict,jdbcType=VARCHAR}
+		</foreach>
+	</update>
+	
+</mapper>

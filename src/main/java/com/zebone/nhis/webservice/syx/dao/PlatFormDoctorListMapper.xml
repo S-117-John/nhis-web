@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.PlatFormDoctorListMapper">
+    <select id="getDoctorList" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.DoctorListReq"
+            resultType="com.zebone.nhis.webservice.syx.vo.platForm.DoctorListRes">
+        
+        SELECT
+			emp.code_emp doctorCode,
+			emp.name_emp doctotName,
+			title.name title,
+			res.spec introduciton,
+			'' AS scheDate,
+			'' AS photoUrl,
+			dept.code_dept deptCode,
+			dept.name_dept deptName  
+		FROM 
+			sch_sch sch 
+			INNER join sch_resource res ON sch.pk_schres = res.pk_schres 
+			INNER join bd_ou_employee emp ON res.pk_emp = emp.pk_emp 
+			INNER join bd_ou_empjob job ON emp.pk_emp = job.pk_emp 
+			INNER join bd_defdoc title ON job.jobname = title.code 
+			AND title.code_defdoclist = '010301' 
+			INNER join bd_ou_dept dept ON sch.pk_dept = dept.pk_dept 
+		WHERE 
+			sch.date_work = to_date(#{dateWork,jdbcType=VARCHAR},'yyyy-MM-dd')
+			<if test = "doctorCode != null and doctorCode != ''">
+			 	AND emp.code_emp = #{doctorCode,jdbcType=VARCHAR} 
+			</if>
+    </select>
+</mapper>

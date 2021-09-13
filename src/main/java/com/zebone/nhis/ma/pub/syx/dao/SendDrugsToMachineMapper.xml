@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.syx.dao.SendDrugsToMachineMapper">
+
+    <select id="qryParam" parameterType="java.lang.String" resultType="DynaBean">
+        SELECT de.PK_DEPT_DE,
+               de.CODE_DE,
+               de.PK_PDDECATE,
+               ca.CODE_DECATE
+        FROM EX_PD_DE de
+                 INNER JOIN BD_PD_DECATE ca ON ca.PK_PDDECATE = de.PK_PDDECATE
+        WHERE PK_PDDE = #{pkPdde}
+    </select>
+
+    <select id="generateRecord" parameterType="java.util.Map" resultType="com.zebone.nhis.ma.pub.syx.vo.AtfYpPageNo">
+        select distinct de.code_de     page_no,
+                        dept.OLD_CODE  ward_sn,
+                        null    as     group_no,
+                        sysdate as     submit_time,
+                        null    as     cofirm_time,
+                        null    as     confirm_oper,
+                        null    as     atf_no,
+                        0       as     flag,
+                        de.name_decate bylx
+        from ex_pd_de de
+                 inner join bd_ou_dept dept on de.pk_dept_ap = dept.pk_dept
+        where de.pk_dept_de = #{pkDeptDe}
+          And de.code_de = #{codeDe}
+    </select>
+
+    <select id="generateRecordDetail" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.ma.pub.syx.vo.AtfYpxxSyx">
+        select pi.code_ip                                                                  as INPATIENT_NO,
+               pi.code_pi                                                                  as P_ID,
+               substr(pi.name_pi, 1, 18)                                                   AS NAME,
+               pv.age_pv                                                                   as AGE,
+               null                                                                        as DEPT_SN,
+               ward.OLD_CODE                                                               as WARD_SN,
+               ward.name_dept                                                              as WARD_NAME,
+               ord.name_emp_ord                                                            as DOCTOR,
+               pv.bed_no                                                                   as BED_NO,
+               case when sup.name is null then '空' else sup.name end                       as commt,
+               ord.note_supply                                                             as COMM2,
+               pd.OLD_CODE                                                                 as DRUG_CODE,
+               pd.name                                                                     as DRUGNAME,
+               pd.spec                                                                     as specification,
+               pd.vol                                                                      as DOSAGE,
+               unit_min.name                                                               as DOS_UNIT,
+               ord.quan                                                                    as AMOUNT,
+               (SELECT sum(de.QUAN_MIN)
+                FROM EX_PD_DE de
+                WHERE de.CODE_DE = pdde.code_de
+                  and de.PK_PV = pdde.PK_PV
+                  AND de.PK_PD = pdde.PK_PD)                                               AS TOTAL,
+               to_date(to_char(occ.date_plan, 'yyyy-mm-dd hh24:mi'), 'yyyy-mm-dd hh24:mi') as OCC_TIME,
+               '0'                                                                         as FLAG,
+               null                                                                        as ATF_NO,
+               '0'                                                                         as PRI_FLAG,
+               pdde.code_de                                                                as PAGE_NO,
+               ord.ordsn || to_char(sysdate, 'dd') || '-' ||
+               to_number(substr(pdde.CODE_DE, 7, 4))                                       as DETAIL_SN,
+               null                                                                        as GEN_TIME,
+               ord.ordsn                                                                   as EXECDALISTID,
+               pdde.code_de                                                                as SEQNO,
+               null                                                                        as BAGNO,
+               CASE
+                   WHEN deca.CODE_DECATE = '02' OR deca.CODE_DECATE = '09' OR deca.CODE_DECATE = '13' OR
+                        deca.CODE_DECATE = '01' OR deca.CODE_DECATE = '08'
+                       THEN
+                       CASE
+                           WHEN to_char(occ.date_plan, 'hh24') > '12'
+                               THEN to_char(occ.date_plan, 'hh24') - 12 || 'p'
+                           WHEN to_char(occ.date_plan, 'hh24') = '12'
+                               THEN to_char(occ.date_plan, 'hh24') || 'p'
+                           WHEN to_char(occ.date_plan, 'hh24') in ('11', '10')
+                               THEN to_char(occ.date_plan, 'hh24') || 'a'
+                           ELSE substr(to_char(occ.date_plan, 'hh24'), 2, 1) || 'a'
+                           END
+                   END                                                                     as prn_comm
+        from ex_pd_de pdde
+                 inner join cn_order ord on pdde.pk_cnord = ord.pk_cnord
+                 inner join bd_pd pd on pdde.pk_pd = pd.pk_pd
+                 inner join pv_encounter pv on pdde.pk_pv = pv.pk_pv
+                 inner join pi_master pi on pv.pk_pi = pi.pk_pi
+                 inner join bd_ou_dept ward on ord.pk_dept_ns = ward.pk_dept
+                 left join bd_supply sup on ord.code_supply = sup.code
+                 inner join bd_unit unit_min on ord.pk_unit_dos = unit_min.pk_unit
+                 inner join ex_order_occ occ on pdde.pk_pdapdt = occ.pk_pdapdt
+                 inner join bd_pd_decate deca on deca.pk_pddecate = pdde.pk_pddecate
+        where pdde.pk_dept_de = #{pkDeptDe}
+          and pdde.code_de = #{codeDe}
+          and pdde.pk_pddecate = #{pkPddecate}
+          and pdde.eu_direct = '1'
+        group by pi.code_ip, pi.code_pi, pi.name_pi, pv.age_pv, ward.OLD_CODE, ward.name_dept, ord.name_emp_ord,
+                 pv.bed_no,
+                 pdde.PK_PV, pdde.PK_PD, deca.CODE_DECATE,
+                 sup.name, ord.note_supply, pd.OLD_CODE, pd.name, pd.spec, pd.vol, unit_min.name, ord.quan,
+                 occ.date_plan,
+                 pdde.code_de, ord.ordsn
+    </select>
+</mapper>

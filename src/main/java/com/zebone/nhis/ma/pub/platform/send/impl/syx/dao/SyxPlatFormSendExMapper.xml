@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.platform.send.impl.syx.dao.SyxPlatFormSendExMapper">
+	<select id="qryOpApplyInfo" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT
+			ord.code_apply,
+			opdiag.diagname,
+			note_ord,
+			op.date_apply,
+			op.eu_optype,
+			doc.NAME anae_name,
+			doc.CODE anae_code,
+		CASE
+			op.eu_optype 
+			WHEN '1' THEN
+			'择期' 
+			WHEN '2' THEN
+			'限期' 
+			WHEN '3' THEN
+			'急诊' 
+			END optype_name,
+			empord.code_emp ord_emp_code,
+			empord.name_emp ord_emp_name,
+			deptord.code_dept ord_code_dept,
+			deptord.name_dept ord_name_dept,
+			ord.date_chk,
+			empchk.code_emp chk_emp_code,
+			empchk.name_emp chk_emp_name,
+			opdiag.diagcode,
+			op.desc_op,
+			leve.CODE op_level_code,
+			leve.NAME op_level_name,
+			op.date_plan,
+			subdiag.diagcode sub_diagcode,
+			subdiag.diagname sub_diagname,
+			opemp.code_emp op_emp_code,
+			opemp.name_emp op_emp_name,
+			opdept.code_dept op_dept_code,
+			opdept.name_dept op_dept_name,
+			count.ip_times,
+			pv.code_pv,
+			pi.address,
+			pv.eu_pvtype,
+		CASE
+			pv.eu_pvtype 
+			WHEN '1' THEN
+			'门诊' 
+			WHEN '2' THEN
+			'急诊' 
+			WHEN '3' THEN
+			'住院' 
+			WHEN '4' THEN
+			'体检' 
+			WHEN '5' THEN
+			'家庭病床' 
+			END pvtype_name,
+			pv.date_admit,
+			pi.code_ip,
+			pi.code_op,
+			pi.pk_pi,
+			pi.id_no,
+			pi.insur_no,
+			pi.name_pi,
+			pi.tel_no,
+			dsex.CODE sex_code,
+			dsex.NAME sex_name,
+			pi.birth_date,
+			pv.bed_no,
+			bed.houseno,
+			bed.code bed_code,
+			bed.name bed_name,
+			pvdept.code_dept pv_dept_code,
+			pvdept.name_dept pv_dept_name,
+			pvnsdept.code_dept ns_dept_code,
+			pvnsdept.name_dept ns_dept_name,
+			cndiag.code_cd,
+			cndiag.name_cd,
+			op.pk_ordop ,
+			op.eu_status eu_status_op,
+			ord.ordsn,
+			pi.code_pi
+		from cn_order ord
+		left join cn_op_apply op on op.pk_cnord=ord.pk_cnord
+		left join pv_encounter pv on pv.pk_pv =ord.pk_pv
+		left join pi_master pi on pi.pk_pi=pv.pk_pi
+		left join pv_ip count on count.pk_pv=pv.pk_pv
+		left join bd_defdoc doc on doc.code=op.dt_anae and doc.code_defdoclist='030300'
+		left join bd_ou_employee empord on empord.pk_emp=ord.pk_emp_ord
+		left join bd_ou_dept deptord on deptord.pk_dept=ord.pk_dept
+		left join bd_ou_employee empchk on empchk.pk_emp=ord.pk_emp_chk
+		left join bd_term_diag opdiag on opdiag.pk_diag=op.pk_op and opdiag.dt_system='01'
+		left join bd_ou_employee opemp on opemp.pk_emp=op.pk_emp_phy_op
+		left join bd_ou_dept opdept on opdept.pk_dept=op.pk_dept_anae
+		left join cn_op_subjoin sub on sub.pk_ordop=op.pk_ordop
+		left join bd_term_diag subdiag on subdiag.pk_diag=sub.pk_diag_sub
+		left join bd_defdoc leve on leve.code=op.dt_oplevel and leve.code_defdoclist='030305'
+		left join bd_defdoc dsex on dsex.code=pi.dt_sex and dsex.code_defdoclist='000000'
+		left join bd_res_bed bed on bed.pk_pi =pi.pk_pi
+		left join bd_ou_dept pvdept on pvdept.pk_dept=pv.pk_dept
+		left join bd_ou_dept pvnsdept on pvnsdept.pk_dept=pv.pk_dept_ns
+		left join pv_diag diag on diag.pk_pvdiag=op.pk_diag_pre 		
+    	left join bd_cndiag cndiag on cndiag.pk_cndiag = op.pk_diag_pre 
+		where ord.PK_CNORD=#{pkCnord,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="qryOrderInfo" parameterType="java.util.Map" resultType="DynaBean">
+SELECT DISTINCT 
+	ord.date_enter,
+	ord.name_emp_input,
+	inemp.code_emp in_code_emp,
+	inde.code_dept in_code_dept,
+	inde.name_dept in_name_dept,
+	chkemp.code_emp code_emp_chk,
+	ord.name_emp_chk,
+	ord.date_chk,
+	ord.ordsn,
+	ord.code_ordtype,
+	ordtype.NAME name_ordtype,
+	ord.date_start,
+	ord.date_stop,
+	freq.NAME code_freq,
+	freq.note freq_name,
+	sup.NAME name_supply,
+	ord.code_supply,
+	dos.NAME name_dos,
+	ord.dosage,
+	ord.quan,
+	quan.NAME name_quan,
+	ord.days,
+	pddoc.code_std pddoc_code_std,
+	pddoc.name_std pddoc_name_std,
+	pd.CODE code_pd,
+	pd.NAME name_pd,
+	pd.spec,
+	pd.appr_no,
+	exdept.code_dept ex_code_dept,
+	exdept.name_dept ex_name_dept,
+	ord.ordsn_parent,
+	ord.eu_always,
+	ord.quan quan_ap,
+	quan.NAME name_unit_ap,
+	ord.note_ord,
+	ip.ip_times,
+	pv.code_pv,
+	op.op_times,
+	pv.eu_pvtype,
+	pi.pk_pi,
+	pi.code_op,
+	pi.code_ip,
+	pi.tel_no,
+	pi.id_no,
+	pi.name_pi,
+	sexdoc.code_std sex_code_std,
+	sexdoc.name_std sex_name_std,
+	pi.birth_date,
+	pi.hic_no pi_hic_no,
+	bed.code bed_code,
+	bed.name bed_name,
+	bed.houseno bed_houseno,
+	pv.bed_no,
+	pvdept.code_dept pv_code_dept,
+	pvdept.name_dept pv_name_dept,
+	nsdept.code_dept ns_code_dept,
+	nsdept.name_dept ns_name_dept,
+	item.dt_hptype,
+	poldoc.code_std poldoc_code_std,
+	poldoc.name_std poldoc_name_std,
+	ord.code_ord,
+	ord.name_ord,
+	ord.eu_status_ord 
+FROM
+	cn_order ord
+		left join bd_ou_employee inemp on inemp.pk_emp=ord.pk_emp_ord
+		left join bd_ou_dept inde on inde.pk_dept=ord.pk_dept
+		left join bd_ou_employee chkemp on chkemp.pk_emp=ord.pk_emp_chk
+		left join bd_ordtype ordtype on ordtype.code=ord.code_ordtype
+		left join bd_term_freq freq on freq.code=ord.code_freq
+		left join bd_supply sup on sup.code=ord.code_supply
+		left join bd_unit dos on dos.pk_unit=ord.pk_unit_dos
+		left join bd_unit quan on quan.pk_unit=ord.pk_unit
+		left join bd_pd pd on pd.pk_pd=ord.pk_ord
+		left join bd_defdoc pddoc on pddoc.code=pd.dt_dosage and pddoc.code_defdoclist='030400'
+		left join bd_ou_dept exdept on exdept.pk_dept=ord.pk_dept_exec
+		left join pv_encounter pv on pv.pk_pv=ord.pk_pv
+		left join pv_ip ip on ip.pk_pv=pv.pk_pv
+		left join pv_op op on op.pk_pv=pv.pk_pv
+		left join pi_master pi on pi.pk_pi=pv.pk_pi
+		left join bd_defdoc sexdoc on sexdoc.code=pi.dt_sex and sexdoc.code_defdoclist='000000'
+		left join bd_res_bed bed on bed.code=pv.bed_no  and bed.pk_ward=pv.pk_dept_ns
+		left join bd_ou_dept pvdept on pvdept.pk_dept=pv.pk_dept
+		left join bd_ou_dept nsdept on nsdept.pk_dept=pv.pk_dept_ns
+		left join bd_hp hp on hp.pk_hp=pv.pk_insu
+		left join BD_HP_CGDIV_ITEM item on pd.PK_PD=item.PK_ITEM
+		left join bd_defdoc poldoc on poldoc.CODE_DEFDOCLIST='040001' and poldoc.CODE=item.DT_HPTYPE
+		where ord.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+	</select>
+</mapper>

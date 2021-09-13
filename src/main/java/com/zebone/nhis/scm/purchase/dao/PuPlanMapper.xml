@@ -1,0 +1,464 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.scm.purchase.dao.PuPlanMapper">
+	
+	<!-- 查询物品 -->
+	<select id="getPdStoreVoList" parameterType="com.zebone.nhis.scm.purchase.vo.PdStoreParam" resultType="com.zebone.nhis.scm.purchase.vo.PdStoreParam">
+		select 
+			distinct
+			pd.pk_pd,
+			pd.code,
+			pd.name,
+			pd.pk_factory,
+       	    pd.spec,
+       	    pd.pk_unit_pack pk_unit,
+       	    unit.name unit,
+       		(pds.stock_max*pds.pack_size/pd.pack_size) stock_max,
+       		pd.pack_size,
+       		pdsu.pk_supplyer ,
+       		pds.flag_stop,
+			pd.DT_POIS,
+			pd.dt_anti,
+			pd.DT_PHARM,
+			pd.APPR_NO,
+			pd.DT_UNIFY,
+		    pds.POSI_NO
+	    from bd_pd_store pds
+	       inner join bd_pd pd on pds.pk_pd=pd.pk_pd and pd.flag_stop='0' and pd.del_flag='0'
+	       inner join bd_unit unit on pd.pk_unit_pack=unit.pk_unit
+	       left outer join (select sum(quan_min) quan,pk_pd from pd_stock where pk_store=#{pkStore,jdbcType=VARCHAR} group by pk_pd) stk on pds.pk_pd=stk.pk_pd
+	       left outer join bd_pd_supplyer pdsu on pds.pk_pd=pdsu.pk_pd and pdsu.del_flag = '0' and pdsu.flag_def = '1' and pdsu.flag_active = '1'
+	 where pds.pk_store=#{pkStore,jdbcType=VARCHAR} 
+	 	   and  pds.del_flag = '0' and pds.flag_stop = '0'
+	 	   and pd.dt_pdtype like '0%'
+		   and (pds.pk_org like '%~%' or pds.pk_org = #{pkOrg,jdbcType=VARCHAR})
+		   <if test="euDrugtype != null and euDrugtype != ''">
+				and pd.eu_drugtype = #{euDrugtype,jdbcType=VARCHAR}
+			</if>
+			<if test="dtPois != null and dtPois != ''">
+				and pd.dt_pois = #{dtPois,jdbcType=VARCHAR} 
+			</if>
+			<if test="dtAbrd != null and dtAbrd != ''">
+				and pd.dt_abrd = #{dtAbrd,jdbcType=VARCHAR} 
+			</if>
+			<if test="dtAnti != null and dtAnti != ''">
+				and pd.dt_anti = #{dtAnti,jdbcType=VARCHAR}
+			</if>
+			<!-- 是否小于库存下限：0-否 1-是  -->
+			<if test="flagSrote == 1">
+				and (stk.quan / pds.pack_size &lt;= pds.stock_min or stk.quan is null) and pds.stock_min != '0'
+			</if>
+	</select>
+	
+	<select id="qryPlanList" parameterType="java.util.Map" resultType="DynaBean">
+		select pla.pk_pdplan,
+		       pla.pk_dept,
+		       pla.pk_store,
+		       pla.dt_plantype,
+		       platype.name namePlatype,
+		       pla.code_plan,
+		       pla.date_plan,
+		       pla.name_emp_mak,
+		       pla.eu_status,
+		       pla.note,
+		       pla.dt_pdpuway,
+		       pla.flag_emer,
+		       pla.eu_disttype,
+		       pla.flag_chk,
+		       pla.name_emp_chk,
+		       pla.date_chk,
+		       store.code as place_dist,
+		       store.name as place_dist_name,
+		       case when pla.code_rtn is null then '未上传' else '已上传' end as code_rtn
+		from pd_plan pla
+		inner join bd_defdoc platype on pla.dt_plantype=platype.code and platype.code_defdoclist='080007'
+		left join bd_store store on store.code = pla.place_dist
+		where pla.del_flag = '0' and pla.dt_plantype = '0101' 
+		      and pla.pk_store = #{pkStore,jdbcType=VARCHAR}
+		      and pla.pk_pdplan in <!--过滤物资的采购计划单  -->
+		      (
+		      	select ppd.pk_pdplan  from pd_plan_detail ppd 
+		      	inner join bd_pd bp on ppd.pk_pd=bp.pk_pd 
+		      	where bp.dt_pdtype like '01%' group by ppd.pk_pdplan
+		      )
+		      <if test="codePlan!=null and codePlan!=''">
+		      	and  pla.code_plan like '%' || #{codePlan,jdbcType=VARCHAR} || '%'
+		      </if>
+		      <if test="datePlanBegin !=null and datePlanBegin !=''"> 
+		      	and pla.date_plan &gt;= to_date(#{datePlanBegin},'YYYYMMDDHH24MISS')
+		      </if>
+		      <if test="datePlanEnd !=null and datePlanEnd !=''">
+		      	and pla.date_plan &lt;= to_date(#{datePlanEnd},'YYYYMMDDHH24MISS')
+		      </if>
+		      <if test="pkEmpMak !=null and pkEmpMak != ''">
+		      	 and pla.pk_emp_mak = #{pkEmpMak,jdbcType=VARCHAR}
+		      </if>
+		      <if test="euStatus !=null and euStatus!=''">
+		      	and pla.eu_status = #{euStatus,jdbcType=VARCHAR}
+		      </if>
+		      <if test='isDrugAdmin!=null and isDrugAdmin=="2"'>
+				and pla.code_rtn is not null
+			  </if>
+			  <if test='isDrugAdmin!=null and isDrugAdmin=="3"'>
+				and pla.code_rtn is  null
+			  </if>
+		      <if test="placeDist!=null and placeDist!=''">
+					and pla.place_dist = #{placeDist,jdbcType=VARCHAR}
+			  </if>
+			<if test="flagChk!=null and flagChk!=''">
+				and pla.flag_chk = #{flagChk,jdbcType=VARCHAR}
+			</if>
+			<if test="euStatusSub !=null and euStatusSub!=''">
+				and pla.eu_status in('1','2')
+			</if>
+		      and pla.pk_org = #{pkOrg,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="qryHistoryPlanList" parameterType="java.util.Map" resultType="DynaBean">
+		select pla.pk_pdplan,
+       		pla.date_plan,
+       		pla.code_plan
+		from pd_plan pla
+		where pla.del_flag = '0' and pla.dt_plantype = '0101' and pla.eu_status='2'
+		      and pla.pk_store=#{pkStore,jdbcType=VARCHAR}
+		      and pla.pk_pdplan in <!--过滤物资的采购计划单  -->
+		      (
+		      	select ppd.pk_pdplan  from pd_plan_detail ppd 
+		      	inner join bd_pd bp on ppd.pk_pd=bp.pk_pd 
+		      	where bp.dt_pdtype like '0%' group by ppd.pk_pdplan
+		      )
+		      and pla.date_plan &gt;=to_date( #{datePlanBegin},'YYYYMMDDHH24MISS')
+		      and pla.date_plan &lt;=to_date( #{datePlanEnd},'YYYYMMDDHH24MISS') 
+	</select>
+	
+	<select id="qryHistoryOrdList" parameterType="java.util.Map" resultType="DynaBean">
+		select plp.pk_pdpu,
+        	plp.date_pu,
+       		plp.code_pu
+		from pd_purchase plp
+		where plp.eu_status = '2' and plp.del_flag = '0'
+		     and exists (select 1 from pd_purchase_dt dt
+ 						 where plp.pk_pdpu=dt.pk_pdpu and dt.pk_store_use=#{pkStore,jdbcType=VARCHAR}
+                        )
+			 and plp.pk_pdpu in 
+			 (
+		      	select ppd.pk_pdpu  from pd_purchase_dt ppd 
+		      	inner join bd_pd bp on ppd.pk_pd=bp.pk_pd 
+		      	where bp.dt_pdtype like '01%' group by ppd.pk_pdpu
+		      )
+		     and plp.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		     <if test="datePuBegin !=null and datePuBegin !=''">
+		     	 and plp.date_pu &gt;=to_date(#{datePuBegin,jdbcType=VARCHAR},'YYYYMMDDHH24MISS') 
+		     </if>
+		     <if test="datePuEnd !=null and datePuEnd !=''">
+		     	and plp.date_pu &lt;=to_date(#{datePuEnd,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')  
+		     </if>
+	</select>
+	
+	
+	<select id="qryByConsumer" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.purchase.vo.PdStoreParam">
+		select pd.pk_pd,  
+		       pd.code,   
+		       pd.name,   
+		       pd.spec,   
+		       pd.pk_factory, 
+		       pd.pack_size_max,
+		       pd.pk_unit_pack pk_unit, 
+		       bps.pack_size,
+		       sum(dt.quan_min)/ #{cnt} * #{cntPlan} AS quanMin, 
+		       sum(dt.quan_min/pd.pack_size)/ #{cnt} * #{cntPlan} AS quanPack ,
+		       bps.flag_stop,
+				pd.DT_POIS,
+				pd.dt_anti,
+				pd.DT_PHARM,
+				pd.APPR_NO,
+				pd.DT_UNIFY,
+
+				bps.POSI_NO
+		, pdSup.PK_SUPPLYER
+		, sup.NAME NAME_SUPPLYER
+		  from pd_st_detail dt
+		       inner join pd_st st on dt.pk_pdst=st.pk_pdst
+		       inner join bd_pd pd on dt.pk_pd=pd.pk_pd 
+		       inner join bd_pd_store bps on bps.pk_pd=dt.pk_pd and bps.pk_store=#{pkStore,jdbcType=VARCHAR}
+		left join BD_PD_SUPPLYER pdSup on pdSup.PK_PD = pd.PK_PD AND pdSup.DEL_FLAG = '0' and pdSup.flag_active = '1'
+		left join BD_SUPPLYER sup on sup.PK_SUPPLYER = pdSup.PK_SUPPLYER AND sup.DEL_FLAG='0'
+		 where
+		       st.eu_direct='-1'  
+		       <if test='account!=null and account!="2"'>
+		       and st.pk_store_st=#{pkStore,jdbcType=VARCHAR} 
+		       </if>
+		       <if test='account!=null and account=="2"'>
+		       and st.pk_store_st in 
+		       	<foreach collection="pkStores" close=")" index="index" item="pkStore" open="(" separator=",">
+		       		#{pkStore,jdbcType=VARCHAR}
+		       	</foreach>
+		       </if>
+			   <if test="dtSttypes!=null">
+			   		and st.dt_sttype in
+					<foreach collection="dtSttypes" item="sttype" index="index" open="(" separator="," close=")">
+						#{sttype,jdbcType=VARCHAR}
+					</foreach>
+			   </if>
+		       and st.date_st &gt;= ( to_date( #{dateStart}, 'YYYYMMDDHH24MISS' ) - #{cnt} ) 
+			   and st.date_st &lt;= to_date( #{dateEnd}, 'YYYYMMDDHH24MISS' ) 
+			   and pd.dt_pdtype like '01%'
+		group by pd.pk_pd,
+		       pd.code,
+		       pd.name,
+		       pd.spec,
+		       pd.pk_factory,
+		       pd.pack_size_max,
+		       pd.pk_unit_pack,
+		       bps.flag_stop,
+		       bps.pack_size,
+				pd.DT_POIS,
+				pd.dt_anti,
+				pd.DT_PHARM,
+				pd.APPR_NO,
+				pd.DT_UNIFY,
+				bps.POSI_NO,
+				pdSup.PK_SUPPLYER,
+				sup.NAME
+	</select>
+    <!-- 根据消耗公式二计算 -->
+	<select id="qryByConsumer2" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.purchase.vo.PdStoreParam">
+		select pd.pk_pd,
+		pd.code,
+		pd.name,
+		pd.spec,
+		pd.pk_factory,
+		pd.pack_size_max,
+		pd.pk_unit_pack pk_unit,
+		(sum(dt.quan_min)/#{days} * #{upperDays}-case when stock.quan_min is null then 0 else stock.quan_min end )/pd.pack_size AS quanMin,
+		sum(dt.quan_min)/#{days} * #{lowerDays} As lowQuanMin,
+		case when stock.quan_min is null then 0 else stock.quan_min end  quanStk,
+		pd.pack_size,
+		pd.DT_POIS,
+		pd.dt_anti,
+		pd.DT_PHARM,
+		pd.APPR_NO,
+		pd.DT_UNIFY,
+		bps.POSI_NO
+		, pdSup.PK_SUPPLYER
+		, sup.NAME NAME_SUPPLYER
+		from pd_st_detail dt
+		Inner join pd_st st on dt.pk_pdst=st.pk_pdst
+		Inner join bd_pd pd on dt.pk_pd=pd.pk_pd and pd.dt_pdtype like '01%'
+		left join BD_PD_SUPPLYER pdSup on pdSup.PK_PD = pd.PK_PD AND pdSup.DEL_FLAG = '0' and pdSup.flag_active = '1'
+		left join BD_SUPPLYER sup on sup.PK_SUPPLYER = pdSup.PK_SUPPLYER AND sup.DEL_FLAG='0'
+		Left Join
+			(select pk_pd,sum(quan_min) quan_min, PK_STORE
+			from pd_stock
+			 group by pk_pd,pk_store
+			 ) stock
+			 On dt.pk_pd = stock.pk_pd And st.pk_store_st = stock.pk_store
+		inner join bd_pd_store bps on bps.pk_store=st.pk_store_st and dt.pk_pd=bps.pk_pd
+		where st.pk_store_st=#{pkStore,jdbcType=VARCHAR} and
+		st.eu_direct='-1' and
+		st.date_st>= to_date( #{dateStart2}, 'YYYYMMDDHH24MISS' )
+		and st.date_st &lt;= to_date( #{dateEnd2}, 'YYYYMMDDHH24MISS' )
+		<if test="euDrugtype != null and euDrugtype !=''">
+				and pd.eu_drugtype = #{euDrugtype}
+		</if>
+
+		<if test="dtSttypes!=null">
+			and st.dt_sttype in
+			<foreach collection="dtSttypes" item="sttype" index="index" open="(" separator="," close=")">
+				#{sttype,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+		group by pd.pk_pd,
+		pd.code,
+		pd.name,
+		pd.spec,
+		pd.pk_factory,
+		pd.pack_size_max,
+		pd.pk_unit_pack,
+		pd.pack_size,
+		stock.quan_min,
+		pd.DT_POIS,
+		pd.dt_anti,
+		pd.DT_PHARM,
+		pd.APPR_NO,
+		pd.DT_UNIFY,
+		bps.POSI_NO,
+		pdSup.PK_SUPPLYER,
+		sup.NAME
+
+	</select>
+	
+	<select id="qryByConsumer3" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.purchase.vo.PdStoreParam">
+		select pd.pk_pd,  
+		       pd.code,   
+		       pd.name,   
+		       pd.spec,   
+		       pd.pk_factory, 
+		       pd.pack_size_max,
+		       pd.pk_unit_pack pk_unit, 
+		       bps.pack_size,
+		       sum(dt.quan_min)/ #{cnt} * #{cntPlan} AS quanMin, 
+		       sum(dt.quan_min/pd.pack_size)/ #{cnt} * #{cntPlan} AS quanPack ,
+		       bps.flag_stop,
+				pd.DT_POIS,
+				pd.dt_anti,
+				pd.DT_PHARM,
+				pd.APPR_NO,
+				pd.DT_UNIFY,
+
+				bps.POSI_NO
+		, pdSup.PK_SUPPLYER
+		, sup.NAME NAME_SUPPLYER
+		  from pd_st_detail dt
+		       inner join pd_st st on dt.pk_pdst=st.pk_pdst
+		       inner join bd_pd pd on dt.pk_pd=pd.pk_pd 
+		       inner join bd_pd_store bps on bps.pk_pd=dt.pk_pd and bps.pk_store=#{uPkStore,jdbcType=VARCHAR}
+		left join BD_PD_SUPPLYER pdSup on pdSup.PK_PD = pd.PK_PD AND pdSup.DEL_FLAG = '0' and pdSup.flag_active = '1'
+		left join BD_SUPPLYER sup on sup.PK_SUPPLYER = pdSup.PK_SUPPLYER AND sup.DEL_FLAG='0'
+		 where
+		       st.eu_direct='-1'  
+		       <if test='account!=null and account!="2"'>
+		       and st.pk_store_st=#{pkStore,jdbcType=VARCHAR} 
+		       </if>
+		       <if test='account!=null and account=="2"'>
+		       and st.pk_store_st in 
+		       	<foreach collection="pkStores" close=")" index="index" item="pkStore" open="(" separator=",">
+		       		#{pkStore,jdbcType=VARCHAR}
+		       	</foreach>
+		       </if>
+			   <if test="dtSttypes!=null">
+			   		and st.dt_sttype in
+					<foreach collection="dtSttypes" item="sttype" index="index" open="(" separator="," close=")">
+						#{sttype,jdbcType=VARCHAR}
+					</foreach>
+			   </if>
+		       and st.date_st &gt;= ( to_date( #{dateStart}, 'YYYYMMDDHH24MISS' ) - #{cnt} ) 
+			   and st.date_st &lt;= to_date( #{dateEnd}, 'YYYYMMDDHH24MISS' ) 
+			   and pd.dt_pdtype like '01%'
+		group by pd.pk_pd,
+		       pd.code,
+		       pd.name,
+		       pd.spec,
+		       pd.pk_factory,
+		       pd.pack_size_max,
+		       pd.pk_unit_pack,
+		       bps.flag_stop,
+		       bps.pack_size,
+				pd.DT_POIS,
+				pd.dt_anti,
+				pd.DT_PHARM,
+				pd.APPR_NO,
+				pd.DT_UNIFY,
+				bps.POSI_NO,
+				pdSup.PK_SUPPLYER,
+				sup.NAME
+	</select>
+	
+	<select id="qryByPurchase" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.purchase.vo.PdStoreParam">
+		 select pd.pk_pd,  
+		       pd.code,   
+		       pd.name,   
+		       pd.spec,   
+		       pd.pk_factory, 
+		       pd.pack_size_max,
+		       pd.pk_unit_pack pk_unit, 
+		       bps.pack_size,
+		        sum(dt.quan_min)/ #{cnt} * #{cntPlan} AS quanMin, 
+		       sum(dt.quan_min/pd.pack_size)/ #{cnt} * #{cntPlan} AS quanPack ,
+		       bps.flag_stop,
+			   pd.DT_POIS,
+			   pd.dt_anti,
+			   pd.DT_PHARM,
+			   pd.APPR_NO,
+			   pd.DT_UNIFY,
+			   bps.POSI_NO
+		  from pd_st_detail dt
+		       inner join pd_st st on dt.pk_pdst=st.pk_pdst
+		       inner join bd_pd pd on dt.pk_pd=pd.pk_pd and pd.dt_pdtype like '01%'
+		       inner join bd_pd_store bps on bps.pk_pd=dt.pk_pd and bps.pk_store=#{pkStore,jdbcType=VARCHAR}
+		 where st.pk_store_st=#{pkStore,jdbcType=VARCHAR} and  
+		       st.eu_direct='1' and 
+		       st.flag_pu='1' 
+		       and st.date_st &gt;= ( to_date( #{dateStart}, 'YYYYMMDDHH24MISS' ) - #{cnt} ) 
+			   and st.date_st &lt;= to_date( #{dateEnd}, 'YYYYMMDDHH24MISS' ) 
+		group by pd.pk_pd,
+		       pd.code,
+		       pd.name,
+		       pd.spec,
+		       pd.pk_factory,
+		       pd.pack_size_max,
+		       pd.pk_unit_pack,
+		       bps.flag_stop,
+		       bps.pack_size,
+			   pd.DT_POIS,
+			   pd.dt_anti,
+			   pd.DT_PHARM,
+			   pd.APPR_NO,
+			   pd.DT_UNIFY,
+			   bps.POSI_NO
+	</select>
+	
+	<select id="qryHistoryPlanDts" parameterType="java.util.Map" resultType="DynaBean">
+		select distinct pldt.pk_pd,
+			   pd.code,
+		       pd.name,
+		       con.spec,
+		       pldt.pk_unit, 
+		       unit.name nameUnit,
+		       pldt.quan_pack,
+		       pldt.quan_min,
+		       fa.name nameFactory,
+			   fa.pk_factory,
+		       con.pack_size,
+		       pldt.pk_supplyer,
+		       bps.flag_stop,
+			   pd.DT_POIS,
+			   pd.dt_anti,
+			   pd.DT_PHARM,
+			   pd.APPR_NO,
+			   pd.DT_UNIFY,
+			   bps.POSI_NO
+		from pd_plan_detail pldt
+		inner join bd_pd pd on pldt.pk_pd=pd.pk_pd and pd.flag_stop='0'
+		inner join bd_pd_store bps on bps.pk_pd=pd.pk_pd and bps.pk_store=#{pkStore,jdbcType=VARCHAR}
+		inner join bd_unit unit on pldt.pk_unit=unit.pk_unit
+		inner join (select distinct spec,pack_size,pk_pd,pk_unit from bd_pd_convert where del_flag = '0') con on pldt.pk_pd=con.pk_pd and pldt.pk_unit=con.pk_unit
+		inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+		inner join bd_supplyer bs on bs.pk_supplyer=pldt.pk_supplyer
+		where pldt.del_flag = '0' and pldt.pk_pdplan = #{pkPdplan,jdbcType=VARCHAR} and pd.dt_pdtype like '0%'
+	</select>
+	
+	<select id="qryHistoryOrdDts" parameterType="java.util.Map" resultType="DynaBean">
+		select distinct pd.pk_pd,
+			   pd.code,
+		       pd.name,
+		       con.spec,
+		       pdpdt.pk_unit,
+		       unit.name nameUnit,
+		       pdpdt.quan_pack,
+		       pdpdt.quan_min,
+		       fa.name nameFactory,
+		       fa.pk_factory,
+		       con.pack_size,
+		       pdp.pk_supplyer,
+		       bs.name nameSupplyer,
+		       bps.flag_stop,
+			   pd.DT_POIS,
+			   pd.dt_anti,
+			   pd.DT_PHARM,
+			   pd.APPR_NO,
+			   pd.DT_UNIFY,
+			   bps.POSI_NO
+		from pd_purchase_dt pdpdt
+		     inner join pd_purchase pdp on pdpdt.pk_pdpu=pdp.pk_pdpu
+		     inner join bd_pd pd on pdpdt.pk_pd=pd.pk_pd and pd.flag_stop='0'
+		     inner join bd_pd_store bps on bps.pk_pd=pd.pk_pd and bps.pk_store=#{pkStore,jdbcType=VARCHAR}
+		     inner join bd_unit unit on pdpdt.pk_unit=unit.pk_unit
+		     inner join bd_pd_convert con on pdpdt.pk_pd=con.pk_pd and pdpdt.pk_unit=con.pk_unit
+		     inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+		     inner join bd_supplyer bs on bs.pk_supplyer=pdp.pk_supplyer
+		where pdpdt.del_flag = '0' and pdpdt.pk_pdpu = #{pkPdpu,jdbcType=VARCHAR}
+			 and pdpdt.pk_store_use=#{pkStore,jdbcType=VARCHAR}
+			 and pd.dt_pdtype like '0%'
+	</select>
+</mapper>

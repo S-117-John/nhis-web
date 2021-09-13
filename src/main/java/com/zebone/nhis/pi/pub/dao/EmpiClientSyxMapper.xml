@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pi.pub.dao.EmpiClientSyxMapper">
+	<select id="getPiMasterInfo" parameterType="java.lang.String" resultType="DynaBean">
+		select doc.name certificate from PI_MASTER pi  
+		LEFT JOIN BD_DEFDOC doc on pi.dt_idtype = doc.code and doc.code_defdoclist='000007'
+		where pi.pk_pi = #{pkPi,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getHpType" parameterType="java.lang.String" resultType="DynaBean">
+		<!-- select 
+		hp.eu_hptype
+		from pv_encounter pv 
+		LEFT JOIN bd_hp hp on pv.pk_insu = hp.pk_hp 
+		where pk_pi =#{pkPi} -->
+		SELECT
+			doc.name_std,
+			doc.code_std
+		FROM
+			pi_insurance ins
+			LEFT JOIN bd_hp hp on ins.pk_hp = hp.pk_hp
+			LEFT JOIN bd_defdoc doc on doc.code = hp.dt_mdpaytype and code_defdoclist = '040009'
+		WHERE
+			ins.del_flag = '0'
+		AND pk_pi =#{pkPi}
+		ORDER BY
+		ins.sort_no
+	</select>
+	
+	<select id="getCreator" parameterType="java.lang.String" resultType="DynaBean">
+		select name_emp , code_emp from  bd_ou_employee  where pk_emp = #{creator}
+	</select>
+	
+	<select id="getAddr" parameterType="java.lang.String" resultType="DynaBean">
+		select PROV,CITY,DIST,NOTE,CODE_DIV,NAME_DIV from BD_ADMIN_DIVISION where CODE_DIV = #{addrcodeCur}
+	</select>
+	
+	<select id="getCreatInfo" parameterType="java.lang.String" resultType="DynaBean">
+		select pi.create_time,emp.name_emp,emp.code_emp from pi_master pi left join bd_ou_employee emp on emp.pk_emp = pi.creator  where pk_pi = #{pkPi}
+	</select>
+	<select id="getHicNo" parameterType="java.lang.String" resultType="java.lang.String">
+		select hic_no from pi_master where pk_pi=#{pkPi}
+	</select>
+	<select id="qryRepetitionPi" parameterType ="java.lang.String" resultType="java.lang.Integer">
+		select count(1) from pi_master
+		where id_no = #{idNo} and mpi is not null
+	</select>
+	<select id="getpkPiByMpi" parameterType="java.lang.String" resultType="java.lang.String">
+		select pk_pi from pi_master where mpi = #{mpi}
+	</select>
+	<select id="qryPiMasterById" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.pi.PiMaster">
+		select * from pi_master where id_no = #{idNo} and dt_idtype = '01'
+	</select>
+	<select id="qryPiMap" parameterType="java.lang.String" resultType="DynaBean">
+		select 
+		hpDoc.name_std hp_name, 
+		hpDoc.code_std hp_code,
+		sexdoc.name_std sex_name, 
+		sexdoc.code_std sex_code,
+		nation.name_std nation_name, 
+		nation.code_std nation_code,
+		marry.name_std marry_name, 
+		marry.code_std marry_code,
+		idtype.name_std idtype_name, 
+		idtype.code_std idtype_code,
+		occu.name_std occu_name, 
+		occu.code_std occu_code,
+		ralation.name_std ralation_name, 
+		ralation.code_std ralation_code,
+		pi.hic_no,
+		pi.code_ip,
+		pi.code_op
+		from pi_master pi 
+		left join pi_insurance ins on pi.pk_pi = ins.pk_pi and ins.DEL_FLAG = '1'
+		LEFT JOIN bd_hp hp on ins.pk_hp = hp.pk_hp
+		LEFT JOIN bd_defdoc hpDoc on hpDoc.code = hp.dt_mdpaytype and hpDoc.code_defdoclist = '040009'
+		left join bd_defdoc sexdoc on sexdoc.code = pi.dt_sex and sexdoc.code_defdoclist = '000000'
+		left join bd_defdoc nation on nation.code = pi.dt_nation and nation.code_defdoclist = '000003'
+		left join bd_defdoc marry on marry.code = pi.dt_marry and marry.code_defdoclist = '000006'
+		left join bd_defdoc idtype on idtype.code = pi.dt_idtype and idtype.code_defdoclist = '000007'
+		left join bd_defdoc occu on occu.code = pi.dt_occu and occu.code_defdoclist = '000010'		
+		left join bd_defdoc ralation on ralation.code = pi.dt_ralation and ralation.code_defdoclist = '000013'		
+		where pi.pk_pi = #{pkPi}
+		ORDER BY
+		ins.sort_no
+	</select>
+</mapper>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.lb.dao.CpMsgMapper">	
+	<!-- 获取患者信息 -->
+	<select id="getPiMasterInfo" parameterType="java.util.Map"  resultType="DynaBean">
+		select pm.name_pi, pm.code_pi, pm.code_ip, pe.code_pv, bod.code_dept
+		  from pi_master pm
+		  left join pv_encounter pe
+		  left join bd_ou_dept bod on pe.pk_dept= bod.pk_dept
+		    on pm.pk_pi = pe.pk_pi
+		 where pe.pk_pv = #{pkPv,jdbcType=VARCHAR} 
+		 and   pe.pk_dept = #{pkDept,jdbcType=VARCHAR}
+	</select>	
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+

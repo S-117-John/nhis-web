@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.pskq.dao.DepartmentDao">
+
+    <select id="findDeptInfoById"  resultMap="DeptInfoResultMap">
+    select dept.code_dept,dept.NAME_DEPT,dept.NAME_DEPT DEPT_FULL_NAME,upDept.CODE_DEPT,upDept.NAME_DEPT,
+       case when dept.NAME_DEPT like '%手术%' then '1' else '0' end as isOp,dept.flag_op,
+       case when dept.NAME_DEPT like '%收费%' then '1' else '0' end as isMoney,
+       dept.telno_dept,dept.name_place,dept.py_code,dept.flag_active,bdOrg.CODE_ORG,bdOrg.NAME_ORG
+       from BD_OU_DEPT dept
+       left join BD_OU_DEPT upDept on upDept.PK_DEPT = dept.PK_FATHER
+       left join bd_ou_org bdOrg on bdOrg.PK_ORG = dept.PK_ORG
+    where dept.code_dept=#{id} and dept.del_flag = '0'
+    </select>
+    <resultMap id="DeptInfoResultMap" type="com.zebone.nhis.webservice.pskq.model.Department">
+        <result column="code_dept" jdbcType="CHAR" property="deptId" />
+        <result column="name_dept" jdbcType="CHAR" property="deptName" />
+        <result column="DEPT_FULL_NAME" jdbcType="VARCHAR" property="deptFullName" />
+        <result column="CODE_DEPT" jdbcType="VARCHAR" property="deptParentId" />
+        <result column="isOp" jdbcType="CHAR" property="operationIndicator" />
+        <result column="flag_op" jdbcType="VARCHAR" property="registerIndicator" />
+        <result column="isMoney" jdbcType="VARCHAR" property="businessAccountingIndicator" />
+        <result column="telno_dept" jdbcType="VARCHAR" property="deptPhoneNo" />
+        <result column="name_place" jdbcType="CHAR" property="deptLocation" />
+        <result column="py_code" jdbcType="VARCHAR" property="spellCode" />
+        <result column="flag_active" jdbcType="DECIMAL" property="validState" />
+        <result column="CODE_ORG" jdbcType="DECIMAL" property="orgCode" />
+        <result column="NAME_ORG" jdbcType="VARCHAR" property="orgName" />
+    </resultMap>
+
+
+</mapper>

@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsrm.cn.dao.CnLabRisMapper">
+    <select id="queryRisLabTreeList" parameterType="java.util.Map" resultType="DynaBean">
+        select t.*
+        from (
+        select
+        srv.code,
+        srv.name,
+        ristype.code as pcode,
+        srv.name as caption,
+        srv.pk_ord,
+        srv.code_ordtype,
+        typ.name as name_ordtype,
+        srv.flag_cg,
+        srv.eu_sex,
+        srv.age_min,
+        srv.age_max,
+        srv.flag_noc,
+        <choose>
+            <when test='ordType != null '>
+                <if test='ordType=="02"'>
+                    ris.dt_type,
+                    ris.dt_body,
+                    ris.desc_att,
+                    doc.name as desc_body,
+                </if>
+                <if test='ordType=="03" '>
+                    lab.dt_colltype,
+                    lab.dt_lisgroup,
+                    lab.dt_contype,
+                    lab.dt_samptype,
+                    lab.note,
+                </if>
+            </when>
+        </choose>
+        <if test='dataBaseType == "oracle"'>
+            nvl((
+            select sum(price.PRICE * item.QUAN * item.ratio_self ) from bd_item_price price inner join BD_ORD_ITEM item
+            on item.PK_ITEM=price.PK_ITEM
+            where price.DEL_FLAG='0' and item.DEL_FLAG='0' and price.FLAG_STOP='0' and item.pk_ord = org.pk_ord
+            and price.PK_ORG = org.PK_ORG
+            ),org.price) as price
+        </if>
+        <if test='dataBaseType == "sqlserver"'>
+            isnull((
+            select sum(price.PRICE * item.QUAN * item.ratio_self ) from bd_item_price price inner join BD_ORD_ITEM item
+            on item.PK_ITEM=price.PK_ITEM
+            where price.DEL_FLAG='0' and item.DEL_FLAG='0' and price.FLAG_STOP='0' and item.pk_ord = org.pk_ord
+            and price.PK_ORG = org.PK_ORG
+            ),org.price) as price
+        </if>
+        from bd_ord srv
+        inner JOIN bd_defdoc ristype ON ristype.CODE = srv.DT_ORDCATE AND ristype.code_defdoclist='030000'
+        <if test='ordType=="02"'>
+            and ristype.ba_code='02'
+        </if>
+        <if test='ordType=="03"'>
+            and ristype.ba_code='03'
+        </if>
+        <if test="codeOrdtype !=null">
+            and ATTR_DESC='1'
+        </if>
+        and ristype.del_flag='0'
+        inner join bd_ordtype typ on srv.code_ordtype = typ.code and typ.del_flag='0'
+        inner join bd_ord_org org on srv.pk_ord = org.pk_ord and org.del_flag = '0' and org.pk_org =
+        #{pkOrg,jdbcType=CHAR}
+        <choose>
+            <when test='ordType != null '>
+                <if test='ordType=="02"'>
+                    left outer join bd_ord_ris ris on srv.pk_ord = ris.pk_ord and ris.del_flag='0'
+                    left join bd_defdoc doc on doc.code = ris.dt_body and doc.code_defdoclist = '030101' and
+                    doc.del_flag='0'
+                </if>
+                <if test='ordType=="03" '>
+                    left outer join bd_ord_lab lab on srv.pk_ord = lab.pk_ord and lab.del_flag='0'
+                </if>
+            </when>
+        </choose>
+        left outer join bd_ord_atd atd on srv.pk_ord=atd.pk_ord and atd.pk_org=#{pkOrg,jdbcType=CHAR}
+        where
+        srv.flag_pd = '0'
+        and srv.del_flag='0'
+        and srv.flag_dr = '1'
+        <if test='pvType != null and pvType=="1"'>
+            and srv.flag_op = '1'
+        </if>
+        <if test='pvType != null and pvType=="2"'>
+            and srv.flag_er = '1'
+        </if>
+        and srv.flag_active = '1'
+        <if test='ordType != null and ordType=="02"'>
+            and substr(srv.code_ordtype, 1, 2) = '02'
+        </if>
+        <if test='ordType != null and ordType=="03"'>
+            and substr(srv.code_ordtype, 1, 2) = '03'
+        </if>
+        and (
+        (atd.eu_type is null ) or
+        (atd.eu_type='0' and atd.pk_orgarea=#{pkOrgarea,jdbcType=VARCHAR} ) or
+        (atd.eu_type='1' and atd.pk_dept=#{pkDept,jdbcType=VARCHAR} )
+        )
+        <if test="codeOrdtype !=null">
+            and substr(srv.code_ordtype, 1, 2) in
+            <foreach collection="codeOrdtype.split(',')" index="index" item="item" open="(" separator="," close=")">
+                #{item, jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        union all
+        select
+        code,
+        name,
+        code_parent AS pcode,
+        name AS caption,
+        '' as pk_ord,
+        '' as code_ordtype,
+        '' as name_ordtype,
+        '' as flag_cg,
+
+        '0' as eu_sex,
+        0 as age_min,
+        999 as age_max,
+        '0' as flag_noc,
+        <choose>
+            <when test='ordType != null '>
+                <if test='ordType=="02"'>
+                    '' as dt_type,
+                    '' as dt_body,
+                    '' as desc_att,
+                    '' as desc_body,
+                </if>
+                <if test='ordType=="03" '>
+                    '' as dt_colltype,
+                    '' as dt_lisgroup,
+                    '' as dt_contype,
+                    '' as dt_samptype,
+                    '' as note,
+                </if>
+            </when>
+        </choose>
+        0 as price
+        FROM BD_DEFDOC
+        WHERE code_defdoclist = '030000'
+        <if test='ordType != null and ordType=="02"'>
+            AND ba_code = '02'
+        </if>
+        <if test='ordType != null and ordType=="03"'>
+            AND ba_code = '03'
+        </if>
+        and del_flag='0'
+        <if test="codeOrdtype !=null">
+            and ATTR_DESC='1'
+            and substr(ba_code, 1, 2) in
+            <foreach collection="codeOrdtype.split(',')" index="index" item="item" open="(" separator="," close=")">
+                #{item, jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        ) t
+        order by t.code
+    </select>
+
+    <select id="qryPreferOrders" parameterType="java.util.Map" resultType="DynaBean">
+        select t.*
+        from (
+        select
+        srv.code,
+        srv.name,
+        ristype.code as pcode,
+        srv.name as caption,
+        srv.pk_ord,
+        srv.code_ordtype,
+        typ.name as name_ordtype,
+        srv.flag_cg,
+        srv.eu_sex,
+        srv.age_min,
+        srv.age_max,
+        srv.flag_noc,
+        <choose>
+            <when test='ordType != null '>
+                <if test='ordType=="02"'>
+                    ris.dt_type,
+                    ris.dt_body,
+                    ris.desc_att,
+                    doc.name as desc_body,
+                </if>
+                <if test='ordType=="03" '>
+                    lab.dt_colltype,
+                    lab.dt_lisgroup,
+                    lab.dt_contype,
+                    lab.dt_samptype,
+                    lab.note,
+                </if>
+            </when>
+        </choose>
+        org.price,
+        comm.TIMES
+        from bd_ord_comm comm
+        inner JOIN bd_ord srv on comm.pk_ord = srv.pk_ord
+        inner JOIN bd_defdoc ristype ON ristype.CODE = srv.DT_ORDCATE AND ristype.code_defdoclist='030000'
+        <if test='ordType=="02"'>
+            and ristype.ba_code='02'
+        </if>
+        <if test='ordType=="03"'>
+            and ristype.ba_code='03'
+        </if>
+        and ristype.del_flag='0'
+        inner join bd_ordtype typ on srv.code_ordtype = typ.code and typ.del_flag='0'
+        inner join bd_ord_org org on srv.pk_ord = org.pk_ord and org.del_flag = '0' and org.pk_org =
+        #{pkOrg,jdbcType=CHAR}
+        <choose>
+            <when test='ordType != null '>
+                <if test='ordType=="02"'>
+                    left outer join bd_ord_ris ris on srv.pk_ord = ris.pk_ord and ris.del_flag='0'
+                    left join bd_defdoc doc on doc.code = ris.dt_body and doc.code_defdoclist = '030101' and
+                    doc.del_flag='0'
+                </if>
+                <if test='ordType=="03" '>
+                    left outer join bd_ord_lab lab on srv.pk_ord = lab.pk_ord and lab.del_flag='0'
+                </if>
+            </when>
+        </choose>
+        where
+        srv.flag_pd = '0'
+        and comm.DEL_FLAG='0'
+        <if test='pkEmpOrd != null and pkEmpOrd != "" '>
+            and comm.pk_emp = #{pkEmpOrd,jdbcType=VARCHAR}
+        </if>
+        and srv.del_flag='0'
+        and srv.flag_dr = '1'
+        <if test='pvType != null and pvType=="1"'>
+            and srv.flag_op = '1'
+        </if>
+        <if test='pvType != null and pvType=="2"'>
+            and srv.flag_er = '1'
+        </if>
+        <if test='pkDept != null and pkDept!=""'>
+            and comm.PK_DEPT = #{pkDept,jdbcType=VARCHAR}
+        </if>
+        and srv.flag_active = '1'
+
+        <if test="codeOrdtype !=null">
+            and substr(comm.code_ordtype, 1, 2) in
+            <foreach collection="codeOrdtype.split(',')" index="index" item="item" open="(" separator="," close=")">
+                #{item, jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        ) t
+        order by t.TIMES desc
+    </select>
+</mapper>

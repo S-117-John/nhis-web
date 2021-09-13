@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.mz.pub.dao.ZsbaBlOtherPayMapper">
+	<select id="queryBlOtherPayList" parameterType="java.util.Map" resultType="DynaBean">
+		select a.*,b.NAME_EMP 
+		from BL_EXT_PAY a 
+		LEFT JOIN BD_OU_EMPLOYEE b on a.CREATOR=b.PK_EMP 
+		where a.DEL_FLAG='0' and a.BODY_PAY in ('病历本','托儿本') 
+		<if test="startDate != null and startDate != ''">
+			and a.CREATE_TIME &gt;= #{startDate,jdbcType=VARCHAR}+' 00:00:00' 
+		</if>
+		<if test="endDate != null and endDate != ''">
+			and a.CREATE_TIME &lt;= #{endDate,jdbcType=VARCHAR}+' 23:59:59' 
+		</if>
+		<if test="serialNo != null and serialNo != ''">
+			and a.SERIAL_NO = #{serialNo,jdbcType=VARCHAR} 
+		</if>
+		order by a.CREATE_TIME desc
+	</select>
+	
+	<select id="queryBlOtherPayRefundDetail" parameterType="java.util.Map" resultType="DynaBean">
+		select REFUND_NO,ABS(AMOUNT) 'AMOUNT',b.NAME_EMP,BODY_PAY, 
+		CASE WHEN PK_OTHERPAY_RECHARGE is null THEN ABS(AMOUNT) ELSE 
+		CAST(ROUND((ABS(AMOUNT)-(select AMOUNT from BL_EXT_PAY chargePay where chargePay.PK_EXTPAY=refundPay.PK_OTHERPAY_RECHARGE)),2) as NUMERIC(14,2)) END as 'REFUND_AMOUNT',
+		DT_BANK,refundPay.CREATE_TIME 'REFUND_TIME' 
+		from BL_EXT_PAY refundPay 
+		INNER JOIN BD_OU_EMPLOYEE b on refundPay.CREATOR=b.PK_EMP 
+		where REFUND_NO is not null and DATE_REFUND is not null 
+		and refundPay.DEL_FLAG='0' and refundPay.BODY_PAY in ('病历本','托儿本') 
+		<if test="codeEmp != null and codeEmp != ''">
+			and b.CODE_EMP = #{codeEmp,jdbcType=VARCHAR} 
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and b.PK_EMP = #{pkEmp,jdbcType=VARCHAR} 
+		</if>
+		<if test="startDate != null and startDate != ''">
+			and refundPay.CREATE_TIME &gt;= #{startDate,jdbcType=VARCHAR} 
+		</if>
+		<if test="endDate != null and endDate != ''">
+			and refundPay.CREATE_TIME &lt;= #{endDate,jdbcType=VARCHAR} 
+		</if>
+		order by refundPay.CREATE_TIME
+	</select>
+	
+	<select id="queryBlOtherPayReport" parameterType="java.util.Map" resultType="DynaBean">
+		select b.PK_EMP,b.CODE_EMP,b.NAME_EMP,
+		SUM(CASE WHEN a.DT_PAYMODE='1' and a.AMOUNT&gt;0 THEN a.AMOUNT ELSE 0 END) 'CASE_PAY',
+		SUM(CASE WHEN a.DT_PAYMODE='1' and a.AMOUNT&lt;0 THEN a.AMOUNT ELSE 0 END) 'CASE_REFUND',
+		SUM(CASE WHEN a.DT_PAYMODE='1' THEN a.AMOUNT ELSE 0 END) 'CASE_AMOUNT',
+		SUM(CASE WHEN (a.DT_PAYMODE='3' or a.DT_BANK='CloudFlashPay') and a.AMOUNT&gt;0 THEN a.AMOUNT ELSE 0 END) 'BANK_PAY',
+		SUM(CASE WHEN (a.DT_PAYMODE='3' or a.DT_BANK='CloudFlashPay') and a.AMOUNT&lt;0 THEN a.AMOUNT ELSE 0 END) 'BANK_REFUND',
+		SUM(CASE WHEN (a.DT_PAYMODE='3' or a.DT_BANK='CloudFlashPay') THEN AMOUNT ELSE 0 END) 'BANK_AMOUNT',
+		SUM(CASE WHEN a.DT_PAYMODE='7' and a.DT_BANK&lt;&gt;'CloudFlashPay' and a.AMOUNT&gt;0 THEN a.AMOUNT ELSE 0 END) 'WECHAT_PAY',
+		SUM(CASE WHEN a.DT_PAYMODE='7' and a.DT_BANK&lt;&gt;'CloudFlashPay' and a.AMOUNT&lt;0 THEN a.AMOUNT ELSE 0 END) 'WECHAT_REFUND',
+		SUM(CASE WHEN a.DT_PAYMODE='7' and a.DT_BANK&lt;&gt;'CloudFlashPay' THEN a.AMOUNT ELSE 0 END) 'WECHAT_AMOUNT',
+		SUM(CASE WHEN a.DT_PAYMODE='8' and a.AMOUNT&gt;0 THEN a.AMOUNT ELSE 0 END) 'ALIPAY_PAY',
+		SUM(CASE WHEN a.DT_PAYMODE='8' and a.AMOUNT&lt;0 THEN a.AMOUNT ELSE 0 END) 'ALIPAY_REFUND',
+		SUM(CASE WHEN a.DT_PAYMODE='8' THEN a.AMOUNT ELSE 0 END) 'ALIPAY_AMOUNT'
+		from BL_DEPOSIT a 
+		INNER JOIN BD_OU_EMPLOYEE b on a.PK_EMP_PAY=b.PK_EMP 
+		where a.DEL_FLAG='0' and a.FLAG_CC='0' and a.NOTE in ('病历本','托儿本') 
+		<if test="codeEmp != null and codeEmp != ''">
+			and b.CODE_EMP = #{codeEmp,jdbcType=VARCHAR} 
+		</if>
+		<if test="pkEmp != null and pkEmp != ''">
+			and b.PK_EMP = #{pkEmp,jdbcType=VARCHAR} 
+		</if>
+		<if test="startDate != null and startDate != ''">
+			and a.CREATE_TIME &gt;= #{startDate,jdbcType=VARCHAR} 
+		</if>
+		<if test="endDate != null and endDate != ''">
+			and a.CREATE_TIME &lt;= #{endDate,jdbcType=VARCHAR} 
+		</if>
+		group by b.PK_EMP,b.CODE_EMP,b.NAME_EMP
+	</select>
+	
+	<update id="blOtherPayDayEnd" parameterType="java.util.Map">
+		update BL_DEPOSIT set FLAG_CC='1',PK_CC=#{pkCc,jdbcType=VARCHAR} 
+		where DATE_PAY&lt;=#{endDate,jdbcType=VARCHAR} and PK_EMP_PAY=#{pkEmp,jdbcType=VARCHAR} 
+		and a.DEL_FLAG='0' and a.FLAG_CC='0' and a.NOTE in ('病历本','托儿本')
+	</update>
+</mapper>

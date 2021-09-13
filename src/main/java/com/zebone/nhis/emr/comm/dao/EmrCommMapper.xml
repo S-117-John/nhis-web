@@ -1,0 +1,1092 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.emr.comm.dao.EmrCommMapper">
+    <resultMap id="ResultMapMedRecTaskQry" type="com.zebone.nhis.emr.comm.vo.EmrMedRecTaskVo">
+        <id column="PK_TASK" jdbcType="CHAR" property="pkTask"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="PK_PI" jdbcType="VARCHAR" property="pkPi"/>
+        <result column="TIMES" jdbcType="DECIMAL" property="times"/>
+        <result column="PK_PV" jdbcType="VARCHAR" property="pkPv"/>
+        <result column="EU_TASKTYPE" jdbcType="VARCHAR" property="euTasktype"/>
+        <result column="RULE_CODE" jdbcType="VARCHAR" property="ruleCode"/>
+        <result column="PK_EVTREC" jdbcType="VARCHAR" property="pkEvtrec"/>
+        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+        <result column="PK_REC" jdbcType="VARCHAR" property="pkRec"/>
+        <result column="FLAG_REC_CYCLE" jdbcType="CHAR" property="flagRecCycle"/>
+        <result column="TASK_DESC" jdbcType="VARCHAR" property="taskDesc"/>
+        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+        <result column="EU_REC_STATUS" jdbcType="CHAR" property="euRecStatus"/>
+        <result column="REC_DATE" jdbcType="DATE" property="recDate"/>
+        <result column="BEGIN_DATE" jdbcType="DATE" property="beginDate"/>
+        <result column="END_DATE" jdbcType="DATE" property="endDate"/>
+        <result column="FINISH_DATE" jdbcType="DATE" property="finishDate"/>
+        <result column="FLAG_TIMEOUT" jdbcType="CHAR" property="flagTimeout"/>
+        <result column="REMAIN_TIME" jdbcType="DECIMAL" property="remainTime"/>
+        <result column="DUE_NUM" jdbcType="DECIMAL" property="dueNum"/>
+        <result column="FACT_NUM" jdbcType="DECIMAL" property="factNum"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp"/>
+        <result column="FLAG_SHOW" jdbcType="CHAR" property="flagShow"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+        <result column="TASK_ID" jdbcType="VARCHAR" property="taskId"/>
+        <result column="DOC_NAME" jdbcType="VARCHAR" property="docName"/>
+        <result column="REC_DATE" jdbcType="DATE" property="recDate"/>
+        <result column="CREATOR_NAME" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="EU_DOC_STATUS" jdbcType="VARCHAR" property="euDocStatus"/>
+        <result column="TASK_TYPE_CODE" jdbcType="VARCHAR" property="taskTypeCode"/>
+        <result column="TASK_TYPE_NAME" jdbcType="VARCHAR" property="taskTypeName"/>
+        <result column="TASK_CODE" jdbcType="VARCHAR" property="taskCode"/>
+        <result column="TASK_NAME" jdbcType="VARCHAR" property="taskName"/>
+        <result column="TASK_TXT" jdbcType="VARCHAR" property="taskTxt"/>
+        <result column="PK_REC" jdbcType="VARCHAR" property="pkRec"/>
+        <result column="EU_STATUS_TASK" jdbcType="CHAR" property="euStatus"/>
+        <association property="patList" javaType="com.zebone.nhis.common.module.emr.rec.rec.EmrPatList">
+            <id column="PK_PV" jdbcType="CHAR" property="pkPv"/>
+            <result column="PK_PI" jdbcType="CHAR" property="pkPi"/>
+            <result column="CODE_PI" jdbcType="VARCHAR" property="codePi"/>
+            <result column="CODE_OP" jdbcType="VARCHAR" property="codeOp"/>
+            <result column="CODE_IP" jdbcType="VARCHAR" property="codeIp"/>
+            <result column="PAT_NO" jdbcType="VARCHAR" property="patNo"/>
+            <result column="BARCODE" jdbcType="VARCHAR" property="barcode"/>
+            <result column="PK_PICATE" jdbcType="CHAR" property="pkPicate"/>
+            <result column="NAME_PI" jdbcType="VARCHAR" property="namePi"/>
+            <result column="NAME" jdbcType="VARCHAR" property="name"/>
+            <result column="DT_IDTYPE" jdbcType="VARCHAR" property="dtIdtype"/>
+            <result column="ID_NO" jdbcType="VARCHAR" property="idNo"/>
+            <result column="HIC_NO" jdbcType="VARCHAR" property="hicNo"/>
+            <result column="INSUR_NO" jdbcType="VARCHAR" property="insurNo"/>
+            <result column="MPI" jdbcType="VARCHAR" property="mpi"/>
+            <result column="FLAG_EHR" jdbcType="CHAR" property="flagEhr"/>
+            <result column="DT_SEX" jdbcType="VARCHAR" property="dtSex"/>
+            <result column="SEX_NAME" jdbcType="VARCHAR" property="sexName"/>
+            <result column="BIRTH_DATE" jdbcType="DATE" property="birthDate"/>
+            <result column="AGE_TXT" jdbcType="VARCHAR" property="ageTxt"/>
+            <result column="PLACE_BIRTH" jdbcType="VARCHAR" property="placeBirth"/>
+            <result column="DT_MARRY" jdbcType="VARCHAR" property="dtMarry"/>
+            <result column="MARRY_NAME" jdbcType="VARCHAR" property="marryName"/>
+            <result column="DT_OCCU" jdbcType="VARCHAR" property="dtOccu"/>
+            <result column="OCCU_NAME" jdbcType="VARCHAR" property="occuName"/>
+            <result column="DT_EDU" jdbcType="VARCHAR" property="dtEdu"/>
+            <result column="DT_COUNTRY" jdbcType="VARCHAR" property="dtCountry"/>
+            <result column="DT_NATION" jdbcType="VARCHAR" property="dtNation"/>
+            <result column="NATION_NAME" jdbcType="VARCHAR" property="nationName"/>
+            <result column="TEL_NO" jdbcType="VARCHAR" property="telNo"/>
+            <result column="MOBILE" jdbcType="VARCHAR" property="mobile"/>
+            <result column="WECHAT_NO" jdbcType="VARCHAR" property="wechatNo"/>
+            <result column="EMAIL" jdbcType="VARCHAR" property="email"/>
+            <result column="UNIT_WORK" jdbcType="VARCHAR" property="unitWork"/>
+            <result column="TEL_WORK" jdbcType="VARCHAR" property="telWork"/>
+            <result column="ADDRESS" jdbcType="VARCHAR" property="address"/>
+            <result column="NAME_REL" jdbcType="VARCHAR" property="nameRel"/>
+            <result column="TEL_REL" jdbcType="VARCHAR" property="telRel"/>
+            <result column="DT_BLOOD_ABO" jdbcType="VARCHAR" property="dtBloodAbo"/>
+            <result column="BLOOD_ABO_NAME" jdbcType="VARCHAR" property="bloodAboName"/>
+            <result column="DT_BLOOD_RH" jdbcType="VARCHAR" property="dtBloodRh"/>
+            <result column="BLOOD_RH_NAME" jdbcType="VARCHAR" property="bloodRhName"/>
+            <result column="PK_ORG" jdbcType="CHAR" property="pkOrg"/>
+            <result column="CODE_PV" jdbcType="VARCHAR" property="codePv"/>
+            <result column="EU_PVTYPE" jdbcType="VARCHAR" property="euPvtype"/>
+            <result column="DATE_BEGIN" jdbcType="DATE" property="dateBegin"/>
+            <result column="DATE_END" jdbcType="DATE" property="dateEnd"/>
+            <result column="EU_STATUS_PV" jdbcType="VARCHAR" property="euStatusPv"/>
+            <result column="FLAG_IN" jdbcType="CHAR" property="flagIn"/>
+            <result column="FLAG_SETTLE" jdbcType="CHAR" property="flagSettle"/>
+            <result column="NAME_PI_PV" jdbcType="VARCHAR" property="namePiPv"/>
+            <result column="DT_SEX_PV" jdbcType="VARCHAR" property="dtSexPv"/>
+            <result column="AGE_PV" jdbcType="VARCHAR" property="agePv"/>
+            <result column="ADDRESS_PV" jdbcType="VARCHAR" property="addressPv"/>
+            <result column="DT_MARRY_PV" jdbcType="VARCHAR" property="dtMarryPv"/>
+            <result column="PK_DEPT" jdbcType="CHAR" property="pkDept"/>
+            <result column="DEPT_NAME" jdbcType="VARCHAR" property="deptName"/>
+            <result column="PK_DEPT_NS" jdbcType="CHAR" property="pkDeptNs"/>
+            <result column="DEPT_NS_NAME" jdbcType="VARCHAR" property="deptNsName"/>
+            <result column="DATE_CLINIC" jdbcType="DATE" property="dateClinic"/>
+            <result column="DATE_ADMIT" jdbcType="DATE" property="dateAdmit"/>
+            <result column="PK_WG" jdbcType="CHAR" property="pkWg"/>
+            <result column="BED_NO" jdbcType="VARCHAR" property="bedNo"/>
+            <result column="PK_EMP_TRE" jdbcType="CHAR" property="pkEmpTre"/>
+            <result column="NAME_EMP_TRE" jdbcType="VARCHAR" property="nameEmpTre"/>
+            <result column="PK_EMP_PHY" jdbcType="CHAR" property="pkEmpPhy"/>
+            <result column="NAME_EMP_PHY" jdbcType="VARCHAR" property="nameEmpPhy"/>
+            <result column="PK_EMP_NS" jdbcType="CHAR" property="pkEmpNs"/>
+            <result column="NAME_EMP_NS" jdbcType="VARCHAR" property="nameEmpNs"/>
+            <result column="PK_INSU" jdbcType="CHAR" property="pkInsu"/>
+            <result column="INSU_NAME" jdbcType="VARCHAR" property="insuName"/>
+            <result column="PK_PATICATE" jdbcType="VARCHAR" property="pkPaticate"/>
+            <result column="PK_EMP_REG" jdbcType="CHAR" property="pkEmpReg"/>
+            <result column="NAME_EMP_REG" jdbcType="VARCHAR" property="nameEmpReg"/>
+            <result column="DATE_REG" jdbcType="DATE" property="dateReg"/>
+            <result column="FLAG_CANCEL" jdbcType="CHAR" property="flagCancel"/>
+            <result column="PK_EMP_CANCEL" jdbcType="CHAR" property="pkEmpCancel"/>
+            <result column="NAME_EMP_CANCEL" jdbcType="VARCHAR" property="nameEmpCancel"/>
+            <result column="DATE_CANCEL" jdbcType="DATE" property="dateCancel"/>
+            <result column="EU_STATUS_FP" jdbcType="VARCHAR" property="euStatusFp"/>
+            <result column="CREATOR" jdbcType="CHAR" property="creator"/>
+            <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+            <result column="MODIFIER" jdbcType="CHAR" property="modifier"/>
+            <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+            <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+            <result column="PK_PVIP" jdbcType="CHAR" property="pkPvip"/>
+            <result column="PK_IP_NOTICE" jdbcType="CHAR" property="pkIpNotice"/>
+            <result column="IP_TIMES" jdbcType="DECIMAL" property="ipTimes"/>
+            <result column="DATE_NOTICE" jdbcType="DATE" property="dateNotice"/>
+            <result column="FLAG_OPT" jdbcType="CHAR" property="flagOpt"/>
+            <result column="DT_LEVEL_NS" jdbcType="VARCHAR" property="dtLevelNs"/>
+            <result column="LEVEL_NS_NAME" jdbcType="VARCHAR" property="levelNsName"/>
+            <result column="DT_LEVEL_DISE" jdbcType="VARCHAR" property="dtLevelDise"/>
+            <result column="LEVEL_DISE_NAME" jdbcType="VARCHAR" property="levelDiseName"/>
+            <result column="DT_LEVEL_NUTR" jdbcType="VARCHAR" property="dtLevelNutr"/>
+            <result column="DT_OUTCOMES" jdbcType="VARCHAR" property="dtOutcomes"/>
+            <result column="FLAG_INFANT" jdbcType="CHAR" property="flagInfant"/>
+            <result column="QUAN_INFANT" jdbcType="DECIMAL" property="quanInfant"/>
+            <result column="EU_STATUS_DOC" jdbcType="VARCHAR" property="euStatusDoc"/>
+            <result column="DATE_COMMIT_DOC" jdbcType="DATE" property="dateCommitDoc"/>
+            <result column="FLAG_GA" jdbcType="CHAR" property="flagGa"/>
+            <result column="FLAG_GA_NS" jdbcType="CHAR" property="flagGaNs"/>
+            <result column="DT_INTYPE" jdbcType="VARCHAR" property="dtIntype"/>
+            <result column="DT_OUTTYPE" jdbcType="VARCHAR" property="dtOuttype"/>
+            <result column="PK_DEPT_ADMIT" jdbcType="CHAR" property="pkDeptAdmit"/>
+            <result column="PK_DEPT_NS_ADMIT" jdbcType="CHAR" property="pkDeptNsAdmit"/>
+            <result column="PK_DEPT_DIS" jdbcType="CHAR" property="pkDeptDis"/>
+            <result column="PK_DEPT_NS_DIS" jdbcType="CHAR" property="pkDeptNsDis"/>
+            <result column="FLAG_PREST" jdbcType="VARCHAR" property="flagPrest"/>
+            <result column="DATE_PREST" jdbcType="DATE" property="datePrest"/>
+            <result column="PK_EMP_PREST" jdbcType="CHAR" property="pkEmpPrest"/>
+            <result column="NAME_EMP_PREST" jdbcType="VARCHAR" property="nameEmpPrest"/>
+            <result column="PK_PATREC" jdbcType="CHAR" property="pkPatrec"/>
+            <result column="DIAG_ADMIT_TXT" jdbcType="VARCHAR" property="diagAdmitTxt"/>
+            <result column="DIAG_DIS_TXT" jdbcType="VARCHAR" property="diagDisTxt"/>
+            <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+            <result column="PK_EMP_REFER" jdbcType="VARCHAR" property="pkEmpRefer"/>
+            <result column="REFER_NAME" jdbcType="VARCHAR" property="referName"/>
+            <result column="PK_EMP_CONSULT" jdbcType="VARCHAR" property="pkEmpConsult"/>
+            <result column="CONSULT_NAME" jdbcType="VARCHAR" property="consultName"/>
+            <result column="PK_EMP_DIRECTOR" jdbcType="VARCHAR" property="pkEmpDirector"/>
+            <result column="DIRECTOR_NAME" jdbcType="VARCHAR" property="directorName"/>
+            <result column="PK_EMP_NS_CHARGE" jdbcType="VARCHAR" property="pkEmpNsCharge"/>
+            <result column="NS_CHARGE_NAME" jdbcType="VARCHAR" property="nsChargeName"/>
+            <result column="PK_EMP_NS_HEAD" jdbcType="VARCHAR" property="pkEmpNsHead"/>
+            <result column="NS_HEAD_NAME" jdbcType="VARCHAR" property="nsHeadName"/>
+            <result column="PK_EMP_QC_DIS" jdbcType="VARCHAR" property="pkEmpQcDis"/>
+            <result column="QC_DIS_NAME" jdbcType="VARCHAR" property="qcDisName"/>
+            <result column="IN_HOS_DAYS" jdbcType="INTEGER" property="inHosDays"/>
+            <result column="TEMPE" jdbcType="VARCHAR" property="tempe"/>
+            <result column="PLUSE" jdbcType="VARCHAR" property="pluse"/>
+            <result column="BREATH" jdbcType="VARCHAR" property="breath"/>
+            <result column="SYSTOLIC" jdbcType="VARCHAR" property="systolic"/>
+            <result column="DIASTOLIC" jdbcType="VARCHAR" property="diastolic"/>
+            <result column="FLAG_AUDIT" jdbcType="CHAR" property="flagAudit"/>
+        </association>
+    </resultMap>
+    <resultMap id="ResultMapMedRecTaskVo" type="com.zebone.nhis.emr.comm.vo.EmrMedRecTaskVo">
+        <id column="TASK_ID" jdbcType="VARCHAR" property="taskId"/>
+        <result column="PK_TASK" jdbcType="CHAR" property="pkTask"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="PK_PI" jdbcType="VARCHAR" property="pkPi"/>
+        <result column="TIMES" jdbcType="DECIMAL" property="times"/>
+        <result column="PK_PV" jdbcType="VARCHAR" property="pkPv"/>
+        <result column="EU_TASKTYPE" jdbcType="VARCHAR" property="euTasktype"/>
+        <result column="RULE_CODE" jdbcType="VARCHAR" property="ruleCode"/>
+        <result column="PK_EVTREC" jdbcType="VARCHAR" property="pkEvtrec"/>
+        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+        <result column="PK_REC" jdbcType="VARCHAR" property="pkRec"/>
+        <result column="FLAG_REC_CYCLE" jdbcType="CHAR" property="flagRecCycle"/>
+        <result column="TASK_DESC" jdbcType="VARCHAR" property="taskDesc"/>
+        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+        <result column="EU_REC_STATUS" jdbcType="CHAR" property="euRecStatus"/>
+        <result column="REC_DATE" jdbcType="DATE" property="recDate"/>
+        <result column="BEGIN_DATE" jdbcType="DATE" property="beginDate"/>
+        <result column="BEGIN_DATE_RMD" jdbcType="DATE" property="beginDateRmd"/>
+        <result column="END_DATE" jdbcType="DATE" property="endDate"/>
+        <result column="FINISH_DATE" jdbcType="DATE" property="finishDate"/>
+        <result column="FLAG_TIMEOUT" jdbcType="CHAR" property="flagTimeout"/>
+        <result column="REMAIN_TIME" jdbcType="DECIMAL" property="remainTime"/>
+        <result column="DUE_NUM" jdbcType="DECIMAL" property="dueNum"/>
+        <result column="FACT_NUM" jdbcType="DECIMAL" property="factNum"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp"/>
+        <result column="FLAG_SHOW" jdbcType="CHAR" property="flagShow"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+        <result column="DOC_NAME" jdbcType="VARCHAR" property="docName"/>
+        <result column="REC_DATE" jdbcType="DATE" property="recDate"/>
+        <result column="CREATOR_NAME" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="EU_DOC_STATUS" jdbcType="VARCHAR" property="euDocStatus"/>
+        <result column="TASK_TYPE_CODE" jdbcType="VARCHAR" property="taskTypeCode"/>
+        <result column="TASK_TYPE_NAME" jdbcType="VARCHAR" property="taskTypeName"/>
+        <result column="TASK_CODE" jdbcType="VARCHAR" property="taskCode"/>
+        <result column="TASK_NAME" jdbcType="VARCHAR" property="taskName"/>
+        <result column="TASK_TXT" jdbcType="VARCHAR" property="taskTxt"/>
+        <result column="PK_REC" jdbcType="VARCHAR" property="pkRec"/>
+        <result column="EU_STATUS_TASK" jdbcType="CHAR" property="euStatus"/>
+        <association property="patList" javaType="com.zebone.nhis.common.module.emr.rec.rec.EmrPatList">
+            <id column="PK_PV" jdbcType="CHAR" property="pkPv"/>
+            <result column="PK_PI" jdbcType="CHAR" property="pkPi"/>
+            <result column="CODE_PI" jdbcType="VARCHAR" property="codePi"/>
+            <result column="CODE_OP" jdbcType="VARCHAR" property="codeOp"/>
+            <result column="CODE_IP" jdbcType="VARCHAR" property="codeIp"/>
+            <result column="PAT_NO" jdbcType="VARCHAR" property="patNo"/>
+            <result column="BARCODE" jdbcType="VARCHAR" property="barcode"/>
+            <result column="PK_PICATE" jdbcType="CHAR" property="pkPicate"/>
+            <result column="NAME_PI" jdbcType="VARCHAR" property="namePi"/>
+            <result column="NAME" jdbcType="VARCHAR" property="name"/>
+            <result column="DT_IDTYPE" jdbcType="VARCHAR" property="dtIdtype"/>
+            <result column="ID_NO" jdbcType="VARCHAR" property="idNo"/>
+            <result column="HIC_NO" jdbcType="VARCHAR" property="hicNo"/>
+            <result column="INSUR_NO" jdbcType="VARCHAR" property="insurNo"/>
+            <result column="MPI" jdbcType="VARCHAR" property="mpi"/>
+            <result column="FLAG_EHR" jdbcType="CHAR" property="flagEhr"/>
+            <result column="DT_SEX" jdbcType="VARCHAR" property="dtSex"/>
+            <result column="SEX_NAME" jdbcType="VARCHAR" property="sexName"/>
+            <result column="BIRTH_DATE" jdbcType="DATE" property="birthDate"/>
+            <result column="AGE_TXT" jdbcType="VARCHAR" property="ageTxt"/>
+            <result column="PLACE_BIRTH" jdbcType="VARCHAR" property="placeBirth"/>
+            <result column="DT_MARRY" jdbcType="VARCHAR" property="dtMarry"/>
+            <result column="MARRY_NAME" jdbcType="VARCHAR" property="marryName"/>
+            <result column="DT_OCCU" jdbcType="VARCHAR" property="dtOccu"/>
+            <result column="OCCU_NAME" jdbcType="VARCHAR" property="occuName"/>
+            <result column="DT_EDU" jdbcType="VARCHAR" property="dtEdu"/>
+            <result column="DT_COUNTRY" jdbcType="VARCHAR" property="dtCountry"/>
+            <result column="DT_NATION" jdbcType="VARCHAR" property="dtNation"/>
+            <result column="NATION_NAME" jdbcType="VARCHAR" property="nationName"/>
+            <result column="TEL_NO" jdbcType="VARCHAR" property="telNo"/>
+            <result column="MOBILE" jdbcType="VARCHAR" property="mobile"/>
+            <result column="WECHAT_NO" jdbcType="VARCHAR" property="wechatNo"/>
+            <result column="EMAIL" jdbcType="VARCHAR" property="email"/>
+            <result column="UNIT_WORK" jdbcType="VARCHAR" property="unitWork"/>
+            <result column="TEL_WORK" jdbcType="VARCHAR" property="telWork"/>
+            <result column="ADDRESS" jdbcType="VARCHAR" property="address"/>
+            <result column="NAME_REL" jdbcType="VARCHAR" property="nameRel"/>
+            <result column="TEL_REL" jdbcType="VARCHAR" property="telRel"/>
+            <result column="DT_BLOOD_ABO" jdbcType="VARCHAR" property="dtBloodAbo"/>
+            <result column="BLOOD_ABO_NAME" jdbcType="VARCHAR" property="bloodAboName"/>
+            <result column="DT_BLOOD_RH" jdbcType="VARCHAR" property="dtBloodRh"/>
+            <result column="BLOOD_RH_NAME" jdbcType="VARCHAR" property="bloodRhName"/>
+            <result column="PK_ORG" jdbcType="CHAR" property="pkOrg"/>
+            <result column="CODE_PV" jdbcType="VARCHAR" property="codePv"/>
+            <result column="EU_PVTYPE" jdbcType="VARCHAR" property="euPvtype"/>
+            <result column="DATE_BEGIN" jdbcType="DATE" property="dateBegin"/>
+            <result column="DATE_END" jdbcType="DATE" property="dateEnd"/>
+            <result column="EU_STATUS_PV" jdbcType="VARCHAR" property="euStatusPv"/>
+            <result column="FLAG_IN" jdbcType="CHAR" property="flagIn"/>
+            <result column="FLAG_SETTLE" jdbcType="CHAR" property="flagSettle"/>
+            <result column="NAME_PI_PV" jdbcType="VARCHAR" property="namePiPv"/>
+            <result column="DT_SEX_PV" jdbcType="VARCHAR" property="dtSexPv"/>
+            <result column="AGE_PV" jdbcType="VARCHAR" property="agePv"/>
+            <result column="ADDRESS_PV" jdbcType="VARCHAR" property="addressPv"/>
+            <result column="DT_MARRY_PV" jdbcType="VARCHAR" property="dtMarryPv"/>
+            <result column="PK_DEPT" jdbcType="CHAR" property="pkDept"/>
+            <result column="DEPT_NAME" jdbcType="VARCHAR" property="deptName"/>
+            <result column="PK_DEPT_NS" jdbcType="CHAR" property="pkDeptNs"/>
+            <result column="DEPT_NS_NAME" jdbcType="VARCHAR" property="deptNsName"/>
+            <result column="DATE_CLINIC" jdbcType="DATE" property="dateClinic"/>
+            <result column="DATE_ADMIT" jdbcType="DATE" property="dateAdmit"/>
+            <result column="PK_WG" jdbcType="CHAR" property="pkWg"/>
+            <result column="BED_NO" jdbcType="VARCHAR" property="bedNo"/>
+            <result column="PK_EMP_TRE" jdbcType="CHAR" property="pkEmpTre"/>
+            <result column="NAME_EMP_TRE" jdbcType="VARCHAR" property="nameEmpTre"/>
+            <result column="PK_EMP_PHY" jdbcType="CHAR" property="pkEmpPhy"/>
+            <result column="NAME_EMP_PHY" jdbcType="VARCHAR" property="nameEmpPhy"/>
+            <result column="PK_EMP_NS" jdbcType="CHAR" property="pkEmpNs"/>
+            <result column="NAME_EMP_NS" jdbcType="VARCHAR" property="nameEmpNs"/>
+            <result column="PK_INSU" jdbcType="CHAR" property="pkInsu"/>
+            <result column="INSU_NAME" jdbcType="VARCHAR" property="insuName"/>
+            <result column="PK_PATICATE" jdbcType="VARCHAR" property="pkPaticate"/>
+            <result column="PK_EMP_REG" jdbcType="CHAR" property="pkEmpReg"/>
+            <result column="NAME_EMP_REG" jdbcType="VARCHAR" property="nameEmpReg"/>
+            <result column="DATE_REG" jdbcType="DATE" property="dateReg"/>
+            <result column="FLAG_CANCEL" jdbcType="CHAR" property="flagCancel"/>
+            <result column="PK_EMP_CANCEL" jdbcType="CHAR" property="pkEmpCancel"/>
+            <result column="NAME_EMP_CANCEL" jdbcType="VARCHAR" property="nameEmpCancel"/>
+            <result column="DATE_CANCEL" jdbcType="DATE" property="dateCancel"/>
+            <result column="EU_STATUS_FP" jdbcType="VARCHAR" property="euStatusFp"/>
+            <result column="CREATOR" jdbcType="CHAR" property="creator"/>
+            <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+            <result column="MODIFIER" jdbcType="CHAR" property="modifier"/>
+            <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+            <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+            <result column="PK_PVIP" jdbcType="CHAR" property="pkPvip"/>
+            <result column="PK_IP_NOTICE" jdbcType="CHAR" property="pkIpNotice"/>
+            <result column="IP_TIMES" jdbcType="DECIMAL" property="ipTimes"/>
+            <result column="DATE_NOTICE" jdbcType="DATE" property="dateNotice"/>
+            <result column="FLAG_OPT" jdbcType="CHAR" property="flagOpt"/>
+            <result column="DT_LEVEL_NS" jdbcType="VARCHAR" property="dtLevelNs"/>
+            <result column="LEVEL_NS_NAME" jdbcType="VARCHAR" property="levelNsName"/>
+            <result column="DT_LEVEL_DISE" jdbcType="VARCHAR" property="dtLevelDise"/>
+            <result column="LEVEL_DISE_NAME" jdbcType="VARCHAR" property="levelDiseName"/>
+            <result column="DT_LEVEL_NUTR" jdbcType="VARCHAR" property="dtLevelNutr"/>
+            <result column="DT_OUTCOMES" jdbcType="VARCHAR" property="dtOutcomes"/>
+            <result column="FLAG_INFANT" jdbcType="CHAR" property="flagInfant"/>
+            <result column="QUAN_INFANT" jdbcType="DECIMAL" property="quanInfant"/>
+            <result column="EU_STATUS_DOC" jdbcType="VARCHAR" property="euStatusDoc"/>
+            <result column="DATE_COMMIT_DOC" jdbcType="DATE" property="dateCommitDoc"/>
+            <result column="FLAG_GA" jdbcType="CHAR" property="flagGa"/>
+            <result column="FLAG_GA_NS" jdbcType="CHAR" property="flagGaNs"/>
+            <result column="DT_INTYPE" jdbcType="VARCHAR" property="dtIntype"/>
+            <result column="DT_OUTTYPE" jdbcType="VARCHAR" property="dtOuttype"/>
+            <result column="PK_DEPT_ADMIT" jdbcType="CHAR" property="pkDeptAdmit"/>
+            <result column="PK_DEPT_NS_ADMIT" jdbcType="CHAR" property="pkDeptNsAdmit"/>
+            <result column="PK_DEPT_DIS" jdbcType="CHAR" property="pkDeptDis"/>
+            <result column="PK_DEPT_NS_DIS" jdbcType="CHAR" property="pkDeptNsDis"/>
+            <result column="FLAG_PREST" jdbcType="VARCHAR" property="flagPrest"/>
+            <result column="DATE_PREST" jdbcType="DATE" property="datePrest"/>
+            <result column="PK_EMP_PREST" jdbcType="CHAR" property="pkEmpPrest"/>
+            <result column="NAME_EMP_PREST" jdbcType="VARCHAR" property="nameEmpPrest"/>
+            <result column="PK_PATREC" jdbcType="CHAR" property="pkPatrec"/>
+            <result column="DIAG_ADMIT_TXT" jdbcType="VARCHAR" property="diagAdmitTxt"/>
+            <result column="DIAG_DIS_TXT" jdbcType="VARCHAR" property="diagDisTxt"/>
+            <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+            <result column="PK_EMP_REFER" jdbcType="VARCHAR" property="pkEmpRefer"/>
+            <result column="REFER_NAME" jdbcType="VARCHAR" property="referName"/>
+            <result column="PK_EMP_CONSULT" jdbcType="VARCHAR" property="pkEmpConsult"/>
+            <result column="CONSULT_NAME" jdbcType="VARCHAR" property="consultName"/>
+            <result column="PK_EMP_DIRECTOR" jdbcType="VARCHAR" property="pkEmpDirector"/>
+            <result column="DIRECTOR_NAME" jdbcType="VARCHAR" property="directorName"/>
+            <result column="PK_EMP_NS_CHARGE" jdbcType="VARCHAR" property="pkEmpNsCharge"/>
+            <result column="NS_CHARGE_NAME" jdbcType="VARCHAR" property="nsChargeName"/>
+            <result column="PK_EMP_NS_HEAD" jdbcType="VARCHAR" property="pkEmpNsHead"/>
+            <result column="NS_HEAD_NAME" jdbcType="VARCHAR" property="nsHeadName"/>
+            <result column="PK_EMP_QC_DIS" jdbcType="VARCHAR" property="pkEmpQcDis"/>
+            <result column="QC_DIS_NAME" jdbcType="VARCHAR" property="qcDisName"/>
+            <result column="IN_HOS_DAYS" jdbcType="INTEGER" property="inHosDays"/>
+            <result column="TEMPE" jdbcType="VARCHAR" property="tempe"/>
+            <result column="PLUSE" jdbcType="VARCHAR" property="pluse"/>
+            <result column="BREATH" jdbcType="VARCHAR" property="breath"/>
+            <result column="SYSTOLIC" jdbcType="VARCHAR" property="systolic"/>
+            <result column="DIASTOLIC" jdbcType="VARCHAR" property="diastolic"/>
+            <result column="FLAG_AUDIT" jdbcType="CHAR" property="flagAudit"/>
+        </association>
+    </resultMap>
+    <resultMap id="ResultMapMedRecTaskVoOracle" type="com.zebone.nhis.emr.comm.vo.EmrMedRecTaskVo">
+        <id column="TASK_ID" jdbcType="VARCHAR" property="taskId"/>
+        <result column="PK_TASK" jdbcType="CHAR" property="pkTask"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="PK_PI" jdbcType="VARCHAR" property="pkPi"/>
+        <result column="TIMES" jdbcType="DECIMAL" property="times"/>
+        <result column="PK_PV" jdbcType="VARCHAR" property="pkPv"/>
+        <result column="EU_TASKTYPE" jdbcType="VARCHAR" property="euTasktype"/>
+        <result column="RULE_CODE" jdbcType="VARCHAR" property="ruleCode"/>
+        <result column="PK_EVTREC" jdbcType="VARCHAR" property="pkEvtrec"/>
+        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+        <result column="PK_REC" jdbcType="VARCHAR" property="pkRec"/>
+        <result column="FLAG_REC_CYCLE" jdbcType="CHAR" property="flagRecCycle"/>
+        <result column="TASK_DESC" jdbcType="VARCHAR" property="taskDesc"/>
+        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+        <result column="EU_REC_STATUS" jdbcType="CHAR" property="euRecStatus"/>
+        <result column="REC_DATE" jdbcType="TIMESTAMP" property="recDate"/>
+        <result column="BEGIN_DATE" jdbcType="TIMESTAMP" property="beginDate"/>
+        <result column="BEGIN_DATE_RMD" jdbcType="TIMESTAMP" property="beginDateRmd"/>
+        <result column="END_DATE" jdbcType="TIMESTAMP" property="endDate"/>
+        <result column="FINISH_DATE" jdbcType="TIMESTAMP" property="finishDate"/>
+        <result column="FLAG_TIMEOUT" jdbcType="CHAR" property="flagTimeout"/>
+        <result column="REMAIN_TIME" jdbcType="DECIMAL" property="remainTime"/>
+        <result column="DUE_NUM" jdbcType="DECIMAL" property="dueNum"/>
+        <result column="FACT_NUM" jdbcType="DECIMAL" property="factNum"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp"/>
+        <result column="FLAG_SHOW" jdbcType="CHAR" property="flagShow"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+        <result column="DOC_NAME" jdbcType="VARCHAR" property="docName"/>
+        <result column="REC_DATE" jdbcType="TIMESTAMP" property="recDate"/>
+        <result column="CREATOR_NAME" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="EU_DOC_STATUS" jdbcType="VARCHAR" property="euDocStatus"/>
+        <result column="TASK_TYPE_CODE" jdbcType="VARCHAR" property="taskTypeCode"/>
+        <result column="TASK_TYPE_NAME" jdbcType="VARCHAR" property="taskTypeName"/>
+        <result column="TASK_CODE" jdbcType="VARCHAR" property="taskCode"/>
+        <result column="TASK_NAME" jdbcType="VARCHAR" property="taskName"/>
+        <result column="TASK_TXT" jdbcType="VARCHAR" property="taskTxt"/>
+        <result column="PK_REC" jdbcType="VARCHAR" property="pkRec"/>
+        <result column="EU_STATUS_TASK" jdbcType="CHAR" property="euStatus"/>
+        <association property="patList" javaType="com.zebone.nhis.common.module.emr.rec.rec.EmrPatList">
+            <id column="PK_PV" jdbcType="CHAR" property="pkPv"/>
+            <result column="PK_PI" jdbcType="CHAR" property="pkPi"/>
+            <result column="CODE_PI" jdbcType="VARCHAR" property="codePi"/>
+            <result column="CODE_OP" jdbcType="VARCHAR" property="codeOp"/>
+            <result column="CODE_IP" jdbcType="VARCHAR" property="codeIp"/>
+            <result column="PAT_NO" jdbcType="VARCHAR" property="patNo"/>
+            <result column="BARCODE" jdbcType="VARCHAR" property="barcode"/>
+            <result column="PK_PICATE" jdbcType="CHAR" property="pkPicate"/>
+            <result column="NAME_PI" jdbcType="VARCHAR" property="namePi"/>
+            <result column="NAME" jdbcType="VARCHAR" property="name"/>
+            <result column="DT_IDTYPE" jdbcType="VARCHAR" property="dtIdtype"/>
+            <result column="ID_NO" jdbcType="VARCHAR" property="idNo"/>
+            <result column="HIC_NO" jdbcType="VARCHAR" property="hicNo"/>
+            <result column="INSUR_NO" jdbcType="VARCHAR" property="insurNo"/>
+            <result column="MPI" jdbcType="VARCHAR" property="mpi"/>
+            <result column="FLAG_EHR" jdbcType="CHAR" property="flagEhr"/>
+            <result column="DT_SEX" jdbcType="VARCHAR" property="dtSex"/>
+            <result column="SEX_NAME" jdbcType="VARCHAR" property="sexName"/>
+            <result column="BIRTH_DATE" jdbcType="DATE" property="birthDate"/>
+            <result column="AGE_TXT" jdbcType="VARCHAR" property="ageTxt"/>
+            <result column="PLACE_BIRTH" jdbcType="VARCHAR" property="placeBirth"/>
+            <result column="DT_MARRY" jdbcType="VARCHAR" property="dtMarry"/>
+            <result column="MARRY_NAME" jdbcType="VARCHAR" property="marryName"/>
+            <result column="DT_OCCU" jdbcType="VARCHAR" property="dtOccu"/>
+            <result column="OCCU_NAME" jdbcType="VARCHAR" property="occuName"/>
+            <result column="DT_EDU" jdbcType="VARCHAR" property="dtEdu"/>
+            <result column="DT_COUNTRY" jdbcType="VARCHAR" property="dtCountry"/>
+            <result column="DT_NATION" jdbcType="VARCHAR" property="dtNation"/>
+            <result column="NATION_NAME" jdbcType="VARCHAR" property="nationName"/>
+            <result column="TEL_NO" jdbcType="VARCHAR" property="telNo"/>
+            <result column="MOBILE" jdbcType="VARCHAR" property="mobile"/>
+            <result column="WECHAT_NO" jdbcType="VARCHAR" property="wechatNo"/>
+            <result column="EMAIL" jdbcType="VARCHAR" property="email"/>
+            <result column="UNIT_WORK" jdbcType="VARCHAR" property="unitWork"/>
+            <result column="TEL_WORK" jdbcType="VARCHAR" property="telWork"/>
+            <result column="ADDRESS" jdbcType="VARCHAR" property="address"/>
+            <result column="NAME_REL" jdbcType="VARCHAR" property="nameRel"/>
+            <result column="TEL_REL" jdbcType="VARCHAR" property="telRel"/>
+            <result column="DT_BLOOD_ABO" jdbcType="VARCHAR" property="dtBloodAbo"/>
+            <result column="BLOOD_ABO_NAME" jdbcType="VARCHAR" property="bloodAboName"/>
+            <result column="DT_BLOOD_RH" jdbcType="VARCHAR" property="dtBloodRh"/>
+            <result column="BLOOD_RH_NAME" jdbcType="VARCHAR" property="bloodRhName"/>
+            <result column="PK_ORG" jdbcType="CHAR" property="pkOrg"/>
+            <result column="CODE_PV" jdbcType="VARCHAR" property="codePv"/>
+            <result column="EU_PVTYPE" jdbcType="VARCHAR" property="euPvtype"/>
+            <result column="DATE_BEGIN" jdbcType="DATE" property="dateBegin"/>
+            <result column="DATE_END" jdbcType="DATE" property="dateEnd"/>
+            <result column="EU_STATUS_PV" jdbcType="VARCHAR" property="euStatusPv"/>
+            <result column="FLAG_IN" jdbcType="CHAR" property="flagIn"/>
+            <result column="FLAG_SETTLE" jdbcType="CHAR" property="flagSettle"/>
+            <result column="NAME_PI_PV" jdbcType="VARCHAR" property="namePiPv"/>
+            <result column="DT_SEX_PV" jdbcType="VARCHAR" property="dtSexPv"/>
+            <result column="AGE_PV" jdbcType="VARCHAR" property="agePv"/>
+            <result column="ADDRESS_PV" jdbcType="VARCHAR" property="addressPv"/>
+            <result column="DT_MARRY_PV" jdbcType="VARCHAR" property="dtMarryPv"/>
+            <result column="PK_DEPT" jdbcType="CHAR" property="pkDept"/>
+            <result column="DEPT_NAME" jdbcType="VARCHAR" property="deptName"/>
+            <result column="PK_DEPT_NS" jdbcType="CHAR" property="pkDeptNs"/>
+            <result column="DEPT_NS_NAME" jdbcType="VARCHAR" property="deptNsName"/>
+            <result column="DATE_CLINIC" jdbcType="DATE" property="dateClinic"/>
+            <result column="DATE_ADMIT" jdbcType="DATE" property="dateAdmit"/>
+            <result column="PK_WG" jdbcType="CHAR" property="pkWg"/>
+            <result column="BED_NO" jdbcType="VARCHAR" property="bedNo"/>
+            <result column="PK_EMP_TRE" jdbcType="CHAR" property="pkEmpTre"/>
+            <result column="NAME_EMP_TRE" jdbcType="VARCHAR" property="nameEmpTre"/>
+            <result column="PK_EMP_PHY" jdbcType="CHAR" property="pkEmpPhy"/>
+            <result column="NAME_EMP_PHY" jdbcType="VARCHAR" property="nameEmpPhy"/>
+            <result column="PK_EMP_NS" jdbcType="CHAR" property="pkEmpNs"/>
+            <result column="NAME_EMP_NS" jdbcType="VARCHAR" property="nameEmpNs"/>
+            <result column="PK_INSU" jdbcType="CHAR" property="pkInsu"/>
+            <result column="INSU_NAME" jdbcType="VARCHAR" property="insuName"/>
+            <result column="PK_PATICATE" jdbcType="VARCHAR" property="pkPaticate"/>
+            <result column="PK_EMP_REG" jdbcType="CHAR" property="pkEmpReg"/>
+            <result column="NAME_EMP_REG" jdbcType="VARCHAR" property="nameEmpReg"/>
+            <result column="DATE_REG" jdbcType="DATE" property="dateReg"/>
+            <result column="FLAG_CANCEL" jdbcType="CHAR" property="flagCancel"/>
+            <result column="PK_EMP_CANCEL" jdbcType="CHAR" property="pkEmpCancel"/>
+            <result column="NAME_EMP_CANCEL" jdbcType="VARCHAR" property="nameEmpCancel"/>
+            <result column="DATE_CANCEL" jdbcType="DATE" property="dateCancel"/>
+            <result column="EU_STATUS_FP" jdbcType="VARCHAR" property="euStatusFp"/>
+            <result column="CREATOR" jdbcType="CHAR" property="creator"/>
+            <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+            <result column="MODIFIER" jdbcType="CHAR" property="modifier"/>
+            <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+            <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+            <result column="PK_PVIP" jdbcType="CHAR" property="pkPvip"/>
+            <result column="PK_IP_NOTICE" jdbcType="CHAR" property="pkIpNotice"/>
+            <result column="IP_TIMES" jdbcType="DECIMAL" property="ipTimes"/>
+            <result column="DATE_NOTICE" jdbcType="DATE" property="dateNotice"/>
+            <result column="FLAG_OPT" jdbcType="CHAR" property="flagOpt"/>
+            <result column="DT_LEVEL_NS" jdbcType="VARCHAR" property="dtLevelNs"/>
+            <result column="LEVEL_NS_NAME" jdbcType="VARCHAR" property="levelNsName"/>
+            <result column="DT_LEVEL_DISE" jdbcType="VARCHAR" property="dtLevelDise"/>
+            <result column="LEVEL_DISE_NAME" jdbcType="VARCHAR" property="levelDiseName"/>
+            <result column="DT_LEVEL_NUTR" jdbcType="VARCHAR" property="dtLevelNutr"/>
+            <result column="DT_OUTCOMES" jdbcType="VARCHAR" property="dtOutcomes"/>
+            <result column="FLAG_INFANT" jdbcType="CHAR" property="flagInfant"/>
+            <result column="QUAN_INFANT" jdbcType="DECIMAL" property="quanInfant"/>
+            <result column="EU_STATUS_DOC" jdbcType="VARCHAR" property="euStatusDoc"/>
+            <result column="DATE_COMMIT_DOC" jdbcType="DATE" property="dateCommitDoc"/>
+            <result column="FLAG_GA" jdbcType="CHAR" property="flagGa"/>
+            <result column="FLAG_GA_NS" jdbcType="CHAR" property="flagGaNs"/>
+            <result column="DT_INTYPE" jdbcType="VARCHAR" property="dtIntype"/>
+            <result column="DT_OUTTYPE" jdbcType="VARCHAR" property="dtOuttype"/>
+            <result column="PK_DEPT_ADMIT" jdbcType="CHAR" property="pkDeptAdmit"/>
+            <result column="PK_DEPT_NS_ADMIT" jdbcType="CHAR" property="pkDeptNsAdmit"/>
+            <result column="PK_DEPT_DIS" jdbcType="CHAR" property="pkDeptDis"/>
+            <result column="PK_DEPT_NS_DIS" jdbcType="CHAR" property="pkDeptNsDis"/>
+            <result column="FLAG_PREST" jdbcType="VARCHAR" property="flagPrest"/>
+            <result column="DATE_PREST" jdbcType="DATE" property="datePrest"/>
+            <result column="PK_EMP_PREST" jdbcType="CHAR" property="pkEmpPrest"/>
+            <result column="NAME_EMP_PREST" jdbcType="VARCHAR" property="nameEmpPrest"/>
+            <result column="PK_PATREC" jdbcType="CHAR" property="pkPatrec"/>
+            <result column="DIAG_ADMIT_TXT" jdbcType="VARCHAR" property="diagAdmitTxt"/>
+            <result column="DIAG_DIS_TXT" jdbcType="VARCHAR" property="diagDisTxt"/>
+            <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+            <result column="PK_EMP_REFER" jdbcType="VARCHAR" property="pkEmpRefer"/>
+            <result column="REFER_NAME" jdbcType="VARCHAR" property="referName"/>
+            <result column="PK_EMP_CONSULT" jdbcType="VARCHAR" property="pkEmpConsult"/>
+            <result column="CONSULT_NAME" jdbcType="VARCHAR" property="consultName"/>
+            <result column="PK_EMP_DIRECTOR" jdbcType="VARCHAR" property="pkEmpDirector"/>
+            <result column="DIRECTOR_NAME" jdbcType="VARCHAR" property="directorName"/>
+            <result column="PK_EMP_NS_CHARGE" jdbcType="VARCHAR" property="pkEmpNsCharge"/>
+            <result column="NS_CHARGE_NAME" jdbcType="VARCHAR" property="nsChargeName"/>
+            <result column="PK_EMP_NS_HEAD" jdbcType="VARCHAR" property="pkEmpNsHead"/>
+            <result column="NS_HEAD_NAME" jdbcType="VARCHAR" property="nsHeadName"/>
+            <result column="PK_EMP_QC_DIS" jdbcType="VARCHAR" property="pkEmpQcDis"/>
+            <result column="QC_DIS_NAME" jdbcType="VARCHAR" property="qcDisName"/>
+            <result column="IN_HOS_DAYS" jdbcType="INTEGER" property="inHosDays"/>
+            <result column="TEMPE" jdbcType="VARCHAR" property="tempe"/>
+            <result column="PLUSE" jdbcType="VARCHAR" property="pluse"/>
+            <result column="BREATH" jdbcType="VARCHAR" property="breath"/>
+            <result column="SYSTOLIC" jdbcType="VARCHAR" property="systolic"/>
+            <result column="DIASTOLIC" jdbcType="VARCHAR" property="diastolic"/>
+            <result column="FLAG_AUDIT" jdbcType="CHAR" property="flagAudit"/>
+        </association>
+    </resultMap>
+    <select id="queryEmpTaskList" statementType="CALLABLE" parameterType="java.util.Map"
+            resultMap="ResultMapMedRecTaskVoOracle">
+        {call emr_proc_get_emp_taks_list(#{pkDept,mode=IN,jdbcType=VARCHAR}, #{pkEmp,mode=IN,jdbcType=VARCHAR},
+                                         #{pkPv,mode=IN,jdbcType=VARCHAR}, #{beginDate,mode=IN,jdbcType=VARCHAR},
+                                         #{endDate,mode=IN,jdbcType=VARCHAR},
+                                         #{result,jdbcType=CURSOR,mode=OUT,javaType=ResultSet, resultMap=ResultMapMedRecTaskVoOracle})}
+    </select>
+    <select id="queryEmpTaskListSql" statementType="CALLABLE" parameterType="java.util.Map"
+            resultMap="ResultMapMedRecTaskVo">
+        {call emr_proc_get_emp_taks_list(#{pkDept,mode=IN,jdbcType=VARCHAR}, #{pkEmp,mode=IN,jdbcType=VARCHAR},
+                                         #{pkPv,mode=IN,jdbcType=VARCHAR}, #{beginDate,mode=IN,jdbcType=VARCHAR},
+                                         #{endDate,mode=IN,jdbcType=VARCHAR})}
+    </select>
+    <resultMap id="ResultMapPatList" type="com.zebone.nhis.common.module.emr.rec.rec.EmrPatList">
+        <result column="PK_PI" jdbcType="CHAR" property="pkPi"/>
+        <result column="CODE_PI" jdbcType="VARCHAR" property="codePi"/>
+        <result column="CODE_OP" jdbcType="VARCHAR" property="codeOp"/>
+        <result column="CODE_IP" jdbcType="VARCHAR" property="codeIp"/>
+        <result column="PAT_NO" jdbcType="VARCHAR" property="patNo"/>
+        <result column="BARCODE" jdbcType="VARCHAR" property="barcode"/>
+        <result column="PK_PICATE" jdbcType="CHAR" property="pkPicate"/>
+        <result column="NAME_PI" jdbcType="VARCHAR" property="namePi"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="DT_IDTYPE" jdbcType="VARCHAR" property="dtIdtype"/>
+        <result column="ID_NO" jdbcType="VARCHAR" property="idNo"/>
+        <result column="HIC_NO" jdbcType="VARCHAR" property="hicNo"/>
+        <result column="INSUR_NO" jdbcType="VARCHAR" property="insurNo"/>
+        <result column="MPI" jdbcType="VARCHAR" property="mpi"/>
+        <result column="FLAG_EHR" jdbcType="CHAR" property="flagEhr"/>
+        <result column="DT_SEX" jdbcType="VARCHAR" property="dtSex"/>
+        <result column="SEX_NAME" jdbcType="VARCHAR" property="sexName"/>
+        <result column="BIRTH_DATE" jdbcType="DATE" property="birthDate"/>
+        <result column="AGE_TXT" jdbcType="VARCHAR" property="ageTxt"/>
+        <result column="PLACE_BIRTH" jdbcType="VARCHAR" property="placeBirth"/>
+        <result column="DT_MARRY" jdbcType="VARCHAR" property="dtMarry"/>
+        <result column="MARRY_NAME" jdbcType="VARCHAR" property="marryName"/>
+        <result column="DT_OCCU" jdbcType="VARCHAR" property="dtOccu"/>
+        <result column="OCCU_NAME" jdbcType="VARCHAR" property="occuName"/>
+        <result column="DT_EDU" jdbcType="VARCHAR" property="dtEdu"/>
+        <result column="DT_COUNTRY" jdbcType="VARCHAR" property="dtCountry"/>
+        <result column="DT_NATION" jdbcType="VARCHAR" property="dtNation"/>
+        <result column="NATION_NAME" jdbcType="VARCHAR" property="nationName"/>
+        <result column="TEL_NO" jdbcType="VARCHAR" property="telNo"/>
+        <result column="MOBILE" jdbcType="VARCHAR" property="mobile"/>
+        <result column="WECHAT_NO" jdbcType="VARCHAR" property="wechatNo"/>
+        <result column="EMAIL" jdbcType="VARCHAR" property="email"/>
+        <result column="UNIT_WORK" jdbcType="VARCHAR" property="unitWork"/>
+        <result column="TEL_WORK" jdbcType="VARCHAR" property="telWork"/>
+        <result column="ADDRESS" jdbcType="VARCHAR" property="address"/>
+        <result column="NAME_REL" jdbcType="VARCHAR" property="nameRel"/>
+        <result column="TEL_REL" jdbcType="VARCHAR" property="telRel"/>
+        <result column="DT_BLOOD_ABO" jdbcType="VARCHAR" property="dtBloodAbo"/>
+        <result column="BLOOD_ABO_NAME" jdbcType="VARCHAR" property="bloodAboName"/>
+        <result column="DT_BLOOD_RH" jdbcType="VARCHAR" property="dtBloodRh"/>
+        <result column="BLOOD_RH_NAME" jdbcType="VARCHAR" property="bloodRhName"/>
+        <result column="PK_PV" jdbcType="CHAR" property="pkPv"/>
+        <result column="PK_ORG" jdbcType="CHAR" property="pkOrg"/>
+        <result column="CODE_PV" jdbcType="VARCHAR" property="codePv"/>
+        <result column="EU_PVTYPE" jdbcType="VARCHAR" property="euPvtype"/>
+        <result column="DATE_BEGIN" jdbcType="DATE" property="dateBegin"/>
+        <result column="DATE_END" jdbcType="TIMESTAMP" property="dateEnd"/>
+        <result column="EU_STATUS_PV" jdbcType="VARCHAR" property="euStatusPv"/>
+        <result column="FLAG_IN" jdbcType="CHAR" property="flagIn"/>
+        <result column="FLAG_SETTLE" jdbcType="CHAR" property="flagSettle"/>
+        <result column="NAME_PI_PV" jdbcType="VARCHAR" property="namePiPv"/>
+        <result column="DT_SEX_PV" jdbcType="VARCHAR" property="dtSexPv"/>
+        <result column="AGE_PV" jdbcType="VARCHAR" property="agePv"/>
+        <result column="ADDRESS_PV" jdbcType="VARCHAR" property="addressPv"/>
+        <result column="DT_MARRY_PV" jdbcType="VARCHAR" property="dtMarryPv"/>
+        <result column="PK_DEPT" jdbcType="CHAR" property="pkDept"/>
+        <result column="DEPT_NAME" jdbcType="VARCHAR" property="deptName"/>
+        <result column="PK_DEPT_NS" jdbcType="CHAR" property="pkDeptNs"/>
+        <result column="DEPT_NS_NAME" jdbcType="VARCHAR" property="deptNsName"/>
+        <result column="DATE_CLINIC" jdbcType="DATE" property="dateClinic"/>
+        <result column="DATE_ADMIT" jdbcType="DATE" property="dateAdmit"/>
+        <result column="PK_WG" jdbcType="CHAR" property="pkWg"/>
+        <result column="BED_NO" jdbcType="VARCHAR" property="bedNo"/>
+        <result column="PK_EMP_TRE" jdbcType="CHAR" property="pkEmpTre"/>
+        <result column="NAME_EMP_TRE" jdbcType="VARCHAR" property="nameEmpTre"/>
+        <result column="PK_EMP_PHY" jdbcType="CHAR" property="pkEmpPhy"/>
+        <result column="NAME_EMP_PHY" jdbcType="VARCHAR" property="nameEmpPhy"/>
+        <result column="PK_EMP_NS" jdbcType="CHAR" property="pkEmpNs"/>
+        <result column="NAME_EMP_NS" jdbcType="VARCHAR" property="nameEmpNs"/>
+        <result column="PK_INSU" jdbcType="CHAR" property="pkInsu"/>
+        <result column="INSU_NAME" jdbcType="VARCHAR" property="insuName"/>
+        <result column="PK_PATICATE" jdbcType="VARCHAR" property="pkPaticate"/>
+        <result column="PK_EMP_REG" jdbcType="CHAR" property="pkEmpReg"/>
+        <result column="NAME_EMP_REG" jdbcType="VARCHAR" property="nameEmpReg"/>
+        <result column="DATE_REG" jdbcType="DATE" property="dateReg"/>
+        <result column="FLAG_CANCEL" jdbcType="CHAR" property="flagCancel"/>
+        <result column="PK_EMP_CANCEL" jdbcType="CHAR" property="pkEmpCancel"/>
+        <result column="NAME_EMP_CANCEL" jdbcType="VARCHAR" property="nameEmpCancel"/>
+        <result column="DATE_CANCEL" jdbcType="DATE" property="dateCancel"/>
+        <result column="EU_STATUS_FP" jdbcType="VARCHAR" property="euStatusFp"/>
+        <result column="CREATOR" jdbcType="CHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="MODIFIER" jdbcType="CHAR" property="modifier"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+        <result column="PK_PVIP" jdbcType="CHAR" property="pkPvip"/>
+        <result column="PK_IP_NOTICE" jdbcType="CHAR" property="pkIpNotice"/>
+        <result column="IP_TIMES" jdbcType="DECIMAL" property="ipTimes"/>
+        <result column="DATE_NOTICE" jdbcType="DATE" property="dateNotice"/>
+        <result column="FLAG_OPT" jdbcType="CHAR" property="flagOpt"/>
+        <result column="DT_LEVEL_NS" jdbcType="VARCHAR" property="dtLevelNs"/>
+        <result column="LEVEL_NS_NAME" jdbcType="VARCHAR" property="levelNsName"/>
+        <result column="DT_LEVEL_DISE" jdbcType="VARCHAR" property="dtLevelDise"/>
+        <result column="LEVEL_DISE_NAME" jdbcType="VARCHAR" property="levelDiseName"/>
+        <result column="DT_LEVEL_NUTR" jdbcType="VARCHAR" property="dtLevelNutr"/>
+        <result column="DT_OUTCOMES" jdbcType="VARCHAR" property="dtOutcomes"/>
+        <result column="FLAG_INFANT" jdbcType="CHAR" property="flagInfant"/>
+        <result column="QUAN_INFANT" jdbcType="DECIMAL" property="quanInfant"/>
+        <result column="EU_STATUS_DOC" jdbcType="VARCHAR" property="euStatusDoc"/>
+        <result column="DATE_COMMIT_DOC" jdbcType="DATE" property="dateCommitDoc"/>
+        <result column="FLAG_GA" jdbcType="CHAR" property="flagGa"/>
+        <result column="FLAG_GA_NS" jdbcType="CHAR" property="flagGaNs"/>
+        <result column="DT_INTYPE" jdbcType="VARCHAR" property="dtIntype"/>
+        <result column="DT_OUTTYPE" jdbcType="VARCHAR" property="dtOuttype"/>
+        <result column="PK_DEPT_ADMIT" jdbcType="CHAR" property="pkDeptAdmit"/>
+        <result column="PK_DEPT_NS_ADMIT" jdbcType="CHAR" property="pkDeptNsAdmit"/>
+        <result column="PK_DEPT_DIS" jdbcType="CHAR" property="pkDeptDis"/>
+        <result column="PK_DEPT_NS_DIS" jdbcType="CHAR" property="pkDeptNsDis"/>
+        <result column="FLAG_PREST" jdbcType="VARCHAR" property="flagPrest"/>
+        <result column="DATE_PREST" jdbcType="DATE" property="datePrest"/>
+        <result column="PK_EMP_PREST" jdbcType="CHAR" property="pkEmpPrest"/>
+        <result column="NAME_EMP_PREST" jdbcType="VARCHAR" property="nameEmpPrest"/>
+        <result column="PK_PATREC" jdbcType="CHAR" property="pkPatrec"/>
+        <result column="DIAG_ADMIT_TXT" jdbcType="VARCHAR" property="diagAdmitTxt"/>
+        <result column="DIAG_DIS_TXT" jdbcType="VARCHAR" property="diagDisTxt"/>
+        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+        <result column="PK_EMP_REFER" jdbcType="VARCHAR" property="pkEmpRefer"/>
+        <result column="REFER_NAME" jdbcType="VARCHAR" property="referName"/>
+        <result column="PK_EMP_CONSULT" jdbcType="VARCHAR" property="pkEmpConsult"/>
+        <result column="CONSULT_NAME" jdbcType="VARCHAR" property="consultName"/>
+        <result column="PK_EMP_DIRECTOR" jdbcType="VARCHAR" property="pkEmpDirector"/>
+        <result column="DIRECTOR_NAME" jdbcType="VARCHAR" property="directorName"/>
+        <result column="PK_EMP_NS_CHARGE" jdbcType="VARCHAR" property="pkEmpNsCharge"/>
+        <result column="NS_CHARGE_NAME" jdbcType="VARCHAR" property="nsChargeName"/>
+        <result column="PK_EMP_NS_HEAD" jdbcType="VARCHAR" property="pkEmpNsHead"/>
+        <result column="NS_HEAD_NAME" jdbcType="VARCHAR" property="nsHeadName"/>
+        <result column="PK_EMP_QC_DIS" jdbcType="VARCHAR" property="pkEmpQcDis"/>
+        <result column="QC_DIS_NAME" jdbcType="VARCHAR" property="qcDisName"/>
+        <result column="IN_HOS_DAYS" jdbcType="INTEGER" property="inHosDays"/>
+        <result column="TEMPE" jdbcType="VARCHAR" property="tempe"/>
+        <result column="PLUSE" jdbcType="VARCHAR" property="pluse"/>
+        <result column="BREATH" jdbcType="VARCHAR" property="breath"/>
+        <result column="SYSTOLIC" jdbcType="VARCHAR" property="systolic"/>
+        <result column="DIASTOLIC" jdbcType="VARCHAR" property="diastolic"/>
+        <result column="FLAG_AUDIT" jdbcType="CHAR" property="flagAudit"/>
+        <result column="ADDR_BIRTH" jdbcType="VARCHAR" property="addrBirth"/>
+        <result column="ADDR_ORIGIN" jdbcType="VARCHAR" property="addrOrigin"/>
+        <result column="ADDR_CUR" jdbcType="VARCHAR" property="addrCur"/>
+        <result column="OUT_HOS_DAYS" jdbcType="VARCHAR" property="outHosDays"/>
+        <result column="OVERTIME_DAYS" jdbcType="VARCHAR" property="overtimeDays"/>
+    </resultMap>
+
+    <select id="queryEmrPatList" resultMap="ResultMapPatList">
+        SELECT
+        *
+        FROM
+        VIEW_EMR_PAT_LIST
+        WHERE pk_pv is not null
+        <if test="pkPv != null">
+            and PK_PV = #{pkPv,jdbcType=VARCHAR}
+        </if>
+        <if test="beginDateB != null">
+            and date_begin &gt;= to_date(#{beginDateB,jdbcType=VARCHAR},'yyyymmddhh24miss')
+        </if>
+        <if test="endDateB != null">
+            and date_begin &lt; to_date(#{endDateB,jdbcType=VARCHAR},'yyyymmddhh24miss')
+        </if>
+        <if test="euStatus != null">
+            and eu_status = #{euStatus,jdbcType=CHAR}
+        </if>
+        <if test="euStatusPvNot != null">
+            and eu_status_pv != #{euStatusPvNot,jdbcType=CHAR}
+        </if>
+
+        <if test="orderBy != null">
+            ${orderBy}
+        </if>
+    </select>
+
+    <select id="selectSn" resultType="java.lang.Double">
+        select val
+        from BD_SERIALNO
+        where name_tb = #{tableName,jdbcType=VARCHAR}
+          and name_fd = #{fieldName,jdbcType=VARCHAR}
+    </select>
+
+    <insert id="initSn" parameterType="com.zebone.nhis.emr.comm.vo.BdSerialnoVo">
+        insert into BD_SERIALNO (PK_SERIALNO, PK_ORG, NAME_TB, NAME_FD, VAL_INIT, VAL )
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            #{pkSerialno,jdbcType=CHAR},
+            #{pkOrg,jdbcType=CHAR},
+            #{nameTb,jdbcType=VARCHAR},
+            #{nameFd,jdbcType=VARCHAR},
+            #{valInit,jdbcType=DECIMAL},
+            #{val,jdbcType=DECIMAL},
+        </trim>
+    </insert>
+
+
+    <select id="queryEmrWeekdays" parameterType="java.util.Map"
+            resultType="com.zebone.nhis.common.module.base.bd.code.BdWorkcalendardate">
+        SELECT
+        d.*
+        FROM
+        bd_workcalendar bw
+        inner join bd_workcalendardate d
+        on bw.pk_workcalendar = d.pk_workcalendar
+        WHERE d.del_flag='0'
+        <if test="calendarDef != null">
+            and bw.calendar_def = #{calendarDef,jdbcType=CHAR}
+        </if>
+        <if test="datetype != null">
+            and d.datetype = #{datetype,jdbcType=VARCHAR}
+        </if>
+        <if test="beginDate != null">
+            and to_date(to_char(d.calendardate,'yyyymmdd'),'yyyymmdd') &gt;=
+            to_date(#{beginDate,jdbcType=VARCHAR},'yyyymmdd')
+        </if>
+        <if test="endDate != null">
+            and to_date(to_char(d.calendardate,'yyyymmdd'),'yyyymmdd') &lt;=
+            to_date(#{endDate,jdbcType=VARCHAR},'yyyymmdd')
+        </if>
+        order by d.calendardate
+    </select>
+    <select id="queryEmpPatTaskList" resultMap="ResultMapPatList">
+        select t.*
+        from (select pat.*,
+        to_date(to_char(pat.date_end, 'yyyy-mm-dd'), 'yyyy-mm-dd') date_end_t,
+        (select max(calendardate) calendardate
+        from (select d.*
+        from bd_workcalendar bw
+        inner join bd_workcalendardate d
+        on bw.pk_workcalendar = d.pk_workcalendar
+        WHERE bw.calendar_def = '1'
+        and d.del_flag = '0'
+        and d.datetype = '1'
+        order by d.calendardate) date_week
+        where rownum &lt;= #{days,jdbcType=INTEGER}
+        and date_week.calendardate >
+        to_date(to_char(pat.date_end, 'yyyy-mm-dd'),
+        'yyyy-mm-dd')) date_week_t
+        FROM view_emr_pat_list pat
+        WHERE pat.pk_pv is not null
+        and pat.flag_in = '0'
+        and pat.eu_status in ('1', '2')
+        and pat.date_end is not null) t
+        where t.date_week_t &lt;=
+        to_date(to_char(sysdate, 'yyyy-mm-dd'), 'yyyy-mm-dd')
+        <if test="pkDept != null">
+            and t.pk_dept = #{pkDept,jdbcType=VARCHAR}
+        </if>
+        and t.eu_status in ('1','2')
+        and t.date_end is not null
+        <if test="pkEmp != null">
+            and (t.pk_emp_refer = #{pkEmp,jdbcType=VARCHAR} or t.pk_emp_consult = #{pkEmp,jdbcType=VARCHAR} or
+            t.pk_emp_director = #{pkEmp,jdbcType=VARCHAR})
+        </if>
+        <if test="orderBy != null">
+            ${orderBy}
+        </if>
+    </select>
+    <select id="queryEmpPatTaskListSql" resultMap="ResultMapPatList">
+        select t.*,datediff(day,convert(varchar(100),t.DATE_END,23),convert(varchar(100),getdate(),23))  outHosDays,
+        <!-- (select count(1)
+		  from bd_workcalendar bw
+		         inner join bd_workcalendardate d on bw.pk_workcalendar = d.pk_workcalendar
+		    where bw.calendar_def = '1'
+		      and d.del_flag = '0'
+		      and d.datetype = '1'
+		      and d.calendardate &gt; =t.date_end_t
+		      and d.calendardate &lt; =getdate()
+		    ) -3 overtimeDays  -->
+		    (case when (select count(1) from bd_workcalendar bw
+		         inner join bd_workcalendardate d on bw.pk_workcalendar = d.pk_workcalendar
+            where bw.calendar_def = '1'
+              and d.del_flag = '0'
+              and d.datetype = '1'
+              and convert(varchar(100),d.calendardate,23)=convert(varchar(100),t.DATE_END,23))=1 then convert(varchar(100),t.date_week_t,23)+' '+ convert(varchar(100),t.DATE_END,8) else convert(varchar(100),t.date_week_t,23)+' 23:59:59' end) overtimeDays
+		  from (select pat.*,
+		        to_date(to_char(pat.date_end, 'yyyy-mm-dd'), 'yyyy-mm-dd') date_end_t,       
+				(select max(calendardate)  from (
+				select *,row_number() over(partition by datetype order by calendardate) tn
+				    from (select top 100 percent d.*
+				            from bd_workcalendar bw
+				            inner join bd_workcalendardate d
+				            on bw.pk_workcalendar = d.pk_workcalendar
+				            where bw.calendar_def = '1'
+				            and d.del_flag = '0'
+				            and d.datetype = '1'
+				            order by d.calendardate) date_week
+				    where  date_week.calendardate > to_date(to_char(pat.date_end, 'yyyy-mm-dd'),'yyyy-mm-dd') 
+				 ) dw
+				 where dw.tn &lt; #{days,jdbcType=INTEGER}) date_week_t
+				from view_emr_pat_list pat 
+				where pat.pk_pv is not null
+		           and pat.flag_in = '0'
+		           and pat.eu_status in ('1', '2') and pat.DT_OUTCOMES!='03' 
+		           and pat.date_end is not null and pat.CODE_IP not like '%B%') t
+		 where 1=1 
+    	<if test="pkDept != null" >
+        	and t.pk_dept = #{pkDept,jdbcType=VARCHAR}
+        </if>
+    		and t.eu_status in ('1','2')
+    		and t.date_end is not null
+		<if test="pkEmp != null" >
+        	and (t.pk_emp_refer = #{pkEmp,jdbcType=VARCHAR} or t.pk_emp_consult = #{pkEmp,jdbcType=VARCHAR} or
+       			 t.pk_emp_director = #{pkEmp,jdbcType=VARCHAR})
+        </if>
+        union all 
+        select t.*,datediff(day,convert(varchar(100),t.DATE_END,23),convert(varchar(100),getdate(),23))  outHosDays,
+        <!-- (select count(1)
+		  from bd_workcalendar bw
+		         inner join bd_workcalendardate d on bw.pk_workcalendar = d.pk_workcalendar
+		    where bw.calendar_def = '1'
+		      and d.del_flag = '0'
+		      and d.datetype = '1'
+		      and d.calendardate &gt; =t.date_end_t
+		      and d.calendardate &lt; =getdate()
+		    ) -7 overtimeDays  -->
+		    (case when (select count(1) from bd_workcalendar bw
+		         inner join bd_workcalendardate d on bw.pk_workcalendar = d.pk_workcalendar
+            where bw.calendar_def = '1'
+              and d.del_flag = '0'
+              and d.datetype = '1'
+              and convert(varchar(100),d.calendardate,23)=convert(varchar(100),t.DATE_END,23))=1 then convert(varchar(100),t.date_week_t,23)+' '+ convert(varchar(100),t.DATE_END,8) else convert(varchar(100),t.date_week_t,23)+' 23:59:59' end) overtimeDays
+		  from (select pat.*,
+		        to_date(to_char(pat.date_end, 'yyyy-mm-dd'), 'yyyy-mm-dd') date_end_t,       
+				(select max(calendardate)  from (
+				select *,row_number() over(partition by datetype order by calendardate) tn
+				    from (select top 100 percent d.*
+				            from bd_workcalendar bw
+				            inner join bd_workcalendardate d
+				            on bw.pk_workcalendar = d.pk_workcalendar
+				            where bw.calendar_def = '1'
+				            and d.del_flag = '0'
+				            and d.datetype = '1'
+				            order by d.calendardate) date_week
+				    where  date_week.calendardate > to_date(to_char(pat.date_end, 'yyyy-mm-dd'),'yyyy-mm-dd') 
+				 ) dw
+				 where dw.tn &lt;= 7) date_week_t
+				from view_emr_pat_list pat 
+				where pat.pk_pv is not null
+		           and pat.flag_in = '0'
+		           and pat.eu_status in ('1', '2')  and pat.DT_OUTCOMES='03' 
+		           and pat.date_end is not null and pat.CODE_IP not like '%B%') t
+		 where 1=1 
+		 <if test="pkDept != null" >
+        	and t.pk_dept = #{pkDept,jdbcType=VARCHAR}
+        </if>
+    		and t.eu_status in ('1','2')
+    		and t.date_end is not null
+		<if test="pkEmp != null" >
+        	and (t.pk_emp_refer = #{pkEmp,jdbcType=VARCHAR} or t.pk_emp_consult = #{pkEmp,jdbcType=VARCHAR} or
+       			 t.pk_emp_director = #{pkEmp,jdbcType=VARCHAR})
+        </if>
+   		<if test="orderBy != null" >
+            ${orderBy}
+        </if>
+    </select>
+
+    <resultMap id="ResultMapEmrMedRecAll" type="com.zebone.nhis.emr.comm.vo.EmrMedRecPatVo">
+        <id column="PK_REC" jdbcType="CHAR" property="pkRec"/>
+        <result column="PK_PATREC" jdbcType="VARCHAR" property="pkPatrec"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="SEQ_NO" jdbcType="DECIMAL" property="seqNo"/>
+        <result column="REC_DATE" jdbcType="TIMESTAMP" property="recDate"/>
+        <result column="DESCRIBE" jdbcType="VARCHAR" property="describe"/>
+        <result column="PK_PI" jdbcType="VARCHAR" property="pkPi"/>
+        <result column="TIMES" jdbcType="DECIMAL" property="times"/>
+        <result column="PK_PV" jdbcType="VARCHAR" property="pkPv"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="PK_WARD" jdbcType="VARCHAR" property="pkWard"/>
+        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+        <result column="PK_TMP" jdbcType="VARCHAR" property="pkTmp"/>
+        <result column="PK_DOC" jdbcType="VARCHAR" property="pkDoc"/>
+        <result column="FLAG_AUDIT" jdbcType="CHAR" property="flagAudit"/>
+        <result column="EU_AUDIT_LEVEL" jdbcType="DECIMAL" property="euAuditLevel"/>
+        <result column="EU_DOC_STATUS" jdbcType="CHAR" property="euDocStatus"/>
+        <result column="EU_AUDIT_STATUS" jdbcType="CHAR" property="euAuditStatus"/>
+        <result column="PK_EMP_REFER" jdbcType="VARCHAR" property="pkEmpRefer"/>
+        <result column="REFER_EMP_CODE" jdbcType="VARCHAR" property="referEmpCode"/>
+        <result column="REFER_SIGN_DATE" jdbcType="DATE" property="referSignDate"/>
+        <result column="PK_EMP_CONSULT_ACT" jdbcType="VARCHAR" property="pkEmpConsultAct"/>
+        <result column="PK_EMP_CONSULT" jdbcType="VARCHAR" property="pkEmpConsult"/>
+        <result column="CONSULT_AUDIT_DATE" jdbcType="DATE" property="consultAuditDate"/>
+        <result column="CONSULT_SIGN_DATE" jdbcType="DATE" property="consultSignDate"/>
+        <result column="PK_EMP_DIRECTOR_ACT" jdbcType="VARCHAR" property="pkEmpDirectorAct"/>
+        <result column="PK_EMP_DIRECTOR" jdbcType="VARCHAR" property="pkEmpDirector"/>
+        <result column="DIRECTOR_AUDIT_DATE" jdbcType="DATE" property="directorAuditDate"/>
+        <result column="DIRECTOR_SIGN_DATE" jdbcType="DATE" property="directorSignDate"/>
+        <result column="DOC_DATA" jdbcType="BLOB" property="docData"/>
+        <result column="DOC_XML" jdbcType="CLOB" property="docXml"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CODE_IP" jdbcType="VARCHAR" property="codeIp"/>
+        <result column="PAT_NAME" jdbcType="VARCHAR" property="patName"/>
+        <result column="CODE_PV" jdbcType="VARCHAR" property="codePv"/>
+        <result column="CODE_PI" jdbcType="VARCHAR" property="codePi"/>
+        <result column="DATE_BEGIN" jdbcType="TIMESTAMP" property="dateBegin"/>
+        <result column="DATE_ADMIT" jdbcType="TIMESTAMP" property="dateAdmit"/>
+        <result column="NAME_DEPT" jdbcType="VARCHAR" property="deptName"/>
+        <association property="template" javaType="com.zebone.nhis.common.module.emr.rec.tmp.EmrTemplate">
+            <id column="PK_TMP" jdbcType="CHAR" property="pkTmp"/>
+            <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+            <result column="NAME" jdbcType="VARCHAR" property="name"/>
+            <result column="DESCRIBE" jdbcType="VARCHAR" property="describe"/>
+            <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+            <result column="EU_TMP_LEVEL" jdbcType="DECIMAL" property="euTmpLevel"/>
+            <result column="TMP_TITLE" jdbcType="VARCHAR" property="tmpTitle"/>
+            <result column="TEXT_TITLE" jdbcType="VARCHAR" property="textTitle"/>
+            <result column="SORT_CODE" jdbcType="DECIMAL" property="sortCode"/>
+            <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+            <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+            <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+            <result column="PK_WARD" jdbcType="VARCHAR" property="pkWard"/>
+            <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+            <result column="FLAG_AUDIT" jdbcType="CHAR" property="flagAudit"/>
+            <result column="AUDIT_LEVEL" jdbcType="DECIMAL" property="auditLevel"/>
+            <result column="AUDIT_LEVEL_SET" jdbcType="VARCHAR" property="auditLevelSet"/>
+            <result column="LIMIT_NUM" jdbcType="DECIMAL" property="limitNum"/>
+            <result column="FLAG_DEFAULT" jdbcType="CHAR" property="flagDefault"/>
+            <result column="FLAG_OPEN" jdbcType="CHAR" property="flagOpen"/>
+            <result column="FLAG_MERGE" jdbcType="CHAR" property="flagMerge"/>
+            <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp"/>
+            <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+            <result column="DOC_DATA" jdbcType="BLOB" property="docData"/>
+            <result column="DOC_XML" jdbcType="CLOB" property="docXml"/>
+            <result column="ASSOCIATION_RULES" jdbcType="CLOB" property="associationRules"/>
+            <result column="TMP_PATH" jdbcType="VARCHAR" property="tmpPath"/>
+            <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+            <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+            <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+            <result column="TS" jdbcType="DATE" property="ts"/>
+        </association>
+        <association property="docType" javaType="com.zebone.nhis.common.module.emr.rec.dict.EmrDocType">
+            <id column="PK_DOCTYPE" jdbcType="CHAR" property="pkDoctype"/>
+            <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+            <result column="CODE" jdbcType="VARCHAR" property="code"/>
+            <result column="NAME" jdbcType="VARCHAR" property="name"/>
+            <result column="PARENT_TYPE" jdbcType="VARCHAR" property="parentType"/>
+            <result column="LEVELS" jdbcType="DECIMAL" property="levels"/>
+            <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+            <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+            <result column="WS_CODE" jdbcType="VARCHAR" property="wsCode"/>
+            <result column="EU_VISIT" jdbcType="CHAR" property="euVisit"/>
+            <result column="EU_USED" jdbcType="CHAR" property="euUsed"/>
+            <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+            <result column="TITLE" jdbcType="VARCHAR" property="title"/>
+            <result column="FLAG_COURSE" jdbcType="CHAR" property="flagCourse"/>
+            <result column="FLAG_FIRST" jdbcType="CHAR" property="flagFirst"/>
+            <result column="FLAG_NEW_PAGE" jdbcType="CHAR" property="flagNewPage"/>
+            <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+            <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+            <result column="PK_WARD" jdbcType="VARCHAR" property="pkWard"/>
+            <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+            <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+            <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+            <result column="TS" jdbcType="DATE" property="ts"/>
+        </association>
+        <association property="medDoc" javaType="com.zebone.nhis.common.module.emr.rec.rec.EmrMedDoc">
+            <id column="PK_DOC" jdbcType="CHAR" property="pkDoc"/>
+            <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+            <result column="DOC_DATA" jdbcType="BLOB" property="docData"/>
+            <result column="DOC_XML" jdbcType="CLOB" property="docXml"/>
+            <result column="DOC_DATA_BAK" jdbcType="BLOB" property="docDataBak"/>
+            <result column="DOC_XML_BAK" jdbcType="CLOB" property="docXmlBak"/>
+            <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+            <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+            <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+            <result column="TS" jdbcType="DATE" property="ts"/>
+        </association>
+    </resultMap>
+    <select id="queryPatMedRecDoc" resultMap="ResultMapEmrMedRecAll">
+        select doc.*,rec.*,tmp.*,typ.*,
+        emp.code_emp refer_emp_code,emp.name_emp refer_emp_name,
+        emp_consult.code_emp consult_emp_code,emp_consult.name_emp consult_emp_name,
+        emp_director.code_emp director_emp_code,emp_director.name_emp director_emp_name,
+        pi.name_pi pat_name,pi.code_ip,pi.code_pi,pv.code_pv,pv.DATE_ADMIT, pv.DATE_BEGIN,dept.name_dept
+        from pi_master pi
+        inner join pv_encounter pv
+        on pi.pk_pi=pv.pk_pi
+        inner join emr_med_rec rec
+        on rec.pk_pv=pv.pk_pv
+        left outer join emr_template tmp
+        on rec.pk_tmp = tmp.pk_tmp
+        left outer join emr_doc_type typ
+        on tmp.type_code = typ.code
+        left outer join emr_med_doc doc
+        on rec.pk_doc=doc.pk_doc
+        left outer join bd_ou_employee emp
+        on rec.pk_emp_refer=emp.pk_emp
+        left outer join bd_ou_employee emp_consult
+        on rec.pk_emp_consult=emp_consult.pk_emp
+        left outer join bd_ou_employee emp_director
+        on rec.pk_emp_director=emp_director.pk_emp
+        left outer join bd_ou_dept dept 
+        on pv.pk_dept=dept.pk_dept
+        where nvl(rec.DEL_FLAG,'0')!='1'
+        <if test="pkPv != null">
+            and rec.pk_pv = #{pkPv,jdbcType=VARCHAR}
+        </if>
+        <if test="codeIp != null">
+            and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+        </if>
+        <if test="typeCode != null">
+            and rec.TYPE_CODE like #{typeCode,jdbcType=VARCHAR}
+        </if>
+        <if test="dateBegin != null">
+            and DATEDIFF(day, pv.date_begin, #{dateBegin,jdbcType=TIMESTAMP}) = 0
+        </if>
+        <if test="dateAdmit != null">
+            and DATEDIFF(day, pv.DATE_ADMIT, #{dateAdmit,jdbcType=TIMESTAMP}) = 0
+        </if>
+        <if test="orderBy != null">
+            ${orderBy}
+        </if>
+    </select>
+
+    <resultMap id="ResultMapMedDoc" type="com.zebone.nhis.common.module.emr.rec.rec.EmrMedDoc">
+        <id column="PK_DOC" jdbcType="CHAR" property="pkDoc"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="DOC_DATA" jdbcType="BLOB" property="docData"/>
+        <result column="DOC_XML" jdbcType="CLOB" property="docXml"/>
+        <result column="DOC_DATA_BAK" jdbcType="BLOB" property="docDataBak"/>
+        <result column="DOC_XML_BAK" jdbcType="CLOB" property="docXmlBak"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    <select id="getEmrMedDocById" resultMap="ResultMapMedDoc">
+        SELECT *
+        FROM EMR_MED_DOC
+        WHERE PK_DOC = #{pkDoc,jdbcType=CHAR}
+    </select>
+</mapper>

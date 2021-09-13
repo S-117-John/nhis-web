@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.CpQualityControlMapper">
+    <select id="qryQCPatient" parameterType="java.util.Map" resultType="DynaBean">
+			select
+				 pi.code_ip as inpatientNo,
+				 pv.name_pi as patientName,
+				 pv.dt_sex as sex,
+				 pv.date_begin,
+				 pv.date_end,
+				 rec.pk_diag,
+				 diag.diagname as diagName,
+				 rec.pk_cprec,
+				 rec.pk_cptemp,
+				 temp.name_cp as cpName,
+				 temp.version,
+				 rec.eu_status as cpStatus,
+				 temp.amount_ref as totalCharge,
+				 pv.pk_dept,
+				 pv.flag_in 
+		 from pv_encounter pv  
+		   inner join pi_master pi on pi.pk_pi = pv.pk_pi and pi.del_flag='0' 
+		   inner join cp_rec rec on rec.pk_pv = pv.pk_pv and rec.del_flag='0'  
+		   inner join cp_temp temp on temp.pk_cptemp = rec.pk_cptemp and temp.del_flag='0'   
+		   inner join bd_term_diag diag on diag.pk_diag = rec.pk_diag and diag.del_flag='0'  
+		 where pv.del_flag='0'  
+		  <if test="dept != null and dept!='' ">
+		         and pv.pk_dept=#{dept,jdbcType=CHAR}
+		  </if>
+		 <if test="beginDt != null and beginDt!='' ">
+				 and  pv.date_begin &gt;= to_date(#{beginDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')  
+         </if>
+	     <if test="endDt != null  and endDt!='' ">
+	             and  pv.date_begin &lt;= to_date(#{endDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')  
+	      </if>
+		  <if test="inOutFlag != null and inOutFlag!='' ">
+		         and pv.flag_in=#{inOutFlag,jdbcType=CHAR}
+		  </if>
+		  <if test="clinicPath != null and clinicPath!='' ">
+		         and temp.pk_cptemp=#{clinicPath,jdbcType=CHAR} 
+		  </if>
+		 order by pi.code_ip  
+    </select>
+    <select id="qryQCUseState" parameterType="java.util.Map" resultType="DynaBean">
+    select  '患者总数' as statNote ,(select count(distinct(pk_pv)) as count_total 
+      from pv_encounter   
+     where  del_flag='0' 
+       and eu_status > 0   
+       and eu_pvtype = '3'  
+       and flag_cancel != '1'  
+       <if test="dept != null and dept!='' ">
+	         and pk_dept=#{dept,jdbcType=CHAR}
+	   </if>  
+       <if test="inOutFlag != null and inOutFlag!='' ">
+	         and flag_in=#{inOutFlag,jdbcType=CHAR}
+	  </if> 
+	  <if test="beginDt != null and beginDt!='' ">
+		    and  date_begin &gt;= to_date(#{beginDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')   
+      </if>
+	  <if test="endDt != null  and endDt!='' ">
+	        and  date_begin &lt;= to_date(#{endDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')  
+	  </if>
+      ) as statResult    
+    union all 
+    select '应入路径人数' as statNote ,  (select count(distinct(pv.pk_pv)) as count_total 
+      from pv_encounter  pv 
+          inner join pv_diag diag on diag.pk_pv = pv.pk_pv and diag.del_flag='0' 
+          inner  join cp_temp_diag temp_diag on temp_diag.pk_diag = diag.pk_diag and temp_diag.del_flag='0' 
+          inner join cp_temp temp on temp.pk_cptemp  = temp_diag.pk_cptemp and temp.del_flag='0' 
+          inner join cp_temp_dept temp_dept on temp_dept.pk_cptemp = temp.pk_cptemp and temp_dept.pk_dept_use = pv.pk_dept and temp_dept.del_flag='0' 
+     where  pv.del_flag='0' 
+       and pv.eu_status > 0   
+       and pv.eu_pvtype = '3'  
+       and pv.flag_cancel != '1'   
+       <if test="dept != null and dept!='' ">
+	         and pv.pk_dept=#{dept,jdbcType=CHAR} 
+	   </if>  
+       <if test="inOutFlag != null and inOutFlag!='' ">
+	         and pv.flag_in=#{inOutFlag,jdbcType=CHAR} 
+	  </if>  
+	  <if test="beginDt != null and beginDt!='' ">
+		    and  pv.date_begin &gt;= to_date(#{beginDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')   
+      </if>
+	  <if test="endDt != null  and endDt!='' ">
+	        and  pv.date_begin &lt;= to_date(#{endDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')  
+	  </if>
+      <if test="clinicPath != null and clinicPath!='' ">
+		    and temp.pk_cptemp=#{clinicPath,jdbcType=CHAR} 
+      </if>
+     ) statResult
+    union all 
+    select  '实入路径人数' as statNote , (select count(distinct(pv.pk_pv)) as count_total 
+      from pv_encounter  pv 
+          inner join pv_diag diag on diag.pk_pv = pv.pk_pv and diag.del_flag='0' 
+          inner  join cp_temp_diag temp_diag on temp_diag.pk_diag = diag.pk_diag and temp_diag.del_flag='0' 
+          inner join cp_temp temp on temp.pk_cptemp  = temp_diag.pk_cptemp and temp.del_flag='0' 
+          inner join cp_temp_dept temp_dept on temp_dept.pk_cptemp = temp.pk_cptemp and temp_dept.pk_dept_use = pv.pk_dept and temp_dept.del_flag='0'
+          inner join cp_rec rec on rec.pk_pv = pv.pk_pv and rec.del_flag='0' 
+     where  pv.del_flag='0' 
+       and pv.eu_status > 0   
+       and pv.eu_pvtype = '3'  
+       and pv.flag_cancel != '1'   
+       <if test="dept != null and dept!='' ">
+	         and pv.pk_dept=#{dept,jdbcType=CHAR} 
+	   </if>  
+       <if test="inOutFlag != null and inOutFlag!='' ">
+	         and pv.flag_in=#{inOutFlag,jdbcType=CHAR} 
+	  </if>
+	   <if test="beginDt != null and beginDt!='' ">
+		    and  pv.date_begin &gt;= to_date(#{beginDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')   
+      </if>
+	  <if test="endDt != null  and endDt!='' ">
+	        and  pv.date_begin &lt;= to_date(#{endDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')  
+	  </if>
+      <if test="clinicPath != null and clinicPath!='' ">
+		    and temp.pk_cptemp=#{clinicPath,jdbcType=CHAR} 
+      </if>
+    )  statResult 
+    union all 
+    select '未入路径人数' as statNote ,(select count(distinct(pv.pk_pv)) as count_total 
+      from pv_encounter  pv 
+          inner join pv_diag diag on diag.pk_pv = pv.pk_pv and diag.del_flag='0' 
+          inner  join cp_temp_diag temp_diag on temp_diag.pk_diag = diag.pk_diag and temp_diag.del_flag='0' 
+          inner join cp_temp temp on temp.pk_cptemp  = temp_diag.pk_cptemp and temp.del_flag='0' 
+          inner join cp_temp_dept temp_dept on temp_dept.pk_cptemp = temp.pk_cptemp and temp_dept.pk_dept_use = pv.pk_dept and temp_dept.del_flag='0' 
+     where  pv.del_flag='0' 
+       and pv.eu_status > 0   
+       and pv.eu_pvtype = '3'  
+       and pv.flag_cancel != '1'   
+      <if test="dept != null and dept!='' ">
+	         and pv.pk_dept=#{dept,jdbcType=CHAR} 
+	   </if>  
+       <if test="inOutFlag != null and inOutFlag!='' ">
+	         and pv.flag_in=#{inOutFlag,jdbcType=CHAR} 
+	  </if> 
+	  <if test="beginDt != null and beginDt!='' ">
+		    and  pv.date_begin &gt;= to_date(#{beginDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')   
+      </if>
+	  <if test="endDt != null  and endDt!='' ">
+	        and  pv.date_begin &lt;= to_date(#{endDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')  
+	  </if>
+      <if test="clinicPath != null and clinicPath!='' ">
+		    and temp.pk_cptemp=#{clinicPath,jdbcType=CHAR} 
+      </if>
+       and not exists ( select rec.pk_cprec  from  cp_rec rec WHERE  rec.pk_pv = pv.pk_pv and rec.del_flag='0' )) statResult 
+    union all 
+    select '完成路径人数' as statNote ,( select count(distinct(pv.pk_pv)) as count_total 
+      from pv_encounter  pv 
+          inner join pv_diag diag on diag.pk_pv = pv.pk_pv and diag.del_flag='0' 
+          inner  join cp_temp_diag temp_diag on temp_diag.pk_diag = diag.pk_diag and temp_diag.del_flag='0' 
+          inner join cp_temp temp on temp.pk_cptemp  = temp_diag.pk_cptemp and temp.del_flag='0' 
+          inner join cp_temp_dept temp_dept on temp_dept.pk_cptemp = temp.pk_cptemp and temp_dept.pk_dept_use = pv.pk_dept and temp_dept.del_flag='0'
+          inner join cp_rec rec on rec.pk_pv = pv.pk_pv and rec.del_flag='0' and rec.eu_status='1' 
+     where  pv.del_flag='0' 
+       and pv.eu_status > 0   
+       and pv.eu_pvtype = '3'  
+       and pv.flag_cancel != '1'   
+       <if test="dept != null and dept!='' ">
+	         and pv.pk_dept=#{dept,jdbcType=CHAR} 
+	   </if>  
+       <if test="inOutFlag != null and inOutFlag!='' ">
+	         and pv.flag_in=#{inOutFlag,jdbcType=CHAR} 
+	  </if>
+	  <if test="beginDt != null and beginDt!='' ">
+		    and  pv.date_begin &gt;= to_date(#{beginDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')   
+      </if>
+	  <if test="endDt != null  and endDt!='' ">
+	        and  pv.date_begin &lt;= to_date(#{endDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')  
+	  </if>
+      <if test="clinicPath != null and clinicPath!='' ">
+		    and temp.pk_cptemp=#{clinicPath,jdbcType=CHAR} 
+      </if>   
+    ) statResult  
+    union all 
+    select '退出路径人数' as statNote ,(select count(distinct(pv.pk_pv)) as count_total 
+      from pv_encounter  pv 
+          inner join pv_diag diag on diag.pk_pv = pv.pk_pv and diag.del_flag='0' 
+          inner  join cp_temp_diag temp_diag on temp_diag.pk_diag = diag.pk_diag and temp_diag.del_flag='0' 
+          inner join cp_temp temp on temp.pk_cptemp  = temp_diag.pk_cptemp and temp.del_flag='0' 
+          inner join cp_temp_dept temp_dept on temp_dept.pk_cptemp = temp.pk_cptemp and temp_dept.pk_dept_use = pv.pk_dept and temp_dept.del_flag='0'
+          inner join cp_rec rec on rec.pk_pv = pv.pk_pv and rec.del_flag='0' and rec.eu_status='9' 
+     where  pv.del_flag='0' 
+       and pv.eu_status > 0   
+       and pv.eu_pvtype = '3'  
+       and pv.flag_cancel != '1'   
+       <if test="dept != null and dept!='' ">
+	         and pv.pk_dept=#{dept,jdbcType=CHAR} 
+	   </if>  
+       <if test="inOutFlag != null and inOutFlag!='' ">
+	         and pv.flag_in=#{inOutFlag,jdbcType=CHAR} 
+	  </if> 
+	  <if test="beginDt != null and beginDt!='' ">
+		    and  pv.date_begin &gt;= to_date(#{beginDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')   
+      </if> 
+	  <if test="endDt != null  and endDt!='' ">
+	        and  pv.date_begin &lt;= to_date(#{endDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')  
+	  </if> 
+      <if test="clinicPath != null and clinicPath!='' ">
+		    and temp.pk_cptemp=#{clinicPath,jdbcType=CHAR} 
+      </if> 
+    ) statResult       
+    </select>   
+    <select id="qryQCVariationSum" parameterType="java.util.Map" resultType="DynaBean">
+	     select 
+			 temp_dept.pk_dept_use as dept,
+			 temp.name_cp as cpName,
+			 temp.version,
+			 temp.pk_cptemp,
+			 (select count(DISTINCT(rec.PK_CPREC)) from cp_rec rec where rec.pk_cptemp = temp.pk_cptemp and rec.del_flag='0') as useNum,
+			 (select count(DISTINCT(rec.PK_CPREC)) from cp_rec rec inner join cp_rec_exp rec_exp on rec_exp.pk_cprec = rec.pk_cprec inner join cp_rec_exp_dt exp_dt on exp_dt.pk_recexp = rec_exp.pk_recexp  where rec.pk_cptemp = temp.pk_cptemp and rec.del_flag='0' ) as expNum 
+	    from cp_temp temp 
+			  inner join cp_temp_dept temp_dept on temp_dept.pk_cptemp = temp.pk_cptemp and temp_dept.del_flag='0' 
+	    where temp.del_flag='0' 
+	     <if test="dept != null and dept!='' ">
+	         and temp_dept.pk_dept_use=#{dept,jdbcType=CHAR} 
+	    </if>
+	    <if test="clinicPath != null and clinicPath!='' ">
+		    and temp.pk_cptemp=#{clinicPath,jdbcType=CHAR} 
+        </if> 
+	    order by temp_dept.pk_dept_use 
+    </select>  
+    <select id="qryQCVariationDetail" parameterType="java.util.Map" resultType="DynaBean">
+	select 
+		exp_dt.eu_type as nodeType,
+		rec.pk_cptemp,
+		exp_dt.pk_cpphase,
+		exp_dt.pk_cpord,
+		exp_dt.pk_cnord,
+		exp_dt.pk_tempwork,
+		exp.pk_cpexp ,
+		bdexp.name_exp as expReason,
+		exp.note as expNote,
+		exp.pk_emp_exp as operaDoctor,
+		exp.date_exp as operaDate,
+		pv.name_pi as patientName 
+	from cp_rec_exp_dt exp_dt 
+		   inner join cp_rec_exp exp on exp.pk_recexp = exp_dt.pk_recexp and exp.del_flag='0'
+		   inner join cp_rec rec on rec.pk_cprec = exp.pk_cprec and rec.del_flag='0'
+		   inner join pv_encounter pv on pv.pk_pv = rec.pk_pv and pv.del_flag='0' 
+		   inner join bd_cp_exp bdexp on bdexp.pk_cpexp = exp.pk_cpexp and bdexp.del_flag='0' 
+   where rec.pk_cptemp=#{clinicPath,jdbcType=CHAR}  
+        and pv.pk_dept=#{dept,jdbcType=CHAR} 
+      <if test="inOutFlag != null and inOutFlag!='' ">
+	         and pv.flag_in=#{inOutFlag,jdbcType=CHAR} 
+	  </if> 
+	  <if test="beginDt != null and beginDt!='' ">
+		    and  pv.date_begin &gt;= to_date(#{beginDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')   
+      </if> 
+	  <if test="endDt != null  and endDt!='' ">
+	        and  pv.date_begin &lt;= to_date(#{endDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')  
+	  </if> 
+   ORDER BY pv.CODE_PV,exp_dt.EU_TYPE   
+    </select>    
+    <select id="qryQCQuit" parameterType="java.util.Map" resultType="DynaBean">
+			select 
+				pi.code_ip as inpatientNo,
+				pv.name_pi as patientName,
+				pv.dt_sex as sex,
+				pv.date_begin,
+				pv.date_end,
+				rec.pk_diag,
+				bddiag.diagname as diagName,
+				temp.pk_cptemp,
+				temp.NAME_CP as cpName,
+				recson.pk_cpreason,
+				recson.date_rec as quitDate,
+				tempson.NAME as quitReason  
+		    from cp_rec rec 
+				  inner join pv_encounter pv on pv.pk_pv=rec.pk_pv and pv.del_flag='0' 
+				  inner join pi_master pi on pi.pk_pi = pv.pk_pi and pi.del_flag='0' 
+				  inner join cp_rec_reason recson on recson.pk_cprec = rec.pk_cprec and recson.del_flag='0' 
+				  inner join cp_temp temp on temp.pk_cptemp = rec.pk_cptemp and temp.del_flag='0'
+				  inner join cp_temp_reason tempson ON tempson.pk_cpreason = recson.pk_cpreason and tempson.del_flag='0' 
+				  inner join bd_term_diag bddiag on bddiag.pk_diag = rec.pk_diag and bddiag.del_flag='0' 
+			where rec.del_flag='0'  and tempson.eu_reason='9'   
+			   <if test="dept != null and dept!='' ">
+			         and pv.pk_dept=#{dept,jdbcType=CHAR} 
+			   </if>  
+		       <if test="inOutFlag != null and inOutFlag!='' ">
+			         and pv.flag_in=#{inOutFlag,jdbcType=CHAR} 
+			  </if> 
+			  <if test="beginDt != null and beginDt!='' ">
+				    and  pv.date_begin &gt;= to_date(#{beginDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')   
+		      </if> 
+			  <if test="endDt != null  and endDt!='' ">
+			        and  pv.date_begin &lt;= to_date(#{endDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')  
+			  </if> 
+		      <if test="clinicPath != null and clinicPath!='' ">
+				    and temp.pk_cptemp=#{clinicPath,jdbcType=CHAR} 
+		      </if> 
+			ORDER BY pi.code_ip
+    </select>   
+    <select id="qryQCOutCp" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			pi.code_ip as inpatientNo,
+			pv.name_pi as patientName,
+			pv.dt_sex as sex,
+			pv.date_begin,
+			pv.date_end,
+			rec.pk_diag,
+			bddiag.diagname as diagName,
+			temp.pk_cptemp,
+			temp.NAME_CP as cpName,
+			ord.name_ord as outOrder,
+			ord.date_chk as execDate,
+			ord.date_stop as stopDate,
+			exp.pk_cpexp,
+			bdexp.name_exp as outOrderReason    
+		from cp_rec rec 
+			  inner join pv_encounter pv on pv.pk_pv=rec.pk_pv and pv.del_flag='0'  
+			  inner join pi_master pi on pi.pk_pi = pv.pk_pi and pi.del_flag='0' 
+			  inner join cp_temp temp on temp.pk_cptemp = rec.pk_cptemp and temp.del_flag='0' 
+			  inner join cp_rec_exp exp on exp.pk_cprec = rec.pk_cprec and exp.del_flag='0' and exp.eu_exptype='9' 
+			  inner join cp_rec_exp_dt expdt on expdt.pk_recexp = exp.pk_recexp and expdt.del_flag='0' and expdt.eu_type='2' 
+			  inner join cn_order ord on ord.pk_cnord = expdt.pk_cnord and ord.del_flag='0' 
+			  inner join bd_term_diag bddiag on bddiag.pk_diag = rec.pk_diag and bddiag.del_flag='0' 
+			  inner join bd_cp_exp bdexp on bdexp.pk_cpexp = exp.pk_cpexp and bdexp.del_flag='0' 
+		where rec.del_flag='0'     
+		 <if test="dept != null and dept!='' ">
+	         and pv.pk_dept=#{dept,jdbcType=CHAR} 
+		   </if>  
+	       <if test="inOutFlag != null and inOutFlag!='' ">
+		         and pv.flag_in=#{inOutFlag,jdbcType=CHAR} 
+		  </if> 
+		  <if test="beginDt != null and beginDt!='' ">
+			    and  pv.date_begin &gt;= to_date(#{beginDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')   
+	      </if> 
+		  <if test="endDt != null  and endDt!='' ">
+		        and  pv.date_begin &lt;= to_date(#{endDt,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')  
+		  </if> 
+	      <if test="clinicPath != null and clinicPath!='' ">
+			    and temp.pk_cptemp=#{clinicPath,jdbcType=CHAR} 
+	      </if>  
+		ORDER BY pi.code_ip  	  
+    </select>                   
+</mapper>    

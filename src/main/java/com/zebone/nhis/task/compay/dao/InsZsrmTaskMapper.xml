@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.task.compay.dao.InsZsrmTaskMapper">
+    <insert id="batchInsertBdPdIndpd">
+        <foreach collection="list" item="item" open="begin" close=";end;" separator=";" index="index">
+            insert into bd_pd_indpd
+            <trim prefix="(" suffix=")" suffixOverrides=",">
+                <if test='item.pkPdindpd!=null and item.pkPdindpd!=""'>
+                    pk_pdindpd,
+                </if>
+                <if test='item.pkOrg!=null and item.pkOrg!=""'>
+                    pk_org,
+                </if>
+                <if test='item.pkPdind!=null and item.pkPdind!=""'>
+                    pk_pdind,
+                </if>
+                <if test='item.pkPd!=null and item.pkPd!=""'>
+                    pk_pd,
+                </if>
+                <if test='item.creator!=null and item.creator!=""'>
+                    creator,
+                </if>
+                <if test="item.createTime!=null">
+                    create_time,
+                </if>
+                <if test='item.modifier!=null and item.modifier!=""'>
+                    modifier,
+                </if>
+                <if test="item.modityTime!=null">
+                    modity_time,
+                </if>
+                <if test='item.delFlag!=null and item.delFlag!=""'>
+                    del_flag,
+                </if>
+                <if test="item.ts!=null">
+                    ts,
+                </if>
+                <if test='item.flagPd!=null and item.flagPd!=""'>
+                    flag_pd,
+                </if>
+            </trim>
+            <trim prefix="values (" suffix=")" suffixOverrides=",">
+                <if test='item.pkPdindpd!=null and item.pkPdindpd!=""'>
+                    #{item.pkPdindpd},
+                </if>
+                <if test='item.pkOrg!=null and item.pkOrg!=""'>
+                    #{item.pkOrg},
+                </if>
+                <if test='item.pkPdind!=null and item.pkPdind!=""'>
+                    #{item.pkPdind},
+                </if>
+                <if test='item.pkPd!=null and item.pkPd!=""'>
+                    #{item.pkPd},
+                </if>
+                <if test='item.creator!=null and item.creator!=""'>
+                    #{item.creator},
+                </if>
+                <if test="item.createTime!=null">
+                    #{item.createTime},
+                </if>
+                <if test='item.modifier!=null and item.modifier!=""'>
+                    #{item.modifier},
+                </if>
+                <if test="item.modityTime!=null">
+                    #{item.modityTime},
+                </if>
+                <if test='item.delFlag!=null and item.delFlag!=""'>
+                    #{item.delFlag},
+                </if>
+                <if test="item.ts!=null">
+                    #{item.ts},
+                </if>
+                <if test='item.flagPd!=null and item.flagPd!=""'>
+                    #{item.flagPd},
+                </if>
+            </trim>
+        </foreach>
+    </insert>
+    <select id="qryRestrictInfo" resultType="com.zebone.nhis.common.module.scm.pub.BdPdIndpd">
+        select REPLACE(sys_guid(), '', '') as pk_pdindpd ,'~ ' as pk_org,ind.pk_pdind,a.PK_ITEM as pk_pd,'JQ' || TO_CHAR(SYSDATE,'yyMMDD') as CREATOR,
+            SYSDATE as CREATE_TIME,'' as MODIFIER,sysdate as MODITY_TIME,'0' as DEL_FLAG,sysdate as ts,'1' as flag_pd
+            from
+                (select distinct iqi.CODE_HOSP,iqi.PK_ITEM,iqi.MED_LIST_CODG,zx.old_code
+                    from ins_qgyb_itemmap iqi
+                    inner join (select distinct INS_ITEM_CODE,old_code from ins_qgyb_item) zx on iqi.MED_LIST_CODG=zx.ins_item_code
+                    inner join bd_pd bp on bp.pk_pd=iqi.PK_ITEM where iqi.LIST_TYPE in ('101') and iqi.DEL_FLAG=0) A
+            inner join BD_PD_IND ind on a.old_code=ind.CODE_IND
+            where not exists(select 1 from bd_pd_indpd ind where ind.pk_pd=a.pk_item )
+    </select>
+</mapper>

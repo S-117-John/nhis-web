@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.compay.ins.qgyb.dao.NationalInsuChkMapper">
+
+    <select id="qryAccSum" resultType="com.zebone.nhis.compay.pub.vo.InsChkAccSumVo">
+        select insutype, clr_type,
+        sum(amount_st) as amount_st,sum(amount_insu) as amount_insu,
+        sum(amount_pi) as amount_pi,sum(data_num) as data_num
+        from (
+        SELECT ybst.insutype,
+        ybst.clr_type,
+        sum(ybst.medfee_sumamt)   as amount_st,
+        sum(ybst.fund_pay_sumamt) as amount_insu,
+        sum(ybst.acct_pay)        as amount_pi,
+        count(1)                  as data_num
+        FROM ins_qgyb_st ybst
+        inner JOIN bl_settle st ON ybst.PK_SETTLE = st.PK_SETTLE
+        WHERE ybst.medfee_sumamt &gt; 0
+        and ybst.PK_SETTLE IS NOT NULL
+        <if test="dateBegin != null and dateBegin != ''">
+            and to_char(st.date_st,'yyyy-MM-dd') &gt;= #{dateBegin,jdbcType=VARCHAR}
+        </if>
+        <if test="dateEnd != null and dateEnd != ''">
+            and to_char(st.date_st,'yyyy-MM-dd') &lt;= #{dateEnd,jdbcType=VARCHAR}
+        </if>
+        <if test="insuType != null and insuType != ''">
+            and ybst.INSUTYPE = #{insuType,jdbcType=VARCHAR}
+        </if>
+        <if test="clrType != null and clrType != ''">
+            and ybst.clr_type = #{clrType,jdbcType=VARCHAR}
+        </if>
+        group by ybst.INSUTYPE, ybst.clr_type
+
+        union all
+        SELECT ybstcanc.insutype,ybstcanc.clr_type,
+        sum(ybstcanc.medfee_sumamt)   as amount_st,
+        sum(ybstcanc.fund_pay_sumamt) as amount_insu,
+        sum(ybstcanc.acct_pay)        as amount_pi,
+        count(1)                      as data_num
+        FROM ins_qgyb_st ybstcanc
+        inner join ins_qgyb_st ybst on ybstcanc.PK_INSST_CANCEL = ybst.PK_INSST
+        inner JOIN bl_settle stcanc ON stcanc.PK_SETTLE_CANC = ybst.PK_SETTLE
+        WHERE ybstcanc.medfee_sumamt &lt; 0
+        and ybst.PK_SETTLE IS NOT NULL
+        <if test="dateBegin != null and dateBegin != ''">
+            and to_char(stcanc.date_st,'yyyy-MM-dd') &gt;= #{dateBegin,jdbcType=VARCHAR}
+        </if>
+        <if test="dateEnd != null and dateEnd != ''">
+            and to_char(stcanc.date_st,'yyyy-MM-dd') &lt;= #{dateEnd,jdbcType=VARCHAR}
+        </if>
+        <if test="insuType != null and insuType != ''">
+            and ybstcanc.INSUTYPE = #{insuType,jdbcType=VARCHAR}
+        </if>
+        <if test="clrType != null and clrType != ''">
+            and ybstcanc.clr_type = #{clrType,jdbcType=VARCHAR}
+        </if>
+        group by ybstcanc.INSUTYPE, ybstcanc.clr_type
+        )group by insutype, clr_type
+    </select>
+
+
+    <select id="qryAccDetail" resultType="com.zebone.nhis.compay.ins.qgyb.vo.CheckAccDetailVo">
+        select *
+        from (
+        select
+        pi.code_op,
+        pi.name_pi,
+        visit.mdtrt_cert_type,
+        visit.mdtrt_cert_no,
+        bl.dt_sttype,
+        to_char(qgyb.date_st,'yyyy-MM-dd HH24:mi:ss') date_st,
+        qgyb.setl_id,
+        nvl(qgyb.medfee_sumamt,0) medfee_sumamt,
+        nvl(qgyb.fund_pay_sumamt,0) fund_pay_sumamt,
+        nvl(qgyb.acct_pay,0) acct_pay,
+        amt_grzf,
+        qgyb.mdtrt_id,
+        qgyb.psn_no,
+        nvl(qgyb.psn_cash_pay,0) as cash_payamt,
+        qgyb.clr_type,
+        'g' mock_group,
+        '0' refd_setl_flag
+        from ins_qgyb_st qgyb
+        inner join bl_settle bl on qgyb.PK_SETTLE = bl.PK_SETTLE
+        inner join pi_master pi On pi.pk_pi = qgyb.pk_pi
+        inner join ins_qgyb_visit visit On visit.pk_visit = qgyb.pk_visit
+        where qgyb.PK_SETTLE is not null
+        and qgyb.MEDFEE_SUMAMT &gt; 0
+        and not exists(select 1 from bl_settle tkbl where tkbl.PK_SETTLE_CANC=bl.PK_SETTLE)
+        <if test="dateBegin != null and dateBegin != ''">
+            and to_char(qgyb.date_st,'yyyy-MM-dd') &gt;= #{dateBegin,jdbcType=VARCHAR}
+        </if>
+        <if test="dateEnd != null and deEnd != ''">
+            and to_char(qgyb.date_st,'yyyy-MM-dd') &lt;= #{dateEnd,jdbcType=VARCHAR}
+        </if>
+        <if test="insuType != null and insuType != ''">
+            and qgyb.INSUTYPE = #{insuType,jdbcType=VARCHAR}
+        </if>
+        <if test="detailClrType != null and detailClrType != ''">
+            and qgyb.clr_type = #{detailClrType,jdbcType=VARCHAR}
+        </if>
+        union all
+        select
+        pi.code_op,
+        pi.name_pi,
+        visit.mdtrt_cert_type,
+        visit.mdtrt_cert_no,
+        bl.dt_sttype,
+        to_char(ybstcanc.date_st,'yyyy-MM-dd HH24:mi:ss') date_st,
+        ybstcanc.setl_id,
+        nvl(ybstcanc.medfee_sumamt,0) medfee_sumamt,
+        nvl(ybstcanc.fund_pay_sumamt,0) fund_pay_sumamt,
+        nvl(ybstcanc.acct_pay,0) acct_pay,
+        ybstcanc.amt_grzf,
+        ybstcanc.mdtrt_id,
+        ybstcanc.psn_no,
+        nvl(ybstcanc.psn_cash_pay,0) as cash_payamt,
+        ybstcanc.clr_type,
+        'g' mock_group,
+        '1' refd_setl_flag
+        from ins_qgyb_st ybstcanc
+        inner join ins_qgyb_st ybst on ybst.PK_INSST = ybstcanc.PK_INSST_CANCEL
+        inner join bl_settle bl on bl.PK_SETTLE = ybst.PK_SETTLE
+        inner join pi_master pi On pi.pk_pi = ybst.pk_pi
+        inner join ins_qgyb_visit visit On visit.pk_visit = ybst.pk_visit
+        where ybstcanc.MEDFEE_SUMAMT &lt; 0
+        <if test="dateBegin != null and dateBegin != ''">
+            and to_char(ybstcanc.date_st,'yyyy-MM-dd') &gt;= #{dateBegin,jdbcType=VARCHAR}
+        </if>
+        <if test="dateEnd != null and dateEnd != ''">
+            and to_char(ybstcanc.date_st,'yyyy-MM-dd') &lt;= #{dateEnd,jdbcType=VARCHAR}
+        </if>
+        <if test="insuType != null and insuType != ''">
+            and ybstcanc.INSUTYPE = #{insuType,jdbcType=VARCHAR}
+        </if>
+        <if test="detailClrType != null and detailClrType != ''">
+            and ybstcanc.clr_type = #{detailClrType,jdbcType=VARCHAR}
+        </if>
+        union all
+        select
+        pi.code_op,
+        pi.name_pi,
+        visit.mdtrt_cert_type,
+        visit.mdtrt_cert_no,
+        bl.dt_sttype,
+        to_char(qgyb.date_st,'yyyy-MM-dd HH24:mi:ss') date_st,
+        qgyb.setl_id,
+        nvl(qgyb.medfee_sumamt,0) medfee_sumamt,
+        nvl(qgyb.fund_pay_sumamt,0) fund_pay_sumamt,
+        nvl(qgyb.acct_pay,0) acct_pay,
+        amt_grzf,
+        qgyb.mdtrt_id,
+        qgyb.psn_no,
+        nvl(qgyb.psn_cash_pay,0) as cash_payamt,
+        qgyb.clr_type,
+        'g' mock_group,
+        '1' refd_setl_flag
+        from ins_qgyb_st qgyb
+        inner join bl_settle bl on qgyb.PK_SETTLE = bl.PK_SETTLE
+        inner join bl_settle tkbl on tkbl.PK_SETTLE_CANC=bl.PK_SETTLE
+        inner join pi_master pi On pi.pk_pi = qgyb.pk_pi
+        inner join ins_qgyb_visit visit On visit.pk_visit = qgyb.pk_visit
+        where qgyb.PK_SETTLE is not null
+        and qgyb.MEDFEE_SUMAMT &gt; 0
+        <if test="dateBegin != null and dateBegin != ''">
+            and to_char(qgyb.date_st,'yyyy-MM-dd') &gt;= #{dateBegin,jdbcType=VARCHAR}
+        </if>
+        <if test="dateEnd != null and deEnd != ''">
+            and to_char(qgyb.date_st,'yyyy-MM-dd') &lt;= #{dateEnd,jdbcType=VARCHAR}
+        </if>
+        <if test="insuType != null and insuType != ''">
+            and qgyb.INSUTYPE = #{insuType,jdbcType=VARCHAR}
+        </if>
+        <if test="detailClrType != null and detailClrType != ''">
+            and qgyb.clr_type = #{detailClrType,jdbcType=VARCHAR}
+        </if>
+        ) tmp order by setl_id
+    </select>
+
+    <select id="getExtSysDetailInfoZY" resultType="com.zebone.nhis.compay.ins.qgyb.vo.CheckAccDetailVo">
+        select
+        '' as code_op,
+        '' as name_pi,
+        '' as mdtrt_cert_type,
+        '' as mdtrt_cert_no,
+        '' as dt_sttype,
+        to_char("record_date",'yyyy-MM-dd HH24:mi:ss') date_st,
+        "setl_id" as setl_id,
+        nvl("medfee_sumamt",0) medfee_sumamt,
+        nvl("fund_pay_sumamt",0) fund_pay_sumamt,
+        nvl("acct_pay",0) acct_pay,
+        '' as amt_grzf,
+        "mdtrt_id" as mdtrt_id,
+        "psn_no" as psn_no,
+        nvl('',0) as cash_payamt,
+        "clr_type" as clr_type,
+        'g' mock_group,
+        "refd_setl_flag" as refd_setl_flag
+        from "view_mzdz_3202" @ZYHISDB
+        where "setl_id" is not null
+        <if test="dateBegin != null and dateBegin != ''">
+            and to_char("record_date",'yyyy-MM-dd') &gt;= #{dateBegin,jdbcType=VARCHAR}
+        </if>
+        <if test="dateEnd != null and deEnd != ''">
+            and to_char("record_date",'yyyy-MM-dd') &lt;= #{dateEnd,jdbcType=VARCHAR}
+        </if>
+        <if test="insuType != null and insuType != ''">
+            and "insutype" = #{insuType,jdbcType=VARCHAR}
+        </if>
+        <if test="detailClrType != null and detailClrType != ''">
+            and "clr_type" = #{detailClrType,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+    <select id="getExtSysDetailInfoMZ" resultType="com.zebone.nhis.compay.ins.qgyb.vo.CheckAccDetailVo">
+        select
+        '' as code_op,
+        '' as name_pi,
+        '' as mdtrt_cert_type,
+        '' as mdtrt_cert_no,
+        '' as dt_sttype,
+        to_char("his_time",'yyyy-MM-dd HH24:mi:ss') date_st,
+        "setl_id" as setl_id,
+        nvl("medfee_sumamt",0) medfee_sumamt,
+        nvl("fund_pay_sumamt",0) fund_pay_sumamt,
+        nvl("acct_pay",0) acct_pay,
+        '' as amt_grzf,
+        "mdtrt_id" as mdtrt_id,
+        "psn_no" as psn_no,
+        nvl("cash_payamt",0) as cash_payamt,
+        "clr_type" as clr_type,
+        'g' mock_group,
+        "refd_setl_flag" as refd_setl_flag
+        from "HQ_pro_query_yp_detail" @MZHISDB
+        where "setl_id" is not null
+        <if test="dateBegin != null and dateBegin != ''">
+            and to_char("his_time",'yyyy-MM-dd') &gt;= #{dateBegin,jdbcType=VARCHAR}
+        </if>
+        <if test="dateEnd != null and deEnd != ''">
+            and to_char("his_time",'yyyy-MM-dd') &lt;= #{dateEnd,jdbcType=VARCHAR}
+        </if>
+        <if test="insuType != null and insuType != ''">
+            and "insutype" = #{insuType,jdbcType=VARCHAR}
+        </if>
+        <if test="detailClrType != null and detailClrType != ''">
+            and "clr_type" = #{detailClrType,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+</mapper>

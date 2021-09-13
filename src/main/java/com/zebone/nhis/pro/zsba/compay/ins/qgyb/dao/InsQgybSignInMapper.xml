@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.compay.ins.qgyb.dao.InsQgybSignInMapper">
+	<resultMap id="BaseResultMap" type="com.zebone.nhis.pro.zsba.compay.ins.qgyb.vo.Business.InsZsbaSignInQg">
+        <id column="PK_INSSIGNINQG" jdbcType="CHAR" property="pkInsSigninqg"/>
+        <result column="OPTER_NO" jdbcType="VARCHAR" property="opterNo"/>
+        <result column="MAC" jdbcType="VARCHAR" property="mac"/>
+        <result column="IP" jdbcType="VARCHAR" property="ip"/>
+        <result column="SIGN_TIME" jdbcType="TIMESTAMP" property="signTime"/>
+        <result column="SIGN_NO" jdbcType="VARCHAR" property="signNo"/>
+        <result column="STATUS" jdbcType="VARCHAR" property="status"/>
+        <result column="PK_ORG" jdbcType="CHAR" property="pkOrg"/>
+        <result column="CREATOR" jdbcType="CHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="MODIFIER" jdbcType="CHAR" property="modifier"/>
+        <result column="MODITY_TIME" jdbcType="TIMESTAMP" property="modityTime"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+    </resultMap>
+	
+	     <!-- 获取签到编号  -->
+    <select id="getInsSignIn" parameterType="java.util.Map" resultType="java.util.Map">
+    		select 
+				*
+    		from
+				ins_sign_in_qg
+			where 
+			    opter_no = #{opterNo,jdbcType=VARCHAR}
+			    and  mac= #{mac,jdbcType=VARCHAR}
+				and  ip= #{ip,jdbcType=VARCHAR}
+				and sign_time&gt;=to_date(#{beginDate,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+				and sign_time&lt;=to_date(#{endDate,jdbcType=VARCHAR}, 'yyyy-mm-dd hh24:mi:ss')
+				and status = '1'
+			order by sign_time desc
+	</select>
+</mapper>

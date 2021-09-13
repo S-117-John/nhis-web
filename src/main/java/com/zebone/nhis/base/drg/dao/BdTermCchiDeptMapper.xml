@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.base.drg.dao.BdTermCchiDeptMapper">
+	<sql id="Base_Column_List" >
+		  cd.PK_CCHIDEPT,
+		  cd.PK_ORG ,
+		  cd.PK_DEPT,
+		  cd.EU_CHILD,
+		  cd.SORTNO,
+		  cd.NAME_CATE,
+		  cd.PK_CCHI,
+		  cd.CODE_CCHI,
+		  cd.PK_ITEM,
+		  cd.PK_ORD,
+		  cd.PK_DIAG,
+		  cd.CREATOR,
+		  cd.CREATE_TIME,
+		  cd.MODIFIER,
+		  cd.FLAG_DEL,
+		  cd.TS,
+		  cchi.code_cchi,
+		  cchi.name_cchi,
+		  cchi.dt_cchispec,
+		  cchi.risk,
+		  cchi.diff,
+		  cchi.eu_maj
+
+	  </sql>
+	
+	<select id="queryTermCchiDeptList"  parameterType="java.util.Map" resultType="DynaBean">
+        select 
+        	<include refid="Base_Column_List" />
+       from bd_term_cchi_dept cd
+       left join bd_term_cchi cchi on cd.pk_cchi=cchi.pk_cchi
+        where    
+       		cd.FLAG_DEL = '0'   
+       		and cd.eu_child='1' 
+       	<if test="pkDept !=null and pkDept != ''">
+          	and cd.pk_dept= #{pkDept,jdbcType=VARCHAR}
+       	</if>
+       	<if test="sortno !=null and sortno != ''">
+          	and cd.sortno= #{sortno,jdbcType=VARCHAR}
+       	</if>
+       	<if test="codeOrName !=null and codeOrName != ''">
+            and (cchi.code_cchi like #{codeOrName,jdbcType=VARCHAR} || '%'
+            	or cchi.name_cchi like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'   
+            	or cchi.spcode like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'  
+            )	
+        </if>
+        <!-- <if test="codeCcdt !=null and codeCcdt != ''">
+            and code_ccdt like #{codeCcdt,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test="nameCcdt !=null and nameCcdt != ''">
+            and name_ccdt like '%' || #{nameCcdt,jdbcType=VARCHAR} || '%'   
+        </if>
+        <if test="dtCcdttype !=null and dtCcdttype != ''">
+            and dt_ccdttype = #{dtCcdttype,jdbcType=VARCHAR}
+        </if>
+        <if test="euMaj !=null and euMaj != ''">
+            and eu_maj = #{euMaj,jdbcType=VARCHAR}
+        </if>
+        <if test="flagStop !=null and flagStop != ''">
+            and flag_stop = #{flagStop,jdbcType=VARCHAR}
+        </if>
+        <if test="version !=null and version != ''">
+            and version = #{version,jdbcType=VARCHAR}
+        </if>
+         -->
+    </select>
+</mapper>

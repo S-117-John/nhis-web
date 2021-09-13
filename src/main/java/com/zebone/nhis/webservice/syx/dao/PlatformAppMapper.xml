@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.PlatformAppMapper">
+	<select id="qryPiInfoForIn" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.ReqPiInfo" resultType="com.zebone.nhis.webservice.syx.vo.platForm.ResIpUserInfo">
+		select ar.CODE_AREA                                 orgAreaCode,
+       		pi.CODE_PI                                   patientId,
+       		pv.CODE_PV                                   inPatientID,
+       		pi.CODE_IP                                   ipSeqnoText,
+		    pi.PK_PI,
+       		pi.NAME_PI                                   patientName,
+       		decode(pv.DT_SEX, '02', 1, '03', 2, '04', 0) sexFlag,
+       		ip.IP_TIMES                                  ipTimes,
+       		emp_phy.CODE_EMP                             doctorEmployeeCode,
+	       	pv.NAME_EMP_PHY                              doctorEmployeeName,
+	       	dp.CODE_DEPT                                 departmentCode,
+	       	dp.NAME_DEPT                                 departmentName,
+	       	pv.BED_NO                                    sickbedNo,
+	       	pv.EU_STATUS                                 ipFlag,
+	       	pv.DATE_BEGIN                                inDateTime,
+	       	pv.DATE_END                                  outDate,
+	       	pv.NOTE                                      otherDesc,
+	       	pi.ID_NO                                     idCardNo,
+	       	emp_ns.CODE_EMP                              nurseCode,
+	       	emp_ns.NAME_EMP                              nurseName,
+			(select sum(AMOUNT) from BL_IP_DT bl where bl.PK_PV = pv.PK_PV) totalAmount,
+			case
+		  		when to_date(to_char(nvl(pv.DATE_END, sysdate), 'yyyymmdd'), 'yyyymmdd') -
+		       		 to_date(to_char(nvl(pv.DATE_BEGIN, sysdate), 'yyyymmdd'), 'yyyymmdd') > 0 then
+		    		 to_date(to_char(nvl(pv.DATE_END, sysdate), 'yyyymmdd'), 'yyyymmdd') -
+		    		 to_date(to_char(nvl(pv.DATE_BEGIN, sysdate), 'yyyymmdd'), 'yyyymmdd')
+		  		else 1 end                                 inDays,
+			ns.CODE_DEPT as  code_dept_ns,
+		    ns.NAME_DEPT as name_dept_ns,
+			di.NAME_DIAG as descDiag
+		from PV_ENCOUNTER pv
+		       inner join PV_IP ip on pv.PK_PV = ip.PK_PV
+		       inner join PI_MASTER pi on pv.PK_PI = pi.PK_PI
+		       inner join PV_DIAG di on pv.PK_PV=di.PK_PV and FLAG_MAJ='1'
+		       inner join BD_OU_DEPT dp on dp.PK_DEPT = pv.PK_DEPT
+		       inner join BD_OU_DEPT ns on ns.PK_DEPT=pv.PK_DEPT_NS
+		       inner join BD_OU_ORG_AREA ar on ar.PK_ORGAREA = dp.PK_ORGAREA
+		       left join BD_OU_EMPLOYEE emp_phy on emp_phy.PK_EMP = pv.pk_emp_phy
+		       left join BD_OU_EMPLOYEE emp_ns on emp_ns.PK_EMP = pv.pk_emp_ns
+		where pi.del_flag = '0'
+		  <if test="ipSeqnoText != null and ipSeqnoText != ''">
+			  and pi.CODE_IP = #{ipSeqnoText,jdbcType=VARCHAR}
+		  </if>
+		  and pi.id_no = #{userCardId,jdbcType=VARCHAR}
+		  and pi.name_pi = #{patientName,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getInPatientFeeInfo" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.QryPiCostReq" resultType="com.zebone.nhis.webservice.syx.vo.platForm.QryPiCostResVo">
+		select pv.CODE_PV                                                                            inpatientId,
+			   nvl((select sum(AMOUNT) from BL_IP_DT bl where bl.PK_PV = pv.PK_PV), 0)               totalAmount,
+			   nvl((select sum(AMOUNT)
+					from BL_DEPOSIT dep
+					where dep.PK_PV = pv.PK_PV and dep.EU_DPTYPE = '9' and dep.DEL_FLAG = '0'), 0) foregiftAmount,
+			   nvl((select sum(AMOUNT)
+					from BL_IP_DT bl
+					where bl.PK_PV = pv.PK_PV
+					  and bl.FLAG_SETTLE = '0'
+					  and bl.DEL_FLAG = '0'), 0)                                                     unpaidAmount
+		from PV_ENCOUNTER pv
+				 inner join PI_MASTER pi on pi.PK_PI = pv.PK_PI
+		where pi.CODE_IP = #{ipSeqnoText,jdbcType=VARCHAR}
+		  and pv.CODE_PV = #{inPatientId,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getInPatientForegiftInfo" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.QryPiDeposReqVo" resultType="com.zebone.nhis.webservice.syx.vo.platForm.QryPiDeposOrderInfo">
+		select
+			dep.PK_DEPO orderIdHis ,
+			dep.DATE_PAY payTime ,
+			dep.DT_PAYMODE payMode ,
+			nvl(dep.AMOUNT ,0)  payAmout,
+			dep.eu_direct statusFlag ,
+			dep.rept_no foregiftReceiptNo  ,
+			dep.NOTE orderDesc
+		from BL_DEPOSIT dep
+		inner join PV_ENCOUNTER pv on pv.PK_PV=dep.PK_PV
+		inner join PI_MASTER pi on pi.PK_PI=pv.PK_PI
+		where pv.CODE_PV=#{inpatientId,jdbcType=VARCHAR}
+			<if test='orderId!=null and orderId !=""'>
+				and dep.note like  #{note} || '%'
+			</if>
+			<if test='beginDate !=null and beginDate !=""'>
+				and dep.DATE_PAY &gt;=to_date(#{beginDate,jdbcType=VARCHAR} || ' 00:00:00','yyyy-MM-dd hh24:mi:ss')
+			</if>
+			<if test='endDate !=null and endDate!=""'>
+				and dep.DATE_PAY &lt;= to_date(#{endDate,jdbcType=VARCHAR} || ' 23:59:59','yyyy-MM-dd hh24:mi:ss')
+			</if>
+	</select>
+	
+	<select id="getInPiListOfDayInfo" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.QryPiDeposReqVo" resultType="com.zebone.nhis.webservice.syx.vo.platForm.QryPiDeposResVo">
+		SELECT
+		  dp.NAME_DEPT                                                           departmentName,
+		  pv.BED_NO                                                              sickBedNo,
+		  nvl((SELECT sum(AMOUNT)
+		   FROM BL_DEPOSIT dep
+		   WHERE dep.PK_PV = pv.PK_PV
+		         AND dep.FLAG_SETTLE = '0'
+		         AND dep.DEL_FLAG = '0'
+		  ),0)                                         foregiftAmount,
+		  nvl((SELECT sum(AMOUNT)
+		   FROM BL_IP_DT bls
+		   WHERE bls.PK_PV = pv.PK_PV 
+		   <if test='beginDate !=null and beginDate !=""'>
+		   		AND bls.DATE_CG &gt;= to_date(#{beginDate,jdbcType=VARCHAR} || ' 00:00:00','yyyy-MM-dd hh24:mi:ss')
+		   </if>
+		   <if test='endDate !=null and endDate!=""'>
+			   	AND bls.DATE_CG &lt;= to_date(#{endDate,jdbcType=VARCHAR} || ' 23:59:59','yyyy-MM-dd hh24:mi:ss')
+		   </if>
+		  ),0) todayAmout,
+		  pv.PK_PV,
+		  pv.EU_STATUS,
+		  pv.DATE_BEGIN,
+		  pv.DATE_END
+		FROM PV_ENCOUNTER pv
+		  INNER JOIN BD_OU_DEPT dp ON dp.PK_DEPT = pv.PK_DEPT
+		WHERE pv.CODE_PV = #{inpatientId,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getInPiItemOfDayInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.webservice.syx.vo.platForm.QryPiDeposOrderInfo">
+		select itemcate.CODE  feekindId,
+		       itemcate.NAME  feekindName,
+		       nvl(sum(bl.AMOUNT),0) amount,
+		       to_char(bl.date_cg,'yyyy-MM-dd') payTime
+		from BL_IP_DT bl
+		       inner join bd_itemcate itemcate on itemcate.pk_itemcate = bl.pk_itemcate
+		where bl.PK_PV = #{pkPv,jdbcType=VARCHAR}
+		  <if test='beginDate !=null and beginDate !=""'>
+		   		AND bl.DATE_CG &gt;= to_date(#{beginDate,jdbcType=VARCHAR} || ' 00:00:00','yyyy-MM-dd hh24:mi:ss')
+		   </if>
+		   <if test='endDate !=null and endDate!=""'>
+			   	AND bl.DATE_CG &lt;= to_date(#{endDate,jdbcType=VARCHAR} || ' 23:59:59','yyyy-MM-dd hh24:mi:ss')
+		   </if>
+		group by itemcate.CODE,
+		         itemcate.NAME,to_char(bl.date_cg,'yyyy-MM-dd')
+	</select>
+	
+	<select id="getInPiListOfDayItemInfo" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.QryPiDeposReqVo" resultType="com.zebone.nhis.webservice.syx.vo.platForm.QryPiItemInfo">
+		select itemcate.CODE  feekindId,
+		       itemcate.NAME  feekindName,
+		       item.CODE      itemNo,
+		       bl.NAME_CG     itemName,
+		       bl.spec,
+		       u.NAME         unit,
+		       sum(bl.QUAN)   quantity,
+		       sum(bl.amount) amount,
+		       to_char(bl.date_cg,'yyyy-MM-dd') payTime
+		from BL_IP_DT bl
+		       inner join (select CODE, PK_ITEM, NAME from BD_ITEM
+		                   union all
+		                   select code, PK_PD, NAME from BD_PD) item on bl.PK_ITEM = item.PK_ITEM
+		       inner join bd_itemcate itemcate on itemcate.pk_itemcate = bl.pk_itemcate
+		       inner join BD_UNIT u on bl.PK_UNIT = u.PK_UNIT
+		       inner join pv_encounter pv on pv.PK_PV=bl.PK_PV
+		where pv.CODE_PV=#{inpatientId,jdbcType=VARCHAR}
+		  <if test='beginDate !=null and beginDate !=""'>
+		   		AND bl.DATE_CG &gt;= to_date(#{beginDate,jdbcType=VARCHAR} || ' 00:00:00','yyyy-MM-dd hh24:mi:ss')
+		   </if>
+		   <if test='endDate !=null and endDate!=""'>
+			   	AND bl.DATE_CG &lt;= to_date(#{endDate,jdbcType=VARCHAR} || ' 23:59:59','yyyy-MM-dd hh24:mi:ss')
+		   </if>
+		   <if test='feekindId !=null and feekindId !=""'>
+		   	    and itemcate.CODE=#{feekindId,jdbcType=VARCHAR}
+		   </if> 
+		group by itemcate.CODE,
+		         itemcate.NAME,
+		         item.CODE,
+		         bl.NAME_CG,
+		         bl.spec,
+		         u.NAME,
+		         to_char(bl.date_cg,'yyyy-MM-dd')
+	</select>
+	
+	<select id="getInPiListOfDayItemKind" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.QryPiDeposReqVo" resultType="com.zebone.nhis.webservice.syx.vo.platForm.QryPiDeposOrderInfo">
+		select itemcate.CODE  feekindId,
+		       itemcate.NAME  feekindName,
+		       sum(bl.amount) amount
+		from BL_IP_DT bl
+		       inner join bd_itemcate itemcate on itemcate.pk_itemcate = bl.pk_itemcate
+		       inner join pv_encounter pv on pv.PK_PV=bl.PK_PV
+		where pv.CODE_PV=#{inpatientId,jdbcType=VARCHAR}
+		  <if test='beginDate !=null and beginDate !=""'>
+		   		AND bl.DATE_CG &gt;= to_date(#{beginDate,jdbcType=VARCHAR} || ' 00:00:00','yyyy-MM-dd hh24:mi:ss')
+		   </if>
+		   <if test='endDate !=null and endDate!=""'>
+			   	AND bl.DATE_CG &lt;= to_date(#{endDate,jdbcType=VARCHAR} || ' 23:59:59','yyyy-MM-dd hh24:mi:ss')
+		   </if>
+		   <if test='feekindId !=null and feekindId !=""'>
+		   	    and itemcate.CODE=#{feekindId,jdbcType=VARCHAR}
+		   </if> 
+		group by itemcate.CODE,
+		         itemcate.NAME
+	</select>
+	
+	<select id="getPiMasterListNoPhoto" parameterType="java.util.Map"   resultType="com.zebone.nhis.webservice.syx.vo.platForm.QryPatiInfoVo">
+		select 	
+			pi.*,
+			nvl(ip.ipTimes,0) ipTimes 
+		from PI_MASTER pi 
+		left join ( select nvl(max(i.ip_times),0) + 1  as ipTimes,e.PK_PI from pv_ip i
+			inner join pv_encounter e on i.pk_pv = e.pk_pv and e.del_flag = '0'
+			where i.del_flag = '0' GROUP BY e.PK_PI) ip  
+		on pi.PK_PI=ip.PK_PI
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and pi.del_flag = '0'
+		    <if test="codePi != null and codePi != ''">
+		  		and (pi.code_pi like '%'||#{codePi,jdbcType=VARCHAR} or pi.code_pi like #{pi.codePi,jdbcType=VARCHAR}||'%')
+		  	</if> 
+		  	<if test="codeIp != null and codeIp != ''">
+		  		and (pi.code_ip like '%'||#{codeIp,jdbcType=VARCHAR} or pi.code_ip like #{codeIp,jdbcType=VARCHAR}||'%')
+		  	</if> 
+		  	<if test="namePi != null and namePi != ''">
+		  		and pi.name_pi like '%'||#{namePi,jdbcType=VARCHAR}||'%'
+		  	</if> 
+		  	<if test="dtSex != null and dtSex != ''">
+		  		and pi.dt_sex = #{dtSex,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="idNo != null and idNo != ''">
+		  		and (pi.id_no like '%'||#{idNo,jdbcType=VARCHAR} or pi.id_no like #{idNo,jdbcType=VARCHAR}||'%')
+		  	</if>
+		  	<if test="insurNo != null and insurNo != ''">
+		  		and (pi.insur_no like '%'||#{insurNo,jdbcType=VARCHAR} or pi.insur_no like #{insurNo,jdbcType=VARCHAR}||'%')
+		  	</if>
+		  	<if test="mobile != null and mobile != ''">
+		  		and (pi.mobile like '%'||#{mobile,jdbcType=VARCHAR} or pi.mobile like #{mobile,jdbcType=VARCHAR}||'%')
+		  	</if>
+  		</trim>
+  		order by code_ip
+	</select>	
+	
+	<select id="getSettleInfoByPv" parameterType="java.lang.String" resultType="DynaBean">
+		SELECT
+  pv.PK_PV,
+  pi.CODE_IP,
+  pi.NAME_PI,
+  pi.DT_SEX,
+  pi.BIRTH_DATE,
+  pv.DATE_BEGIN,
+  pv.DATE_END,
+  st.DATE_END,
+  pv.PK_INSU,
+  hp.NAME,
+  pvip.DT_OUTCOMES,
+  sum(depo.amount) pay_amount,
+  st.pk_settle,
+  st.amount_st total_amount,
+  st.amount_pi self_amout,
+  st.AMOUNT_INSU insu_amount,
+  st.AMOUNT_PREP foregift_amount
+FROM BL_SETTLE st
+  INNER JOIN PV_ENCOUNTER pv ON pv.pk_pv = st.pk_pv
+  INNER JOIN PI_MASTER pi ON pi.pk_pi = pv.pk_pi
+  inner JOIN PV_IP pvip on pvip.PK_PV=pv.PK_PV
+  INNER JOIN bd_hp hp ON hp.pk_hp = pv.pk_insu
+  LEFT JOIN BL_DEPOSIT depo ON depo.pk_settle = st.pk_settle AND depo.eu_dptype != '9'
+WHERE st.flag_canc = '0'
+GROUP BY pv.PK_PV,
+  pi.CODE_IP,
+  pi.NAME_PI,
+  pi.DT_SEX,
+  pi.BIRTH_DATE,
+  pv.DATE_BEGIN,
+  pv.DATE_END,
+  st.DATE_END,
+  pv.PK_INSU,
+  hp.NAME,
+  pvip.DT_OUTCOMES,
+  st.pk_settle,
+  st.amount_st,
+  st.amount_pi,
+  st.AMOUNT_INSU,
+  st.AMOUNT_PREP
+		
+	</select>
+
+	<select id="getChkInfoList" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.QryCheckListInfo" resultType="com.zebone.nhis.webservice.syx.vo.platForm.QryChecklistInfoResData">
+		select ep.serial_no                                                   as order_id,
+			   ep.trade_no                                                    as pay_num,
+			   pos.CODE_DEPO                                                  as agt_ord_num,
+			   pos.AMOUNT                                                     as pay_amout,
+			   pos.DATE_PAY                                                   as pay_time,
+			   pos.NOTE                                                       as pay_desc,
+			   case when pos.EU_DIRECT = '-1' then '2' else pos.EU_DIRECT end as type
+		from BL_DEPOSIT pos
+				 inner join BL_EXT_PAY ep on ep.PK_DEPO = pos.PK_DEPO
+		where EU_PAYTYPE=#{payMode}
+		and pos.DATE_PAY between to_date(#{startDate},'yyyy-mm-dd') and to_date(#{endDate},'yyyy-mm-dd')
+		<if test="type != null and type != '' ">
+			and pos.eu_dptype=#{type}
+		</if>
+	</select>
+
+	<select id="getSettleAccounts" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.QryAppSettleReqVo" resultType="com.zebone.nhis.webservice.syx.vo.platForm.QryAppSettleResVo">
+		select pv.PK_PV,
+			   pi.CODE_IP,
+			   pi.NAME_PI,
+			   pi.DT_SEX,
+			   pi.BIRTH_DATE,
+			   pv.DATE_BEGIN,
+			   pv.DATE_END,
+			   pv.DATE_END - pv.DATE_BEGIN as in_day,
+			   pv.PK_INSU,
+			   hp.NAME                     as nameInsu,
+			   pp.DT_OUTCOMES,
+			   pp.DT_STWAY                 as eu_Settle_Way,
+			   AMOUNT_ST                   as totalAmount,
+			   AMOUNT_PREP                 as foregift_amount,
+			   ''                          as unpaidAmount,
+			   AMOUNT_INSU                 as insu_amount,
+			   AMOUNT_PI                   as self_amout,
+			   '1'                         as settle_status
+		from BL_SETTLE bs
+				 inner join PV_ENCOUNTER pv on pv.PK_PV = bs.PK_PV
+				 inner join PV_IP pp on pp.PK_PV = pv.PK_PV
+				 inner join PI_MASTER pi on pi.PK_PI = pv.PK_PI
+				 inner join BD_HP hp on hp.PK_HP = pv.PK_INSU
+		where pv.PK_PV = #{pkPv}
+		  and pi.CODE_IP = #{codeIp}
+		  and pi.ID_NO = #{userCardId}
+		  and pv.NAME_PI = #{namePi}
+	</select>
+    <select id="getPkDeptNs" resultType="DynaBean">
+		SELECT busa.PK_DEPTBUS,
+			   bu.code           bu_code,
+			   bu.name           bu_name,
+			   busa.PK_ORG,
+			   busa.PK_DEPTBU,
+			   busa.PK_DEPT,
+			   busa.SORT,
+			   busa.DT_DEPTTYPE,
+			   dept.PK_ORGAREA,
+			   dept.PK_DEPT as pk_dept_ns,
+			   dept.CODE_DEPT AS code,
+			   dept.NAME_DEPT AS name,
+			   dept.PY_CODE   AS py_code,
+			   dept.D_CODE    AS d_code,
+			   busa.DEL_FLAG  AS del_flag
+		FROM BD_DEPT_BUS bus
+				 left JOIN BD_DEPT_BU bu ON bus.PK_DEPTBU = bu.PK_DEPTBU
+				 left JOIN BD_DEPT_BUS busa ON bus.PK_DEPTBU = busa.PK_DEPTBU
+				 LEFT JOIN BD_OU_DEPT dept ON dept.PK_DEPT = busa.PK_DEPT
+		WHERE 1 = 1
+		  and bu.DT_BUTYPE = '01'
+		  and bus.PK_DEPT = #{pkDept}
+		  and busa.DT_DEPTTYPE = '02'
+	</select>
+    <select id="getDeptInfos" resultType="com.zebone.nhis.webservice.syx.vo.platForm.QryAppItem">
+        select de.pk_dept   pk,
+               de.CODE_DEPT code,
+               de.NAME_DEPT name,
+               ar.CODE_AREA,
+               ar.NAME_AREA,
+               '' lcdep_code
+        from BD_OU_DEPT de
+                 left join BD_OU_ORG_AREA ar on ar.PK_ORGAREA = de.PK_ORGAREA
+        where FLAG_IP = '1'
+          and DT_DEPTTYPE = '01'
+          and FLAG_ACTIVE = '1'
+        union all
+        SELECT dept.PK_DEPT pk,
+               dept.CODE_DEPT AS code,
+               dept.NAME_DEPT AS name,
+               ar2.CODE_AREA,
+               ar2.NAME_AREA,
+               dep2.CODE_DEPT lcdep_code
+        FROM BD_DEPT_BUS bus
+                 left JOIN BD_DEPT_BU bu ON bus.PK_DEPTBU = bu.PK_DEPTBU
+                 left JOIN BD_DEPT_BUS busa ON bus.PK_DEPTBU = busa.PK_DEPTBU
+                 left join BD_OU_DEPT dep2 on dep2.PK_DEPT=bus.PK_DEPT
+                 LEFT JOIN BD_OU_DEPT dept ON dept.PK_DEPT = busa.PK_DEPT
+                 left join BD_OU_ORG_AREA ar2 on ar2.PK_ORGAREA = dept.PK_ORGAREA
+        WHERE 1 = 1
+          and bu.DT_BUTYPE = '01'
+          and bus.PK_DEPT in (select de.pk_dept
+                              from BD_OU_DEPT de
+                              where FLAG_IP = '1'
+                                and DT_DEPTTYPE = '01'
+                                and FLAG_ACTIVE = '1')
+          and busa.DT_DEPTTYPE = '02'
+    </select>
+
+</mapper>

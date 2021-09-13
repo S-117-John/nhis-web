@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.zsrm.dao.ZsrmOpHerbDrugPackMapper">
+    <select id="qryHerbPresInfo" parameterType="java.util.List" resultType="com.zebone.nhis.ma.pub.zsrm.vo.ZsrmHerbPresVo">
+        select occ.PRES_NO,
+            pv.CODE_PV,
+            pv.NAME_PI,
+            sex.NAME                             DT_SEX,
+            case
+            when TRUNC(months_between(sysdate, BIRTH_DATE) / 12) > 0
+            then TRUNC(months_between(sysdate, BIRTH_DATE) / 12)
+            else 0 end                       age,
+            case when pi.MOBILE is null then '0' else pi.mobile end mobile,
+            ' ' EMAIL,
+            deptpres.NAME_DEPT                   name_dept_pres,
+            emppres.NAME_EMP                     name_emp_pres,
+            'null'                               NAME_ORD,
+            pres.DATE_PRES,
+            sett.CODE_ST,
+            'null'                               name_emp_inp,
+            'null'                               date_inp,
+            empst.NAME_EMP                       name_emp_st,
+            sett.DATE_ST,
+            '1'                                  ords,
+            ord.ords                             ords_day,
+            (select sum(AMOUNT)
+            from BL_OP_DT opdt
+            where opdt.PK_SETTLE = occ.PK_SETTLE
+            and opdt.PK_CNORD = ord.PK_CNORD) PRICE_TOTAL,
+            hp.NAME                              hp_name,
+            'null'                               device_id,
+            'PAYED'                              PAYMENT_STATUS,
+            'HIS'                                DATA_SOURCE,
+            'NEW'                                PROCESS_STATUS,
+            ' ' NOTE_ORD,
+            sto.code code_store
+            from EX_PRES_OCC occ
+            inner join BL_SETTLE sett on sett.PK_SETTLE = occ.PK_SETTLE
+            inner join PV_ENCOUNTER pv on pv.PK_PV = occ.PK_PV
+            inner join PI_MASTER pi on pi.PK_PI = pv.PK_PI
+            inner join CN_PRESCRIPTION pres on pres.PK_PRES = occ.PK_PRES
+            inner join cn_order ord on ord.PK_PRES = pres.PK_PRES
+            inner join BD_OU_DEPT deptpres on deptpres.PK_DEPT = pres.PK_DEPT
+            inner join BD_OU_EMPLOYEE emppres on emppres.PK_EMP = pres.PK_EMP_ORD
+            inner join BD_OU_EMPLOYEE empst on empst.pk_emp = sett.PK_EMP_ST
+            inner join bd_hp hp on hp.PK_HP = pv.PK_INSU
+            inner join BD_DEFDOC sex on sex.CODE_DEFDOCLIST = '000000' and sex.CODE = pv.DT_SEX
+            inner join bd_store sto on sto.pk_dept=occ.pk_dept_ex
+        where pres.DT_PRESTYPE = '02'
+          --and occ.PK_DEPT_EX=''
+          --and occ.WINNO_CONF in ('','')
+          and occ.FLAG_CONF = '0'
+          and occ.FLAG_REG = '1'
+          and occ.pk_presocc in
+          <foreach collection="list" close=")" index="index" item="item" open="(" separator=",">
+              #{item.pkPresocc,jdbcType=VARCHAR}
+          </foreach>
+    </select>
+    <select id="qryHerbPresDtInfo" parameterType="java.util.List" resultType="com.zebone.nhis.ma.pub.zsrm.vo.ZsrmHerbPresDtVo">
+        select pres.PRES_NO,
+            ROW_NUMBER() OVER ( PARTITION BY occ.PRES_NO ORDER BY herb.SORT_NO) NO,
+            pd.CODE_hp                                                         code,
+            pd.NAME,
+            herb.quan,
+            herb.price * herb.QUAN                                              amount,
+            '0'                                                                 val,
+            herb.quan                                                           dose_herb
+        from EX_PRES_OCC_DT dt
+        inner join EX_PRES_OCC occ on occ.PK_PRESOCC = dt.PK_PRESOCC
+        inner join CN_ORD_HERB herb on herb.PK_CNORD = dt.PK_CNORD and herb.PK_PD = dt.PK_PD
+        inner join bd_pd pd on pd.PK_PD = herb.PK_PD
+        inner join CN_PRESCRIPTION pres on pres.PK_PRES = occ.PK_PRES
+        where pres.DT_PRESTYPE = '02'
+          --and occ.PK_DEPT_EX=''
+          --and occ.WINNO_CONF in ('','')
+          and occ.FLAG_CONF = '0'
+          and occ.FLAG_REG = '1'
+          and occ.pk_presocc in
+          <foreach collection="list" close=")" index="index" item="item" open="(" separator=",">
+                #{item.pkPresocc,jdbcType=VARCHAR}
+          </foreach>
+        order by occ.PRES_NO, herb.SORT_NO
+    </select>
+
+</mapper>

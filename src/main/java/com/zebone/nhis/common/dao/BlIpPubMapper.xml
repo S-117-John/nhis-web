@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.common.dao.BlIpPubMapper">
+	
+	<select id="QryBlDtIpByRefunds" resultType="com.zebone.nhis.common.module.bl.BlIpDt" >
+          select * from bl_ip_dt where del_flag = '0' and pk_cgip in    
+        <foreach collection="list" item="vo" index="index"
+            open="(" close=")" separator=",">
+            #{vo.pkCgip} 
+        </foreach>
+    </select>
+    <select id="getBdItemsByCon" resultType="com.zebone.nhis.common.module.base.bd.srv.BdItem" parameterType="list">
+    select item.name||'/ '||nvl(unit.name,'') as name ,item.pk_item,item.code,item.pk_unit,item.spec,item.pk_itemcate from bd_item item 
+  left join bd_unit unit on item.pk_unit = unit.pk_unit
+  where pk_item  in
+  
+  <foreach collection="list" item="vo" index="index"
+      open="(" close=")" separator=",">
+      #{vo.pkItem} 
+  </foreach>
+</select>
+   
+    <select id="QryBlSettleByPk" resultType="com.zebone.nhis.common.module.bl.BlSettle">
+		      select * from bl_settle where 1= 0 or  
+			<if test="pkSettle != null  and  pkSettle != ''">
+			     	pk_settle  = #{pkSettle,jdbcType=VARCHAR}   
+	      </if>
+    </select>
+    
+      <select id="QryBlIpDtBySt" resultType="com.zebone.nhis.common.module.bl.BlIpDt">
+		      select * from bl_ip_dt where 1= 0 or  
+			<if test="pkSettle != null  and  pkSettle != ''">
+			     	pk_settle  = #{pkSettle,jdbcType=VARCHAR}   
+	      </if>
+	     </select>  
+	       <select id="QryBlDepositBySt" resultType="com.zebone.nhis.common.module.bl.BlDeposit">
+		      select * from bl_deposit where (eu_dptype  &lt; 2 or eu_dptype = 3) and 
+			<if test="pkSettle != null  and  pkSettle != ''">
+			     	pk_settle  = #{pkSettle,jdbcType=VARCHAR}   
+	      </if>
+	       </select>
+	        <select id="QryBlDepositPiBySt" resultType="com.zebone.nhis.common.module.bl.BlDepositPi">
+			      select * from bl_deposit_pi where 1= 0 or  
+				<if test="pkSettle != null  and  pkSettle != ''">
+				     	pk_settle  = #{pkSettle,jdbcType=VARCHAR}   
+		      </if>
+         </select>
+          <select id="qryStrikePatis" resultType="java.util.Map" parameterType="java.util.Map">
+	select st.pk_settle pkSettle,  pv.code_pv codePv,pv.pk_pv pkPv,pi.name_pi namePi,
+       sex.name sex ,hp.name hp, dept.name_dept dept,ns.name_dept ns,pv.bed_no bedNo,
+       sttype.name sttype,st.date_st dateSt, st.name_emp_st nameEmpSt,st.pk_settle_rev pkSettleRev
+  from pi_master pi
+       inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+       inner join bl_settle st on pv.pk_pv=st.pk_pv
+       inner join bd_ou_dept dept on pv.pk_dept=dept.pk_dept
+       inner join bd_ou_dept ns on pv.pk_dept_ns=ns.pk_dept
+       inner join bd_hp hp on pv.pk_insu=hp.pk_hp
+       inner join bd_defdoc sex on pi.dt_sex=sex.code and sex.code_defdoclist='000000'
+       inner join bd_defdoc sttype on st.dt_sttype=sttype.code and sttype.code_defdoclist='110102'
+       left outer join bl_st_inv stinv on st.pk_settle=stinv.pk_settle
+       left outer join bl_invoice inv on stinv.pk_invoice=inv.pk_invoice
+ where st.dt_sttype in ('10','20') and
+       not exists (select 1
+                     from bl_settle rev
+                    where rev.pk_settle_rev = st.pk_settle and
+                          rev.dt_sttype = '20')
+      and not exists (select 1 
+                     from bl_settle canc
+                    where canc.pk_settle_canc = st.pk_settle and
+                          canc.flag_canc='1')
+				<if test="dateBegin != null  and  dateBegin != ''">
+				     	and  st.date_st &gt;= to_date(substr(#{dateBegin,jdbcType=VARCHAR}, 1, 8)||'000000' , 'yyyymmddhh24miss')   
+		      </if>
+		      <if test="dateEnd != null  and  dateEnd != ''">
+				     	and st.date_st &lt;=  to_date( substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'yyyymmddhh24miss')  
+		      </if>
+		      <if test="codePi != null  and  codePi != ''">
+				     	and pi.code_pi =#{codePi,jdbcType=VARCHAR}    
+		      </if>
+		      <if test="namePi != null  and  namePi != ''">
+				     	and pi.name_pi like  #{namePi,jdbcType=VARCHAR}   
+		      </if>
+		      <if test="codePv != null  and  codePv != ''">
+				     	and pv.code_pv = #{codePv,jdbcType=VARCHAR}   
+		      </if>
+		      <if test="codeInv != null  and  codeInv != ''">
+				     	 and  inv.code_inv = #{codeInv,jdbcType=VARCHAR}   
+		      </if>
+         </select>
+             <select id="getRefundData" resultType="com.zebone.nhis.common.module.bl.BlIpDt" >
+             	select * from (select blip.date_cg, blip.pk_dept_app,blip.pk_dept_ex,blip.pk_item,
+               blip.spec, blip.pk_unit,blip.name_cg,blip.price_org,
+               blip.price, 
+               blip.quan + (CASE WHEN back.quan is null THEN 0 ELSE back.quan END) quan ,
+               blip.amount + (CASE WHEN back.amt is null THEN 0 ELSE back.amt END)  amount,
+                blip.pk_cgip
+          from bl_ip_dt blip
+       left outer join (select sum(quan) quan,sum(amount) amt,pk_cgip_back
+                         from bl_ip_dt cg
+                        where pk_pv = #{pkPv,jdbcType=VARCHAR} and
+                              quan &lt; 0   and cg.pk_settle in
+     <foreach collection="pkSettles" item="pkSettle" index="index"
+      open="(" close=")" separator=",">
+      #{pkSettle} 
+  </foreach>
+                        group by pk_cgip_back) back
+                        on blip.pk_cgip=back.pk_cgip_back
+ where blip.pk_pv = #{pkPv,jdbcType=VARCHAR}  and
+       blip.quan &gt; 0  and blip.pk_settle in 
+       <foreach collection="pkSettles" item="pkSettle" index="index"
+      open="(" close=")" separator=",">
+      #{pkSettle} 
+  </foreach>
+      
+)temp where temp.quan &gt;0
+</select>
+
+ <select id="qryOrdFees" resultType="com.zebone.nhis.common.module.bl.BlOpFee" parameterType="list">
+    select cg.pk_cgop,
+    	cg.pk_pv,
+    	cg.pk_item,
+    	cg.pk_cnord,
+       item.code,
+       cg.name_cg,
+       cg.price,
+       cg.quan,
+       cg.amount,
+       cg.amount_pi,
+       case when cg.flag_acc=1 then 1
+            when cg.flag_settle=1 then 1
+            else 0 end flag_pay
+  from bd_item item
+       inner join bl_op_dt cg on item.pk_item=cg.pk_item 
+ where cg.pk_cnord in 
+  
+  <foreach collection="list" item="pk" index="index"
+      open="(" close=")" separator=",">
+      #{pk} 
+  </foreach>
+</select>
+
+<update id="medExeOp"  parameterType="java.util.Map" >
+            update ex_assist_occ
+   set flag_occ=1,
+       date_occ=#{dateOcc},
+       pk_emp_occ=#{pkEmp,jdbcType=VARCHAR},
+       name_emp_occ=#{nameEmp,jdbcType=VARCHAR},
+         <if test="note != null  and  note != ''">
+				     	note =  #{note,jdbcType=VARCHAR}  ,
+		      </if>
+       eu_status=1
+ where  flag_occ=0   and pk_assocc in
+     <foreach collection="pkAssOccs" item="pk" index="index"
+      open="(" close=")" separator=",">
+      #{pk} 
+  </foreach>
+</update>
+<select id="qryOrdByPkAss" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOrder" parameterType="list">
+    select * from cn_order where pk_cnord in
+  <foreach collection="list" item="pk" index="index"
+      open="(" close=")" separator=",">
+      #{pk} 
+  </foreach>
+</select>
+<select id="qryOrdByPkAssOcc" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOrder" parameterType="list">
+    select * from cn_order where pk_cnord in (
+    select pk_cnord from ex_assist_occ where pk_assocc in 
+  <foreach collection="list" item="pk" index="index"
+      open="(" close=")" separator=",">
+      #{pk} 
+  </foreach>
+  )
+</select>
+<update id="updateOrderToExec"  parameterType="java.util.Map" >
+          			  update cn_order  set eu_status_ord='3',date_last_ex=to_date(#{curDate},'YYYYMMDDHH24MISS') where eu_status_ord='1' and pk_cnord in 			        
+     <foreach collection="ordList" item="item" index="index"
+      open="(" close=")" separator=",">
+      #{item.pkCnord} 
+  </foreach>
+</update>
+<update id="updOrder"  parameterType="list" >
+          			  update cn_order  set eu_status_ord='3' where eu_status_ord='1' and pk_cnord in 			        
+     <foreach collection="list" item="item" index="index"
+      open="(" close=")" separator=",">
+      #{item.pkCnord} 
+  </foreach>
+</update>
+<update id="updOrderApply"  parameterType="list" >
+   update cn_ris_apply set eu_status=3 where pk_cnord in 			        
+  <foreach collection="list" item="item" index="index"
+      open="(" close=")" separator=",">
+      #{item} 
+  </foreach>
+</update>
+<update id="updOrderPa"  parameterType="list" >
+    update cn_pa_apply  set eu_status=3 where pk_cnord in 			        
+     <foreach collection="list" item="item" index="index"
+      open="(" close=")" separator=",">
+      #{item} 
+  </foreach>
+</update>
+<select id="qryCgIps" resultType="com.zebone.nhis.common.module.bl.BlIpDt" >
+
+	select * from bl_ip_dt  where pk_pv = #{pkPv,jdbcType=VARCHAR}
+	<if test="dateBegin != null  and  dateBegin != ''">
+		and date_hap &gt;=  to_date(substr(#{dateBegin,jdbcType=VARCHAR} ,1,8)||'000000', 'yyyymmddhh24miss')   
+	</if>
+	<if test="dateEnd != null  and  dateEnd != ''">
+		and date_hap &lt;=  to_date(substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'yyyymmddhh24miss')
+	</if>  
+	<if test='euSttype != null  and  euSttype != "23"'>
+		and flag_settle=0 
+	</if>	
+	<if test='pkCgips!=null and pkCgips.size()>0'>
+		and pk_cgip in 
+		<foreach collection="pkCgips" item="pkCgips" index="no" open="("
+            separator="," close=")">
+            #{pkCgips}
+        </foreach>
+	</if>
+</select>
+<select id="queryMedAppSubmitCount"  resultType="java.lang.Integer"  parameterType="java.util.Map">
+		select count(1) cnt
+		  from cn_order ord
+		  left outer join cn_ris_apply ris
+		    on ord.pk_cnord = ris.pk_cnord
+		  left outer join cn_lab_apply lab
+		    on ord.pk_cnord = lab.pk_cnord
+		  left outer join cn_pa_apply pa
+		    on ord.pk_cnord = pa.pk_cnord
+		 where ord.pk_cnord = #{pkCnord,jdbcType=CHAR}
+		   and ( (ord.code_ordtype like '02%' and (ris.eu_status = 1 or ris.eu_status = 2)) or
+		       ( ord.code_ordtype like '03%' and (lab.eu_status = 1 or lab.eu_status = 2)) or
+		       ( ord.code_ordtype not like '02%' and ord.code_ordtype not like '03%') )
+</select>
+<select id="queryMedAppOrdCount"  resultType="java.lang.Integer"  parameterType="java.util.Map">
+		select count(1) cnt
+		  from cn_order ord 
+		 where ord.eu_status_ord = '0' 
+		 and ord.ordsn_parent = #{ordsnParent,jdbcType=VARCHAR}
+		 and ord.ordsn != ord.ordsn_parent 
+		  
+</select>
+<select id="queryMedOrdList"  resultType="com.zebone.nhis.common.module.cn.ipdw.CnOrder"  parameterType="list">
+		select * from cn_order where ordsn!=ordsn_parent  and ordsn_parent in 
+		<foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item} 
+        </foreach>
+</select>
+<select id="queryMedToDoExList"  resultType="DynaBean"  parameterType="java.util.Map">
+select
+  occ.pk_exocc,
+  occ.date_plan,
+  pv.bed_no,
+  pv.name_pi,
+  pv.pk_pv,
+  ord.name_ord,
+  occ.quan_occ,
+  freq.name    name_freq,
+  sup.name  as name_supply,
+  ord.date_stop,
+  occ.name_emp_canc,
+  occ.date_canc,
+  occ.pk_cg,
+  unit.name as name_unit,
+  ass.pk_assocc 
+from ex_order_occ occ
+  inner join cn_order ord on occ.pk_cnord = ord.pk_cnord
+  inner join pv_encounter pv on pv.pk_pv = occ.pk_pv
+  inner join bd_term_freq freq on freq.code = ord.code_freq
+  left join bd_unit unit on unit.pk_unit = occ.pk_unit
+  left join bd_supply sup on sup.code = ord.code_supply
+  inner join pi_master pi on pi.pk_pi = pv.pk_pi 
+  left join ex_assist_occ ass  on ass.pk_exocc = occ.pk_exocc 
+where
+  occ.eu_status = '9' and (occ.pk_cg_cancel is null or occ.pk_cg_cancel = '') 
+  and (occ.pk_cg is not null or occ.pk_cg!='')  
+  <if test="namePi != null  and  namePi != ''">
+		  and pv.name_pi like '%${namePi}%'
+  </if> 
+  <if test="codeIp != null  and  codeIp != ''">
+		  and pi.code_ip like '%${codeIp}%'
+  </if> 
+  <if test="dateBegin != null  and  dateBegin != ''">
+		and occ.date_plan &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+  </if>
+  <if test="dateEnd != null  and  dateEnd != ''">
+		and occ.date_plan &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+  </if>   
+  <if test="pkDeptKL != null  and  pkDeptKL != ''">
+		and ord.pk_dept = #{pkDeptKL,jdbcType=CHAR}
+  </if> 
+  order by pv.bed_no,pv.name_pi,ord.ordsn_parent,ord.ordsn,occ.date_plan 
+</select>
+
+<select id="queryItemListByOrd" resultType="DynaBean"  parameterType="java.util.Map">
+select orditem.quan, item.name as name_cg,item.code,item.pk_item,item.spec,item.pk_unit,item.price   
+from bd_item item 
+inner join bd_ord_item orditem on item.pk_item = orditem.pk_item
+inner join cn_order cnorder on cnorder.pk_ord = orditem.pk_ord
+ where  cnorder.pk_cnord = #{pkCnord,jdbcType=VARCHAR} and orditem.del_flag != '1' and item.flag_active='1' 
+</select>
+<select id="queryMedAppList" resultType="DynaBean"  parameterType="java.util.Map">
+ select occ.pk_exocc,
+       occ.pk_cnord,
+       pv.code_pv,
+       pv.bed_no,
+       pi.code_ip,
+       pi.name_pi,
+       occ.date_plan,
+       ord.code_apply,
+       ord.flag_emer,
+       ord.name_ord,
+       occ.quan_occ,
+       ord.date_start,
+       ord.name_emp_ord,
+       ord.pk_org_exec  pk_org_occ,
+	   ord.pk_dept_exec  pk_dept_occ,
+	   ord.pk_pv,
+	   ord.pk_pi,
+	   ord.pk_org pk_org_app,
+       ord.pk_emp_ord  pk_emp_app,
+       ord.pk_dept  pk_dept_app,
+       ord.pk_dept_ns  pk_dept_ns_app,
+       dept.name_dept,
+       dept_ns.name_dept  name_dept_ns,
+       ord.infant_no,
+       occ.eu_status,
+       ord.ordsn_parent   
+  from pi_master pi
+       inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+       inner join cn_order ord on pv.pk_pv=ord.pk_pv
+       inner join ex_order_occ occ on ord.pk_cnord=occ.pk_cnord
+       inner join bd_ou_dept dept on ord.pk_dept=dept.pk_dept
+       inner join bd_ou_dept dept_ns on ord.pk_dept_ns=dept_ns.pk_dept
+ left outer join cn_ris_apply ris on ord.pk_cnord=ris.pk_cnord 
+       left outer join cn_lab_apply lab on ord.pk_cnord=lab.pk_cnord 
+       left outer join cn_pa_apply pa on ord.pk_cnord=pa.pk_cnord 
+       left outer join cn_trans_apply trans on ord.pk_cnord=trans.pk_cnord 
+ where occ.pk_dept_occ = #{pkDeptOcc,jdbcType=CHAR} and occ.eu_status=0 and ord.flag_durg = 0 and 
+ ((ord.code_ordtype like '02%' and ris.eu_status in ('1','2')) or
+       (ord.code_ordtype like '03%' and lab.eu_status in ('1','2')) or 
+       (ord.code_ordtype like '12%' and trans.eu_status in ('1','2')) or
+       (ord.code_ordtype not like '02%') and (ord.code_ordtype not like '03%') and (ord.code_ordtype not like '12%'))
+       <if test="codePv != null  and  codePv != ''">
+		   and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+       </if> 
+       <if test="bedNo != null  and  bedNo != ''">
+		   and pv.bed_no = #{bedNo,jdbcType=VARCHAR}
+       </if> 
+       <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		   and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+       </if> 
+       <if test="dateBegin != null  and  dateBegin != ''">
+		   and ord.date_start &gt;= to_date(substr(#{dateBegin,jdbcType=VARCHAR}, 1, 8)||'000000', 'YYYYMMDDHH24MISS')
+       </if> 
+       <if test="dateEnd != null  and  dateEnd != ''">
+		   and ord.date_start &lt;= to_date(substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'YYYYMMDDHH24MISS')
+       </if>
+       <if test="codeIp !=null and codeIp!=''">
+       		and pi.code_ip=#{codeIp,jdbcType=VARCHAR}
+       </if> 
+</select>
+	
+	<select id="qryAmountAddByPv" resultType="java.lang.Double">
+		select sum(bl.amount_add) amountAdd
+		  from bl_ip_dt bl 
+		 where bl.pk_pv=#{pkPv,jdbcType=CHAR} 
+		 		and bl.flag_settle = '0'
+		 	<if test='dateBegin!=null and dateEnd!=null'>
+		 		and bl.date_hap &gt;= #{dateBegin,javaType=java.util.Date} and bl.date_hap &lt;= #{dateEnd,javaType=java.util.Date} 
+		 	</if>
+	        <if test="pkCgips != null and  pkCgips != ''">
+	    	   and (bl.pk_cgip in 
+				  <trim suffixOverrides=" OR bl.pk_cgip in()">    <!-- 表示删除最后一个条件 -->
+			          <foreach collection="pkCgips" item="pkCgips" index="index" open="(" close=")">
+			            <if test="index != 0">
+			              <choose>
+			                 <when test="index % 1000 == 999">) OR bl.pk_cgip in (</when>
+			                     <otherwise>,</otherwise>
+			              </choose>
+			            </if>
+			            #{pkCgips}
+			          </foreach>
+			       </trim>
+				)
+	        </if>
+	</select>
+
+	<select id="qryItemAllowQuanRe" resultType="com.zebone.nhis.common.module.bl.BlIpDt" >
+		select cg.pk_item,
+		      cg.NAME_CG,
+		       cg.quan + nvl(bk.quan,0) quan,  
+		       cg.amount + nvl(bk.amount,0) amount,
+		       cg.pk_cgip,
+		       cg.amount_pi + nvl(bk.amount_pi,0) amount_pi,
+       			cg.amount_add + nvl(bk.amount_add,0) amount_add,
+       			cg.amount_hppi + nvl(bk.amount_hppi,0) amount_hppi
+		  from bl_ip_dt cg
+		       left outer join (select back.pk_cgip_back,
+		                               sum(back.quan) quan,
+		                               sum(back.amount) amount,
+		                               sum(back.amount_pi) amount_pi,
+                               			sum(back.amount_hppi) amount_hppi,
+                               			sum(back.amount_add) amount_add
+		                          from bl_ip_dt back
+		                         where back.pk_cgip_back in 
+		                         <foreach collection="list" item="vo" index="index"
+						            open="(" close=")" separator=",">
+						            #{vo.pkCgip} 
+						         </foreach>
+		                          and BACK.flag_SETTLE ='0'
+		                      group by back.pk_cgip_back) bk on cg.pk_cgip=bk.pk_cgip_back
+		 where cg.pk_cgip in 
+		 <foreach collection="list" item="vo" index="index"
+            open="(" close=")" separator=",">
+            #{vo.pkCgip} 
+         </foreach>
+	</select>
+
+</mapper>

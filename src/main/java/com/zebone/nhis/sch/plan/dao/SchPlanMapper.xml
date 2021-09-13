@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.sch.plan.dao.SchPlanMapper">
+	<!-- 查询计划停诊的记录 -->
+	<select id="getSchSchstop" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.sch.plan.SchSchstop">
+		select
+		   *
+		from sch_schstop schstop
+		where schstop.del_flag ='0' 
+		and schstop.pk_org = #{pkOrg,jdbcType=CHAR}
+		<if test="codeEmpStop != null and codeEmpStop != ''">
+		 	and (schstop.code_emp_stop = #{codeEmpStop,jdbcType=VARCHAR}  
+		 	    	or schstop.name_emp_stop = #{codeEmpStop,jdbcType=VARCHAR} 
+		 	   )
+        </if>
+        <if test="nameEmpStop != null and nameEmpStop != ''">
+		 	and schstop.name_emp_stop = #{nameEmpStop,jdbcType=VARCHAR}
+        </if>
+        <if test="pkEmpStop != null and pkEmpStop != ''">
+		 	and schstop.pk_emp_stop = #{pkEmpStop,jdbcType=VARCHAR}
+        </if>
+        <if test="dateEnd != null and dateEnd != '' ">
+		    and schstop.date_end &gt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-mm-dd')
+		</if>
+        
+	</select>
+	<!-- 查询排班计划列表 -->
+	<select id="getPlanList" parameterType="java.util.Map" resultType="DynaBean">
+		select
+		  sch_plan.pk_schplan,
+		  sch_plan.code,
+		  sch_plan.name,
+		  sch_plan.spcode,
+		  sch_plan.pk_schres,
+		  sch_plan.pk_schsrv,
+		  sch_plan.pk_dept,
+		  sch_plan.flag_stop,
+		  sch_resource.name as resName,
+		  sch_resource.eu_restype,
+		  sch_resource.pk_dept pk_dept_rs
+		from sch_plan
+		  left join sch_resource on sch_plan.pk_schres = sch_resource.pk_schres
+		where sch_plan.del_flag ='0' and sch_plan.pk_org = #{pkOrg,jdbcType=CHAR}
+		<if test="code != null and code != ''">
+		 and sch_plan.code = #{code,jdbcType=VARCHAR}
+        </if>
+        <if test="name != null and name != ''">
+		 and sch_plan.name like '%${name}%'
+        </if>
+        <if test="pkSchSrv != null and pkSchSrv != ''">
+		 and sch_plan.pk_schsrv = #{pkSchSrv,jdbcType=CHAR}
+        </if>
+        <if test="pkSchRes != null and pkSchRes != ''">
+		 and sch_plan.pk_schres = #{pkSchRes,jdbcType=CHAR}
+        </if>
+        <if test="ftByUser !=null and ftByUser==1"><!--参数SCH0018=1的情况 根据人员科室权限过滤信息-->
+		 and sch_plan.pk_dept in (select pk_dept from bd_ou_empjob where pk_emp=#{pkEmp,jdbcType=VARCHAR} and del_flag='0' )
+		</if>
+		<if test="ftByUser !=null and ftByUser==2"><!--参数SCH0018=2的情况 根据分诊台权限过滤信息-->
+		 and sch_plan.pk_dept in (select que.pk_dept from bd_qc_platform platform
+			inner join bd_qc_que que on platform.pk_qcplatform=que.pk_qcplatform
+			inner join bd_qc_perm perm on perm.pk_qcplatform = que.pk_qcplatform
+			where perm.pk_user = #{pkUser,jdbcType=VARCHAR}
+		 )
+		</if>
+		<if test="ftByUser !=null and ftByUser==3"><!--参数SCH0018=3的情况 根据业务线类型【12】诊区权限滤信息-->
+		 and sch_resource.pk_dept_area in (select busa.pk_dept
+  							  from bd_dept_bus bus
+       						  inner join bd_dept_bu bu on bus.pk_deptbu=bu.pk_deptbu
+				        	  inner join bd_dept_bus busa on bus.pk_deptbu=busa.pk_deptbu
+				 			  where busa.dt_depttype='16' 
+				 			  And bu.dt_butype='12' 
+				 			  And busa.del_flag=0 
+				 			  And bus.pk_dept=#{pkDeptArea,jdbcType=VARCHAR}
+					)	
+		</if>
+        <if test="pkDept != null and pkDept != ''">
+		 and sch_plan.pk_dept = #{pkDept,jdbcType=CHAR}
+        </if>
+        <if test="flagStop != null and flagStop != ''">
+		 and sch_plan.flag_stop = #{flagStop,jdbcType=VARCHAR}
+        </if>
+        <if test="flagStop != null and flagStop != ''">
+		 and sch_plan.flag_stop = #{flagStop,jdbcType=VARCHAR}
+        </if>
+        <if test="euSchclass != null and euSchclass != ''">
+		 and sch_plan.eu_schclass = #{euSchclass,jdbcType=VARCHAR}
+        </if>
+		 order by sch_plan.ts
+	</select>
+	<select id="queryPlanAndWeek" parameterType="java.util.Map" resultType="DynaBean">
+	   select week.cnt_add,pl.pk_schplan,week.pk_deptunit,pl.minute_per,pl.pk_schres,pl.dt_dateslottype,pl.pk_dept
+	   from sch_plan pl
+	   left join sch_plan_week  week on pl.pk_schplan = week.pk_schplan
+		where week.pk_schplan=#{pkSchplan,jdbcType=CHAR} 
+		 and week.pk_dateslot=#{pkDateslot,jdbcType=CHAR} 
+		 and week.week_no=#{weekNo,jdbcType=VARCHAR}
+	</select>
+</mapper>

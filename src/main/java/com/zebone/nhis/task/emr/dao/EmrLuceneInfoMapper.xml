@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.task.emr.dao.EmrLuceneInfoMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.task.emr.vo.EmrLuceneInfo">
+        <id column="PK_LUCENE" jdbcType="CHAR" property="pkLucene" />
+        <result column="PK_REC" jdbcType="CHAR" property="pkRec"/>
+        <result column="PK_TMP" jdbcType="CHAR" property="pkTmp"/>
+        <result column="DOC_NAME" jdbcType="VARCHAR" property="docName"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+    </resultMap>
+    <select id="getEmrLuceneInfoById" resultMap="BaseResultMap">
+          SELECT * FROM EMR_LUCENE_INFO where PK_LUCENE = #{pkLucene,jdbcType=CHAR}
+    </select>
+    <select id="findAllEmrLuceneInfo" resultMap="BaseResultMap">
+          SELECT * FROM EMR_LUCENE_INFO 
+    </select>
+    <select id="deleteEmrLuceneInfo" resultMap="BaseResultMap">
+          delete FROM EMR_LUCENE_INFO where PK_LUCENE = #{pkLucene,jdbcType=CHAR}
+    </select>
+
+    <insert id="saveEmrLuceneInfo" parameterType="com.zebone.nhis.task.emr.vo.EmrLuceneInfo">
+        INSERT INTO EMR_LUCENE_INFO
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkLucene != null" >
+                PK_LUCENE,
+            </if>
+            <if test="pkRec != null" >
+                PK_REC,
+            </if>
+            <if test="pkTmp != null" >
+                PK_TMP,
+            </if>
+            <if test="docName != null" >
+                DOC_NAME,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkLucene != null" >
+                #{pkLucene,jdbcType=CHAR},
+            </if>
+            <if test="pkRec != null" >
+                #{pkRec,jdbcType=CHAR},
+            </if> 
+            <if test="pkTmp != null" >
+                #{pkTmp,jdbcType=CHAR},
+            </if> 
+            <if test="docName != null" >
+                #{docName,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrLuceneInfo" parameterType="com.zebone.nhis.task.emr.vo.EmrLuceneInfo" >
+        UPDATE EMR_LUCENE_INFO
+        <set>
+            <if test="pkRec != null" >
+                PK_REC = #{pkRec,jdbcType=CHAR},
+            </if>
+            <if test="pkTmp != null" >
+                PK_TMP = #{pkTmp,jdbcType=CHAR},
+            </if>
+            <if test="docName != null" >
+                DOC_NAME = #{docName,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+        </set>
+        WHERE
+        PK_LUCENE = #{pkLucene,jdbcType=CHAR}
+    </update>
+</mapper>

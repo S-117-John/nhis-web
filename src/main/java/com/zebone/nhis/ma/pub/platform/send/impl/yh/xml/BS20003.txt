@@ -1,0 +1,33 @@
+<ESBEntry>  
+   <AccessControl>         
+      <UserName>JZ</UserName>
+      <Password>123456</Password>    
+      <SysFlag>2</SysFlag>   
+      <Fid>BS20003</Fid>
+   </AccessControl>
+   <MessageHeader>      
+      <Fid>BS20003</Fid>     
+      <SourceSysCode>S40</SourceSysCode>  
+      <TargetSysCode>S00</TargetSysCode>      
+      <MsgDate>2017-05-25 14:00:0</MsgDate>  
+   </MessageHeader>
+   <RequestOption>
+      <triggerData>0</triggerData>
+      <dataAmount>500</dataAmount> 
+   </RequestOption>   
+   <MsgInfo flag="1"> 
+      <Msg></Msg>        
+      <distinct value="0"/>       
+       <query item="PAT_INDEX_NO" compy="=" value="'$patindexNo$'" splice="and"/>
+       <query item="EXECUT_DATE" compy="&gt;" value="to_date('$begin$',&apos;yyyymmddhh24miss&apos;)" splice="and"/>
+       <query item="EXECUT_DATE" compy="&lt;" value="to_date('$end$',&apos;yyyymmddhh24miss&apos;)" splice="and"/>
+
+      <order item="PAT_INDEX_NO" sort="asc"/>
+   </MsgInfo>
+   <GroupInfo flag="0">
+   <AS ID="" linkField=""/>
+   </GroupInfo>
+</ESBEntry>
+
+ 
+ 

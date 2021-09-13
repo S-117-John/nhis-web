@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.compay.ins.zsyb.dao.InsZsybItemMapMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybItemMap">
+        <id column="PK_INSITEMMAP" jdbcType="CHAR" property="pkInsitemmap"/>
+        <result column="PK_ORG" jdbcType="CHAR" property="pkOrg"/>
+        <result column="PK_HP" jdbcType="CHAR" property="pkHp"/>
+        <result column="PK_ITEM" jdbcType="CHAR" property="pkItem"/>
+        <result column="PK_INSITEM" jdbcType="CHAR" property="pkInsitem"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="XMLB" jdbcType="VARCHAR" property="xmlb"/>
+        <result column="XMBH" jdbcType="VARCHAR" property="xmbh"/>
+        <result column="ZWMC" jdbcType="VARCHAR" property="zwmc"/>
+        <result column="YJJYPBM" jdbcType="VARCHAR" property="yjjypbm"/>
+        <result column="NOTE" jdbcType="VARCHAR" property="note"/>
+        <result column="XGLX" jdbcType="VARCHAR" property="xglx"/>
+        <result column="SPRQ" jdbcType="VARCHAR" property="sprq"/>
+        <result column="SPBZ" jdbcType="VARCHAR" property="spbz"/>
+        <result column="YXBZ" jdbcType="VARCHAR" property="yxbz"/>
+        <result column="CREATOR" jdbcType="CHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="MODIFIER" jdbcType="CHAR" property="modifier"/>
+        <result column="MODITY_TIME" jdbcType="TIMESTAMP" property="modityTime"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+    </resultMap>
+    <select id="getInsItemMapById" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+             ins_item_map
+        WHERE            
+            PK_INSITEMMAP = #{pkInsitemmap,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllInsItemMap" resultMap="BaseResultMap">
+          SELECT * FROM ins_item_map 
+    </select>
+    
+    <delete id="deleteInsItemMap">
+        DELETE
+        FROM
+             ins_item_map
+        WHERE            
+            PK_INSITEMMAP = #{pkInsitemmap,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveInsItemMap" parameterType="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybItemMap" >
+        INSERT INTO ins_item_map
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkInsitemmap != null" >
+                PK_INSITEMMAP,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="pkHp != null" >
+                PK_HP,
+            </if>
+            <if test="pkItem != null" >
+                PK_ITEM,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="xmlb != null" >
+                XMLB,
+            </if>
+            <if test="xmbh != null" >
+                XMBH,
+            </if>
+            <if test="zwmc != null" >
+                ZWMC,
+            </if>
+            <if test="yjjypbm != null" >
+                YJJYPBM,
+            </if>
+            <if test="note != null" >
+                NOTE,
+            </if>
+            <if test="xglx != null" >
+                XGLX,
+            </if>
+            <if test="sprq != null" >
+                SPRQ,
+            </if>
+            <if test="spbz != null" >
+                SPBZ,
+            </if>
+            <if test="yxbz != null" >
+                YXBZ,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="modifier != null" >
+                MODIFIER,
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkInsitemmap != null" >
+                #{pkInsitemmap,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=CHAR},
+            </if> 
+            <if test="pkHp != null" >
+                #{pkHp,jdbcType=CHAR},
+            </if> 
+            <if test="pkItem != null" >
+                #{pkItem,jdbcType=CHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="xmlb != null" >
+                #{xmlb,jdbcType=VARCHAR},
+            </if> 
+            <if test="xmbh != null" >
+                #{xmbh,jdbcType=VARCHAR},
+            </if> 
+            <if test="zwmc != null" >
+                #{zwmc,jdbcType=VARCHAR},
+            </if> 
+            <if test="yjjypbm != null" >
+                #{yjjypbm,jdbcType=VARCHAR},
+            </if> 
+            <if test="note != null" >
+                #{note,jdbcType=VARCHAR},
+            </if> 
+            <if test="xglx != null" >
+                #{xglx,jdbcType=VARCHAR},
+            </if> 
+            <if test="sprq != null" >
+                #{sprq,jdbcType=VARCHAR},
+            </if> 
+            <if test="spbz != null" >
+                #{spbz,jdbcType=VARCHAR},
+            </if> 
+            <if test="yxbz != null" >
+                #{yxbz,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=CHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="modifier != null" >
+                #{modifier,jdbcType=CHAR},
+            </if> 
+            <if test="modityTime != null" >
+                #{modityTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=TIMESTAMP},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateInsItemMap" parameterType="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybItemMap" >
+        UPDATE ins_item_map
+        <set>
+            <if test="pkInsitemmap != null" >
+                PK_INSITEMMAP = #{pkInsitemmap,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=CHAR},
+            </if>
+            <if test="pkHp != null" >
+                PK_HP = #{pkHp,jdbcType=CHAR},
+            </if>
+            <if test="pkItem != null" >
+                PK_ITEM = #{pkItem,jdbcType=CHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="xmlb != null" >
+                XMLB = #{xmlb,jdbcType=VARCHAR},
+            </if>
+            <if test="xmbh != null" >
+                XMBH = #{xmbh,jdbcType=VARCHAR},
+            </if>
+            <if test="zwmc != null" >
+                ZWMC = #{zwmc,jdbcType=VARCHAR},
+            </if>
+            <if test="yjjypbm != null" >
+                YJJYPBM = #{yjjypbm,jdbcType=VARCHAR},
+            </if>
+            <if test="note != null" >
+                NOTE = #{note,jdbcType=VARCHAR},
+            </if>
+            <if test="xglx != null" >
+                XGLX = #{xglx,jdbcType=VARCHAR},
+            </if>
+            <if test="sprq != null" >
+                SPRQ = #{sprq,jdbcType=VARCHAR},
+            </if>
+            <if test="spbz != null" >
+                SPBZ = #{spbz,jdbcType=VARCHAR},
+            </if>
+            <if test="yxbz != null" >
+                YXBZ = #{yxbz,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=CHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="modifier != null" >
+                MODIFIER = #{modifier,jdbcType=CHAR},
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME = #{modityTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        WHERE 
+            PK_INSITEMMAP = #{pkInsitemmap,jdbcType=CHAR}
+    </update>
+</mapper>

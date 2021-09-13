@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.QcRuleMapper">
+
+	<!-- 查询分诊规则 -->
+	<select id="qryQcRule" resultType="com.zebone.nhis.common.module.base.bd.srv.BdQcRule" parameterType="java.lang.String">
+		select pk_qcrule, 
+	       code_rule, 
+	       name_rule, 
+	       cnt_wait,  
+	       cnt_conte, 
+	       cnt_wait2,
+	       flag_appt, 
+	       flag_dise, 
+	       flag_func, 
+	       func,      
+	       sortno_over,
+	       note       
+		 from bd_qc_rule 
+		 where pk_org=#{pkOrg,jdbcType=VARCHAR} and
+		       del_flag='0'
+	</select>
+
+</mapper>

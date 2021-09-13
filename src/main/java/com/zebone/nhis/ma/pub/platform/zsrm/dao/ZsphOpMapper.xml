@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ma.pub.platform.zsrm.dao.ZsphOpMapper">
+
+    <select id="getPvEncounter" resultType="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.model.PvEncounterVo">
+        select pv.pk_pv,pi.CODE_OP,
+        pv.EU_STATUS,
+        pi.PK_PI,
+        pv.EU_PVTYPE,
+        pi.CODE_PI,
+        pi.CODE_OP,
+        pi.NAME_PI,
+        pi.TEL_NO,
+        srv.eu_srvtype,
+        pi.BIRTH_DATE,
+        pi.name_rel,
+        pi.dt_ralation,
+        pi.tel_rel,
+        pi.ID_NO,
+        pv.DATE_BEGIN,
+        pv.DATE_END,
+        pv.PK_DEPT,
+        pv.pk_emp_phy,
+        pv.name_emp_phy,
+        empphy.code_emp code_emp_phy,
+        pv.PK_EMP_PHY as pk_emp_pv,
+        empphy.CODE_EMP as CODE_EMP,
+        pv.NAME_EMP_PHY NAME_EMP,
+        pv.CODE_PV,
+        dept.CODE_DEPT,
+        dept.name_dept,
+        pi.dt_sex
+        from PV_ENCOUNTER pv
+        inner join PI_MASTER pi on pv.PK_PI = pi.PK_PI
+        left join PV_OP op on pv.PK_PV = op.PK_PV and pv.EU_PVTYPE ='1'
+        left join PV_ER er on pv.PK_PV = er.PK_PV and pv.EU_PVTYPE ='2'
+        left join sch_srv srv on op.PK_SCHSRV = srv.PK_SCHSRV or er.PK_SCHSRV = srv.PK_SCHSRV
+        left join bd_ou_employee empphy on empphy.pk_emp=pv.pk_emp_phy
+        left join BD_OU_DEPT dept on pv.PK_DEPT = dept.PK_DEPT
+        <where>
+            <if test="patientno!=null and patientno!=''">
+                and pi.CODE_OP=#{patientno,jdbcType=VARCHAR}
+            </if>
+            <if test="codeOp!=null and codeOp!=''">
+                and pi.CODE_OP=#{codeOp,jdbcType=VARCHAR}
+            </if>
+            <if test="visitno!=null and visitno!=''">
+                and pv.CODE_PV=#{visitno,jdbcType=VARCHAR}
+            </if>
+            <if test="idNo!=null and idNo!=''">
+                and pi.id_no=#{visitno,jdbcType=VARCHAR} and pi.dt_idtype='01'
+            </if>
+            <if test="name!=null and name!=''">
+                and pi.name_pi=#{name,jdbcType=VARCHAR}
+            </if>
+            <if test="begindata!=null and begindata!=''">
+                and pv.date_begin &gt;= to_date(#{begindata},'yyyy-mm-dd HH24:mi:ss')
+            </if>
+            <if test="enddata!=null and enddata!=''">
+                and pv.date_begin &lt;= to_date(#{enddata},'yyyy-mm-dd HH24:mi:ss')
+            </if>
+            <if test="deptCode!=null and deptCode!=''">
+                and dept.CODE_DEPT = #{deptCode,jdbcType=VARCHAR}
+            </if>
+        </where>
+    </select>
+    <select id = "qryDaigByCode"  parameterType="java.lang.String" resultType="DynaBean" >
+		 select * from
+		(
+			select
+				b.pk_cndiag as PK_DIAG,
+				icd.diagcode as code,
+				b.name_cd as name,
+				als.spcode as py_code,
+				als.d_code
+			from bd_cndiag b
+			inner join bd_cndiag_comp comp on b.pk_cndiag=comp.pk_cndiag_comp
+			inner join bd_cndiag_as als on b.pk_cndiag=als.pk_cndiag
+			left outer join bd_term_diag icd on b.pk_diag=icd.pk_diag
+			where  1=1  and b.del_flag='0'
+			AND icd.diagcode = #{code,jdbcType=VARCHAR}
+			UNION  all
+			select
+				b.pk_cndiag as PK_DIAG,
+				icd.diagcode as code,
+				b.name_cd as name,
+				als.spcode as py_code,
+				als.d_code
+			from bd_cndiag b
+		       inner join bd_cndiag_as als on b.pk_cndiag=als.pk_cndiag
+		       left outer join bd_term_diag icd on b.pk_diag=icd.pk_diag
+			where  1=1 and b.del_flag='0'
+			AND icd.diagcode = #{code,jdbcType=VARCHAR}
+		)
+		order by length(name)
+    </select>
+</mapper>

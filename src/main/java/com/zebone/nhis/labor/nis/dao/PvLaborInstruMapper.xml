@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.labor.nis.dao.PvLaborInstruMapper">
+<select id="queryPvLaborInstru" parameterType="java.util.Map" resultType="com.zebone.nhis.labor.nis.vo.PvLaborInstruVo">
+	select * from pv_labor_instru 
+	where pk_org = #{pkOrg,jdbcType=CHAR}  and pk_pv = #{pkPv,jdbcType=CHAR}     
+	 <if test="pkLaborrec != null  and  pkLaborrec != ''">
+		       and pk_laborrec = #{pkLaborrec,jdbcType=CHAR}     
+	 </if>
+</select>
+<select id="queryPvLaborInstruDt" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.labor.nis.PvLaborInstruDt">
+	select * from pv_labor_instru_dt  
+	where pk_instru = #{pkInstru,jdbcType=CHAR}  
+</select>
+
+</mapper>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.CnBloodMapper">
+    <select id="qryMaxBl" resultType="DynaBean" parameterType="java.util.Map">
+        select
+        	ord.PK_PV,
+        	ord.PK_ORD,
+        	max(app.quan_bt) as quan_bt
+        from CN_ORDER ord
+        inner join cn_trans_apply app on app.pk_cnord=ord.PK_CNORD
+        inner join bd_unit unit on app.pk_unit_bt = unit.PK_UNIT
+        where ord.PK_PV= #{pkPv,jdbcType=VARCHAR}
+        	and unit.name='U' and ord.DEL_FLAG='0' and app.del_flag='0' and unit.del_flag='0'
+        group by ord.pk_pv,ord.PK_ORD
+    </select>
+    <select id="qryBlApp" resultType="com.zebone.nhis.cn.ipdw.vo.CnTransApprovalVo" parameterType="java.util.Map">
+        SELECT
+            app.*,
+            dept.NAME_DEPT,
+            emp.NAME_EMP,
+            pv.name_pi,
+            pv.age_pv,
+            pi.code_pi,
+            pv.dt_sex,
+            ord.name as name_ord,
+            deSex.NAME as name_sex,
+            cnord.name_abo,
+            cnord.name_rh,
+            cnord.note
+        FROM cn_trans_approval app
+        INNER JOIN BD_ORD ord on ord.PK_ORD=app.pk_ord
+        INNER JOIN PV_ENCOUNTER pv ON app.pk_pv = pv.PK_PV
+        inner join BD_DEFDOC deSex ON pv.DT_SEX=deSex.CODE and deSex.code_defdoclist='000000' and deSex.DEL_FLAG='0'
+        INNER JOIN PI_MASTER pi on pi.pk_pi=pv.pk_pi
+        INNER JOIN BD_OU_DEPT dept on dept.PK_DEPT=app.pk_dept
+        INNER JOIN BD_OU_EMPLOYEE emp on emp.PK_EMP=app.creator
+        INNER JOIN
+        (
+        select  a.pk_pv,a.pk_ord,max(a.NAME_ORD) as NAME_ORD, max(deAbo.NAME) as name_abo,max(deRh.NAME) as name_rh,max(b.note) as note
+        from CN_ORDER a
+        inner join CN_TRANS_APPLY b on a.PK_CNORD=b.PK_CNORD
+        inner join cn_trans_approval app1 on a.pk_ord = app1.pk_ord and a.pk_pv= app1.PK_PV
+        inner join BD_DEFDOC deAbo ON b.dt_bt_abo=deAbo.CODE and deAbo.code_defdoclist='000004' and deAbo.DEL_FLAG='0'
+        inner join BD_DEFDOC deRh ON b.dt_bt_rh=deRh.CODE and deRh.code_defdoclist='000005' and deRh.DEL_FLAG='0'
+        group by a.pk_pv,a.pk_ord
+        ) cnord on cnord.pk_ord = app.pk_ord and cnord.pk_pv= app.PK_PV
+        WHERE
+            app.del_flag = '0'
+        <if test='pkPv != null and pkPv != "" '>
+            and  app.PK_PV= #{pkPv,jdbcType=VARCHAR}
+        </if>
+        <if test='codeIp != null and codeIp != "" '>
+            and pi.code_ip= #{codeIp,jdbcType=VARCHAR}
+        </if>
+        <if test='pkDept != null and pkDept != "" '>
+            AND app.pk_dept= #{pkDept,jdbcType=VARCHAR}
+        </if>
+        <if test='namePi != null and namePi != "" '>
+            AND pv.name_pi like  '%'||#{namePi,jdbcType=VARCHAR}||'%'
+        </if>
+        <if test='dateStart != null and dateStart != "" '>
+            and app.date_apply &gt;= to_date(#{dateStart,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        </if>
+        <if test='dateEnd != null and dateEnd != "" '>
+            and app.date_apply &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        </if>
+        <if test='flagChkHead != null and flagChkHead != "" '>
+            and flag_chk_head= #{flagChkHead,jdbcType=VARCHAR}
+        </if>
+        <if test='flagChkTrans != null and flagChkTrans != "" '>
+            and flag_chk_trans= #{flagChkTrans,jdbcType=VARCHAR}
+        </if>
+        <if test='flagChkMm != null and flagChkMm != "" '>
+            and flag_chk_mm= #{flagChkMm,jdbcType=VARCHAR}
+        </if>
+    </select>
+    <select id="qryMaxOrd" resultType="DynaBean" parameterType="java.util.Map">
+        select
+        	ord.PK_PV,ord.PK_ORD,
+        	app.QUAN_BT,app.PK_UNIT_BT,app.DT_BT_ABO,app.DT_BT_RH,app.NOTE,app.PK_ORDBT
+        from CN_ORDER ord
+        inner join cn_trans_apply app on app.pk_cnord=ord.PK_CNORD
+        inner join bd_unit unit on app.pk_unit_bt = unit.PK_UNIT
+        where unit.name='U' and ord.DEL_FLAG='0' and app.del_flag='0' and unit.del_flag='0'
+            and ord.PK_PV= #{pkPv,jdbcType=VARCHAR}
+        	and ord.PK_ORD= #{pkOrd,jdbcType=VARCHAR}
+    </select>
+</mapper>

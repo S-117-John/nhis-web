@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.PrnPresToxicHempMapper">
+	<select id="getPresDt" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT
+		  pi.code_ip,
+		  pi.name_pi,
+		  pi.dt_sex,
+		  pi.id_no,
+		  pi.insur_no,
+		  pi.addr_cur||pi.addr_cur_dt as pi_address,
+		  pi.mobile,
+		  pv.tel_rel,
+		  pv.pk_dept,
+		  pv.pk_pv,
+		  pv.age_pv,
+		  pv.bed_no,
+		  hp.name as hp_name,
+		  di.name_diag,
+		  dept.name_dept,
+		  pres.pk_pres,
+		  pres.pres_no,
+		  pres.flag_prt,
+		  pres.dt_prestype,
+		  pres.date_pres,
+		  pres.dt_properties,
+		  pres.name_agent,
+		  pres.idno_agent,
+		  pres.name_emp_ord,
+		  pt.name       prestype,
+		  ord.name_ord,
+		  ord.spec,
+		  ord.dosage,
+		  unit_dos.name unit_dos,
+		  sup.name      sup,
+		  freq.name     freq,
+		  ord.quan,
+		  ord.PK_EMP_ORD,
+		  unit.name     quan_unit,
+		  ord.ORDSN_PARENT,
+		  ord.ORDSN,
+		  bp.name_chem
+		FROM cn_prescription pres
+		  INNER JOIN cn_order ord ON pres.pk_pres = ord.pk_pres
+		  INNER JOIN pv_encounter pv ON ord.pk_pv = pv.pk_pv
+		  INNER JOIN BD_HP hp ON hp.pk_hp=pv.pk_insu
+		  LEFT JOIN  pv_diag di ON di.pk_pv=pv.pk_pv and di.FLAG_MAJ=1 and di.del_flag=0
+		  INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+		  INNER JOIN bd_defdoc pt ON pres.dt_prestype = pt.code AND pt.code_defdoclist = '060101'
+		  INNER JOIN bd_unit unit_dos ON ord.pk_unit_dos = unit_dos.pk_unit
+		  INNER JOIN bd_unit unit ON ord.pk_unit = unit.pk_unit
+		  INNER JOIN bd_supply sup ON ord.code_supply = sup.code
+		  INNER JOIN bd_term_freq freq ON ord.code_freq = freq.code
+		  INNER JOIN BD_OU_DEPT dept ON dept.PK_DEPT = pv.PK_DEPT
+		  INNER JOIN BD_PD bp on bp.PK_PD=ord.PK_ORD
+		  INNER JOIN (SELECT
+		                sum(amount) amt,
+		                pk_cnord
+		              FROM bl_ip_dt
+		              WHERE 1=1
+		              <if test="pkDeptEx != null and pkDeptEx != '' ">
+		             	 and pk_dept_ex = #{pkDeptEx} 
+		              </if>
+		              <if test="dateBegin != null and dateBegin != '' ">
+		             	 AND date_cg &gt;= to_date(#{dateBegin},'yyyy-MM-dd hh24:mi:ss') 
+		              </if>
+		              <if test="dateEnd != null and dateEnd	 != '' ">
+		             	 AND date_cg &lt;= to_date(#{dateEnd},'yyyy-MM-dd hh24:mi:ss')
+		              </if>
+		              GROUP BY pk_cnord) cg ON ord.pk_cnord = cg.pk_cnord
+		WHERE 1=1
+		<if test="codeIp != null and codeIp != '' ">
+			and pi.code_ip = #{codeIp} 	
+        </if>
+		AND cg.amt > 0
+	</select>
+	
+	<select id="getPresSummary" parameterType="java.util.List" resultType="DynaBean">
+		SELECT
+		  cg.date_cg,
+		  dept.name_dept,
+		  pi.code_ip,
+		  pi.name_pi,
+		  pv.age_pv,
+		  pv.dt_sex,
+		  pi.id_no,
+		  diag.name_diag,
+		  cg.name_cg,
+		  cg.spec,
+		  sum(cg.quan) quan,
+		  unit.name    unit,
+		  cg.batch_no,
+		  cg.name_emp_app,
+		  bp.name_chem
+		FROM bl_ip_dt cg
+		  inner join cn_order ord on cg.pk_cnord=ord.pk_cnord
+		  INNER JOIN BD_PD bp on bp.PK_PD=ord.PK_ORD
+		  INNER JOIN pv_encounter pv ON cg.pk_pv = pv.pk_pv
+		  INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+		  INNER JOIN bd_unit unit ON cg.pk_unit = unit.pk_unit
+		  INNER JOIN bd_ou_dept dept ON cg.pk_dept_app = dept.pk_dept
+		  LEFT OUTER JOIN pv_diag diag ON pv.pk_pv = diag.pk_pv AND diag.flag_maj = '1'
+		WHERE ord.pk_pres IN 
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		GROUP BY 
+		cg.name_cg,
+			cg.date_cg,
+		  dept.name_dept,
+		  pi.code_ip,
+		  pi.name_pi,
+		  pv.age_pv,
+		  pv.dt_sex,
+		  pi.id_no,
+		  diag.name_diag,
+		  cg.spec,
+		  unit.name,
+		  cg.name_emp_app,
+		  cg.batch_no,
+		  bp.name_chem
+	</select>
+</mapper>

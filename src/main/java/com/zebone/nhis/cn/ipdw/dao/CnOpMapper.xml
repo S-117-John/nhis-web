@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.CnOpMapper" >
+
+  <select id="selectOrder" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOrder" parameterType="java.lang.String" >
+    select 
+    *
+    from CN_ORDER
+    where PK_CNORD = #{pkCnord,jdbcType=CHAR}
+  </select>
+  
+  <select id="getOpDictList" resultType="com.zebone.nhis.common.module.base.bd.code.BdDefdoc" >
+	select * from BD_DEFDOC 
+	WHERE code_defdoclist like '0303%'
+	order by code_defdoclist, code
+  </select>
+
+  <select id="getOpApplyList" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOpApply" parameterType="java.util.Map" >
+	select op.date_apply,op.date_begin,op.date_confirm,op.date_confirm_dept,op.date_head,op.date_plan,op.desc_cpb,op.desc_diag_pre,op.desc_icjd,op.desc_infec,op.desc_op,op.desc_op_sub,op.desc_unicjd,op.dt_anae,op.dt_asepsis,op.dt_blood_abo,op.dt_blood_rh,op.dt_incitype,op.dt_opbody,op.dt_oplevel,op.dt_posi,op.eu_optype,op.eu_status,op.flag_again,op.flag_ed,op.flag_head,op.name_emp_anae,op.name_emp_asis,
+	   op.name_emp_asis2,op.name_emp_asis3,op.name_emp_cricul,op.name_emp_head,op.name_emp_phy_op,op.name_emp_scrub,op.note,op.pk_cnord,op.pk_dept_anae,op.pk_diag_pre,op.pk_emp_anae,
+	   op.pk_emp_asis,op.pk_emp_asis2,op.pk_emp_asis3,op.pk_emp_circul,op.pk_emp_head,op.pk_emp_phy_op,op.pk_emp_scrub,op.pk_op,op.pk_opt,op.pk_ordop,op.pk_org,
+	   op.purp_again,op.spec_equipment,op.ticketno,op.duration,
+	   op.weight,ord.ts,ord.flag_print as flag_print_ord,
+	   ord.code_apply, ord.pk_pv, ord.pk_dept_exec, ord.pk_org_exec , ord.eu_status_ord, ord.flag_cp,op.date_apply as date_start,ord.pk_dept,ord.eu_intern,
+       typ.name as srv_type_name,oe.name_org as org_exec_name,de.name_dept as dept_exec_name, 
+       (select name_cd from bd_cndiag  where rtrim(pk_cndiag)=rtrim(op.pk_diag_pre)) as diag_op_name,
+       nvl((select diagname from bd_term_diag where rtrim(pk_diag)=rtrim(op.pk_op)),op.desc_op) as op_name,
+       (case when op.dt_anae=null or op.dt_anae='~' then '' else (select name from bd_defdoc where pk_defdoc=op.dt_anae) end) as anae_name,
+       (case when op.dt_asepsis=null or op.dt_asepsis='~'  then '' else (select name from bd_defdoc where pk_defdoc=op.dt_asepsis) end) as asepsis_name,
+       (case when op.dt_posi=null or op.dt_posi='~' then ''  else (select name from bd_defdoc where pk_defdoc=op.dt_posi) end) as posi_name,
+       (case when op.dt_opbody=null or op.dt_opbody='~' then '' else (select name from bd_defdoc where pk_defdoc=op.dt_opbody) end) as bodypart_name,
+       opt.name_place,op.dt_asalevel
+	from cn_order ord   
+    	inner join cn_op_apply op on ord.pk_cnord = op.pk_cnord
+     	inner join bd_ordtype typ on typ.code='04' and typ.pk_org in ('~', #{pkOrg,jdbcType=CHAR} )
+     	left outer join bd_ou_org oe on ord.pk_org_exec=oe.pk_org 
+     	left outer join bd_ou_dept de on ord.pk_dept_exec=de.pk_org  
+     	left outer join bd_res_opt opt on opt.pk_opt=op.pk_opt and opt.del_flag='0'
+ 	where ord.pk_pv =  #{pkPv,jdbcType=CHAR}
+ 	<if test='pkCnord != null and pkCnord != "" '>  
+			and ord.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+	</if>
+ 	order by ord.ordsn ,ord.date_enter
+  </select>
+
+	<select id="getOpApplyListNew" resultType="com.zebone.nhis.cn.ipdw.vo.OpPressVo" parameterType="java.util.Map" >
+		select op.date_apply,op.date_begin,op.date_confirm,op.date_confirm_dept,op.date_head,op.date_plan,op.desc_cpb,op.desc_diag_pre,op.desc_icjd,op.desc_infec,op.desc_op,op.desc_op_sub,op.desc_unicjd,op.dt_anae,op.dt_asepsis,op.dt_blood_abo,op.dt_blood_rh,op.dt_incitype,op.dt_opbody,op.dt_oplevel,op.dt_posi,op.eu_optype,op.eu_status,op.flag_again,op.flag_ed,op.flag_head,op.name_emp_anae,op.name_emp_asis,
+		op.name_emp_asis2,op.name_emp_asis3,op.name_emp_cricul,op.name_emp_head,op.name_emp_phy_op,op.name_emp_scrub,op.note,op.pk_cnord,op.pk_dept_anae,op.pk_diag_pre,op.pk_emp_anae,
+		op.pk_emp_asis,op.pk_emp_asis2,op.pk_emp_asis3,op.pk_emp_circul,op.pk_emp_head,op.pk_emp_phy_op,op.pk_emp_scrub,op.pk_op,op.pk_opt,op.pk_ordop,op.pk_org,
+		op.purp_again,op.spec_equipment,op.ticketno,op.duration,
+		op.weight,ord.ts,ord.flag_print as flag_print_ord,op.flag_frozen,op.flag_carm,
+		ord.code_apply, ord.pk_pv, ord.pk_dept_exec, ord.pk_org_exec , ord.eu_status_ord, ord.flag_cp,op.date_apply as date_start,ord.pk_dept,ord.eu_intern,
+		typ.name as srv_type_name,oe.name_org as org_exec_name,de.name_dept as dept_exec_name,
+		op.name_op,
+		nvl((select CODE_CD from bd_cndiag  where rtrim(pk_cndiag)=rtrim(op.pk_diag_pre)),(select code_icd from pv_diag  where rtrim(pk_pv)=rtrim(ord.pk_pv) and FLAG_MAJ='1' and DEL_FLAG='0')) as code_icd,
+		nvl(bd.diagname,op.desc_op) as op_name, bd.diagcode as diag_code,
+		(case when op.dt_anae=null or op.dt_anae='~' then '' else (select name from bd_defdoc where pk_defdoc=op.dt_anae) end) as anae_name,
+		(case when op.dt_asepsis=null or op.dt_asepsis='~'  then '' else (select name from bd_defdoc where pk_defdoc=op.dt_asepsis) end) as asepsis_name,
+		(case when op.dt_posi=null or op.dt_posi='~' then ''  else (select name from bd_defdoc where pk_defdoc=op.dt_posi) end) as posi_name,
+		(case when op.dt_opbody=null or op.dt_opbody='~' then '' else (select name from bd_defdoc where pk_defdoc=op.dt_opbody) end) as bodypart_name,
+		opt.name_place,op.dt_asalevel,bd.dt_oplevel  as op_level,ord.NAME_EMP_INPUT,ord.PK_EMP_INPUT,op.eu_erlevel
+		from cn_order ord
+		inner join cn_op_apply op on ord.pk_cnord = op.pk_cnord
+		inner join bd_ordtype typ on typ.code='04' and typ.pk_org in ('~', #{pkOrg,jdbcType=CHAR} )
+		left outer join bd_ou_org oe on ord.pk_org_exec=oe.pk_org
+		left outer join bd_ou_dept de on ord.pk_dept_exec=de.pk_org
+		left outer join bd_res_opt opt on opt.pk_opt=op.pk_opt and opt.del_flag='0'
+		left outer join  BD_TERM_DIAG  bd on bd.PK_DIAG=op.PK_OP
+		where ord.pk_pv =  #{pkPv,jdbcType=CHAR}
+		<if test='pkCnord != null and pkCnord != "" '>
+			and ord.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+		</if>
+		order by ord.ordsn ,ord.date_enter
+	</select>
+
+  <update id="cancelOpApply" parameterType="java.lang.String" >
+  	update cn_order
+  	set eu_status_ord = '9', flag_erase='1', 
+  		pk_emp_erase=#{empSn,jdbcType=VARCHAR}, name_emp_erase=#{empName,jdbcType=VARCHAR}, date_erase = sysdate  
+  	where 
+	<foreach collection="pkOpList" item="pkOp" open="" close="" separator="OR">  
+           PK_CNORD = #{pkOp,jdbcType=VARCHAR}
+	</foreach>  
+  </update>
+  
+  <update id="signOpApply" parameterType="java.lang.String" >
+
+	update cn_op_apply 
+  	set  eu_status='1'    
+  	where 
+	<foreach collection="pkOpList" item="pkOp" open="" close="" separator="OR">  
+           PK_CNORD = #{pkOp,jdbcType=VARCHAR}
+	</foreach>  
+
+  </update>
+
+  <select id="getOpApptList" resultType="java.util.HashMap" parameterType="java.lang.String" >
+	select appt.*, appt_op.*, 
+	     srv.name srv_name
+	from sch_appt appt inner join sch_appt_op appt_op on appt.pk_schappt = appt_op.pk_schappt
+	     left join sch_srv srv on appt.pk_schsrv = srv.pk_schsrv 
+	     left join bd_res_opt opt on appt_op.pk_opt = opt.pk_opt 
+	--where appt.code_apply = ? 
+	order by appt.ts desc
+  </select>
+
+  <delete id="removeChildApply" parameterType="java.lang.String" >
+  	delete from cn_op_subjoin
+  	where pk_ordop = #{pkOrdop,jdbcType=VARCHAR} 
+  </delete>
+  
+  <select id="getChildApplyList" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOpSubjoin" >
+    select op.*, dg.diagname as op_name,dg.diagcode as op_code  
+    from cn_op_subjoin op inner join bd_term_diag dg on op.pk_diag_sub= dg.pk_diag
+    where 
+  	<foreach collection="pkOpList" item="pkOp" open="" close="" separator="OR">  
+           pk_ordop = #{pkOp,jdbcType=VARCHAR}
+	</foreach>  
+  </select>
+
+  <delete id="removeOpApply" parameterType="java.lang.String" >
+  	delete cn_op_apply
+  	where PK_ORDOP = #{pkOrdop,jdbcType=VARCHAR}
+  </delete>
+
+  <delete id="removeOpOrder" parameterType="java.lang.String" >
+  	delete cn_order
+  	where ordsn_parent in (select ordsn_parent from cn_order where pk_cnord =  #{pkCnord,jdbcType=VARCHAR})   
+  </delete>
+  <select id="qryHeadSignApply" parameterType="java.util.Map" resultType="DynaBean">
+	  select opt.pk_ordop,
+	         opt.eu_status,
+			 opt.flag_head,
+			 opt.date_head,
+		   opt.pk_emp_head,
+		   opt.name_emp_head,
+	       opt.ticketno,
+	       opt.eu_optype,
+	       op.diagname         op_name,
+	       anae.name           anae,
+	       opt.date_plan,
+	       pv.bed_no,
+	       pi.code_ip,
+	       pi.name_pi,
+	       sex.name            sex,
+	       pv.age_pv,
+	       diag.NAME_CD as diag_name_pre,
+	       opt.name_emp_phy_op,
+	       oplevel.name as oplevel_name,
+	       opt.desc_op,
+	       deptanae.name_dept as name_dept_anae,
+	       deptexec.name_dept as name_dept_exec,
+	       ord.pk_cnord,
+	       opt.note 
+	  from cn_order ord 
+	 inner join cn_op_apply opt 
+	    on ord.pk_cnord = opt.pk_cnord 
+	 inner join pv_encounter pv 
+	    on ord.pk_pv = pv.pk_pv 
+	 inner join pi_master pi 
+	    on pv.pk_pi = pi.pk_pi 
+	 inner join bd_term_diag op 
+	    on opt.pk_op = op.pk_diag 
+	 INNER JOIN BD_CNDIAG diag
+                    ON opt.pk_diag_pre = diag.PK_CNDIAG
+	 inner join bd_defdoc sex 
+	    on pi.dt_sex = sex.code 
+	   and sex.code_defdoclist = '000000' 
+	  left outer join bd_defdoc anae 
+	    on opt.dt_anae = anae.code 
+	   and anae.code_defdoclist = '030300'
+	 LEFT JOIN bd_defdoc oplevel on oplevel.code = opt.dt_oplevel AND oplevel.code_defdoclist = '030305' 
+	 LEFT JOIN bd_ou_dept deptanae on deptanae.pk_dept=opt.pk_dept_anae
+	 LEFT JOIN bd_ou_dept deptexec on deptexec.pk_dept=ord.pk_dept_exec
+     <where>
+           ord.del_flag='0'  
+           and opt.eu_status &lt;=1  
+	        <if test="datePlanBegin != null" >
+		 	   and opt.date_plan  &gt;=to_date(#{datePlanBegin,jdbcType=VARCHAR},'yyyy-mm-dd HH24:mi:ss')
+            </if>
+		    <if test="datePlanEnd != null" >
+		 	   and opt.date_plan &lt;=to_date(#{datePlanEnd,jdbcType=VARCHAR},'yyyy-mm-dd HH24:mi:ss')
+            </if>
+		    <if test="bedNo !=null">
+				 and pv.bed_no = #{bedNo,jdbcType=VARCHAR}  
+			</if>
+		    <if test="namePi !=null">
+				 and pv.name_pi like '%' ||  #{namePi,jdbcType=VARCHAR}  || '%'  
+			</if>
+			<if test="nameEmpPhyOp !=null">
+				  and opt.name_emp_phy_op like  '%' ||  #{nameEmpPhyOp,jdbcType=VARCHAR} || '%'    
+			</if>
+		    <if test="euOptype !=null">
+				  and opt.eu_optype = #{euOptype,jdbcType=VARCHAR}  
+			</if>
+		    <if test="flagHead !=null">
+				 and opt.flag_head= #{flagHead,jdbcType=VARCHAR}  
+			</if>
+			<!--
+		    <if test="pkDeptExec !=null">
+				 and ord.pk_dept_exec= #{pkDeptExec,jdbcType=VARCHAR}
+			</if>
+		 	<if test="pkOrg !=null">
+			 	and ord.pk_org_exec= #{pkOrg,jdbcType=VARCHAR}
+		 	</if>
+		 	-->
+		 <if test="pkDeptList !=null">
+			 and ord.pk_dept in
+			 <foreach item="item" index="index" collection="pkDeptList" open="(" separator="," close=")">
+				 #{item, jdbcType=VARCHAR}
+			 </foreach>
+		 </if>
+
+		    <if test="opName !=null">
+				 and op.diagname like  '%' || #{opName,jdbcType=VARCHAR} || '%'    
+			</if>
+	 </where> 
+	 order by  opt.date_plan,opt.eu_optype desc  
+  </select>
+  
+  <select id="qryOpApply" resultType="DynaBean" parameterType="java.util.Map">
+  SELECT 
+  	ord.CODE_ORDTYPE,
+  	pi.CODE_PI,
+  	pi.NAME_PI,
+  	pi.CODE_IP,
+  	case 
+		when diag.diagname is null then apply.desc_op 
+		else diag.diagname  
+	end DIAGNAME,
+	conter.PK_DEPT,
+	conter.PK_DEPT_NS,
+	ord.CODE_APPLY, 
+ 	conter.BED_NO,
+  	apply.*   
+  FROM CN_ORDER ord 
+INNER JOIN PV_ENCOUNTER conter
+ON conter.PK_ORG = #{pkOrg,jdbcType=VARCHAR}
+ AND conter.PK_DEPT = #{pkDept,jdbcType=VARCHAR}
+ <if test="bedNo!=null">
+  AND conter.BED_NO LIKE '%' || #{bedNo,jdbcType=VARCHAR} || '%'  
+ </if>
+ INNER JOIN CN_OP_APPLY apply
+ ON ord.PK_CNORD = apply.PK_CNORD 
+<if test="dateStartBegin!=null">
+ AND apply.DATE_APPLY &gt;= to_date(#{dateStartBegin,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+</if>
+<if test="dateStartEnd!=null">
+ AND apply.DATE_APPLY &lt;= to_date(#{dateStartEnd,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+</if>
+<if test="datePlanBegin!=null">
+ AND apply.DATE_PLAN &gt;= to_date(#{datePlanBegin,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+</if>
+<if test="datePlanEnd!=null">
+ AND apply.DATE_PLAN &lt;= to_date(#{datePlanEnd,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+</if>
+<if test="ticketno!=null">
+ AND apply.TICKETNO = #{ticketno,jdbcType=VARCHAR} 
+ </if>
+ <if test="euStatus!=null">
+ AND apply.EU_STATUS = #{euStatus,jdbcType=VARCHAR} 
+ </if>
+<if test="codeApply!=null">
+ AND ord.CODE_APPLY =#{codeApply,jdbcType=VARCHAR} 
+</if>
+<if test="pkDeptNs!=null">
+ AND ord.PK_DEPT_NS  = #{pkDeptNs,jdbcType=VARCHAR}
+</if>
+INNER JOIN PI_MASTER pi
+ ON  pi.PK_PI = conter.PK_PI 
+ <if test="codeIp!=null">
+ AND pi.CODE_IP = #{codeIp,jdbcType=VARCHAR} 
+ </if>
+ <if test="namePi!=null">
+ 	and pi.name_pi like '%' || #{namePi,jdbcType=VARCHAR} || '%'
+ </if>
+ LEFT JOIN BD_TERM_DIAG diag ON diag.PK_DIAG = apply.PK_OP
+ WHERE 
+	 conter.pk_pi = ord.pk_pi AND conter.DEL_FLAG = '0' 
+	 AND ord.pk_pi NOT IN( SELECT pk_pi FROM CN_ORDER WHERE CODE_ORDTYPE = '1102' and pk_pv=conter.pk_pv) 
+  </select>
+  <select id="qryOpOrderMsg" parameterType="java.util.List"  resultType="DynaBean">
+  	select * from cn_order 
+  		where pk_cnord in 
+  		<foreach collection="list" index="index" item="pkCnord" open="(" separator="," close=")" >
+			       #{pkCnord}
+		</foreach>
+  </select>
+  
+  <select id="getInfectList" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOpInfect" >
+    select op.*
+    from cn_op_infect op 
+    where 
+  	<foreach collection="pkCnordList" item="pkOp" open="" close="" separator="OR">  
+           op.pk_cnord = #{pkOp,jdbcType=VARCHAR}
+	</foreach>  
+  </select>
+  
+  <delete id="removeOpInfect" parameterType="java.lang.String" >
+  	delete cn_op_infect
+  	where pk_cnord = #{pkCnord,jdbcType=VARCHAR}  
+  </delete>
+  
+  <select id="qryCnOpInfect" parameterType="java.lang.String"   resultType="DynaBean">
+  	select 
+	  infect.name as infect_name,
+		infresult.name as infresult_name
+	from cn_op_infect inf
+	LEFT JOIN bd_defdoc infect on infect.code = inf.dt_infect AND infect.code_defdoclist = '060606' 
+	LEFT JOIN bd_defdoc infresult on infresult.code = inf.dt_infresult AND infresult.code_defdoclist = '060607' 
+	where  inf.pk_cnord =#{pkCnord}
+  </select>
+</mapper>

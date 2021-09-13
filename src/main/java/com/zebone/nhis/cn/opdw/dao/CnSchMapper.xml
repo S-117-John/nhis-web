@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.opdw.dao.CnSchMapper" >
+    <select id = "qryClinicSchList"  parameterType="java.util.Map" resultType="DynaBean">
+		 select sch.pk_sch,
+		 		emp.PK_EMP,
+		 		emp.NAME_EMP,
+		 		dept.PK_DEPT,
+		       sch.pk_dateslot,
+		       def.NAME_DATESLOT,
+		       dept.name_dept,
+		       tk.begin_time,
+		       tk.end_time,res.PK_DEPT res_pk_dept,
+ res.EU_RESTYPE,
+		       TK.ticketno,res.pk_schres,res.name res_name
+		 from sch_sch sch
+		       inner join sch_ticket tk on sch.pk_sch=tk.pk_sch
+		       inner join bd_ou_dept dept on sch.pk_dept=dept.pk_dept
+		        inner join  sch_resource res on sch.PK_SCHRES = res.PK_SCHRES
+			   inner join BD_OU_EMPLOYEE emp on res.PK_EMP = emp.PK_EMP
+		       INNER JOIN BD_CODE_DATESLOT def on sch.pk_dateslot = def.pk_dateslot
+		 where  to_char(sch.date_work,'yyyy-MM-dd') = #{dateWork,jdbcType=VARCHAR}
+		       and sch.eu_status='8'
+               and sch.flag_stop='0'
+               and tk.flag_appt='1'
+               and tk.flag_used='0'
+               and tk.flag_stop='0'
+		order by dept.name_dept,def.SORTNO,tk.begin_time
+    </select>
+
+    <select id = "qryClinicSchListTic"  parameterType="java.util.Map" resultType="DynaBean">
+		select sch.pk_sch,
+		emp.PK_EMP,
+		 		emp.NAME_EMP,
+		 		dept.PK_DEPT,
+		sch.pk_dateslot,
+		dept.name_dept,
+		tk.begin_time,
+		tk.end_time,
+		def.NAME_DATESLOT,
+		tk.ticketno,res.PK_DEPT res_pk_dept,
+ res.EU_RESTYPE,
+		sum(case when tk.flag_used='1' then 0 else 1 end) cnt,
+		res.pk_schres,res.name res_name
+		from sch_sch sch
+		inner join sch_ticket tk on sch.pk_sch=tk.pk_sch
+		inner join bd_ou_dept dept on sch.pk_dept=dept.pk_dept
+		left join BD_CODE_DATESLOT def on sch.pk_dateslot = def.pk_dateslot
+		inner join  sch_resource res on sch.PK_SCHRES = res.PK_SCHRES
+			   inner join BD_OU_EMPLOYEE emp on res.PK_EMP = emp.PK_EMP
+		where  to_char(sch.date_work,'yyyy-MM-dd') = #{dateWork,jdbcType=VARCHAR}
+		and sch.eu_status='8'
+		and sch.flag_stop='0'
+		and tk.flag_appt='1'
+		and tk.flag_used='0'
+		and tk.flag_stop='0'
+		and tk.dt_apptype='0'
+		group by sch.pk_sch,
+		sch.pk_dateslot,
+		dept.name_dept,
+		tk.begin_time,
+		tk.end_time,res.PK_DEPT,
+ res.EU_RESTYPE,
+		def.NAME_DATESLOT,
+		emp.PK_EMP,
+		 		emp.NAME_EMP,
+		 		dept.PK_DEPT,
+        tk.ticketno,res.pk_schres,res.name
+		order by dept.name_dept,tk.begin_time
+	</select>
+
+</mapper>

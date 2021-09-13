@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.opdw.dao.CnOpHerbPresMapper" >
+
+	<select id="getHerbPres" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.cn.ipdw.CnPrescription">
+		  select distinct pres.*,pres.note,ord.ords as herbords, cg.flag_acc, cg.flag_settle
+		  		 --(case when temp.pk_temp_cgop is null then '0' else '1' end) flagBarPrint
+		  from cn_prescription pres
+		       inner join cn_order ord on pres.pk_pres=ord.pk_pres
+		       inner join bl_op_dt cg on pres.pk_pres=cg.pk_pres
+		       --left outer join temp_bl_op_dt temp on (temp.pk_pres=pres.pk_pres and temp.del_flag='0')
+		 where  pres.dt_prestype='02' and pres.pk_pv=#{pkPv,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getHerbPresDt" parameterType="java.lang.String" resultType="com.zebone.nhis.cn.opdw.vo.CnPresDt">
+		select herb.sort_no, herb.pk_pd,pd.name,  herb.quan,herb.price,herb.pk_unit,
+		       unit.name unit,herb.note_use,cg.flag_acc, cg.flag_settle,cg.ts ,
+		          to_char(cg.ts,'yyyy-mm-dd hh24:mi:ss') as tstr
+		  from cn_order ord
+		       inner join cn_ord_herb herb on ord.pk_cnord=herb.pk_cnord
+		       inner join bd_pd pd on herb.pk_pd=pd.pk_pd
+		       inner join bd_unit unit on herb.pk_unit=unit.pk_unit
+		       inner join bl_op_dt cg on herb.pk_cnord=cg.pk_cnord and herb.pk_pd=cg.pk_pd
+		 where ord.pk_pres=#{pkPres,jdbcType=VARCHAR} and cg.ts IN (SELECT min(ts) from bl_op_dt bd WHERE herb.pk_cnord = bd.pk_cnord and bd.pk_cgop_back IS NULL 
+			   AND herb.pk_pd = bd.pk_pd)
+			   <if test="pkPdList!=null and pkPdList.size>0">
+			   	and pd.pk_pd not in
+			   	<foreach item="pkPd" collection="pkPdList" open="(" separator="," close=")">
+			        #{pkPd,jdbcType=VARCHAR}
+			    </foreach>
+			   </if>
+	</select>
+	
+	<select id="getOrdSet" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.cn.ipdw.BdOrdSet">		
+		 select tmp.* from bd_ord_set tmp
+		 where ((tmp.eu_right=0 and tmp.pk_org=#{pkOrg,jdbcType=VARCHAR}) or  
+		        (tmp.eu_right=1 and tmp.pk_dept=#{pkDept,jdbcType=VARCHAR}) or  
+		        (tmp.eu_right=2 and tmp.pk_emp=#{pkEmp,jdbcType=VARCHAR})) and 
+		       exists (select 1 from bd_ord_set_dt dt 
+		                     inner join bd_pd pd on dt.pk_ord=pd.pk_pd
+		                     inner join pd_stock sto on pd.pk_pd=sto.pk_pd
+		               where tmp.pk_ordset=dt.pk_ordset and 
+		                     pd.eu_drugtype=2 and
+		                     pd.flag_stop=0 and
+		                     sto.pk_dept=#{pkStore,jdbcType=VARCHAR} and  
+		                     sto.flag_stop=0)		
+	</select>
+	
+	<select id="getOrdSetDt" parameterType="java.util.Map" resultType="com.zebone.nhis.cn.opdw.vo.HerbOrdSetDt">
+		 select dt.pk_ordsetdt,dt.pk_ord,pd.name, dt.dosage, dt.pk_unit_dos,dt.days,dt.supply_note from bd_ord_set_dt dt
+		       inner join bd_pd pd on dt.pk_ord=pd.pk_pd
+		 where dt.pk_ordset=#{pkOrdset,jdbcType=VARCHAR} and
+		       pd.eu_drugtype=2 and
+		       pd.flag_stop=0 and
+		       exists (select 1 from pd_stock sto 
+		                where pd.pk_pd=sto.pk_pd and
+		                      sto.flag_stop=0 and
+		                      sto.pk_dept=#{pkDept,jdbcType=VARCHAR} and sto.quan_min-sto.quan_prep>0)
+	</select>
+	<!-- 根据就诊主键查询患者就诊_临床综合诊断信息列表 -->
+	<select id="getPvDiagListByPkPv" resultType="com.zebone.nhis.common.module.pv.PvDiag">
+		select d.*, t.DIAGNAME as nameDiag
+		from PV_DIAG d
+		left join BD_TERM_DIAG t on d.pk_diag = t.pk_diag
+		where d.del_flag = '0' and d.flag_maj = '1' and d.pk_pv = #{pkPv,jdbcType=VARCHAR}
+  		order by d.date_diag
+	</select>
+	
+	<!-- Oracle版本 -->
+	<select id="getCopyPresOracle" parameterType="com.zebone.nhis.cn.opdw.vo.PiPresInfo" resultType="com.zebone.nhis.cn.opdw.vo.PiPresInfo">
+		  select pres.pk_pres,pv.date_begin,pv.eu_pvtype,pres.pk_dept,
+		       dept.name_dept,pres.name_emp_ord, prestype.name prestype,pres.pres_no,pres.dt_prestype 
+		  from cn_prescription pres
+		       inner join bd_ou_dept dept on pres.pk_dept=dept.pk_dept
+		       inner join bd_defdoc prestype on pres.dt_prestype=prestype.code and prestype.code_defdoclist='060101'
+		       inner join pv_encounter pv on pres.pk_pv=pv.pk_pv
+		 where 1=1
+		    and pres.dt_prestype='02'
+			<if test="pkPi != null and pkPi != ''">
+				and pres.pk_pi= #{pkPi,jdbcType=VARCHAR}
+			</if>
+			<if test="dateBegin != null and dateBegin != ''">
+				and pv.date_begin &gt;#{dateBegin,jdbcType=DATE}
+			</if>
+			<if test="dateEnd != null and dateEnd != ''">
+				and pv.date_begin &lt;=#{dateEnd,jdbcType=DATE}+1
+			</if>
+	</select>
+	<!-- Sqlserver版本 -->
+	<select id="getCopyPres" parameterType="com.zebone.nhis.cn.opdw.vo.PiPresInfo" resultType="com.zebone.nhis.cn.opdw.vo.PiPresInfo">
+		  select pres.pk_pres,pv.date_begin,pv.eu_pvtype,pres.pk_dept,
+		       dept.name_dept,pres.name_emp_ord, prestype.name prestype,pres.pres_no,pres.dt_prestype 
+		  from cn_prescription pres
+		       inner join bd_ou_dept dept on pres.pk_dept=dept.pk_dept
+		       inner join bd_defdoc prestype on pres.dt_prestype=prestype.code and prestype.code_defdoclist='060101'
+		       inner join pv_encounter pv on pres.pk_pv=pv.pk_pv
+		 where 1=1
+		     and  pres.dt_prestype='02'
+			<if test="pkPi != null and pkPi != ''">
+				and pres.pk_pi= #{pkPi,jdbcType=VARCHAR}
+			</if>
+			<if test="dateBegin != null and dateBegin != ''">
+				and pv.date_begin &gt;#{dateBegin,jdbcType=DATE}
+			</if>
+			<if test="dateEnd != null and dateEnd != ''">
+				and pv.date_begin &lt;=DATEADD(day,1,#{dateEnd,jdbcType=DATE})
+			</if>
+	</select>
+	
+	<select id="getCopyPresDt" parameterType="java.lang.String" resultType="com.zebone.nhis.cn.opdw.vo.HerbPresDt">
+		select
+		 herb.*,
+		 pd.name,
+		 cg.flag_acc,
+		 cg.flag_settle,
+		  cg.ts,
+		  cg.spec,
+		  to_char(cg.ts, 'yyyy-mm-dd hh24:mi:ss') as tstr,
+		  stk.quan_min / con.pack_size stock_quan
+		  from cn_order ord
+		    inner join cn_ord_herb herb on ord.pk_cnord = herb.pk_cnord
+		    inner join bd_pd pd on herb.pk_pd = pd.pk_pd
+		    inner join bd_unit unit on herb.pk_unit = unit.pk_unit
+		    inner join bl_op_dt cg on herb.pk_cnord = cg.pk_cnord and herb.pk_pd = cg.pk_pd
+		    inner join bd_pd_store pds
+		        on pds.pk_pd=pd.pk_pd
+		       and pds.flag_stop = '0'
+		       AND pds.PK_PDCONVERT IS NOT NULL
+		       and nvl(pds.del_flag,'0') = '0'
+		      and pds.pk_dept = #{pkDept,jdbcType=VARCHAR}
+		    inner join BD_PD_CONVERT con
+		    on con.PK_PDCONVERT=pds.PK_PDCONVERT
+		    inner join (select sum(quan_min - quan_prep) quan_min, pk_pd, price
+		                     from pd_stock
+		                    where del_flag = '0' and pk_dept = #{pkDept,jdbcType=VARCHAR}
+		                    group by pk_pd, price, pk_org, pk_dept) stk
+		    on pds.pk_pd = stk.pk_pd
+		  where ord.pk_pres = #{pkPres,jdbcType=VARCHAR}
+		        and pd.flag_stop=0
+		        and exists (select 1 from pd_stock sto where pd.pk_pd=sto.pk_pd and sto.flag_stop=0 and sto.pk_dept= #{pkDept,jdbcType=VARCHAR})
+	</select>
+	
+</mapper>

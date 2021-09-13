@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.pub.dao.DeDrugExtPubMapper">
+<select id="getPdStorePrice" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdOutDtParamVo">
+	 select sto.price_cost,sto.price,sto.batch_no,sto.date_expire,sto.pk_pd,pd.name,pd.pack_size as pack_size_pd   
+	 from pd_stock sto 
+	  inner join bd_pd pd on pd.pk_pd = sto.pk_pd 
+	 where sto.pk_store = #{pkStore,jdbcType=CHAR}  
+	 and sto.pk_pd in  
+	 <foreach collection="pdlist" index="index" item="item" open="(" separator="," close=")"> 
+	    		#{item} 
+	</foreach> 
+</select>
+<select id="getOrderInfo" parameterType="java.util.List" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOrder">
+	 select pk_cnord,pk_pi,pk_org,pk_dept,pk_emp_ord,name_emp_ord,infant_no,pk_dept_ns
+	 from cn_order 
+	 where pk_cnord in  
+	 <foreach collection="list" index="index" item="item" open="(" separator="," close=")"> 
+	    		#{item} 
+	</foreach> 
+</select>
+<select id="getPdInfo" parameterType="java.util.List" resultType="com.zebone.nhis.common.module.scm.pub.BdPd">
+	 select name 
+	 from bd_pd
+	 where pk_pd in  
+	 <foreach collection="list" index="index" item="item" open="(" separator="," close=")"> 
+	    		#{item} 
+	</foreach> 
+</select>
+
+<select id="qryBoilBl" parameterType="java.util.List" resultType="com.zebone.nhis.bl.pub.vo.BlPubParamVo">
+	SELECT
+	  ord.pk_cnord,
+	  pres.pk_pres,
+	  ord.pk_pv,
+	  ord.pk_pi,
+	  ord.eu_pvtype,
+	  ord.pk_org       pk_org_app,
+	  ord.pk_dept      pk_dept_app,
+	  ord.pk_emp_ord   pk_emp_app,
+	  ord.name_emp_ord name_emp_app,
+	  fried_num        quan_cg
+	FROM cn_order ord INNER JOIN cn_prescription pres ON pres.pk_pres = ord.pk_pres
+	WHERE pres.eu_boil &gt; 0 AND FRIED_NUM &gt; 0
+	      AND pres.pk_pres in
+	      <foreach collection="list" index="index" item="item" open="(" separator="," close=")"> 
+	    		#{item} 
+	</foreach> 
+</select>
+</mapper>

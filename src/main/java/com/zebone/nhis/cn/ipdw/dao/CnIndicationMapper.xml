@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.CnIndicationMapper">
+    <select id="qryPvCnOrder" resultType="DynaBean" parameterType="java.util.Map">
+        select ord.*
+        from cn_order ord
+                     inner join pv_encounter pv on pv.PK_PV = ord.PK_PV
+                     left join BD_PD_INDPD indpd on ord.PK_ORD = indpd.PK_PD and indpd.DEL_FLAG = '0'
+                     left join bd_pd_ind ind on ind.PK_PDIND = indpd.PK_PDIND and ind.DEL_FLAG = '0'
+                     left join bd_indtype ty on ind.CODE_INDTYPE = ty.CODE_TYPE
+                     left join bd_pd_indhp indhp1
+                on indhp1.PK_INDTYPE = ty.PK_INDTYPE and indhp1.PK_HP = pv.PK_INSU and indhp1.DEL_FLAG = '0'
+        where ord.PK_PV = #{pkPv,jdbcType=VARCHAR}
+                and EU_STATUS_ORD in ('1', '2', '3', '4')
+                and(ord.DESC_FIT is not null
+                or ind.DESC_IND is not null)
+    </select>
+</mapper>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.task.bl.dao.BlSyxTaskMapper">
+	<select id="qryPvList" resultType="DynaBean">
+		select pi.code_pi,pi.pk_pi,pv.pk_pv,pv.pk_dept,pv.pk_dept_ns from PV_ENCOUNTER pv 
+		  inner join PI_MASTER pi on pv.pk_pi = pi.pk_pi 
+		where pi.code_pi in 
+		<foreach collection="pkList" item="pkList" index="no" open="("
+                separator="," close=")">
+                #{pkList}
+        </foreach> 
+	</select>
+	
+	<select id="qryDeptList" resultType="DynaBean">
+		select old_id,pk_dept,pk_org from bd_ou_dept dept where dept.old_id in 
+		<foreach collection="pkList" item="pkList" index="no" open="("
+                separator="," close=")">
+                #{pkList}
+        </foreach> 
+	</select>
+	
+	<select id="qryItemList" resultType="DynaBean">
+		select code as code_item,pk_item,pk_itemcate from bd_item where code in 
+		<foreach collection="pkList" item="pkList" index="no" open="("
+                separator="," close=")">
+                #{pkList}
+        </foreach> 
+	</select>
+	
+	<select id="qryEmpList" resultType="DynaBean">
+		select emp.code_emp,emp.pk_emp,emp.name_emp,empjob.pk_dept from bd_ou_employee emp
+  			inner join bd_ou_empjob empjob on emp.pk_emp = empjob.pk_emp where emp.code_emp in 
+		<foreach collection="pkList" item="pkList" index="no" open="("
+                separator="," close=")">
+                #{pkList}
+        </foreach> 
+	</select>
+
+</mapper>

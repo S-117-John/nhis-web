@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.platform.send.impl.zb.dao.CnSendMapper" >
+ <select id="qryRisInfo" parameterType="java.util.Map" resultType="DynaBean">
+  	SELECT distinct
+  		ord.code_ordtype,co.pk_pv,co.code_apply,co.ordsn,co.ordsn_parent,co.flag_emer ,co.pk_emp_input,
+  		co.pk_emp_ord,co.name_emp_ord ,co.date_start,co.code_ord , co.pk_dept, co.name_emp_input,
+ 		co.name_ord, co.note_ord,co.pk_dept_exec,bd.code_emp,
+ 		<!-- pd.sort_no,pd.pk_diag,pd.dt_diagtype,pd.desc_diag, pd.flag_maj,pd.PK_EMP_DIAG,pd.name_emp_diag,pd.date_diag , -->
+ 		cra.note_dise,cra.dt_ristype,
+  		cra.desc_body,cra.purpose,ris_notice,cra.eu_status,cra.name_diag
+ 	from CN_RIS_APPLY cra
+ 		left join CN_ORDER co on cra.PK_CNORD=co.PK_CNORD
+ 		LEFT JOIN BD_OU_EMPLOYEE bd on BD.pk_emp=co.pk_emp_ord
+ 		left join cn_diag cd on cd.pk_pv=co.pk_pv
+ 		LEFT JOIN bd_ord ord on ord.pk_ord=co.pk_ord and ord.del_flag='0'
+ 		<!-- INNER JOIN (select * from (SELECT * FROM PV_DIAG WHERE pk_pv = #{pkPv,jdbcType=VARCHAR}) where rownum=1) pd  ON pd.PK_PV = co.PK_PV -->
+  	where co.pk_pv=#{pkPv,jdbcType=VARCHAR} 
+  		and ord.code_ordtype in ('0201','0202','0203','0204','0205','0206','0207')<!--取分超声，放射，内镜 ,心电 -->
+  	<if test="'out'.equals(type) and type!=null">
+  		 AND co.FLAG_SIGN = '0' and cra.eu_status='1' and co.flag_bl='0'<!-- 已经记费的项目，不在重复发送 -->
+  	</if>
+  	<if test="type==null">
+  		AND co.EU_STATUS_ORD = '1'
+  		and cra.eu_status='0'
+  	</if>
+  </select>
+  
+  <select id="qryLisInfo" parameterType="java.util.Map" resultType="DynaBean">
+  	SELECT distinct
+  		co.code_apply,co.pk_pv,co.ordsn,co.ordsn_parent,co.flag_emer ,co.pk_emp_input,co.name_emp_input,
+ 		co.pk_emp_ord,co.name_emp_ord ,co.date_start,co.code_ord , co.pk_dept,co.name_ord,
+  		co.note_ord,co.pk_dept_exec,doc.name as bbname<!-- cd.pk_emp_diag CNEMP, -->
+  		<!-- pd.sort_no,pd.pk_diag,pd.dt_diagtype,pd.desc_diag,pd.flag_maj,
+  		pd.PK_EMP_DIAG CNEMP,pd.name_emp_diag,pd.date_diag -->
+	from CN_lab_APPLY cra
+		inner join CN_ORDER co on cra.PK_CNORD=co.PK_CNORD
+		INNER JOIN bd_ord_lab ord on ord.pk_ord = co.pk_ord and ord.del_flag = '0'
+        INNER JOIN bd_defdoc doc on ord.dt_samptype = doc.code and doc.CODE_DEFDOCLIST = '030200' 
+		<!-- inner join cn_diag cd on cd.pk_pv=co.pk_pv -->
+<!-- 		INNER JOIN (select * from (SELECT * FROM PV_DIAG WHERE pk_pv = #{pkPv,jdbcType=VARCHAR}) where rownum=1) pd  ON pd.PK_PV = co.PK_PV
+ --> 	where co.pk_pv=#{pkPv,jdbcType=VARCHAR}
+ 	<if test="'out'.equals(type) and type!=null">
+ 		AND co.FLAG_SIGN = '0'
+ 		and co.flag_bl='0'<!-- 已经记费的项目，不在重复发送 -->
+ 		and cra.eu_status='1'
+ 	</if>
+ 	<if test="type==null">
+ 		AND co.EU_STATUS_ORD = '1'
+ 		and cra.eu_status='0'
+ 	</if>
+  </select>
+  
+  <select id="qryRisAgainInfo" parameterType="java.util.Map" resultType="DynaBean">
+  	SELECT distinct
+  		ord.code_ordtype,co.pk_pv,co.code_apply,co.ordsn,co.ordsn_parent,co.flag_emer ,co.pk_emp_input,
+  		co.pk_emp_ord,co.name_emp_ord ,co.date_start,co.code_ord , co.pk_dept, co.name_emp_input,
+ 		co.name_ord, co.note_ord,co.pk_dept_exec,
+ 		<!-- pd.sort_no,pd.pk_diag,pd.dt_diagtype,pd.desc_diag, pd.flag_maj,pd.PK_EMP_DIAG,pd.name_emp_diag,pd.date_diag , -->
+ 		cra.note_dise,cra.dt_ristype,
+  		cra.desc_body,cra.purpose,ris_notice,cra.eu_status,cra.name_diag
+ 	from CN_RIS_APPLY cra
+ 		left join CN_ORDER co on cra.PK_CNORD=co.PK_CNORD
+ 		left join cn_diag cd on cd.pk_pv=co.pk_pv
+ 		LEFT JOIN bd_ord ord on ord.pk_ord=co.pk_ord and ord.del_flag='0'
+ 		<!-- INNER JOIN (select * from (SELECT * FROM PV_DIAG WHERE pk_pv = #{pkPv,jdbcType=VARCHAR}) where rownum=1) pd  ON pd.PK_PV = co.PK_PV -->
+  	where co.pk_pv=#{pkPv,jdbcType=VARCHAR} 
+  		and ord.code_ordtype in ('0201','0205','0207','0206','0203','0202','0204')<!--取分超声，放射，内镜  -->
+  </select>
+  
+  <select id="qryLisAgainInfo" parameterType="java.util.Map" resultType="DynaBean">
+   	SELECT distinct
+  		co.pk_pv,co.code_apply,co.ordsn,co.ordsn_parent,co.flag_emer ,co.pk_emp_input,co.name_emp_input,
+ 		co.pk_emp_ord,co.name_emp_ord ,co.date_start,co.code_ord , co.pk_dept,co.name_ord,
+  		co.note_ord,co.pk_dept_exec,doc.name as bbnamecd.pk_emp_diag CNEMP,
+  		pd.sort_no,pd.pk_diag,pd.dt_diagtype,pd.desc_diag,pd.flag_maj,
+  		pd.PK_EMP_DIAG CNEMP,pd.name_emp_diag,pd.date_diag
+	from CN_lab_APPLY cra
+		inner join CN_ORDER co on cra.PK_CNORD=co.PK_CNORD
+		INNER JOIN bd_ord_lab ord on ord.pk_ord = co.pk_ord and ord.del_flag = '0'
+        INNER JOIN bd_defdoc doc on ord.dt_samptype = doc.code and doc.CODE_DEFDOCLIST = '030200' 
+		inner join cn_diag cd on cd.pk_pv=co.pk_pv
+		INNER JOIN (select * from (SELECT * FROM PV_DIAG WHERE pk_pv = #{pkPv,jdbcType=VARCHAR}) where rownum=1) pd  ON pd.PK_PV = co.PK_PV
+ 	where co.pk_pv=#{pkPv,jdbcType=VARCHAR} 
+  </select>
+  
+  <select id="qryLisOrderRLInfo" resultType="DynaBean">
+      SELECT distinct(co.pk_cnord),co.code_supply,co.pk_dept_exec,co.pk_pv,co.price_cg,co.code_apply,co.eu_pvtype,co.ordsn,co.desc_ord,co.code_ord,
+	  co.code_ordtype,co.name_ord,co.pk_pres,co.ordsn_parent,co.dosage,co.pk_unit_dos,co.code_freq,co.flag_emer,
+	  co.days,co.date_start,co.pk_dept,co.flag_durg,co.quan,co.ords,co.eu_st,pm.code_pi,bd.code_emp,co.name_emp_ord
+	   FROM cn_order co
+	  LEFT JOIN pi_master pm ON pm.pk_pi = co.pk_pi 
+	  INNER JOIN BL_OP_DT dt ON dt.pk_cnord = co.pk_cnord 
+	  LEFT JOIN BD_OU_EMPLOYEE bd on BD.pk_emp=co.pk_emp_ord 
+	  where 1=1
+	  <if test="pkCnords != null  and  pkCnords != ''">
+	  and co.pk_cnord in 
+	      <foreach collection="pkCnords" index="index" item="id" open="(" close=")" separator=",">
+	         #{id}
+	      </foreach>
+	  </if>
+	  <if test="pkCgops != null  and  pkCgops != ''">
+	   and dt.pk_cgop in
+	      <foreach collection="pkCgops" index="index" item="id" open="(" close=")" separator=",">
+	         #{id}
+	      </foreach>
+	  </if>
+  </select>
+  
+   <select id="qryLisOrderIpInfo" parameterType="java.util.Map" resultType="DynaBean">
+      SELECT co.pk_dept_exec, co.pk_pv, co.price_cg, co.code_apply, co.eu_pvtype, co.ordsn, co.desc_ord, co.code_ord,
+	  co.code_ordtype,co.name_ord, pm.code_pi 
+	  FROM cn_order co 
+	  LEFT JOIN pi_master pm ON pm.pk_pi = co.pk_pi
+	  where 1=1
+	  <if test="pkCnords != null  and  pkCnords != ''">
+		    and co.pk_cnord  in   
+		    <foreach collection="pkCnords" index="index" item="id" open="(" close=")" separator=",">
+	         #{id}
+	      </foreach>
+	  </if>
+  </select>
+  		
+</mapper>

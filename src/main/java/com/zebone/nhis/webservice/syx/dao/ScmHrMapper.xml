@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.ScmHrMapper">
+	<select id="qryDrugSpacePosi" parameterType="java.util.Map" resultType="com.zebone.nhis.webservice.syx.vo.scmhr.ResSubject">
+		select
+		  dept.code_dept                 dispensary,
+		  pd.code                        drug_code,
+		  ps.posi_no                     locationinfo,
+		  ''                          as batchid,
+		  stk.batch_no                   batchno,
+		  null                        as producedate,
+		  stk.date_expire                disableddate,
+		  stk.quan_min / ps.pack_size as quantity
+		from pd_stock stk
+		  inner join bd_pd_store ps on stk.pk_pd = ps.pk_pd and stk.pk_dept = ps.pk_dept
+		  inner join bd_ou_dept dept on stk.pk_dept = dept.pk_dept
+		  inner join bd_pd pd on pd.pk_pd = stk.pk_pd
+		where 1=1 
+		<if test='dispensary!=null and dispensary!=""'>
+			and dept.code_dept = #{dispensary,jdbcType=VARCHAR} 
+		</if>
+		<if test='drugCode!=null and drugCode!=""'>
+			and pd.code = #{drugCode,jdbcType=VARCHAR}
+		</if>
+		<if test='locationinfo!=null and locationinfo!=""'>
+			and ps.posi_no like  '%' || #{locationinfo,jdbcType=VARCHAR} || '%'
+		</if>
+	</select>
+	
+	<select id="qryDrugWindows" parameterType="java.util.Map" resultType="com.zebone.nhis.webservice.syx.vo.scmhr.ResSubject">
+		select
+		  win.code       opwinid_code,
+		  dept.code_dept dispensary,
+		  win.name       opwinid_name
+		from bd_dept_unit win
+		  inner join bd_ou_dept dept on win.pk_dept = dept.pk_dept
+		where win.eu_unittype = '1'
+		      and win.eu_butype = '1'
+		      <!-- and dept.code_dept = #{opwinidCode,jdbcType=VARCHAR} -->
+	</select>
+	
+	<select id="qryDataPresInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.webservice.syx.vo.scmhr.DataPrescription">
+		SELECT
+		  pres.pk_presocc,
+		  pres.pres_no                            id,
+		  pv.code_pv                              register_id,
+		  pv.eu_pvtype                            code_pvtype,
+		  pi.code_pi                              code_pati,
+		  pi.name_pi                              name,
+		  pv.age_pv                               age,
+		  pi.tel_no                               tele,
+		  pi.email                                email,
+		  dept.code_dept                          department_code,
+		  dept.name_dept                          department_name,
+		  pres.name_emp_pres                      doctor_name,
+		  pres.NAME_EMP_PRES                      prescription_name,
+		  to_char(pres.date_pres,'yyyymmddhh24miss')                          prescribe_time,
+		  pres.name_emp_pres                      creator_name,
+		  to_char(pres.create_time ,'yyyymmddhh24miss')                       creation_time,
+		  ''       AS                             value_sn,
+		  ''       AS                             valuer_name,
+		  ''       AS                             valuation_time,
+		  ''       AS                             price,
+		  ''       AS                             quantity,
+		  ''       AS                             price_total,
+		  ''       AS                             date_de,
+		  ''       AS                             eu_herbtype,
+		  hp.name                                 payment_type,
+		  ''       AS                             payment_status,
+		  ''       AS                             device_id,
+		  ''       AS                             process_status,
+		  cnpre.note                              description,
+		  to_char(pi.birth_date,'yyyyMMdd')                           date_of_birth,
+		  indiag.desc_diag                           rcpt_info,
+		  CASE WHEN pi.dt_sex = '02'
+		    THEN '男'
+		  ELSE '女' END                            sex,
+		  CASE WHEN pv.flag_spec = '1'
+		    THEN '01'
+		  ELSE '00' END                           patient_type,
+		  (SELECT sum(dt.amount_cg - dt.amount_ret)
+		   FROM ex_pres_occ_dt dt
+		   WHERE dt.pk_presocc = pres.pk_presocc) costs,
+		  (SELECT sum(dt.amount_cg - dt.amount_ret)
+		   FROM ex_pres_occ_dt dt
+		   WHERE dt.pk_presocc = pres.pk_presocc) payments,
+		  pharm.code_dept                         dispensary,
+		  pi.code_op                              pv_carno,
+		  ''       AS                             invoice_no,
+		  pi.id_no AS                             presc_identity,
+		  ''       AS                             presc_attr,
+		  0        AS                             dispense_pri,
+		  1        AS                             repetition,
+		  hp.code                                 code_charge_type,
+		  hp.NAME                                 name_charge_type
+		FROM ex_pres_occ pres
+		  inner join bl_settle bl on bl.pk_settle=pres.pk_settle
+		  INNER JOIN pv_encounter pv ON pres.pk_pv = pv.pk_pv
+		  INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+		  INNER JOIN CN_PRESCRIPTION cnpre ON cnpre.PK_PRES = pres.PK_PRES
+		  INNER JOIN bd_hp hp ON pv.pk_insu = hp.pk_hp
+		  INNER JOIN bd_ou_dept dept ON pres.pk_dept_pres = dept.pk_dept
+		  INNER JOIN bd_ou_dept pharm ON pres.pk_dept_ex = pharm.pk_dept
+		  left join (select desc_diag ,pk_pv from (select row_number() over(partition by pk_pv order by flag_maj desc) cnt, diag.pk_pv,diag.desc_diag from pv_diag diag ) res where res.cnt = 1) indiag on indiag.PK_PV=pv.PK_PV
+		 where 
+		 1=1
+		 and pharm.code_dept=#{dispensary,jdbcType=VARCHAR}
+		 and pres.flag_prep='0' and pres.FLAG_CANC='0'
+		 <if test='dateStart!=null and dateStart!=""'>
+		 	and bl.date_st &gt;= to_date(#{dateStart,jdbcType=VARCHAR},'yyyymmddhh24miss')
+		 </if>
+		 <if test='dateEnd!=null and dateEnd!=""'>
+		 	and bl.date_st &lt;=to_date(#{dateEnd,jdbcType=VARCHAR},'yyyymmddhh24miss')
+		 </if>
+		 and 
+		 (1=0
+		 <if test='id!=null and id!=""'>
+		 	or pres.pres_no=#{id,jdbcType=VARCHAR}
+		 </if>
+		 <if test='codePati!=null and codePati!=""'>
+		 	or pi.code_pi=#{codePati,jdbcType=VARCHAR}
+		 </if>
+		 <if test='registerId!=null and registerId!=""'>
+		 	or pv.code_pv=#{registerId,jdbcType=VARCHAR}
+		 </if>
+		 )
+	</select>
+	
+	<select id="qryDataPrescriptionDetails" parameterType="java.util.List" resultType="com.zebone.nhis.webservice.syx.vo.scmhr.DataPrescriptionDetail">
+		SELECT
+		  pres.pk_presocc,
+		  pd.code         granule_id,
+		  pd.name         granule_name,
+		  ord.dosage      dose,
+		  ord.price_cg    price_cg,
+		  rownum AS       item_no,
+		  ord.ORDSN       advice_code,
+		  pd.spec         drug_spec,
+		  fac.code        firm_id,
+		  fac.name        firm_name,
+		  pd.spec         package_spec,
+		  unit.name       package_unit,
+		  dt.quan_cg*dt.pack_size      quantity,
+		  min.name       unit,
+		  ord.days        quantity_day,
+		  dt.amount_cg    costs,
+		  dt.amount_cg    payments,
+		  unit_dos.name   dosage_units,
+		  sup.name        administration,
+		  freq.name       frequency,
+		  freq.note       frequency_name,
+		  ord.note_supply additionusage,
+		  ord.note_ord    rcpt_remark
+		FROM ex_pres_occ_dt dt
+		  INNER JOIN ex_pres_occ pres ON dt.pk_presocc = pres.pk_presocc
+		  INNER JOIN bd_pd pd ON dt.pk_pd = pd.pk_pd
+		  INNER JOIN cn_order ord ON dt.pk_cnord = ord.pk_cnord
+		  left JOIN bd_factory fac ON pd.pk_factory = fac.pk_factory
+		  left JOIN bd_unit unit ON dt.pk_unit = unit.pk_unit
+		  left join bd_unit min on min.pk_unit =pd.pk_unit_min
+		  left JOIN bd_unit unit_dos ON ord.pk_unit_dos = unit_dos.pk_unit
+		  left JOIN bd_supply sup ON ord.code_supply = sup.code
+		  left JOIN bd_term_freq freq ON ord.code_freq = freq.code
+		where pres.pk_presocc in 
+		<foreach collection="list" index="index" close=")" item="pkPresocc" open="(" separator=",">
+			#{pkPresocc,jdbcType=VARCHAR}
+		</foreach>
+	</select>
+	
+	<update id="updateWinnoByPresNo" parameterType="com.zebone.nhis.webservice.syx.vo.scmhr.Root">
+		update ex_pres_occ set winno_conf=#{retmsg,jdbcType=VARCHAR}
+		<if test="">
+			,winno_prep=#{pyretmsg,jdbcType=VARCHAR}
+		</if>
+		where pres_no=#{prescNo,jdbcType=VARCHAR}
+	</update>
+	
+	<select id="qryDrugDict" resultType="com.zebone.nhis.webservice.syx.vo.scmhr.DcDictDrug" parameterType="java.util.Map">
+	   SELECT
+		  pd.code         CODE_DRUG,
+		  pd.name_chem    BM,
+		  pd.name         NAME_GOODS,
+		  ''  AS          YWSPM,
+		  pd.spcode       PYM,
+		  pd.eu_drugtype  CODE_DRUGTYPE,
+		  pd.dt_dosage    DOSAGE_FORM,
+		  pd.spec         SPECIFICATIONS,
+		  pd.spec         MINSPECS,
+		  unit.name       PACKING_UNIT,
+		  unit.name       MAXUNIT,
+		  minunit.name    MIN_UNIT,
+		  pd.vol          DOSAGE,
+		  pd.vol          FIRST_DOSE,
+		  dosunit.name    FIRST_DOSE_UNIT,
+		  pd.price        RETAIL_PRICE,
+		  1   AS          CONVERTION1,
+		  pd.pack_size    CONVERTION2,
+		  fac.code        SCCJ,
+		  fac.name        PWXX,
+		  pd.appr_no      passno,
+		  pd.barcode      TXM,
+		  pd.dt_storetype CCTJ,
+		  '0' AS          STORAGETYPE,
+		  CASE WHEN pd.flag_stop = '1'
+		    THEN 'N'
+		  ELSE 'Y' END    ALLOWIND
+       FROM bd_pd pd
+		  INNER JOIN bd_unit unit ON pd.pk_unit_pack = unit.pk_unit
+		  INNER JOIN bd_unit minunit ON pd.pk_unit_min = minunit.pk_unit
+		  INNER JOIN bd_unit dosunit ON pd.pk_unit_vol = dosunit.pk_unit
+		  LEFT JOIN bd_unit dos2unit ON dos2unit.PK_UNIT = pd.PK_UNIT_WT
+		  INNER JOIN bd_factory fac ON pd.pk_factory = fac.pk_factory
+      WHERE pd.dt_pdtype LIKE '0%'
+       <if test='pkDictDrug!=null and pkDictDrug!=""'>
+			and pd.pk_pd = #{pkDictDrug,jdbcType=VARCHAR} 
+		</if>
+		<if test='codeDrug!=null and codeDrug!=""'>
+			and pd.code = #{codeDrug,jdbcType=VARCHAR} 
+		</if>
+		<if test='nameDrug!=null and nameDrug!=""'>
+			and pd.name_chem = #{nameDrug,jdbcType=VARCHAR} 
+		</if>		
+	</select>
+</mapper>

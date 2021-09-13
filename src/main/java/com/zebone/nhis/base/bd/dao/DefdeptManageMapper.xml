@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.DefdeptManageMapper">
+	<select id="qryDefdept" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.base.bd.res.BdDefdept">
+		select dept.pk_defdept ,  
+	       dept.code_dept,  
+	       dept.name_dept,   
+	       dept.pk_father, 
+	       dept.spcode,    
+	       dept.d_code,      
+	       dept.sortno,     
+	       dept.note         
+	  	from bd_defdept dept
+		where dept.dt_defdepttype=#{dtDefdepttype}
+		order by dept.sortno asc
+	</select>
+	
+	<select id="qryBdOuDept" parameterType="java.util.Map" resultType="com.zebone.nhis.base.bd.vo.BdOuDeptVo">
+		select distinct
+	       dept.pk_dept,     
+	       dept.code_dept,  
+	       dept.name_dept,   
+	       dept.dt_depttype, 
+	       dmap.pk_defdept PkDefdept,   
+	       case when ft.pk_father is null then 1 else 0 end flag_checked,
+	       dept.Pk_father
+	  	from bd_ou_dept dept
+	       left outer join bd_ou_dept ft on dept.pk_dept=ft.pk_father
+	       left outer join bd_defdept_map dmap on dept.pk_dept=dmap.pk_dept
+	       left outer join bd_defdept def on dmap.pk_defdept=def.pk_defdept and def.dt_defdepttype=#{dtDefdepttype}
+		where dept.pk_org=#{pkOrg}
+		order by dept.code_dept asc
+
+	</select>
+	
+	<delete id="delDefdept" parameterType="java.lang.String">
+		delete from bd_defdept 
+		where pk_defdept=#{pkDefdept} <!-- and 
+       	pk_defdept not in (select case when pk_father is null then '1' end pk_father from bd_defdept) -->
+		
+	</delete>
+	
+	<delete id="delDefdeptMap" parameterType="java.lang.String">
+		delete from bd_defdept_map where pk_defdept=#{pkDefdept}
+	</delete>
+	
+	<select id="qryCount" parameterType="java.lang.String" resultType="java.lang.Integer">
+		select count(1) from bd_defdept where pk_father = #{pkDefdept}
+	</select>
+	
+	<select id="qryCountCode" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(1) from bd_defdept where Code_dept = #{codeDept}
+		<if test="pkDefdept != null and pkDefdept!=''">
+			and pk_defdept !=  #{pkDefdept}
+		</if>
+	</select>
+	
+	<select id="qryCountName" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(1) from bd_defdept where name_dept = #{nameDept}
+		<if test="pkDefdept != null and pkDefdept!=''">
+			and pk_defdept !=  #{pkDefdept}
+		</if>
+	</select>
+</mapper>

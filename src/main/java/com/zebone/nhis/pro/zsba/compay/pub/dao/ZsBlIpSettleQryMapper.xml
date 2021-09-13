@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.compay.pub.dao.ZsBlIpSettleQryMapper">
+	
+	<!-- 根据条件查询机构下的患者信息 -->
+	<select id="qryStRecords" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.SettleRecord">
+		  select pv.pk_pv,pv.date_begin,st.dt_sttype,st.pk_settle,st.eu_pvtype, sttype.name sttype, st.date_st,pi.code_pi,pi.code_ip, 
+		       	pi.code_op,pi.name_pi, hp.name hp,st.amount_st, st.amount_pi,dept.name_dept,st.name_emp_st,st.eu_stresult,st.reason_canc,
+		       	pv.code_pv,st.code_st   
+		  from pi_master pi
+		       inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+		       inner join bl_settle st on pv.pk_pv=st.pk_pv
+		       inner join bd_hp hp on st.pk_insurance=hp.pk_hp
+		       inner join bd_ou_dept dept on st.pk_dept_st=dept.pk_dept
+		       inner join bd_defdoc sttype on st.dt_sttype=sttype.code and sttype.code_defdoclist='110102'
+		       inner join BD_OU_EMPLOYEE us on us.pk_emp = st.pk_emp_st
+		 where st.pk_org = #{pkOrg,jdbcType=VARCHAR} 
+		 <if test='isIpSettle!=null and isIpSettle!="" and isIpSettle.equals("1")'>
+		 	and pv.eu_pvtype in(1,2,3,4)
+		 </if>
+		 <if test='isIpSettle!=null and isIpSettle!="" and isIpSettle.equals("0")'>
+		 	and pv.eu_pvtype in(1,2,4)
+		 </if>
+		 <if test="codeOp != null  and  codeOp != ''">
+		 	and pi.code_op = #{codeOp,jdbcType=VARCHAR}
+		 </if>
+		 
+		 <if test="cardNo != null  and  cardNo != ''"><!-- 诊疗卡 -->
+		 	and pi.P_CAR_CODE = #{cardNo,jdbcType=VARCHAR}
+		 </if>
+		 <if test="insurNo != null  and  insurNo != ''"><!-- 二代卡号 -->
+		 	and pi.INSUR_NO = #{insurNo,jdbcType=VARCHAR}
+		 </if>
+		 <if test="thirdSocialNo != null  and  thirdSocialNo != ''"><!-- 三代卡号 -->
+		 	and pi.THIRD_SOCIAL_NO = #{thirdSocialNo,jdbcType=VARCHAR}
+		 </if>
+		 <if test="icCardId != null  and  icCardId != ''"><!-- 健康卡 -->
+		 	and pi.IC_CARD_ID = #{icCardId,jdbcType=VARCHAR}
+		 </if>
+		 <if test="idNo != null  and  idNo != ''"><!-- 证件号 -->
+		 	and pi.ID_NO = #{idNo,jdbcType=VARCHAR}
+		 </if>
+		 
+		 <if test="dtSttype != null  and  dtSttype != ''">
+		 	and st.dt_sttype = #{dtSttype,jdbcType=VARCHAR}
+		 </if>
+		 <if test="codePi != null  and  codePi != ''">
+		 	and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+		 </if>
+		 <if test='codeIp!=null and codeIp!=""'>
+		 	and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+		 </if>
+		 <if test="namePi != null  and  namePi != ''">
+		 	and pi.name_pi like '%' || #{namePi,jdbcType=VARCHAR} || '%' 
+		 </if>
+		 <if test="codePv != null  and  codePv != ''">
+		 	and  pv.code_pv = #{codePv,jdbcType=VARCHAR}
+		 </if>
+		 <if test="dateBegin != null  and  dateBegin != ''">
+		 	and st.date_st &gt;= to_date(substr(#{dateBegin,jdbcType=VARCHAR} ,1,8)||'000000', 'yyyymmddhh24miss')
+		 </if>
+		 <if test="dateEnd != null  and  dateEnd != ''">
+		 	and st.date_st &lt;= to_date( substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'yyyymmddhh24miss')
+		 </if>
+		  <if test="euStresult != null  and  euStresult != ''">
+		 	and st.eu_stresult= #{euStresult,jdbcType=VARCHAR} 
+		 </if>
+		 <if test="nameEmpSt != null  and  nameEmpSt != ''">
+		 	and (st.name_emp_st like '%' || #{nameEmpSt,jdbcType=VARCHAR} || '%' 
+		 		 or	us.code_emp = #{nameEmpSt,jdbcType=VARCHAR}
+		 		)
+		 </if>
+		 <if test="codeInv != null  and  codeInv != ''">
+		 	and  exists (select 1
+                 from bl_st_inv stinv 
+                      inner join bl_invoice inv on stinv.pk_invoice=inv.pk_invoice
+                where stinv.pk_settle=st.pk_settle and
+                      inv.code_inv=#{codeInv,jdbcType=VARCHAR})
+		 </if>
+		 <if test="euPvtype!=null and euPvtype!=''">
+		 	and pv.eu_pvtype='3'
+		 </if>
+		 <if test="euPvtype==null or euPvtype==''">
+		 	and pv.eu_pvtype in(1,2,4)
+		 </if>
+		 <if test="pkInsu != null and pkInsu != ''">
+		 	and st.PK_INSURANCE = #{pkInsu,jdbcType=CHAR}
+		 </if>
+		 order by st.date_st desc
+	</select>
+	
+	<!-- 住院：根据条件查询机构下的患者信息 -->
+	<select id="qryIpStRecordAll" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.SettleRecord">
+		  select pv.pk_pv,st.dt_sttype,st.pk_settle,st.eu_pvtype, sttype.name sttype, st.date_st,pi.code_pi, pi.code_ip, 
+		       pi.name_pi, hp.name hp,st.amount_st, st.amount_pi,dept.name_dept,st.name_emp_st,st.eu_stresult,st.reason_canc   
+		  from pi_master pi
+		       inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+		       inner join bl_settle st on pv.pk_pv=st.pk_pv
+		       inner join bd_hp hp on st.pk_insurance=hp.pk_hp
+		       inner join bd_ou_dept dept on st.pk_dept_st=dept.pk_dept
+		       inner join bd_defdoc sttype on st.dt_sttype=sttype.code and sttype.code_defdoclist='110102'
+		 where st.dt_sttype in ('10','11','20','21') and		 
+		 st.pk_org = #{pkOrg,jdbcType=VARCHAR} and st.eu_pvtype='3'
+		 
+		 <if test="codeIp != null  and  codeIp != ''">
+		 	and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+		 </if>
+		 <if test="codePi != null  and  codePi != ''">
+		 	and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+		 </if>
+		 <if test="namePi != null  and  namePi != ''">
+		 	and pi.name_pi like '%' || #{namePi,jdbcType=VARCHAR} || '%' 
+		 </if>
+		 <if test="codePv != null  and  codePv != ''">
+		 	and  pv.code_pv = #{codePv,jdbcType=VARCHAR}
+		 </if>
+		 <if test="dateBegin != null  and  dateBegin != ''">
+		 	and st.date_st &gt;= to_date(substr(#{dateBegin,jdbcType=VARCHAR} ,1,8)||'000000', 'yyyymmddhh24miss')
+		 </if>
+		 <if test="dateEnd != null  and  dateEnd != ''">
+		 	and st.date_st &lt;= to_date( substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'yyyymmddhh24miss')
+		 </if>
+		  <if test="euStresult != null  and  euStresult != ''">
+		 	and st.eu_stresult= #{euStresult,jdbcType=VARCHAR} 
+		 </if>
+		 <if test="nameEmpSt != null  and  nameEmpSt != ''">
+		 	and st.name_emp_st like '%' || #{nameEmpSt,jdbcType=VARCHAR} || '%' 
+		 </if>
+		 <if test="codeInv != null  and  codeInv != ''">
+		 	and  exists (select 1
+                 from bl_st_inv stinv 
+                      inner join bl_invoice inv on stinv.pk_invoice=inv.pk_invoice
+                where stinv.pk_settle=st.pk_settle and
+                      inv.code_inv=#{codeInv,jdbcType=VARCHAR})
+		 </if>
+	</select>
+	
+	<!-- 门诊：根据条件查询机构下的患者信息 -->
+	<select id="qryStRecordAll" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.SettleRecord">
+		  select pv.pk_pv,st.dt_sttype,st.pk_settle,st.eu_pvtype, sttype.name sttype, st.date_st,pi.code_pi, 
+		       pi.code_op,pi.name_pi, hp.name hp,st.amount_st, st.amount_pi,dept.name_dept,st.name_emp_st,st.eu_stresult,st.reason_canc,
+		       pv.code_pv,st.code_st,stold.code_st as old_code_st,stold.amount_st as old_amount_st,st.pk_settle_recharge,st.pk_insurance pk_insu
+				<if test='flagHpLb!=null and flagHpLb!="" and flagHpLb.equals("1")'>
+		  		,case when ybjs.qdid is not null then '1' else '0' end flag_upload
+				</if>
+		from pi_master pi
+		       inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+		       inner join bl_settle st on pv.pk_pv=st.pk_pv
+		       inner join bd_hp hp on st.pk_insurance=hp.pk_hp
+		       inner join bd_ou_dept dept on st.pk_dept_st=dept.pk_dept
+		       inner join bd_defdoc sttype on st.dt_sttype=sttype.code and sttype.code_defdoclist='110102'
+		       inner join BD_OU_EMPLOYEE us on us.pk_emp = st.pk_emp_st
+			   left join bl_settle stold on stold.pk_settle = st.PK_SETTLE_CANC
+				<if test='flagHpLb!=null and flagHpLb!="" and flagHpLb.equals("1")'>
+			       left join ins_szyb_js ybjs on ybjs.pk_settle = st.pk_settle
+				</if>
+		where st.dt_sttype in ('00','01','20','21') and st.eu_pvtype in('1','2','4')
+		 and st.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		 
+		 <if test="codePi != null  and  codePi != ''">
+		 	and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+		 </if>
+		 <if test="namePi != null  and  namePi != ''">
+		 	and pi.name_pi like '%' || #{namePi,jdbcType=VARCHAR} || '%' 
+		 </if>
+		 <if test="codePv != null  and  codePv != ''">
+		 	and  pv.code_pv = #{codePv,jdbcType=VARCHAR}
+		 </if>
+		 <if test="dateBegin != null  and  dateBegin != ''">
+		 	and st.date_st &gt;= to_date(substr(#{dateBegin,jdbcType=VARCHAR} ,1,8)||'000000', 'yyyymmddhh24miss')
+		 </if>
+		 <if test="dateEnd != null  and  dateEnd != ''">
+		 	and st.date_st &lt;= to_date( substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'yyyymmddhh24miss')
+		 </if>
+		  <if test="euStresult != null  and  euStresult != ''">
+		 	and st.eu_stresult= #{euStresult,jdbcType=VARCHAR} 
+		 </if>
+		 <if test="nameEmpSt != null  and  nameEmpSt != ''">
+		 	and (st.name_emp_st like '%' || #{nameEmpSt,jdbcType=VARCHAR} || '%' 
+		 		 or	us.code_emp = #{nameEmpSt,jdbcType=VARCHAR}
+		 		)
+		 </if>
+		 <if test="codeInv != null  and  codeInv != ''">
+		 	and  exists (select 1
+                 from bl_st_inv stinv 
+                      inner join bl_invoice inv on stinv.pk_invoice=inv.pk_invoice
+                where stinv.pk_settle=st.pk_settle and
+                      inv.code_inv=#{codeInv,jdbcType=VARCHAR})
+		 </if>
+		 <if test="codeOp != null  and  codeOp != ''">
+		 	and pi.code_op = #{codeOp,jdbcType=VARCHAR}
+		 </if>
+		 
+		 <if test="cardNo != null  and  cardNo != ''"><!-- 诊疗卡 -->
+		 	and pi.P_CAR_CODE = #{cardNo,jdbcType=VARCHAR}
+		 </if>
+		 <if test="insurNo != null  and  insurNo != ''"><!-- 二代卡号 -->
+		 	and pi.INSUR_NO = #{insurNo,jdbcType=VARCHAR}
+		 </if>
+		 <if test="thirdSocialNo != null  and  thirdSocialNo != ''"><!-- 三代卡号 -->
+		 	and pi.THIRD_SOCIAL_NO = #{thirdSocialNo,jdbcType=VARCHAR}
+		 </if>
+		 <if test="icCardId != null  and  icCardId != ''"><!-- 健康卡 -->
+		 	and pi.IC_CARD_ID = #{icCardId,jdbcType=VARCHAR}
+		 </if>
+		 <if test="idNo != null  and  idNo != ''"><!-- 证件号 -->
+		 	and pi.ID_NO = #{idNo,jdbcType=VARCHAR}
+		 </if>
+		 
+		 <if test="euPvtype!=null and euPvtype!=''">
+		 	and pv.eu_pvtype='3'
+		 </if>
+		 <if test="euPvtype==null or euPvtype==''">
+		 	and pv.eu_pvtype in('1','2','4')
+		 </if>
+		 <if test="pkInsu != null and pkInsu != ''">
+		 	and st.PK_INSURANCE = #{pkInsu,jdbcType=CHAR}
+		 </if>
+		 <if test="idNo != null and idNo != ''">
+		 	and ( pi.id_no = #{idNo,jdbcType=CHAR} or pi.insur_no = #{idNo,jdbcType=CHAR} )
+		 </if>
+		 order by st.date_st desc
+	</select>
+	
+		<select id="queryChargePrePay" parameterType="java.util.Map" resultType="DynaBean">
+	   select depo.date_pay,
+       depo.rept_no,
+       depo.amount,
+       paymode.name NamePaymode,
+       depo.bank_no,
+       depo.pay_info,
+       depo.eu_direct,
+       depo.name_emp_pay NameEmpPay,
+       depo.note,
+       depo.pk_depo_back, 
+       depo.pk_depo,
+       depo.remittance_unit
+	   from bl_deposit depo
+	       inner join bd_defdoc paymode on depo.dt_paymode=paymode.code and paymode.code_defdoclist='110100'
+	   where depo.eu_dptype = 9
+	   <if test='pkPv!=null and pkPv!=""'>
+	   		and  depo.pk_pv = #{pkPv,jdbcType=VARCHAR}
+	   </if>
+	   <if test='pkSettle==null or pkSettle==""'>
+	        and flag_settle = 0
+	   </if>
+	   <if test='dateBegin!=null'>
+	   	and depo.date_pay &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss') 
+	   </if>
+	   <if test='dateEnd!=null'>
+	   	and depo.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+	   </if>
+	   <if test='flagFilter!=null and flagFilter!="" and flagFilter=="1"'>
+	   	and depo.eu_direct='1' and not exists (select 1 from bl_deposit back where depo.pk_depo=back.pk_depo_back)
+	   </if>
+	   <if test='pkSettle!=null and pkSettle!=""'>
+	        and flag_settle = 1
+	   		and depo.pk_settle = #{pkSettle,jdbcType=CHAR}
+	   </if>
+	</select>
+</mapper>

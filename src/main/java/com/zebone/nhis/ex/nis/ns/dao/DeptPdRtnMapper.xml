@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.ns.dao.DeptPdRtnMapper">
+<select id="queryCgListByPv" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.nis.ns.vo.PdRtnDtVo">
+  select cg.pk_cgip,
+       cg.pk_cnord,
+       cg.pk_pv,
+       cg.pk_pd,
+       cg.pk_unit,
+       cg.pk_pres,
+       unit.name nameunit,
+       ord.eu_always,
+       ord.ordsn,
+       ord.flag_self,
+       ord.flag_base,
+       ord.ords,
+       ord.flag_medout,
+       ord.code_ordtype,
+       cg.price_cost,
+       cg.batch_no,
+       cg.pack_size,
+       cg.name_cg,
+       cg.spec,
+       cg.price,
+       cg.amount + nvl(rtn.amount, 0) as amount,
+       cg.quan + nvl(rtn.quan, 0) as quan,
+       nvl(dts.quan_min,0)/cg.pack_size as dclnum,
+       cg.quan as cg_quan ,
+       cg.date_cg,
+       cg.date_expire,
+       cg.pk_org_ex as pk_org_de,
+       cg.pk_dept_ex as pk_dept_de  
+  from bl_ip_dt cg
+  inner join cn_order ord on ord.pk_cnord = cg.pk_cnord 
+  inner join bd_unit unit on unit.pk_unit = cg.pk_unit 
+  inner join pv_encounter pv on pv.pk_pv = ord.pk_pv
+  left join (select sum(y.amount) amount, sum(y.quan) quan, y.pk_cgip_back
+               from bl_ip_dt y
+              where y.quan &lt; 0
+              group by y.pk_cgip_back) rtn
+    on rtn.pk_cgip_back = cg.pk_cgip
+  left join (select sum(dt.quan_min) quan_min, dt.pk_cgip
+               from ex_pd_apply_detail dt, ex_pd_apply ap
+              where dt.pk_pdap = ap.pk_pdap
+                and ap.eu_status = '0'
+                and (dt.flag_stop = '0' or dt.flag_stop is null)
+                and (dt.flag_canc = '0' or dt.flag_canc is null)
+                and dt.eu_direct = -1
+                and dt.flag_de != '1'
+              group by dt.pk_cgip) dts
+    on dts.pk_cgip = cg.pk_cgip
+ where cg.quan &gt;0    
+        <if test='type!="1"'>
+ 		and ord.pk_dept_ns = pv.pk_dept_ns<!-- 排除掉医技科室药品记费记录 -->
+ 		</if>
+ 		<if test='type!=null and type=="1"'>
+ 		and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+ 		</if>
+ 		
+ 		<!-- bug-25631 ★【住院护士】记费请退领，可退药数量计算错误  为处理此bug 去掉此 exists
+        and exists (select 1 from ex_order_occ occ1 
+        		     inner join cn_order ord1 on ord1.pk_cnord = occ1.pk_cnord 
+        		     where ord1.ordsn_parent = ord.ordsn_parent 
+        		       and occ1.pk_exocc != cg.pk_ordexdt 
+        		       and (occ1.eu_status &lt; '9'  or  ord1.code_ordtype ='0103'))
+        		        --> <!-- 部分取消 --><!-- 2020-03-19 放开草药医嘱取消执行的记录 -->      
+        		         		       
+        and not exists (select 1 from ex_order_occ occ1 where occ1.pk_cnord = ord.pk_cnord and occ1.flag_pivas = '1')<!-- 排除静配 -->
+        and (cg.quan + nvl(rtn.quan, 0) &gt;0)   
+        and cg.flag_pd = '1' 
+        and cg.pk_settle is null 
+        <if test="euAlways != null  and  euAlways != ''">
+ 		      and ord.eu_always = #{euAlways,jdbcType=CHAR}
+ 		</if>
+        <if test="name != null  and  name != ''">
+		       and cg.name_cg like '%${name}%'   
+	    </if> 
+	    <if test="pkDept != null  and  pkDept != ''">
+		       and ord.pk_dept = #{pkDept,jdbcType=CHAR}
+	    </if>
+	    <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		       and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+	    </if>  
+	    and  cg.pk_pv = #{pkPv,jdbcType=CHAR} 
+        order by date_cg
+</select> 
+<select id="queryExListByOrd" parameterType="java.util.Map" resultType="DynaBean">
+ select exlist.pk_exocc,
+ 		exlist.pk_cnord,
+ 		exlist.date_plan,
+ 		exlist.date_occ,
+ 		exlist.eu_status,
+ 		exlist.quan_occ,
+ 		exlist.pk_unit,
+ 		unit.name nameunit,
+ 		ord.name_ord as name_cg,
+ 		ord.ordsn  
+   from ex_order_occ exlist 
+  inner join cn_order ord on ord.pk_cnord = exlist.pk_cnord 
+   left join bd_unit unit on unit.pk_unit = exlist.pk_unit 
+  where  (exlist.pk_cg_cancel is null or exlist.pk_cg_cancel = '') and (exlist.pk_pdback is null or exlist.pk_pdback = '')
+    and exlist.pk_cnord in 
+    <!-- and exlist.pk_pdde is not null 暂时不要-->
+   <foreach item="pkCnord" index="index" collection="pkCnords" open="(" separator="," close=")">
+            	   #{pkCnord}    
+   </foreach>
+   order by ord.pk_cnord ,exlist.date_plan
+</select> 
+
+</mapper>

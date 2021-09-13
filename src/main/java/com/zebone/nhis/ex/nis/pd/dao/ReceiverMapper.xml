@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.pd.dao.ReceiverMapper">
+	
+	<!-- 查询配药汇总列表 -->
+	<select id="QueryDispenseList" parameterType="java.util.Map" 
+		resultType="com.zebone.nhis.ex.nis.pd.vo.SummaryVo">
+		select de.code_de, de.pk_pdde, pd.name pdname, pd.spec, unit.name unit, 
+       	   	   sum(de.quan_pack*de.eu_direct) quan, de.eu_status, de.date_de, de.name_emp_dist,  
+               de.date_dist, de.pk_emp_sign, de.name_emp_sign, de.date_sign, de.flag_sign       
+      	  from ex_pd_de de
+    	 inner join bd_pd pd on de.pk_pd=pd.pk_pd and de.eu_status is not null
+    	 inner join bd_unit unit on de.pk_unit=unit.pk_unit
+    	 inner join pv_encounter pv on de.pk_pv = pv.pk_pv
+    	 inner join pi_master pi on pv.pk_pi=pi.pk_pi
+ 		<trim prefix="WHERE" prefixOverrides="AND | OR">
+ 			<if test="no != null and no != ''">
+ 				and de.code_de=#{no}   
+ 			</if>
+ 			<if test="dateS != null and dateS != ''">
+ 				and de.date_de &gt;= to_date(#{dateS}, 'YYYYMMDDHH24MISS')
+ 			</if>
+ 			<if test="dateE != null and dateE != ''">
+ 				and de.date_de &lt;= to_date(#{dateE}, 'YYYYMMDDHH24MISS')
+ 			</if>
+ 			<if test="state != null and  state !=9">
+ 				and de.eu_status=#{state}  
+ 			</if>
+ 			<if test="person != null and person != ''">
+ 				and de.name_emp_dist like '%'||#{person}||'%'   
+ 			</if>
+ 			<if test="pkdeptns != null and pkdeptns != ''">
+ 				and pv.pk_dept_ns=#{pkdeptns}  
+ 			</if>
+ 			<if test="bedNo != null and bedNo != ''">
+ 				and pv.bed_no=#{bedNo}  
+ 			</if>
+ 			<if test="codeIp != null and codeIp != ''">
+ 				and pi.code_ip=#{codeIp}   
+ 			</if>
+  			<if test="pharmacy != null and pharmacy != ''">
+ 				and de.pk_dept_de=#{pharmacy}  
+ 			</if>
+ 	 	</trim> 
+ 		group by de.code_de, de.pk_pdde, pd.name, pd.spec, unit.name,
+       		  de.eu_status, de.date_de, de.name_emp_dist, de.date_dist,
+       		  de.pk_emp_sign, de.name_emp_sign, de.date_sign, de.flag_sign	
+        order by de.code_de
+	</select>   
+	
+	<!-- 查询配药明细列表 -->
+	<select id="QueryDetailedList" parameterType="java.util.Map" 
+		resultType="com.zebone.nhis.ex.nis.pd.vo.DetailedVo">
+	select pv.bed_no, pi.name_pi,pi.code_ip, de.code_de, pd.name pdname, pd.spec,       
+           unit.name unit, de.quan_pack*de.eu_direct as quan, freq.name freq, sup.name supply,  
+           ord.dosage, unit_dos.name unit_dos, de.eu_status, de.date_de      
+      from ex_pd_de de
+     inner join bd_pd pd on de.pk_pd=pd.pk_pd
+     inner join bd_unit unit on de.pk_unit=unit.pk_unit
+     inner join pv_encounter pv on de.pk_pv = pv.pk_pv
+     inner join pi_master pi on pv.pk_pi=pi.pk_pi
+     inner join cn_order ord on de.pk_cnord = ord.pk_cnord
+     inner join bd_term_freq freq on ord.code_freq=freq.code
+      left join bd_supply sup on ord.code_supply=sup.code
+      left join bd_unit unit_dos on ord.pk_unit_dos=unit_dos.pk_unit
+ 	<trim prefix="WHERE" prefixOverrides="AND | OR">
+ 		<if test="no != null and no != ''">
+ 	   		and de.code_de=#{no}   
+ 		</if>
+ 		<if test="dateS != null and dateS != ''">
+ 			and de.date_de &gt;= to_date(#{dateS}, 'YYYYMMDDHH24MISS')
+ 		</if>
+ 		<if test="dateE != null and dateE != ''">
+ 			and de.date_de &lt;= to_date(#{dateE}, 'YYYYMMDDHH24MISS')
+ 		</if>
+ 		<if test="state != null and state != 9">
+ 			and de.eu_status=#{state}  
+ 		</if>
+ 		<if test="person != null and person != ''">
+ 			and de.name_emp_dist like '%'||#{person}||'%'   
+ 		</if>
+ 		<if test="bedNo != null and bedNo != ''">
+ 			and pv.bed_no=#{bedNo}  
+ 		</if>
+ 		<if test="pkdeptns != null and pkdeptns != ''">
+ 			and pv.pk_dept_ns=#{pkdeptns}  
+ 		</if>
+ 		<if test="codeIp != null and codeIp != ''">
+ 			and pi.code_ip=#{codeIp}   
+ 		</if>
+  		<if test="pharmacy != null and pharmacy != ''">
+ 			and de.pk_dept_de=#{pharmacy}  
+ 		</if>
+ 	 </trim> 
+ 	 order by de.date_de desc,pv.bed_no
+	</select>
+	
+	<!-- 查询当前签收人 -->
+	<select id="QueryEmp" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.nis.pd.vo.EmpVo">
+		select emp.pk_emp, emp.name_emp
+      	  from bd_ou_employee emp 
+      	  WHERE  Upper(emp.code_emp)=Upper(#{empcode})
+	</select>
+	
+	<!-- 更新签收 -->
+	<update id="UpdateState" parameterType="com.zebone.nhis.ex.nis.pd.vo.AcceptVo">
+	 update ex_pd_de 
+	    set eu_status='2', flag_sign='1',
+            date_sign= to_date(#{dateSign}, 'YYYYMMDDHH24MISS'),    
+            pk_emp_sign = #{pkEmp},  
+            name_emp_sign = #{nameEmp}
+      where pk_pdde in 			
+ 		<foreach item="list" index="index" collection="pkPdDes" open="(" separator="," close=")">
+				#{list}
+		</foreach> 
+		and flag_sign ='0' 
+		and flag_dist='1'
+	</update>
+	
+</mapper>

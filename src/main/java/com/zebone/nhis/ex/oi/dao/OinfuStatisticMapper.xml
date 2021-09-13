@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.oi.dao.OinfuStatisticMapper">
+
+  <select id="getDealInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.ex.oi.ExInfusionOcc"> 
+   select occ.exec_times, occ.date_exec, 
+          case occ.eu_status when '0' then '待治疗' when '1' then '治疗中' when '2' then '完成' when '9' then '终止' end as eu_status,
+	      emp.name_emp as emp_receive, occ.date_receive,assign.name_emp as emp_assign,occ.date_assign,finished.name_emp as emp_finish, 
+	      occ.date_finish,watcher.name_emp as emp_watch,circle.name_emp as emp_eyre,occ.eyre_record,recheck.name_emp as emp_check,
+		  occ.date_check,case occ.skin_test_ret when '0' then '阴性' when '1' then '阳性' end as skin_test_ret,occ.comment_str, occ.date_plan,exec_emp.name_emp as emp_exec,occ.date_exec, 
+		  case iv.eu_seattype when '0' then '椅位' when '1' then '床位' end as pk_bed, 
+		  occ.exec_times,occ.pk_infuocc  
+	from ex_infusion_occ occ left join bd_ou_employee emp on emp.pk_emp=occ.emp_receive  
+	left join bd_ou_employee assign on assign.pk_emp=occ.emp_assign  
+    left join bd_ou_employee finished on finished.pk_emp = occ.emp_finish  
+	left join bd_ou_employee watcher on watcher.pk_emp=occ.emp_watch  
+	left join bd_ou_employee circle on circle.pk_emp=occ.emp_eyre   
+	left join bd_ou_employee recheck on recheck.pk_emp = occ.emp_check  
+	left join bd_ou_employee exec_emp on exec_emp.pk_emp=occ.emp_exec  
+	left join bd_place_iv iv on occ.pk_bed=iv.pk_placeiv  
+	where  1=1   
+      <if test="pkInfureg!=null and  pkInfureg!=''">
+       and occ.pk_infureg=#{pkInfureg,jdbcType=VARCHAR}
+      </if>
+       <if test="regDtNo!=null and  regDtNo!=''">
+      and occ.reg_dt_no=#{regDtNo,jdbcType=VARCHAR}
+      </if>
+    
+  </select>
+  
+  </mapper>

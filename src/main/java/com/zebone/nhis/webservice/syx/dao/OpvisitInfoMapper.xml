@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.OpvisitInfoMapper">
+
+     <select id="opvisitinfoQuery" parameterType="java.util.Map" resultType="DynaBean">
+          select pv.pk_pv visit_id,
+		       pi.code_pi patient_id,
+		       pv.pk_dept dept_key,
+		       dept.name_dept dept_name,
+		       pv.name_emp_phy doctor,
+		       pv.date_begin visit_date,
+		       pi.name_pi patient_name,
+		       case when pi.dt_sex='02' then '男' else '女' end sex,
+		       pi.birth_date birthday,
+		       '' as age,
+		       pi.code_op clinic_no,
+		       pi.code_op clinc_card_no,
+		       pi.id_no id_number,
+		       pi.mobile telphone,
+			   docm.name marital_status,
+		       docv.name vocation,
+					 doc.name nation, 
+		       pv.unit_work work_unit,
+		       pi.dt_edu education,
+		       '' as present_addr_province,
+		       '' as present_addr_city,
+		       '' as present_addr_area,
+		       '' as present_addr_detail,
+		       '' as reside_adr_prov,
+		       '' as reside_addr_city,
+		       '' as reside_addr_area,
+		       '' as reside_addr_detail,
+			   'NHIS' date_source,	 
+			 CASE pv.eu_status WHEN '0' THEN '登记'
+			                   WHEN '1' THEN '就诊'
+			                   WHEN '2' THEN '结束'
+			                   WHEN '3' THEN '结算'
+							   ELSE '退诊' END rstatus
+		   from pv_encounter pv
+		       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		       inner join bd_ou_dept dept on pv.pk_dept=dept.pk_dept
+			   left join BD_DEFDOC doc on doc.CODE = pi.dt_nation and doc.CODE_DEFDOCLIST = '000003'		 
+			   left join BD_DEFDOC docv on docv.CODE = pi.dt_occu and docv.CODE_DEFDOCLIST = '000010'
+			   left join BD_DEFDOC docm on docm.CODE = pi.dt_marry and docm.CODE_DEFDOCLIST = '000006'
+		   where 1=1
+		   <if test='visitType != null and visitType != "" '>  
+			    and pv.eu_pvtype=#{visitType,jdbcType=VARCHAR} 
+		   </if> 
+		   <if test='startTime != null and startTime != ""'>  			      
+			     and pv.date_begin &gt;= #{startTime} 
+		   </if>
+		   <if test='endTime != null and endTime != "" '>  
+			     and pv.date_end &lt;= #{endTime}
+		   </if>		  
+     </select>
+     
+     <select id="opdiaginfoQueryDao" parameterType="java.util.Map" resultType="DynaBean">
+             select diag.PK_PVDIAG diagnosis_id,
+		       pv.pk_pv visit_id,
+		       pi.code_pi patient_id,
+		       diag.code_icd diag_code,
+		       diag.desc_diag diag_desc,
+		       diag.date_diag diag_date,
+		       'NHIS' date_source,
+		       case when op.flag_first!='0' then '初诊' else '复诊' end visit_type,
+		        CASE diag.flag_maj WHEN '0' THEN '次要诊断'
+							               ELSE '主诊断' END rstatus
+	      from pv_encounter pv
+		       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		       inner join pv_diag diag on pv.pk_pv=diag.pk_pv
+		       left outer join pv_op op on pv.pk_pv=op.pk_pv
+	      where 1=1
+            <if test='visitType != null and visitType != "" '>  
+			    and pv.eu_pvtype=#{visitType,jdbcType=VARCHAR} 
+			</if> 
+			<if test='startTime != null and startTime != "" '>  
+				and pv.date_begin &gt;= #{startTime} 
+			</if>
+			<if test='endTime != null and endTime != "" '>  
+				and pv.date_end &lt;= #{endTime} 
+			</if>	
+     </select>
+     
+</mapper>

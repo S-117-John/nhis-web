@@ -1,0 +1,836 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.compay.ins.zsyb.dao.InsZsybPvMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybPv">
+        <id column="PK_INSPV" jdbcType="CHAR" property="pkInspv"/>
+        <result column="PK_ORG" jdbcType="CHAR" property="pkOrg"/>
+        <result column="YYBH" jdbcType="VARCHAR" property="yybh"/>
+        <result column="PK_HP" jdbcType="CHAR" property="pkHp"/>
+        <result column="PK_PI" jdbcType="CHAR" property="pkPi"/>
+        <result column="PK_PV" jdbcType="CHAR" property="pkPv"/>
+        <result column="EU_PVTYPE" jdbcType="VARCHAR" property="euPvtype"/>
+        <result column="JZJLH" jdbcType="CHAR" property="jzjlh"/>
+        <result column="GMSFHM" jdbcType="VARCHAR" property="gmsfhm"/>
+        <result column="GRSXH" jdbcType="VARCHAR" property="grsxh"/>
+        <result column="RYRQ" jdbcType="TIMESTAMP" property="ryrq"/>
+        <result column="RYZD" jdbcType="VARCHAR" property="ryzd"/>
+        <result column="RYZDGJDM" jdbcType="CHAR" property="ryzdgjdm"/>
+        <result column="RYZD2" jdbcType="VARCHAR" property="ryzd2"/>
+        <result column="RYZD3" jdbcType="VARCHAR" property="ryzd3"/>
+        <result column="RYZD4" jdbcType="VARCHAR" property="ryzd4"/>
+        <result column="ZZYSXM" jdbcType="CHAR" property="zzysxm"/>
+        <result column="BQDM" jdbcType="VARCHAR" property="bqdm"/>
+        <result column="CWDH" jdbcType="VARCHAR" property="cwdh"/>
+        <result column="SHJG" jdbcType="VARCHAR" property="shjg"/>
+        <result column="SFZY" jdbcType="VARCHAR" property="sfzy"/>
+        <result column="ZRYY" jdbcType="VARCHAR" property="zryy"/>
+        <result column="JSFFBZ" jdbcType="VARCHAR" property="jsffbz"/>
+        <result column="WSBZ" jdbcType="VARCHAR" property="wsbz"/>
+        <result column="SSRQ" jdbcType="TIMESTAMP" property="ssrq"/>
+        <result column="SYLB" jdbcType="VARCHAR" property="sylb"/>
+        <result column="ZSZH" jdbcType="VARCHAR" property="zszh"/>
+        <result column="XZLX" jdbcType="VARCHAR" property="xzlx"/>
+        <result column="CYRQ" jdbcType="TIMESTAMP" property="cyrq"/>
+        <result column="CYZD" jdbcType="VARCHAR" property="cyzd"/>
+        <result column="CYZDGJDM" jdbcType="VARCHAR" property="cyzdgjdm"/>
+        <result column="CYZD2" jdbcType="VARCHAR" property="cyzd2"/>
+        <result column="CYZDGJDM2" jdbcType="VARCHAR" property="cyzdgjdm2"/>
+        <result column="CYZD3" jdbcType="VARCHAR" property="cyzd3"/>
+        <result column="CYZDGJDM3" jdbcType="VARCHAR" property="cyzdgjdm3"/>
+        <result column="CYZD4" jdbcType="VARCHAR" property="cyzd4"/>
+        <result column="CYZDGJDM4" jdbcType="VARCHAR" property="cyzdgjdm4"/>
+        <result column="RYZS" jdbcType="VARCHAR" property="ryzs"/>
+        <result column="CYQK" jdbcType="VARCHAR" property="cyqk"/>
+        <result column="RYQK" jdbcType="VARCHAR" property="ryqk"/>
+        <result column="ZLFF" jdbcType="VARCHAR" property="zlff"/>
+        <result column="SSMC" jdbcType="VARCHAR" property="ssmc"/>
+        <result column="ZLFF2" jdbcType="VARCHAR" property="zlff2"/>
+        <result column="ZLFFMC2" jdbcType="VARCHAR" property="zlffmc2"/>
+        <result column="ZLFF3" jdbcType="VARCHAR" property="zlff3"/>
+        <result column="ZLFFMC3" jdbcType="VARCHAR" property="zlffmc3"/>
+        <result column="ZLFF4" jdbcType="VARCHAR" property="zlff4"/>
+        <result column="ZLFFMC4" jdbcType="VARCHAR" property="zlffmc4"/>
+        <result column="SSRQ1" jdbcType="TIMESTAMP" property="ssrq1"/>
+        <result column="TZCYSJ" jdbcType="TIMESTAMP" property="tzcysj"/>
+        <result column="ZWYY" jdbcType="VARCHAR" property="zwyy"/>
+        <result column="JZLB" jdbcType="VARCHAR" property="jzlb"/>
+        <result column="CREATOR" jdbcType="CHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="MODIFIER" jdbcType="CHAR" property="modifier"/>
+        <result column="MODITY_TIME" jdbcType="TIMESTAMP" property="modityTime"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="TS" jdbcType="TIMESTAMP" property="ts"/>
+        <result column="STATUS" jdbcType="CHAR" property="status"/>
+        <result column="FHZ" jdbcType="VARCHAR" property="fhz"/>
+        <result column="MSG" jdbcType="VARCHAR" property="msg"/>
+    </resultMap>
+    <select id="getInsPvById" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+             ins_pv
+        WHERE            
+            PK_INSPV = #{pkInspv,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllInsPv" resultMap="BaseResultMap">
+          SELECT * FROM ins_pv 
+    </select>
+    
+    <delete id="deleteInsPv">
+        DELETE
+        FROM
+             ins_pv
+        WHERE            
+            PK_INSPV = #{pkInspv,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveInsPv" parameterType="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybPv" >
+        INSERT INTO ins_pv
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkInspv != null" >
+                PK_INSPV,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="yybh != null" >
+                YYBH,
+            </if>
+            <if test="pkHp != null" >
+                PK_HP,
+            </if>
+            <if test="pkPi != null" >
+                PK_PI,
+            </if>
+            <if test="pkPv != null" >
+                PK_PV,
+            </if>
+            <if test="euPvtype != null" >
+                EU_PVTYPE,
+            </if>
+            <if test="jzjlh != null" >
+                JZJLH,
+            </if>
+            <if test="gmsfhm != null" >
+                GMSFHM,
+            </if>
+            <if test="grsxh != null" >
+                GRSXH,
+            </if>
+            <if test="ryrq != null" >
+                RYRQ,
+            </if>
+            <if test="ryzd != null" >
+                RYZD,
+            </if>
+            <if test="ryzdgjdm != null" >
+                RYZDGJDM,
+            </if>
+            <if test="ryzd2 != null" >
+                RYZD2,
+            </if>
+            <if test="ryzd3 != null" >
+                RYZD3,
+            </if>
+            <if test="ryzd4 != null" >
+                RYZD4,
+            </if>
+            <if test="zzysxm != null" >
+                ZZYSXM,
+            </if>
+            <if test="bqdm != null" >
+                BQDM,
+            </if>
+            <if test="cwdh != null" >
+                CWDH,
+            </if>
+            <if test="shjg != null" >
+                SHJG,
+            </if>
+            <if test="sfzy != null" >
+                SFZY,
+            </if>
+            <if test="zryy != null" >
+                ZRYY,
+            </if>
+            <if test="jsffbz != null" >
+                JSFFBZ,
+            </if>
+            <if test="wsbz != null" >
+                WSBZ,
+            </if>
+            <if test="ssrq != null" >
+                SSRQ,
+            </if>
+            <if test="sylb != null" >
+                SYLB,
+            </if>
+            <if test="zszh != null" >
+                ZSZH,
+            </if>
+            <if test="xzlx != null" >
+                XZLX,
+            </if>
+            <if test="cyrq != null" >
+                CYRQ,
+            </if>
+            <if test="cyzd != null" >
+                CYZD,
+            </if>
+            <if test="cyzdgjdm != null" >
+                CYZDGJDM,
+            </if>
+            <if test="cyzd2 != null" >
+                CYZD2,
+            </if>
+            <if test="cyzdgjdm2 != null" >
+                CYZDGJDM2,
+            </if>
+            <if test="cyzd3 != null" >
+                CYZD3,
+            </if>
+            <if test="cyzdgjdm3 != null" >
+                CYZDGJDM3,
+            </if>
+            <if test="cyzd4 != null" >
+                CYZD4,
+            </if>
+            <if test="cyzdgjdm4 != null" >
+                CYZDGJDM4,
+            </if>
+            <if test="ryzs != null" >
+                RYZS,
+            </if>
+            <if test="cyqk != null" >
+                CYQK,
+            </if>
+            <if test="ryqk != null" >
+                RYQK,
+            </if>
+            <if test="zlff != null" >
+                ZLFF,
+            </if>
+            <if test="ssmc != null" >
+                SSMC,
+            </if>
+            <if test="zlff2 != null" >
+                ZLFF2,
+            </if>
+            <if test="zlffmc2 != null" >
+                ZLFFMC2,
+            </if>
+            <if test="zlff3 != null" >
+                ZLFF3,
+            </if>
+            <if test="zlffmc3 != null" >
+                ZLFFMC3,
+            </if>
+            <if test="zlff4 != null" >
+                ZLFF4,
+            </if>
+            <if test="zlffmc4 != null" >
+                ZLFFMC4,
+            </if>
+            <if test="ssrq1 != null" >
+                SSRQ1,
+            </if>
+            <if test="tzcysj != null" >
+                TZCYSJ,
+            </if>
+            <if test="zwyy != null" >
+                ZWYY,
+            </if>
+            <if test="jzlb != null" >
+                JZLB,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="modifier != null" >
+                MODIFIER,
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+            <if test="status != null" >
+                STATUS,
+            </if>
+            <if test="fhz != null" >
+                FHZ,
+            </if>
+            <if test="msg != null" >
+                MSG,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkInspv != null" >
+                #{pkInspv,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=CHAR},
+            </if> 
+            <if test="yybh != null" >
+                #{yybh,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkHp != null" >
+                #{pkHp,jdbcType=CHAR},
+            </if> 
+            <if test="pkPi != null" >
+                #{pkPi,jdbcType=CHAR},
+            </if> 
+            <if test="pkPv != null" >
+                #{pkPv,jdbcType=CHAR},
+            </if> 
+            <if test="euPvtype != null" >
+                #{euPvtype,jdbcType=VARCHAR},
+            </if> 
+            <if test="jzjlh != null" >
+                #{jzjlh,jdbcType=CHAR},
+            </if> 
+            <if test="gmsfhm != null" >
+                #{gmsfhm,jdbcType=VARCHAR},
+            </if> 
+            <if test="grsxh != null" >
+                #{grsxh,jdbcType=VARCHAR},
+            </if> 
+            <if test="ryrq != null" >
+                #{ryrq,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="ryzd != null" >
+                #{ryzd,jdbcType=VARCHAR},
+            </if> 
+            <if test="ryzdgjdm != null" >
+                #{ryzdgjdm,jdbcType=CHAR},
+            </if> 
+            <if test="ryzd2 != null" >
+                #{ryzd2,jdbcType=VARCHAR},
+            </if> 
+            <if test="ryzd3 != null" >
+                #{ryzd3,jdbcType=VARCHAR},
+            </if> 
+            <if test="ryzd4 != null" >
+                #{ryzd4,jdbcType=VARCHAR},
+            </if> 
+            <if test="zzysxm != null" >
+                #{zzysxm,jdbcType=CHAR},
+            </if> 
+            <if test="bqdm != null" >
+                #{bqdm,jdbcType=VARCHAR},
+            </if> 
+            <if test="cwdh != null" >
+                #{cwdh,jdbcType=VARCHAR},
+            </if> 
+            <if test="shjg != null" >
+                #{shjg,jdbcType=VARCHAR},
+            </if> 
+            <if test="sfzy != null" >
+                #{sfzy,jdbcType=VARCHAR},
+            </if> 
+            <if test="zryy != null" >
+                #{zryy,jdbcType=VARCHAR},
+            </if> 
+            <if test="jsffbz != null" >
+                #{jsffbz,jdbcType=VARCHAR},
+            </if> 
+            <if test="wsbz != null" >
+                #{wsbz,jdbcType=VARCHAR},
+            </if> 
+            <if test="ssrq != null" >
+                #{ssrq,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="sylb != null" >
+                #{sylb,jdbcType=VARCHAR},
+            </if> 
+            <if test="zszh != null" >
+                #{zszh,jdbcType=VARCHAR},
+            </if> 
+            <if test="xzlx != null" >
+                #{xzlx,jdbcType=VARCHAR},
+            </if> 
+            <if test="cyrq != null" >
+                #{cyrq,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="cyzd != null" >
+                #{cyzd,jdbcType=VARCHAR},
+            </if> 
+            <if test="cyzdgjdm != null" >
+                #{cyzdgjdm,jdbcType=VARCHAR},
+            </if> 
+            <if test="cyzd2 != null" >
+                #{cyzd2,jdbcType=VARCHAR},
+            </if> 
+            <if test="cyzdgjdm2 != null" >
+                #{cyzdgjdm2,jdbcType=VARCHAR},
+            </if> 
+            <if test="cyzd3 != null" >
+                #{cyzd3,jdbcType=VARCHAR},
+            </if> 
+            <if test="cyzdgjdm3 != null" >
+                #{cyzdgjdm3,jdbcType=VARCHAR},
+            </if> 
+            <if test="cyzd4 != null" >
+                #{cyzd4,jdbcType=VARCHAR},
+            </if> 
+            <if test="cyzdgjdm4 != null" >
+                #{cyzdgjdm4,jdbcType=VARCHAR},
+            </if> 
+            <if test="ryzs != null" >
+                #{ryzs,jdbcType=VARCHAR},
+            </if> 
+            <if test="cyqk != null" >
+                #{cyqk,jdbcType=VARCHAR},
+            </if> 
+            <if test="ryqk != null" >
+                #{ryqk,jdbcType=VARCHAR},
+            </if> 
+            <if test="zlff != null" >
+                #{zlff,jdbcType=VARCHAR},
+            </if> 
+            <if test="ssmc != null" >
+                #{ssmc,jdbcType=VARCHAR},
+            </if> 
+            <if test="zlff2 != null" >
+                #{zlff2,jdbcType=VARCHAR},
+            </if> 
+            <if test="zlffmc2 != null" >
+                #{zlffmc2,jdbcType=VARCHAR},
+            </if> 
+            <if test="zlff3 != null" >
+                #{zlff3,jdbcType=VARCHAR},
+            </if> 
+            <if test="zlffmc3 != null" >
+                #{zlffmc3,jdbcType=VARCHAR},
+            </if> 
+            <if test="zlff4 != null" >
+                #{zlff4,jdbcType=VARCHAR},
+            </if> 
+            <if test="zlffmc4 != null" >
+                #{zlffmc4,jdbcType=VARCHAR},
+            </if> 
+            <if test="ssrq1 != null" >
+                #{ssrq1,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="tzcysj != null" >
+                #{tzcysj,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="zwyy != null" >
+                #{zwyy,jdbcType=VARCHAR},
+            </if> 
+            <if test="jzlb != null" >
+                #{jzlb,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=CHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="modifier != null" >
+                #{modifier,jdbcType=CHAR},
+            </if> 
+            <if test="modityTime != null" >
+                #{modityTime,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=TIMESTAMP},
+            </if> 
+            <if test="status != null" >
+                #{status,jdbcType=CHAR},
+            </if> 
+            <if test="fhz != null" >
+                #{fhz,jdbcType=VARCHAR},
+            </if> 
+            <if test="msg != null" >
+                #{msg,jdbcType=VARCHAR},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateInsPv" parameterType="com.zebone.nhis.common.module.compay.ins.zsba.zsyb.InsZsybPv" >
+        UPDATE ins_pv
+        <set>
+            <if test="pkInspv != null" >
+                PK_INSPV = #{pkInspv,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=CHAR},
+            </if>
+            <if test="yybh != null" >
+                YYBH = #{yybh,jdbcType=VARCHAR},
+            </if>
+            <if test="pkHp != null" >
+                PK_HP = #{pkHp,jdbcType=CHAR},
+            </if>
+            <if test="pkPi != null" >
+                PK_PI = #{pkPi,jdbcType=CHAR},
+            </if>
+            <if test="pkPv != null" >
+                PK_PV = #{pkPv,jdbcType=CHAR},
+            </if>
+            <if test="euPvtype != null" >
+                EU_PVTYPE = #{euPvtype,jdbcType=VARCHAR},
+            </if>
+            <if test="jzjlh != null" >
+                JZJLH = #{jzjlh,jdbcType=CHAR},
+            </if>
+            <if test="gmsfhm != null" >
+                GMSFHM = #{gmsfhm,jdbcType=VARCHAR},
+            </if>
+            <if test="grsxh != null" >
+                GRSXH = #{grsxh,jdbcType=VARCHAR},
+            </if>
+            <if test="ryrq != null" >
+                RYRQ = #{ryrq,jdbcType=TIMESTAMP},
+            </if>
+            <if test="ryzd != null" >
+                RYZD = #{ryzd,jdbcType=VARCHAR},
+            </if>
+            <if test="ryzdgjdm != null" >
+                RYZDGJDM = #{ryzdgjdm,jdbcType=CHAR},
+            </if>
+            <if test="ryzd2 != null" >
+                RYZD2 = #{ryzd2,jdbcType=VARCHAR},
+            </if>
+            <if test="ryzd3 != null" >
+                RYZD3 = #{ryzd3,jdbcType=VARCHAR},
+            </if>
+            <if test="ryzd4 != null" >
+                RYZD4 = #{ryzd4,jdbcType=VARCHAR},
+            </if>
+            <if test="zzysxm != null" >
+                ZZYSXM = #{zzysxm,jdbcType=CHAR},
+            </if>
+            <if test="bqdm != null" >
+                BQDM = #{bqdm,jdbcType=VARCHAR},
+            </if>
+            <if test="cwdh != null" >
+                CWDH = #{cwdh,jdbcType=VARCHAR},
+            </if>
+            <if test="shjg != null" >
+                SHJG = #{shjg,jdbcType=VARCHAR},
+            </if>
+            <if test="sfzy != null" >
+                SFZY = #{sfzy,jdbcType=VARCHAR},
+            </if>
+            <if test="zryy != null" >
+                ZRYY = #{zryy,jdbcType=VARCHAR},
+            </if>
+            <if test="jsffbz != null" >
+                JSFFBZ = #{jsffbz,jdbcType=VARCHAR},
+            </if>
+            <if test="wsbz != null" >
+                WSBZ = #{wsbz,jdbcType=VARCHAR},
+            </if>
+            <if test="ssrq != null" >
+                SSRQ = #{ssrq,jdbcType=TIMESTAMP},
+            </if>
+            <if test="sylb != null" >
+                SYLB = #{sylb,jdbcType=VARCHAR},
+            </if>
+            <if test="zszh != null" >
+                ZSZH = #{zszh,jdbcType=VARCHAR},
+            </if>
+            <if test="xzlx != null" >
+                XZLX = #{xzlx,jdbcType=VARCHAR},
+            </if>
+            <if test="cyrq != null" >
+                CYRQ = #{cyrq,jdbcType=TIMESTAMP},
+            </if>
+            <if test="cyzd != null" >
+                CYZD = #{cyzd,jdbcType=VARCHAR},
+            </if>
+            <if test="cyzdgjdm != null" >
+                CYZDGJDM = #{cyzdgjdm,jdbcType=VARCHAR},
+            </if>
+            <if test="cyzd2 != null" >
+                CYZD2 = #{cyzd2,jdbcType=VARCHAR},
+            </if>
+            <if test="cyzdgjdm2 != null" >
+                CYZDGJDM2 = #{cyzdgjdm2,jdbcType=VARCHAR},
+            </if>
+            <if test="cyzd3 != null" >
+                CYZD3 = #{cyzd3,jdbcType=VARCHAR},
+            </if>
+            <if test="cyzdgjdm3 != null" >
+                CYZDGJDM3 = #{cyzdgjdm3,jdbcType=VARCHAR},
+            </if>
+            <if test="cyzd4 != null" >
+                CYZD4 = #{cyzd4,jdbcType=VARCHAR},
+            </if>
+            <if test="cyzdgjdm4 != null" >
+                CYZDGJDM4 = #{cyzdgjdm4,jdbcType=VARCHAR},
+            </if>
+            <if test="ryzs != null" >
+                RYZS = #{ryzs,jdbcType=VARCHAR},
+            </if>
+            <if test="cyqk != null" >
+                CYQK = #{cyqk,jdbcType=VARCHAR},
+            </if>
+            <if test="ryqk != null" >
+                RYQK = #{ryqk,jdbcType=VARCHAR},
+            </if>
+            <if test="zlff != null" >
+                ZLFF = #{zlff,jdbcType=VARCHAR},
+            </if>
+            <if test="ssmc != null" >
+                SSMC = #{ssmc,jdbcType=VARCHAR},
+            </if>
+            <if test="zlff2 != null" >
+                ZLFF2 = #{zlff2,jdbcType=VARCHAR},
+            </if>
+            <if test="zlffmc2 != null" >
+                ZLFFMC2 = #{zlffmc2,jdbcType=VARCHAR},
+            </if>
+            <if test="zlff3 != null" >
+                ZLFF3 = #{zlff3,jdbcType=VARCHAR},
+            </if>
+            <if test="zlffmc3 != null" >
+                ZLFFMC3 = #{zlffmc3,jdbcType=VARCHAR},
+            </if>
+            <if test="zlff4 != null" >
+                ZLFF4 = #{zlff4,jdbcType=VARCHAR},
+            </if>
+            <if test="zlffmc4 != null" >
+                ZLFFMC4 = #{zlffmc4,jdbcType=VARCHAR},
+            </if>
+            <if test="ssrq1 != null" >
+                SSRQ1 = #{ssrq1,jdbcType=TIMESTAMP},
+            </if>
+            <if test="tzcysj != null" >
+                TZCYSJ = #{tzcysj,jdbcType=TIMESTAMP},
+            </if>
+            <if test="zwyy != null" >
+                ZWYY = #{zwyy,jdbcType=VARCHAR},
+            </if>
+            <if test="jzlb != null" >
+                JZLB = #{jzlb,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=CHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="modifier != null" >
+                MODIFIER = #{modifier,jdbcType=CHAR},
+            </if>
+            <if test="modityTime != null" >
+                MODITY_TIME = #{modityTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=TIMESTAMP},
+            </if>
+            <if test="status != null" >
+                STATUS = #{status,jdbcType=CHAR},
+            </if>
+            <if test="fhz != null" >
+                FHZ = #{fhz,jdbcType=VARCHAR},
+            </if>
+            <if test="msg != null" >
+                MSG = #{msg,jdbcType=VARCHAR},
+            </if>
+        </set>
+        WHERE 
+            PK_INSPV = #{pkInspv,jdbcType=CHAR}
+    </update>
+    
+      <!-- 获取医保入院登记界面的基本信息  -->
+    <select id="getBasicData" parameterType="java.util.Map" resultType="java.util.Map">
+			select 
+			    pe.pk_pi,
+				pm.code_ip, 
+				pi.ip_times, 
+				pm.name_pi, 
+				pe.dt_sex, 
+				pm.birth_date,  
+				pe.pk_dept, 
+				bod.code_dept,
+				bod.name_dept, 
+        		bod.code_dept_nation_ins,
+				idm.code_insdept,
+				idm.name_insdept,
+				pe.pk_dept_ns, 
+				bod_ns.name_dept name_dept_ns, 
+				bod_ns.code_dept code_dept_ns,
+        		bod_ns.code_dept_nation_ins as code_dept_ns_nation_ins,
+				bed_no,
+				pm.dt_idtype,
+				pm.id_no,
+			    pm.insur_no,
+			    pe.pk_insu,
+			    pe.date_begin,
+				pe.date_end,
+			    pe.pk_emp_tre,
+			    pe.name_emp_tre,
+				emp.code_emp,
+			    pi.dt_outcomes,
+			    pm.name_rel,
+			    pm.tel_rel,
+			    pe.pk_emp_tre as pk_emp_phy,
+			    pe.name_emp_tre as name_emp_phy,
+				phyEmp.code_emp as code_emp_phy
+			from 
+				pv_encounter pe INNER JOIN pv_ip pi on pe.pk_pv = pi.pk_pv
+			    INNER JOIN pi_master pm ON pe.pk_pi = pm.pk_pi
+				LEFT JOIN bd_ou_dept bod ON pe.pk_dept = bod.pk_dept
+				LEFT JOIN bd_ou_dept bod_ns ON pe.pk_dept_ns = bod_ns.pk_dept
+				LEFT JOIN ins_dept_map idm ON pe.pk_dept = idm.pk_dept and idm.del_flag = '0'
+				LEFT JOIN bd_ou_employee emp ON emp.PK_EMP = pe.pk_emp_tre
+				LEFT JOIN bd_ou_employee phyEmp ON phyEmp.PK_EMP = pe.pk_emp_tre
+			where 
+			    pe.del_flag = '0' and pe.eu_status!='9'
+			    and pe.pk_pv=#{pkPv,jdbcType=VARCHAR} 
+	</select>
+    
+    <!-- CN0016=0的时候获取入院诊断数据  -->
+   	<!-- 获取医保入院登记界面的4个诊断  -->
+    <select id="getDiagData" parameterType="java.util.Map" resultType="java.util.Map">
+			SELECT
+				diag.pk_diag,
+				diag.diagcode,
+				pd.sort_no,
+				pd.flag_maj,
+				pd.name_diag AS diagname 
+			FROM
+				pv_diag pd
+				INNER JOIN BD_CNDIAG diag1 ON pd.pk_diag = diag1.PK_CNDIAG
+				INNER JOIN bd_term_diag diag ON diag1.pk_diag = diag.pk_diag 
+			WHERE
+				pd.pk_pv=#{pkPv,jdbcType=VARCHAR} 
+				AND pd.dt_diagtype = '0100' 
+			ORDER BY
+				pd.flag_maj DESC,
+				sort_no
+	</select>
+	
+	 <!-- CN0016=1的时候获取入院诊断数据  -->
+    <select id="getDiagData2" parameterType="java.util.Map" resultType="java.util.Map">
+	   SELECT
+			td.diagcode AS diagcode,
+			pd.name_diag AS diagname,
+			pd.name_diag AS diagDesc,
+			emp.code_emp as diagCodeEmp,
+	        pd.name_emp_diag as diagNameEmp,
+	        pd.date_diag as diagDate
+		FROM
+			pv_diag pd
+			LEFT JOIN BD_CNDIAG diag ON diag.PK_CNDIAG = pd.PK_DIAG 
+			LEFT JOIN bd_ou_employee emp ON emp.PK_EMP = pd.pk_emp_diag
+			LEFT JOIN BD_TERM_DIAG td on diag.pk_diag = td.pk_diag
+		WHERE
+			pd.dt_diagtype = '0100' 
+			AND pd.pk_pv=#{pkPv,jdbcType=VARCHAR} 
+		ORDER BY
+			pd.flag_maj DESC,
+			sort_no
+	</select>
+	
+	<!-- CN0016=0的时候获取出院诊断数据  -->
+    <select id="getCyDiagData" parameterType="java.util.Map" resultType="java.util.Map">
+			select 
+				diag.pk_diag,
+       			diag.diagcode,
+       			diag.diagname,
+      		    pd.sort_no,  
+       			pd.flag_maj   
+  			from pv_diag pd
+       			inner join bd_term_diag diag on pd.pk_diag = diag.pk_diag
+ 				where 
+ 				pd.dt_diagtype = '0109'
+ 				pd.pk_pv=#{pkPv,jdbcType=VARCHAR} 
+ 				order by pd.flag_maj desc,sort_no
+	</select>
+	
+		 <!-- CN0016=1的时候获取出院诊断数据  -->
+    <select id="getCyDiagData2" parameterType="java.util.Map" resultType="java.util.Map">
+    		SELECT
+				td.diagcode AS diagcode,
+				pd.desc_diag AS diagname,
+				pd.name_diag AS diagDesc,
+				emp.code_emp as diagCodeEmp,
+		        pd.name_emp_diag as diagNameEmp,
+		        pd.date_diag as diagDate
+			FROM
+				pv_diag pd
+				LEFT JOIN BD_CNDIAG diag ON diag.PK_CNDIAG = pd.PK_DIAG 
+				LEFT JOIN bd_ou_employee emp ON emp.PK_EMP = pd.pk_emp_diag
+				LEFT JOIN BD_TERM_DIAG td on diag.pk_diag = td.pk_diag
+			WHERE
+				pd.pk_pv=#{pkPv,jdbcType=VARCHAR} 
+				and pd.dt_diagtype = '0109'
+			ORDER BY
+				pd.flag_maj DESC,
+				sort_no
+	</select>
+	
+   <!--  获取出院登记界面初始数据  -->
+    <select id="getDischargeRegistrationData" parameterType="java.util.Map" resultType="java.util.Map">
+    		select 
+    		    ip.pk_inspv,
+    			ip.JZJLH, 
+    			pe.date_end, 
+    			pi.dt_outcomes, 
+    			pi.dt_level_dise, 
+    			coa.desc_op, 
+    			pi.date_notice, 
+    			ip.JSFFBZ, 
+    			ip.SYLB, 
+    			ip.ZSZH 
+    		from
+				pv_encounter pe inner join pv_ip pi on pe.pk_pv = pi.pk_pv
+  				INNER JOIN ins_pv ip on pe.pk_pv = ip.pk_pv
+  				left JOIN cn_order co on pe.pk_pv = co.pk_pv
+  				left join cn_op_apply coa on co.pk_cnord = coa.pk_cnord 
+			where 
+			    ip.del_flag = '0'
+				and pe.pk_pv = #{pkPv,jdbcType=VARCHAR} 
+	</select>
+	
+	<!-- 获取出院登记界面初始数据,异地医保用的  -->
+    <select id="getYdDischargeRegistrationData" parameterType="java.util.Map" resultType="java.util.Map">
+    		select 
+    			pe.date_begin, 
+    			pe.date_end, 
+    			pi.dt_outcomes, 
+    			pi.dt_level_dise, 
+    			coa.desc_op, 
+    			pi.date_notice, 
+    			pi.pk_dept_dis,
+    			pi.pk_dept_ns_dis,
+    			bod.name_dept, 
+    			bod.code_dept,
+				bod_ns.name_dept name_dept_ns, 
+				pe.bed_no,
+				pe.name_emp_tre,
+				pi.dt_intype,
+				ybDt.code_insdept,
+				bod.code_dept_nation_ins,
+				bod_ns.code_dept_nation_ins as code_dept_ns_nation_ins
+    		from
+				pv_encounter pe inner join pv_ip pi on pe.pk_pv = pi.pk_pv
+  				left JOIN cn_order co on pe.pk_pv = co.pk_pv
+  				left join cn_op_apply coa on co.pk_cnord = coa.pk_cnord 
+  				LEFT JOIN bd_ou_dept bod ON pi.pk_dept_dis = bod.pk_dept
+				LEFT JOIN bd_ou_dept bod_ns ON pi.pk_dept_ns_dis = bod_ns.pk_dept
+				LEFT JOIN ins_dept_map ybDt ON pi.pk_dept_dis = ybDt.pk_dept
+			where 
+			    pe.del_flag = '0'
+				and pe.pk_pv = #{pkPv,jdbcType=VARCHAR} 
+	</select>
+</mapper>

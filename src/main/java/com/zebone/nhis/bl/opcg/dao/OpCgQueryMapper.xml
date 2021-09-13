@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.bl.opcg.dao.OpCgQueryMapper">
+
+	<!-- 根据患者的主键查询患者未结算的收费信息 
+	<select id="queryPatiCgInfoNotSettle" parameterType="com.zebone.nhis.bl.opcg.vo.OpCgTransforVo" resultType="DynaBean">
+	
+	</select>-->
+	
+	<select id="getDrawDocName" resultType="com.zebone.nhis.common.module.pv.PvEncounter" parameterType="java.lang.String">
+	SELECT * FROM pv_encounter WHERE PK_PV = #{pkPv,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getBdOrdDepts" resultType="com.zebone.nhis.common.module.base.bd.srv.BdOrdDept" parameterType="java.util.Map">
+		SELECT * FROM BD_ORD_DEPT dept ,BD_ORD_ORG org  
+			WHERE org.PK_ORD = dept.PK_ORD AND org.PK_ORG = #{pkOrg,jdbcType=VARCHAR} 
+			AND org.PK_ORDORG = dept.PK_ORDORG AND dept.FLAG_DEF = '1' AND dept.PK_ORD = #{pkOrd,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getStocks" resultType="com.zebone.nhis.scm.pub.vo.PdStockVo" parameterType="java.util.Map">
+		SELECT a.* ,c.PACK_SIZE FROM PD_STOCK a ,BD_PD_STORE b ,BD_PD_CONVERT c 
+		WHERE a.PK_PD = #{pkPd,jdbcType=VARCHAR}
+ 			AND a.PK_DEPT = #{pkDept,jdbcType=VARCHAR} AND a.PK_PD = b.PK_PD AND a.PK_DEPT = b.PK_DEPT 
+ 			AND b.PK_PDCONVERT = c.PK_PDCONVERT AND a.DEL_FLAG = '0'
+	</select>
+	
+	<select id="getIsStopOp" resultType="int" parameterType="java.util.Map">
+		SELECT count(*) FROM PD_STOCK stock 
+ 			LEFT JOIN BD_PD pd
+  			ON pd.CODE = #{code,jdbcType=VARCHAR}
+  		WHERE stock.PK_ORG = #{pkOrg,jdbcType=VARCHAR} 
+  		AND stock.PK_DEPT = #{pkDept,jdbcType=VARCHAR} 
+  		AND stock.PK_PD = pd.PK_PD  
+  		AND stock.FLAG_STOP_OP = '1'
+	</select>
+	<select id="queryPvAndHpInof"  parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.pv.PvEncounter">
+		select pv.pk_pv,pv.pk_insu 
+         from pv_encounter pv
+         inner join bd_hp hp on hp.pk_hp = pv.pk_insu 
+         where pv.eu_pvtype = '3' and pv.eu_status in ('0','1','2') and pv.pk_pi=#{pkPi,jdbcType=VARCHAR}  and hp.flag_ipnoop='1'
+	</select>
+	
+	<select id="qryCnOrderList"  parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOrder">
+		SELECT
+			pk_cnord,
+			code_ordtype 
+		FROM
+			CN_ORDER 
+		WHERE
+			PK_CNORD in
+			<foreach collection="pkCnords" index="index" item="pkCnord" open="(" separator="," close=")">  
+               #{pkCnord}    
+            </foreach>
+	</select>
+</mapper>

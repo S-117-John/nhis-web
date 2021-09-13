@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.sd.dao.DiseaseUploadMapper">
+
+    <select id="getDiseaseList" parameterType="java.util.Map" resultType="DynaBean">
+        select ip.ip_times,
+               ardoc.PK_ARCHPV,
+               ardoc.PK_ARCHDOC,
+               ardoc.note,
+               ardoc.name_emp_upload,
+               ardoc.date_upload,
+               ardoc.PATH,
+               ardoc.FLAG_LOOK,
+               ardoc.PK_EMP_UPLOAD
+        from arch_pv arpv
+                 inner Join arch_doc ardoc on arpv.pk_archpv = ardoc.pk_archpv
+                 inner Join pv_ip ip on arpv.pk_pv = ip.pk_pv
+        where arpv.pk_pv = #{pkPv}
+            and ardoc.DEL_FLAG='0'
+            and ardoc.FLAG_CANCEL='0'
+    </select>
+</mapper>

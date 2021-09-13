@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.pub.dao.FixedCostPubMapper">
+    <select id="queryFixedCharge" parameterType="java.util.Map" resultType="DynaBean">
+		 select cgdt.pk_item,
+        cgdt.begin_month,
+        cgdt.end_month,
+        cgdt.begin_day,
+        cgdt.end_day,
+        cgdt.eu_cgmode,
+        item.price,
+        item.name itemname,
+        item.flag_pd,
+        item.code itemcode,
+        item.pk_unit,
+        itemcate.code as catecode,
+        daycg.eu_daycgmode,
+        daycg.date_daycg,
+        daycg.date_bed,
+        daycg.flag_stop_bed,
+        pv.date_admit,
+        pv.pk_pv,
+        pv.pk_pi,
+        pv.eu_pvtype,
+        pv.pk_dept_ns,
+        pv.pk_dept,
+        pv.name_pi,
+        pv.bed_no
+       from pv_daycg daycg 
+       inner join pv_encounter pv  on daycg.pk_pv = pv.pk_pv  and pv.eu_status='1' 
+       left join pv_daycg_detail cgdt on daycg.pk_daycg = cgdt.pk_daycg  and cgdt.flag_active = '1'
+       left join bd_item item  on item.pk_item = cgdt.pk_item 
+       left join bd_itemcate itemcate on itemcate.pk_itemcate = item.pk_itemcate 
+       where 1=1 
+       <if test="pkPvs != null  and  pkPvs != ''">
+		       and  daycg.pk_pv in 
+		       <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            	#{pkpv}    
+               </foreach>
+       </if>
+         order by pv.bed_no 
+    </select>
+   <select id="queryPvBedItem" parameterType="java.util.Map" resultType="DynaBean">
+    select  item.price, item.name itemname,pvbed.date_begin,pvbed.date_end ,bed.pk_bed,bed.pk_item_add,
+            item.flag_pd,item.pk_item ,item.code itemcode,item.pk_unit,pvbed.eu_hold,itemadd.price price_add, itemadd.name itemname_add,
+            itemadd.flag_pd flag_pd_add,itemadd.code itemcode_add,itemadd.pk_unit as pk_unit_add
+                from pv_encounter pv 
+             inner join pv_bed pvbed 
+                on pv.pk_pv = pvbed.pk_pv and pvbed.pk_dept_ns = pv.pk_dept_ns and pvbed.pk_dept = pv.pk_dept 
+             inner join bd_res_bed bed 
+               on pvbed.bedno = bed.code  and  pvbed.pk_org = bed.pk_org  and bed.pk_ward = pv.pk_dept_ns 
+             inner join bd_item item
+               on bed.pk_item = item.pk_item  
+             left join bd_item itemadd
+               on bed.pk_item_add = itemadd.pk_item 
+             where pv.pk_pv = #{pkPv,jdbcType=CHAR} and pv.eu_status = '1' and (pvbed.date_end &gt; to_date(#{dateenditem},'YYYYMMDDHH24MISS') or pvbed.date_end is null) 
+    </select>
+    <!-- 查询就诊床位及对应费用，博爱使用费用子表维护床位费版本 2020.3.15 -->
+     <select id="queryPvBedItems" parameterType="java.util.Map" resultType="DynaBean">
+    select  item.price, item.name itemname,pvbed.date_begin,pvbed.date_end ,bed.pk_bed,bed.pk_item_add,
+            item.flag_pd,item.pk_item ,item.code itemcode,item.pk_unit,pvbed.eu_hold,
+            beditem.flag_add,beditem.quan 
+            from pv_encounter pv 
+            inner join pv_bed pvbed on pv.pk_pv = pvbed.pk_pv and pvbed.pk_dept_ns = pv.pk_dept_ns and pvbed.pk_dept = pv.pk_dept
+  		    inner join bd_res_bed bed on pvbed.bedno = bed.code and pvbed.pk_org = bed.pk_org and bed.pk_ward = pv.pk_dept_ns
+  		    inner join bd_item_bed beditem on bed.pk_bed = beditem.pk_bed
+  		    inner join bd_item item on beditem.pk_item = item.pk_item 
+            where beditem.del_flag = '0' and  pv.pk_pv = #{pkPv,jdbcType=CHAR} and pv.eu_status = '1' and (pvbed.date_end &gt; to_date(#{dateenditem},'YYYYMMDDHH24MISS') or pvbed.date_end is null) 
+    </select>
+    <select id="queryPvVirtualBedItem" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.pub.vo.PvBedVo">
+    select  pvbed.date_begin,pvbed.date_end,pvbed.bedno,pv.pk_pv
+                from pv_encounter pv
+             inner join pv_bed pvbed
+                on pv.pk_pv = pvbed.pk_pv and pvbed.pk_dept_ns = pv.pk_dept_ns and pvbed.pk_dept = pv.pk_dept
+             inner join bd_res_bed bed
+               on pvbed.bedno = bed.code  and  pvbed.pk_org = bed.pk_org  and bed.pk_ward = pv.pk_dept_ns 
+               and bed.dt_bedtype = '03' 
+             where pv.pk_pv = #{pkPv,jdbcType=CHAR} and pv.eu_status = '1' and pvbed.eu_hold ='0' and (pvbed.date_end &gt; to_date(#{dateenditem},'YYYYMMDDHH24MISS') or pvbed.date_end is null)
+    </select>
+</mapper>

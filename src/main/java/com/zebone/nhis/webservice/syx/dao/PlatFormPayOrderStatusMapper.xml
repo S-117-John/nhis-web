@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.PlatFormPayOrderStatusMapper">
+    <select id="getPayOrderStatus" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.PayOrderStatusReq"
+            resultType="com.zebone.nhis.webservice.syx.vo.platForm.PayOrderStatusRes">
+        
+        SELECT 
+			st.code_st orderIdHIS,
+			st.amount_st payAmout,
+			dp.dt_paymode payMode,
+			st.date_st payTime,
+			'' AS orderDesc 
+		FROM 
+			pv_encounter pv 
+		INNER join pi_master pi ON pv.pk_pi = pi.pk_pi 
+		INNER join bl_settle st ON pv.pk_pv = st.pk_pv 
+		INNER join bl_deposit dp ON st.pk_settle = dp.pk_settle 
+		INNER join bl_ext_pay ep ON dp.pk_depo = ep.pk_depo 	
+		WHERE 
+			ep.serial_no = #{orderId,jdbcType=VARCHAR} 
+			<if test="userCardType == 0">
+				AND pi.id_no = #{userCardId,jdbcType=VARCHAR}
+			</if>
+			<if test="userCardType == 1">
+				AND pi.code_op = #{userCardId,jdbcType=VARCHAR}
+			</if>
+			<if test="userCardType == 2">
+				AND pi.citizen_no = #{userCardId,jdbcType=VARCHAR}
+			</if>
+			<if test="userCardType == 3">
+				AND pi.insur_no = #{userCardId,jdbcType=VARCHAR}
+			</if>
+			<if test="userCardType == 4">
+				AND pi.idno_rel = #{userCardId,jdbcType=VARCHAR}
+			</if>
+			<if test="userCardType == 5">
+				AND pi.mobile = #{userCardId,jdbcType=VARCHAR}
+			</if>	
+			<if test="startDate != null and startDate != ''">
+			 	AND st.date_st &gt;= to_date(#{startDate,jdbcType=VARCHAR},'yyyy-mm-dd HH24:mi:ss')
+		 	</if>
+		 	<if test="endDate != null and endDate != ''">
+			 	AND st.date_st &lt;= to_date(#{endDate,jdbcType=VARCHAR},'yyyy-mm-dd HH24:mi:ss')
+		 	</if>
+    </select>
+</mapper>

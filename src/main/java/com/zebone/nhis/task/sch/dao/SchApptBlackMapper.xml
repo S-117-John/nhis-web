@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.task.sch.dao.SchApptBlackMapper">
+
+	<select id="genApplyBlacklist" resultType="DynaBean" parameterType="java.util.Map">
+	  select pi.pk_pi,
+		pi.code_pi,
+		pi.name_pi,
+		sex.name sex,
+		pi.birth_date,
+		pi.id_no,
+		pi.mobile,
+		case when lk.pk_pi = pi.pk_pi then '1' else '-1' end status,
+		count(1) cnt
+	  from pi_master pi
+		inner join sch_appt appt on pi.pk_pi = appt.pk_pi
+		inner join bd_defdoc sex on pi.dt_sex = sex.code and sex.code_defdoclist='000000'
+		left outer join pi_lock lk on pi.pk_pi = lk.pk_pi
+	  where appt.eu_schclass = 0 
+		and appt.eu_status = 0 
+		and appt.date_appt &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyymmddHH24miss') 
+		and appt.date_appt &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyymmddHH24miss')
+	  group by pi.pk_pi, 
+		pi.code_pi,
+		pi.name_pi,
+		sex.name,
+		pi.birth_date,
+		pi.id_no,
+		pi.mobile,
+		case when lk.pk_pi = pi.pk_pi then '1' else '-1' end
+	  having count(1) &gt; #{breakCnt,jdbcType=INTEGER}	
+	</select>
+	
+	<select id="genApplyBlackLatelist" parameterType="java.util.Map" resultType="DynaBean">
+          select pi.pk_pi,
+		       pi.code_pi,
+		       pi.name_pi,
+		       sex.name sex,
+		       pi.birth_date,
+		       pi.id_no,
+		       pi.mobile,
+		       case when lk.pk_pi=pi.pk_pi then 'Y' else 'N' end status,
+		       count(1) cnt
+          from pi_master pi
+		       inner join sch_appt appt on pi.pk_pi=appt.pk_pi
+		       inner join bd_defdoc sex on pi.dt_sex=sex.code and sex.code_defdoclist='000000'
+		       Inner Join sch_appt_pv appv On appt.pk_schappt=appv.pk_schappt
+		       Left Outer Join pv_op op On appv.pk_pv=op.pk_pv
+		       Left Outer Join pi_lock lk on pi.pk_pi=lk.pk_pi
+          where appt.eu_schclass = 0 and
+		       appt.eu_status = 1 and 
+		       appt.end_time &lt; op.date_sign and 
+		       appt.date_appt &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyymmddHH24miss') and
+		       appt.date_appt &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyymmddHH24miss')       
+          group by pi.pk_pi, 
+		       pi.code_pi,
+		       pi.name_pi,
+		       sex.name,
+		       pi.birth_date,
+		       pi.id_no,
+		       pi.mobile,
+		       case when lk.pk_pi=pi.pk_pi then 'Y' else 'N' end
+		       having count(1) &gt; #{lateTimer,jdbcType=INTEGER}	
+    </select>
+	<select id="genApplyBlackPskqlist" parameterType="java.util.Map" resultType="DynaBean">
+	  select aa.*,ROWNUM no from (
+			select sa.BEGIN_TIME,pv.DATE_CLINIC,
+			(case when pv.DATE_CLINIC is null and (pv.EU_STATUS='0' or (pv.EU_STATUS='9' and to_char(pv.DATE_CANCEL,'YYYY-MM-DD')>to_char(sa.BEGIN_TIME,'YYYY-MM-DD')))  then '1' else '0' end) flag_was,pv.EU_STATUS,sa.PK_PI 
+			from SCH_APPT sa
+			INNER JOIN SCH_APPT_PV sap on sap.PK_SCHAPPT=sa.PK_SCHAPPT
+			INNER JOIN PV_ENCOUNTER pv on pv.PK_PV=sap.PK_PV
+			where  to_char(sa.BEGIN_TIME,'YYYY-MM-DD')<![CDATA[<]]>to_char(SYSDATE,'YYYY-MM-DD')
+							and EXISTS (select PK_PI from SCH_APPT where EU_STATUS='1' and FLAG_PAY='1' and FLAG_CANCEL='0' and PK_PI=sa.PK_PI 
+							and BEGIN_TIME &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyymmddHH24miss') 
+							and BEGIN_TIME &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyymmddHH24miss') )
+			ORDER BY sa.PK_PI,sa.BEGIN_TIME desc
+	) aa
+	</select>
+	<select id="genApplyUnBlackPskqlist" parameterType="java.util.Map" resultType="DynaBean">
+	  select aa.*,ROWNUM no from (
+			select sa.BEGIN_TIME,pv.DATE_CLINIC,
+			(case when pv.DATE_CLINIC is null and (pv.EU_STATUS='0' or (pv.EU_STATUS='9' and to_char(pv.DATE_CANCEL,'YYYY-MM-DD')>to_char(sa.BEGIN_TIME,'YYYY-MM-DD')))  then '1' else '0' end) flag_was,pv.EU_STATUS,sa.PK_PI 
+			from SCH_APPT sa
+			INNER JOIN SCH_APPT_PV sap on sap.PK_SCHAPPT=sa.PK_SCHAPPT
+			INNER JOIN PV_ENCOUNTER pv on pv.PK_PV=sap.PK_PV
+			where  to_char(sa.BEGIN_TIME,'YYYY-MM-DD')<![CDATA[<]]>to_char(SYSDATE,'YYYY-MM-DD')
+							and EXISTS (select PK_PI from pi_lock where PK_PI=sa.PK_PI )
+			ORDER BY sa.PK_PI,sa.BEGIN_TIME desc
+	) aa
+	</select>
+</mapper>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.zsba.dao.BaPatiInfoMapper">
+    <select id="quePvInfantLab" resultType="com.zebone.nhis.ma.pub.zsba.vo.PvInfantLab">
+        SELECT pi.code_ip,
+               pv.pk_pv,
+               pv.pk_pi,
+               pv.name_pi,
+               pv.date_admit,
+               pv.pk_pv,
+               pv.date_begin,
+               pv.date_end,
+               GETPVAGE(pi.BIRTH_DATE,pv.DATE_BEGIN)        age,
+               pv.pk_dept,
+               pv.pk_dept_ns,
+               sex.name         dt_sex,
+               dept.name_dept,
+               deptns.name_dept name_dept_ns,
+               hp.name          name_hp,
+               dise.name        level_dise_hint,
+               ord_ns.name      level_ns_hint,
+               diag.desc_diag,
+               pv.EU_STATUS
+        FROM pv_encounter pv
+                 INNER JOIN bd_hp hp ON pv.pk_insu = hp.pk_hp
+                 INNER JOIN pi_master pi ON pi.pk_pi = pv.pk_pi
+                 INNER JOIN bd_ou_dept dept ON dept.pk_dept = pv.pk_dept
+                 INNER JOIN bd_ou_dept deptns ON deptns.pk_dept = pv.pk_dept_ns
+                 INNER JOIN pv_ip ip ON pv.pk_pv = ip.pk_pv
+                 LEFT JOIN pv_diag diag ON diag.pk_pv = pv.pk_pv and diag.flag_Maj = '1'
+                 LEFT JOIN bd_defdoc sex ON sex.code = pv.dt_sex AND sex.code_defdoclist = '000000'
+                 LEFT JOIN bd_defdoc dise ON dise.code = ip.DT_LEVEL_DISE AND dise.code_defdoclist = '000202'
+                 LEFT JOIN bd_ord ord_ns ON ip.dt_level_ns = ord_ns.code AND ord_ns.code_ordtype LIKE '06%'
+        where pv.pk_pv = #{pkPv,jdbcType=VARCHAR}
+    </select>
+
+    <select id="queryPvFunctionList" resultType="com.zebone.nhis.ma.pub.zsba.vo.PvFunctionVo">
+        select fun.pk_fun,fun.date_fun,pi.code_ip,pv.pk_pv,pv.name_pi,pv.pk_dept,dept.name_dept,pv.eu_status
+        from pv_function fun
+        inner join pv_encounter pv on pv.pk_pv = fun.pk_pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        inner join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+        where pv.eu_status = '1'
+        <if test="dateBegin != null and dateBegin !=''">
+            and fun.date_fun >= to_date(#{dateBegin},'yyyy-MM-dd hh24:mi:ss')
+        </if>
+        <if test="dateEnd != null and dateEnd !=''">
+            and fun.date_fun &lt;= to_date(#{dateEnd},'yyyy-MM-dd hh24:mi:ss')
+        </if>
+        <if test="codeOrName != null and codeOrName !=''">
+            and (pi.code_ip like '%'||#{codeOrName,jdbcType=VARCHAR}||'%' or pi.name_pi like
+            '%'||#{codeOrName,jdbcType=VARCHAR}||'%')
+        </if>
+        <if test="pkDept != null and pkDept !=''">
+            and fun.pk_dept = #{pkDept,jdbcType=VARCHAR}
+        </if>
+        <if test="dtOutMode != null and dtOutMode !=''">
+            and (not exists(select 1
+                               from pv_labor_rec_dt inf
+                               where fun.PK_PV = inf.pk_pv and inf.dt_out_mode = #{dtOutMode,jdbcType=VARCHAR}))
+        </if>
+        
+    </select>
+
+</mapper>

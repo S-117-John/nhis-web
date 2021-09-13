@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.webservice.dao.CnPubForWsMapper">
+	<select id="LbqueryCnOrderUnpaid" parameterType="java.util.Map" resultType="DynaBean">
+	   SELECT count(ord.PK_CNORD),sum(dt.amount) as recipe_fee,ord.pk_pv as visit_id,DEPT.NAME_DEPT as dept_name,
+        ous.code_emp as doct_code,ord.name_emp_input as doct_name,pv.date_begin as visit_date,bdtype.name recipe_type,
+        ord.pk_cnord as recipe_id,ord.name_ord as recipe_name,date_start as recipe_time,ord.ordsn,ord.code_ord,ord.quan,
+        unit.name as wicket,depts.NAME_DEPT as exec_dept,depts.name_place as exec_location
+        FROM cn_order ord
+        LEFT JOIN bd_ou_dept dept on dept.PK_DEPT = ord.pk_dept
+        LEFT JOIN bd_ou_dept depts on depts.PK_DEPT = ord.pk_dept_exec
+        LEFT JOIN PV_ENCOUNTER pv on pv.pk_pv = ord.pk_pv 
+        LEFT JOIN BD_ORDTYPE bdtype on bdtype.code = ord.code_ordtype and bdtype.DEL_FLAG = '0'
+        LEFT JOIN bl_op_dt dt on dt.pk_cnord = ord.PK_CNORD and dt.del_flag = '0'
+        LEFT JOIN bd_item item ON dt.pk_item = item.pk_item
+        LEFT JOIN ex_pres_occ occ on occ.pk_pres = ord.pk_pres
+        LEFT JOIN bd_dept_unit unit on unit.code = occ.winno_conf
+        LEFT JOIN bd_ou_employee ous on ous.pk_emp=ord.pk_emp_ord
+        WHERE 1=1 
+         <if test="pkCnord !=nul and pkCnord !=''">
+			and ord.PK_CNORD = #{pkCnord}
+		 </if>
+         <if test="visitId !=nul and visitId !=''">
+			and ord.pk_pv = #{visitId} 
+		 </if>
+		 <if test="codePv !=nul and codePv !=''">
+			and pv.code_pv = #{codePv}
+		 </if>
+		 <if test="settle !=nul and settle !=''">
+			and dt.flag_settle = #{settle} 
+		 </if>
+         <if test="endDate !=nul and endDate !=''">
+			and date_start &lt; to_date(#{endDate,jdbcType=CHAR}, 'YYYYMMDDHH24MISS') 
+		 </if>
+		 <if test="startDate !=nul and startDate !=''">
+			and date_start &gt;= to_date(#{startDate,jdbcType=CHAR}, 'YYYYMMDDHH24MISS') 
+		 </if>
+        GROUP BY ord.pk_pv,DEPT.NAME_DEPT,ord.name_emp_input,pv.date_begin,bdtype.name,ous.code_emp,
+        ord.ordsn,ord.code_ord,ord.quan,
+        ord.pk_cnord,ord.name_ord,ord.date_start,unit.name,depts.NAME_DEPT,depts.name_place
+	</select>
+	
+	<select id="queryCnOrderWeb" parameterType="java.util.Map" resultType="DynaBean">
+	      select
+             pv.code_pv,
+             cn.pk_pi,
+	         pi.code_ip,
+	         cn.pk_pv,
+	         cn.date_start,
+	         cn.eu_status_ord,
+	         cn.eu_always,
+	         cn.code_ordtype,
+	         ortype.name as name_ordtype,
+	         cn.code_ord,
+	         cn.ordsn,
+	         cn.ordsn_parent,
+	         cn.name_ord,
+	         bdpd.name as name_pd,
+	         dept.code_dept,
+	         depts.code_dept as code_dept_ns,
+	         cn.spec,
+	         cn.code_freq,
+	         freq.name as name_freq,
+	         cn.dosage,
+	         unit.name as name_unit_dos,
+	         cn.code_supply,
+	         supply.name as name_supply,
+	         cn.first_num,
+	         cn.last_num as stop_num,
+	         cn.eu_st,
+	         cn.flag_self, 
+	         cn.date_enter,
+	         cn.date_stop,
+	         cn.name_emp_input,
+	         cn.date_stop,
+	         cn.name_emp_stop,
+	         cn.flag_note,
+	         cn.flag_note,
+	         cn.note_ord,
+	         doc.name as dt_pois
+          from CN_ORDER cn
+          LEFT JOIN PV_ENCOUNTER pv on pv.pk_pv=cn.PK_PV
+          LEFT JOIN PI_MASTER pi on pi.PK_PI=pv.PK_PI
+          LEFT JOIN BD_ORDTYPE ortype on ortype.code=cn.code_ordtype
+          LEFT JOIN BD_PD bdpd on bdpd.pk_pd=cn.pk_ord and bdpd.del_flag = '0'
+          LEFT JOIN BD_OU_DEPT dept on dept.pk_dept=cn.pk_dept
+          LEFT JOIN BD_OU_DEPT depts on depts.pk_dept=cn.pk_dept_ns
+          LEFT JOIN bd_unit unit on unit.pk_unit=cn. pk_unit_dos
+          LEFT JOIN BD_SUPPLY supply on supply.code=cn.code_supply
+          LEFT JOIN BD_DEFDOC doc on doc.code=bdpd.dt_pois and doc.CODE_DEFDOCLIST='030403' 
+          LEFT join BD_TERM_FREQ freq on cn.code_freq=freq.code
+             WHERE 1=1
+        <if test="pkPi != nul and pkPi != ''">
+			and pi.pk_pi = #{pkPi}
+		</if>
+		<if test="codeIp != nul and codeIp != ''">
+			and pi.code_ip = #{codeIp}
+		</if>
+		<if test="pkPv != nul and pkPv != ''">
+			and cn.pk_pv = #{pkPv}
+		</if>
+		<if test="codePv != nul and codePv != ''">
+			and pv.code_pv = #{codePv}
+		</if>
+		<if test="codeDeptNs != nul and codeDeptNs != ''">
+			and depts.code_dept = #{codeDeptNs}
+		</if>
+		<if test="codeDept != nul and codeDept != ''">
+			and dept.code_dept = #{codeDept}
+		</if>
+		<if test="dateBegin != nul and dateBegin != ''">
+			and TO_CHAR (cn.date_start, 'YYYY-MM-DD HH:mm:ss') &gt;= #{dateBegin}
+		</if>
+		<if test="dateEnd != nul and dateEnd != ''">
+			and TO_CHAR (cn.date_start, 'YYYY-MM-DD HH:mm:ss') &lt;= #{dateEnd}
+		</if>
+		<if test="euAlways != nul and euAlways != ''">
+			and cn.eu_always = #{euAlways}
+		</if>
+		<if test="ordsn != nul and ordsn != ''">
+			and cn.ordsn = #{ordsn}
+		</if>
+		<if test="ordsnParent != nul and ordsnParent != ''">
+			and cn.ordsn_parent = #{ordsnParent}
+		</if>
+		<if test="codeOrd != nul and codeOrd != ''">
+			and cn.code_ord = #{codeOrd}
+		</if>
+		<if test="codeOrdtype != nul and codeOrdtype != ''">
+			and cn.code_ordtype like '%#{codeOrdtype}%'
+		</if>
+		<if test="status != nul and status != '' and status == '1'">
+			and (cn.flag_stop_chk =#{status} or cn.flag_erase = #{status})
+		</if>
+		<if test="status != nul and status != '' and status == '0'">
+			and cn.flag_stop_chk =#{status} and cn.flag_erase = #{status}
+		</if>
+		<if test="codeOrdtypes != null  and  codeOrdtypes != ''">
+		   and cn.code_ordtype in 
+		       <foreach item="codeOrdtype" index="index" collection="codeOrdtypes" open="(" separator="," close=")">
+            	#{codeOrdtype}   
+               </foreach>
+	     </if>
+	     <if test="ordsns != null  and  ordsns != ''">
+		   and cn.ordsn in 
+		       <foreach item="ordsn" index="index" collection="ordsns" open="(" separator="," close=")">
+            	#{ordsn}   
+               </foreach>
+	     </if>
+	</select>
+</mapper>

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.webservice.zsrm.dao.ZsrmSelfAppMapper">
+    <select id="qryPvdataByPi" resultType="DynaBean" parameterType="java.util.Map">
+        select
+         pv.pk_pv,
+         pv.pk_pi,
+         pv.NAME_PI,
+         pi.CODE_PI,
+         pv.CODE_PV,
+         pi.CODE_OP,
+         hp.dt_exthp,
+         hp.name as name_exthp,
+         to_char(pv.DATE_BEGIN,'yyyy-MM-dd HH:mm:ss') date_pv,
+         nvl(pvo.OP_TIMES,1) op_times
+        from PV_ENCOUNTER pv
+        inner join PI_MASTER pi on pi.PK_PI = pv.PK_PI
+        left join pv_op pvo on pvo.PK_PV = pv.PK_PV
+        left join BD_HP hp on hp.PK_HP = pv.PK_INSU and hp.del_flag ='0'  
+        where pv.EU_PVTYPE in ('1', '2', '4') and pv.EU_STATUS = '2'
+          and pi.CODE_OP=#{codePi,jdbcType=VARCHAR}
+          <if test='codePv!=null and codePv!=""'>
+              and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+          </if>
+        group by pv.pk_pv,pv.pk_pi, pv.NAME_PI, pi.CODE_PI, pv.CODE_PV, 
+        pi.CODE_OP, pv.DATE_BEGIN, pvo.OP_TIMES,hp.name,hp.dt_exthp
+    </select>
+    
+     <select id="qryOutpfeeMasterInfo" resultType="com.zebone.nhis.webservice.zsrm.vo.self.ResponseQryOutpfeeMasterVo" parameterType="java.lang.String">
+         select  pi.NAME_PI patname,
+	   		   pi.CODE_OP patientid,
+			   case when pi.DT_IDTYPE ='01' then pi.id_no else '' end as id_no,
+			   pi.MOBILE as phone_number,
+			   case when pi.DT_SEX ='02' then '1' else '2' end as gender,
+			   pv.AGE_PV as age,
+			   to_char(pi.birth_date,'yyyy-MM-dd') as birthday,
+			   to_char(pv.DATE_BEGIN,'yyyy-MM-dd') as visit_date,
+			   pv.CODE_PV as visit_no,
+			   dept.NAME_DEPT as dept_name,
+			   CARD.CARD_NO,
+			   pi.CODE_OP as outpatient_no,
+			   st.CODE_ST as receipt_no,
+			   st.CODE_ST as bussiness_no,
+			   INVOICE.EBILLNO as invoice_no,
+			   invcate.name invoice_type,
+			   stdt.name as insur_type,
+			   '' as card_type,
+			   '' as insur_card_no,
+			   '' as insur_rcpt_no,
+			   nvl(to_char(st.AMOUNT_ST,'FM99999999990.0099'),'0') as account_sum,
+			   to_char(st.DATE_ST,'yyyy-MM-dd hh24:mi:ss') as settlement_date,
+			   deposit.PAY_INFO order_no,
+			   deposit.name as pay_channel
+ 		 from BL_SETTLE st
+		 inner join PI_MASTER pi on pi.PK_PI=st.PK_PI
+		 inner join PV_ENCOUNTER pv on pv.PK_PV = st.PK_PV
+		 left join BL_ST_INV inv on st.PK_SETTLE = inv.PK_SETTLE
+		 left join BL_INVOICE  INVOICE on INVOICE.PK_INVOICE=inv.PK_INVOICE
+		 left join PI_CARD CARD on CARD.PK_PI=st.PK_PI and CARD.FLAG_ACTIVE='1' and CARD.EU_STATUS='0' and CARD.DEL_FLAG='0' and CARD.DT_CARDTYPE='01'
+		 left join BD_OU_DEPT dept on dept.PK_DEPT=pv.PK_DEPT
+		 left join BD_INVCATE invcate on invcate.PK_INVCATE =INVOICE.PK_INVCATE and invcate.PK_ORG=INVOICE.PK_ORG
+		 left join (select  stdt.PK_SETTLE,replace(wm_concat(case when hp.CODE ='01' then '自付'  else '医保负担' end),',','|') as name
+				  from bl_settle settle 
+				  inner join PI_MASTER pi on pi.PK_PI=settle.PK_PI
+				  inner join bl_settle_detail stdt on settle.pk_settle=stdt.pk_settle
+		      	  left outer join bd_hp hp on stdt.pk_insurance=hp.pk_hp
+		      	  where  pi.code_op=#{patientid,jdbcType=VARCHAR}
+				      and settle.date_st &gt;= to_date(#{indate,jdbcType=VARCHAR}||' 00:00:00', 'yyyy-MM-dd hh24:mi:ss')
+				      and settle.date_st &lt;= to_date(#{outdate,jdbcType=VARCHAR}||' 23:59:59', 'yyyy-MM-dd hh24:mi:ss')
+				  group by stdt.PK_SETTLE
+		 ) stdt on stdt.PK_SETTLE = st.PK_SETTLE
+		 left join ( select depo.PK_SETTLE,replace(wm_concat(depo.PAY_INFO),',','|') PAY_INFO,replace(wm_concat(defdoc.NAME),',','|') NAME
+			   	  from bl_settle settle 
+			   	  inner join PI_MASTER pi on pi.PK_PI=settle.PK_PI
+			   	  inner join BL_DEPOSIT depo on settle.pk_settle=depo.pk_settle
+			  	  left join BD_DEFDOC defdoc on defdoc.CODE=depo.DT_PAYMODE and defdoc.CODE_DEFDOCLIST='110100' and defdoc.DEL_FLAG='0'
+			  	  where  pi.code_op=#{patientid,jdbcType=VARCHAR}
+				      and settle.date_st &gt;= to_date(#{indate,jdbcType=VARCHAR}||' 00:00:00', 'yyyy-MM-dd hh24:mi:ss')
+				      and settle.date_st &lt;= to_date(#{outdate,jdbcType=VARCHAR}||' 23:59:59', 'yyyy-MM-dd hh24:mi:ss')
+			      group by depo.PK_SETTLE
+		 ) deposit on deposit.PK_SETTLE = st.PK_SETTLE
+		 where  pi.code_op=#{patientid,jdbcType=VARCHAR}
+		 and st.date_st &gt;= to_date(#{indate,jdbcType=VARCHAR}||' 00:00:00', 'yyyy-MM-dd hh24:mi:ss')
+		 and st.date_st &lt;= to_date(#{outdate,jdbcType=VARCHAR}||' 23:59:59', 'yyyy-MM-dd hh24:mi:ss')
+		 order by st.date_st 
+    </select>
+    
+     <select id="qryOutpfeeDetailInfo" resultType="com.zebone.nhis.webservice.zsrm.vo.self.ResponseQryOutpfeeDetailVo" parameterType="java.lang.String">
+         select  pi.NAME_PI as patname,
+        	 pi.CODE_OP as patientid,
+       		 case when pi.DT_IDTYPE ='01' then pi.id_no else '' end as id_no,
+			 pi.MOBILE as phone_number,
+			 case when pi.DT_SEX ='02' then '1' else '2' end as gender,
+	         st.CODE_ST as receipt_no,
+	         to_char(pv.DATE_BEGIN,'yyyy-MM-dd') as visit_date,
+	         pv.CODE_PV as visit_no,
+	         to_char(st.DATE_ST,'yyyy-MM-dd hh24:mi:ss') as pay_date,
+	         dt.PK_CGOP as m_feiyongid,
+	         dt.PK_CGOP as item_no,
+	         case when item.CODE is not null then item.CODE else pd.CODE end as item_code,
+	         case when item.NAME is not null then item.NAME else pd.NAME end as item_name,
+	         dt.SPEC as item_spec,
+	         unit.name as item_units,
+	         defdoc.name as item_form,
+	         nvl(to_char(dt.quan,'FM99999999990.0000'),'0') as item_amount,
+	         nvl(to_char(dt.price,'FM99999999990.000000'),'0') as item_price,
+	         nvl(to_char(dt.AMOUNT_PI,'FM99999999990.0099'),'0') as item_costs,
+	         bi.NAME as item_class,
+	         '' as insur_class,
+        	 '' as self_pay,
+       	  	 emp.NAME_EMP as doctor_name,
+        	 dept.NAME_DEPT as perform_dept
+		from BL_OP_DT dt
+		inner join PI_MASTER pi on pi.PK_PI=dt.PK_PI
+		inner join PV_ENCOUNTER pv on pv.PK_PV=dt.PK_PV
+		inner join BL_SETTLE st on dt.PK_SETTLE = st.PK_SETTLE
+		left join BD_ITEM item on item.PK_ITEM =dt.PK_ITEM
+		left join bd_pd pd on pd.PK_PD=dt.PK_ITEM
+		left join BD_DEFDOC defdoc on defdoc.CODE = pd.dt_dosage and defdoc.CODE_DEFDOCLIST='030400' and defdoc.DEL_FLAG='0'
+		left join BD_UNIT unit on unit.PK_UNIT=dt.PK_UNIT
+		left join bd_itemcate bi on dt.code_bill=bi.code
+		left join BD_OU_EMPLOYEE emp on emp.PK_EMP=dt.PK_EMP_APP
+		left join BD_OU_DEPT dept on dept.PK_DEPT=dt.PK_DEPT_EX
+		where st.code_st = #{codeSt,jdbcType=VARCHAR} 
+		order by dt.sortno 
+    </select>
+</mapper>

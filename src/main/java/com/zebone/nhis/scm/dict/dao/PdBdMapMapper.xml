@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.dict.dao.PdBdMapMapper">
+    <select id="qryHerbPdRateList" resultType="com.zebone.nhis.scm.dict.vo.BdPdMapVo">
+        SELECT pdy.code pdyCode, pdy.name || pdy.spec PdyName,
+            pdk.code pdkCode, pdk.name || pdk.spec pdkName,
+            tra.rate rates,tra.* 
+        FROM BD_PD_TRANS tra
+        left join bd_pd pdy on pdy.pk_pd = tra.PK_PD_Y and pdy.eu_herbtype = '0'
+        left join bd_pd pdk on pdk.pk_pd = tra.PK_PD_K and pdk.eu_herbtype = '1'
+        where tra.DEL_FLAG = '0'
+    </select>
+
+</mapper>

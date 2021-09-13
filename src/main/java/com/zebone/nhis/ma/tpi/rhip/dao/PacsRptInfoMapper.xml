@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ma.tpi.rhip.dao.PacsRptInfoMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.common.module.ma.tpi.rhip.PacsRptInfo">
+        <result column="SENDED_HOSPITAL" jdbcType="VARCHAR" property="sendedHospital"/>
+        <result column="RECORD_NO" jdbcType="VARCHAR" property="recordNo"/>
+        <result column="HOSPITAL_CARDID" jdbcType="VARCHAR" property="hospitalCardid"/>
+        <result column="BODY_OF_CASE" jdbcType="VARCHAR" property="bodyOfCase"/>
+        <result column="CLINIC_HOSPITALNO" jdbcType="VARCHAR" property="clinicHospitalno"/>
+        <result column="DEPT_TYPE" jdbcType="DECIMAL" property="deptType"/>
+        <result column="HIS_UID" jdbcType="VARCHAR" property="hisUid"/>
+        <result column="REPORT_DATE" jdbcType="DATE" property="reportDate"/>
+        <result column="REPORT_DESC_TXT" jdbcType="VARCHAR" property="reportDescTxt"/>
+        <result column="REPORT_DIAG_TXT" jdbcType="VARCHAR" property="reportDiagTxt"/>
+        <result column="REPORT_DOCNAME" jdbcType="VARCHAR" property="reportDocname"/>
+        <result column="POSITIVE_CONTEXT" jdbcType="VARCHAR" property="positiveContext"/>
+    </resultMap>
+    
+    <select id="findAllPacsRptInfo" resultMap="BaseResultMap">
+          SELECT * FROM VIEW_PACS_RPT_INFO 
+    </select>
+    
+
+    <insert id="savePacsRptInfo" parameterType="com.zebone.nhis.common.module.ma.tpi.rhip.PacsRptInfo" >
+        INSERT INTO VIEW_PACS_RPT_INFO
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="sendedHospital != null" >
+                SENDED_HOSPITAL,
+            </if>
+            <if test="recordNo != null" >
+                RECORD_NO,
+            </if>
+            <if test="hospitalCardid != null" >
+                HOSPITAL_CARDID,
+            </if>
+            <if test="bodyOfCase != null" >
+                BODY_OF_CASE,
+            </if>
+            <if test="clinicHospitalno != null" >
+                CLINIC_HOSPITALNO,
+            </if>
+            <if test="deptType != null" >
+                DEPT_TYPE,
+            </if>
+            <if test="hisUid != null" >
+                HIS_UID,
+            </if>
+            <if test="reportDate != null" >
+                REPORT_DATE,
+            </if>
+            <if test="reportDescTxt != null" >
+                REPORT_DESC_TXT,
+            </if>
+            <if test="reportDiagTxt != null" >
+                REPORT_DIAG_TXT,
+            </if>
+            <if test="reportDocname != null" >
+                REPORT_DOCNAME,
+            </if>
+            <if test="positiveContext != null" >
+                POSITIVE_CONTEXT,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="sendedHospital != null" >
+                #{sendedHospital,jdbcType=VARCHAR},
+            </if> 
+            <if test="recordNo != null" >
+                #{recordNo,jdbcType=VARCHAR},
+            </if> 
+            <if test="hospitalCardid != null" >
+                #{hospitalCardid,jdbcType=VARCHAR},
+            </if> 
+            <if test="bodyOfCase != null" >
+                #{bodyOfCase,jdbcType=VARCHAR},
+            </if> 
+            <if test="clinicHospitalno != null" >
+                #{clinicHospitalno,jdbcType=VARCHAR},
+            </if> 
+            <if test="deptType != null" >
+                #{deptType,jdbcType=DECIMAL},
+            </if> 
+            <if test="hisUid != null" >
+                #{hisUid,jdbcType=VARCHAR},
+            </if> 
+            <if test="reportDate != null" >
+                #{reportDate,jdbcType=DATE},
+            </if> 
+            <if test="reportDescTxt != null" >
+                #{reportDescTxt,jdbcType=VARCHAR},
+            </if> 
+            <if test="reportDiagTxt != null" >
+                #{reportDiagTxt,jdbcType=VARCHAR},
+            </if> 
+            <if test="reportDocname != null" >
+                #{reportDocname,jdbcType=VARCHAR},
+            </if> 
+            <if test="positiveContext != null" >
+                #{positiveContext,jdbcType=VARCHAR},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updatePacsRptInfo" parameterType="com.zebone.nhis.common.module.ma.tpi.rhip.PacsRptInfo" >
+        UPDATE VIEW_PACS_RPT_INFO
+        <set>
+            <if test="sendedHospital != null" >
+                SENDED_HOSPITAL = #{sendedHospital,jdbcType=VARCHAR},
+            </if>
+            <if test="recordNo != null" >
+                RECORD_NO = #{recordNo,jdbcType=VARCHAR},
+            </if>
+            <if test="hospitalCardid != null" >
+                HOSPITAL_CARDID = #{hospitalCardid,jdbcType=VARCHAR},
+            </if>
+            <if test="bodyOfCase != null" >
+                BODY_OF_CASE = #{bodyOfCase,jdbcType=VARCHAR},
+            </if>
+            <if test="clinicHospitalno != null" >
+                CLINIC_HOSPITALNO = #{clinicHospitalno,jdbcType=VARCHAR},
+            </if>
+            <if test="deptType != null" >
+                DEPT_TYPE = #{deptType,jdbcType=DECIMAL},
+            </if>
+            <if test="hisUid != null" >
+                HIS_UID = #{hisUid,jdbcType=VARCHAR},
+            </if>
+            <if test="reportDate != null" >
+                REPORT_DATE = #{reportDate,jdbcType=DATE},
+            </if>
+            <if test="reportDescTxt != null" >
+                REPORT_DESC_TXT = #{reportDescTxt,jdbcType=VARCHAR},
+            </if>
+            <if test="reportDiagTxt != null" >
+                REPORT_DIAG_TXT = #{reportDiagTxt,jdbcType=VARCHAR},
+            </if>
+            <if test="reportDocname != null" >
+                REPORT_DOCNAME = #{reportDocname,jdbcType=VARCHAR},
+            </if>
+            <if test="positiveContext != null" >
+                POSITIVE_CONTEXT = #{positiveContext,jdbcType=VARCHAR},
+            </if>
+        </set>
+        WHERE 
+    </update>
+     <select id="queryPacRptInfo" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+            V_CS_PACS_INFO
+        where REPORT_DATE IS NOT NULL
+   	    <if test="hospitalCardid != null" >
+            and HOSPITAL_CARDID = #{hospitalCardid,jdbcType=VARCHAR}
+        </if>
+   	    <if test="clinicHospitalno != null" >
+            and CLINIC_HOSPITALNO = #{clinicHospitalno,jdbcType=VARCHAR}
+        </if>
+   		<if test="orderBy != null" >
+            ${orderBy}
+        </if>           
+    </select>
+</mapper>

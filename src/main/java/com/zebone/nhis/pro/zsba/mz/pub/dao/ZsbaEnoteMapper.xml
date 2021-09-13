@@ -1,0 +1,657 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.mz.pub.dao.ZsbaEnoteMapper">
+	<select id="qryENoteInvInfo" resultType="DynaBean">
+		select st.code_st bus_No, --业务流水号
+		       '01' bus_Type,     --业务标识
+		       pi.name_pi payer, --患者姓名
+		       to_char(st.date_st,'yyyyMMddhh24miss') bus_Date_Time, --业务发生时间
+		       emp.code_emp as place_Code,--开票点编码
+		       st.name_emp_st payee,--收费员
+		       emp.name_emp as author,--开票人，当前用户
+		       st.amount_st total_Amt,--总金额
+		       null as remark,        --备注
+		       st.amount_pi,
+		       st.AMOUNT_INSU,
+		       ISNULL(st.AMOUNT_DISC, 0.0) AMOUNT_DISC
+		  from bl_settle st
+		       inner join PI_MASTER pi on st.pk_pi=pi.pk_pi
+		       left join BD_OU_EMPLOYEE emp on st.PK_EMP_ST = emp.PK_EMP
+		 where st.pk_settle=#{pkSettle,jdbcType=CHAR}
+	</select>
+	
+	<select id="qryWechatTradeNo" resultType="DynaBean">
+		select top 1 SERIAL_NO serial_no,TRADE_NO trade_no from BL_EXT_PAY 
+		where EU_PAYTYPE='7' 
+		and PK_SETTLE=#{pkSettle,jdbcType=CHAR} 
+		and FLAG_PAY='1' and DEL_FLAG='0'
+	</select>
+	
+	<select id="qryInformInfo" resultType="DynaBean">
+		select pi.mobile tel,
+		       pi.email email,
+		       '1' payer_Type,
+		       pi.id_no id_Card_No,
+		       '1101' card_Type,
+		       case when pi.id_no is null then '无' else pi.id_no end card_No
+		  from pv_encounter pv
+		       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		 where pv.pk_pv=#{pkPv,jdbcType=CHAR}
+	</select>
+	
+	<select id="qryENotePvInfo" resultType="DynaBean">
+		select doc.NAME medical_Institution,
+		       org.code_hosp med_Care_Institution,
+		       hp.code med_Care_Type_Code,
+		       hp.name medical_Care_Type,
+		       pi.insur_no medical_Insurance_ID,
+		       dpa.name_dept category,
+		       dpa.code_dept category_Code,
+		       <choose>
+				   <when test="svType ==1">
+					   dpd.name_dept leave_Category,
+					   dpd.code_dept leave_Category_Code,
+				   </when>
+			   </choose>
+ 			   pi.code_op,
+		       pi.code_ip hospital_No,
+		       pv.code_pv visit_No,
+		       to_char(pv.date_begin,'yyyy-MM-dd') consultation_Date,
+		       pi.code_pi patient_Id,
+		       pv.code_pv patient_No,
+		       pi.id_no,
+			   pi.mobile,
+		       docs.NAME sex,
+		       pv.age_pv age,
+		       pv.pk_dept_ns hospital_Area,
+		       pv.bed_no bed_No,
+		       pi.code_ip case_Number,
+		       to_char(pv.date_begin,'yyyyMMdd') in_Hospital_Date,
+		       to_char(pv.date_end,'yyyy-MM-dd') out_Hospital_Date,
+		       null as hospital_Days
+		  from pv_encounter pv
+		       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		       <choose>
+				   <when test="svType ==0">
+					   left join pv_op op on pv.pk_pv=op.pk_pv and (pv.EU_PVTYPE='1' or pv.EU_PVTYPE='4')
+					   left join pv_er er on pv.pk_pv=er.pk_pv and pv.EU_PVTYPE='2'
+					   inner join bd_ou_dept dpa on (op.pk_dept_pv=dpa.pk_dept or er.pk_dept_pv=dpa.pk_dept)
+				   </when>
+				   <otherwise>
+					   inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+					   inner join bd_ou_dept dpa on ip.pk_dept_admit=dpa.pk_dept
+					   left join bd_ou_dept dpd on ip.pk_dept_dis=dpd.pk_dept
+				   </otherwise>
+			   </choose>
+
+		       inner join bd_hp hp on pv.pk_insu=hp.pk_hp
+		       inner join bd_ou_org org on pv.pk_org=org.pk_org
+		       left join bd_defdoc doc on doc.code = org.DT_HOSPTYPE and doc.CODE_DEFDOCLIST = '010100' and doc.del_flag = '0'
+		       left join bd_defdoc docs on docs.code = pi.dt_sex and docs.CODE_DEFDOCLIST = '000000' and docs.del_flag = '0'
+		 where pv.pk_pv=#{pkPv,jdbcType=CHAR}
+	</select>
+
+	<select id="qryENotePvInfoZsrm" resultType="DynaBean">
+		select doc.NAME medical_Institution,
+		org.code_hosp med_Care_Institution,
+		hp.code med_Care_Type_Code,
+		hp.name medical_Care_Type,
+		pi.insur_no medical_Insurance_ID,
+		dpa.name_dept category,
+		dpa.code_dept category_Code,
+		<choose>
+			<when test="svType ==1">
+				dpd.name_dept leave_Category,
+				dpd.code_dept leave_Category_Code,
+			</when>
+		</choose>
+
+		pi.code_ip hospital_No,
+		pv.code_pv visit_No,
+		to_char(pv.date_begin,'yyyy-MM-dd') consultation_Date,
+		pi.code_pi patient_Id,
+		pi.code_op patient_No,
+		docs.NAME sex,
+		pv.age_pv age,
+		pv.pk_dept_ns hospital_Area,
+		pv.bed_no bed_No,
+		pi.code_ip case_Number,
+		to_char(pv.date_begin,'yyyy-MM-dd') in_Hospital_Date,
+		to_char(pv.date_end,'yyyy-MM-dd') out_Hospital_Date,
+		null as hospital_Days
+		from pv_encounter pv
+		inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		<choose>
+			<when test="svType ==0">
+				left join pv_op op on pv.pk_pv=op.pk_pv and pv.EU_PVTYPE = '1'
+				left join pv_er er on pv.pk_pv=er.pk_pv and pv.EU_PVTYPE = '2'
+				left join (select pvpe.*,pven.pk_dept as pk_dept_pv from pv_pe pvpe 
+							inner join pv_encounter pven on pven.pk_pv=pvpe.pk_pv
+							where pven.pk_pv=#{pkPv,jdbcType=CHAR} 
+				) pe on pv.pk_pv=pe.pk_pv and pv.EU_PVTYPE = '4'
+				inner join bd_ou_dept dpa on (op.pk_dept_pv=dpa.pk_dept 
+						or er.pk_dept_pv=dpa.pk_dept or pe.pk_dept_pv=dpa.pk_dept)
+			</when>
+			<otherwise>
+				inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+				inner join bd_ou_dept dpa on ip.pk_dept_admit=dpa.pk_dept
+				left join bd_ou_dept dpd on ip.pk_dept_dis=dpd.pk_dept
+			</otherwise>
+		</choose>
+		inner join bd_hp hp on pv.pk_insu=hp.pk_hp
+		inner join bd_ou_org org on pv.pk_org=org.pk_org
+		left join bd_defdoc doc on doc.code = org.DT_HOSPTYPE and doc.CODE_DEFDOCLIST = '010100' and doc.del_flag = '0'
+		left join bd_defdoc docs on docs.code = pv.dt_sex and docs.CODE_DEFDOCLIST = '000000' and docs.del_flag = '0'
+		where pv.pk_pv=#{pkPv,jdbcType=CHAR}
+	</select>
+	
+	<select id="qryStDepoList" resultType="com.zebone.nhis.ma.pub.sd.vo.PayChannelDetailVo">
+		select dp.dt_paymode as pay_Channel_Code,
+		       dp.amount as pay_Channel_Value
+		  from bl_deposit dp
+		 where dp.pk_settle=#{pkSettle,jdbcType=CHAR}
+	</select>
+	
+	<select id="qryStIpDtListChk" resultType="java.lang.Double">
+			select
+			       round(sum(cg.price*cg.quan),2) amt
+			  from bd_invcate_item invitem
+	         inner join bd_invcate cate on invitem.pk_invcate=cate.pk_invcate and cate.del_flag = '0'
+	         inner join bd_invcate_itemcate iicate on invitem.pk_invcateitem=iicate.pk_invcateitem and iicate.del_flag = '0'
+		<choose>
+			<when test="svType ==0">
+				inner join bl_op_dt cg on iicate.pk_itemcate=cg.pk_itemcate
+			</when>
+			<otherwise>
+				inner join bl_ip_dt cg on iicate.pk_itemcate=cg.pk_itemcate
+			</otherwise>
+		</choose>
+			and cg.del_flag = '0'
+			where cate.eu_type = #{svType,jdbcType=CHAR} and invitem.del_flag = '0'
+	          and cg.pk_settle=#{pkSettle,jdbcType=CHAR}
+	</select>
+	
+	<select id="qryStIpDtList" resultType="com.zebone.nhis.ma.pub.sd.vo.ChargeDetailVo">
+		select row_number() over(order by charge_Code) as sort_No ,stDt.* from (
+			select 
+			  case invitem.code
+              <!-- when '11' then '99920001'
+              when '12' then '99921594'
+              when '21' then '99920007'
+              when '22' then '99920011'
+              when '09' then '99920016'
+              when '31' then '99920005'
+              when '33' then '99920009'
+              when '41' then '99920012'
+              when '42' then '99920013'
+              when '43' then '99920006'
+              when '13' then '99920010'
+              when '14' then '99921594' -->
+              when 'B' then 'MZ005'<!-- 床位费 -->
+			  when 'C' then 'MZ004'<!-- 诊查费 -->
+			  when 'D' then 'MZ060'<!-- 检查费 -->
+			  when 'E' then 'MZ080'<!-- 治疗费 -->
+			  <!-- when 'F' then '' --><!-- 护理费 -->
+			  when 'G' then 'MZ013'<!-- 手术费 -->
+			  when 'H' then 'MZ009'<!-- 化(检)验费 -->
+			  when 'I' then 'MZ014'<!-- 其他费 -->
+			  when 'J1' then 'MZ001'<!-- 西药费 -->
+			  when 'J2' then 'MZ002'<!-- 中成药费 -->
+			  when 'J3' then 'MZ003'<!-- 草药费 -->
+			  when 'K' then 'MZ016'<!-- 材料费 -->
+              else 'MZ014'
+              end charge_Code, 
+		      invitem.name charge_Name,
+		      null as unit,
+		      sum(cg.amount) std,
+		      1 as "number",
+		      sum(cg.amount) amt,
+		      sum(cg.amount_pi) self_Amt,
+		      null as remark
+			 from bd_invcate_item invitem
+	         inner join bd_invcate cate on invitem.pk_invcate=cate.pk_invcate and cate.del_flag = '0'
+	         inner join bd_invcate_itemcate iicate on invitem.pk_invcateitem=iicate.pk_invcateitem and iicate.del_flag = '0'
+		<choose>
+			<when test="svType ==0">
+				inner join bl_op_dt cg on iicate.pk_itemcate=cg.pk_itemcate
+			</when>
+			<otherwise>
+				inner join bl_ip_dt cg on iicate.pk_itemcate=cg.pk_itemcate
+			</otherwise>
+		</choose>
+			and cg.del_flag = '0'
+			where cate.eu_type = #{svType,jdbcType=CHAR} and invitem.del_flag = '0'
+	          and cg.pk_settle=#{pkSettle,jdbcType=CHAR}
+				group by invitem.pk_invcateitem,
+	                invitem.code,
+	                invitem.name
+		) stDt where amt>0
+	</select>
+
+	<select id="qryStIpDtListZsrm" resultType="com.zebone.nhis.ma.pub.sd.vo.ChargeDetailVo">
+    		select row_number() over(order by charge_Code) as sort_No ,stDt.* from (
+    			select
+    		            case invitem.code
+    		              when '11' then '026'
+                          when '12' then '004'
+                          when '13' then '017'
+                          when '14' then '006'
+                          when '15' then '007'
+                          when '16' then '016'
+                          when '17' then '008'
+                          when '18' then '010'
+                          when '19' then '99920027'
+                          when '91' then '001'
+                          when '92' then '003'
+                          when '93' then '002'
+                          when '94' then '005'
+                          when '96' then '020'
+                          else '99920027'
+    		              end charge_Code,
+    			       invitem.name charge_Name,
+    			       null as unit,
+		               sum(cg.amount-cg.amount_add) std,
+    			       1 as "number",
+		               sum(cg.amount-cg.amount_add) amt,
+		               sum(cg.amount-cg.amount_add) self_Amt,
+    			       null as remark
+    			  from bd_invcate_item invitem
+    	         inner join bd_invcate cate on invitem.pk_invcate=cate.pk_invcate and cate.del_flag = '0'
+    	         inner join bd_invcate_itemcate iicate on invitem.pk_invcateitem=iicate.pk_invcateitem and iicate.del_flag = '0'
+    		<choose>
+    			<when test="svType ==0">
+    				inner join bl_op_dt cg on iicate.pk_itemcate=cg.pk_itemcate
+    			</when>
+    			<otherwise>
+    				inner join bl_ip_dt cg on iicate.pk_itemcate=cg.pk_itemcate
+    			</otherwise>
+    		</choose>
+    			and cg.del_flag = '0'
+    			where cate.eu_type = #{svType,jdbcType=CHAR} and invitem.del_flag = '0'
+    	          and cg.pk_settle=#{pkSettle,jdbcType=CHAR} and invitem.code != '96'
+    				group by invitem.pk_invcateitem,
+    	                invitem.code,
+    	                invitem.name
+    		) stDt where amt>0
+    	</select>
+	<select id="qryStIpDtDtlListChk" resultType="java.lang.Double">
+		select
+	        round(sum(cg.price*cg.quan),2) amt
+		from bd_invcate_item invitem
+   		 inner join bd_invcate cate on invitem.pk_invcate=cate.pk_invcate and cate.del_flag = '0'
+   		 inner join bd_invcate_itemcate iicate on invitem.pk_invcateitem=iicate.pk_invcateitem and iicate.del_flag = '0'
+		<choose>
+			<when test="svType ==0">
+				inner join bl_op_dt cg on iicate.pk_itemcate=cg.pk_itemcate
+			</when>
+			<otherwise>
+				inner join bl_ip_dt cg on iicate.pk_itemcate=cg.pk_itemcate
+			</otherwise>
+		</choose>
+		where cate.eu_type = #{svType,jdbcType=CHAR} and invitem.del_flag = '0'
+     		and cg.pk_settle=#{pkSettle,jdbcType=CHAR}
+	</select>
+	
+	<select id="qryStIpDtDtlList" resultType="com.zebone.nhis.ma.pub.sd.vo.ListDetailVo">
+		select
+			0 as list_Detail_No,
+	         case invitem.code
+              <!-- when '11' then '99920001'
+              when '12' then '99921594'
+              when '21' then '99920007'
+              when '22' then '99920011'
+              when '09' then '99920016'
+              when '31' then '99920005'
+              when '33' then '99920009'
+              when '41' then '99920012'
+              when '42' then '99920013'
+              when '43' then '99920006'
+              when '13' then '99920010'
+              when '14' then '99921594' -->
+              when 'B' then 'MZ005'<!-- 床位费 -->
+			  when 'C' then 'MZ004'<!-- 诊查费 -->
+			  when 'D' then 'MZ060'<!-- 检查费 -->
+			  when 'E' then 'MZ080'<!-- 治疗费 -->
+			  <!-- when 'F' then '' --><!-- 护理费 -->
+			  when 'G' then 'MZ013'<!-- 手术费 -->
+			  when 'H' then 'MZ009'<!-- 化(检)验费 -->
+			  when 'I' then 'MZ014'<!-- 其他费 -->
+			  when 'J1' then 'MZ001'<!-- 西药费 -->
+			  when 'J2' then 'MZ002'<!-- 中成药费 -->
+			  when 'J3' then 'MZ003'<!-- 草药费 -->
+			  when 'K' then 'MZ016'<!-- 材料费 -->
+              else 'MZ014'
+              end charge_Code, 
+	        invitem.name charge_Name,
+	        null as prescribe_Code,
+			null as list_Type_Code,
+	        null as list_Type_Name,
+	       	cg.pk_item code,
+	        cg.name_cg name,
+	        null as form,
+	        case when DATALENGTH(cg.spec)>50 then substr(cg.spec,0,LEN(cg.spec)/3) else cg.spec end specification,
+	        --cg.spec specification,
+	        null as unit,
+	        cg.price std,
+	        sum(cg.quan) "number",
+	        round(sum(cg.price*cg.quan),2) amt_chk,
+	        round(sum(cg.price*cg.quan),2) self_Amt_chk,
+	        sum(cg.amount) amt,
+	        sum(cg.amount_pi) self_Amt,
+	        0 as receivable_Amt,
+	        null as medical_Care_Type,
+	        null as med_Care_Item_Type,
+	        null as med_Reimburse_Rate,
+	        null as remark,
+	        0 as sortno,
+	        null as chrgtype
+		from bd_invcate_item invitem
+   		 inner join bd_invcate cate on invitem.pk_invcate=cate.pk_invcate and cate.del_flag = '0'
+   		 inner join bd_invcate_itemcate iicate on invitem.pk_invcateitem=iicate.pk_invcateitem and iicate.del_flag = '0'
+		<choose>
+			<when test="svType ==0">
+				inner join bl_op_dt cg on iicate.pk_itemcate=cg.pk_itemcate
+			</when>
+			<otherwise>
+				inner join bl_ip_dt cg on iicate.pk_itemcate=cg.pk_itemcate
+			</otherwise>
+		</choose>
+		where cate.eu_type = #{svType,jdbcType=CHAR} and invitem.del_flag = '0'
+     		and cg.pk_settle=#{pkSettle,jdbcType=CHAR}
+		group by invitem.pk_invcateitem,
+         invitem.code,
+         invitem.name,
+         cg.pk_item,
+		 cg.name_cg,
+		 cg.spec ,
+		 cg.price
+		having sum(cg.quan)!=0
+	</select>
+
+	<select id="qryStIpDtDtlListZsrm" resultType="com.zebone.nhis.ma.pub.sd.vo.ListDetailVo">
+    		select
+    			0 as list_Detail_No,
+    	         case invitem.code
+                  when '11' then '026'
+                  when '12' then '004'
+                  when '13' then '017'
+                  when '14' then '006'
+                  when '15' then '007'
+                  when '16' then '016'
+                  when '17' then '008'
+                  when '18' then '010'
+                  when '19' then '99920027'
+                  when '91' then '001'
+                  when '92' then '003'
+                  when '93' then '002'
+                  when '94' then '005'
+                  when '96' then '020'
+                  else '99920027'
+                  end charge_Code,
+    	        invitem.name charge_Name,
+    	        null as prescribe_Code,
+    			null as list_Type_Code,
+    	        null as list_Type_Name,
+    	       	cg.pk_item code,
+    	        cg.name_cg name,
+    	        null as form,
+    	        case when DATALENGTH(cg.spec)>50 then substr(cg.spec,0,LEN(cg.spec)/3) else cg.spec end specification,
+    	        --cg.spec specification,
+    	        null as unit,
+		        sum(cg.amount-cg.amount_add) std,
+    	        sum(cg.quan) "number",
+		        sum(cg.amount-cg.amount_add) amt_chk,
+		        sum(cg.amount-cg.amount_add) self_Amt_chk,
+		        sum(cg.amount-cg.amount_add) amt,
+		        sum(cg.amount-cg.amount_add) self_Amt,
+    	        0 as receivable_Amt,
+    	        null as medical_Care_Type,
+    	        null as med_Care_Item_Type,
+    	        null as med_Reimburse_Rate,
+    	        null as remark,
+    	        0 as sortno,
+    	        null as chrgtype
+    		from bd_invcate_item invitem
+       		 inner join bd_invcate cate on invitem.pk_invcate=cate.pk_invcate and cate.del_flag = '0'
+       		 inner join bd_invcate_itemcate iicate on invitem.pk_invcateitem=iicate.pk_invcateitem and iicate.del_flag = '0'
+    		<choose>
+    			<when test="svType ==0">
+    				inner join bl_op_dt cg on iicate.pk_itemcate=cg.pk_itemcate
+    			</when>
+    			<otherwise>
+    				inner join bl_ip_dt cg on iicate.pk_itemcate=cg.pk_itemcate
+    			</otherwise>
+    		</choose>
+    		where cate.eu_type = #{svType,jdbcType=CHAR} and invitem.del_flag = '0'
+         		and cg.pk_settle=#{pkSettle,jdbcType=CHAR} and invitem.code != '96'
+    		group by invitem.pk_invcateitem,
+             invitem.code,
+             invitem.name,
+             cg.pk_item,
+    		 cg.name_cg,
+    		 cg.spec
+    		having sum(cg.quan)!=0
+    	</select>
+
+	<select id="qryDtSumAmountZsrm" resultType="java.lang.Double">
+		select sum(cg.amount)
+		<choose>
+			<when test="svType ==0">
+				from bl_op_dt cg
+			</when>
+			<otherwise>
+				from bl_ip_dt cg
+			</otherwise>
+		</choose>
+		  inner join BD_itemcate cate on cate.pk_itemcate=cg.pk_itemcate
+		where cate.code ='96' and cg.flag_pd='0' and cg.pk_settle=#{pkSettle,jdbcType=CHAR}
+	</select>
+
+	<select id="qryDtSumAmountAddZsrm" resultType="java.lang.Double">
+		select sum(cg.amount_add)
+		<choose>
+			<when test="svType ==0">
+				from bl_op_dt cg
+			</when>
+			<otherwise>
+				from bl_ip_dt cg
+			</otherwise>
+		</choose>
+		  inner join BD_itemcate cate on cate.pk_itemcate=cg.pk_itemcate
+		where cate.code !='96' and cg.flag_pd='0' and cg.pk_settle=#{pkSettle,jdbcType=CHAR}
+	</select>
+
+
+	<select id="qryStIpDtDtlTXListZsrm" resultType="com.zebone.nhis.ma.pub.sd.vo.ListDetailVo">
+		SELECT
+			0 AS list_Detail_No,
+			'020' as charge_Code,
+			'特需费' charge_Name,
+			NULL as prescribe_Code,
+			NULL as list_Type_Code,
+			NULL as list_Type_Name,
+			NULL as code,
+			'特需服务费' as name,
+			NULL as FORM,
+			NULL as specification,
+			NULL as unit,
+			sum(cg.amount_add) as std,
+			'1' as "number",
+			sum(cg.amount_add) as  amt_chk,
+			sum(cg.amount_add) as self_Amt_chk,
+			sum(cg.amount_add) as amt,
+			sum(cg.amount_add) as self_Amt,
+			0 AS receivable_Amt,
+			NULL AS medical_Care_Type,
+			NULL AS med_Care_Item_Type,
+			NULL AS med_Reimburse_Rate,
+			NULL AS remark,
+			0 AS sortno,
+			NULL AS chrgtype
+		FROM bl_op_dt cg where pk_settle=#{pkSettle,jdbcType=CHAR}
+	</select>
+	
+	<select id="qryEbillInfo" resultType="DynaBean">
+		select inv.ebillbatchcode as ebillbatchcode,
+			   inv.billbatchcode as billbatchcode,
+		       inv.ebillno as billno,
+		       inv.code_sn as codeinv,
+		       '退费' as reason,
+		       emp.code_emp as codeemp,
+		       case when cate.EU_TYPE is null
+			    then
+			      case when st.EU_PVTYPE != '3' then '0' else '1' end
+			  else cate.EU_TYPE end eu_type
+		  from bl_invoice inv
+		       inner join bl_st_inv si on inv.pk_invoice=si.pk_invoice
+		       inner join bl_settle st on si.pk_settle=st.pk_settle
+		       inner join bd_ou_employee emp on emp.pk_emp = inv.pk_emp_inv
+		       left join BD_INVCATE cate on inv.PK_INVCATE = cate.PK_INVCATE
+		 where st.pk_settle=#{pkSettle,jdbcType=CHAR} and inv.ebillno is not null order by DATE_EBILL desc
+	</select>
+	
+	<select id="qryInvItemInfo" resultType="com.zebone.nhis.common.module.bl.InvItemVo">
+		         select invitem.pk_invcateitem,invitem.code,  invitem.name, sum(bl.amount) amount
+		  			from bd_invcate_item invitem
+		      		 inner join bd_invcate cate on invitem.pk_invcate=cate.pk_invcate and cate.del_flag = '0'
+		      		 inner join bd_invcate_itemcate iicate on invitem.pk_invcateitem=iicate.pk_invcateitem and iicate.del_flag = '0'
+					<choose>
+						<when test="svType ==0">
+							inner join bl_op_dt bl on iicate.pk_itemcate=bl.pk_itemcate and bl.del_flag = '0'
+						</when>
+						<otherwise>
+							inner join bl_ip_dt bl on iicate.pk_itemcate=bl.pk_itemcate and bl.del_flag = '0'
+						</otherwise>
+					</choose>
+				 where cate.eu_type = '1' and invitem.del_flag = '0'
+			<if test="pkPv != null  and  pkPv != ''">
+			    and    	bl.pk_pv  = #{pkPv,jdbcType=VARCHAR}   
+	      </if>
+	      <if test="pkOrg != null  and  pkOrg != ''">
+			    and    	cate.pk_org  = #{pkOrg,jdbcType=VARCHAR}   
+	      </if>
+	       <if test="dateBegin!= null  and  dateBegin!= ''">
+			    and  bl.date_cg &gt;= to_date(substr(#{dateBegin,jdbcType=VARCHAR}, 1, 8)||'000000', 'YYYYMMDDHH24MISS') 
+	      </if>
+	       <if test="dateEnd != null  and  dateEnd != ''">
+			    and  bl.date_cg&lt;= to_date( substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'yyyymmddhh24miss')
+	      </if>
+	      <if test="pkSettle != null  and  pkSettle != ''">
+	      		and bl.pk_settle = #{pkSettle,jdbcType=CHAR} 
+	      </if>
+    	<if test="pkDepts != null ">
+    	   and bl.pk_dept_app in 
+			   <foreach collection="pkDepts" item="vo" index="index"
+			      open="(" close=")" separator=",">
+			      #{vo.pkDept,jdbcType=VARCHAR} 
+			  </foreach>
+	      </if>
+		group by invitem.pk_invcateitem,
+         invitem.code,
+         invitem.name
+    </select>
+    
+    <select id="qryInvInfoByPkSettle" resultType="com.zebone.nhis.common.module.bl.BlInvoice">
+    	select inv.*
+		  from bl_invoice inv
+		       inner join bl_st_inv si on inv.pk_invoice=si.pk_invoice
+		       inner join bl_settle st on si.pk_settle=st.pk_settle
+		 where st.pk_settle=#{pkSettle,jdbcType=CHAR}
+		 order by inv.CREATE_TIME desc
+    </select>
+    
+    <select id="qryDepoAmtByPkPv" resultType="java.lang.Double">
+    	select sum(amount) from bl_deposit
+    	 where eu_dptype='9' and pk_settle = #{pkSettle,jdbcType=CHAR}
+    </select>
+    
+    <select id="qryInsuAmtByPkSettle" resultType="DynaBean">
+    	select sum(jjzf) as jjzf,sum(zhzf) as zhzf from (
+		  select amt_jjzf as jjzf,amt_grzhzf zhzf from ins_szyb_st st
+		    inner join ins_szyb_st_city city on city.pk_insst = st.pk_insst
+		  where st.pk_settle = #{pkSettle,jdbcType=CHAR} and st.del_flag = '0'
+		  union
+		  select akb068 as jjzf,akb066 as zhzf from ins_szyb_st st
+		    inner join ins_szyb_st_diff diff on diff.pk_insst = st.pk_insst
+		  where st.PK_SETTLE = #{pkSettle,jdbcType=CHAR} and st.del_flag = '0'
+		)
+    </select>
+
+	<select id="qryInsuAmtByPkPv" resultType="DynaBean">
+    	select sum(jjzf) as jjzf,sum(zhzf) as zhzf from (
+		  select top 1 jjzf,zhzf from (
+			  select st.date_st,amt_jjzf as jjzf,amt_grzhzf zhzf from ins_szyb_st st
+				inner join ins_szyb_st_city city on city.pk_insst = st.pk_insst
+			  where st.pk_pv = #{pkPv,jdbcType=CHAR} and st.pk_settle is null and st.del_flag = '0'
+			  order by st.date_st desc
+		  )
+		  union
+		  select top 1 jjzf,zhzf from (
+			select st.date_st,akb068 as jjzf,akb066 as zhzf from ins_szyb_st st
+				inner join ins_szyb_st_diff diff on diff.pk_insst = st.pk_insst
+			where st.pk_pv = #{pkPv,jdbcType=CHAR} and  st.pk_settle is null and st.del_flag = '0'
+			order by st.date_st desc
+		  )
+		)
+    </select>
+
+	<select id="qryInsuAmtByNamePi" resultType="DynaBean">
+    	SELECT top 1 
+        jjzf,
+        zhzf
+      FROM (SELECT
+              st.date_st,
+              amt_jjzf AS jjzf,
+              amt_grzhzf  zhzf
+            FROM ins_szyb_st st
+              INNER JOIN ins_szyb_st_city city ON city.pk_insst = st.pk_insst
+              inner join ins_szyb_visit visit on visit.pk_visit = st.pk_visit
+            WHERE visit.name_pi = #{namePi,jdbcType=VARCHAR} and st.amount=#{amountSt,jdbcType=NUMERIC} AND st.del_flag = '0' and st.pk_settle is null
+            ORDER BY st.date_st DESC)
+    </select>
+
+	<select id="qryPayInfoList" resultType="com.zebone.nhis.common.module.base.bd.code.BdDefdoc">
+		SELECT * FROM BD_defdoc
+		WHERE CODE_DEFDOCLIST = '110100' AND del_flag = '0' and (NAME like '%挂账%' or name like '%职业暴露%' or name like '%大肠癌筛查%')
+	</select>
+
+	<select id="qryPrefixByEuType" resultType="com.zebone.nhis.common.module.bl.BlEmpInvoice">
+		select * from BL_EMP_INVOICE empinv
+		  inner join BD_INVCATE cate on cate.pk_invcate = empinv.pk_invcate
+		where empinv.DEL_FLAG = '0' and FLAG_USE='1' and cate.del_flag='0' and cate.EU_TYPE = #{euType,jdbcType=VARCHAR}
+			and PK_EMP_OPERA = #{pkEmp,jdbcType=CHAR}
+	</select>
+
+	<select id="qryHpTypeByPkSettle" resultType="java.lang.String">
+		select hp.EU_HPTYPE from bl_settle st
+		  inner join bd_hp hp on hp.pk_hp = st.pk_insurance
+		where PK_SETTLE = #{pkSettle,jdbcType=CHAR}
+	</select>
+
+	<select id="qryAumByPkSettleZsrm" resultType="java.lang.Double">
+		select sum(AMOUNT)
+		from BL_DEPOSIT where dt_paymode in ('12', '13', '14', '18', '19','0404','0504','0601') and
+		pk_settle = #{pkSettle,jdbcType=CHAR}
+	</select>
+	<select id="qrySelfConceitedAmtPkSettleZsrm" resultType="java.lang.Double">
+	select case hp.DT_EXTHP
+           when '01' then qgyb.medfee_sumamt - qgyb.fund_pay_sumamt - qgyb.fulamt_ownpay_amt - qgyb.overlmt_selfpay -
+                          qgyb.preselfpay_amt - qgyb.hosp_part_amt
+           when '02' then to_number(sgsyb.bka831)
+           else 0 end
+           as SelfConceitedAmt
+	from BL_SETTLE st
+         inner join bd_hp hp on hp.PK_HP = st.PK_INSURANCE and hp.DEL_FLAG = '0'
+         left join ins_qgyb_st qgyb on qgyb.PK_SETTLE = st.PK_SETTLE and hp.DT_EXTHP = '01'
+         left join ins_sgsyb_st sgsyb on sgsyb.PK_SETTLE = st.PK_SETTLE and hp.DT_EXTHP = '02'
+    where st.pk_pv  = #{pkPv,jdbcType=VARCHAR} and st.pk_settle = #{pkSettle,jdbcType=CHAR}
+    		  
+	</select>
+
+    <select id="qrySerialNoByPkSettleZsrm" resultType="java.lang.String">
+		select SERIAL_NO from BL_EXT_PAY ext
+        inner JOIN BL_DEPOSIT de on de.PK_DEPO=ext.PK_DEPO
+        where  ext.EU_PAYTYPE='23' and  de.PK_SETTLE = #{pkSettle,jdbcType=CHAR}
+	</select>
+
+</mapper>

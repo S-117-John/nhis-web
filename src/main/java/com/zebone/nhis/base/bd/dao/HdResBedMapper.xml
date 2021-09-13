@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.HdResBedMapper">
+	<select id="queryDialysisBeds" parameterType="java.util.Map" resultType="DynaBean">
+ 		select 
+ 			bed.pk_hdbed, 
+       		bed.code_bed,
+       		bed.name_bed, 
+       		bed.sortno,  
+       		bed.pk_msp,  
+       		msp.name msp,
+	   		bed.dt_hdtype,  
+       		bed.eu_status,  
+       		bed.pk_dept_ns, 
+       		hd.name_dept hd,
+       		bed.pk_dept, 
+       		dept.name_dept, 
+       		bed.pk_pi,    
+       		pi.name_pi,   
+       		bed.note,   
+       		bed.flag_open, 
+       		bed.dt_dateslottype 
+  		from bd_res_hdbed bed
+    	left outer join bd_res_msp msp on bed.pk_msp=msp.pk_msp
+    	left outer join bd_ou_dept hd on bed.pk_dept_ns=hd.pk_dept
+    	left outer join bd_ou_dept dept on bed.pk_dept=dept.pk_dept
+    	left outer join pi_master pi on bed.pk_pi=pi.pk_pi
+ 		where bed.pk_org=#{pkOrg,jdbcType=CHAR} 
+ 		<if test=" codeBed != null and  codeBed != '' ">
+ 			and bed.code_bed =#{codeBed,jdbcType=VARCHAR}
+ 		</if>
+ 		<if test=" nameBed != null and  nameBed != '' ">
+ 			and bed.name_bed =#{nameBed,jdbcType=VARCHAR}
+ 		</if>
+ 		<if test=" euStatus != null and  euStatus != '' ">
+ 			and bed.eu_status=  #{euStatus,jdbcType=VARCHAR}
+ 		</if>
+ 		<if test=" pkDept != null and  pkDept != '' ">
+ 			and bed.pk_dept= #{pkDept,jdbcType=CHAR} 
+ 		</if>
+ 		<if test=" pkDeptNs != null and  pkDeptNs != '' ">
+ 			and bed.pk_dept_ns= #{pkDeptNs,jdbcType=VARCHAR}
+ 		</if>
+	</select>
+	<select id="queryPvEncounterByBedNo" parameterType="java.util.Map" resultType="DynaBean">
+		select count(1) ifDelete from pv_hd
+		where PK_HDBED='${pkHdbed}' and EU_STATUS_HD='0'
+	</select>
+</mapper>

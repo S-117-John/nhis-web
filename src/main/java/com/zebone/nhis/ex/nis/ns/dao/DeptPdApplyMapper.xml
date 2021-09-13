@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.ns.dao.DeptPdApplyMapper">
+<!-- 查询需要生成请领单的医嘱列表-->
+<select id="getGenPdApOrdList" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.pub.vo.GeneratePdApExListVo">
+select pv.pk_pv,
+       pv.name_pi,
+       pv.pk_insu,
+       pv.bed_no,
+       ord.ordsn,
+       ord.ordsn_parent,
+       ord.pk_cnord,
+       ord.pk_org,
+       ord.pk_dept,
+       ord.flag_emer,
+       ord.flag_stop flag_ord_stop,
+       ord.flag_stop_chk,
+       ord.date_stop,
+       exlist.pk_dept_occ,
+       exlist.pk_org_occ,
+       ex_dept.name_dept      name_dept_occ,
+       ex_org.name_org       name_org_occ,
+       exlist.date_plan   date_ex,
+       exlist.date_plan,
+       ord.quan,
+       ord.dosage,
+       exlist.quan_occ,
+       ord.pk_unit_dos,
+       exlist.pk_unit,
+       exlist.pack_size,
+       ord.quan_bed,
+       pd.pk_pd,
+       ord.ords,
+       ord.flag_medout,
+       pd.name pdname,
+       pd.code pdcode,
+       ord.spec,
+      ord.EU_ST,
+       pd.price,
+       pd.dt_pois,
+       pd.pk_unit_min ,
+       pd.eu_muputype,
+       pd.pk_unit_pack,
+       pd.flag_stop,
+       store.flag_stop as flag_store_stop,
+       store.pk_unit pk_unit_store,
+       unit.name name_unit_store,
+       store.pack_size as pack_size_store,
+       pd.pack_size as pack_size_p,
+       ord.date_last_ex,
+       ord.code_ordtype,
+       freq.eu_cycle,
+       ord.pk_pres,
+       ord.flag_self,
+       exlist.flag_pivas,
+       exlist.flag_base,
+       exlist.pk_exocc,
+       ord.eu_always,
+       supply.name namesupply,
+       freq.name freqname,
+       pres.eu_boil,
+       ord.pk_dept_exec as pk_dept_ex_ord,
+       ex_dept_ord.name_dept as name_dept_ex_ord,
+       case when to_char(ord.date_start,'YYYYMMDD')=to_char(exlist.date_plan,'YYYYMMDD') then '新'
+       else '' end flag_new,
+       unitOrd.name as name_unit_ord,
+       ord.pack_size as pack_size_ord 
+  from ex_order_occ exlist
+ inner join cn_order ord
+    on ord.pk_cnord = exlist.pk_cnord
+  left join bd_supply supply
+    on ord.code_supply = supply.code 
+ inner join pv_encounter pv
+    on pv.pk_pv = ord.pk_pv
+ inner join pi_master pi
+    on pi.pk_pi = pv.pk_pi
+ inner join bd_ou_dept ex_dept
+    on exlist.pk_dept_occ = ex_dept.pk_dept
+ inner join bd_ou_dept ex_dept_ord  
+    on ord.pk_dept_exec = ex_dept_ord.pk_dept 
+ inner join bd_ou_org ex_org
+    on ex_org.pk_org = exlist.pk_org_occ
+ left join bd_pd pd
+    on pd.pk_pd = ord.pk_ord 
+ left join bd_pd_store store
+    on pd.pk_pd = store.pk_pd and store.pk_dept = exlist.pk_dept_occ 
+ left join bd_unit unit on store.pk_unit = unit.pk_unit 
+ left join bd_unit unitOrd on ord.pk_unit = unitOrd.pk_unit   
+ left join cn_prescription pres on pres.pk_pres = ord.pk_pres 
+ inner join bd_term_freq freq
+    on freq.code = ord.code_freq
+ where exlist.pk_pdapdt is null and (exlist.eu_status = '0' or  exlist.eu_status = '1')
+   and ord.code_ordtype like '01%'  and ord.flag_durg = '1' 
+   and exlist.date_plan &lt; to_date(#{endDate},'YYYYMMDDHH24MISS')
+   and ((supply.DT_EXCARDTYPE !='2' and ord.eu_always ='0') or ord.eu_always ='1')
+   and (ord.flag_note='0' or ord.flag_note is null)<!-- 2018-12-14嘱托类药品医嘱不请领 -->
+   and ((exlist.flag_self='0' or exlist.flag_self is null) or (exlist.flag_self = '1' and exlist.flag_pivas = '1'))<!-- 静配自备要参与请领 -->
+   and (exlist.flag_canc='0' or exlist.flag_canc is null) 
+   and exlist.flag_base='0'
+    <if test="pkPvs != null">
+		   and ord.pk_pv in 
+	    <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+	            	#{pkpv}    
+	    </foreach> 
+	</if>
+    <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		  and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}  
+	</if> 
+	<if test="bedNo != null  and  bedNo != ''">
+		  and pv.bed_no = #{bedNo,jdbcType=VARCHAR}  
+	</if> 
+	<if test="codeSupply != null  and  codeSupply != ''">
+		  and ord.code_supply = #{codeSupply,jdbcType=VARCHAR}  
+	</if>  
+	<if test="pkCnOrdsPivas != null">
+		   and ord.pk_cnord in 
+	    <foreach item="pkCnord" index="index" collection="pkCnOrdsPivas" open="(" separator="," close=")">
+	            	#{pkCnord}    
+	    </foreach> 
+	</if>
+	<if test="orderFlag!=null and orderFlag!=''">
+	   order by ord.pk_pv,exlist.date_plan,ord.ordsn_parent,ord.ordsn
+	</if>
+	<if test="orderFlag==null or orderFlag==''">
+	   order by pv.bed_no,ord.ordsn_parent,exlist.flag_pivas,ord.ordsn,exlist.date_plan
+	</if>
+  
+</select>
+    <!-- 查询需要生成请领单的医嘱列表（长期口服的执行单）-->
+<select id="getGenPdApOrdOralList" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.pub.vo.GeneratePdApExListVo">
+        select pv.pk_pv,
+        pv.name_pi,
+        pv.pk_insu,
+        pv.bed_no,
+        ord.ordsn,
+        ord.ordsn_parent,
+        ord.pk_cnord,
+        ord.pk_org,
+        ord.pk_dept,
+        ord.flag_emer,
+        ord.flag_stop flag_ord_stop,
+        ord.flag_stop_chk,
+        ord.date_stop,
+        exlist.pk_dept_occ,
+        exlist.pk_org_occ,
+        ex_dept.name_dept      name_dept_occ,
+        ex_org.name_org       name_org_occ,
+        exlist.date_plan   date_ex,
+        exlist.date_plan,
+        ord.quan,
+        ord.dosage,
+        exlist.quan_occ,
+        ord.pk_unit_dos,
+        exlist.pk_unit,
+        exlist.pack_size,
+        ord.quan_bed,
+        pd.pk_pd,
+        ord.ords,
+        ord.flag_medout,
+        pd.name pdname,
+        ord.spec,
+        ord.EU_ST,
+        pd.price,
+        pd.dt_pois,
+        pd.pk_unit_min ,
+        pd.eu_muputype,
+        pd.pk_unit_pack,
+        pd.flag_stop,
+        store.flag_stop as flag_store_stop,
+        store.pk_unit pk_unit_store,
+        unit.name name_unit_store,
+        store.pack_size as pack_size_store,
+        pd.pack_size as pack_size_p,
+        ord.date_last_ex,
+        ord.code_ordtype,
+        freq.eu_cycle,
+        ord.pk_pres,
+        ord.flag_self,
+        exlist.flag_pivas,
+        exlist.flag_base,
+        exlist.pk_exocc,
+        ord.eu_always,
+        supply.name namesupply,
+        freq.name freqname,
+        pres.eu_boil,
+        ord.pk_dept_exec as pk_dept_ex_ord,
+        ex_dept_ord.name_dept as name_dept_ex_ord,
+        case when to_char(ord.date_start,'YYYYMMDD')=to_char(exlist.date_plan,'YYYYMMDD') then '新'
+        else '' end flag_new,
+        unitOrd.name as name_unit_ord,
+        ord.pack_size as pack_size_ord
+        from ex_order_occ exlist
+        inner join cn_order ord
+        on ord.pk_cnord = exlist.pk_cnord
+        left join bd_supply supply
+        on ord.code_supply = supply.code
+        inner join pv_encounter pv
+        on pv.pk_pv = ord.pk_pv
+        inner join pi_master pi
+        on pi.pk_pi = pv.pk_pi
+        inner join bd_ou_dept ex_dept
+        on exlist.pk_dept_occ = ex_dept.pk_dept
+        inner join bd_ou_dept ex_dept_ord
+        on ord.pk_dept_exec = ex_dept_ord.pk_dept
+        inner join bd_ou_org ex_org
+        on ex_org.pk_org = exlist.pk_org_occ
+        left join bd_pd pd
+        on pd.pk_pd = ord.pk_ord
+        left join bd_pd_store store
+        on pd.pk_pd = store.pk_pd and store.pk_dept = exlist.pk_dept_occ
+        left join bd_unit unit on store.pk_unit = unit.pk_unit
+        left join bd_unit unitOrd on ord.pk_unit = unitOrd.pk_unit
+        left join cn_prescription pres on pres.pk_pres = ord.pk_pres
+        inner join bd_term_freq freq
+        on freq.code = ord.code_freq
+        where exlist.pk_pdapdt is null and (exlist.eu_status = '0' or  exlist.eu_status = '1')
+        and ord.code_ordtype like '01%'  and ord.flag_durg = '1'
+        and exlist.date_plan &lt; to_date(#{endDate},'YYYYMMDDHH24MISS')
+        and (supply.DT_EXCARDTYPE ='2' and ord.eu_always ='0')
+        and (ord.flag_note='0' or ord.flag_note is null)<!-- 2018-12-14嘱托类药品医嘱不请领 -->
+        and ((exlist.flag_self='0' or exlist.flag_self is null) or (exlist.flag_self = '1' and exlist.flag_pivas = '1'))<!-- 静配自备要参与请领 -->
+        and (exlist.flag_canc='0' or exlist.flag_canc is null)
+        and exlist.flag_base='0'
+        <if test="pkPvs != null">
+            and ord.pk_pv in
+            <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+                #{pkpv}
+            </foreach>
+        </if>
+        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+            and ord.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        <if test="bedNo != null  and  bedNo != ''">
+            and pv.bed_no = #{bedNo,jdbcType=VARCHAR}
+        </if>
+        <if test="codeSupply != null  and  codeSupply != ''">
+            and ord.code_supply = #{codeSupply,jdbcType=VARCHAR}
+        </if>
+        <if test="pkCnOrdsPivas != null">
+            and ord.pk_cnord in
+            <foreach item="pkCnord" index="index" collection="pkCnOrdsPivas" open="(" separator="," close=")">
+                #{pkCnord}
+            </foreach>
+        </if>
+        <if test="orderFlag!=null and orderFlag!=''">
+            order by ord.pk_pv,exlist.date_plan,ord.ordsn_parent,ord.ordsn
+        </if>
+        <if test="orderFlag==null or orderFlag==''">
+            order by pv.bed_no,ord.ordsn_parent,exlist.flag_pivas,ord.ordsn,exlist.date_plan
+        </if>
+
+ </select>
+    <select id="getPivasRule" parameterType="java.util.Map" resultType="DynaBean">
+   select pivasrule.wheresql
+  from bd_pivasrule pivasrule
+       inner join bd_pivasrule_dept dept on pivasrule.pk_pivasrule=dept.pk_pivasrule
+ where dept.pk_dept=#{pkDept,jdbcType=VARCHAR} and  pivasrule.del_flag='0'
+</select> 
+<select id="queryUpdateEx" parameterType="java.util.Map" resultType="DynaBean">
+  select ord.pk_ord,
+        ord.pk_cnord,
+        occ.pk_exocc,
+        ord.pk_dept_exec,
+        ord.ordsn_parent,
+        pd.name,
+        pd.spec,
+        store.pk_dept as pk_dept_store, 
+        store.pack_size  
+        from ex_order_occ occ 
+        inner join cn_order ord on occ.pk_cnord=ord.pk_cnord
+        inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+        inner join bd_pd pd on ord.pk_ord=pd.pk_pd and ord.flag_durg='1'
+        inner join bd_supply sup on ord.code_supply=sup.code 
+        inner join bd_pd_store store on store.pk_pd = ord.pk_ord 
+          and store.pk_dept in ( 
+          	 select bus.pk_dept
+       		   from bd_dept_bus bus
+			  inner join bd_dept_bu bu on bus.pk_deptbu = bu.pk_deptbu and bu.del_flag = '0'
+              inner join bd_dept_bus bus2 on bus.pk_deptbu=bus2.pk_deptbu and bus2.del_flag='0'
+      		  where bu.dt_butype='08' and bus.dt_depttype='0402' 
+      		    and bus.del_flag = '0' and bus2.dt_depttype='01' 
+      		    and bus2.pk_dept=ord.pk_dept)
+      where 1=1
+  		and occ.pk_pv in 
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            	#{pkpv}    
+       </foreach> 
+  		 and (occ.eu_status = '0' or occ.eu_status = '1')
+  		 and (occ.pk_pdapdt is null or occ.pk_pdapdt = '')   
+  		 and ord.PK_DEPT_NS=#{pkDeptNs}   
+         and occ.date_plan &lt; to_date(#{endDate},'YYYYMMDDHH24MISS')
+        ${whereSql}
+         order by ord.ordsn_parent
+</select>
+
+<select id="queryUpdateExByWithAs" parameterType="java.util.Map" resultType="DynaBean">
+  with S1 as
+    (select  ord.pk_ord, ord.pk_cnord, ord.date_start,ord.eu_always,ord.flag_self,
+             ord.pk_dept_exec,ord.ORDSN,ord.ordsn_parent,ord.pk_dept_ns,ord.pk_dept,ord.FLAG_PIVAS ord_flag_pivas,
+             pd.name, pd.spec,pd.dt_injtype,pd.flag_chrt,pd.EU_USECATE,
+             sup.flag_pivas sup_flag_pivas,pv.PK_PV,
+             occ.date_plan,occ.pk_exocc,occ.flag_modi, occ.flag_pivas,occ.pk_pdapdt
+        from ex_order_occ occ 
+       inner join cn_order ord on occ.pk_cnord=ord.pk_cnord
+       inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+       inner join bd_pd pd on ord.pk_ord=pd.pk_pd and ord.flag_durg='1'
+       inner join bd_supply sup on ord.code_supply=sup.code 
+       where 1=1 and occ.pk_pv in 
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            	#{pkpv}    
+       </foreach> 
+         and (occ.eu_status = '0' or occ.eu_status = '1')
+  		 and (occ.pk_pdapdt is null or occ.pk_pdapdt = '') and occ.date_plan &lt; to_date(#{endDate},'YYYYMMDDHH24MISS')
+         and ord.PK_DEPT_NS=#{pkDeptNs}
+     ) select S1.*, store.pk_dept as pk_dept_store, store.pack_size
+from S1
+inner join bd_pd_store store on store.pk_pd = S1.pk_ord 
+and store.pk_dept in ( select bus.pk_dept from bd_dept_bus bus
+			  inner join bd_dept_bu bu on bus.pk_deptbu = bu.pk_deptbu and bu.del_flag = '0'
+              inner join bd_dept_bus bus2 on bus.pk_deptbu=bus2.pk_deptbu and bus2.del_flag='0'
+      		  where bu.dt_butype='08' and bus.dt_depttype='0402' 
+      		    and bus.del_flag = '0' and bus2.dt_depttype='01' 
+      		    and bus2.pk_dept=S1.pk_dept)
+        ${whereSql}
+         order by S1.ordsn_parent 
+</select>
+
+</mapper>

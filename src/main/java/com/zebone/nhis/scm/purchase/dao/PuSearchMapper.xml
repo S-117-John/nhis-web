@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.scm.purchase.dao.PuSearchMapper">
+	
+	<!-- 通过仓库和日期和名称查询供应商 -->
+	<select id="querySupplyerByParam" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.scm.pub.BdSupplyer">
+		select 
+		sup.pk_supplyer,
+      	sup.code,
+       	sup.name from bd_supplyer sup
+ 		where exists (select 1 from pd_st st
+ 		  inner join pd_st_detail dt on dt.pk_pdst=st.pk_pdst
+ 		  inner join bd_pd pd on pd.pk_pd=dt.pk_pd
+          where st.pk_supplyer = sup.pk_supplyer 
+          and st.flag_pu = '1'
+          and pd.dt_pdtype like '0%'
+          <if test="pkStore != null and pkStore != ''">
+          	and st.pk_store_st = #{pkStore}
+          </if>
+          <if test="dateBegin != null and dateBegin != ''">
+          	and st.date_st &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+          </if>
+          <if test="dateEnd != null and dateEnd != ''">
+          	and st.date_st &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+          </if>
+          <if test="name != null and name != ''">
+          	and sup.name like '%${name}%'
+          </if>
+         )
+         order by sup.code desc
+	</select>
+	
+	<!-- 通过供应商和日期查询药品明细 -->
+	<select id="queryDrugBySupplyer" parameterType="java.util.Map" 
+		resultType="com.zebone.nhis.scm.purchase.vo.PuSearchQueryDrugBySupplyerResult">
+		
+		select pd.code,
+		pd.name,
+		pd.spec,        
+        pd.pk_factory,
+        dt.pk_unit_pack,
+        dt.price_cost,
+        abs(dt.quan_pack)*st.eu_direct quan_pack,
+        abs(dt.amount_cost)*st.eu_direct amount_cost,
+        st.date_st
+   		from pd_st st
+        inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst
+        inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+        where st.flag_pu='1' and st.pk_supplyer = #{pkSupplyer}
+        <if test="pkStore != null and pkStore != ''">
+        	and st.pk_store_st = #{pkStore}
+        </if>
+        <if test="dateBegin != null and dateBegin != ''">
+        	and st.date_st &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateEnd != null and dateEnd != ''">
+        	and st.date_st &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+        </if>
+        order by pd.code desc
+	</select>
+	
+	<!-- 根据条件查询采购入库的药品 -->
+	<select id="queryDrugPyParam" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.scm.pub.BdPd">
+		select pd.pk_pd,
+		pd.code,
+		pd.name,
+		pd.spec,
+		pd.pk_factory
+  		from bd_pd pd
+ 		where exists (
+ 			select 1 from pd_st st
+            inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst
+            where pd.pk_pd=dt.pk_pd and st.flag_pu='1' 
+            <if test="pkStore != null and pkStore != ''">
+          	  and st.pk_store_st = #{pkStore}
+            </if>
+            <if test="dateBegin != null and dateBegin != ''">
+          	  and st.date_st &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+            </if>
+            <if test="dateEnd != null and dateEnd != ''">
+          	  and st.date_st &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+            </if>
+            <if test="name != null and name != ''">
+          	  and pd.name like '%${name}%'
+            </if>
+         )
+	</select>
+	
+	<!-- 根据药品查询关联的采购供应商-->
+	<select id="querySupplyerByDrug" parameterType="java.util.Map" 
+		resultType="com.zebone.nhis.scm.purchase.vo.PuSearchQuerySupplyerByDrugResult">
+
+		select sup.code,
+		sup.name,
+		dt.price_cost,
+		abs(dt.quan_pack)*st.eu_direct quan_pack,
+        abs(dt.amount_cost)*st.eu_direct amount_cost,
+		dt.pk_unit_pack,
+		dt.batch_no,
+		st.date_st,
+		dt.RECEIPT_NO,
+		dt.date_expire as date_valid_reg,
+		pd.price
+		from bd_supplyer sup
+		inner join pd_st st on sup.pk_supplyer=st.pk_supplyer
+		inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst
+		inner join  bd_pd pd on pd.pk_pd=dt.PK_PD
+		where st.flag_pu='1'
+        and dt.pk_pd = #{pkPd}
+        <if test="pkStore != null and pkStore != ''">
+        	and st.pk_store_st = #{pkStore}
+        </if>
+        <if test="dateBegin != null and dateBegin != ''">
+        	and st.date_st &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateEnd != null and dateEnd != ''">
+        	and st.date_st &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+        </if>
+        order by st.date_st desc
+	</select>
+	
+	<select id="querySupplyerPrint" parameterType="java.util.Map" resultType="java.util.Map">
+	
+		SELECT sup.name supplyerName,
+			d.drugName,
+			d.spec,
+			d.pkFactory,
+			d.pkUnitPack,
+			d.priceCost,
+			d.quanPack,
+			d.amountCost,
+			d.dateSt,
+			d.name_Emp_op as name_emp_mak,
+            d.NAME_EMP_CHK 
+			from bd_supplyer sup
+			inner join 
+				(select pd.name drugName,        
+			        pd.spec,        
+			        pd.pk_factory pkFactory,
+			        dt.pk_unit_pack pkUnitPack,
+			        dt.price_cost priceCost,  
+			        dt.quan_pack quanPack,   
+			        dt.amount_cost amountCost, 
+			        st.date_st dateSt,
+			        st.NAME_EMP_CHK,
+                    st.NAME_EMP_OP,
+					st.pk_supplyer,
+					pd.code drugCode
+			   from pd_st st
+			        inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst
+			        inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+			  where st.flag_pu = '1' 
+				<if test="pkStore != null and pkStore != ''">
+					and st.pk_store_st = #{pkStore}
+				</if>
+				<if test="dateBegin != null and dateBegin != ''">
+					and st.date_st &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+				</if>
+				<if test="dateEnd != null and dateEnd != ''">
+					and st.date_st &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+				</if>
+			  ) d on d.pk_supplyer = sup.pk_supplyer
+		where exists (
+			select 1 from pd_st st 
+			where st.pk_supplyer = sup.pk_supplyer 
+			and st.flag_pu = '1'
+			<if test="pkStore != null and pkStore != ''">
+          	and st.pk_store_st = #{pkStore}
+			</if>
+			<if test="dateBegin != null and dateBegin != ''">
+				and st.date_st &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+			</if>
+			<if test="dateEnd != null and dateEnd != ''">
+				and st.date_st &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+			</if>
+			<if test="name != null and name != ''">
+				and sup.name like '%${name}%'
+			</if>
+			)
+		order by sup.code,d.drugCode desc
+	</select>
+	
+</mapper>

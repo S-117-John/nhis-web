@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.sch.pub.dao.SchBaseMapper">
+
+
+	<select id="getSchTicketrulesByPk" resultType="com.zebone.nhis.common.module.sch.pub.SchTicketrules" parameterType="java.lang.String">
+		select * from SCH_TICKETRULES
+		where PK_TICKETRULES = #{pkTicketrules,jdbcType=VARCHAR}
+	</select>
+
+	
+	<select id="SchSrvCheckExist" resultType="int" parameterType="java.util.Map">
+		select count(1) from SCH_SRV
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and del_flag = '0'
+		    <if test="code != null and code != ''">
+		  		and code = #{code,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="name != null and name != ''">
+		  		and name = #{name,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="pkOrg != null and pkOrg != ''">
+		  		and pk_org like #{pkOrg,jdbcType=VARCHAR}||'%'
+		  	</if> 
+		  	<if test="pkSchsrv != null and pkSchsrv != ''">
+		  		and PK_SCHSRV != #{pkSchsrv,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="euSchclass != null and euSchclass != ''">
+		  		and eu_schclass = #{euSchclass,jdbcType=VARCHAR}
+		  	</if> 
+  		</trim>
+	</select>
+	
+	<select id="searchSchSrvOrd" resultType="com.zebone.nhis.sch.pub.vo.SchSrvOrdSearchParam" parameterType="java.util.Map">
+		select a.*,b.name nameOrd from SCH_SRV_ORD a 
+		left join bd_ord b on a.pk_ord = b.pk_ord
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and a.del_flag = '0'
+			<if test="pkSchsrv != null and pkSchsrv != ''">
+		  		and a.PK_SCHSRV = #{pkSchsrv,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="pkOrg != null and pkOrg != ''">
+		  		and a.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="nameOrd != null and nameOrd != ''">
+		  		and b.name like '%'||#{nameOrd,jdbcType=VARCHAR}||'%'
+		  	</if> 
+		</trim>
+	</select>
+	
+	<select id="searchSchSrvOrdToMap" resultType="DynaBean" parameterType="java.util.Map">
+		select a.*,b.name name_ord,b.code code_ord from SCH_SRV_ORD a 
+		left join bd_ord b on a.pk_ord = b.pk_ord
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and a.del_flag = '0'
+			<if test="pkSchsrv != null and pkSchsrv != ''">
+		  		and a.PK_SCHSRV = #{pkSchsrv,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="pkOrg != null and pkOrg != ''">
+		  		and a.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		  	</if> 
+		  	<if test="nameOrd != null and nameOrd != ''">
+		  		and b.name like '%'||#{nameOrd,jdbcType=VARCHAR}||'%'
+		  	</if> 
+		</trim>
+	</select>
+   
+   <select id="getSchPlanByPk" resultType="com.zebone.nhis.sch.pub.vo.SchPlanVo" parameterType="java.lang.String">
+   	select sch.*,res.eu_restype,res.pk_dept_belong,res.pk_emp  
+   	from sch_plan  sch
+   	left join sch_resource res on res.pk_schres = sch.pk_schres 
+   	where sch.del_flag = '0' and sch.pk_schplan = #{pkSchplan,jdbcType=CHAR}
+   </select>
+   
+   <select id="getSchPlanEmpsByPkSchplan" resultType="com.zebone.nhis.common.module.sch.plan.SchPlanEmp" parameterType="java.lang.String">
+   	select emp.*,unit.name as name_deptunit  
+   	from sch_plan_emp emp 
+   	left join bd_dept_unit unit on unit.pk_deptunit = emp.pk_deptunit and unit.del_flag='0'
+   	where emp.del_flag = '0' and emp.pk_schplan = #{pkSchplan,jdbcType=CHAR}  
+   </select>
+   
+   <select id="getSchPlanWeeksByPkSchplan" resultType="com.zebone.nhis.sch.pub.vo.SchPlanWeekExt" parameterType="java.lang.String">
+   	select w.*,d.sortno,w.pk_deptunit pk_dept_unit,unit.name name_dept_unit 
+   	from sch_plan_week w 
+   	left join bd_code_dateslot d on d.pk_dateslot = w.pk_dateslot
+	left join bd_dept_unit unit on w.pk_deptunit = unit.pk_deptunit
+   	 where w.del_flag = '0' and w.pk_schplan = #{pkSchplan,jdbcType=CHAR}
+   </select>
+   
+   <select id="getSchPlanWeekPvtypelistByPkPlanWeek" resultType="com.zebone.nhis.common.module.sch.plan.SchPlanweekPvtype" parameterType="java.util.Map">
+   	select pt.* from sch_planweek_pvtype pt where pt.del_flag = '0'
+   	<choose>
+   		<when test="pkPlanweek !=null and pkPlanweek !=''">
+   			and pt.pk_planweek = #{pkPlanweek,jdbcType=CHAR} 
+   		</when>
+   		<when test="pkSchplan !=null and pkSchplan !=''">
+   			and exists(select 1 from sch_plan_week w where w.pk_schplan = #{pkSchplan,jdbcType=CHAR} and w.pk_planweek=pt.pk_planweek)
+   		</when>
+   	</choose>
+   	
+   	order by eu_pvtype
+   </select>
+   
+   <select id="getResouceDts" resultType="com.zebone.nhis.common.module.sch.pub.SchResourceDt" parameterType="java.util.Map">
+    select srdt.*,bcd.name_dateslot,bcd.code_dateslot 
+     from sch_resource_dt srdt 
+     inner join  bd_code_dateslot bcd  on  srdt.pk_dateslot = bcd.pk_dateslot
+   	WHERE  srdt.del_flag = '0'
+    and srdt.pk_schres= #{pkSchres,jdbcType=CHAR}
+    <if test="pkOrg != null and pkOrg != ''">
+		and srdt.pk_org=#{pkOrg,jdbcType=VARCHAR}
+    </if>
+   </select>
+    <select id="getDateSlot" resultType="com.zebone.nhis.common.module.sch.pub.SchResourceDt" parameterType="java.util.Map">
+	    select code_dateslot,pk_dateslot,name_dateslot  
+	    from  bd_code_dateslot   
+		where dt_dateslottype = #{dtDateslottype,jdbcType=VARCHAR}
+   </select>
+   <select id="querySchResourceList" resultType="com.zebone.nhis.sch.pub.vo.SchResourceVo" parameterType="java.util.Map">
+	   	select res.*,emp.CODE_EMP,emp.NAME_EMP,doc.name name_dt_cnlevel from SCH_RESOURCE res 
+	   	left join BD_OU_EMPLOYEE emp on res.PK_EMP=emp.PK_EMP
+	   	left join BD_DEFDOC doc on doc.code=res.dt_cnlevel and doc.code_defdoclist='010308'
+	   	where res.DEL_FLAG = '0' and res.pk_dept is null
+	   	 <if test="pkOrg != null and pkOrg != ''">
+			and res.pk_org=#{pkOrg,jdbcType=VARCHAR}
+	      </if>
+	     <if test="code != null and code != ''">
+	       and res.code = #{code} 
+	     </if>
+	     <if test="euRestype != null and euRestype != ''">
+		   and res.eu_restype=#{euRestype,jdbcType=VARCHAR}
+		 </if>
+		 <if test="name != null and name != ''">
+			and res.name like '%${name}%' 
+		 </if>
+		 <if test="euSchclass != null and euSchclass != ''">
+			and res.eu_schclass=#{euSchclass,jdbcType=VARCHAR}
+		 </if>
+		 <if test="pkDeptBelong != null and pkDeptBelong != ''">
+		  and res.pk_dept_belong=#{pkDeptBelong,jdbcType=VARCHAR}
+		 </if>
+		 <if test="pkSchresZs != null and pkSchresZs != ''">
+			and res.pk_schres= #{pkSchresZs,jdbcType=VARCHAR} 
+		 </if>
+		union
+	   	select res.*,emp.CODE_EMP,emp.NAME_EMP,doc.name name_dt_cnlevel from SCH_RESOURCE res 
+	   	left join BD_OU_EMPLOYEE emp on res.PK_EMP=emp.PK_EMP
+	   	left join BD_DEFDOC doc on doc.code=res.dt_cnlevel and doc.code_defdoclist='010308'
+	   	 where res.DEL_FLAG = '0'
+   	 	<if test="pkOrg != null and pkOrg != ''">
+			and res.pk_org=#{pkOrg,jdbcType=VARCHAR}
+	      </if>
+	     <if test="code != null and code != ''">
+	       and res.code = #{code} 
+	     </if>
+	     <if test="euRestype != null and euRestype != ''">
+		   and res.eu_restype=#{euRestype,jdbcType=VARCHAR}
+		 </if>
+		 <if test="name != null and name != ''">
+			and res.name like '%${name}%' 
+		 </if>
+		 <if test="ftByUser !=null and ftByUser==1"><!--参数SCH0018=1的情况 根据人员科室权限过滤信息-->
+		 	and res.pk_dept_belong in (select pk_dept from bd_ou_empjob where pk_emp=#{pkEmp,jdbcType=VARCHAR} and del_flag='0' )
+		 </if>
+		 <if test="ftByUser !=null and ftByUser==2"><!--参数SCH0018=2的情况 根据分诊台权限过滤信息-->
+		 	and res.pk_dept_belong in (select que.pk_dept from bd_qc_platform platform
+				inner join bd_qc_que que on platform.pk_qcplatform=que.pk_qcplatform
+				inner join bd_qc_perm perm on perm.pk_qcplatform = que.pk_qcplatform
+				where perm.pk_user = #{pkUser,jdbcType=VARCHAR}
+			 )
+		 </if>
+		 <if test="ftByUser !=null and ftByUser==3"><!--参数SCH0018=3的情况 根据业务线类型【12】诊区权限判断，通过人员登陆的科室，拿到科室对应的诊区进行过滤信息-->
+		 	and res.pk_dept_area in (
+		 		select busa.pk_dept
+				from bd_dept_bus bus
+				inner join bd_dept_bu bu on bus.pk_deptbu=bu.pk_deptbu
+				inner join bd_dept_bus busa on bus.pk_deptbu=busa.pk_deptbu
+				where busa.dt_depttype='16' 
+				And bu.dt_butype='12' 
+				And busa.del_flag='0' 
+				and bus.pk_dept=#{pkDept,jdbcType=VARCHAR}
+		 	)
+		 </if>
+		 <if test="euSchclass != null and euSchclass != ''">
+			and res.eu_schclass=#{euSchclass,jdbcType=VARCHAR}
+		 </if>
+		 <if test="pkDeptBelong != null and pkDeptBelong != ''">
+		  and res.pk_dept_belong=#{pkDeptBelong,jdbcType=VARCHAR}
+		 </if>
+		 <if test="pkSchresZs != null and pkSchresZs != ''">
+			and  res.pk_dept = #{pkSchresZs,jdbcType=VARCHAR}
+		 </if>
+   </select>
+   
+	<select id="queryDtDateslottype" resultType="java.lang.String" parameterType="java.lang.String">
+		select DT_DATESLOTTYPE from SCH_RESOURCE where PK_SCHRES = #{pkSchres,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="checkRepeatPk" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT
+			ord.NAME AS ord_name,
+			srv.NAME AS srv_name
+		FROM SCH_SRV_ORD sso
+		INNER JOIN BD_ORD ord ON ord.PK_ORD=sso.PK_ORD
+		INNER JOIN SCH_SRV srv ON srv.PK_SCHSRV=sso.PK_SCHSRV
+		WHERE 1=1
+			AND sso.PK_ORG=#{pkOrg,jdbcType=VARCHAR}
+			AND sso.PK_ORD IN 
+	<foreach item="item" index="index" collection="pkOrds" open="(" separator="," close=")">  
+		#{item}  
+	</foreach>
+	</select>
+	
+	<select id="getSimpleSchResource" resultType="com.zebone.nhis.common.module.sch.pub.SchResource" parameterType="java.util.Map">
+    	select * 
+    		from sch_resource where EU_SCHCLASS='0' and del_flag='0' and pk_father is not null
+    		<if test="pkOrg != null and pkOrg != ''">
+				and pk_org=#{pkOrg,jdbcType=VARCHAR}
+	      	</if>
+	      	<if test="pkDeptNull != null and pkDeptNull != ''">
+				and pk_dept is null
+	      	</if>
+		 <if test="ftByUser !=null and ftByUser==1"><!--参数SCH0018=1的情况 根据人员科室权限过滤信息-->
+		 	and pk_dept_belong in (select pk_dept from bd_ou_empjob where pk_emp=#{pkEmp,jdbcType=VARCHAR} and del_flag='0' )
+		 </if>
+		 <if test="ftByUser !=null and ftByUser==2"><!--参数SCH0018=2的情况 根据分诊台权限过滤信息-->
+		 	and pk_dept_belong in (select que.pk_dept from bd_qc_platform platform
+				inner join bd_qc_que que on platform.pk_qcplatform=que.pk_qcplatform
+				inner join bd_qc_perm perm on perm.pk_qcplatform = que.pk_qcplatform
+				where perm.pk_user = #{pkUser,jdbcType=VARCHAR}
+			 )
+		 </if>
+		 <if test="ftByUser !=null and ftByUser==3"><!--参数SCH0018=3的情况 根据业务线类型【12】诊区权限判断，通过人员登陆的科室，拿到科室对应的诊区进行过滤信息-->
+		 	and pk_dept_area in (
+		 		select busa.pk_dept
+				from bd_dept_bus bus
+				inner join bd_dept_bu bu on bus.pk_deptbu=bu.pk_deptbu
+				inner join bd_dept_bus busa on bus.pk_deptbu=busa.pk_deptbu
+				where busa.dt_depttype='16' 
+				And bu.dt_butype='12' 
+				And busa.del_flag='0' 
+				and bus.pk_dept=#{pkDept,jdbcType=VARCHAR}
+		 	)
+		 </if>
+	</select> 
+	
+	<select id="getSimpleSchResourceFather" resultType="com.zebone.nhis.common.module.sch.pub.SchResource" parameterType="java.util.Map">
+    	select * 
+    		from sch_resource where EU_SCHCLASS='0' and  del_flag='0' and pk_father is  null
+    		and pk_schres in (${pkFathers}) 
+    		<if test="pkOrg != null and pkOrg != ''">
+				and pk_org=#{pkOrg,jdbcType=VARCHAR}
+	      	</if>
+	      	<if test="pkDeptNull != null and pkDeptNull != ''">
+				and pk_dept is null
+	      	</if>
+    	union 
+    	select * 
+    		from sch_resource where EU_SCHCLASS='0' and del_flag='0' and pk_father is  null
+    		<if test="pkFatherList != null and pkFatherList.size > 0">
+		    AND (pk_schres IN
+		        <trim suffixOverrides=" OR pk_schres IN()">    <!-- 表示删除最后一个条件 -->
+		          <foreach collection="pkFatherList" item="pkSchres" index="index" open="(" close=")">
+		            <if test="index != 0">
+		              <choose>
+		                 <when test="index % 1000 == 999">) OR pk_schres IN (</when>
+						  <otherwise>,</otherwise>
+		              </choose>
+		            </if>
+		            #{pkSchres}
+		          </foreach>
+		       </trim>
+				)
+			 </if>
+    		<if test="pkOrg != null and pkOrg != ''">
+				and pk_org=#{pkOrg,jdbcType=VARCHAR}
+	      	</if>
+	      	<if test="pkDeptNull != null and pkDeptNull != ''">
+				and pk_dept is null
+	      	</if>
+		 <if test="ftByUser !=null and ftByUser==1"><!--参数SCH0018=1的情况 根据人员科室权限过滤信息-->
+		 	and pk_dept_belong in (select pk_dept from bd_ou_empjob where pk_emp=#{pkEmp,jdbcType=VARCHAR} and del_flag='0' )
+		 </if>
+		 <if test="ftByUser !=null and ftByUser==2"><!--参数SCH0018=2的情况 根据分诊台权限过滤信息-->
+		 	and pk_dept_belong in (select que.pk_dept from bd_qc_platform platform
+				inner join bd_qc_que que on platform.pk_qcplatform=que.pk_qcplatform
+				inner join bd_qc_perm perm on perm.pk_qcplatform = que.pk_qcplatform
+				where perm.pk_user = #{pkUser,jdbcType=VARCHAR}
+			 )
+		 </if>
+		 <if test="ftByUser !=null and ftByUser==3"><!--参数SCH0018=3的情况 根据业务线类型【12】诊区权限判断，通过人员登陆的科室，拿到科室对应的诊区进行过滤信息-->
+		 	and pk_dept_area in (
+		 		select busa.pk_dept
+				from bd_dept_bus bus
+				inner join bd_dept_bu bu on bus.pk_deptbu=bu.pk_deptbu
+				inner join bd_dept_bus busa on bus.pk_deptbu=busa.pk_deptbu
+				where busa.dt_depttype='16' 
+				And bu.dt_butype='12' 
+				And busa.del_flag='0' 
+				and bus.pk_dept=#{pkDept,jdbcType=VARCHAR}
+		 	)
+		 </if>
+   </select>
+   
+</mapper>

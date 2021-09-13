@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.MedForDiseaseMapper">
+	<select id="qryPdInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select distinct pd.pk_pd,  
+		       pd.code,   
+		       pd.name,   
+		       pd.spec,   
+		       pd.pk_factory, 
+		       fac.name factory_name,
+		       pd.spcode,
+		       case when dise.pk_diseaseord is null then '0' else '1' end  flag_ref
+		  from bd_pd pd
+		       left outer join ins_gzgy_disease_ord dise on pd.pk_pd=dise.pk_ord
+		       inner join bd_factory fac on fac.pk_factory=pd.pk_factory
+		 where pd.dt_pdtype like '0%' and pd.del_flag='0'
+		   <if test='code!=null and code !=""'>
+		   		and  pd.code like #{code,jdbcType=VARCHAR}||'%'
+		   </if>
+		   <if test='name !=null and name !=""'>
+		   		and  pd.name like '%'||#{name,jdbcType=VARCHAR}||'%'
+		   </if>
+		   <if test='euDrugtype !=null and euDrugtype!=""'>
+		   		and pd.eu_drugtype=#{euDrugtype,jdbcType=VARCHAR}
+		   </if>
+		   <if test='dtDosage !=null and dtDosage !=""'>
+		   		and pd.dt_dosage=#{dtDosage,jdbcType=VARCHAR}
+		   </if>
+		   <if test='dtPharm !=null and dtPharm !=""'>
+		   		and pd.dt_pharm=#{dtPharm,jdbcType=VARCHAR}
+		   </if>
+		   <if test='euUsecate !=null and euUsecate !=""'>
+		   		and pd.eu_usecate=#{euUsecate,jdbcType=VARCHAR}
+		   </if>
+	</select>
+	
+	<select id="qryBdPdRefDisease" parameterType="java.lang.String" resultType="DynaBean">
+		 select ord.pk_gzgydisease,
+		       dise.dt_diseasetype, 
+		       doc.name disetypename,
+		       dise.code_diag,      
+		       dise.name_diag,      
+		       ord.days             
+		  from ins_gzgy_disease_ord ord
+		       inner join ins_gzgy_disease dise on ord.pk_gzgydisease=dise.pk_gzgydisease
+		       inner join bd_pd pd on ord.pk_ord=pd.pk_pd
+		       inner join bd_defdoc doc on doc.code_defdoclist='060011' and doc.code=dise.dt_diseasetype
+		 where ord.eu_ordtype='1' and
+		       ord.pk_ord=#{pkPd,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="qryDiseaseInfo" resultType="DynaBean">
+		SELECT
+		  dise.pk_gzgydisease,
+		  dise.pk_diag,
+		  dise.code_diag,
+		  dise.name_diag,
+		  dise.dt_diseasetype,
+		  doc.name disetypename
+		FROM ins_gzgy_disease dise
+		  INNER JOIN bd_defdoc doc ON doc.code_defdoclist = '060011' AND doc.code = dise.dt_diseasetype
+		WHERE dise.del_flag = '0'
+	</select>
+	
+	<select id="qryDisRefPdInfo" parameterType="java.lang.String" resultType="DynaBean">
+		SELECT
+		  ord.pk_diseaseord,
+		  ord.pk_gzgydisease,
+		  pd.code,
+		  pd.name,
+		  pd.spec,
+		  pd.pk_factory,
+		  fac.name factory_name,
+		  ord.days,
+		  pd.spcode,
+		  pd.pk_pd 
+		FROM ins_gzgy_disease_ord ord
+		  INNER JOIN bd_pd pd ON ord.pk_ord = pd.pk_pd
+		  INNER JOIN bd_factory fac ON pd.pk_factory = fac.pk_factory
+		WHERE ord.eu_ordtype = '1' AND
+		      ord.pk_gzgydisease = #{pkGzgydisease,jdbcType=VARCHAR}
+	</select>
+	
+	<delete id="delDisRefPd" parameterType="java.util.List">
+		delete from ins_gzgy_disease_ord where pk_diseaseord in
+		<foreach collection="list" open="(" separator="," close=")" item="pk" index="index">
+			#{pk,jdbcType=VARCHAR}
+		</foreach>
+	</delete>
+</mapper>

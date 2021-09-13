@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.lb.dao.MedicalInsuranceCostsMapper">
+	<select id="adviceAudit" resultType="com.zebone.nhis.ma.pub.lb.vo.PatientInfoVo" parameterType="java.util.Map">
+		SELECT
+			bd.code_org as orgcode,
+			bd.name_org as orgname,
+			enc.CODE_PV as Visitno,
+			pi.ID_NO as idno,
+			enc.NAME_PI as name,
+			case when GETPATAGE(BIRTH_DATE,sysdate) like '%天'
+					 then '1'
+				 when GETPATAGE(BIRTH_DATE,sysdate) like '%月'
+					 then '1'
+				 when GETPATAGE(BIRTH_DATE,sysdate) like '%岁'
+					 then replace(GETPATAGE(BIRTH_DATE,sysdate),'岁')
+				end age,
+			replace(GETPATAGE(BIRTH_DATE,sysdate),'岁') as age,
+			GETPATAGE(BIRTH_DATE,sysdate),
+			CASE when to_number(pi.DT_SEX) = '2'
+					 then '1'
+				 when to_number(pi.DT_SEX) = '3'
+					 then '2'
+				 when to_number(pi.DT_SEX) = '4'
+					 then '9'
+				end sex,
+			'普通入院' as RedeemType,
+			enc.DATE_BEGIN as officeDate,
+			enc.DATE_END as leaveDate,
+			bod.NAME_DEPT as depName,
+			enc.BED_NO as bedNo,
+			diag.code_icd as Picd01,
+			diag.NAME_DIAG as Picd02,
+			boe.CODE_EMP as DoctorCode,
+			boe.NAME_EMP as DoctorName,
+			bh.name as protecttype
+		FROM PV_ENCOUNTER enc
+				 INNER JOIN bd_hp bh on enc.pk_insu = bh.pk_hp
+				 inner join BD_OU_ORG bd on enc.pk_org = bd.pk_org
+				 inner join PI_MASTER pi on enc.PK_PI = pi.PK_PI
+				 inner join PV_DIAG diag on enc.PK_PV = diag.PK_PV
+				 inner join BD_OU_EMPLOYEE boe on enc.pk_emp_tre = boe.pk_emp
+				 inner join BD_OU_DEPT bod on enc.PK_DEPT = bod.PK_DEPT
+		where enc.PK_PV = #{pkPv}
+	</select>
+		<select id="adviceInputData" resultType="com.zebone.nhis.ma.pub.lb.vo.MedicalAdviceVo">
+			SELECT
+				enc.CODE_PV AS Visitno,
+				ord.ordsn AS inpatientRxno,
+				NVL (TO_NUMBER(ord.GROUPNO), '0') AS setno,
+				ord.DATE_START AS useDate,
+				NAME_ORD AS hiscode,
+				NAME_ORD AS hisname,
+				map.CODE AS insureId,
+				map. NAME AS insureName,
+				pd.DT_DOSAGE conf,
+				ord.SPEC AS spec,
+				unit. NAME AS unit,
+				ord.price_cg AS price,
+				ord.quan_cg AS quantity,
+				ord.price_cg * ord.quan_cg AS money,
+				ord.dosage AS ord11,
+				dos. NAME AS ord12,
+				freq. NAME AS ord13,
+				sup. NAME AS ord14
+			FROM
+				PV_ENCOUNTER enc
+					INNER JOIN CN_ORDER ord ON enc.PK_PV = ord.PK_PV
+					LEFT JOIN bd_supply sup ON sup.code = ord.code_supply
+					LEFT JOIN bd_unit unit ON ord.PK_UNIT_CG = unit.pk_unit
+					INNER JOIN BD_pd pd ON pd.PK_PD = ord.PK_ORD
+					LEFT JOIN INS_SZYB_ITEM_MAP map ON map.PK_ITEM = pd.PK_PD
+					AND map.PK_HP = enc.PK_INSU
+					AND map.DEL_FLAG = '0'
+					LEFT JOIN BD_TERM_FREQ freq ON freq.CODE = ord.CODE_FREQ
+					AND freq.DEL_FLAG = '0'
+					LEFT JOIN BD_UNIT dos ON dos.PK_UNIT = ord.PK_UNIT_DOS
+			WHERE
+				ord.FLAG_NOTE = '0'
+			  AND FLAG_SELF = '0'
+			  AND enc.PK_PV = #{pkPv}
+			UNION ALL
+			SELECT
+				enc.CODE_PV AS Visitno,
+				ord.ordsn AS inpatientRxno,
+				NVL (TO_NUMBER(ord.GROUPNO), '0') AS setno,
+				ord.DATE_START AS useDate,
+				NVL (CODE_ORD, NAME_ORD) AS hiscode,
+				NVL (item. NAME, NAME_ORD) AS hisname,
+				map.CODE AS insureId,
+				--取医保匹配表
+				map. NAME AS insureName,
+				--取医保匹配表
+				'-' conf,
+				DECODE (
+						orditem.FLAG_PD,
+						'0',
+						item.SPEC,
+						'1',
+						pd.SPEC
+					) AS spec,
+				unit. NAME AS unit,
+				ord.price_cg price,
+				ord.quan_cg AS quantity,
+				ord.price_cg * ord.quan_cg AS money,
+				ord.dosage AS ord11,
+				dos. NAME AS ord12,
+				freq. NAME AS ord13,
+				sup. NAME AS ord14
+			FROM
+				PV_ENCOUNTER enc
+					INNER JOIN CN_ORDER ord ON enc.PK_PV = ord.PK_PV
+					LEFT JOIN bd_supply sup ON sup.code = ord.code_supply
+					LEFT JOIN bd_unit unit ON ord.PK_UNIT_CG = unit.pk_unit
+					INNER JOIN bd_ord_item orditem ON orditem.PK_ord = ord.PK_ord
+					AND orditem.DEL_FLAG = '0'
+					LEFT JOIN INS_SZYB_ITEM_MAP map ON map.PK_ITEM = orditem.PK_ITEM
+					AND map.PK_HP = enc.PK_INSU
+					AND map.DEL_FLAG = '0'
+					LEFT JOIN BD_pd pd ON pd.PK_PD = orditem.PK_ITEM
+					AND orditem.FLAG_PD = '1' -----------药品
+					LEFT JOIN BD_ITEM item ON item.PK_ITEM = orditem.PK_ITEM
+					AND orditem.FLAG_PD = '0' --------------费用
+					LEFT JOIN BD_TERM_FREQ freq ON freq.CODE = ord.CODE_FREQ
+					AND freq.DEL_FLAG = '0'
+					LEFT JOIN BD_UNIT dos ON dos.PK_UNIT = ord.PK_UNIT_DOS
+			WHERE
+				ord.FLAG_NOTE = '0'
+			  AND FLAG_SELF = '0'
+			  AND enc.PK_PV = #{pkPv}
+
+		</select>
+	<select id="opInputData" resultType="com.zebone.nhis.ma.pub.lb.vo.OpPrescriptionVo">
+		SELECT
+			enc.CODE_PV AS Visitno,
+			ord.ordsn AS inpatientRxno,
+			NVL (TO_NUMBER(ord.GROUPNO), '0') AS setno,
+			ord.DATE_START AS useDate,
+			NAME_ORD AS hiscode,
+			CODE_ORD AS hisname,
+			map.CODE AS insureId,
+			map. NAME AS insureName,
+			pd.DT_DOSAGE conf,
+			ord.SPEC AS spec,
+			unit. NAME AS unit,
+			ord.price_cg AS price,
+			ord.quan_cg AS quantity,
+			ord.price_cg * ord.quan_cg AS money,
+			ord.dosage AS ord11,
+			dos. NAME AS ord12,
+			freq. NAME AS ord13,
+			sup. NAME AS ord14,
+			ord.name_emp_ord doc01
+		FROM
+			PV_ENCOUNTER enc
+				INNER JOIN CN_ORDER ord ON enc.PK_PV = ord.PK_PV
+				LEFT JOIN bd_supply sup ON sup.code = ord.code_supply
+				LEFT JOIN bd_unit unit ON ord.PK_UNIT_CG = unit.pk_unit
+				INNER JOIN BD_pd pd ON pd.PK_PD = ord.PK_ORD
+				LEFT JOIN INS_SZYB_ITEM_MAP map ON map.PK_ITEM = pd.PK_PD
+				AND map.PK_HP = enc.PK_INSU
+				AND map.DEL_FLAG = '0'
+				LEFT JOIN BD_TERM_FREQ freq ON freq.CODE = ord.CODE_FREQ
+				AND freq.DEL_FLAG = '0'
+				LEFT JOIN BD_UNIT dos ON dos.PK_UNIT = ord.PK_UNIT_DOS
+		WHERE
+			ord.FLAG_NOTE = '0'
+		  AND FLAG_SELF = '0'
+		  AND enc.PK_PV = #{pkPv}
+		UNION ALL
+		SELECT
+			enc.CODE_PV AS Visitno,
+			ord.ordsn AS inpatientRxno,
+			NVL (TO_NUMBER(ord.GROUPNO), '0') AS setno,
+			ord.DATE_START AS useDate,
+			NVL (CODE_ORD, NAME_ORD) AS hiscode,
+			NVL (item. NAME, NAME_ORD) AS hisname,
+			map.CODE AS insureId,
+			map. NAME AS insureName,
+			'-' conf,
+			DECODE (
+					orditem.FLAG_PD,
+					'0',
+					item.SPEC,
+					'1',
+					pd.SPEC
+				) AS spec,
+			unit. NAME AS unit,
+			ord.price_cg price,
+			ord.quan_cg AS quantity,
+			ord.price_cg * ord.quan_cg AS money,
+			ord.dosage AS ord11,
+			dos. NAME AS ord12,
+			freq. NAME AS ord13,
+			sup. NAME AS ord14,
+			ord.name_emp_ord doc01
+		FROM
+			PV_ENCOUNTER enc
+				INNER JOIN CN_ORDER ord ON enc.PK_PV = ord.PK_PV
+				LEFT JOIN bd_supply sup ON sup.code = ord.code_supply
+				LEFT JOIN bd_unit unit ON ord.PK_UNIT_CG = unit.pk_unit
+				INNER JOIN bd_ord_item orditem ON orditem.PK_ord = ord.PK_ord
+				AND orditem.DEL_FLAG = '0'
+				LEFT JOIN INS_SZYB_ITEM_MAP map ON map.PK_ITEM = orditem.PK_ITEM
+				AND map.PK_HP = enc.PK_INSU
+				AND map.DEL_FLAG = '0'
+				LEFT JOIN BD_pd pd ON pd.PK_PD = orditem.PK_ITEM
+				AND orditem.FLAG_PD = '1' -----------药品
+				LEFT JOIN BD_ITEM item ON item.PK_ITEM = orditem.PK_ITEM
+				AND orditem.FLAG_PD = '0' --------------费用
+				LEFT JOIN BD_TERM_FREQ freq ON freq.CODE = ord.CODE_FREQ
+				AND freq.DEL_FLAG = '0'
+				LEFT JOIN BD_UNIT dos ON dos.PK_UNIT = ord.PK_UNIT_DOS
+		WHERE
+			ord.FLAG_NOTE = '0'
+		  AND FLAG_SELF = '0'
+		  AND enc.PK_PV = #{pkPv}
+	</select>
+	<select id="adviceSaveCancel" resultType="com.zebone.nhis.ma.pub.lb.vo.AdviceSaveCancelVo">
+		select
+			bd.code_org as orgcode,
+			bd.name_org as orgname,
+			enc.CODE_PV as Visitno,
+			ord.ordsn as inpatientRxno
+		from PV_ENCOUNTER enc
+				 inner join BD_OU_ORG bd on enc.PK_ORG = bd.PK_ORG
+				 inner join CN_ORDER ord on enc.PK_PV = ord.PK_PV
+		where enc.PK_PV = #{pkPv}
+		  and ord.ordsn = #{inpatientRxno}
+	</select>
+
+	<select id="getPatientInfoVo" resultType="com.zebone.nhis.ma.pub.lb.vo.MedicalAdviceVo">
+		select
+			enc.CODE_PV as Visitno,
+			--nvl(ord.ordsn,'0') as inpatientRxno,
+			--nvl(to_number(ord.GROUPNO),'0') as setno,
+			dt.DATE_HAP as useDate,
+			decode(dt.FLAG_PD,'1',pd.CODE,'0',item.CODE) as hiscode,
+			decode(dt.FLAG_PD,'1',pd.NAME,'0',item.NAME) as hisname,
+			decode(dt.FLAG_PD,'1',mapyp.CODE,'0',mapfy.CODE) as insureId,--取医保匹配表
+			decode(dt.FLAG_PD,'1',mapyp.NAME,'0',mapfy.NAME) as insureName,--取医保匹配表
+			pd.DT_DOSAGE conf,
+			dt.SPEC as spec,
+			unit.NAME as unit,
+			dt.PRICE as price ,
+			dt.QUAN as quantity,
+			dt.AMOUNT as money
+		from PV_ENCOUNTER enc
+				 left join bl_ip_dt dt on dt.PK_PV = enc.PK_PV
+-- 				 left join CN_ORDER ord on enc.PK_PV = ord.PK_PV and dt.PK_CNORD=ord.PK_CNORD and ord.FLAG_NOTE ='0'  and FLAG_SELF='0'
+				 left join bd_unit unit ON dt.pk_unit= unit.pk_unit
+				 left join BD_pd pd on pd.PK_PD=dt.PK_ITEM and dt.FLAG_PD='1'-----------药品
+				 left join BD_ITEM item on item.PK_ITEM=dt.PK_ITEM and dt.FLAG_PD='0'--------------费用
+				 left join INS_SZYB_ITEM_MAP mapyp on mapyp.PK_ITEM=pd.PK_PD and mapyp.PK_HP=enc.PK_INSU------------药品匹配表
+				 left join INS_SZYB_ITEM_MAP mapfy on mapfy.PK_ITEM=item.PK_ITEM and mapfy.PK_HP=enc.PK_INSU----------费用匹配表
+		where
+			enc.PK_PV =  #{pkPv}
+	</select>
+
+	<select id="getInpCancelFee" resultType="com.zebone.nhis.ma.pub.lb.vo.PatientInfoVo">
+		SELECT
+			enc.CODE_PV as visitno,
+			bd.code_org as orgcode,
+			bd.name_org as orgname
+		FROM PV_ENCOUNTER enc
+				 inner join BD_OU_ORG bd on enc.pk_org = bd.pk_org
+		where enc.PK_PV = #{pkPv}
+	</select>
+	<select id="adviceAuditInputData" resultType="com.zebone.nhis.ma.pub.lb.vo.MedicalAdviceVo">
+		select
+			NAME_ORD as hiscode,
+			NAME_ORD as hisname,
+			map.CODE as insureId,--取医保匹配表
+			map.NAME as insureName--取医保匹配表
+		from PV_ENCOUNTER enc
+				 inner join CN_ORDER ord on enc.PK_PV = ord.PK_PV
+				 inner join BD_pd pd on pd.PK_PD=ord.PK_ORD
+				 left join INS_SZYB_ITEM_MAP map on map.PK_ITEM=pd.PK_PD and map.PK_HP=enc.PK_INSU and map.DEL_FLAG = '0'
+		where
+			ord.FLAG_NOTE ='0'
+		  and FLAG_SELF='0'
+		  and enc.PK_PV = #{pkPv}
+		  and ord.ordsn = #{inpatientRxno}
+		union all
+		select
+			nvl(CODE_ORD,NAME_ORD) as hiscode,
+			nvl(item.NAME,NAME_ORD) as hisname,
+			map.CODE as insureId,--取医保匹配表
+			map.NAME as insureName--取医保匹配表
+		from PV_ENCOUNTER enc
+				 inner join CN_ORDER ord on enc.PK_PV = ord.PK_PV
+				 inner join bd_ord_item orditem on orditem.PK_ord = ord.PK_ord and orditem.DEL_FLAG='0'
+				 left join INS_SZYB_ITEM_MAP map on map.PK_ITEM=orditem.PK_ITEM and map.PK_HP=enc.PK_INSU and map.DEL_FLAG='0'
+				 left join BD_pd pd on pd.PK_PD=orditem.PK_ITEM and orditem.FLAG_PD='1'-----------药品
+				 left join BD_ITEM item on item.PK_ITEM=orditem.PK_ITEM and orditem.FLAG_PD='0'--------------费用
+		where
+			ord.FLAG_NOTE ='0'
+		  and FLAG_SELF='0'
+		  and enc.PK_PV = #{pkPv}
+		  and ord.ordsn = #{inpatientRxno}
+	</select>
+	<select id="opInterfaceInfo" resultType="java.util.Map">
+		select
+			bd.code_org as orgcode,
+			bd.name_org as orgname,
+			enc.CODE_PV as Visitno
+		from PV_ENCOUNTER enc
+				 inner join BD_OU_ORG bd on enc.PK_ORG = bd.PK_ORG
+				 inner join CN_ORDER ord on enc.PK_PV = ord.PK_PV
+		where enc.PK_PV = #{pkPv}
+	</select>
+	<select id="opInsuReviewInputData" resultType="com.zebone.nhis.ma.pub.lb.vo.MedicalAdviceVo">
+		SELECT
+			pres.pres_no visitno,
+			ord.code_ord hiscode,
+			ord.name_ord hisname,
+			map.CODE as insureId,
+			map.NAME as insureName,
+			ord.date_start usedate,
+			'-' conf,
+			ord.spec spec,
+			unit.NAME unit,
+			ord.price_cg price,
+			ord.quan_cg quantity,
+			ord.price_cg * ord.quan_cg money,
+			ord.dosage ord11,
+			unitdos.NAME ord12,
+			freq.NAME  ord13,
+			sup.NAME  ord14
+		FROM
+			cn_order ord
+				INNER JOIN pv_encounter pv ON ord.pk_pv = pv.pk_pv
+				LEFT JOIN bd_ou_dept dept ON dept.pk_dept = ord.pk_dept
+				LEFT JOIN bd_ou_dept deptex ON deptex.pk_dept = ord.pk_dept_exec
+				LEFT JOIN bd_unit unitdos ON unitdos.pk_unit = ord.pk_unit_dos
+				LEFT JOIN bd_supply sup ON sup.code = ord.code_supply
+				LEFT JOIN BD_TERM_FREQ freq ON freq.code = ord.code_freq
+				LEFT JOIN bd_unit unit ON ord.pk_unit = unit.pk_unit
+				LEFT OUTER JOIN cn_prescription pres ON ord.pk_pres = pres.pk_pres
+				LEFT OUTER JOIN bd_pd pd ON ord.pk_ord = pd.pk_pd AND ord.flag_durg = '1'
+				left join INS_SZYB_ITEM_MAP map on map.PK_ITEM=pd.PK_PD and map.PK_HP=pv.PK_INSU and map.DEL_FLAG = '0'
+		WHERE
+			NOT EXISTS (
+					SELECT
+						1
+					FROM
+						bl_op_dt dt
+					WHERE
+						ord.pk_cnord = dt.pk_cnord
+					  AND dt.flag_settle = '1'
+				)
+		  AND ord.eu_pvtype = '1'
+		  and ord.pk_pv= #{pkPv}
+	</select>
+	<select id="opPrescription" resultType="com.zebone.nhis.ma.pub.lb.vo.PatientInfoVo">
+		SELECT
+			bd.code_org as orgcode,
+			bd.name_org as orgname,
+			enc.CODE_PV as Visitno,
+			pi.ID_NO as idno,
+			enc.NAME_PI as name,
+			case when GETPATAGE(BIRTH_DATE,sysdate) like '%天'
+					 then '1'
+				 when GETPATAGE(BIRTH_DATE,sysdate) like '%月'
+					 then '1'
+				 when GETPATAGE(BIRTH_DATE,sysdate) like '%岁'
+					 then replace(GETPATAGE(BIRTH_DATE,sysdate),'岁')
+				end age,
+			GETPATAGE(BIRTH_DATE,sysdate),
+			CASE when to_number(pi.DT_SEX) = '2'
+					 then '1'
+				 when to_number(pi.DT_SEX) = '3'
+					 then '2'
+				 when to_number(pi.DT_SEX) = '4'
+					 then '9'
+				end sex,
+			'1' as RedeemType,
+			enc.DATE_BEGIN as inofficeDate,
+			enc.DATE_BEGIN as officeDate,
+			enc.DATE_END as leaveDate,
+			bod.NAME_DEPT as depName,
+			diag.code_icd as Picd01,
+			diag.NAME_DIAG as Picd02
+		FROM PV_ENCOUNTER enc
+				 INNER JOIN bd_hp bh on enc.pk_insu = bh.pk_hp
+				 inner join BD_OU_ORG bd on enc.pk_org = bd.pk_org
+				 inner join PI_MASTER pi on enc.PK_PI = pi.PK_PI
+				 inner join PV_DIAG diag on enc.PK_PV = diag.PK_PV
+				 inner join BD_OU_DEPT bod on enc.PK_DEPT = bod.PK_DEPT
+				 inner join CN_ORDER ord on enc.PK_PV = ord.PK_PV
+				 LEFT OUTER JOIN cn_prescription pres ON ord.pk_pres = pres.pk_pres
+		where enc.PK_PV = #{pkPv}
+	</select>
+
+</mapper>

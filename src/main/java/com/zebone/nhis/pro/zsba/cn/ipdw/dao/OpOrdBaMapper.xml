@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.cn.ipdw.dao.OpOrdBaMapper">
+    <select id="queryOrderCheckList" parameterType="java.util.Map" resultType="com.zebone.nhis.pro.zsba.cn.ipdw.vo.OpOrderVO">
+        select pv.pk_dept_ns as pk_dept_ns_cur,
+        pv.bed_no,
+        pv.name_pi,
+        pv.flag_spec,
+        pi.code_ip,
+        pi.birth_date,
+        newborn.name as newborn_name,
+        dept.name_dept  as name_dept_exec,
+        unitdos.name as name_unit_dosage,
+        unit.name as name_unit,
+        us.name as name_usage,
+        us.pk_supplycate,
+        unitcg.name as name_unit_cg,
+        freq.name as name_freq,
+        freq.cnt,
+        def.name AS lab_name,
+        freq.eu_cycle,
+        ord.pk_org,
+        ord.pk_dept,
+        ord.pk_cnord,
+        ord.pk_ord,
+        ord.pk_pres,
+        ord.pk_pi,
+        ord.pk_pv,
+        ord.ordsn,
+        ord.groupno,
+        ord.ordsn_parent,
+        ord.name_ord,
+        ord.code_ord,
+        ord.eu_always,
+        ord.eu_status_ord,
+        ord.drip_speed,
+        ord.date_start,
+        ord.code_supply,
+        ord.code_freq,
+        ord.code_ordtype,
+        ord.dosage,
+        ord.pk_unit_dos,
+        ord.quan,
+        ord.pk_unit,
+        ord.quan_cg,
+        ord.pk_unit_cg,
+        ord.price_cg,
+        ord.days,
+        ord.ords,
+        ord.spec,
+        ord.infant_no,
+        ord.last_num,
+        ord.first_num,
+        ord.flag_fit,
+        ord.desc_fit,
+        ord.flag_bl,
+        ord.flag_emer,
+        ord.flag_first,
+        ord.flag_stop,
+        ord.flag_erase,
+        ord.flag_stop_chk,
+        ord.flag_erase_chk,
+        ord.flag_durg,
+        ord.flag_doctor,
+        ord.flag_self,
+        ord.flag_base,
+        ord.flag_medout,
+        ord.flag_note,
+        ord.flag_pivas,
+        ord.eu_st,
+        ord.pk_emp_ord,
+        ord.name_emp_ord,
+        ord.date_chk,
+        ord.pk_emp_chk,
+        ord.pk_dept_exec,
+        ord.pk_org_exec,
+        ord.pack_size,
+        ord.date_plan_ex,
+        ord.date_stop,
+        ord.pk_emp_stop,
+        ord.name_emp_stop,
+        ord.note_ord,
+        ord.ts,
+        hp.name name_hp,
+        type.name name_ordtype,
+        pres.eu_boil,
+        CASE tt.VAL_ATT WHEN '1' THEN '是' WHEN '0' THEN '' ELSE tt.VAL_ATT END VAL_ATT,
+        <!-- 添加用法容器费列，目前只支持oracle数据库 -->
+        <if test='dbType == "oracle"'>
+            (select wmsys.wm_concat(item.name)
+            from CN_LAB_APPLY apply
+            inner join bd_item_defdoc defitem on defitem.CODE_DEFDOC = apply.DT_TUBETYPE
+            inner join bd_item item on item.pk_item = defitem.pk_item
+            where defitem.eu_pvtype = '3' and defitem.code_defdoclist = '030203' and defitem.del_flag = '0'
+            and apply.PK_CNORD=ord.pk_cnord
+            group by apply.DT_TUBETYPE ) as nameTubeItem,
+        </if>
+        <if test='dbType == "sqlserver"'>
+            (select name =(stuff((select ','+ item.name  from CN_LAB_APPLY  apply1
+            inner join bd_item_defdoc defitem on defitem.CODE_DEFDOC = apply1.DT_TUBETYPE
+            inner join bd_item item on item.pk_item = defitem.pk_item
+            where defitem.eu_pvtype = '3' and defitem.code_defdoclist = '030203' and defitem.del_flag = '0'
+            and apply1.PK_CNORD=ord.pk_cnord  and apply1.DT_TUBETYPE = applyt.DT_TUBETYPE for xml path('')),1,1,''))
+            from  CN_LAB_APPLY applyt
+            inner join bd_item_defdoc defitemt on defitemt.CODE_DEFDOC = applyt.DT_TUBETYPE
+            inner join bd_item itemt on itemt.pk_item = defitemt.pk_item
+            where defitemt.eu_pvtype = '3' and defitemt.code_defdoclist = '030203' and defitemt.del_flag = '0'
+            and applyt.PK_CNORD=ord.pk_cnord
+            group by applyt.DT_TUBETYPE) as nameTubeItem,
+        </if>
+        ord.desc_ord,
+        pd.dt_injtype,
+        op.dt_oplevel,
+        op.dt_anae,
+        dept1.name_dept as dept_name,
+        op.date_apply,
+        op.eu_optype,
+        op.desc_op,
+        ord.name_emp_chk
+        from cn_order ord
+        inner join cn_op_apply op on op.pk_cnord=ord.pk_cnord
+        inner join bd_ou_dept dept on dept.pk_dept = ord.pk_dept_exec and dept.del_flag = '0'
+        inner join BD_OU_DEPT dept1 on dept1.pk_dept = ord.pk_dept and dept1.del_flag='0'
+        inner join pv_encounter pv on ord.pk_pv = pv.pk_pv and pv.eu_pvtype = '3' and pv.flag_in = '1' and pv.del_flag = '0'
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi and pi.del_flag = '0'
+        inner join bd_term_freq freq on freq.code = ord.code_freq
+        left join bd_supply us on ord.code_supply = us.code
+        left join bd_unit unit on unit.pk_unit = ord.pk_unit
+        left join bd_unit unitdos on unitdos.pk_unit = ord.pk_unit_dos
+        left join bd_unit unitcg on unitcg.pk_unit = ord.pk_unit_cg
+        left join pv_infant newborn on pv.pk_pv=newborn.pk_pv and ord.infant_no=newborn.sort_no
+        left join bd_ordtype type on type.code = ord.code_ordtype and type.del_flag = '0'
+        left join bd_hp hp on hp.pk_hp = pv.pk_insu and hp.del_flag = '0'
+        left join cn_prescription pres on pres.pk_pres = ord.pk_pres and pres.del_flag = '0'
+        left join bd_pd pd on ord.pk_ord = pd.pk_pd and pd.del_flag='0'
+        LEFT JOIN (select att.* FROM BD_PD_ATT att INNER JOIN BD_PD_ATT_DEFINE de ON de.PK_PDATTDEF = att.PK_PDATTDEF  AND de.DEL_FLAG = '0'
+        where de.CODE_ATT = 'BA11' AND att.del_flag = '0' and att.VAL_ATT is not null) tt ON tt.PK_PD = ord.PK_ORD AND tt.PK_ORG = ord.PK_ORG
+        left join CN_LAB_APPLY lab on lab.pk_cnord = ord.pk_cnord and lab.del_flag = '0'
+        left join BD_DEFDOC def on def.code = lab.dt_samptype and def.del_flag = '0' and def.code_defdoclist = '030200'
+        where  pi.code_ip = #{codeIp,jdbcType=VARCHAR} and ord.flag_erase='0'
+        <if test=' euStatusOrd != null '>
+            and ord.eu_status_ord = #{euStatusOrd,jdbcType=VARCHAR}
+        </if>
+        <if test="dateBegin != null" >
+            and op.date_apply  &gt;=to_date(#{dateBegin,jdbcType=VARCHAR},'yyyymmddHH24miss')
+        </if>
+        <if test="dateEnd != null" >
+            and op.date_apply &lt;=to_date(#{dateEnd,jdbcType=VARCHAR},'yyyymmddHH24miss')
+        </if>
+        <if test=' ordOrder=="0" '><!-- 排序方式 EX0069 0降序，1升序  默认降序-->
+            order by pv.bed_no, ord.date_start desc, nvl(ord.groupno,0) desc, ord.ordsn_parent,ord.ordsn
+        </if>
+        <if test=' ordOrder=="1" '><!-- 排序方式 EX0069 0降序，1升序  默认降序-->
+            order by pv.bed_no, ord.date_start asc, nvl(ord.groupno,0) desc, ord.ordsn_parent,ord.ordsn
+        </if>
+    </select>
+
+    <select id="queryPiFuncInfo" resultType="DynaBean">
+        select master.PK_PI,f.pk_pv, f.date_fun,master.NAME_PI,master.CODE_IP,pv.PK_DEPT,dept.NAME_DEPT NAME_DEPT,pv.PK_DEPT_NS, deptns.NAME_DEPT NAME_DEPT_NS
+        from pv_function f
+                 inner join PV_ENCOUNTER pv on pv.PK_PV = f.pk_pv
+                 inner join PI_MASTER master on pv.PK_PI = master.PK_PI
+                 left join BD_OU_DEPT dept on pv.PK_DEPT = dept.PK_DEPT
+                 left join bd_ou_dept deptns on pv.PK_DEPT_NS = deptns.PK_DEPT
+        where pv.EU_STATUS = 1
+        <if test="dateBegin !=null and dateBegin !=''">
+            and f.date_fun >= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyymmddHH24miss')
+        </if>
+        <if test="dateEnd !=null and dateEnd !=''">
+            and f.date_fun &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyymmddHH24miss')
+        </if>
+        <if test="searchCon !=null and searchCon !=''">
+            and  (master.CODE_IP like '%'||#{searchCon,jdbcType=VARCHAR}||'%' or master.NAME_PI like '%'||#{searchCon,jdbcType=VARCHAR}||'%')
+        </if>
+        <if test="pkDept !=null and pkDept !=''">
+            and f.pk_dept=#{pkDept,jdbcType=VARCHAR}
+        </if>
+    </select>
+    
+    <select id="queryPtopOperatInfo" resultType="DynaBean" parameterType="java.util.Map">
+           select
+               * 
+           from medsurgery.v_operation_nhis 
+           where OPERATION_SN =#{ordsn,jdbcType=VARCHAR} 
+    </select>
+    
+    <select id="queryPkEmpInfo" resultType="DynaBean" parameterType="java.util.List">
+           select pk_emp,code_emp from BD_OU_EMPLOYEE where
+           code_emp in 
+           <foreach collection="list" item="codeEmp" open="(" separator="," close=")">
+            #{codeEmp,jdbcType=VARCHAR}
+           </foreach>
+    </select>
+</mapper>

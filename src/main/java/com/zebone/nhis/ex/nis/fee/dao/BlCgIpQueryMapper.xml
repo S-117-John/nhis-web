@@ -1,0 +1,1300 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.fee.dao.BlCgIpQueryMapper">
+    <!-- 查询患者费用汇总 -->
+    <select id="queryBlCgIpSummer" parameterType="java.util.Map" resultType="DynaBean">
+    select a.* from  (
+		select * from (select lab.bed_no as lab_bed,
+		        pv.bed_no,
+		        pv.name_pi,
+		        pv.code_pv,
+		        pv.pk_pv,
+		        pv.date_begin,
+		        pi.code_ip,
+		        itemcate.name as catename,
+		        cg.name_cg,
+		        sum(cg.quan) as quan ,
+		        unit.name as unitname,
+		        cg.price,
+		        sum(cg.amount) as amount,
+		        sum(cg.amount_pi) as amnout_pi
+		        from bl_ip_dt cg
+		        inner join pv_encounter pv on cg.pk_pv = pv.pk_pv
+		        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+		        left join bd_unit unit on unit.pk_unit = cg.pk_unit
+		        inner join bd_itemcate itemcate on itemcate.pk_itemcate = cg.pk_itemcate
+		        left join bd_ou_dept dept on dept.pk_dept = cg.pk_dept_app
+		        left join bd_ou_dept deptns on deptns.pk_dept = cg.pk_dept_ns_app
+		        inner join bd_ou_dept deptex on deptex.pk_dept = cg.pk_dept_ex
+		        left join pv_labor lab on lab.pk_pv = pv.pk_pv and lab.eu_status = '1' and lab.pk_dept_ns = cg.pk_dept_app
+				where cg.date_hap &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+		        and cg.date_hap &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+		        <if test="pkItemcate != null  and  pkItemcate != ''">
+		            and itemcate.pk_itemcate = #{pkItemcate,jdbcType=CHAR}
+		        </if>
+		        <if test="type != null  and  type != ''">
+		            and cg.flag_pd = #{type}
+		        </if>
+		        <if test="pkDept != null  and  pkDept != ''">
+		            and cg.pk_dept_app = #{pkDept,jdbcType=CHAR}
+		        </if>
+		        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		            and cg.pk_dept_ns_app = #{pkDeptNs,jdbcType=CHAR}
+		        </if>
+		        and cg.pk_pv in
+		        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+		            #{pkpv}
+		        </foreach>
+						
+				group by pv.bed_no, lab.bed_no, pv.name_pi, pv.code_pv, pv.pk_pv,pi.code_ip,
+		        pv.date_begin, itemcate.name, cg.name_cg, unit.name, cg.price
+				) aa
+						
+		union all 
+				select * from (select lab.bed_no as lab_bed,
+		        pv.bed_no,
+		        pv.name_pi,
+		        pv.code_pv,
+		        pv.pk_pv,
+		        pv.date_begin,
+		        pi.code_ip,
+		        itemcate.name as catename,
+		        cg.name_cg,
+		        sum(cg.quan) as quan ,
+		        unit.name as unitname,
+		        cg.price,
+		        sum(cg.amount) as amount,
+		        sum(cg.amount_pi) as amnout_pi
+		        from bl_ip_dt_b cg
+		        inner join pv_encounter pv on cg.pk_pv = pv.pk_pv
+		        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+		        left join bd_unit unit on unit.pk_unit = cg.pk_unit
+		        inner join bd_itemcate itemcate on itemcate.pk_itemcate = cg.pk_itemcate
+		        left join bd_ou_dept dept on dept.pk_dept = cg.pk_dept_app
+		        left join bd_ou_dept deptns on deptns.pk_dept = cg.pk_dept_ns_app
+		        inner join bd_ou_dept deptex on deptex.pk_dept = cg.pk_dept_ex
+		        left join pv_labor lab on lab.pk_pv = pv.pk_pv and lab.eu_status = '1' and lab.pk_dept_ns = cg.pk_dept_app
+				where cg.date_hap &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+		        and cg.date_hap &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+		        <if test="pkItemcate != null  and  pkItemcate != ''">
+		            and itemcate.pk_itemcate = #{pkItemcate,jdbcType=CHAR}
+		        </if>
+		        <if test="type != null  and  type != ''">
+		            and cg.flag_pd = #{type}
+		        </if>
+		        <if test="pkDept != null  and  pkDept != ''">
+		            and cg.pk_dept_app = #{pkDept,jdbcType=CHAR}
+		        </if>
+		        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		            and cg.pk_dept_ns_app = #{pkDeptNs,jdbcType=CHAR}
+		        </if>
+		        and cg.pk_pv in
+		        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+		            #{pkpv}
+		        </foreach>
+						
+				group by pv.bed_no, lab.bed_no, pv.name_pi, pv.code_pv, pv.pk_pv,pi.code_ip,
+		        pv.date_begin, itemcate.name, cg.name_cg, unit.name, cg.price
+				) aa
+		) a order by  a.lab_bed ,a.NAME_PI,a.PK_PV ,a.CODE_PV,a.CODE_IP,a.DATE_BEGIN,
+		a.catename,a.NAME_CG,a.unitname,a.PRICE
+    
+       <!--  select lab.bed_no as lab_bed,
+        pv.bed_no,
+        pv.name_pi,
+        pv.code_pv,
+        pv.pk_pv,
+        pv.date_begin,
+        pi.code_ip,
+        itemcate.name as catename,
+        cg.name_cg,
+        sum(cg.quan) as quan ,
+        unit.name as unitname,
+        cg.price,
+        sum(cg.amount) as amount,
+        sum(cg.amount_pi) as amnout_pi
+        from bl_ip_dt cg
+        inner join pv_encounter pv on cg.pk_pv = pv.pk_pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        left join bd_unit unit on unit.pk_unit = cg.pk_unit
+        inner join bd_itemcate itemcate on itemcate.pk_itemcate = cg.pk_itemcate
+        left join bd_ou_dept dept on dept.pk_dept = cg.pk_dept_app
+        left join bd_ou_dept deptns on deptns.pk_dept = cg.pk_dept_ns_app
+        inner join bd_ou_dept deptex on deptex.pk_dept = cg.pk_dept_ex
+        left join pv_labor lab on lab.pk_pv = pv.pk_pv and lab.eu_status = '1' and lab.pk_dept_ns = cg.pk_dept_app
+        where cg.date_hap &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        and cg.date_hap &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        <if test="pkItemcate != null  and  pkItemcate != ''">
+            and itemcate.pk_itemcate = #{pkItemcate,jdbcType=CHAR}
+        </if>
+        <if test="type != null  and  type != ''">
+            and cg.flag_pd = #{type}
+        </if>
+        <if test="pkDept != null  and  pkDept != ''">
+            and cg.pk_dept_app = #{pkDept,jdbcType=CHAR}
+        </if>
+        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+            and cg.pk_dept_ns_app = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        and cg.pk_pv in
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            #{pkpv}
+        </foreach>
+        group by pv.bed_no, lab.bed_no, pv.name_pi, pv.code_pv, pv.pk_pv,pi.code_ip,
+        pv.date_begin, itemcate.name, cg.name_cg, unit.name, cg.price
+        order by pv.bed_no, lab.bed_no, pv.name_pi, pv.pk_pv,pv.code_pv,pi.code_ip,
+        pv.date_begin, itemcate.name, cg.name_cg, unit.name, cg.price -->
+    </select>
+
+    <!-- 查询患者费用明细 -->
+    <select id="queryBlCgIpDetails" parameterType="java.util.Map"
+            resultType="DynaBean">
+        select a.* from  (
+				select lab.bed_no as lab_bed,
+		        pv.bed_no,
+		        pv.name_pi,
+		        pi.code_ip,
+		        pvdept.name_dept as dept,
+		        pvdeptns.name_dept as dept_ns,
+		        hp.name as name_hp,
+		        pv.code_pv,
+		        pv.pk_pv,
+		        pv.date_begin,
+		        cg.date_cg,
+		        cg.date_hap,
+		        itemcate.name as catename,
+		        case cg.flag_pd when '1' then pd.code else item.code end as code_item,
+		        cg.name_cg,
+		        case cg.flag_pd when '1' then pd.spec else item.spec end as spec,
+		        cg.quan ,
+		        unit.name unitname,
+		        cg.price,
+		        cg.amount,
+		        cg.pk_org,
+		        cg.amount_pi,
+		        cg.name_emp_app,
+		        dept.name_dept as dept_app,
+		        deptns.name_dept as dept_app_ns,
+		        deptex.name_dept as dept_ex,
+		        org.name_org as org_ex,
+		        cg.infant_no,
+		        cg.name_emp_cg
+		        from bl_ip_dt cg
+		        left join bd_item item on item.pk_item = cg.pk_item
+		        left join bd_pd pd on pd.pk_pd = cg.pk_pd
+		        inner join pv_encounter pv on cg.pk_pv = pv.pk_pv
+		        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+		        inner join bd_itemcate itemcate on itemcate.pk_itemcate = cg.pk_itemcate
+		        inner join bd_ou_dept deptex on deptex.pk_dept = cg.pk_dept_ex
+		        left join bd_hp hp on hp.pk_hp = pv.pk_insu
+		        left join bd_unit unit on unit.pk_unit = cg.pk_unit
+		        left join bd_ou_dept dept on dept.pk_dept = cg.pk_dept_app
+		        left join bd_ou_dept deptns on deptns.pk_dept = cg.pk_dept_ns_app
+		        left join bd_ou_dept pvdept on pvdept.pk_dept = pv.pk_dept
+		        left join bd_ou_dept pvdeptns on pvdeptns.pk_dept = pv.pk_dept_ns
+		        left join bd_ou_org org on org.pk_org = cg.pk_org_ex
+		        left join pv_labor lab on lab.pk_pv = pv.pk_pv and lab.eu_status = '1' and lab.pk_dept_ns = cg.pk_dept_app
+		        where cg.pk_pv in
+		        <foreach item="pkpv" index="index" collection="pkPvs" open="("
+		                 separator="," close=")">
+		            #{pkpv}
+		        </foreach>
+		        <if test="dateEnd != null  and  dateEnd != ''">
+		            and cg.date_hap &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+		        </if>
+		        <if test="dateBegin != null  and  dateBegin != ''">
+		            and cg.date_hap &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+		        </if>
+		        <if test="pkDept != null  and  pkDept != ''">
+		            and cg.pk_dept_app = #{pkDept,jdbcType=CHAR}
+		        </if>
+		        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		            and cg.pk_dept_ns_app = #{pkDeptNs,jdbcType=CHAR}
+		        </if>
+		        <if test="type != null  and  type != ''">
+		            and cg.flag_pd = #{type}
+		        </if>
+		        <if test="pkDeptEx != null  and  pkDeptEx != ''">
+		            and cg.pk_dept_ex = #{pkDeptEx,jdbcType=CHAR}
+		        </if>
+		        <if test="pkItemcate != null  and  pkItemcate != ''">
+		            and cg.pk_itemcate = #{pkItemcate,jdbcType=CHAR}
+		        </if>
+		        <if test="codeItemcate != null  and  codeItemcate != ''">
+		            and itemcate.code like '${codeItemcate}%'
+		        </if>
+		        <if test="nameCg != null  and  nameCg != ''">
+		            and ((cg.flag_pd = '0' and (cg.name_cg like '%${nameCg}%' or item.spcode like '${nameCg}%' or item.d_code
+		            like '${nameCg}%') )
+		            or(cg.flag_pd = '1' and (cg.name_cg like '%${nameCg}%' or pd.spcode like '${nameCg}%')))
+		        </if>
+		union all 
+				select lab.bed_no as lab_bed,
+		        pv.bed_no,
+		        pv.name_pi,
+		        pi.code_ip,
+		        pvdept.name_dept as dept,
+		        pvdeptns.name_dept as dept_ns,
+		        hp.name as name_hp,
+		        pv.code_pv,
+		        pv.pk_pv,
+		        pv.date_begin,
+		        cg.date_cg,
+		        cg.date_hap,
+		        itemcate.name as catename,
+		        case cg.flag_pd when '1' then pd.code else item.code end as code_item,
+		        cg.name_cg,
+		        case cg.flag_pd when '1' then pd.spec else item.spec end as spec,
+		        cg.quan ,
+		        unit.name unitname,
+		        cg.price,
+		        cg.amount,
+		        cg.pk_org,
+		        cg.amount_pi,
+		        cg.name_emp_app,
+		        dept.name_dept as dept_app,
+		        deptns.name_dept as dept_app_ns,
+		        deptex.name_dept as dept_ex,
+		        org.name_org as org_ex,
+		        cg.infant_no,
+		        cg.name_emp_cg
+		        from bl_ip_dt_b cg
+		        left join bd_item item on item.pk_item = cg.pk_item
+		        left join bd_pd pd on pd.pk_pd = cg.pk_pd
+		        inner join pv_encounter pv on cg.pk_pv = pv.pk_pv
+		        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+		        inner join bd_itemcate itemcate on itemcate.pk_itemcate = cg.pk_itemcate
+		        inner join bd_ou_dept deptex on deptex.pk_dept = cg.pk_dept_ex
+		        left join bd_hp hp on hp.pk_hp = pv.pk_insu
+		        left join bd_unit unit on unit.pk_unit = cg.pk_unit
+		        left join bd_ou_dept dept on dept.pk_dept = cg.pk_dept_app
+		        left join bd_ou_dept deptns on deptns.pk_dept = cg.pk_dept_ns_app
+		        left join bd_ou_dept pvdept on pvdept.pk_dept = pv.pk_dept
+		        left join bd_ou_dept pvdeptns on pvdeptns.pk_dept = pv.pk_dept_ns
+		        left join bd_ou_org org on org.pk_org = cg.pk_org_ex
+		        left join pv_labor lab on lab.pk_pv = pv.pk_pv and lab.eu_status = '1' and lab.pk_dept_ns = cg.pk_dept_app
+		        where cg.pk_pv in
+		        <foreach item="pkpv" index="index" collection="pkPvs" open="("
+		                 separator="," close=")">
+		            #{pkpv}
+		        </foreach>
+		        <if test="dateEnd != null  and  dateEnd != ''">
+		            and cg.date_hap &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+		        </if>
+		        <if test="dateBegin != null  and  dateBegin != ''">
+		            and cg.date_hap &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+		        </if>
+		        <if test="pkDept != null  and  pkDept != ''">
+		            and cg.pk_dept_app = #{pkDept,jdbcType=CHAR}
+		        </if>
+		        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		            and cg.pk_dept_ns_app = #{pkDeptNs,jdbcType=CHAR}
+		        </if>
+		        <if test="type != null  and  type != ''">
+		            and cg.flag_pd = #{type}
+		        </if>
+		        <if test="pkDeptEx != null  and  pkDeptEx != ''">
+		            and cg.pk_dept_ex = #{pkDeptEx,jdbcType=CHAR}
+		        </if>
+		        <if test="pkItemcate != null  and  pkItemcate != ''">
+		            and cg.pk_itemcate = #{pkItemcate,jdbcType=CHAR}
+		        </if>
+		        <if test="codeItemcate != null  and  codeItemcate != ''">
+		            and itemcate.code like '${codeItemcate}%'
+		        </if>
+		        <if test="nameCg != null  and  nameCg != ''">
+		            and ((cg.flag_pd = '0' and (cg.name_cg like '%${nameCg}%' or item.spcode like '${nameCg}%' or item.d_code
+		            like '${nameCg}%') )
+		            or(cg.flag_pd = '1' and (cg.name_cg like '%${nameCg}%' or pd.spcode like '${nameCg}%')))
+		        </if>
+		) a   order by pk_pv , date_hap , date_cg   
+            
+            
+           
+        <!-- select lab.bed_no as lab_bed,
+        pv.bed_no,
+        pv.name_pi,
+        pi.code_ip,
+        pvdept.name_dept as dept,
+        pvdeptns.name_dept as dept_ns,
+        hp.name as name_hp,
+        pv.code_pv,
+        pv.pk_pv,
+        pv.date_begin,
+        cg.date_cg,
+        cg.date_hap,
+        itemcate.name as catename,
+        case cg.flag_pd when '1' then pd.code else item.code end as code_item,
+        cg.name_cg,
+        case cg.flag_pd when '1' then pd.spec else item.spec end as spec,
+        cg.quan ,
+        unit.name unitname,
+        cg.price,
+        cg.amount,
+        cg.pk_org,
+        cg.amount_pi,
+        cg.name_emp_app,
+        dept.name_dept as dept_app,
+        deptns.name_dept as dept_app_ns,
+        deptex.name_dept as dept_ex,
+        org.name_org as org_ex,
+        cg.infant_no,
+        cg.name_emp_cg
+        from bl_ip_dt cg
+        left join bd_item item on item.pk_item = cg.pk_item
+        left join bd_pd pd on pd.pk_pd = cg.pk_pd
+        inner join pv_encounter pv on cg.pk_pv = pv.pk_pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        inner join bd_itemcate itemcate on itemcate.pk_itemcate = cg.pk_itemcate
+        inner join bd_ou_dept deptex on deptex.pk_dept = cg.pk_dept_ex
+        left join bd_hp hp on hp.pk_hp = pv.pk_insu
+        left join bd_unit unit on unit.pk_unit = cg.pk_unit
+        left join bd_ou_dept dept on dept.pk_dept = cg.pk_dept_app
+        left join bd_ou_dept deptns on deptns.pk_dept = cg.pk_dept_ns_app
+        left join bd_ou_dept pvdept on pvdept.pk_dept = pv.pk_dept
+        left join bd_ou_dept pvdeptns on pvdeptns.pk_dept = pv.pk_dept_ns
+        left join bd_ou_org org on org.pk_org = cg.pk_org_ex
+        left join pv_labor lab on lab.pk_pv = pv.pk_pv and lab.eu_status = '1' and lab.pk_dept_ns = cg.pk_dept_app
+        where cg.pk_pv in
+        <foreach item="pkpv" index="index" collection="pkPvs" open="("
+                 separator="," close=")">
+            #{pkpv}
+        </foreach>
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and cg.date_hap &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and cg.date_hap &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="pkDept != null  and  pkDept != ''">
+            and cg.pk_dept_app = #{pkDept,jdbcType=CHAR}
+        </if>
+        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+            and cg.pk_dept_ns_app = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        <if test="type != null  and  type != ''">
+            and cg.flag_pd = #{type}
+        </if>
+        <if test="pkDeptEx != null  and  pkDeptEx != ''">
+            and cg.pk_dept_ex = #{pkDeptEx,jdbcType=CHAR}
+        </if>
+        <if test="pkItemcate != null  and  pkItemcate != ''">
+            and cg.pk_itemcate = #{pkItemcate,jdbcType=CHAR}
+        </if>
+        <if test="codeItemcate != null  and  codeItemcate != ''">
+            and itemcate.code like '${codeItemcate}%'
+        </if>
+        <if test="nameCg != null  and  nameCg != ''">
+            and ((cg.flag_pd = '0' and (cg.name_cg like '%${nameCg}%' or item.spcode like '${nameCg}%' or item.d_code
+            like '${nameCg}%') )
+            or(cg.flag_pd = '1' and (cg.name_cg like '%${nameCg}%' or pd.spcode like '${nameCg}%')))
+        </if>
+        order by pv.pk_pv , cg.date_hap , cg.date_cg -->
+    </select>
+
+    <!-- 查询产房增加的婴儿费用汇总 -->
+    <select id="queryInfantBlCgIpSummer" parameterType="java.util.Map" resultType="DynaBean">
+        select '' as lab_bed,
+        pv.bed_no,
+        pv.name_pi,
+        pv.code_pv,
+        pv.pk_pv,
+        pv.date_begin,
+        pi.code_ip,
+        itemcate.name as catename,
+        cg.name_cg,
+        sum(cg.quan) as quan ,
+        unit.name as unitname,
+        cg.price,
+        sum(cg.amount) as amount,
+        sum(cg.amount_pi) as amnout_pi
+        from bl_ip_dt cg
+        inner join pv_encounter pv on cg.pk_pv = pv.pk_pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        left join bd_unit unit on unit.pk_unit = cg.pk_unit
+        inner join bd_itemcate itemcate on itemcate.pk_itemcate = cg.pk_itemcate
+        left join bd_ou_dept dept on dept.pk_dept = cg.pk_dept_app
+        left join bd_ou_dept deptns on deptns.pk_dept = cg.pk_dept_ns_app
+        inner join bd_ou_dept deptex on deptex.pk_dept = cg.pk_dept_ex
+        inner join pv_infant inf on inf.pk_pv_infant = pv.pk_pv
+        left join pv_labor lab on lab.pk_pv = inf.pk_pv and lab.eu_status = '1' and lab.pk_dept_ns = cg.pk_dept_app
+        where cg.date_hap &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        and cg.date_hap &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        <if test="pkItemcate != null  and  pkItemcate != ''">
+            and itemcate.pk_itemcate = #{pkItemcate,jdbcType=CHAR}
+        </if>
+        <if test="type != null  and  type != ''">
+            and cg.flag_pd = #{type}
+        </if>
+        <if test="pkDept != null  and  pkDept != ''">
+            and cg.pk_dept_app = #{pkDept,jdbcType=CHAR}
+        </if>
+        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+            and cg.pk_dept_ns_app = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        and cg.pk_pv in
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            #{pkpv}
+        </foreach>
+        group by pv.bed_no, lab.bed_no, pv.name_pi, pv.code_pv, pv.pk_pv,pi.code_ip,
+        pv.date_begin, itemcate.name, cg.name_cg, unit.name, cg.price
+        order by pv.bed_no, lab.bed_no, pv.name_pi, pv.pk_pv,pv.code_pv, pi.code_ip,
+        pv.date_begin, itemcate.name, cg.name_cg, unit.name, cg.price
+    </select>
+
+    <!-- 查询产房增加的婴儿费用明细 -->
+    <select id="queryInfantBlCgIpDetails" parameterType="java.util.Map"
+            resultType="DynaBean">
+        select '' as lab_bed,
+        pv.bed_no,
+        pv.name_pi,
+        pv.code_pv,
+        pv.pk_pv,
+        pv.date_begin,
+        pi.code_ip,
+        cg.date_cg,
+        cg.date_hap,
+        itemcate.name as catename,
+        cg.name_cg,
+        cg.quan ,
+        unit.name unitname,
+        cg.price,
+        cg.amount,
+        cg.pk_org,
+        cg.amount_pi,
+        cg.name_emp_app,
+        dept.name_dept as dept_app,
+        deptns.name_dept as dept_app_ns,
+        deptex.name_dept as dept_ex,
+        cg.infant_no,
+        cg.name_emp_cg
+        from bl_ip_dt cg
+        inner join pv_encounter pv on cg.pk_pv = pv.pk_pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        left join bd_unit unit on unit.pk_unit = cg.pk_unit
+        inner join bd_itemcate itemcate on itemcate.pk_itemcate = cg.pk_itemcate
+        left join bd_ou_dept dept on dept.pk_dept = cg.pk_dept_app
+        left join bd_ou_dept deptns on deptns.pk_dept = cg.pk_dept_ns_app
+        inner join bd_ou_dept deptex on deptex.pk_dept = cg.pk_dept_ex
+        inner join pv_infant inf on inf.pk_pv_infant = pv.pk_pv
+        left join pv_labor lab on lab.pk_pv = inf.pk_pv and lab.eu_status = '1' and lab.pk_dept_ns = cg.pk_dept_app
+        where cg.pk_pv in
+        <foreach item="pkpv" index="index" collection="pkPvs" open="("
+                 separator="," close=")">
+            #{pkpv}
+        </foreach>
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and cg.date_hap &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and cg.date_hap &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="pkDept != null  and  pkDept != ''">
+            and cg.pk_dept_app = #{pkDept,jdbcType=CHAR}
+        </if>
+        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+            and cg.pk_dept_ns_app = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        <if test="type != null  and  type != ''">
+            and cg.flag_pd = #{type}
+        </if>
+        <if test="pkDeptEx != null  and  pkDeptEx != ''">
+            and cg.pk_dept_ex = #{pkDeptEx,jdbcType=CHAR}
+        </if>
+        <if test="pkItemcate != null  and  pkItemcate != ''">
+            and cg.pk_itemcate = #{pkItemcate,jdbcType=CHAR}
+        </if>
+        order by pv.pk_pv , cg.date_hap , cg.date_cg
+    </select>
+
+    <select id="queryBlCgIpDetailsByOrd" parameterType="java.util.Map"
+            resultType="DynaBean">
+        select a.* from  (
+			select cg.pk_cgip,
+		           cg.flag_pd,
+		           cg.pk_cgip_back,
+				   cg.date_cg,
+				   cg.date_hap,
+				   cg.name_emp_cg,
+				   cg.name_cg,
+				   cg.quan,
+				   cg.amount,
+				   cg.amount_pi,
+				   cg.price,
+				   cg.pk_dept_ex,
+	         	   dept.name_dept name_dept_cg,
+				   exde.name_dept name_dept_ex,
+				   case cg.flag_pd when '1' then pdUnit.name else unit.name end as nameUnit
+			  from bl_ip_dt cg
+			  left join bd_unit pdUnit on pdUnit.pk_unit = cg.pk_unit_pd
+			  left join bd_unit unit on unit.pk_unit = cg.pk_unit
+			  left join bd_ou_dept dept on dept.pk_dept = cg.pk_dept_cg
+			  left join bd_ou_dept exde on exde.PK_DEPT=cg.pk_dept_ex
+			  where cg.pk_cnord = #{pkOrd,jdbcType=CHAR} <!-- and cg.flag_settle = '0'   为处理bug-25861 注释此条件    -->
+			  <if test="flagPd != null  and  flagPd != ''">
+	            and cg.flag_pd = #{flagPd,jdbcType=CHAR}
+	          </if>
+		union all 
+			select cg.pk_cgip,
+		           cg.flag_pd,
+		           cg.pk_cgip_back,
+			       cg.date_cg,
+				   cg.date_hap,
+				   cg.name_emp_cg,
+				   cg.name_cg,
+				   cg.quan,
+				   cg.amount,
+				   cg.amount_pi,
+				   cg.price,
+				   cg.pk_dept_ex,
+	         	   dept.name_dept name_dept_cg,
+				   exde.name_dept name_dept_ex,
+				   case cg.flag_pd when '1' then pdUnit.name else unit.name end as nameUnit
+			  from bl_ip_dt_b cg
+			  left join bd_unit pdUnit on pdUnit.pk_unit = cg.pk_unit_pd
+			  left join bd_unit unit on unit.pk_unit = cg.pk_unit
+			  left join bd_ou_dept dept on dept.pk_dept = cg.pk_dept_cg
+			  left join bd_ou_dept exde on exde.PK_DEPT=cg.pk_dept_ex
+			  where cg.pk_cnord = #{pkOrd,jdbcType=CHAR} <!-- and cg.flag_settle = '0'   为处理bug-25861 注释此条件    -->
+			  <if test="flagPd != null  and  flagPd != ''">
+	            and cg.flag_pd = #{flagPd,jdbcType=CHAR}
+	          </if>
+		) a order by a.date_cg
+		<!-- select cg.pk_cgip,
+               cg.flag_pd,
+               cg.pk_cgip_back,
+		       cg.date_cg,
+			   cg.date_hap,
+			   cg.name_emp_cg,
+			   cg.name_cg,
+			   cg.quan,
+			   cg.amount,
+			   cg.price,
+         	   dept.name_dept name_dept_cg,
+			   exde.name_dept name_dept_ex,
+			   case cg.flag_pd when '1' then pdUnit.name else unit.name end as nameUnit
+		  from bl_ip_dt cg
+		  left join bd_unit pdUnit on pdUnit.pk_unit = cg.pk_unit_pd
+		  left join bd_unit unit on unit.pk_unit = cg.pk_unit
+		  left join bd_ou_dept dept on dept.pk_dept = cg.pk_dept_cg
+		  left join bd_ou_dept exde on exde.PK_DEPT=cg.pk_dept_ex
+		 where cg.pk_cnord = #{pkOrd,jdbcType=CHAR} and cg.flag_settle = '0'   为处理bug-25861 注释此条件   
+		  <if test="flagPd != null  and  flagPd != ''">
+            and cg.flag_pd = #{flagPd,jdbcType=CHAR}
+          </if> -->
+	</select>
+
+    <select id="queryBlCgIpDetailsByPv" parameterType="java.util.Map"
+            resultType="DynaBean">
+        select a.* from  (
+				select cg.date_cg,
+			        cg.date_hap,
+			        itemcate.name namecate,
+			        cg.name_cg,
+			        cg.spec,
+			        cg.quan,
+			        cg.amount,
+					cg.amount_pi,
+			        cg.price,
+			        case cg.flag_pd when '1' then pdUnit.name else unit.name end as nameUnit,
+			        cg.pk_pv,
+			        cg.infant_no,
+			        cg.pk_cgip,
+			        ord.ordsn,
+			        cg.barcode
+			        from bl_ip_dt cg
+			        inner join bd_itemcate itemcate on itemcate.pk_itemcate = cg.pk_itemcate
+			        left join bd_unit pdUnit on pdUnit.pk_unit = cg.pk_unit_pd
+			        left join bd_unit unit on unit.pk_unit = cg.pk_unit
+			        left join cn_order ord on ord.pk_cnord = cg.pk_cnord
+			        where cg.pk_pv = #{pkPv,jdbcType=CHAR}
+			        <if test="flagPd != null  and  flagPd != ''">
+			            and cg.flag_pd = #{flagPd,jdbcType=CHAR}
+			        </if>
+			        <if test="nameCg != null  and  nameCg != ''">
+			            and cg.name_cg like '%${nameCg}%'
+			        </if>
+			        <if test="infantNo != null  and  infantNo != ''">
+			            and cg.infant_no like '%${infantNo}%'
+			        </if>
+			        <if test="pkDept != null  and  pkDept != ''">
+			            and cg.pk_dept_app = #{pkDept,jdbcType=CHAR}
+			        </if>
+			        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+			            and cg.pk_dept_ns_app = #{pkDeptNs,jdbcType=CHAR}
+			        </if>
+			        <if test="dateEnd != null  and  dateEnd != ''">
+			            and cg.date_hap &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+			        </if>
+			        <if test="dateBegin != null  and  dateBegin != ''">
+			            and cg.date_hap &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+			        </if>
+		union all 
+				select cg.date_cg,
+			        cg.date_hap,
+			        itemcate.name namecate,
+			        cg.name_cg,
+			        cg.spec,
+			        cg.quan,
+			        cg.amount,
+					cg.amount_pi,
+			        cg.price,
+			        case cg.flag_pd when '1' then pdUnit.name else unit.name end as nameUnit,
+			        cg.pk_pv,
+			        cg.infant_no,
+			        cg.pk_cgip,
+			        ord.ordsn,
+			        cg.barcode
+			        from bl_ip_dt_b cg
+			        inner join bd_itemcate itemcate on itemcate.pk_itemcate = cg.pk_itemcate
+			        left join bd_unit pdUnit on pdUnit.pk_unit = cg.pk_unit_pd
+			        left join bd_unit unit on unit.pk_unit = cg.pk_unit
+			        left join cn_order_b ord on ord.pk_cnord = cg.pk_cnord
+			        where cg.pk_pv = #{pkPv,jdbcType=CHAR}
+			        <if test="flagPd != null  and  flagPd != ''">
+			            and cg.flag_pd = #{flagPd,jdbcType=CHAR}
+			        </if>
+			        <if test="nameCg != null  and  nameCg != ''">
+			            and cg.name_cg like '%${nameCg}%'
+			        </if>
+			        <if test="infantNo != null  and  infantNo != ''">
+			            and cg.infant_no like '%${infantNo}%'
+			        </if>
+			        <if test="pkDept != null  and  pkDept != ''">
+			            and cg.pk_dept_app = #{pkDept,jdbcType=CHAR}
+			        </if>
+			        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+			            and cg.pk_dept_ns_app = #{pkDeptNs,jdbcType=CHAR}
+			        </if>
+			        <if test="dateEnd != null  and  dateEnd != ''">
+			            and cg.date_hap &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+			        </if>
+			        <if test="dateBegin != null  and  dateBegin != ''">
+			            and cg.date_hap &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+			        </if>
+		) a 
+	    order by date_hap , date_cg
+		<!--     
+            
+            
+        select cg.date_cg,
+        cg.date_hap,
+        itemcate.name namecate,
+        cg.name_cg,
+        cg.quan,
+        cg.amount,
+        cg.price,
+        case cg.flag_pd when '1' then pdUnit.name else unit.name end as nameUnit,
+        cg.pk_pv,
+        cg.infant_no,
+        cg.pk_cgip,
+        ord.ordsn
+        from bl_ip_dt cg
+        inner join bd_itemcate itemcate on itemcate.pk_itemcate = cg.pk_itemcate
+        left join bd_unit pdUnit on pdUnit.pk_unit = cg.pk_unit_pd
+        left join bd_unit unit on unit.pk_unit = cg.pk_unit
+        left join cn_order ord on ord.pk_cnord = cg.pk_cnord
+        where cg.pk_pv = #{pkPv,jdbcType=CHAR}
+        <if test="flagPd != null  and  flagPd != ''">
+            and cg.flag_pd = #{flagPd,jdbcType=CHAR}
+        </if>
+        <if test="nameCg != null  and  nameCg != ''">
+            and cg.name_cg like '%${nameCg}%'
+        </if>
+        <if test="infantNo != null  and  infantNo != ''">
+            and cg.infant_no like '%${infantNo}%'
+        </if>
+        <if test="pkDept != null  and  pkDept != ''">
+            and cg.pk_dept_app = #{pkDept,jdbcType=CHAR}
+        </if>
+        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+            and cg.pk_dept_ns_app = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and cg.date_hap &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and cg.date_hap &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        </if>
+        order by cg.date_hap , cg.date_cg -->
+    </select>
+
+    <select id="queryCgCateFeeByPv" parameterType="java.util.Map"
+            resultType="DynaBean">
+        select cg.pk_itemcate,
+        itemcate.name catename,
+        sum(cg.amount) as amount,
+        sum(cg.amount_pi) as amount_pi
+        from bl_ip_dt cg
+        inner join bd_itemcate itemcate
+        on itemcate.pk_itemcate = cg.pk_itemcate
+        where cg.pk_pv = #{pkPv,jdbcType=CHAR}
+        <if test="pkDept != null  and  pkDept != ''">
+            and cg.pk_dept_app = #{pkDept,jdbcType=CHAR}
+        </if>
+        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+            and cg.pk_dept_ns_app = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        group by cg.pk_itemcate,itemcate.name
+    </select>
+
+    <select id="queryCgItemFeeByPv" parameterType="java.util.Map"
+            resultType="DynaBean">
+        select cg.pk_itemcate,
+        itemcate.name namecate,
+        cg.name_cg,
+        item.code as code_cg,
+        cg.price,
+        sum(cg.quan) quan,
+        sum(cg.amount) amount,
+        sum(cg.amount_pi) as amount_pi
+        from bl_ip_dt cg
+        inner join bd_itemcate itemcate on itemcate.pk_itemcate = cg.pk_itemcate
+        left join bd_item item on item.pk_item = cg.pk_item
+        where cg.flag_pd = '0'
+        and cg.pk_pv = #{pkPv,jdbcType=CHAR}
+        <if test="pkDept != null  and  pkDept != ''">
+            and cg.pk_dept_app = #{pkDept,jdbcType=CHAR}
+        </if>
+        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+            and cg.pk_dept_ns_app = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        <if test="pkItemcate != null  and  pkItemcate != ''">
+            and cg.pk_itemcate = #{pkItemcate,jdbcType=CHAR}
+        </if>
+        <if test="codeItemcate != null  and  codeItemcate != ''">
+            and itemcate.code like '${codeItemcate}%'
+        </if>
+        <if test="nameCg != null  and  nameCg != ''">
+            and cg.name_cg like '%${nameCg}%'
+        </if>
+        group by cg.pk_itemcate, cg.name_cg,item.code, cg.price,
+        itemcate.name
+        union
+        select cg.pk_itemcate,
+        itemcate.name namecate,
+        cg.name_cg,
+        pd.code as code_cg,
+        cg.price,
+        sum(cg.quan) quan,
+        sum(cg.amount) amount,
+        sum(cg.amount_pi) as amount_pi
+        from bl_ip_dt cg
+        inner join bd_itemcate itemcate
+        on itemcate.pk_itemcate = cg.pk_itemcate
+        left join bd_pd pd on cg.pk_pd = pd.pk_pd
+        where cg.flag_pd = '1' and cg.pk_pv = #{pkPv,jdbcType=CHAR}
+        <if test="pkDept != null  and  pkDept != ''">
+            and cg.pk_dept_app = #{pkDept,jdbcType=CHAR}
+        </if>
+        <if test="pkDeptNs != null  and  pkDeptNs != ''">
+            and cg.pk_dept_ns_app = #{pkDeptNs,jdbcType=CHAR}
+        </if>
+        <if test="pkItemcate != null  and  pkItemcate != ''">
+            and cg.pk_itemcate = #{pkItemcate,jdbcType=CHAR}
+        </if>
+        <if test="codeItemcate != null  and  codeItemcate != ''">
+            and itemcate.code like '${codeItemcate}%'
+        </if>
+        <if test="nameCg != null  and  nameCg != ''">
+            and cg.name_cg like '%${nameCg}%'
+        </if>
+        group by cg.pk_itemcate, cg.name_cg,pd.code, cg.price,
+        itemcate.name
+    </select>
+
+    <!-- 查询患者费用 （账单码）汇总 -->
+    <select id="queryCgIpSummer" parameterType="java.util.Map" resultType="DynaBean">
+        select lab.bed_no as lab_bed,
+        pv.bed_no,
+        pv.name_pi,
+        pv.code_pv,
+        pi.code_ip,    <!-- 住院号 -->
+        pv.pk_pv,
+        pv.date_begin,
+        cg.code_bill,
+        invitem.name as name_inv_item,
+        deptns.name_dept as name_dept_ns,
+        sum(cg.amount) as amount
+        from bl_ip_dt cg
+        inner join pv_encounter pv on cg.pk_pv = pv.pk_pv
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi
+        left join bd_ou_dept deptns on deptns.pk_dept = pv.pk_dept_ns
+        left join bd_invcate_item invitem on invitem.code = cg.code_bill and invitem.pk_org = cg.pk_org
+        left join bd_invcate invcate on invitem.pk_invcate = invcate.pk_invcate and invcate.eu_type = '1'
+        left join pv_labor lab on lab.pk_pv = pv.pk_pv and lab.eu_status = '1' and lab.pk_dept_ns = cg.pk_dept_app
+        where cg.date_hap &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        and cg.date_hap &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        <if test="type != null  and  type != ''">
+            and cg.flag_pd = #{type}
+        </if>
+        and cg.pk_pv in
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            #{pkpv}
+        </foreach>
+        group by lab.bed_no, pv.bed_no, pv.name_pi, pv.code_pv, pi.code_ip, pv.pk_pv,
+        pv.date_begin, cg.code_bill, deptns.name_dept, invitem.name
+        order by lab.bed_no, pv.bed_no, pv.name_pi, pv.code_pv, pi.code_ip, pv.pk_pv,
+        pv.date_begin, cg.code_bill, deptns.name_dept
+    </select>
+
+    <!-- 查询患者费用明细 （项目） 汇总 -->
+    <select id="queryCgIpDetails" parameterType="java.util.Map" resultType="DynaBean">
+        select lab.bed_no as lab_bed,
+        pi.code_ip,    <!-- 住院号 -->
+        pv.bed_no,
+        pv.name_pi,
+        pv.code_pv,
+        pv.pk_pv,
+        pv.date_begin,                        <!-- 入院日期 -->
+        pvdept.name_dept as name_dept,        <!-- 就诊科室 -->
+        pvdeptns.name_dept as name_dept_ns,    <!-- 就诊病区 -->
+        hp.name as name_hp,                    <!-- 医保类型 -->
+        itemcate.name as catename,
+        case cg.flag_pd when '1' then pd.code else item.code end as code_cg,
+        cg.name_cg,
+        cg.spec,
+        sum(cg.quan) as quan ,
+        unit.name as unitname,
+        cg.price,
+        sum(cg.amount) as amount,
+        insitem.jbzfbl
+        from bl_ip_dt cg
+        inner join pv_encounter pv on cg.pk_pv = pv.pk_pv
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi
+        left join bd_unit unit on unit.pk_unit = cg.pk_unit
+        inner join bd_itemcate itemcate on itemcate.pk_itemcate = cg.pk_itemcate
+        inner join bd_ou_dept deptex on deptex.pk_dept = cg.pk_dept_ex
+        left join bd_ou_dept pvdept on pvdept.pk_dept = pv.pk_dept
+        left join bd_ou_dept pvdeptns on pvdeptns.pk_dept = pv.pk_dept_ns
+        left join bd_hp hp on hp.pk_hp = pv.pk_insu
+        left join bd_pd pd on pd.pk_pd = cg.pk_item
+        left join bd_item item on item.pk_item = cg.pk_item
+        left join ins_item_map insmap on insmap.pk_item = cg.pk_item and insmap.pk_hp = pv.pk_insu
+        left join ins_item insitem on insitem.xmbh = insmap.xmbh and insitem.pk_hp = pv.pk_insu
+        left join pv_labor lab on lab.pk_pv = pv.pk_pv and lab.eu_status = '1' and lab.pk_dept_ns = cg.pk_dept_app
+        where cg.date_hap &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        and cg.date_hap &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        <if test="type != null  and  type != ''">
+            and cg.flag_pd = #{type}
+        </if>
+        and cg.pk_pv in
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            #{pkpv}
+        </foreach>
+        group by lab.bed_no , pi.code_ip, pv.bed_no, pv.name_pi, pv.code_pv, pv.pk_pv,
+        pv.date_begin, pvdept.name_dept , pvdeptns.name_dept , hp.name, itemcate.name ,
+        case cg.flag_pd when '1' then pd.code else item.code end ,
+        cg.name_cg, cg.spec, unit.name, cg.price, insitem.jbzfbl
+        order by pv.bed_no,pi.code_ip, lab.bed_no, pv.name_pi, pv.pk_pv,pv.code_pv,
+        pv.date_begin, itemcate.name, cg.name_cg, unit.name, cg.price
+    </select>
+    <!-- 查询患者费用明细 （项目），其中药品按每日实际执行数量汇总 -->
+    <!-- 情况：医嘱执行之后，但是又出现申请退药，如果还按执行数量记费的话，费用会重复 -->
+    <select id="queryExIpDetailsByDatePlan" parameterType="java.util.Map" resultType="DynaBean">
+        select pi.code_ip,
+        pv.bed_no,
+        pv.name_pi,
+        pv.code_pv,
+        pv.pk_pv,
+        pv.date_begin,
+        dept.name_dept as name_dept,
+        deptns.name_dept as name_dept_ns,
+        hp.name as name_hp,
+        pd.code as code_cg,
+        occ.date_plan as date_hap,
+        pd.name as name_cg,
+        pd.spec,
+        cg.price * occ.pack_size / nvl(cg.pack_size,1) as price,
+        sum(occ.quan_occ) as quan,
+        sum(occ.quan_occ) * cg.price * occ.pack_size / nvl(cg.pack_size,1) as amount,
+        unit.name as unitname,
+        insitem.jbzfbl
+        from ex_order_occ occ
+        inner join ex_pd_apply_detail apdt on occ.pk_pdapdt=apdt.pk_pdapdt
+        inner join ex_pd_de de on apdt.pk_pdapdt=de.pk_pdapdt
+        inner join bl_ip_dt cg on de.pk_pdde=cg.pk_ordexdt
+        inner join bd_pd pd on pd.pk_pd = cg.pk_pd
+        left join bd_unit unit on unit.pk_unit=occ.pk_unit and unit.del_flag = '0'
+        inner join pv_encounter pv on occ.pk_pv=pv.pk_pv
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi
+        inner join bd_ou_dept deptex on cg.pk_dept_ex=deptex.pk_dept
+        inner join bd_ou_dept dept on cg.pk_dept_app=dept.pk_dept
+        inner join bd_ou_dept deptns on cg.pk_dept_ns_app=deptns.pk_dept
+        inner join bd_hp hp on hp.pk_hp = pv.pk_insu
+        left join ins_item_map insmap on insmap.pk_item = cg.pk_item and insmap.pk_hp = pv.pk_insu
+        left join ins_item insitem on insitem.xmbh = insmap.xmbh and insitem.pk_hp = pv.pk_insu
+        where occ.flag_base = '0' and cg.flag_pd = '1' and (cg.pk_pres is null or cg.pk_pres like '% %')
+        and occ.date_plan &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+        and occ.date_plan &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+        <if test="type != null and type == '0'.toString()">
+            and 1=0
+        </if>
+        and occ.pk_pv in
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            #{pkpv}
+        </foreach>
+        group by pi.code_ip, pv.bed_no, pv.name_pi, pv.code_pv, pv.pk_pv, pv.date_begin,occ.date_plan,
+        dept.name_dept, deptns.name_dept,hp.name, pd.code, pd.name, pd.spec,
+        cg.price, cg.pack_size, occ.pack_size, unit.name, insitem.jbzfbl
+        union
+        select pi.code_ip,
+        pv.bed_no,
+        pv.name_pi,
+        pv.code_pv,
+        pv.pk_pv,
+        pv.date_begin,
+        dept.name_dept as name_dept,
+        deptns.name_dept as name_dept_ns,
+        hp.name as name_hp,
+        case cg.flag_pd
+        when '1' then pd.code else item.code end as code_cg,
+        cg.date_hap,
+        cg.name_cg,
+        cg.spec,
+        cg.price,
+        sum(cg.quan) as quan,
+        sum(cg.amount) as amount,
+        unit.name as unitname,
+        insitem.jbzfbl
+        from bl_ip_dt cg
+        left join ex_order_occ occ on cg.pk_ordexdt=occ.pk_exocc
+        left join bd_pd pd on cg.pk_pd = pd.pk_pd
+        left join bd_item item on item.pk_item = cg.pk_item and cg.flag_pd='0'
+        left join bd_unit unit on unit.pk_unit = cg.pk_unit and unit.del_flag = '0'
+        inner join pv_encounter pv on cg.pk_pv = pv.pk_pv
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi
+        inner join bd_ou_dept deptex on cg.pk_dept_ex=deptex.pk_dept
+        inner join bd_ou_dept dept on cg.pk_dept_app=dept.pk_dept
+        inner join bd_ou_dept deptns on cg.pk_dept_ns_app=deptns.pk_dept
+        inner join bd_hp hp on hp.pk_hp = pv.pk_insu
+        left join ins_item_map insmap on insmap.pk_item = cg.pk_item and insmap.pk_hp = pv.pk_insu
+        left join ins_item insitem on insitem.xmbh = insmap.xmbh and insitem.pk_hp = pv.pk_insu
+        where cg.date_cg &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+        and cg.date_cg &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+        <if test="type != null and type == '0'.toString()">  <!-- 查询诊疗 -->
+            and cg.flag_pd = '0'
+        </if>
+        <if test="type != null and type == '1'.toString()">  <!-- 查询物品 -->
+            and ((cg.flag_pd ='1' and cg.pk_pres is not null and cg.pk_pres not like '% %' and (occ.flag_base='0' or
+            occ.flag_base is null))
+            or (occ.flag_base = '1' and cg.flag_pd = '1'))
+        </if>
+        <if test="type ==null or type == '' "><!-- 查询全部 -->
+            and ((cg.flag_pd ='1' and cg.pk_pres is not null and cg.pk_pres not like '% %' and (occ.flag_base='0' or
+            occ.flag_base is null))
+            or (occ.flag_base = '1' and cg.flag_pd = '1')
+            or (cg.flag_pd = '0'))
+        </if>
+        and cg.pk_pv in
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            #{pkpv}
+        </foreach>
+        group by pi.code_ip, pv.bed_no, pv.name_pi, pv.code_pv, pv.pk_pv, cg.date_hap,
+        pv.date_begin, dept.name_dept,deptns.name_dept, hp.name,
+        case cg.flag_pd when '1' then pd.code else item.code end,
+        cg.name_cg, cg.spec, cg.price, unit.name, insitem.jbzfbl
+    </select>
+
+    <!-- 查询患者费用汇总,其中药品按每日实际执行数量汇总 -->
+    <select id="queryExIpSummerByDatePlan" parameterType="java.util.Map" resultType="DynaBean">
+        select a.bed_no,
+        a.name_pi,
+        a.code_pv,
+        a.code_ip,
+        a.pk_pv,
+        a.date_begin,
+        a.code_bill,
+        a.name_inv_item,
+        a.name_dept_ns,
+        sum(a.amount) as amount
+        from (
+        select
+        pv.bed_no,
+        pv.name_pi,
+        pv.code_pv,
+        pi.code_ip,
+        pv.pk_pv,
+        pv.date_begin,
+        cg.code_bill,
+        invitem.name as name_inv_item,
+        deptns.name_dept as name_dept_ns,
+        sum(cg.price / cg.pack_size * occ.pack_size * cg.quan) as amount
+        from ex_order_occ occ
+        inner join ex_pd_apply_detail apdt on occ.pk_pdapdt = apdt.pk_pdapdt
+        inner join ex_pd_de de on de.pk_pdapdt = apdt.pk_pdapdt
+        inner join bl_ip_dt cg on cg.pk_ordexdt = de.pk_pdde
+        inner join bd_invcate_item invitem on invitem.code = cg.code_bill and invitem.pk_org = cg.pk_org
+        inner join bd_invcate invcate on invitem.pk_invcate = invcate.pk_invcate and invcate.eu_type = '1'
+        inner join pv_encounter pv on cg.pk_pv = pv.pk_pv
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi
+        left join bd_ou_dept deptns on deptns.pk_dept = pv.pk_dept_ns
+        where occ.flag_base = '0' and (cg.pk_pres is null or cg.pk_pres = '') and
+        occ.date_plan &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        and occ.date_plan &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        and occ.pk_pv in
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            #{pkpv}
+        </foreach>
+        group by pv.bed_no, pv.name_pi, pv.code_pv, pi.code_ip, pv.pk_pv,
+        pv.date_begin, cg.code_bill, deptns.name_dept, invitem.name
+        union
+        select
+        pv.bed_no,
+        pv.name_pi,
+        pv.code_pv,
+        pi.code_ip,
+        pv.pk_pv,
+        pv.date_begin,
+        cg.code_bill,
+        invitem.name as name_inv_item,
+        deptns.name_dept as name_dept_ns,
+        sum(cg.amount) as amount
+        from bl_ip_dt cg
+        left join cn_order ord on ord.pk_cnord = cg.pk_cnord
+        inner join bd_invcate_item invitem on invitem.code = cg.code_bill and invitem.pk_org = cg.pk_org
+        inner join bd_invcate invcate on invitem.pk_invcate = invcate.pk_invcate and invcate.eu_type = '1'
+        inner join pv_encounter pv on cg.pk_pv = pv.pk_pv
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi
+        left join bd_ou_dept deptns on deptns.pk_dept = pv.pk_dept_ns
+        <!-- where (cg.flag_pd = '0' or (cg.flag_pd = '1' and cg.pk_pres is not null and cg.pk_pres != '') or -->
+
+        where (cg.flag_pd = '0' or (cg.flag_pd = '1' ) or
+
+        <!-- (ord.flag_base = '1' and cg.flag_pd = '1' and (cg.pk_pres is null or cg.pk_pres = ''))) and -->
+        (ord.flag_base = '1' and cg.flag_pd = '1' )) and
+        cg.date_hap &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        and cg.date_hap &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        and cg.pk_pv in
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            #{pkpv}
+        </foreach>
+        group by pv.bed_no, pv.name_pi, pv.code_pv, pi.code_ip, pv.pk_pv,
+        pv.date_begin, cg.code_bill, deptns.name_dept, invitem.name
+        ) a
+        group by a.bed_no, a.name_pi, a.code_pv, a.code_ip, a.pk_pv,
+        a.date_begin, a.code_bill, a.name_dept_ns, a.name_inv_item
+    </select>
+
+    <!-- 查询患者费用明细 （项目），实际记费 -->
+    <select id="queryCgIpDetailsByDateHap" parameterType="java.util.Map" resultType="DynaBean">
+        select pi.code_ip,
+        pv.bed_no,
+        pv.name_pi,
+        pv.code_pv,
+        pv.pk_pv,
+        pv.date_begin,
+        dept.name_dept as name_dept,
+        deptns.name_dept as name_dept_ns,
+        hp.name as name_hp,
+        case cg.flag_pd when '1' then pd.code else item.code end as code_cg,
+        cg.name_cg,
+        cg.spec,
+        cg.price,
+        sum(cg.quan) as quan,
+        sum(cg.amount) as amount,
+        unit.name as unitname,
+        to_char(cg.date_hap,'yyyy-mm-dd') as date_hap,
+        insitem.eu_level jbzfbl,
+        bi.NAME as item_type
+        from bl_ip_dt cg
+        left outer join ex_order_occ occ on cg.pk_ordexdt=occ.pk_exocc
+        left join bd_pd pd on cg.pk_pd = pd.pk_pd
+        left join bd_item item on item.pk_item = cg.pk_item and cg.flag_pd='0'
+        inner join BD_ITEMCATE bi on bi.PK_ITEMCATE=cg.PK_ITEMCATE
+        inner join bd_unit unit on unit.pk_unit = cg.pk_unit
+        inner join pv_encounter pv on cg.pk_pv = pv.pk_pv
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi
+        inner join bd_ou_dept deptex on cg.pk_dept_ex=deptex.pk_dept
+        inner join bd_ou_dept dept on cg.pk_dept_app=dept.pk_dept
+        inner join bd_ou_dept deptns on cg.pk_dept_ns_app=deptns.pk_dept
+        inner join bd_hp hp on hp.pk_hp = pv.pk_insu
+        left join BD_ITEM_HP insitem on insitem.PK_ITEM = cg.PK_ITEM and insitem.PK_HP = pv.PK_INSU and
+        insitem.DT_HPDICTTYPE='1' and insitem.del_flag='0'   
+        where cg.date_cg &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+        and cg.date_cg &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+        <if test="type != null and type == '0'.toString()">  <!-- 查询诊疗 -->
+            and cg.flag_pd = '0'
+        </if>
+        <if test="type != null and type == '1'.toString()">  <!-- 查询物品 :处方和非基数药品 + 基数药-->
+            and cg.flag_pd = '1'
+        </if>
+        <if test="type ==null or type == '' "><!-- 查询全部 -->
+            and 1=1
+        </if>
+        and cg.pk_pv in
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            #{pkpv}
+        </foreach>
+        group by pi.code_ip, pv.bed_no, pv.name_pi, pv.code_pv, pv.pk_pv,
+        pv.date_begin, dept.name_dept,deptns.name_dept, hp.name,
+        case cg.flag_pd when '1' then pd.code else item.code end,bi.NAME,
+        cg.name_cg, cg.spec, cg.price, unit.name, insitem.eu_level ,to_char(cg.date_hap,'yyyy-mm-dd')
+    </select>
+
+
+    <!-- 查询患者费用汇总,实际发生 -->
+    <select id="queryCgIpSummerByDateHap" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.bed_no,
+        pv.name_pi,
+        pv.code_pv,
+        pi.code_ip,
+        pv.pk_pv,
+        pv.date_begin,
+        hp.rate_ip,
+        def.name sex,
+        deptns.name_dept as name_dept_ns,
+        cg.pk_pv,
+        cg.code_bill,
+        invitem.name as name_inv_item,
+        sum(cg.amount) as amount
+        from bl_ip_dt cg
+        inner join bd_invcate_item invitem on invitem.code = cg.code_bill and invitem.pk_org = cg.pk_org
+        inner join bd_invcate invcate on invitem.pk_invcate = invcate.pk_invcate and invcate.eu_type = '1'
+        inner join pv_encounter pv on cg.pk_pv = pv.pk_pv
+        inner join pi_master pi on pv.pk_pi = pi.pk_pi
+        inner join bd_defdoc def on def.code = pv.dt_sex and def.code_defdoclist = '000000'
+        left join bd_hp hp on hp.pk_hp = pv.pk_insu
+        left join bd_ou_dept deptns on deptns.pk_dept = pv.pk_dept_ns
+        where cg.date_cg &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        and cg.date_cg &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        and cg.pk_pv in
+        <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            #{pkpv}
+        </foreach>
+        group by cg.pk_pv,cg.code_bill,hp.rate_ip,def.name,invitem.name,pv.bed_no,pv.name_pi,
+        pv.code_pv,pi.code_ip,pv.pk_pv,pv.date_begin,deptns.name_dept
+    </select>
+    <select id="queryToalBlAmount" parameterType="java.util.List" resultType="DynaBean">
+    select pv.PK_PV, nvl(sum(bl.AMOUNT_PI),0) total_amount
+             from PV_ENCOUNTER pv
+             left join BL_IP_DT bl on pv.PK_PV = bl.PK_PV
+             where bl.PK_PV in
+		<foreach collection="list" item="item" open="(" close=")" separator=",">
+			#{item}
+		</foreach>
+            group by pv.PK_PV
+	</select>
+	<select id="queryToalPreAmount" parameterType="java.util.List" resultType="DynaBean">
+		select pv.PK_PV, nvl(sum(bl.AMOUNT),0)prepay_amount
+         from PV_ENCOUNTER pv
+         left join BL_DEPOSIT  bl on pv.PK_PV = bl.PK_PV
+         where bl.PK_PV  in
+         <foreach collection="list" item="item" open="(" close=")" separator=",">
+        #{item}
+       </foreach>
+         group by pv.PK_PV
+	</select>
+	
+	<!-- 查询患者费用明细 -->
+    <select id="queryPatiDetails" parameterType="java.util.Map" resultType="DynaBean">
+        Select cg.pk_item,
+        	case when ord.pk_ord is null then ''
+            when cg.flag_pd='0' and ord.code_supply is not null then ''
+            else ord.pk_ord end pk_ord,
+        	itemcate.name as catename,
+        	case when ord.name_ord is null then '非医嘱'
+            when cg.flag_pd='0' and ord.code_supply is not null then '非医嘱'
+            else ord.name_ord end name_ord,
+        	cg.name_cg, 
+        	cg.spec,
+        	sum(cg.quan) quan,
+        	sum(cg.amount) amount,
+			sum(cg.amount_pi) amount_pi,
+        	cg.pk_dept_app,
+        	cg.pk_dept_ns_app,
+        	cg.pk_dept_ex
+ 		From bl_ip_dt cg
+ 		left join bd_itemcate itemcate on itemcate.pk_itemcate = cg.pk_itemcate
+ 		Left Join cn_order ord on cg.pk_cnord=ord.pk_cnord and ord.flag_doctor='1'
+ 		left join bd_item item on item.pk_item = cg.pk_item
+        left join bd_pd pd on pd.pk_pd = cg.pk_pd
+ 		Where cg.pk_pv = #{pkPv,jdbcType=CHAR}
+       		<if test="pkDept != null  and  pkDept != ''">
+            	and cg.pk_dept_app = #{pkDept,jdbcType=CHAR}
+        	</if>
+       		<if test="codeItemcate != null  and  codeItemcate != ''">
+            	and itemcate.code like '${codeItemcate}%'
+        	</if>
+        	<if test="nameCg != null  and  nameCg != ''">
+            	and ((cg.flag_pd = '0' and (cg.name_cg like '%${nameCg}%' or item.spcode like '%${nameCg}%' or item.d_code
+            	like '%${nameCg}%') )
+            	or(cg.flag_pd = '1' and (cg.name_cg like '%${nameCg}%' or pd.spcode like '%${nameCg}%')))
+        	</if>
+        	<if test="pkDeptEx != null  and  pkDeptEx != ''">
+            	and cg.pk_dept_ex = #{pkDeptEx,jdbcType=CHAR}
+        	</if>
+        	 <if test="dateEnd != null  and  dateEnd != ''">
+            	and cg.date_cg &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        	</if>
+        	<if test="dateBegin != null  and  dateBegin != ''">
+            	and cg.date_cg &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        	</if>
+ 		Group By cg.pk_item,
+ 			case when ord.pk_ord is null then ''
+            when cg.flag_pd='0' and ord.code_supply is not null then ''
+            else ord.pk_ord end,
+        	case when ord.name_ord is null then '非医嘱'
+            when cg.flag_pd='0' and ord.code_supply is not null then '非医嘱'
+            else ord.name_ord end,
+        	cg.name_cg, 
+        	cg.spec,
+        	cg.pk_dept_app,
+        	cg.pk_dept_ns_app,
+        	cg.pk_dept_ex,
+        	itemcate.name
+        order by cg.name_cg
+    </select>
+       <!-- 查询患者费用明细 -->
+    <select id="queryCgDetaileds" parameterType="java.util.Map" resultType="DynaBean">
+        select case when occ.date_plan is null then ap.date_occ else occ.date_plan end date_plan,
+	      cg.name_cg,
+	      cg.date_hap,	
+	      cg.spec,
+	      cg.price,
+	      cg.quan,
+	      cg.amount,
+		  cg.amount_pi,
+	      cg.pk_emp_app,
+	      cg.pk_emp_cg,
+	      cg.pk_dept_app,
+	      cg.pk_dept_ns_app,
+	      cg.pk_dept_ex,
+	      cg.date_cg,
+	      ord.ordsn,
+	      case when ord.pk_ord is null then ''
+          when cg.flag_pd='0' and ord.code_supply is not null then ''
+          else ord.pk_ord end pk_ord,
+      	  cg.pk_item  
+	 	from bl_ip_dt cg
+      	left outer join cn_order ord on cg.pk_cnord=ord.pk_cnord and ord.flag_doctor='1'
+      	left join bd_itemcate itemcate on itemcate.pk_itemcate = cg.pk_itemcate
+      	left outer join ex_order_occ occ on cg.pk_ordexdt=occ.pk_exocc
+      	left outer join ex_pd_de de on cg.pk_ordexdt=de.pk_pdde
+      	left outer join ex_pd_apply_detail ap on de.pk_pdapdt=ap.pk_pdapdt
+      	left join bd_item item on item.pk_item = cg.pk_item
+        left join bd_pd pd on pd.pk_pd = cg.pk_pd
+		where cg.pk_pv = #{pkPv,jdbcType=CHAR}
+  		<if test="dateEnd != null  and  dateEnd != ''">
+            and cg.date_cg &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and cg.date_cg &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+        </if>
+        <if test="pkDeptEx != null  and  pkDeptEx != ''">
+            and cg.pk_dept_ex = #{pkDeptEx,jdbcType=CHAR}
+        </if>
+        <if test="pkDept != null  and  pkDept != ''">
+            and cg.pk_dept_app = #{pkDept,jdbcType=CHAR}
+        </if>
+       	<if test="codeItemcate != null  and  codeItemcate != ''">
+            and itemcate.code like '${codeItemcate}%'
+        </if>
+        <if test="nameCg != null  and  nameCg != ''">
+           	and ((cg.flag_pd = '0' and (cg.name_cg like '%${nameCg}%' or item.spcode like '%${nameCg}%' or item.d_code
+           	like '%${nameCg}%') )
+           	or(cg.flag_pd = '1' and (cg.name_cg like '%${nameCg}%' or pd.spcode like '%${nameCg}%')))
+        </if>
+    </select>
+	
+</mapper>

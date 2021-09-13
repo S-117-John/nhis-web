@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.rent.dao.NmRentDetailsMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.pro.zsba.rent.vo.NmRentDetails">
+        <id column="pk_rent_details" jdbcType="CHAR" property="pkRentDetails"/>
+        <result column="pk_org" jdbcType="CHAR" property="pkOrg"/>
+        
+        <result column="pk_rent" jdbcType="CHAR" property="pkRent"/>
+        <result column="times" jdbcType="INTEGER" property="times"/>
+        <result column="day_num" jdbcType="INTEGER" property="dayNum"/>
+        <result column="date_begin" jdbcType="VARCHAR" property="dateBegin"/>
+        <result column="date_end" jdbcType="VARCHAR" property="dateEnd"/>
+        
+        <result column="creator" jdbcType="CHAR" property="creator"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="modifier" jdbcType="CHAR" property="modifier"/>
+        <result column="modity_time" jdbcType="TIMESTAMP" property="modityTime"/>
+        <result column="del_flag" jdbcType="CHAR" property="delFlag"/>
+        <result column="ts" jdbcType="TIMESTAMP" property="ts"/>
+    </resultMap>
+        
+    <select id="getById" resultMap="BaseResultMap">
+        SELECT * FROM nm_rent_details WHERE pk_rent_details = #{pkRentDetails ,jdbcType=CHAR}
+    </select>
+    
+     <select id="findByPkRent" resultType="DynaBean">
+          SELECT a.*,b.name_emp from nm_rent_details a join bd_ou_employee b on a.creator = b.pk_emp  where a.del_flag = '0' and  pk_rent = #{pkRent ,jdbcType=CHAR}
+    </select>
+
+    <insert id="saveEntity" parameterType="com.zebone.nhis.pro.zsba.rent.vo.NmRentDetails" >
+        INSERT INTO nm_rent_details
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkRentDetails != null" > pk_rent_details, </if>
+            <if test="pkOrg != null" >  pk_org, </if>
+            
+            <if test="pkRent != null" > pk_rent, </if>
+            <if test="times != null" > times, </if>
+            <if test="dayNum != null" >  day_num, </if>
+            <if test="dateBegin != null" >  date_begin, </if>
+            <if test="dateEnd != null" >  date_end, </if>
+            
+            <if test="creator != null" > creator, </if>
+            <if test="createTime != null" > create_time, </if>
+            <if test="modifier != null" > modifier, </if>
+            <if test="modityTime != null" > modity_time, </if> 
+            <if test="delFlag != null" > del_flag, </if>
+            <if test="ts != null" > ts, </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkRentDetails != null" > #{pkRentDetails, jdbcType=CHAR}, </if> 
+            <if test="pkOrg != null" >  #{pkOrg, jdbcType=CHAR}, </if> 
+            
+            <if test="pkRent != null" > #{pkRent, jdbcType=CHAR}, </if>
+            <if test="times != null" > #{times, jdbcType=INTEGER}, </if>
+            <if test="dayNum != null" >  #{dayNum, jdbcType=INTEGER}, </if>
+            <if test="dateBegin != null" >  #{dateBegin, jdbcType=VARCHAR}, </if>
+            <if test="dateEnd != null" >  #{dateEnd, jdbcType=VARCHAR}, </if>
+            
+            <if test="creator != null" > #{creator ,jdbcType=CHAR}, </if> 
+            <if test="createTime != null" > #{createTime ,jdbcType=TIMESTAMP}, </if> 
+            <if test="modifier != null" > #{modifier ,jdbcType=CHAR}, </if> 
+            <if test="modityTime != null" > #{modityTime ,jdbcType=TIMESTAMP}, </if> 
+            <if test="delFlag != null" > #{delFlag ,jdbcType=CHAR}, </if> 
+            <if test="ts != null" > #{ts ,jdbcType=TIMESTAMP}, </if> 
+        </trim>
+    </insert>
+																					
+    <update id="updateEntity" parameterType="com.zebone.nhis.pro.zsba.rent.vo.NmRentDetails" >
+        UPDATE nm_rent_details
+        <set>
+            <if test="pkOrg != null" > pk_org = #{pkOrg ,jdbcType=CHAR}, </if>
+           
+            <if test="pkRent != null" > pk_rent #{pkRent, jdbcType=CHAR}, </if>
+            <if test="times != null" > times = #{times, jdbcType=CHAR}, </if>
+            <if test="dayNum != null" > day_num = #{dayNum, jdbcType=CHAR}, </if>
+            <if test="dateBegin != null" > date_begin = #{dateBegin, jdbcType=VARCHAR}, </if>
+            <if test="dateEnd != null" > date_end = #{dateEnd, jdbcType=VARCHAR}, </if>
+            
+            <if test="creator != null" > creator = #{creator ,jdbcType=CHAR}, </if>
+            <if test="createTime != null" > create_time = #{createTime ,jdbcType=TIMESTAMP}, </if>
+            <if test="modifier != null" > modifier = #{modifier ,jdbcType=CHAR}, </if>
+            <if test="modityTime != null" > modity_time = #{modityTime ,jdbcType=TIMESTAMP}, </if>
+            <if test="delFlag != null" > del_flag = #{delFlag ,jdbcType=CHAR}, </if>
+            <if test="ts != null" > ts = #{ts ,jdbcType=TIMESTAMP}, </if>
+        </set>
+        WHERE 
+            pk_rent_details = #{pkRentDetails ,jdbcType=CHAR}
+    </update>
+    
+    <delete id="deleteById">
+        DELETE FROM nm_rent_details WHERE pk_rent_details = #{pkRentDetails ,jdbcType=CHAR}
+    </delete>
+    
+    <delete id="deleteByPkRent">
+        DELETE FROM nm_rent_details WHERE pk_rent = #{pkRent ,jdbcType=CHAR}
+    </delete>
+    
+</mapper>

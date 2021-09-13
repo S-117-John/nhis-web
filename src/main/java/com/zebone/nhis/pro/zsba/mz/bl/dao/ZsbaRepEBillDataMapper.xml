@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.mz.bl.dao.ZsbaRepEBillDataMapper">
+
+	<select id="qryStInvInfo" resultType="DynaBean">
+		select pi.code_ip,pi.code_op,pv.name_pi,hp.name as hp,st.*,
+		inv.pk_invoice,inv.pk_invcate,inv.pk_empinvoice,inv.code_inv,inv.code_sn,inv.date_inv,inv.amount_inv,inv.print_times,inv.pk_emp_inv,inv.name_emp_inv,inv.flag_cancel,inv.date_cancel,inv.pk_emp_cancel,inv.name_emp_cancel,inv.billbatchcode,inv.ebillbatchcode,inv.ebillno,inv.checkcode,inv.date_ebill,inv.url_ebill,inv.url_netebill,inv.pk_emp_ebill,inv.name_emp_ebill,inv.ebillbatchcode_cancel,inv.ebillno_cancel,inv.checkcode_cancel,inv.date_ebill_cancel,inv.url_ebill_cancel,inv.url_netebill_cancel,inv.flag_cancel_ebill,inv.pk_emp_cancel_ebill,inv.name_emp_cancel_ebill
+		 from bl_settle st
+		  inner join PV_ENCOUNTER pv on pv.pk_pv = st.pk_pv
+		  inner join pi_master pi on pi.pk_pi = pv.pk_pi
+		  inner join bl_st_inv stinv on stinv.pk_settle = st.pk_settle
+		  inner join bl_invoice inv on inv.pk_invoice = stinv.pk_invoice
+		  inner join BD_OU_EMPLOYEE us on us.pk_emp = st.pk_emp_st
+		  inner join bd_hp hp on st.pk_insurance=hp.pk_hp
+		where (inv.flag_cancel_ebill = '0' or inv.flag_cancel_ebill is null)
+		 <if test="codeOp != null  and  codeOp != ''">
+		 	and pi.code_op = #{codeOp,jdbcType=VARCHAR}
+		 </if>
+		 <if test="dtSttype != null  and  dtSttype != ''">
+			 <if test="dtSttype.equals('20')  or  dtSttype.equals('21')">
+				 and inv.flag_cancel = '1'
+			 </if>
+			 <if test="!dtSttype.equals('20')  and  !dtSttype.equals('21')">
+				 and inv.flag_cancel = '0'
+				 and st.dt_sttype = #{dtSttype,jdbcType=VARCHAR}
+			 </if>
+		 </if>
+		 <if test='codeIp!=null and codeIp!=""'>
+		 	and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+		 </if>
+		 <if test="namePi != null  and  namePi != ''">
+		 	and pi.name_pi like '%' || #{namePi,jdbcType=VARCHAR} || '%' 
+		 </if>
+		 <if test="nameEmpSt != null  and  nameEmpSt != ''">
+		 	and (st.name_emp_st like '%' || #{nameEmpSt,jdbcType=VARCHAR} || '%' 
+		 		 or	us.code_emp = #{nameEmpSt,jdbcType=VARCHAR}
+		 		)
+		 </if>
+		 <if test="codeInv != null  and  codeInv != ''">
+		 	and  exists (select 1
+                 from bl_st_inv stinv 
+                      inner join bl_invoice inv on stinv.pk_invoice=inv.pk_invoice
+                where stinv.pk_settle=st.pk_settle and
+                      inv.code_inv=#{codeInv,jdbcType=VARCHAR})
+		 </if>
+		 <if test="euEbillRep!=null and euEbillRep!=''">
+			 <if test='euEbillRep.equals("2")'>
+				 and inv.EBILLNO is not null
+				 and not exists(
+				 	select 1 from bl_invoice invs where invs.EBILLNO = inv.EBILLNO group by inv.EBILLBATCHCODE,inv.ebillno,inv.BILLBATCHCODE having count(1)>1
+				 )
+			 </if>
+		 	<if test='euEbillRep.equals("1")'>
+		 		and inv.EBILLNO is not null and inv.CODE_INV is not null and inv.billbatchcode is null
+		 	</if>
+		 	<if test='euEbillRep.equals("0")'>
+		 		and inv.code_inv is not null and inv.EBILLNO is null and inv.date_ebill is null
+		 	</if>
+		 </if>
+		 <if test="pkInvList != null and pkInvList.size > 0">
+		    AND (inv.pk_invoice IN
+		        <!-- 处理in的集合超过1000条时Oracle不支持的情况 -->
+		        <trim suffixOverrides=" OR inv.pk_invoice IN()">    <!-- 表示删除最后一个条件 -->
+		          <foreach collection="pkInvList" item="Id" index="index" open="(" close=")">
+		            <if test="index != 0">
+		              <choose>
+		                 <when test="index % 1000 == 999">) OR inv.pk_invoice IN (</when>
+						  <otherwise>,</otherwise>
+		              </choose>
+		            </if>
+		            #{Id}
+		          </foreach>
+		       </trim>
+			 )
+ 		</if>
+		<if test="dateBegin != null  and  dateBegin != ''">
+			and st.date_st &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+			and st.date_st &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+		</if>
+		 order by inv.code_inv,st.date_st desc
+	</select>
+
+</mapper>

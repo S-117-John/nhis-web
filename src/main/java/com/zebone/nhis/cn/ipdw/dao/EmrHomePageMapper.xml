@@ -1,0 +1,2222 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.EmrHomePageMapper">
+
+    <select id="getEmrHomePageByPkPv" resultType="com.zebone.nhis.cn.ipdw.vo.EmrHomePageVO">
+select *
+from emr_home_page ehp
+where ehp.pk_pv=#{pkPv} and
+      ehp.del_flag='0'
+	</select>
+
+    <select id="findOps" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePageOps">
+select *
+  from emr_home_page_ops op
+ where op.pk_page=#{pkPage} and
+       op.del_flag='0'
+
+    </select>
+
+    <select id="findCharges" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePageCharges">
+select *
+  from emr_home_page_charges cg
+ where cg.pk_page=#{pkPage} and
+       cg.del_flag='0'
+
+
+    </select>
+
+<select id="findBrs" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePageBr">
+select *
+  from emr_home_page_br br
+ where br.pk_page=#{pkPage} and
+       br.del_flag='0'
+
+</select>
+
+    <select id="findOr" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePageOr">
+select *
+  from emr_home_page_or pr
+ where pr.pk_page=#{pkPage} and
+       pr.del_flag='0'
+
+
+</select>
+
+    <select id="findOrDt" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePageOrDt">
+select *
+  from emr_home_page_or_dt dt
+ where dt.pk_pageor=#{pkPageOr} and
+       dt.del_flag='0'
+
+
+</select>
+    <select id="findTrans" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePageTrans">
+select *
+from emr_home_page_trans trans
+where trans.pk_page = #{pkPage}
+  and trans.del_flag = '0'
+    </select>
+
+
+
+    <select id="getVisitInformationById" resultType="com.zebone.nhis.cn.ipdw.vo.EmrVisitInformationVO">
+            select pv.pk_pv,
+       pv.pk_pi,
+       ip.ip_times                                         times,
+       org.code_hosp                                       med_org_code,
+       org.name_org                                        med_org_name,
+       case when pi.hic_no is null then pi.insur_no else pi.hic_no end                                           health_card_no,
+       paymode.code                                        med_pay_mode,
+       pi.code_ip                                          pat_no,
+       pi.name_pi                                          name,
+       pi.dt_sex,
+       pi.birth_date,
+       br.weight                                           newborn_weight,
+       inf.weight                                          newborn_in_weight,
+       pi.addr_birth,
+       pi.addrcode_birth,
+       pi.addr_origin,
+       pi.addrcode_origin                                  origin_addr_code,
+       country.ba_code                                     country_code,
+       country.name                                        country_name,
+       nation.ba_code                                      nation_code,
+       nation.name                                         nation_name,
+       pi.dt_idtype                                        id_type,
+       pi.id_no,
+       occup.ba_code                                       occup_code,
+       occup.name                                          occup_name,
+       marry.ba_code                                       marry_code,
+       marry.name                                          marry_name,
+       pi.addr_cur                                         curr_addr,
+       pi.addr_cur_dt                                      curr_addr_dt,
+       pi.addrcode_cur                                     curr_addr_code,
+       pi.postcode_cur                                     curr_zip_code,
+       pi.unit_work                                        work_unit,      --工作单位
+       pi.tel_work                                         work_unit_phone, --单位电话
+       pi.postcode_work                                    work_unit_zip_code, --单位邮编
+
+       pi.addr_regi                                        reside_addr,
+       pi.addr_regi_dt                                     reside_addr_dt,
+       pi.addrcode_regi                                     reside_addr_code,
+       pi.postcode_regi                                    reside_zip_code,--户籍地址邮编
+       pi.mobile                                           curr_phone,
+       pv.name_rel                                         contact_name,
+       ln.ba_code                                          admit_path_code,
+       ln.name                                             admit_path_name,
+       rel.ba_code                                         contact_relat_code,
+       rel.name                                            contact_relat_name,
+       pv.addr_rel                                         contact_addr,
+       pv.tel_rel                                          contact_phone,
+       pv.date_admit                                       admit_time,
+       adm.code_dept                                       pk_admit_dept,
+       adm.name_dept                                       admit_dept_name,
+       adw.code_dept                                       pk_admit_ward,
+       adw.name_dept                                       admit_ward_name,
+       pv.date_end                                         dis_time,
+       dis.code_dept                                       pk_dept_dis,
+       dis.name_dept                                       dis_dept_name,
+       diw.code_dept                                       pk_ward_dis,
+       diw.name_dept                                       dis_ward_name,
+       ip.name_diag                                        diag_name_clinic,
+       ip.code_diag                                        diag_code_clinic,
+       pv.pk_emp_tre                                       pk_emp_clinic,
+       pv.name_emp_tre                                     clinic_name,
+       case when cp.eu_rectype = '1' then '1' else '2' end flag_cp,
+       abo.ba_code                                         blood_code_abo,
+       abo.name                                            blood_name_abo,
+       rh.ba_code                                          blood_code_rh,
+       rh.name                                             blood_name_rh,
+       dire.pk_emp                                         pk_emp_director,
+       dire.name_emp                                       director_name,
+       cons.pk_emp                                         pk_emp_consult,
+       cons.name_emp                                       consult_name,
+       refe.pk_emp                                         pk_emp_refer,
+       refe.name_emp                                       refer_name,
+       ns.pk_emp                                           pk_emp_nurse,
+       ns.name_emp                                         nurse_name,
+       lear.pk_emp                                         pk_emp_learn,
+       lear.name_emp                                       learn_name,
+       inte.pk_emp                                         pk_emp_intern,
+       inte.name_emp                                       intern_name,
+       qcd.pk_emp                                          pk_emp_qc_doc,
+       qcd.name_emp                                        qc_doc_name,
+       lv.ba_code                                          leave_hos_code,
+       lv.name                                             leave_hos_name,
+       case when pv.flag_settle='1' then settle.amt
+       else (select sum(cg.amount) from bl_ip_dt cg where cg.pk_pv=pv.pk_pv)
+       end total_cost,
+       settle.amt_pi                                       self_cost
+from pv_encounter pv
+       inner join pi_master pi on pv.pk_pi = pi.pk_pi
+       inner join pv_ip ip on pv.pk_pv = ip.pk_pv
+       left outer join pv_infant inf on pv.pk_pv = inf.pk_pv_infant --新生儿入院
+       left outer join pv_infant br on pv.pk_pv = br.pk_pv and br.sort_no = 1 --产科
+       inner join bd_ou_dept adm on ip.pk_dept_admit = adm.pk_dept
+       inner join bd_ou_dept adw on ip.pk_dept_ns_admit = adw.pk_dept
+       left outer join bd_ou_dept dis on ip.pk_dept_dis = dis.pk_dept
+       left outer join bd_ou_dept diw on ip.pk_dept_ns_dis = diw.pk_dept
+       inner join bd_ou_org org on pv.pk_org = org.pk_org
+       inner join bd_hp hp on pv.pk_insu = hp.pk_hp
+       inner join bd_defdoc paymode on hp.dt_mdpaytype = paymode.code and paymode.code_defdoclist = '040009'
+       left outer join bd_defdoc country on pi.dt_country = country.code and country.code_defdoclist = '000009'
+       left outer join bd_defdoc nation on pi.dt_nation = nation.code and nation.code_defdoclist = '000003'
+       left outer join bd_defdoc occup on pi.dt_occu = occup.code and occup.code_defdoclist = '000010'
+       left outer join bd_defdoc marry on pi.dt_marry = marry.code and marry.code_defdoclist = '000006'
+       left outer join bd_defdoc rel on pv.dt_ralation = rel.code and rel.code_defdoclist = '000013'
+       left outer join cp_rec cp on pv.pk_pv = cp.pk_pv and cp.eu_status = '8'
+       left outer join bd_defdoc abo on pi.dt_blood_abo = abo.code and abo.code_defdoclist = '000004'
+       left outer join bd_defdoc rh on pi.dt_blood_rh = rh.code and rh.code_defdoclist = '000005'
+       left outer join pv_staff dire
+         on pv.pk_pv = dire.pk_pv and dire.dt_role = '0000' and (pv.date_end=dire.date_end or dire.date_end is null) --主任
+       left outer join pv_staff cons
+         on pv.pk_pv = cons.pk_pv and cons.dt_role = '0006' and (pv.date_end=cons.date_end or cons.date_end is null) --主治
+       left outer join pv_staff refe
+         on pv.pk_pv = refe.pk_pv and refe.dt_role = '0001' and (pv.date_end=refe.date_end or refe.date_end is null) --住院
+       left outer join pv_staff ns on pv.pk_pv = ns.pk_pv and ns.dt_role = '0100' and (pv.date_end=ns.date_end or ns.date_end is null) --责护
+       left outer join pv_staff lear
+         on pv.pk_pv = lear.pk_pv and lear.dt_role = '0003' and (pv.date_end=lear.date_end or lear.date_end is null) --进修
+       left outer join pv_staff inte
+         on pv.pk_pv = inte.pk_pv and inte.dt_role = '0004' and (pv.date_end=inte.date_end or inte.date_end is null) --实习
+       left outer join pv_staff qcd
+         on pv.pk_pv = qcd.pk_pv and qcd.dt_role = '0005' and (pv.date_end=qcd.date_end or qcd.date_end is null) --质控
+       left outer join bd_defdoc lv on ip.dt_outtype = lv.code and lv.code_defdoclist = '000105'
+       left outer join bd_defdoc ln on ip.dt_intype=ln.code and ln.code_defdoclist='000104'
+       left outer join (select sum(st.amount_st) amt, sum(st.amount_pi) amt_pi, st.pk_pv
+                        from bl_settle st
+                        where st.pk_pv = #{pkPv}
+                        group by st.pk_pv) settle on pv.pk_pv = settle.pk_pv
+where pv.pk_pv = #{pkPv}
+       </select>
+
+
+    <select id="getTransferInformationById" resultType="com.zebone.nhis.cn.ipdw.vo.EmrTransferInformationVO">
+        select adt.pk_dept,
+       dept.code_dept,
+       dept.name_dept,
+       adt.date_begin trans_date,
+       case when dept.dt_medicaltype like '21%' then '1' else '0' end flag_icu,
+       medtype.ba_code                                                code_icutype,
+       medtype.name                                                   name_icutype,
+       adt.date_end
+from pv_adt adt
+       inner join bd_ou_dept dept on adt.pk_dept = dept.pk_dept
+       inner join bd_defdoc medtype on dept.dt_medicaltype = medtype.code and medtype.code_defdoclist = '010205'
+where adt.pk_pv = #{pkPv}
+  and adt.flag_admit = '0'
+order by date_begin
+    </select>
+
+    <select id="getDiagnosticInformationById" resultType="com.zebone.nhis.cn.ipdw.vo.EmrDiagnosticInformationVO">
+        select diag.sort_no       seq_no,
+       diag.dt_diagtype   dt_diag_type,
+       diag.code_icd      diag_code,
+       diag.name_diag     diag_name,
+       diag.desc_diag     diag_desc,
+       diag.eu_admcon     admit_cond_code,
+       diag.flag_maj      flag_primary,
+       diag.code_dcdt     code_dcdt,
+       diag.desc_bodypart desc_bodypart,
+       diag.desc_drgprop  desc_drgprop,
+       diag.flag_cure     flag_cure
+from pv_diag diag
+where diag.pk_pv = #{pkPv}
+  and diag.dt_diagtype = '0109'
+  and diag.del_flag = '0'
+  order by flag_maj desc,sort_no asc
+    </select>
+
+    <select id="getSurgeryRecordById" resultType="com.zebone.nhis.cn.ipdw.vo.EmrSurgeryRecordVO">
+
+        select '0' eu_type,
+       icd9.diagcode op_code,
+       op.desc_op op_name,
+       op.date_begin op_date,
+       opl.ba_code grade_code,
+       opl.name grade_name,
+       op.pk_emp_phy_op pk_emp_op,
+       op.name_emp_phy_op op_doc_name,
+       op.pk_emp_asis pk_emp_opi,
+       op.name_emp_asis opi_name,
+       op.pk_emp_asis2 pk_emp_opii,
+       op.name_emp_asis2 opii_name,
+       inc.ba_code incision_type_code,
+       inc.name incision_type_name,
+       hea.ba_code heal_garde_code,
+       hea.name heal_grade_name,
+       ane.ba_code anes_type_code,
+       ane.name anes_type_name,
+       op.pk_emp_anae pk_emp_anes,
+       op.name_emp_anae anes_doc_name,
+       case when op.eu_optype='1' then '1' else '0' end flag_elective
+  from ex_op_occ op
+       inner join bd_term_diag icd9 on op.pk_op=icd9.pk_diag
+       inner join bd_defdoc opl on op.dt_oplevel=opl.code and opl.code_defdoclist='030305'
+       inner join bd_defdoc inc on op.dt_oplevel=inc.code and inc.code_defdoclist='030303'
+       inner join bd_defdoc hea on op.dt_oplevel=hea.code and hea.code_defdoclist='030306'
+       inner join bd_defdoc ane on op.dt_anae=ane.code and ane.code_defdoclist='030300'
+ where op.pk_pv=#{pkPv} and
+       op.del_flag='0'
+
+    </select>
+
+    <select id="getCostInformationById" resultType="com.zebone.nhis.cn.ipdw.vo.EmrCostInformationVO">
+select sum(cg.amount)                                             item_amount,
+       case when cg.flag_pd = '1' then pct.code else ict.code end item_code,
+       case when cg.flag_pd = '1' then pct.name else ict.name end item_name
+from bl_ip_dt cg
+         left outer join bd_pd pd on cg.pk_item = pd.pk_pd and cg.flag_pd = '1'
+         left outer join bd_defdoc pct on pd.dt_chcate = pct.code and pct.code_defdoclist = '030800'
+         left outer join bd_item item on cg.pk_item = item.pk_item and cg.flag_pd = '0'
+         left outer join bd_defdoc ict on item.dt_chcate = ict.code and ict.code_defdoclist = '030800'
+where cg.pk_pv = #{pkPv}
+group by case when cg.flag_pd = '1' then pct.code else ict.code end,
+         case when cg.flag_pd = '1' then pct.name else ict.name end
+order by case when cg.flag_pd = '1' then pct.code else ict.code end
+    </select>
+
+    <select id="getBabyRecordById" resultType="com.zebone.nhis.cn.ipdw.vo.EmrBabyRecordVO">
+select *
+from pv_infant inf
+where inf.pk_pv = #{pkPv}
+    </select>
+
+    <select id="getIntensiveCareById" resultType="com.zebone.nhis.cn.ipdw.vo.EmrHomePageTransVO">
+select *
+from emr_home_page_trans adt
+where adt.pk_page= #{pkPage} and
+        adt.flag_icu='1'
+    </select>
+
+    <select id="getCchiById" resultType="com.zebone.nhis.cn.ipdw.vo.EmrCchiVO">
+select cchi.sortno,
+       cchi.code_cchi,
+       cchi.name_cchi,
+       cchi.desc_cchi,
+       emp.code_emp,
+       cchi.name_emp_entry,
+       dept.code_dept,
+       dept.name_dept,
+       cchi.flag_maj
+from cn_cchi cchi
+         inner join bd_ou_employee emp on cchi.pk_emp_entry=emp.PK_EMP
+         inner join bd_ou_dept dept on cchi.pk_dept=dept.pk_dept
+where cchi.pk_pv= #{pkPv} and
+        cchi.FLAG_DEL='0'
+        order by cchi.sortno
+    </select>
+
+    <update id="submit" parameterType="java.util.Map">
+        update pv_ip
+   set eu_status_doc='0',
+   date_commit_doc = #{date}
+ where pk_pv = #{pkPv} and
+       (eu_status_doc in('-2','-1') or eu_status_doc is null)
+    </update>
+
+    <update id="revoke">
+        update pv_ip
+   set eu_status_doc='-1',
+   date_commit_doc=null
+ where pk_pv= #{pkPv} and
+       eu_status_doc='0'
+
+    </update>
+
+    <select id="findTransByPkPage" resultType="com.zebone.nhis.cn.ipdw.vo.EmrHomePageTransVO">
+select trans.pk_trans,
+       trans.seq_no,
+       trans.pk_dept,
+       trans.dept_code,
+       trans.dept_name,
+       trans.trans_date
+  from emr_home_page_trans trans
+ where trans.pk_page=#{pkPage} and
+       trans.del_flag='0'
+
+    </select>
+
+    <select id="findDiags" resultType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePageDiags">
+        select *
+  from emr_home_page_diags diag
+ where diag.pk_page=#{pkPage} and
+       diag.del_flag='0'
+    </select>
+
+    <update id="updateEmrHomePage">
+        UPDATE EMR_HOME_PAGE SET
+<if test="emrHomePage.pkOrg != null and emrHomePage.pkOrg != '' ">
+    PK_ORG  = #{emrHomePage.pkOrg},
+</if>
+        <if test="emrHomePage.pkPi != null and emrHomePage.pkPi != '' ">
+            PK_PI                 = #{emrHomePage.pkPi},
+
+        </if>
+        <if test="emrHomePage.times != null">
+            TIMES = #{emrHomePage.times,jdbcType=DECIMAL},
+        </if>
+        <if test="emrHomePage.pkPv != null and emrHomePage.pkPv != '' ">
+            PK_PV                 = #{emrHomePage.pkPv},
+        </if>
+        <if test="emrHomePage.medOrgCode != null and emrHomePage.medOrgCode != '' ">
+            MED_ORG_CODE          = #{emrHomePage.medOrgCode},
+        </if>
+        <if test="emrHomePage.medOrgName != null and emrHomePage.medOrgName != '' ">
+            MED_ORG_NAME          = #{emrHomePage.medOrgName},
+        </if>
+        <if test="emrHomePage.medPayMode != null and emrHomePage.medPayMode != '' ">
+            MED_PAY_MODE          = #{emrHomePage.medPayMode},
+        </if>
+        <if test="emrHomePage.patNo != null and emrHomePage.patNo != '' ">
+            PAT_NO                = #{emrHomePage.patNo},
+        </if>
+
+        <if test="emrHomePage.name != null and emrHomePage.name != '' ">
+            NAME                  = #{emrHomePage.name},
+        </if>
+
+        <if test="emrHomePage.dtSex != null and emrHomePage.dtSex != '' ">
+            DT_SEX                = #{emrHomePage.dtSex},
+        </if>
+        <if test="emrHomePage.birthDate != null and emrHomePage.birthDate != '' ">
+            BIRTH_DATE            = #{emrHomePage.birthDate},
+        </if>
+
+        <if test="emrHomePage.ageYear != null and emrHomePage.ageYear != '' ">
+            AGE_YEAR              = #{emrHomePage.ageYear},
+        </if>
+
+        <if test="emrHomePage.ageTxt != null and emrHomePage.ageTxt != '' ">
+            AGE_TXT               = #{emrHomePage.ageTxt},
+        </if>
+
+        <if test="emrHomePage.countryCode != null and emrHomePage.countryCode != '' ">
+            COUNTRY_CODE          = #{emrHomePage.countryCode},
+        </if>
+
+        <if test="emrHomePage.countryName != null and emrHomePage.countryName != '' ">
+            COUNTRY_NAME          = #{emrHomePage.countryName},
+        </if>
+
+        <if test="emrHomePage.nationCode != null and emrHomePage.nationCode != '' ">
+            NATION_CODE           = #{emrHomePage.nationCode},
+        </if>
+
+        <if test="emrHomePage.nationName != null and emrHomePage.nationName != '' ">
+            NATION_NAME           = #{emrHomePage.nationName},
+        </if>
+
+        <if test="emrHomePage.marryCode != null and emrHomePage.marryCode != '' ">
+            MARRY_CODE            = #{emrHomePage.marryCode},
+        </if>
+
+        <if test="emrHomePage.resideAddr != null and emrHomePage.resideAddr != '' ">
+            RESIDE_ADDR           = #{emrHomePage.resideAddr},
+        </if>
+
+        <if test="emrHomePage.resideAddrCode != null and emrHomePage.resideAddrCode != '' ">
+            RESIDE_ADDR_CODE      = #{emrHomePage.resideAddrCode},
+        </if>
+
+        <if test="emrHomePage.admitPathCode != null and emrHomePage.admitPathCode != '' ">
+            ADMIT_PATH_CODE       = #{emrHomePage.admitPathCode},
+        </if>
+
+        <if test="emrHomePage.admitTime != null and emrHomePage.admitTime != '' ">
+            ADMIT_TIME            = #{emrHomePage.admitTime},
+        </if>
+
+        <if test="emrHomePage.pkAdmitDept != null and emrHomePage.pkAdmitDept != '' ">
+            PK_ADMIT_DEPT         = #{emrHomePage.pkAdmitDept},
+        </if>
+
+        <if test="emrHomePage.admitDeptName != null and emrHomePage.admitDeptName != '' ">
+            ADMIT_DEPT_NAME       = #{emrHomePage.admitDeptName},
+        </if>
+
+        <if test="emrHomePage.admitWardName != null and emrHomePage.admitWardName != '' ">
+            ADMIT_WARD_NAME       = #{emrHomePage.admitWardName},
+        </if>
+
+        <if test="emrHomePage.disTime != null and emrHomePage.disTime != '' ">
+            DIS_TIME              = #{emrHomePage.disTime},
+        </if>
+
+        <if test="emrHomePage.pkDeptDis != null and emrHomePage.pkDeptDis != '' ">
+            PK_DEPT_DIS           = #{emrHomePage.pkDeptDis},
+        </if>
+
+        <if test="emrHomePage.disDeptName != null and emrHomePage.disDeptName != '' ">
+            DIS_DEPT_NAME         = #{emrHomePage.disDeptName},
+        </if>
+
+        <if test="emrHomePage.pkWardDis != null and emrHomePage.pkWardDis != '' ">
+            PK_WARD_DIS           = #{emrHomePage.pkWardDis},
+        </if>
+
+        <if test="emrHomePage.disWardName != null and emrHomePage.disWardName != '' ">
+            DIS_WARD_NAME         = #{emrHomePage.disWardName},
+        </if>
+
+        <if test="emrHomePage.inHosDays != null and emrHomePage.inHosDays != '' ">
+            IN_HOS_DAYS           = #{emrHomePage.inHosDays},
+        </if>
+
+
+        <if test="emrHomePage.pkEmpClinic != null and emrHomePage.pkEmpClinic != '' ">
+            PK_EMP_CLINIC         = #{emrHomePage.pkEmpClinic},
+        </if>
+
+        <if test="emrHomePage.medRecType != null and emrHomePage.medRecType != '' ">
+            MED_REC_TYPE          = #{emrHomePage.medRecType},
+        </if>
+
+        <if test="emrHomePage.flagCp != null and emrHomePage.flagCp != '' ">
+            FLAG_CP               = #{emrHomePage.flagCp},
+        </if>
+
+        <if test="emrHomePage.numRes != null and emrHomePage.numRes != '' ">
+            NUM_RES               = #{emrHomePage.numRes},
+        </if>
+
+        <if test="emrHomePage.numSucc != null and emrHomePage.numSucc != '' ">
+            NUM_SUCC              = #{emrHomePage.numSucc},
+        </if>
+
+        <if test="emrHomePage.flagDrugAllergy != null and emrHomePage.flagDrugAllergy != '' ">
+            FLAG_DRUG_ALLERGY     = #{emrHomePage.flagDrugAllergy},
+        </if>
+
+        <if test="emrHomePage.flagAutopsy != null and emrHomePage.flagAutopsy != '' ">
+            FLAG_AUTOPSY          = #{emrHomePage.flagAutopsy},
+        </if>
+
+        <if test="emrHomePage.bloodCodeAbo != null and emrHomePage.bloodCodeAbo != '' ">
+            BLOOD_CODE_ABO        = #{emrHomePage.bloodCodeAbo},
+        </if>
+
+        <if test="emrHomePage.bloodCodeRh != null and emrHomePage.bloodCodeRh != '' ">
+            BLOOD_CODE_RH         = #{emrHomePage.bloodCodeRh},
+        </if>
+
+        <if test="emrHomePage.bloodNameRh != null and emrHomePage.bloodNameRh != '' ">
+            BLOOD_NAME_RH         = #{emrHomePage.bloodNameRh},
+        </if>
+
+        <if test="emrHomePage.pkEmpChief != null and emrHomePage.pkEmpChief != '' ">
+            PK_EMP_CHIEF          = #{emrHomePage.pkEmpChief},
+        </if>
+
+        <if test="emrHomePage.chiefName != null and emrHomePage.chiefName != '' ">
+            CHIEF_NAME            = #{emrHomePage.chiefName},
+        </if>
+
+        <if test="emrHomePage.pkEmpConsult != null and emrHomePage.pkEmpConsult != '' ">
+            PK_EMP_CONSULT        = #{emrHomePage.pkEmpConsult},
+        </if>
+
+        <if test="emrHomePage.consultName != null and emrHomePage.consultName != '' ">
+            CONSULT_NAME          = #{emrHomePage.consultName},
+        </if>
+
+        <if test="emrHomePage.pkEmpRefer != null and emrHomePage.pkEmpRefer != '' ">
+            PK_EMP_REFER          = #{emrHomePage.pkEmpRefer},
+        </if>
+
+        <if test="emrHomePage.referName != null and emrHomePage.referName != '' ">
+            REFER_NAME            = #{emrHomePage.referName},
+        </if>
+
+        <if test="emrHomePage.pkEmpNurse != null and emrHomePage.pkEmpNurse != '' ">
+            PK_EMP_NURSE          = #{emrHomePage.pkEmpNurse},
+        </if>
+
+        <if test="emrHomePage.nurseName != null and emrHomePage.nurseName != '' ">
+            NURSE_NAME            = #{emrHomePage.nurseName},
+        </if>
+
+        <if test="emrHomePage.leaveHosCode != null and emrHomePage.leaveHosCode != '' ">
+            LEAVE_HOS_CODE        = #{emrHomePage.leaveHosCode},
+        </if>
+
+        <if test="emrHomePage.receiveOrgName != null and emrHomePage.receiveOrgName != '' ">
+            RECEIVE_ORG_NAME      = #{emrHomePage.receiveOrgName},
+        </if>
+
+        <if test="emrHomePage.flagReadmit != null and emrHomePage.flagReadmit != '' ">
+            FLAG_READMIT          = #{emrHomePage.flagReadmit},
+        </if>
+
+        <if test="emrHomePage.comaDayBef != null and emrHomePage.comaDayBef != '' ">
+            COMA_DAY_BEF          = #{emrHomePage.comaDayBef},
+        </if>
+        <if test="emrHomePage.birthAddrProv != null and emrHomePage.birthAddrProv != '' ">
+            BIRTH_ADDR_PROV          = #{emrHomePage.birthAddrProv},
+        </if>
+        <if test="emrHomePage.birthAddrCity != null and emrHomePage.birthAddrCity != '' ">
+            BIRTH_ADDR_CITY          = #{emrHomePage.birthAddrCity},
+        </if>
+        <if test="emrHomePage.birthAddrCounty != null and emrHomePage.birthAddrCounty != '' ">
+            BIRTH_ADDR_COUNTY          = #{emrHomePage.birthAddrCounty},
+        </if>
+        <if test="emrHomePage.originAddrProv != null and emrHomePage.originAddrProv != '' ">
+            ORIGIN_ADDR_PROV          = #{emrHomePage.originAddrProv},
+        </if>
+        <if test="emrHomePage.originAddrCity != null and emrHomePage.originAddrCity != '' ">
+            ORIGIN_ADDR_CITY          = #{emrHomePage.originAddrCity},
+        </if>
+        <if test="emrHomePage.currAddrProv != null and emrHomePage.currAddrProv != '' ">
+            CURR_ADDR_PROV          = #{emrHomePage.currAddrProv},
+        </if>
+        <if test="emrHomePage.currAddrCity != null and emrHomePage.currAddrCity != '' ">
+            CURR_ADDR_CITY          = #{emrHomePage.currAddrCity},
+        </if>
+        <if test="emrHomePage.currAddrCounty != null and emrHomePage.currAddrCounty != '' ">
+            CURR_ADDR_COUNTY          = #{emrHomePage.currAddrCounty},
+        </if>
+        <if test="emrHomePage.resideAddrProv != null and emrHomePage.resideAddrProv != '' ">
+            RESIDE_ADDR_PROV          = #{emrHomePage.resideAddrProv},
+        </if>
+        <if test="emrHomePage.resideAddrCity != null and emrHomePage.resideAddrCity != '' ">
+            RESIDE_ADDR_CITY          = #{emrHomePage.resideAddrCity},
+        </if>
+        <if test="emrHomePage.resideAddrCounty != null and emrHomePage.resideAddrCounty != '' ">
+            RESIDE_ADDR_COUNTY          = #{emrHomePage.resideAddrCounty},
+        </if>
+        <if test="emrHomePage.pkAdmitWard != null and emrHomePage.pkAdmitWard != '' ">
+            PK_ADMIT_WARD          = #{emrHomePage.pkAdmitWard},
+        </if>
+        <if test="emrHomePage.currAddrCode != null and emrHomePage.currAddrCode != '' ">
+            CURR_ADDR_CODE          = #{emrHomePage.currAddrCode},
+        </if>
+
+
+        DEL_FLAG    = '0'
+WHERE PK_PAGE = #{emrHomePage.pkPage}
+    </update>
+
+    <update id="updateEmrHomePageTrans">
+UPDATE EMR_HOME_PAGE_TRANS
+SET
+<if test="emrHomePageTrans.pkOrg != null and emrHomePageTrans.pkOrg != '' ">
+    PK_ORG      = #{emrHomePageTrans.pkOrg},
+</if>
+
+    <if test="emrHomePageTrans.pkPage != null and emrHomePageTrans.pkPage != '' ">
+        PK_PAGE     = #{emrHomePageTrans.pkPage},
+    </if>
+
+    <if test="emrHomePageTrans.pkDept != null and emrHomePageTrans.pkDept != '' ">
+        PK_DEPT     = #{emrHomePageTrans.pkDept},
+    </if>
+
+
+        <if test="emrHomePageTrans.deptCode != null and emrHomePageTrans.deptCode != '' ">
+            DEPT_CODE   = #{emrHomePageTrans.deptCode},
+        </if>
+
+        <if test="emrHomePageTrans.deptName != null and emrHomePageTrans.deptName != '' ">
+            DEPT_NAME   = #{emrHomePageTrans.deptName},
+        </if>
+        <if test="emrHomePageTrans.transDate != null and emrHomePageTrans.transDate != '' ">
+            TRANS_DATE   = #{emrHomePageTrans.transDate},
+        </if>
+        DEL_FLAG    = '0'
+
+WHERE PK_TRANS = #{emrHomePageTrans.pkTrans}
+    </update>
+
+    <update id="updateEmrHomePageDiags">
+
+UPDATE EMR_HOME_PAGE_DIAGS
+SET
+
+        <if test="emrHomePageDiags.pkOrg != null and emrHomePageDiags.pkOrg != '' ">
+            PK_ORG   = #{emrHomePageDiags.pkOrg},
+        </if>
+
+        <if test="emrHomePageDiags.pkPage != null and emrHomePageDiags.pkPage != '' ">
+            PK_PAGE     = #{emrHomePageDiags.pkPage},
+        </if>
+
+        <if test="emrHomePageDiags.dtDiagType != null and emrHomePageDiags.dtDiagType != '' ">
+            DT_DIAG_TYPE     = #{emrHomePageDiags.dtDiagType},
+        </if>
+
+        <if test="emrHomePageDiags.diagCode != null and emrHomePageDiags.diagCode != '' ">
+            DIAG_CODE     = #{emrHomePageDiags.diagCode},
+        </if>
+        <if test="emrHomePageDiags.diagName != null and emrHomePageDiags.diagName != '' ">
+            DIAG_NAME     = #{emrHomePageDiags.diagName},
+        </if>
+        <if test="emrHomePageDiags.diagDesc != null and emrHomePageDiags.diagDesc != '' ">
+            DIAG_DESC     = #{emrHomePageDiags.diagDesc},
+        </if>
+        <if test="emrHomePageDiags.admitCondCode != null and emrHomePageDiags.admitCondCode != '' ">
+            ADMIT_COND_CODE     = #{emrHomePageDiags.admitCondCode},
+        </if>
+        <if test="emrHomePageDiags.admitCondName != null and emrHomePageDiags.admitCondName != '' ">
+            ADMIT_COND_NAME     = #{emrHomePageDiags.admitCondName},
+        </if>
+        <if test="emrHomePageDiags.flagPrimary != null and emrHomePageDiags.flagPrimary != '' ">
+            FLAG_PRIMARY     = #{emrHomePageDiags.flagPrimary},
+        </if>
+        <if test="emrHomePageDiags.flagPrimary != null and emrHomePageDiags.flagPrimary != '' ">
+            FLAG_PRIMARY     = #{emrHomePageDiags.flagPrimary}
+        </if>
+        DEL_FLAG    = '0'
+WHERE PK_PAGEDIAG = #{emrHomePageDiags.pkPagediag}
+    </update>
+
+    <update id="updateEmrHomePageOps">
+UPDATE EMR_HOME_PAGE_OPS
+
+SET
+        <if test="emrHomePageOps.pkOrg != null and emrHomePageOps.pkOrg != '' ">
+            PK_ORG   = #{emrHomePageOps.pkOrg},
+        </if>
+
+        <if test="emrHomePageOps.pkPage != null and emrHomePageOps.pkPage != '' ">
+            PK_PAGE     = #{emrHomePageOps.pkPage},
+        </if>
+
+        <if test="emrHomePageOps.opCode != null and emrHomePageOps.opCode != '' ">
+            OP_CODE     = #{emrHomePageOps.opCode},
+        </if>
+
+        <if test="emrHomePageOps.opName != null and emrHomePageOps.opName != '' ">
+            OP_NAME     = #{emrHomePageOps.opName},
+        </if>
+        <if test="emrHomePageOps.opDate != null and emrHomePageOps.opDate != '' ">
+            OP_DATE     = #{emrHomePageOps.opDate},
+        </if>
+
+        <if test="emrHomePageOps.gradeCode != null and emrHomePageOps.gradeCode != '' ">
+            GRADE_CODE     = #{emrHomePageOps.gradeCode},
+        </if>
+
+        <if test="emrHomePageOps.gradeName != null and emrHomePageOps.gradeName != '' ">
+            GRADE_NAME     = #{emrHomePageOps.gradeName},
+        </if>
+
+        <if test="emrHomePageOps.pkEmpOp != null and emrHomePageOps.pkEmpOp != '' ">
+            PK_EMP_OP     = #{emrHomePageOps.pkEmpOp},
+        </if>
+
+        <if test="emrHomePageOps.opDocName != null and emrHomePageOps.opDocName != '' ">
+            OP_DOC_NAME     = #{emrHomePageOps.opDocName},
+        </if>
+
+        <if test="emrHomePageOps.pkEmpOpi != null and emrHomePageOps.pkEmpOpi != '' ">
+            PK_EMP_OPI     = #{emrHomePageOps.pkEmpOpi},
+        </if>
+
+        <if test="emrHomePageOps.opiName != null and emrHomePageOps.opiName != '' ">
+            OPI_NAME     = #{emrHomePageOps.opiName},
+        </if>
+
+        <if test="emrHomePageOps.pkEmpOpii != null and emrHomePageOps.pkEmpOpii != '' ">
+            PK_EMP_OPII     = #{emrHomePageOps.pkEmpOpii},
+        </if>
+
+        <if test="emrHomePageOps.opiiName != null and emrHomePageOps.opiiName != '' ">
+            OPII_NAME     = #{emrHomePageOps.opiiName},
+        </if>
+
+        <if test="emrHomePageOps.incisionTypeCode != null and emrHomePageOps.incisionTypeCode != '' ">
+            INCISION_TYPE_CODE     = #{emrHomePageOps.incisionTypeCode},
+        </if>
+
+        <if test="emrHomePageOps.incisionTypeName != null and emrHomePageOps.incisionTypeName != '' ">
+            INCISION_TYPE_NAME     = #{emrHomePageOps.incisionTypeName},
+        </if>
+
+        <if test="emrHomePageOps.healGradeCode != null and emrHomePageOps.healGradeCode != '' ">
+            HEAL_GRADE_CODE     = #{emrHomePageOps.healGradeCode},
+        </if>
+
+        <if test="emrHomePageOps.healGradeName != null and emrHomePageOps.healGradeName != '' ">
+            HEAL_GRADE_NAME     = #{emrHomePageOps.healGradeName},
+        </if>
+
+        <if test="emrHomePageOps.anesTypeCode != null and emrHomePageOps.anesTypeCode != '' ">
+            ANES_TYPE_CODE     = #{emrHomePageOps.anesTypeCode},
+        </if>
+
+        <if test="emrHomePageOps.anesTypeName != null and emrHomePageOps.anesTypeName != '' ">
+            ANES_TYPE_NAME     = #{emrHomePageOps.anesTypeName},
+        </if>
+
+        <if test="emrHomePageOps.pkEmpAnes != null and emrHomePageOps.pkEmpAnes != '' ">
+            PK_EMP_ANES     = #{emrHomePageOps.pkEmpAnes},
+        </if>
+
+        <if test="emrHomePageOps.anesDocName != null and emrHomePageOps.anesDocName != '' ">
+            ANES_DOC_NAME     = #{emrHomePageOps.anesDocName},
+        </if>
+        DEL_FLAG    = '0'
+WHERE PK_OPS = #{emrHomePageOps.pkOps}
+    </update>
+
+    <update id="updateEmrHomePageCharges">
+
+        UPDATE EMR_HOME_PAGE_CHARGES
+
+SET
+        <if test="emrHomePageCharges.pkOrg != null and emrHomePageCharges.pkOrg != '' ">
+            PK_ORG   = #{emrHomePageCharges.pkOrg},
+        </if>
+
+        <if test="emrHomePageCharges.pkPage != null and emrHomePageCharges.pkPage != '' ">
+            PK_PAGE     = #{emrHomePageCharges.pkPage},
+        </if>
+        <if test="emrHomePageCharges.itemCode != null and emrHomePageCharges.itemCode != '' ">
+            ITEM_CODE     = #{emrHomePageCharges.itemCode},
+        </if>
+        <if test="emrHomePageCharges.itemName != null and emrHomePageCharges.itemName != '' ">
+            ITEM_NAME     = #{emrHomePageCharges.itemName},
+        </if>
+        <if test="emrHomePageCharges.itemAmount != null and emrHomePageCharges.itemAmount != '' ">
+            ITEM_AMOUNT     = #{emrHomePageCharges.itemAmount},
+        </if>
+        DEL_FLAG    = '0'
+    WHERE PK_CHARGE = #{emrHomePageCharges.pkCharge}
+    </update>
+
+
+    <update id="updateEmrHomePageBr">
+UPDATE EMR_HOME_PAGE_BR
+SET
+        <if test="emrHomePageBr.pkOrg != null and emrHomePageBr.pkOrg != '' ">
+            PK_ORG   = #{emrHomePageBr.pkOrg},
+        </if>
+
+        <if test="emrHomePageBr.pkPage != null and emrHomePageBr.pkPage != '' ">
+            PK_PAGE     = #{emrHomePageBr.pkPage},
+        </if>
+        <if test="emrHomePageBr.dtSex != null and emrHomePageBr.dtSex != '' ">
+            DT_SEX     = #{emrHomePageBr.dtSex},
+        </if>
+        <if test="emrHomePageBr.codeCb != null and emrHomePageBr.codeCb != '' ">
+            CODE_CB     = #{emrHomePageBr.codeCb},
+        </if>
+        <if test="emrHomePageBr.nameCb != null and emrHomePageBr.nameCb != '' ">
+            NAME_CB     = #{emrHomePageBr.nameCb},
+        </if>
+        <if test="emrHomePageBr.weight != null and emrHomePageBr.weight != '' ">
+            WEIGHT     = #{emrHomePageBr.weight},
+        </if>
+        <if test="emrHomePageBr.codeOc != null and emrHomePageBr.codeOc != '' ">
+            CODE_OC     = #{emrHomePageBr.codeOc},
+        </if>
+        <if test="emrHomePageBr.nameOc != null and emrHomePageBr.nameOc != '' ">
+            NAME_OC     = #{emrHomePageBr.nameOc},
+        </if>
+        <if test="emrHomePageBr.codeBreath != null and emrHomePageBr.codeBreath != '' ">
+            CODE_BREATH     = #{emrHomePageBr.codeBreath},
+        </if>
+        <if test="emrHomePageBr.nameBreath != null and emrHomePageBr.nameBreath != '' ">
+            NAME_BREATH     = #{emrHomePageBr.nameBreath},
+        </if>
+        <if test="emrHomePageBr.numRes != null and emrHomePageBr.numRes != '' ">
+            NUM_RES     = #{emrHomePageBr.numRes},
+        </if>
+        <if test="emrHomePageBr.numSucc != null and emrHomePageBr.numSucc != '' ">
+            NUM_SUCC     = #{emrHomePageBr.numSucc},
+        </if>
+        <if test="emrHomePageBr.numSucc != null and emrHomePageBr.numSucc != '' ">
+            NUM_SUCC     = #{emrHomePageBr.numSucc},
+        </if>
+
+    DEL_FLAG    = '0'
+
+
+        WHERE PK_BR = #{emrHomePageBr.pkBr}
+    </update>
+
+    <update id="updateEmrHomePageOr">
+        UPDATE EMR_HOME_PAGE_OR
+SET
+
+
+        <if test="emrHomePageOr.pkOrg != null and emrHomePageOr.pkOrg != '' ">
+            PK_ORG   = #{emrHomePageOr.pkOrg},
+        </if>
+        <if test="emrHomePageOr.pkPage != null and emrHomePageOr.pkPage != '' ">
+            PK_PAGE     = #{emrHomePageOr.pkPage},
+        </if>
+        <if test="emrHomePageOr.stageTypeCode != null and emrHomePageOr.stageTypeCode != '' ">
+            STAGE_TYPE_CODE     = #{emrHomePageOr.stageTypeCode},
+        </if>
+        <if test="emrHomePageOr.stageTypeName != null and emrHomePageOr.stageTypeName != '' ">
+            STAGE_TYPE_NAME     = #{emrHomePageOr.stageTypeName},
+        </if>
+        <if test="emrHomePageOr.stageT != null and emrHomePageOr.stageT != '' ">
+            STAGE_T     = #{emrHomePageOr.stageT},
+        </if>
+        <if test="emrHomePageOr.stageN != null and emrHomePageOr.stageN != '' ">
+            STAGE_N     = #{emrHomePageOr.stageN},
+        </if>
+        <if test="emrHomePageOr.stageM != null and emrHomePageOr.stageM != '' ">
+            STAGE_M     = #{emrHomePageOr.stageM},
+        </if>
+        <if test="emrHomePageOr.stageCode != null and emrHomePageOr.stageCode != '' ">
+            STAGE_CODE     = #{emrHomePageOr.stageCode},
+        </if>
+        <if test="emrHomePageOr.stageName != null and emrHomePageOr.stageName != '' ">
+            STAGE_NAME     = #{emrHomePageOr.stageName},
+        </if>
+        <if test="emrHomePageOr.radiothModeCode != null and emrHomePageOr.radiothModeCode != '' ">
+            RADIOTH_MODE_CODE     = #{emrHomePageOr.radiothModeCode},
+        </if>
+        <if test="emrHomePageOr.radiothModeName != null and emrHomePageOr.radiothModeName != '' ">
+            RADIOTH_MODE_NAME     = #{emrHomePageOr.radiothModeName},
+        </if>
+        <if test="emrHomePageOr.radiothProgrCode != null and emrHomePageOr.radiothProgrCode != '' ">
+            RADIOTH_PROGR_CODE     = #{emrHomePageOr.radiothProgrCode},
+        </if>
+        <if test="emrHomePageOr.radiothProgrName != null and emrHomePageOr.radiothProgrName != '' ">
+            RADIOTH_PROGR_NAME     = #{emrHomePageOr.radiothProgrName},
+        </if>
+        <if test="emrHomePageOr.radiothDeviceCode != null and emrHomePageOr.radiothDeviceCode != '' ">
+            RADIOTH_DEVICE_CODE     = #{emrHomePageOr.radiothDeviceCode},
+        </if>
+        <if test="emrHomePageOr.radiothDeviceName != null and emrHomePageOr.radiothDeviceName != '' ">
+            RADIOTH_DEVICE_NAME     = #{emrHomePageOr.radiothDeviceName},
+        </if>
+        <if test="emrHomePageOr.priDose != null and emrHomePageOr.priDose != '' ">
+            PRI_DOSE     = #{emrHomePageOr.priDose},
+        </if>
+        <if test="emrHomePageOr.priTimes != null and emrHomePageOr.priTimes != '' ">
+            PRI_TIMES     = #{emrHomePageOr.priTimes},
+        </if>
+        <if test="emrHomePageOr.priDays != null and emrHomePageOr.priDays != '' ">
+            PRI_DAYS     = #{emrHomePageOr.priDays},
+        </if>
+        <if test="emrHomePageOr.priDateBegin != null and emrHomePageOr.priDateBegin != '' ">
+            PRI_DATE_BEGIN     = #{emrHomePageOr.priDateBegin},
+        </if>
+        <if test="emrHomePageOr.priDateEnd != null and emrHomePageOr.priDateEnd != '' ">
+            PRI_DATE_END     = #{emrHomePageOr.priDateEnd},
+        </if>
+        <if test="emrHomePageOr.lymDose != null and emrHomePageOr.lymDose != '' ">
+            LYM_DOSE     = #{emrHomePageOr.lymDose},
+        </if>
+        <if test="emrHomePageOr.lymTimes != null and emrHomePageOr.lymTimes != '' ">
+            LYM_TIMES     = #{emrHomePageOr.lymTimes},
+        </if>
+        <if test="emrHomePageOr.lymDays != null and emrHomePageOr.lymDays != '' ">
+            LYM_DAYS     = #{emrHomePageOr.lymDays},
+        </if>
+        <if test="emrHomePageOr.lymDateBegin != null and emrHomePageOr.lymDateBegin != '' ">
+            LYM_DATE_BEGIN     = #{emrHomePageOr.lymDateBegin},
+        </if>
+        <if test="emrHomePageOr.lymDateEnd != null and emrHomePageOr.lymDateEnd != '' ">
+            LYM_DATE_END     = #{emrHomePageOr.lymDateEnd},
+        </if>
+        <if test="emrHomePageOr.metName != null and emrHomePageOr.metName != '' ">
+            MET_NAME     = #{emrHomePageOr.metName},
+        </if>
+        <if test="emrHomePageOr.metDose != null and emrHomePageOr.metDose != '' ">
+            MET_DOSE     = #{emrHomePageOr.metDose},
+        </if>
+        <if test="emrHomePageOr.metTimes != null and emrHomePageOr.metTimes != '' ">
+            MET_TIMES     = #{emrHomePageOr.metTimes},
+        </if>
+        <if test="emrHomePageOr.metDays != null and emrHomePageOr.metDays != '' ">
+            MET_DAYS     = #{emrHomePageOr.metDays},
+        </if>
+        <if test="emrHomePageOr.metDateBegin != null and emrHomePageOr.metDateBegin != '' ">
+            MET_DATE_BEGIN     = #{emrHomePageOr.metDateBegin},
+        </if>
+        <if test="emrHomePageOr.metDateEnd != null and emrHomePageOr.metDateEnd != '' ">
+            MET_DATE_END     = #{emrHomePageOr.metDateEnd},
+        </if>
+        <if test="emrHomePageOr.chemModeCode != null and emrHomePageOr.chemModeCode != '' ">
+            CHEM_MODE_CODE     = #{emrHomePageOr.chemModeCode},
+        </if>
+        <if test="emrHomePageOr.chemModeName != null and emrHomePageOr.chemModeName != '' ">
+            CHEM_MODE_NAME     = #{emrHomePageOr.chemModeName},
+        </if>
+        <if test="emrHomePageOr.chemMethodCode != null and emrHomePageOr.chemMethodCode != '' ">
+            CHEM_METHOD_CODE     = #{emrHomePageOr.chemMethodCode},
+        </if>
+        <if test="emrHomePageOr.chemMethodName != null and emrHomePageOr.chemMethodName != '' ">
+            CHEM_METHOD_NAME     = #{emrHomePageOr.chemMethodName},
+        </if>
+    DEL_FLAG            = '0'
+
+     WHERE PK_PAGEOR = #{emrHomePageOr.pkPageor}
+    </update>
+
+    <update id="updateEmrHomePageOrDt">
+UPDATE NHIS.EMR_HOME_PAGE_OR_DT
+SET
+        <if test="emrHomePageOrDt.pkOrg != null and emrHomePageOrDt.pkOrg != '' ">
+            PK_ORG   = #{emrHomePageOrDt.pkOrg},
+        </if>
+        <if test="emrHomePageOrDt.pkPageor != null and emrHomePageOrDt.pkPageor != '' ">
+            PK_PAGEOR     = #{emrHomePageOrDt.pkPageor},
+        </if>
+        <if test="emrHomePageOrDt.beginDate != null and emrHomePageOrDt.beginDate != '' ">
+            BEGIN_DATE     = #{emrHomePageOrDt.beginDate},
+        </if>
+        <if test="emrHomePageOrDt.endDate != null and emrHomePageOrDt.endDate != '' ">
+            END_DATE     = #{emrHomePageOrDt.endDate},
+        </if>
+        <if test="emrHomePageOrDt.drugName != null and emrHomePageOrDt.drugName != '' ">
+            DRUG_NAME     = #{emrHomePageOrDt.drugName},
+        </if>
+        <if test="emrHomePageOrDt.courseCode != null and emrHomePageOrDt.courseCode != '' ">
+            COURSE_CODE     = #{emrHomePageOrDt.courseCode},
+        </if>
+        <if test="emrHomePageOrDt.courseName != null and emrHomePageOrDt.courseName != '' ">
+            COURSE_NAME     = #{emrHomePageOrDt.courseName},
+        </if>
+        <if test="emrHomePageOrDt.effectCode != null and emrHomePageOrDt.effectCode != '' ">
+            EFFECT_CODE     = #{emrHomePageOrDt.effectCode},
+        </if>
+        <if test="emrHomePageOrDt.effectName != null and emrHomePageOrDt.effectName != '' ">
+            EFFECT_NAME     = #{emrHomePageOrDt.effectName},
+        </if>
+        <if test="emrHomePageOrDt.effectName != null and emrHomePageOrDt.effectName != '' ">
+            EFFECT_NAME     = #{emrHomePageOrDt.effectName},
+        </if>
+
+    DEL_FLAG    = '0'
+
+WHERE PK_ORDT = #{emrHomePageOrDt.PK_ORDT}
+    </update>
+
+    <insert id="insert" parameterType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePage">
+    insert into EMR_HOME_PAGE (PK_PAGE, PK_ORG, PK_PI, TIMES,
+      PK_PV, MED_ORG_CODE, MED_ORG_NAME,
+      HEALTH_CARD_NO, MED_PAY_MODE, PAT_NO,
+      "NAME", DT_SEX, BIRTH_DATE,
+      AGE_YEAR, AGE_MONTH, AGE_TXT,
+      NEWBORN_WEIGHT, NEWBORN_IN_WEIGHT, BIRTH_ADDR_PROV,
+      BIRTH_ADDR_CITY, BIRTH_ADDR_COUNTY, ORIGIN_ADDR_PROV,
+      ORIGIN_ADDR_CITY, COUNTRY_CODE, COUNTRY_NAME,
+      NATION_CODE, NATION_NAME, ID_TYPE,
+      ID_NO, OCCUP_CODE, OCCUP_NAME,
+      MARRY_CODE, MARRY_NAME, CURR_ADDR_PROV,
+      CURR_ADDR_CITY, CURR_ADDR_COUNTY, CURR_PHONE,
+      CURR_ZIP_CODE, WORK_UNIT, WORK_UNIT_PHONE,
+      RESIDE_ADDR_PROV, RESIDE_ADDR_CITY, RESIDE_ADDR_COUNTY,
+      RESIDE_ZIP_CODE, WORK_UNIT_ZIP_CODE, CONTACT_NAME,
+      CONTACT_RELAT_CODE, CONTACT_RELAT_NAME, CONTACT_ADDR,
+      CONTACT_PHONE, ADMIT_PATH_CODE, ADMIT_PATH_NAME,
+      ADMIT_TIME, PK_ADMIT_DEPT, ADMIT_DEPT_NAME,
+      ADMIT_WARD_NAME, TRANS_DEPT_NAMES, DIS_TIME,
+      PK_DEPT_DIS, DIS_DEPT_NAME, PK_WARD_DIS,
+      DIS_WARD_NAME, PK_DIAG_CLINIC, IN_HOS_DAYS,
+      DIAG_CODE_CLINIC, PK_DIAG_DIS, DIAG_NAME_CLINIC,
+      DIAG_CODE_DIS, PK_DIAG_EXTC_IP, DIAG_NAME_DIS,
+      MED_REC_TYPE, FLAG_CP, NUM_RES,
+      NUM_SUCC, DIAG_CODE_EXTC_IP, PK_DIAG_PATHO,
+      DIAG_NAME_EXTC_IP, DIAG_CODE_PATHO, DIAG_NAME_PATHO,
+      PATHO_NO, FLAG_DRUG_ALLERGY, ALLERGIC_DRUG,
+      FLAG_AUTOPSY, BLOOD_CODE_ABO, BLOOD_NAME_ABO,
+      BLOOD_CODE_RH, BLOOD_NAME_RH, PK_EMP_DIRECTOR,
+      DIRECTOR_NAME, PK_EMP_CONSULT, CONSULT_NAME,
+      PK_EMP_REFER, REFER_NAME, PK_EMP_NURSE,
+      NURSE_NAME, PK_EMP_LEARN, LEARN_NAME,
+      PK_EMP_INTERN, INTERN_NAME, PK_EMP_CODER,
+      CODER_NAME, QUALITY_CODE, QUALITY_NAME,
+      PK_EMP_QC_DOC, QC_DOC_NAME, PK_EMP_QC_NURSE,
+      QC_NURSE_NAME, QC_DATE, LEAVE_HOS_CODE,
+      LEAVE_HOS_NAME, RECEIVE_ORG_CODE, RECEIVE_ORG_NAME,
+      FLAG_READMIT, READMIT_PURP, COMA_DAY_BEF,
+      COMA_HOUR_BEF, COMA_MIN_BEF, COMA_DAY_AFTER,
+      COMA_HOUR_AFTER, COMA_MIN_AFTER, TOTAL_COST,
+      SELF_COST, DEL_FLAG, REMARK,
+      CREATOR, CREATE_TIME, PK_ADMIT_WARD,
+      PK_EMP_CHIEF, CHIEF_NAME, TS,
+      PK_EMP_CLINIC, CLINIC_NAME, CURR_ADDR,
+      RESIDE_ADDR, ADMIT_COND_CODE, ADMIT_COND_NAME,
+      BIRTH_ADDR, ORIGIN_ADDR, CURR_ADDR_DT,
+      RESIDE_ADDR_DT, DIAG_FIT_CODE_OI, DIAG_FIT_CODE_CP,
+      DIAG_CODE_CLINIC_ICD, DIAG_NAME_CLINIC_ICD, DIAG_CODE_EXTC_IP_ICD,
+      DIAG_NAME_EXTC_IP_ICD, DIAG_CODE_PATHO_ICD, DIAG_NAME_PATHO_ICD,
+      PATHO_NO_ICD, FLAG_DRUG_ALLERGY_ICD, ALLERGIC_DRUG_ICD,
+      PART_DISEASE, PAT_SOURCE, CODE_DCDT_CLINIC,
+      DESC_BODYPART, DESC_DRGPROP, DESC_DIAG,
+      DAYS_GDI, DAYS_GDII, DAYS_GDIII,
+      DAYS_GDS, HOURS_GDS, HOURS_BM,
+      MINUTES_BM, VAL_ADLIN, VAL_ADLOUT,
+      DT_DRGCASETYPE, CURR_ADDR_ICD, BIRTH_ADDR_CODE,
+      ORIGIN_ADDR_CODE, CURR_ADDR_CODE, RESIDE_ADDR_CODE
+      )
+    values (#{pkPage,jdbcType=CHAR}, #{pkOrg,jdbcType=CHAR}, #{pkPi,jdbcType=CHAR}, #{times,jdbcType=DECIMAL},
+      #{pkPv,jdbcType=CHAR}, #{medOrgCode,jdbcType=VARCHAR}, #{medOrgName,jdbcType=VARCHAR},
+      #{healthCardNo,jdbcType=VARCHAR}, #{medPayMode,jdbcType=VARCHAR}, #{patNo,jdbcType=VARCHAR},
+      #{name,jdbcType=VARCHAR}, #{dtSex,jdbcType=VARCHAR}, #{birthDate,jdbcType=TIMESTAMP},
+      #{ageYear,jdbcType=DECIMAL}, #{ageMonth,jdbcType=VARCHAR}, #{ageTxt,jdbcType=VARCHAR},
+      #{newbornWeight,jdbcType=DECIMAL}, #{newbornInWeight,jdbcType=DECIMAL}, #{birthAddrProv,jdbcType=VARCHAR},
+      #{birthAddrCity,jdbcType=VARCHAR}, #{birthAddrCounty,jdbcType=VARCHAR}, #{originAddrProv,jdbcType=VARCHAR},
+      #{originAddrCity,jdbcType=VARCHAR}, #{countryCode,jdbcType=VARCHAR}, #{countryName,jdbcType=VARCHAR},
+      #{nationCode,jdbcType=VARCHAR}, #{nationName,jdbcType=VARCHAR}, #{idType,jdbcType=VARCHAR},
+      #{idNo,jdbcType=VARCHAR}, #{occupCode,jdbcType=VARCHAR}, #{occupName,jdbcType=VARCHAR},
+      #{marryCode,jdbcType=VARCHAR}, #{marryName,jdbcType=VARCHAR}, #{currAddrProv,jdbcType=VARCHAR},
+      #{currAddrCity,jdbcType=VARCHAR}, #{currAddrCounty,jdbcType=VARCHAR}, #{currPhone,jdbcType=VARCHAR},
+      #{currZipCode,jdbcType=VARCHAR}, #{workUnit,jdbcType=VARCHAR}, #{workUnitPhone,jdbcType=VARCHAR},
+      #{resideAddrProv,jdbcType=VARCHAR}, #{resideAddrCity,jdbcType=VARCHAR}, #{resideAddrCounty,jdbcType=VARCHAR},
+      #{resideZipCode,jdbcType=VARCHAR}, #{workUnitZipCode,jdbcType=VARCHAR}, #{contactName,jdbcType=VARCHAR},
+      #{contactRelatCode,jdbcType=VARCHAR}, #{contactRelatName,jdbcType=VARCHAR}, #{contactAddr,jdbcType=VARCHAR},
+      #{contactPhone,jdbcType=VARCHAR}, #{admitPathCode,jdbcType=VARCHAR}, #{admitPathName,jdbcType=VARCHAR},
+      #{admitTime,jdbcType=TIMESTAMP}, #{pkAdmitDept,jdbcType=CHAR}, #{admitDeptName,jdbcType=VARCHAR},
+      #{admitWardName,jdbcType=VARCHAR}, #{transDeptNames,jdbcType=VARCHAR}, #{disTime,jdbcType=TIMESTAMP},
+      #{pkDeptDis,jdbcType=CHAR}, #{disDeptName,jdbcType=VARCHAR}, #{pkWardDis,jdbcType=CHAR},
+      #{disWardName,jdbcType=VARCHAR}, #{pkDiagClinic,jdbcType=CHAR}, #{inHosDays,jdbcType=DECIMAL},
+      #{diagCodeClinic,jdbcType=VARCHAR}, #{pkDiagDis,jdbcType=CHAR}, #{diagNameClinic,jdbcType=VARCHAR},
+      #{diagCodeDis,jdbcType=VARCHAR}, #{pkDiagExtcIp,jdbcType=CHAR}, #{diagNameDis,jdbcType=VARCHAR},
+      #{medRecType,jdbcType=CHAR}, #{flagCp,jdbcType=CHAR}, #{numRes,jdbcType=DECIMAL},
+      #{numSucc,jdbcType=DECIMAL}, #{diagCodeExtcIp,jdbcType=VARCHAR}, #{pkDiagPatho,jdbcType=CHAR},
+      #{diagNameExtcIp,jdbcType=VARCHAR}, #{diagCodePatho,jdbcType=VARCHAR}, #{diagNamePatho,jdbcType=VARCHAR},
+      #{pathoNo,jdbcType=VARCHAR}, #{flagDrugAllergy,jdbcType=CHAR}, #{allergicDrug,jdbcType=VARCHAR},
+      #{flagAutopsy,jdbcType=CHAR}, #{bloodCodeAbo,jdbcType=VARCHAR}, #{bloodNameAbo,jdbcType=VARCHAR},
+      #{bloodCodeRh,jdbcType=VARCHAR}, #{bloodNameRh,jdbcType=VARCHAR}, #{pkEmpDirector,jdbcType=CHAR},
+      #{directorName,jdbcType=VARCHAR}, #{pkEmpConsult,jdbcType=CHAR}, #{consultName,jdbcType=VARCHAR},
+      #{pkEmpRefer,jdbcType=CHAR}, #{referName,jdbcType=VARCHAR}, #{pkEmpNurse,jdbcType=CHAR},
+      #{nurseName,jdbcType=VARCHAR}, #{pkEmpLearn,jdbcType=CHAR}, #{learnName,jdbcType=VARCHAR},
+      #{pkEmpIntern,jdbcType=CHAR}, #{internName,jdbcType=VARCHAR}, #{pkEmpCoder,jdbcType=CHAR},
+      #{coderName,jdbcType=VARCHAR}, #{qualityCode,jdbcType=CHAR}, #{qualityName,jdbcType=VARCHAR},
+      #{pkEmpQcDoc,jdbcType=CHAR}, #{qcDocName,jdbcType=VARCHAR}, #{pkEmpQcNurse,jdbcType=CHAR},
+      #{qcNurseName,jdbcType=VARCHAR}, #{qcDate,jdbcType=TIMESTAMP}, #{leaveHosCode,jdbcType=VARCHAR},
+      #{leaveHosName,jdbcType=VARCHAR}, #{receiveOrgCode,jdbcType=VARCHAR}, #{receiveOrgName,jdbcType=VARCHAR},
+      #{flagReadmit,jdbcType=CHAR}, #{readmitPurp,jdbcType=VARCHAR}, #{comaDayBef,jdbcType=DECIMAL},
+      #{comaHourBef,jdbcType=DECIMAL}, #{comaMinBef,jdbcType=DECIMAL}, #{comaDayAfter,jdbcType=DECIMAL},
+      #{comaHourAfter,jdbcType=DECIMAL}, #{comaMinAfter,jdbcType=DECIMAL}, #{totalCost,jdbcType=DECIMAL},
+      #{selfCost,jdbcType=DECIMAL}, #{delFlag,jdbcType=CHAR}, #{remark,jdbcType=VARCHAR},
+      #{creator,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP}, #{pkAdmitWard,jdbcType=CHAR},
+      #{pkEmpChief,jdbcType=CHAR}, #{chiefName,jdbcType=VARCHAR}, #{ts,jdbcType=TIMESTAMP},
+      #{pkEmpClinic,jdbcType=CHAR}, #{clinicName,jdbcType=VARCHAR}, #{currAddr,jdbcType=VARCHAR},
+      #{resideAddr,jdbcType=VARCHAR}, #{admitCondCode,jdbcType=VARCHAR}, #{admitCondName,jdbcType=VARCHAR},
+      #{birthAddr,jdbcType=VARCHAR}, #{originAddr,jdbcType=VARCHAR}, #{currAddrDt,jdbcType=VARCHAR},
+      #{resideAddrDt,jdbcType=VARCHAR}, #{diagFitCodeOi,jdbcType=VARCHAR}, #{diagFitCodeCp,jdbcType=VARCHAR},
+      #{diagCodeClinicIcd,jdbcType=VARCHAR}, #{diagNameClinicIcd,jdbcType=VARCHAR}, #{diagCodeExtcIpIcd,jdbcType=VARCHAR},
+      #{diagNameExtcIpIcd,jdbcType=VARCHAR}, #{diagCodePathoIcd,jdbcType=VARCHAR}, #{diagNamePathoIcd,jdbcType=VARCHAR},
+      #{pathoNoIcd,jdbcType=VARCHAR}, #{flagDrugAllergyIcd,jdbcType=CHAR}, #{allergicDrugIcd,jdbcType=VARCHAR},
+      #{partDisease,jdbcType=CHAR}, #{patSource,jdbcType=VARCHAR}, #{codeDcdtClinic,jdbcType=VARCHAR},
+      #{descBodypart,jdbcType=VARCHAR}, #{descDrgprop,jdbcType=VARCHAR}, #{descDiag,jdbcType=VARCHAR},
+      #{daysGdi,jdbcType=DECIMAL}, #{daysGdii,jdbcType=DECIMAL}, #{daysGdiii,jdbcType=DECIMAL},
+      #{daysGds,jdbcType=DECIMAL}, #{hoursGds,jdbcType=DECIMAL}, #{hoursBm,jdbcType=DECIMAL},
+      #{minutesBm,jdbcType=DECIMAL}, #{valAdlin,jdbcType=DECIMAL}, #{valAdlout,jdbcType=DECIMAL},
+      #{dtDrgcasetype,jdbcType=VARCHAR}, #{currAddrIcd,jdbcType=VARCHAR}, #{birthAddrCode,jdbcType=VARCHAR},
+      #{originAddrCode,jdbcType=VARCHAR}, #{currAddrCode,jdbcType=VARCHAR}, #{resideAddrCode,jdbcType=VARCHAR}
+      )
+  </insert>
+    <insert id="insertSelective" parameterType="com.zebone.nhis.common.module.emr.rec.rec.EmrHomePage">
+        insert into EMR_HOME_PAGE
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkPage != null">
+                PK_PAGE,
+            </if>
+            <if test="pkOrg != null">
+                PK_ORG,
+            </if>
+            <if test="pkPi != null">
+                PK_PI,
+            </if>
+            <if test="times != null">
+                TIMES,
+            </if>
+            <if test="pkPv != null">
+                PK_PV,
+            </if>
+            <if test="medOrgCode != null">
+                MED_ORG_CODE,
+            </if>
+            <if test="medOrgName != null">
+                MED_ORG_NAME,
+            </if>
+            <if test="healthCardNo != null">
+                HEALTH_CARD_NO,
+            </if>
+            <if test="medPayMode != null">
+                MED_PAY_MODE,
+            </if>
+            <if test="patNo != null">
+                PAT_NO,
+            </if>
+            <if test="name != null">
+                "NAME",
+            </if>
+            <if test="dtSex != null">
+                DT_SEX,
+            </if>
+            <if test="birthDate != null">
+                BIRTH_DATE,
+            </if>
+            <if test="ageYear != null">
+                AGE_YEAR,
+            </if>
+            <if test="ageMonth != null">
+                AGE_MONTH,
+            </if>
+            <if test="ageTxt != null">
+                AGE_TXT,
+            </if>
+            <if test="newbornWeight != null">
+                NEWBORN_WEIGHT,
+            </if>
+            <if test="newbornInWeight != null">
+                NEWBORN_IN_WEIGHT,
+            </if>
+            <if test="birthAddrProv != null">
+                BIRTH_ADDR_PROV,
+            </if>
+            <if test="birthAddrCity != null">
+                BIRTH_ADDR_CITY,
+            </if>
+            <if test="birthAddrCounty != null">
+                BIRTH_ADDR_COUNTY,
+            </if>
+            <if test="originAddrProv != null">
+                ORIGIN_ADDR_PROV,
+            </if>
+            <if test="originAddrCity != null">
+                ORIGIN_ADDR_CITY,
+            </if>
+            <if test="countryCode != null">
+                COUNTRY_CODE,
+            </if>
+            <if test="countryName != null">
+                COUNTRY_NAME,
+            </if>
+            <if test="nationCode != null">
+                NATION_CODE,
+            </if>
+            <if test="nationName != null">
+                NATION_NAME,
+            </if>
+            <if test="idType != null">
+                ID_TYPE,
+            </if>
+            <if test="idNo != null">
+                ID_NO,
+            </if>
+            <if test="occupCode != null">
+                OCCUP_CODE,
+            </if>
+            <if test="occupName != null">
+                OCCUP_NAME,
+            </if>
+            <if test="marryCode != null">
+                MARRY_CODE,
+            </if>
+            <if test="marryName != null">
+                MARRY_NAME,
+            </if>
+            <if test="currAddrProv != null">
+                CURR_ADDR_PROV,
+            </if>
+            <if test="currAddrCity != null">
+                CURR_ADDR_CITY,
+            </if>
+            <if test="currAddrCounty != null">
+                CURR_ADDR_COUNTY,
+            </if>
+            <if test="currPhone != null">
+                CURR_PHONE,
+            </if>
+            <if test="currZipCode != null">
+                CURR_ZIP_CODE,
+            </if>
+            <if test="workUnit != null">
+                WORK_UNIT,
+            </if>
+            <if test="workUnitPhone != null">
+                WORK_UNIT_PHONE,
+            </if>
+            <if test="resideAddrProv != null">
+                RESIDE_ADDR_PROV,
+            </if>
+            <if test="resideAddrCity != null">
+                RESIDE_ADDR_CITY,
+            </if>
+            <if test="resideAddrCounty != null">
+                RESIDE_ADDR_COUNTY,
+            </if>
+            <if test="resideZipCode != null">
+                RESIDE_ZIP_CODE,
+            </if>
+            <if test="workUnitZipCode != null">
+                WORK_UNIT_ZIP_CODE,
+            </if>
+            <if test="contactName != null">
+                CONTACT_NAME,
+            </if>
+            <if test="contactRelatCode != null">
+                CONTACT_RELAT_CODE,
+            </if>
+            <if test="contactRelatName != null">
+                CONTACT_RELAT_NAME,
+            </if>
+            <if test="contactAddr != null">
+                CONTACT_ADDR,
+            </if>
+            <if test="contactPhone != null">
+                CONTACT_PHONE,
+            </if>
+            <if test="admitPathCode != null">
+                ADMIT_PATH_CODE,
+            </if>
+            <if test="admitPathName != null">
+                ADMIT_PATH_NAME,
+            </if>
+            <if test="admitTime != null">
+                ADMIT_TIME,
+            </if>
+            <if test="pkAdmitDept != null">
+                PK_ADMIT_DEPT,
+            </if>
+            <if test="admitDeptName != null">
+                ADMIT_DEPT_NAME,
+            </if>
+            <if test="admitWardName != null">
+                ADMIT_WARD_NAME,
+            </if>
+            <if test="transDeptNames != null">
+                TRANS_DEPT_NAMES,
+            </if>
+            <if test="disTime != null">
+                DIS_TIME,
+            </if>
+            <if test="pkDeptDis != null">
+                PK_DEPT_DIS,
+            </if>
+            <if test="disDeptName != null">
+                DIS_DEPT_NAME,
+            </if>
+            <if test="pkWardDis != null">
+                PK_WARD_DIS,
+            </if>
+            <if test="disWardName != null">
+                DIS_WARD_NAME,
+            </if>
+            <if test="pkDiagClinic != null">
+                PK_DIAG_CLINIC,
+            </if>
+            <if test="inHosDays != null">
+                IN_HOS_DAYS,
+            </if>
+            <if test="diagCodeClinic != null">
+                DIAG_CODE_CLINIC,
+            </if>
+            <if test="pkDiagDis != null">
+                PK_DIAG_DIS,
+            </if>
+            <if test="diagNameClinic != null">
+                DIAG_NAME_CLINIC,
+            </if>
+            <if test="diagCodeDis != null">
+                DIAG_CODE_DIS,
+            </if>
+            <if test="pkDiagExtcIp != null">
+                PK_DIAG_EXTC_IP,
+            </if>
+            <if test="diagNameDis != null">
+                DIAG_NAME_DIS,
+            </if>
+            <if test="medRecType != null">
+                MED_REC_TYPE,
+            </if>
+            <if test="flagCp != null">
+                FLAG_CP,
+            </if>
+            <if test="numRes != null">
+                NUM_RES,
+            </if>
+            <if test="numSucc != null">
+                NUM_SUCC,
+            </if>
+            <if test="diagCodeExtcIp != null">
+                DIAG_CODE_EXTC_IP,
+            </if>
+            <if test="pkDiagPatho != null">
+                PK_DIAG_PATHO,
+            </if>
+            <if test="diagNameExtcIp != null">
+                DIAG_NAME_EXTC_IP,
+            </if>
+            <if test="diagCodePatho != null">
+                DIAG_CODE_PATHO,
+            </if>
+            <if test="diagNamePatho != null">
+                DIAG_NAME_PATHO,
+            </if>
+            <if test="pathoNo != null">
+                PATHO_NO,
+            </if>
+            <if test="flagDrugAllergy != null">
+                FLAG_DRUG_ALLERGY,
+            </if>
+            <if test="allergicDrug != null">
+                ALLERGIC_DRUG,
+            </if>
+            <if test="flagAutopsy != null">
+                FLAG_AUTOPSY,
+            </if>
+            <if test="bloodCodeAbo != null">
+                BLOOD_CODE_ABO,
+            </if>
+            <if test="bloodNameAbo != null">
+                BLOOD_NAME_ABO,
+            </if>
+            <if test="bloodCodeRh != null">
+                BLOOD_CODE_RH,
+            </if>
+            <if test="bloodNameRh != null">
+                BLOOD_NAME_RH,
+            </if>
+            <if test="pkEmpDirector != null">
+                PK_EMP_DIRECTOR,
+            </if>
+            <if test="directorName != null">
+                DIRECTOR_NAME,
+            </if>
+            <if test="pkEmpConsult != null">
+                PK_EMP_CONSULT,
+            </if>
+            <if test="consultName != null">
+                CONSULT_NAME,
+            </if>
+            <if test="pkEmpRefer != null">
+                PK_EMP_REFER,
+            </if>
+            <if test="referName != null">
+                REFER_NAME,
+            </if>
+            <if test="pkEmpNurse != null">
+                PK_EMP_NURSE,
+            </if>
+            <if test="nurseName != null">
+                NURSE_NAME,
+            </if>
+            <if test="pkEmpLearn != null">
+                PK_EMP_LEARN,
+            </if>
+            <if test="learnName != null">
+                LEARN_NAME,
+            </if>
+            <if test="pkEmpIntern != null">
+                PK_EMP_INTERN,
+            </if>
+            <if test="internName != null">
+                INTERN_NAME,
+            </if>
+            <if test="pkEmpCoder != null">
+                PK_EMP_CODER,
+            </if>
+            <if test="coderName != null">
+                CODER_NAME,
+            </if>
+            <if test="qualityCode != null">
+                QUALITY_CODE,
+            </if>
+            <if test="qualityName != null">
+                QUALITY_NAME,
+            </if>
+            <if test="pkEmpQcDoc != null">
+                PK_EMP_QC_DOC,
+            </if>
+            <if test="qcDocName != null">
+                QC_DOC_NAME,
+            </if>
+            <if test="pkEmpQcNurse != null">
+                PK_EMP_QC_NURSE,
+            </if>
+            <if test="qcNurseName != null">
+                QC_NURSE_NAME,
+            </if>
+            <if test="qcDate != null">
+                QC_DATE,
+            </if>
+            <if test="leaveHosCode != null">
+                LEAVE_HOS_CODE,
+            </if>
+            <if test="leaveHosName != null">
+                LEAVE_HOS_NAME,
+            </if>
+            <if test="receiveOrgCode != null">
+                RECEIVE_ORG_CODE,
+            </if>
+            <if test="receiveOrgName != null">
+                RECEIVE_ORG_NAME,
+            </if>
+            <if test="flagReadmit != null">
+                FLAG_READMIT,
+            </if>
+            <if test="readmitPurp != null">
+                READMIT_PURP,
+            </if>
+            <if test="comaDayBef != null">
+                COMA_DAY_BEF,
+            </if>
+            <if test="comaHourBef != null">
+                COMA_HOUR_BEF,
+            </if>
+            <if test="comaMinBef != null">
+                COMA_MIN_BEF,
+            </if>
+            <if test="comaDayAfter != null">
+                COMA_DAY_AFTER,
+            </if>
+            <if test="comaHourAfter != null">
+                COMA_HOUR_AFTER,
+            </if>
+            <if test="comaMinAfter != null">
+                COMA_MIN_AFTER,
+            </if>
+            <if test="totalCost != null">
+                TOTAL_COST,
+            </if>
+            <if test="selfCost != null">
+                SELF_COST,
+            </if>
+            <if test="delFlag != null">
+                DEL_FLAG,
+            </if>
+            <if test="remark != null">
+                REMARK,
+            </if>
+            <if test="creator != null">
+                CREATOR,
+            </if>
+            <if test="createTime != null">
+                CREATE_TIME,
+            </if>
+            <if test="pkAdmitWard != null">
+                PK_ADMIT_WARD,
+            </if>
+            <if test="pkEmpChief != null">
+                PK_EMP_CHIEF,
+            </if>
+            <if test="chiefName != null">
+                CHIEF_NAME,
+            </if>
+            <if test="ts != null">
+                TS,
+            </if>
+            <if test="pkEmpClinic != null">
+                PK_EMP_CLINIC,
+            </if>
+            <if test="clinicName != null">
+                CLINIC_NAME,
+            </if>
+            <if test="currAddr != null">
+                CURR_ADDR,
+            </if>
+            <if test="resideAddr != null">
+                RESIDE_ADDR,
+            </if>
+            <if test="admitCondCode != null">
+                ADMIT_COND_CODE,
+            </if>
+            <if test="admitCondName != null">
+                ADMIT_COND_NAME,
+            </if>
+            <if test="birthAddr != null">
+                BIRTH_ADDR,
+            </if>
+            <if test="originAddr != null">
+                ORIGIN_ADDR,
+            </if>
+            <if test="currAddrDt != null">
+                CURR_ADDR_DT,
+            </if>
+            <if test="resideAddrDt != null">
+                RESIDE_ADDR_DT,
+            </if>
+            <if test="diagFitCodeOi != null">
+                DIAG_FIT_CODE_OI,
+            </if>
+            <if test="diagFitCodeCp != null">
+                DIAG_FIT_CODE_CP,
+            </if>
+            <if test="diagCodeClinicIcd != null">
+                DIAG_CODE_CLINIC_ICD,
+            </if>
+            <if test="diagNameClinicIcd != null">
+                DIAG_NAME_CLINIC_ICD,
+            </if>
+            <if test="diagCodeExtcIpIcd != null">
+                DIAG_CODE_EXTC_IP_ICD,
+            </if>
+            <if test="diagNameExtcIpIcd != null">
+                DIAG_NAME_EXTC_IP_ICD,
+            </if>
+            <if test="diagCodePathoIcd != null">
+                DIAG_CODE_PATHO_ICD,
+            </if>
+            <if test="diagNamePathoIcd != null">
+                DIAG_NAME_PATHO_ICD,
+            </if>
+            <if test="pathoNoIcd != null">
+                PATHO_NO_ICD,
+            </if>
+            <if test="flagDrugAllergyIcd != null">
+                FLAG_DRUG_ALLERGY_ICD,
+            </if>
+            <if test="allergicDrugIcd != null">
+                ALLERGIC_DRUG_ICD,
+            </if>
+            <if test="partDisease != null">
+                PART_DISEASE,
+            </if>
+            <if test="patSource != null">
+                PAT_SOURCE,
+            </if>
+            <if test="codeDcdtClinic != null">
+                CODE_DCDT_CLINIC,
+            </if>
+            <if test="descBodypart != null">
+                DESC_BODYPART,
+            </if>
+            <if test="descDrgprop != null">
+                DESC_DRGPROP,
+            </if>
+            <if test="descDiag != null">
+                DESC_DIAG,
+            </if>
+            <if test="daysGdi != null">
+                DAYS_GDI,
+            </if>
+            <if test="daysGdii != null">
+                DAYS_GDII,
+            </if>
+            <if test="daysGdiii != null">
+                DAYS_GDIII,
+            </if>
+            <if test="daysGds != null">
+                DAYS_GDS,
+            </if>
+            <if test="hoursGds != null">
+                HOURS_GDS,
+            </if>
+            <if test="hoursBm != null">
+                HOURS_BM,
+            </if>
+            <if test="minutesBm != null">
+                MINUTES_BM,
+            </if>
+            <if test="valAdlin != null">
+                VAL_ADLIN,
+            </if>
+            <if test="valAdlout != null">
+                VAL_ADLOUT,
+            </if>
+            <if test="dtDrgcasetype != null">
+                DT_DRGCASETYPE,
+            </if>
+            <if test="currAddrIcd != null">
+                CURR_ADDR_ICD,
+            </if>
+            <if test="birthAddrCode != null">
+                BIRTH_ADDR_CODE,
+            </if>
+            <if test="originAddrCode != null">
+                ORIGIN_ADDR_CODE,
+            </if>
+            <if test="currAddrCode != null">
+                CURR_ADDR_CODE,
+            </if>
+            <if test="resideAddrCode != null">
+                RESIDE_ADDR_CODE,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkPage != null">
+                #{pkPage,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null">
+                #{pkOrg,jdbcType=CHAR},
+            </if>
+            <if test="pkPi != null">
+                #{pkPi,jdbcType=CHAR},
+            </if>
+            <if test="times != null">
+                #{times,jdbcType=DECIMAL},
+            </if>
+            <if test="pkPv != null">
+                #{pkPv,jdbcType=CHAR},
+            </if>
+            <if test="medOrgCode != null">
+                #{medOrgCode,jdbcType=VARCHAR},
+            </if>
+            <if test="medOrgName != null">
+                #{medOrgName,jdbcType=VARCHAR},
+            </if>
+            <if test="healthCardNo != null">
+                #{healthCardNo,jdbcType=VARCHAR},
+            </if>
+            <if test="medPayMode != null">
+                #{medPayMode,jdbcType=VARCHAR},
+            </if>
+            <if test="patNo != null">
+                #{patNo,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null">
+                #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="dtSex != null">
+                #{dtSex,jdbcType=VARCHAR},
+            </if>
+            <if test="birthDate != null">
+                #{birthDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="ageYear != null">
+                #{ageYear,jdbcType=DECIMAL},
+            </if>
+            <if test="ageMonth != null">
+                #{ageMonth,jdbcType=VARCHAR},
+            </if>
+            <if test="ageTxt != null">
+                #{ageTxt,jdbcType=VARCHAR},
+            </if>
+            <if test="newbornWeight != null">
+                #{newbornWeight,jdbcType=DECIMAL},
+            </if>
+            <if test="newbornInWeight != null">
+                #{newbornInWeight,jdbcType=DECIMAL},
+            </if>
+            <if test="birthAddrProv != null">
+                #{birthAddrProv,jdbcType=VARCHAR},
+            </if>
+            <if test="birthAddrCity != null">
+                #{birthAddrCity,jdbcType=VARCHAR},
+            </if>
+            <if test="birthAddrCounty != null">
+                #{birthAddrCounty,jdbcType=VARCHAR},
+            </if>
+            <if test="originAddrProv != null">
+                #{originAddrProv,jdbcType=VARCHAR},
+            </if>
+            <if test="originAddrCity != null">
+                #{originAddrCity,jdbcType=VARCHAR},
+            </if>
+            <if test="countryCode != null">
+                #{countryCode,jdbcType=VARCHAR},
+            </if>
+            <if test="countryName != null">
+                #{countryName,jdbcType=VARCHAR},
+            </if>
+            <if test="nationCode != null">
+                #{nationCode,jdbcType=VARCHAR},
+            </if>
+            <if test="nationName != null">
+                #{nationName,jdbcType=VARCHAR},
+            </if>
+            <if test="idType != null">
+                #{idType,jdbcType=VARCHAR},
+            </if>
+            <if test="idNo != null">
+                #{idNo,jdbcType=VARCHAR},
+            </if>
+            <if test="occupCode != null">
+                #{occupCode,jdbcType=VARCHAR},
+            </if>
+            <if test="occupName != null">
+                #{occupName,jdbcType=VARCHAR},
+            </if>
+            <if test="marryCode != null">
+                #{marryCode,jdbcType=VARCHAR},
+            </if>
+            <if test="marryName != null">
+                #{marryName,jdbcType=VARCHAR},
+            </if>
+            <if test="currAddrProv != null">
+                #{currAddrProv,jdbcType=VARCHAR},
+            </if>
+            <if test="currAddrCity != null">
+                #{currAddrCity,jdbcType=VARCHAR},
+            </if>
+            <if test="currAddrCounty != null">
+                #{currAddrCounty,jdbcType=VARCHAR},
+            </if>
+            <if test="currPhone != null">
+                #{currPhone,jdbcType=VARCHAR},
+            </if>
+            <if test="currZipCode != null">
+                #{currZipCode,jdbcType=VARCHAR},
+            </if>
+            <if test="workUnit != null">
+                #{workUnit,jdbcType=VARCHAR},
+            </if>
+            <if test="workUnitPhone != null">
+                #{workUnitPhone,jdbcType=VARCHAR},
+            </if>
+            <if test="resideAddrProv != null">
+                #{resideAddrProv,jdbcType=VARCHAR},
+            </if>
+            <if test="resideAddrCity != null">
+                #{resideAddrCity,jdbcType=VARCHAR},
+            </if>
+            <if test="resideAddrCounty != null">
+                #{resideAddrCounty,jdbcType=VARCHAR},
+            </if>
+            <if test="resideZipCode != null">
+                #{resideZipCode,jdbcType=VARCHAR},
+            </if>
+            <if test="workUnitZipCode != null">
+                #{workUnitZipCode,jdbcType=VARCHAR},
+            </if>
+            <if test="contactName != null">
+                #{contactName,jdbcType=VARCHAR},
+            </if>
+            <if test="contactRelatCode != null">
+                #{contactRelatCode,jdbcType=VARCHAR},
+            </if>
+            <if test="contactRelatName != null">
+                #{contactRelatName,jdbcType=VARCHAR},
+            </if>
+            <if test="contactAddr != null">
+                #{contactAddr,jdbcType=VARCHAR},
+            </if>
+            <if test="contactPhone != null">
+                #{contactPhone,jdbcType=VARCHAR},
+            </if>
+            <if test="admitPathCode != null">
+                #{admitPathCode,jdbcType=VARCHAR},
+            </if>
+            <if test="admitPathName != null">
+                #{admitPathName,jdbcType=VARCHAR},
+            </if>
+            <if test="admitTime != null">
+                #{admitTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="pkAdmitDept != null">
+                #{pkAdmitDept,jdbcType=CHAR},
+            </if>
+            <if test="admitDeptName != null">
+                #{admitDeptName,jdbcType=VARCHAR},
+            </if>
+            <if test="admitWardName != null">
+                #{admitWardName,jdbcType=VARCHAR},
+            </if>
+            <if test="transDeptNames != null">
+                #{transDeptNames,jdbcType=VARCHAR},
+            </if>
+            <if test="disTime != null">
+                #{disTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="pkDeptDis != null">
+                #{pkDeptDis,jdbcType=CHAR},
+            </if>
+            <if test="disDeptName != null">
+                #{disDeptName,jdbcType=VARCHAR},
+            </if>
+            <if test="pkWardDis != null">
+                #{pkWardDis,jdbcType=CHAR},
+            </if>
+            <if test="disWardName != null">
+                #{disWardName,jdbcType=VARCHAR},
+            </if>
+            <if test="pkDiagClinic != null">
+                #{pkDiagClinic,jdbcType=CHAR},
+            </if>
+            <if test="inHosDays != null">
+                #{inHosDays,jdbcType=DECIMAL},
+            </if>
+            <if test="diagCodeClinic != null">
+                #{diagCodeClinic,jdbcType=VARCHAR},
+            </if>
+            <if test="pkDiagDis != null">
+                #{pkDiagDis,jdbcType=CHAR},
+            </if>
+            <if test="diagNameClinic != null">
+                #{diagNameClinic,jdbcType=VARCHAR},
+            </if>
+            <if test="diagCodeDis != null">
+                #{diagCodeDis,jdbcType=VARCHAR},
+            </if>
+            <if test="pkDiagExtcIp != null">
+                #{pkDiagExtcIp,jdbcType=CHAR},
+            </if>
+            <if test="diagNameDis != null">
+                #{diagNameDis,jdbcType=VARCHAR},
+            </if>
+            <if test="medRecType != null">
+                #{medRecType,jdbcType=CHAR},
+            </if>
+            <if test="flagCp != null">
+                #{flagCp,jdbcType=CHAR},
+            </if>
+            <if test="numRes != null">
+                #{numRes,jdbcType=DECIMAL},
+            </if>
+            <if test="numSucc != null">
+                #{numSucc,jdbcType=DECIMAL},
+            </if>
+            <if test="diagCodeExtcIp != null">
+                #{diagCodeExtcIp,jdbcType=VARCHAR},
+            </if>
+            <if test="pkDiagPatho != null">
+                #{pkDiagPatho,jdbcType=CHAR},
+            </if>
+            <if test="diagNameExtcIp != null">
+                #{diagNameExtcIp,jdbcType=VARCHAR},
+            </if>
+            <if test="diagCodePatho != null">
+                #{diagCodePatho,jdbcType=VARCHAR},
+            </if>
+            <if test="diagNamePatho != null">
+                #{diagNamePatho,jdbcType=VARCHAR},
+            </if>
+            <if test="pathoNo != null">
+                #{pathoNo,jdbcType=VARCHAR},
+            </if>
+            <if test="flagDrugAllergy != null">
+                #{flagDrugAllergy,jdbcType=CHAR},
+            </if>
+            <if test="allergicDrug != null">
+                #{allergicDrug,jdbcType=VARCHAR},
+            </if>
+            <if test="flagAutopsy != null">
+                #{flagAutopsy,jdbcType=CHAR},
+            </if>
+            <if test="bloodCodeAbo != null">
+                #{bloodCodeAbo,jdbcType=VARCHAR},
+            </if>
+            <if test="bloodNameAbo != null">
+                #{bloodNameAbo,jdbcType=VARCHAR},
+            </if>
+            <if test="bloodCodeRh != null">
+                #{bloodCodeRh,jdbcType=VARCHAR},
+            </if>
+            <if test="bloodNameRh != null">
+                #{bloodNameRh,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmpDirector != null">
+                #{pkEmpDirector,jdbcType=CHAR},
+            </if>
+            <if test="directorName != null">
+                #{directorName,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmpConsult != null">
+                #{pkEmpConsult,jdbcType=CHAR},
+            </if>
+            <if test="consultName != null">
+                #{consultName,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmpRefer != null">
+                #{pkEmpRefer,jdbcType=CHAR},
+            </if>
+            <if test="referName != null">
+                #{referName,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmpNurse != null">
+                #{pkEmpNurse,jdbcType=CHAR},
+            </if>
+            <if test="nurseName != null">
+                #{nurseName,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmpLearn != null">
+                #{pkEmpLearn,jdbcType=CHAR},
+            </if>
+            <if test="learnName != null">
+                #{learnName,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmpIntern != null">
+                #{pkEmpIntern,jdbcType=CHAR},
+            </if>
+            <if test="internName != null">
+                #{internName,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmpCoder != null">
+                #{pkEmpCoder,jdbcType=CHAR},
+            </if>
+            <if test="coderName != null">
+                #{coderName,jdbcType=VARCHAR},
+            </if>
+            <if test="qualityCode != null">
+                #{qualityCode,jdbcType=CHAR},
+            </if>
+            <if test="qualityName != null">
+                #{qualityName,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmpQcDoc != null">
+                #{pkEmpQcDoc,jdbcType=CHAR},
+            </if>
+            <if test="qcDocName != null">
+                #{qcDocName,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmpQcNurse != null">
+                #{pkEmpQcNurse,jdbcType=CHAR},
+            </if>
+            <if test="qcNurseName != null">
+                #{qcNurseName,jdbcType=VARCHAR},
+            </if>
+            <if test="qcDate != null">
+                #{qcDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="leaveHosCode != null">
+                #{leaveHosCode,jdbcType=VARCHAR},
+            </if>
+            <if test="leaveHosName != null">
+                #{leaveHosName,jdbcType=VARCHAR},
+            </if>
+            <if test="receiveOrgCode != null">
+                #{receiveOrgCode,jdbcType=VARCHAR},
+            </if>
+            <if test="receiveOrgName != null">
+                #{receiveOrgName,jdbcType=VARCHAR},
+            </if>
+            <if test="flagReadmit != null">
+                #{flagReadmit,jdbcType=CHAR},
+            </if>
+            <if test="readmitPurp != null">
+                #{readmitPurp,jdbcType=VARCHAR},
+            </if>
+            <if test="comaDayBef != null">
+                #{comaDayBef,jdbcType=DECIMAL},
+            </if>
+            <if test="comaHourBef != null">
+                #{comaHourBef,jdbcType=DECIMAL},
+            </if>
+            <if test="comaMinBef != null">
+                #{comaMinBef,jdbcType=DECIMAL},
+            </if>
+            <if test="comaDayAfter != null">
+                #{comaDayAfter,jdbcType=DECIMAL},
+            </if>
+            <if test="comaHourAfter != null">
+                #{comaHourAfter,jdbcType=DECIMAL},
+            </if>
+            <if test="comaMinAfter != null">
+                #{comaMinAfter,jdbcType=DECIMAL},
+            </if>
+            <if test="totalCost != null">
+                #{totalCost,jdbcType=DECIMAL},
+            </if>
+            <if test="selfCost != null">
+                #{selfCost,jdbcType=DECIMAL},
+            </if>
+            <if test="delFlag != null">
+                #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="remark != null">
+                #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null">
+                #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null">
+                #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="pkAdmitWard != null">
+                #{pkAdmitWard,jdbcType=CHAR},
+            </if>
+            <if test="pkEmpChief != null">
+                #{pkEmpChief,jdbcType=CHAR},
+            </if>
+            <if test="chiefName != null">
+                #{chiefName,jdbcType=VARCHAR},
+            </if>
+            <if test="ts != null">
+                #{ts,jdbcType=TIMESTAMP},
+            </if>
+            <if test="pkEmpClinic != null">
+                #{pkEmpClinic,jdbcType=CHAR},
+            </if>
+            <if test="clinicName != null">
+                #{clinicName,jdbcType=VARCHAR},
+            </if>
+            <if test="currAddr != null">
+                #{currAddr,jdbcType=VARCHAR},
+            </if>
+            <if test="resideAddr != null">
+                #{resideAddr,jdbcType=VARCHAR},
+            </if>
+            <if test="admitCondCode != null">
+                #{admitCondCode,jdbcType=VARCHAR},
+            </if>
+            <if test="admitCondName != null">
+                #{admitCondName,jdbcType=VARCHAR},
+            </if>
+            <if test="birthAddr != null">
+                #{birthAddr,jdbcType=VARCHAR},
+            </if>
+            <if test="originAddr != null">
+                #{originAddr,jdbcType=VARCHAR},
+            </if>
+            <if test="currAddrDt != null">
+                #{currAddrDt,jdbcType=VARCHAR},
+            </if>
+            <if test="resideAddrDt != null">
+                #{resideAddrDt,jdbcType=VARCHAR},
+            </if>
+            <if test="diagFitCodeOi != null">
+                #{diagFitCodeOi,jdbcType=VARCHAR},
+            </if>
+            <if test="diagFitCodeCp != null">
+                #{diagFitCodeCp,jdbcType=VARCHAR},
+            </if>
+            <if test="diagCodeClinicIcd != null">
+                #{diagCodeClinicIcd,jdbcType=VARCHAR},
+            </if>
+            <if test="diagNameClinicIcd != null">
+                #{diagNameClinicIcd,jdbcType=VARCHAR},
+            </if>
+            <if test="diagCodeExtcIpIcd != null">
+                #{diagCodeExtcIpIcd,jdbcType=VARCHAR},
+            </if>
+            <if test="diagNameExtcIpIcd != null">
+                #{diagNameExtcIpIcd,jdbcType=VARCHAR},
+            </if>
+            <if test="diagCodePathoIcd != null">
+                #{diagCodePathoIcd,jdbcType=VARCHAR},
+            </if>
+            <if test="diagNamePathoIcd != null">
+                #{diagNamePathoIcd,jdbcType=VARCHAR},
+            </if>
+            <if test="pathoNoIcd != null">
+                #{pathoNoIcd,jdbcType=VARCHAR},
+            </if>
+            <if test="flagDrugAllergyIcd != null">
+                #{flagDrugAllergyIcd,jdbcType=CHAR},
+            </if>
+            <if test="allergicDrugIcd != null">
+                #{allergicDrugIcd,jdbcType=VARCHAR},
+            </if>
+            <if test="partDisease != null">
+                #{partDisease,jdbcType=CHAR},
+            </if>
+            <if test="patSource != null">
+                #{patSource,jdbcType=VARCHAR},
+            </if>
+            <if test="codeDcdtClinic != null">
+                #{codeDcdtClinic,jdbcType=VARCHAR},
+            </if>
+            <if test="descBodypart != null">
+                #{descBodypart,jdbcType=VARCHAR},
+            </if>
+            <if test="descDrgprop != null">
+                #{descDrgprop,jdbcType=VARCHAR},
+            </if>
+            <if test="descDiag != null">
+                #{descDiag,jdbcType=VARCHAR},
+            </if>
+            <if test="daysGdi != null">
+                #{daysGdi,jdbcType=DECIMAL},
+            </if>
+            <if test="daysGdii != null">
+                #{daysGdii,jdbcType=DECIMAL},
+            </if>
+            <if test="daysGdiii != null">
+                #{daysGdiii,jdbcType=DECIMAL},
+            </if>
+            <if test="daysGds != null">
+                #{daysGds,jdbcType=DECIMAL},
+            </if>
+            <if test="hoursGds != null">
+                #{hoursGds,jdbcType=DECIMAL},
+            </if>
+            <if test="hoursBm != null">
+                #{hoursBm,jdbcType=DECIMAL},
+            </if>
+            <if test="minutesBm != null">
+                #{minutesBm,jdbcType=DECIMAL},
+            </if>
+            <if test="valAdlin != null">
+                #{valAdlin,jdbcType=DECIMAL},
+            </if>
+            <if test="valAdlout != null">
+                #{valAdlout,jdbcType=DECIMAL},
+            </if>
+            <if test="dtDrgcasetype != null">
+                #{dtDrgcasetype,jdbcType=VARCHAR},
+            </if>
+            <if test="currAddrIcd != null">
+                #{currAddrIcd,jdbcType=VARCHAR},
+            </if>
+            <if test="birthAddrCode != null">
+                #{birthAddrCode,jdbcType=VARCHAR},
+            </if>
+            <if test="originAddrCode != null">
+                #{originAddrCode,jdbcType=VARCHAR},
+            </if>
+            <if test="currAddrCode != null">
+                #{currAddrCode,jdbcType=VARCHAR},
+            </if>
+            <if test="resideAddrCode != null">
+                #{resideAddrCode,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </insert>
+
+    <select id="getNurseDays" resultType="com.zebone.nhis.cn.ipdw.vo.EmrPageNurseLevelVo">
+       select sum(cg.quan) quan,
+       cg.name_cg,
+       parm.code
+  from bl_ip_dt cg
+       inner join bd_ord_item oi on cg.pk_item=oi.pk_item
+       inner join bd_ord ord on oi.pk_ord=ord.pk_ord
+       inner join bd_sysparam parm on ord.code=parm.val and parm.code in ('EX0010','EX0011','EX0012','EX0013')
+ where cg.pk_pv=#{pkPv}
+group by cg.name_cg,
+         parm.code
+    </select>
+
+    <select id="getQuanHours" resultType="java.lang.Double">
+       select sum(cg.quan) quan
+ from bl_ip_dt cg
+      inner join bd_item item on cg.pk_item=item.pk_item
+      inner join bd_dictattr att on item.pk_item=att.pk_dict and att.code_attr='0110' and val_attr='1'
+ where cg.pk_pv=#{pkPv}
+
+    </select>
+    <delete id="deleteHomePageTrans">
+        delete from EMR_HOME_PAGE_TRANS where PK_PAGE = #{pkPage,jdbcType=CHAR}
+    </delete>
+    <delete id="deleteHomePageDiags">
+        delete from EMR_HOME_PAGE_DIAGS where PK_PAGE = #{pkPage,jdbcType=CHAR}
+    </delete>
+    <delete id="deleteHomePageOps">
+        delete from EMR_HOME_PAGE_OPS where PK_PAGE = #{pkPage,jdbcType=CHAR}
+    </delete>
+    <delete id="deleteHomePageCharges">
+        delete from EMR_HOME_PAGE_CHARGES where PK_PAGE = #{pkPage,jdbcType=CHAR}
+    </delete>
+    <delete id="deleteHomePageBr">
+        delete from EMR_HOME_PAGE_BR where PK_PAGE = #{pkPage,jdbcType=CHAR}
+    </delete>
+    <delete id="deleteHomePageOrDt">
+        delete from EMR_HOME_PAGE_OR_DT where PK_PAGEOR = #{pkOr,jdbcType=CHAR}
+    </delete>
+    <delete id="deleteHomePageOr">
+        delete from EMR_HOME_PAGE_OR where PK_PAGE = #{pkPage,jdbcType=CHAR}
+    </delete>
+
+    <delete id="deleteHomePageOpsByPk">
+        delete from EMR_HOME_PAGE_OPS where PK_OPS = #{pkOps,jdbcType=CHAR}
+    </delete>
+    <delete id="deleteHomePageBrByPk">
+        delete from EMR_HOME_PAGE_BR where PK_BR = #{pkBr,jdbcType=CHAR}
+    </delete>
+    <delete id="deleteHomePageOrDtByPk">
+        delete from EMR_HOME_PAGE_OR_DT where PK_ORDT = #{pkOrDt,jdbcType=CHAR}
+    </delete>
+
+    <select id="getQcEhpList" resultType="DynaBean" parameterType="java.lang.String">
+       select rec.eu_qctype,
+       rec.date_qc,
+       rec.name_emp_qc,
+       rec.eu_result
+  from qc_ehp_rec rec
+  Inner Join qc_ehp ehp On rec.pk_qcehp=ehp.pk_qcehp
+ where ehp.pk_pv=#{pkPv}
+    </select>
+
+    <select id="getQcEhpDetail" resultType="DynaBean" parameterType="java.lang.String">
+       select dt.dt_ehpitem,
+       dt.name_item,
+       dt.desc_defect,
+       dt.eu_status
+  from qc_ehp_detail dt
+  Inner Join qc_ehp ehp On dt.pk_qcehp=ehp.pk_qcehp
+ where ehp.pk_pv=#{pkPv} and
+       dt.eu_type='0'
+    </select>
+</mapper>

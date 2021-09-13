@@ -1,0 +1,530 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.CnOrderSyncMapper">
+    <select id="queryCnOrderSync" parameterType="java.util.Map" resultType="com.zebone.nhis.cn.ipdw.vo.CnOrderSyncVo">
+		select ord.pk_cnord,
+		      ord.pk_org,
+		      ord.eu_pvtype,
+		      ord.pk_pv,
+		      ord.pk_pi,
+		      pi.code_op,
+		      pi.code_ip,
+		      pi.name_pi name,
+		      pi.birth_date,
+		      pi.dt_sex,
+		      pv.code_pv,
+		      ord.date_effe,
+		      ord.code_ordtype,
+		      ord.eu_always,
+		      ord.groupno,
+		      ord.ordsn,
+		      ord.ordsn_parent,
+		      ord.pk_ord,
+		      (case when ord.flag_durg = '1' then SUBSTRING (ord.code_ord,1,len(ord.code_ord)-3) else (case when ord.code_ord='DEF99999' then '0' else ord.code_ord end) end) code_ord,
+		      ord.pk_pres,
+		      ord.name_ord,
+		      ord.desc_ord,
+		      ord.code_apply,
+		      (case when ord.code_freq='once' then 'st' when ord.code_freq='ONCE' then 'st' else ord.code_freq end) code_freq,
+		      ord.spec,
+		      (case when ord.flag_durg = '1' then ord.dosage else 0 end ) dosage,
+		      bud.code code_unit_dos,
+		      ord.pk_unit_dos,
+		      ord.quan,
+		      ord.pk_unit,
+		      bu.code code_unit,
+		      ord.code_supply,
+		      ord.quan_cg,
+		      buc.code code_unit_cg,
+		      ord.pk_unit_cg,
+		      ord.pack_size,
+		      ord.price_cg price,
+		      ord.price_cg,
+		      ord.note_supply,
+		      ord.dt_usagenote,
+		      ord.days,
+		      ord.drip_speed,
+		      ord.ords,
+		      ord.flag_first,
+		      ord.first_num,
+		      ord.last_num,
+		      ord.pk_org_exec,
+		      ord.pk_dept_exec,
+		      (case when ord.flag_durg = '1' then bod.code_dept else REPLACE((case when dept_ex.code_dept = dept_ns.code_dept then bod.code_dept else dept_ex.code_dept end),'YF' , '') end)  code_dept_exec,
+		      ord.eu_status_ord,
+		      ord.date_start,
+		      ord.flag_durg flag_drug,
+		      ord.flag_self,
+		      ord.flag_note,
+		      ord.flag_base,
+		      ord.flag_bl,
+		      (case when ord.flag_durg='1' then '1' else bdord.flag_pd  end) flag_pd,
+		      ord.pk_wg,
+		      ord.date_enter,
+		      ord.pk_emp_input,
+		      emp_input.code_emp code_emp_input,
+		      ord.name_emp_input,
+		      ord.flag_itc,
+		      ord.eu_intern,
+		      ord.pk_dept_ns,
+		      dept_ns.code_dept code_dept_ns,
+		      ord.pk_dept,
+		      bod.code_dept code_dept,
+		      ord.pk_emp_ord,
+		      emp.code_emp code_emp_ord,
+		      ord.name_emp_ord,
+		      ord.flag_sign,
+		      ord.date_sign,
+		      ord.pk_emp_chk,
+		      ord.name_emp_chk,
+		      ord.date_chk,
+		      ord.date_last_ex,
+		      ord.date_plan_ex,
+		      ord.date_stop,
+		      ord.pk_emp_stop,
+		      emp_stop.code_emp code_emp_stop,
+		      ord.name_emp_stop,
+		      ord.flag_stop,
+		      ord.date_stop_chk,
+		      ord.pk_emp_stop_chk,
+		      ord.name_emp_stop_chk,
+		      ord.flag_stop_chk,
+		      ord.date_erase,
+		      ord.pk_emp_erase,
+		      emp_erase.code_emp code_emp_erase,
+		      ord.name_emp_erase,
+		      ord.flag_erase,
+		      ord.date_erase_chk,
+		      ord.pk_emp_erase_chk,
+		      ord.name_erase_chk,
+		      ord.flag_erase_chk,
+		      ord.flag_cp,
+		      ord.flag_doctor,
+		      ord.infant_no,
+		      ord.pk_event,
+		      ord.flag_print,
+		      ord.flag_medout,
+		      ord.eu_exctype,
+		      ord.pk_ord_exc,
+		      ord.eu_st,
+		      ord.flag_emer,
+		      ord.flag_thera,
+		      ord.flag_prev,
+		      ord.flag_fit,
+		      ord.flag_pivas,
+		      ord.quan_bed,
+		      ord.note_ord,
+		      ord.sort_iv,
+		      ord.dt_herbusage,
+		      ord.creator,
+		      ord.create_time,
+		      ord.modifier,
+		      ord.modity_time,
+		      ord.del_flag,
+		      lis.pk_ordlis,
+		      lis.desc_diag desc_diag_lis,
+ 			  lis.purpose purpose_lis,
+			  lis.dt_samptype,
+			  bdsmp.name samptype_name,
+			  lis.dt_tubetype,
+			  lis.dt_coltype,
+			  lis.samp_no,
+			  lis.pk_dept_col,
+			  lis.eu_status eu_status_lis,
+			  lis.date_col,
+			  lis.date_acpt,
+			  lis.date_rpt,
+			  lis.note note_lis,
+			  lis.flag_prt flag_prt_lis,
+			  null form_app_lis,
+			  lis.pk_emp_col,
+			  lis.name_emp_col,
+		      ris.pk_ordris,
+			  ris.pk_org,
+  			  ris.note_dise,
+			  ris.dt_ristype,
+			  ris.desc_body,
+			  ris.purpose,
+			  ris.pk_msp,
+			  ris.date_appo,
+			  ris.date_exam,
+			  ris.flag_fasting,
+			  ris.dt_patitrans,
+			  ris.ris_notice,
+			  ris.ticketno,
+			  ris.eu_status eu_status_ris,
+			  ris.flag_bed,
+			  ris.note note_ris,
+			  ris.pk_diag pk_diag_ris,
+			  ris.name_diag name_diag_ris,
+			  ris.pk_emp_appo,
+			  ris.name_emp_appo,
+			  ris.flag_print flag_print_ris,
+			  ris.form_app form_app_ris,
+			  trans.pk_ordbt,
+		      trans.pk_diag pk_diag_trans,
+		      trans.desc_diag desc_diag_trans,
+		      trans.dt_bttype,
+		      trans.dt_bt_abo,
+		      trans.dt_bt_rh,
+		      trans.flag_lab,
+		      trans.flag_bthis,
+		      trans.bt_content,
+		      trans.pk_unit_bt,
+		      trans.quan_bt,
+		      trans.date_plan,
+		      trans.flag_preg,
+		      trans.flag_al,
+		      trans.flag_bp,
+		      trans.date_bp,
+		      trans.quan_bp,
+		      trans.barcode_bp,
+		      trans.pk_emp_bp,
+		      trans.name_emp_bp,
+		      trans.eu_status eu_status_trans,
+		      trans.note note_trans,
+		      (case when ord.code_ordtype in ('0206','0217') then 'ECG' when substr(ord.code_ordtype,1,2)='03' then 'LIS' when substr(ord.code_ordtype,1,2)='02' then 'RIS' else '' end) req_type,
+		      (case when ord.flag_durg = '1' then (CASE WHEN pd.eu_drugtype = '0' THEN '1' WHEN pd.eu_drugtype = '2' THEN '3' ELSE '2'END) else '0' end)  eu_drugtype,
+		      bf.code factory_code,
+		      pd.eu_hptype,
+		      REPLACE (dept_ex.code_dept,'YF' , '') code_store,
+		      (case when ord.flag_durg='1' then '1' else (case when nvl(ord.flag_note,'0') = '1' then '3' when substr(bdord.code_ordtype,1,2) in ('02','03') then '1' else '2' end) end) eu_type_bl,
+		      (case when REPLACE(zt.zyzt,'ZT' , '') ='' then null else REPLACE(zt.zyzt,'ZT' , '') end ) set_code,
+		      (case when zt.zyzt is null then null when zt.zyzt = '' then null when zt.zyzt='0' then null else '1' end) flag_set,
+		      ord.order_no,
+		      boe.code_type
+		 from cn_order ord inner join 
+		      pv_encounter pv on pv.pk_pv=ord.pk_pv inner join 
+		      pi_master pi on pv.pk_pi=pi.pk_pi left outer join 
+		      bd_pd pd on ord.pk_ord=pd.pk_pd left outer join 
+		      bd_ord bdord on ord.pk_ord=bdord.pk_ord  left outer join 
+		      cn_ris_apply ris on ris.pk_cnord = ord.pk_cnord and ris.del_flag='0' left outer join 
+		      cn_lab_apply lis on lis.pk_cnord = ord.pk_cnord and lis.del_flag='0' left outer join 
+		      cn_trans_apply trans on trans.pk_cnord = ord.pk_cnord and trans.del_flag='0' left outer join 
+		      bd_factory bf ON bf.pk_factory = pd.pk_factory left outer join 
+		      bd_ou_dept bod on bod.pk_dept= ord.pk_dept left outer join 
+		      bd_ou_dept dept_ns on dept_ns.pk_dept= ord.pk_dept_ns	left outer join 
+		      bd_ou_dept dept_ex on dept_ex.pk_dept= ord.pk_dept_exec left outer join 
+		      bd_ou_employee emp on emp.pk_emp=ord.pk_emp_ord left outer join 
+		      bd_ou_employee emp_input on emp_input.pk_emp=ord.pk_emp_input	left outer join 
+		      bd_ou_employee emp_stop on emp_stop.pk_emp=ord.pk_emp_stop left outer join 
+		      bd_ou_employee emp_erase on emp_erase.pk_emp=ord.pk_emp_erase left outer join 
+		      bd_unit bud on bud.pk_unit=ord.pk_unit_dos  left outer join
+		      bd_unit bu on bu.pk_unit=ord.pk_unit left outer join
+		      bd_unit buc on buc.pk_unit=ord.pk_unit_cg left outer join
+		      ZT_COMPARISON zt on ord.code_ord = zt.bzzt left outer join
+		      bd_defdoc bdsmp on bdsmp.code=lis.dt_samptype and bdsmp.code_defdoclist='030200' left outer join
+		      bd_ordtype bdt on bdt.code=ord.code_ordtype left outer join
+		      BD_ORDTYPE_RELATION boe on boe.pk_ordtype = bdt.pk_ordtype
+		where ord.del_flag='0' 
+		   <if test="pkPv!=null">
+		      and ord.pk_pv=#{pkPv,jdbcType=VARCHAR} 
+		  </if>
+		      and ord.ordsn in 
+		  <foreach item="ordsn" index="index" collection="ordsns" open="(" separator="," close=")">
+			#{ordsn}
+		</foreach>
+		  order by ord.ordsn
+    </select>
+   <select id="queryCnOrderIpBlDtSync" parameterType="java.util.Map" resultType="com.zebone.nhis.cn.ipdw.vo.CnBlIpDtVo">
+		select dt.pk_cnord,
+			   dt.pk_item,
+			   dt.name_cg,
+			   dt.pk_unit,
+			   dt.spec,
+			   dt.price_org,
+			   dt.price,
+			   dt.quan,
+			   dt.amount,
+			   dt.date_hap,
+			   dt.pk_pd,
+			   dt.pk_cgip,
+			   (case when ord.flag_durg = '1' then SUBSTRING (ord.code_ord,1,len(ord.code_ord)-3) else item.code end) code,
+			   (case when ord.flag_durg = '1' then CONVERT(int, ord.ratio_hp)  else item.hp_type end) eu_hptype,
+			   dt.charge_id,
+			   nvl(ord.order_no,dt.charge_id) order_no,
+			   pv.code_pv
+		 from cn_order ord inner join 
+		      pv_encounter pv on pv.pk_pv=ord.pk_pv left outer join 
+		      bl_ip_dt dt on dt.pk_cnord=ord.pk_cnord left outer join 
+		      bd_item item on dt.pk_item=item.pk_item left outer join
+		      bd_pd pd on ord.pk_ord=pd.pk_pd left outer join 
+		      bd_unit bu on item.pk_unit=bu.pk_unit
+		where ord.del_flag='0' 
+		   <if test="pkPv!=null">
+		      and ord.pk_pv=#{pkPv,jdbcType=VARCHAR} 
+		  </if>
+		      and ord.ordsn in 
+		  <foreach item="ordsn" index="index" collection="ordsns" open="(" separator="," close=")">
+			#{ordsn}
+		</foreach>
+		  order by dt.pk_cnord,item.code
+    </select>
+    
+        
+    <select id="querySyncOrderStatusBak" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOrder">
+		select ord.JLXH ordsn,
+		       ord.YZMC name_ord
+		 from HHIS_V_ZY_BQYZ ord    
+		where COALESCE(ord.JLXH,0) = 1  
+		   <if test="zyh!=null">
+		      and ord.zyh=#{zyh,jdbcType=VARCHAR} 
+		  </if>
+		      and ord.jlxh in 
+		  <foreach item="ordsn" index="index" collection="ordsns" open="(" separator="," close=")">
+			#{ordsn}
+		</foreach>
+    </select>
+    <select id="querySyncOrderStatus" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOrder">
+		select ord.JLXH ordsn,
+		       ord.YZMC name_ord
+		 from HHIS_V_ZY_BQYZ ord    
+		where COALESCE(ord.JLXH,0) = 1  
+		   <if test="zyh!=null">
+		      and ord.zyh=#{zyh,jdbcType=VARCHAR} 
+		  </if>
+		      and ord.jlxh in 
+		  <foreach item="ordsn" index="index" collection="ordsns" open="(" separator="," close=")">
+			#{ordsn}
+		</foreach>
+    </select>              
+    <select id="querySyncOrderStops" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOrder">
+		select ord.JLXH ordsn,
+		       ord.YZMC name_ord
+		 from HHIS_V_ZY_BQYZ ord    
+		where TZSJ is not null and 1=0 
+		   <if test="zyh!=null">
+		      and ord.zyh=#{zyh,jdbcType=VARCHAR} 
+		  </if>
+		      and ord.jlxh in 
+		  <foreach item="ordsn" index="index" collection="ordsns" open="(" separator="," close=")">
+			#{ordsn}
+		</foreach>
+    </select>
+    <select id="syncProcOrders" statementType="CALLABLE" parameterType="java.util.Map" resultMap="resultMapProc">
+		{call NEMS_PROC_INP_HIS_SYNC_ORDER(#{codePv,mode=IN,jdbcType=VARCHAR},#{optType,mode=IN,jdbcType=VARCHAR},#{rtnCode,jdbcType=INTEGER,mode=OUT},#{rtnMsg,mode=OUT, jdbcType=VARCHAR})}
+	</select>
+	<resultMap type="java.util.HashMap" id="resultMapProc">
+		<result column="rtn_code" property="rtnCode" jdbcType="INTEGER" />
+		<result column="rtn_msg" property="rtnMsg" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<select id="syncPatEncInfo" statementType="CALLABLE" parameterType="java.util.Map" resultMap="resultMapProc">  
+		{call proc_nems_inp_sync_his_pat_info(#{pkDept,mode=IN,jdbcType=VARCHAR},#{rtnCode,jdbcType=INTEGER,mode=OUT},#{rtnMsg,mode=OUT, jdbcType=VARCHAR})} 
+	</select>
+	
+	<select id="querySyncPvDiags" parameterType="java.util.Map" resultType="com.zebone.nhis.cn.ipdw.vo.PvDiagVo">
+		select diag.*,
+			   zd.diagcode,
+			   zd.diagname,
+			   pv.code_pv,
+			   pi.code_ip,
+			   emp.code_emp emp_code,
+			   bd.name diagtype_name
+		 from pv_diag diag inner join 
+		      pv_encounter pv on pv.pk_pv=diag.pk_pv inner join 
+		      pi_master pi on pv.pk_pi=pi.pk_pi left outer join
+		      bd_ou_employee emp on diag.pk_emp_diag=emp.pk_emp left outer join 
+		      bd_defdoc bd on bd.code=diag.dt_diagtype and code_defdoclist='060005' left outer join
+		      bd_term_diag zd on diag.pk_diag=zd.pk_diag 
+		where diag.del_flag='0' 
+		  <if test="pkPv!=null">
+		  and diag.pk_pv=#{pkPv,jdbcType=VARCHAR} 
+		  </if>
+		order by diag.dt_diagtype,diag.sort_no
+    </select>
+     <select id="createSyncHisSn" statementType="CALLABLE" parameterType="java.util.Map" resultMap="resultMapSn">
+		{call his.dt_getmax_tran(#{code,mode=IN,jdbcType=VARCHAR},#{sn,jdbcType=INTEGER,mode=OUT})}
+	</select>
+	<resultMap type="java.util.HashMap" id="resultMapSn">
+		<result column="sn" property="sn" jdbcType="INTEGER" />
+	</resultMap>
+	<select id="createSyncHisSnYs" statementType="CALLABLE" parameterType="java.util.Map" resultMap="resultMapSn">
+		{call his.dt_getmax_ys(#{code,mode=IN,jdbcType=VARCHAR},#{sn,jdbcType=INTEGER,mode=OUT})}
+	</select>
+	<select id="createSyncHisSnMax" statementType="CALLABLE" parameterType="java.util.Map" resultMap="resultMapSn">
+		{call his.dt_getmax(#{code,mode=IN,jdbcType=VARCHAR},#{sn,jdbcType=INTEGER,mode=OUT})}
+	</select>	
+	<select id="queryReqTmpItemsBak" parameterType="java.util.Map" resultType="com.zebone.nhis.cn.ipdw.vo.ReqTmpItemVo">
+		select item.mbxh,
+			   item.nbmc,
+			   item.dxmc,
+			   item.dxqz
+		 from his.YJ_BGMB02 item    
+		where (item.dxmc in ('X_M','J_E','MS','Z_D','LCYX') or instr(item.dxqz,'临床印象')>0 
+		                 or instr(item.dxqz,'病史及特征')>0  or instr(item.dxqz,'病历摘要')>0 
+		                 or instr(item.dxqz,'症    状')>0 or instr(item.dxqz,'检查部位')>0 
+		                 or instr(item.dxqz,'目  的')>0 or
+		                 (mbxh=38 and nbmc='item12'))
+		      and item.mbxh in 
+		  <foreach item="mbxh" index="index" collection="mbxhs" open="(" separator="," close=")">
+			#{mbxh}
+		</foreach>
+	  order by item.mbxh,item.nbmc	   
+    </select> 
+    <select id="queryReqTmpItems" parameterType="java.util.Map" resultType="com.zebone.nhis.cn.ipdw.vo.ReqTmpItemVo">
+		select item.mbxh,
+			   item.nbmc,
+			   item.dxmc,
+			   item.dxqz
+		 from his.YJ_BGMB02 item    
+		where ((item.dxmc in ('X_M','J_E','MS','Z_D')) or
+		                 (mbxh=38 and nbmc='item12') or
+		                 (mbxh=40 and nbmc in ('item23','item24')) or
+		                 (mbxh=41 and nbmc='item23') or
+		                 (mbxh=42 and nbmc='item44') or
+		                 (mbxh=43 and nbmc in ('item40','item41')) or
+		                 (mbxh=44 and nbmc in ('item21','item23','item26','item50')) or
+		                 (mbxh=53 and nbmc in ('item40','item41')) or
+		                 (mbxh=54 and nbmc in ('item40','item41')) or
+		                 (mbxh=55 and nbmc in ('item40','item41')) or
+		                 (mbxh=56 and nbmc in ('item40','item41')) or
+		                 (mbxh=57 and nbmc in ('item40','item41')) or
+		                 (mbxh=58 and nbmc in ('item41','item47','item52','item53','item54','item55')) or
+		                 (mbxh=59 and nbmc in ('item36','item44','item46','item49','item69')) or
+		                 (mbxh=61 and nbmc in ('item40','item41')) or
+		                 (mbxh=63 and nbmc in ('item40','item41')) 
+		                 )
+		      and item.mbxh in 
+		  <foreach item="mbxh" index="index" collection="mbxhs" open="(" separator="," close=")">
+			#{mbxh}
+		</foreach>
+	  order by item.mbxh,item.nbmc	   
+    </select>
+    <select id="queryReqRecsBak" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.ma.tpi.ems.YjSq01">
+		select rec.*
+		 from his.yj_sq01 rec,
+		      cn_order_sync ord
+		where rec.zyh=ord.code_pv
+		  and rec.yzxh=ord.order_no
+		   <if test="pkPv!=null">
+		      and ord.pk_pv=#{pkPv,jdbcType=VARCHAR} 
+		  </if>
+		      and ord.ordsn in 
+		  <foreach item="ordsn" index="index" collection="ordsns" open="(" separator="," close=")">
+			#{ordsn}
+		</foreach>
+    </select>
+	<select id="queryReqRecs" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.ma.tpi.ems.YjSq01">
+		select rec.*
+		 from his.yj_sq01 rec
+		where rec.zyh is not null
+		  <if test="zyh!=null">
+		      and rec.zyh=#{zyh,jdbcType=VARCHAR} 
+		  </if>
+		      and rec.yzxh in 
+		  <foreach item="yzxh" index="index" collection="yzxhs" open="(" separator="," close=")">
+			#{yzxh}
+		</foreach>
+    </select>    
+    <select id="queryReqItems" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.ma.tpi.ems.YjSq02">
+		select item.*
+		 from his.yj_sq02 item
+		where item.yjxh in 
+		  <foreach item="yjxh" index="index" collection="yjxhs" open="(" separator="," close=")">
+			#{yjxh}
+		</foreach>
+    </select>
+     <!-- 查询患者就诊信息 -->
+     <select id="queryPatListSync" parameterType="java.util.Map" resultType="DynaBean">
+         select pi.pk_pi, pi.code_pi, pi.code_op, pi.code_ip, 
+			pv.code_pv pat_no, pi.barcode, pi.pk_picate, 
+			pi.name_pi, pi.name_pi  name, pi.photo_pi, 
+			pi.dt_idtype, pi.hic_no, pi.insur_no, 
+			(case pi.dt_idtype when '01' then pi.id_no else null end) id_no,
+			pi.mpi, pi.flag_ehr, pi.dt_sex, zd_sex.name  sex_name,zd_sex.spcode  sex_spcode,
+		    to_char(pi.birth_date,'YYYYMMDDHH24MISS') birth_date, pi.place_birth, 
+		    pi.dt_marry, zd_marry.name  marry_name, zd_marry.spcode  marry_spcode,
+		    pi.dt_occu, zd_occu.name  occu_name,zd_occu.spcode  occu_spcode, 
+			pi.dt_country, zd_country.name country_name,zd_country.spcode country_spcode,  
+			pi.dt_nation, zd_nation.name  nation_name, zd_nation.spcode  nation_spcode, 
+			(case pi.dt_blood_abo when null then '' else substr(pi.dt_blood_abo, 0, 2) end) dt_blood_abo,
+		    pi.dt_blood_rh, zd_rh.name  blood_rh_name, zd_rh.spcode  rh_spcde,
+		    pi.dt_edu, pi.tel_no, pi.mobile, pi.wechat_no, pi.email, 
+			pi.unit_work, pi.tel_work,pi.postcode_work, pi.address, 
+			pi.name_rel,pi.dt_ralation,zd_rel.name ralation_name,pi.tel_rel, pi.addr_rel,
+			pv.pk_pv, pv.pk_org, pv.code_pv, pv.eu_pvtype, 
+			to_char(pv.date_begin,'YYYYMMDDHH24MISS') date_begin, 
+			to_char(pv.date_end,'YYYYMMDDHH24MISS') date_end, 
+			to_char(pv.date_clinic,'YYYYMMDDHH24MISS') date_clinic, 
+			to_char(pv.date_admit,'YYYYMMDDHH24MISS') date_admit, 
+			to_char(pv.date_reg,'YYYYMMDDHH24MISS') date_reg, 
+			pv.eu_status  eu_status_pv, pv.flag_in, 
+			pv.name_pi  name_pi_pv, pv.dt_sex  dt_sex_pv, pv.age_pv, 
+			pv.pk_insu, bd_hp.name  insu_name,bd_hp.eu_hptype, pv.pk_picate, 
+			pv.address  address_pv, pv.dt_marry  dt_marry_pv, 
+			pv.pk_dept, dept.name_dept ,dept.code_dept, 
+			pv.pk_dept_ns, ns.name_dept  name_dept_ns, ns.code_dept  code_dept_ns, 
+			pv.pk_wg, pv.bed_no, 
+			pv.pk_emp_ns, pv.name_emp_ns, 
+			pv.pk_emp_tre, pv.name_emp_tre, emp_tre.code_emp code_emp_tre,
+			pv.pk_emp_phy, pv.name_emp_phy, emp_phy.code_emp code_emp_phy,
+			pv.pk_emp_reg, pv.name_emp_reg, 
+			pv.flag_settle, pv.eu_status_fp, 
+			pv.flag_cancel, pv.pk_emp_cancel, pv.name_emp_cancel, to_char(pv.date_cancel,'YYYYMMDDHH24MISS') date_cancel, 
+			pv.creator creator_pv, pv.create_time  create_time_pv, 
+			pv.modifier modifier_pv, pv.del_flag, pv.ts, 
+			pv_op.op_times,sch_srv.eu_srvtype,
+			pv_ip.pk_pvip, pv_ip.pk_ip_notice, pv_ip.ip_times, 
+			to_char(pv_ip.date_notice,'YYYYMMDDHH24MISS') date_notice, pv_ip.flag_opt, 
+			pv_ip.dt_level_ns, ord_ns.name level_ns_name,
+			pv_ip.dt_level_dise, zd_ld.name  level_dise_name, 
+			pv_ip.dt_level_nutr, ord_nutr.name level_nutr_name,
+			pv_ip.dt_outcomes, 
+			pv_ip.flag_infant flag_inf, inf.sort_no , 
+			pi.code_pi code_pi_ma,
+            pi.name_pi name_pi_ma,
+			pv_ip.quan_infant, pv_ip.eu_status_doc, 
+			to_char(pv_ip.date_commit_doc,'YYYYMMDDHH24MISS') date_commit_doc, 
+			pv_ip.flag_ga, pv_ip.flag_ga_ns, 
+			pv_ip.dt_intype, pv_ip.dt_outtype, 
+			pv_ip.pk_dept_admit, pv_ip.pk_dept_dis, 
+			pv_ip.pk_dept_ns_admit, pv_ip.pk_dept_ns_dis, 
+			to_char(pv_ip.date_prest,'YYYYMMDDHH24MISS') date_prest, 
+			pv_ip.flag_prest, pv_ip.pk_emp_prest, pv_ip.name_emp_prest, 
+			<!-- datediff(dd, pv.date_begin, nvl(pv.date_end, getdate()))  in_hos_days,  -->
+			pi.addrcode_origin, pi.addr_origin, pi.addr_cur || nvl(pi.addr_cur_dt,'') addr_cur, 
+			pi.addrcode_cur, pi.addr_cur_dt, pi.postcode_cur,
+			pi.addrcode_birth, pi.addr_birth, 
+			pi.postcode_regi,pi.addr_regi || nvl(pi.addr_regi_dt,'') addr_regi, pi.addr_regi_dt
+		from pv_encounter  pv 
+	   inner join pi_master  pi on pv.pk_pi = pi.pk_pi 
+	    left join bd_ou_dept  dept on pv.pk_dept = dept.pk_dept 
+	    left join pv_ip on  pv.pk_pv = pv_ip.pk_pv 
+	    left join pv_op on  pv.pk_pv = pv_op.pk_pv
+	    left join bd_ou_dept  ns on pv.pk_dept_ns = ns.pk_dept 
+	    left join bd_defdoc  zd_sex on pi.dt_sex = zd_sex.code and zd_sex.code_defdoclist = '000000' 
+	    left join bd_defdoc  zd_nation on pi.dt_nation = zd_nation.code and zd_nation.code_defdoclist = '000003' 
+	    left join bd_defdoc  zd_country on pi.dt_country = zd_country.code and zd_country.code_defdoclist = '000009' 
+	    left join bd_defdoc  zd_occu on pi.dt_occu = zd_occu.code and zd_occu.code_defdoclist = '000010' 
+	    left join bd_defdoc  zd_marry on pi.dt_marry = zd_marry.code and zd_marry.code_defdoclist = '000006' 
+	    left join bd_defdoc  zd_abo on pi.dt_blood_abo = zd_abo.code and zd_abo.code_defdoclist = '000004' 
+	    left join bd_defdoc  zd_rh on pi.dt_blood_rh = zd_rh.code and zd_rh.code_defdoclist = '000005' 
+	    left join bd_defdoc  zd_rel on pi.dt_ralation = zd_rel.code and zd_rel.code_defdoclist = '000013' 
+	    left join bd_defdoc  zd_ld on pv_ip.dt_level_dise = zd_ld.code and zd_ld.code_defdoclist = '000202' 
+	    left join bd_ord ord_ns on pv_ip.dt_level_ns = ord_ns.code and ord_ns.code_ordtype = '06'
+		left join bd_ord ord_nutr on pv_ip.dt_level_nutr = ord_nutr.code and ord_nutr.code_ordtype = '13'
+	    left join bd_ou_employee  emp_tre on emp_tre.pk_emp = pv.pk_emp_tre
+	    left join bd_ou_employee  emp_phy on emp_phy.pk_emp = pv.pk_emp_phy
+	    left join bd_hp on pv.pk_insu = bd_hp.pk_hp
+	    left join pv_infant  inf on inf.pk_pv_infant = pv.pk_pv and inf.del_flag = '0'
+	    left join sch_srv on sch_srv.pk_schsrv = pv_op.pk_schsrv
+		where 1=1	
+   	    <if test="pkPv != null" >
+            and pv.pk_pv = #{pkPv,jdbcType=VARCHAR}
+        </if> 		
+   	    <if test="pkPi != null" >
+            and pv.pk_pi = #{pkPi,jdbcType=VARCHAR}
+            and (pv.eu_status = '0' or pv.eu_status = '1')
+        </if> 		
+   	    <if test="codePi != null" >
+            and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+        </if> 		
+   	    <if test="codeIp != null" >
+            and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+        </if>
+       	<if test="codePv != null" >
+            and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+        </if> 		
+    </select> 	   	  	         
+</mapper>

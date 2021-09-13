@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.material.dao.MtlInUsedMapper">
+
+	<select id="queryPdUsedList" parameterType="java.util.Map" resultType="DynaBean"> 
+	      select us.*,
+		       	pd.pk_pd,
+		       	pd.name,
+		       	pd.spec,
+		       	pd.pk_factory,
+		       	pd.pk_unit_pack,
+		       	pd.pack_size,
+		       	dept.name_dept dept_name,
+		       	fa.name factory_name,
+		       	bu.name unit_name
+		   from pd_deptusing us
+		  inner join bd_pd pd on pd.pk_pd = us.pk_pd
+		   left join bd_ou_dept dept on dept.pk_dept = us.pk_dept_use
+		   left join bd_factory fa on fa.pk_factory = pd.pk_factory
+		   left join bd_unit bu on bu.pk_unit = pd.pk_unit_pack
+		  where us.pk_store = #{pkStore,jdbcType=CHAR}
+	 <if test="pkDeptUse != null  and  pkDeptUse != ''">
+		    and us.pk_dept_use = #{pkDeptUse,jdbcType=CHAR}
+     </if> 
+	 <if test="code != null  and  code != ''">
+		    and pd.code= #{code,jdbcType=CHAR}
+	 </if> 
+	 <if test="dateBegin != null  and  dateBegin != ''">
+            and us.date_beign &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+     </if>
+     <if test="dateEnd != null  and  dateEnd != ''">
+            and us.date_beign &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+     </if>
+		  order by pd.code
+	</select>
+
+	
+</mapper>

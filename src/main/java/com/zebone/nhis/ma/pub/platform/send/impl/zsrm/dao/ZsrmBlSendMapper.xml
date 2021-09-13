@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.platform.send.impl.zsrm.dao.ZsrmBlSendMapper" >
+
+    <select id="getOpArrearsLis" parameterType="java.lang.String" resultType="DynaBean">
+        select
+          distinct pi.name_pi,pi.MOBILE, pi.TEL_NO,pi.CODE_PI,pi.CODE_OP,pi.CODE_IP
+        	from bl_op_dt opdt
+        	inner join pv_encounter pv on pv.pk_pv= opdt.pk_pv
+        	inner join pi_master pi on pi.pk_pi=opdt.pk_pi
+        	where
+        opdt.flag_settle='0'
+        and opdt.pk_settle is NULL
+        and pv.eu_pvtype !='3'
+        and to_char(opdt.date_hap, 'yyyyMMdd')= #{dateHap,jdbcType=VARCHAR}
+        GROUP BY pi.name_pi,pi.MOBILE, pi.TEL_NO,pi.CODE_PI,pi.CODE_OP,pi.CODE_IP
+	</select>
+</mapper>

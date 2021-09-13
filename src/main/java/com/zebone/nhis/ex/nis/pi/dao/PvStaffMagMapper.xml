@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ex.nis.pi.dao.PvStaffMagMapper">
+	
+	<select id="queryPvStaffList"  parameterType="java.util.Map" resultType="DynaBean">
+		select sta.pk_org, 
+				sta.pk_staff, 
+				sta.pk_emp,  
+				sta.name_emp, 
+				sta.dt_role,
+				sta.date_begin, 
+				sta.date_end, 
+				sta.modifier , 
+				sta.pk_dept, 
+				sta.pk_dept_ns,
+				sta.dt_patieva,  
+				sta.desc_patieva ,
+				dept.name_dept,
+				deptNs.name_dept name_dept_ns,
+				emp.name_emp name_modifer
+		from pv_staff sta 
+		left join bd_ou_dept dept on dept.pk_dept = sta.pk_dept
+		left join bd_ou_dept deptNs on deptNs.pk_dept = sta.pk_dept_ns
+		left join bd_ou_employee emp on emp.pk_emp = sta.modifier
+ 	   where sta.del_flag = '0'    
+	<if test=" pkPv != null  and  pkPv != ''">
+		 and sta.pk_pv = #{pkPv,jdbcType=CHAR} 
+	</if>	 
+  	   order by sta.date_end, sta.date_begin, sta.pk_dept, sta.pk_dept_ns, sta.dt_role
+	</select>
+	
+	<select id="queryPvWgList"  parameterType="java.util.Map" resultType="DynaBean">
+		select wg.pk_clinicgroup,
+			   wg.pk_org,
+			   wg.pk_pv,
+			   wg.pk_dept,
+			   wg.pk_dept_ns,
+			   wg.pk_wg,
+			   wg.date_begin,
+			   wg.date_end,
+			   wg.dt_patieva,
+			   wg.desc_patieva,
+			   wg.eu_status,
+			   wg.creator,
+			   wg.create_time,
+			   wg.modifier,
+			   wg.del_flag,
+			   wg.ts ,
+			   dept.name_dept,
+			   deptNs.name_dept name_dept_ns,
+			   emp.name_emp name_modifer,
+			   deptWg.name_wg
+		 from pv_clinic_group wg
+		 left join bd_ou_dept dept on dept.pk_dept = wg.pk_dept
+		 left join bd_ou_dept deptNs on deptNs.pk_dept = wg.pk_dept_ns
+		 left join bd_ou_employee emp on emp.pk_emp = wg.modifier
+		 left join org_dept_wg deptWg on deptWg.pk_wg = wg.pk_wg
+		where wg.del_flag = '0' 
+	<if test=" pkPv != null  and  pkPv != ''">
+		  and wg.pk_pv = #{pkPv,jdbcType=CHAR} 
+	</if>	
+	      order by wg.date_begin
+	</select>
+
+
+	<select id="queryWgList"  parameterType="java.util.Map" resultType="DynaBean">
+		select
+		odw.pk_wg,
+		odw.name_wg
+		from org_dept_wg_emp odwe left join org_dept_wg odw on odwe.pk_wg = odw.pk_wg
+		where odw.del_flag = '0'
+		<if test="pkEmp != null and pkEmp != ''">
+			and odwe.pk_emp = #{pkEmp,jdbcType=CHAR}
+		</if>
+		<if test="pkDept != null and pkDept != ''">
+			and odw.pk_dept = #{pkDept,jdbcType=CHAR}
+		</if>
+	</select>
+</mapper>

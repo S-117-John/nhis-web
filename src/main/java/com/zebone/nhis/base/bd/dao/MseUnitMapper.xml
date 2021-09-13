@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.MseUnitMapper">
+
+	<select id="queryAllUnits" resultType="com.zebone.nhis.common.module.cn.ipdw.BdUnit">
+		select
+		  pk_unit,
+		  pk_org,
+		  code,
+		  name,
+		  spcode,
+		  d_code,
+		  creator,
+		  create_time,
+		  modifier,
+		  del_flag,
+		  ts
+		from bd_unit where DEL_FLAG='0'
+	</select>
+	<!-- 查询计量单位(条件查询) -->
+	<select id="queryUnitsByCondition" resultType="com.zebone.nhis.common.module.cn.ipdw.BdUnit" parameterType="java.util.Map">
+		select 
+			pk_unit,
+			pk_org,
+			code, 
+			name, 
+			spcode, 
+			d_code, 
+			del_flag
+		from BD_UNIT 
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+		    <if test="code != null and code != ''">
+		  		and code like '%'||#{code,jdbcType=VARCHAR}||'%'
+		  	</if> 
+		  	<if test="name != null and name != ''">
+		  		and name like '%'||#{name,jdbcType=VARCHAR}||'%'
+		  	</if>
+		  	<if test="spcode != null and spcode != ''">
+		  		and spcode like '%'||#{spcode,jdbcType=VARCHAR}||'%'
+		  	</if>
+		  	<if test="dcode != null and dcode != ''">
+		  		and d_code like '%'||#{dcode,jdbcType=VARCHAR}||'%'
+		  	</if>
+  		</trim>
+  		order by code
+	</select>
+	
+	<!-- 根据编码和名称查询单位是否存在 -->
+	<select id="queryUnitCountByCondition" resultType="int" parameterType="java.util.Map">
+		select count(1) from BD_UNIT where code=#{code} or "name"=#{name}
+	</select>
+	
+	<!-- 根据主键获取计量单位信息 -->
+	<select id="queryUnitBypkUnit" resultType="com.zebone.nhis.common.module.cn.ipdw.BdUnit" parameterType="java.lang.String">
+		select 
+		  pk_unit,
+		  pk_org,
+		  code,
+		  name,
+		  spcode,
+		  d_code,
+		  creator,
+		  create_time,
+		  modifier,
+		  del_flag,
+		  ts
+		from BD_UNIT 
+		where pk_unit=#{pkUnit}
+	</select>
+	
+	<!-- 根据主键删除单位(必须是未作废的) -->
+	<delete id="delUnitByPk" parameterType="java.lang.String">
+		delete from bd_unit where pk_unit=#{pkUnit} and del_flag='0'
+	</delete>
+	
+	
+</mapper>

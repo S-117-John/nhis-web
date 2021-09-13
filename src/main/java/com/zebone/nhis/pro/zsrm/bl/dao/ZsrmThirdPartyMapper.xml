@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsrm.bl.dao.ZsrmThirdPartyMapper">
+    <select id="getHisTripartite" parameterType="java.util.Map" resultType="com.zebone.nhis.pro.zsrm.bl.vo.PaymentCheckVo">
+  		SELECT
+        	pv.EU_PVTYPE,
+        	pi.CODE_OP,
+        	pi.NAME_PI,
+        	pv.DATE_BEGIN date_pv,
+        	pay.pk_extpay,
+        	pay.pk_depo,
+        	depo.DT_PAYMODE pay_type,
+            depo.PAY_INFO order_no,
+        	st.DT_STTYPE,
+        	st.DATE_ST,
+        	pay.TRADE_NO trade_no,
+            pay.body_pay,
+            pay.sysname,
+            pay.amount,
+            pay.DATE_PAY,
+  		    pay.DT_BANK,
+  		    pay.flag_pay,
+            depo.NAME_EMP_PAY as name_emp,
+        	st.AMOUNT_PI,
+        	st.AMOUNT_INSU,
+        	st.AMOUNT_ST
+        FROM
+        	bl_deposit depo
+        	inner JOIN BL_SETTLE st ON st.PK_SETTLE =depo.pk_settle
+        	inner JOIN PV_ENCOUNTER pv ON pv.PK_PV = depo.PK_PV
+        	inner JOIN PI_MASTER pi ON pi.PK_PI = depo.PK_PI
+            left join BL_EXT_PAY pay on depo.pk_depo=pay.pk_depo and pay.SERIAL_NO is not null
+        WHERE
+        	depo.PAY_INFO is not null and pay.PK_EXTPAY is not null 
+            <if test="euOrdertype != null and euOrdertype != '' and euOrdertype == 'Seabird' ">
+                and depo.DT_PAYMODE in ('23','24','25')
+            </if>
+            <if test="euOrdertype != null and euOrdertype != '' and euOrdertype == 'UnionPay' ">
+               and depo.DT_PAYMODE in ('15','16','13','14','17')
+            </if>
+            <if test="euOrdertype != null and euOrdertype != '' and euOrdertype == 'Sande' ">
+               and depo.DT_PAYMODE in ('22','21','20','19','18')
+            </if>
+            <if test="euOrdertype != null and euOrdertype != '' and euOrdertype == 'GenerationPOS' ">
+               and depo.DT_PAYMODE = '12'
+            </if>
+            <if test="euOrdertype != null and euOrdertype != '' and euOrdertype == 'QualityPay' ">
+                and depo.DT_PAYMODE in ('30','31')
+            </if>
+            AND to_char( depo.DATE_PAY, 'yyyyMMdd' ) = #{datePay,jdbcType=VARCHAR}
+             ORDER BY depo.DATE_PAY
+  	</select>
+
+         <!--一代社保交易总笔数金额查询-->
+         <select id = "queryOneInsu" parameterType="java.util.Map" resultType="DynaBean">
+             select count(*) as toles,sum(pay.AMOUNT) as amount from BL_EXT_PAY pay
+             INNER join bl_deposit depo on depo.pk_depo=pay.pk_depo
+             left JOIN BL_SETTLE st ON st.PK_SETTLE =depo.pk_settle
+             WHERE pay.FLAG_PAY='1' and pay.SERIAL_NO is not null
+               AND to_char( pay.DATE_PAY, 'yyyyMMddHHmmss') &lt;= #{dateEnd,jdbcType=VARCHAR}
+               AND to_char( pay.DATE_PAY, 'yyyyMMddHHmmss') &gt;= #{dateDegin,jdbcType=VARCHAR}
+               AND pay.eu_paytype in ('12','0601')
+         </select>
+         <!--三代代社保交易总笔数金额查询-->
+         <select id = "queryThreInsu" parameterType="java.util.Map" resultType="DynaBean">
+             select count(*) as toles,sum(pay.AMOUNT) as amount from BL_EXT_PAY pay
+             INNER join bl_deposit depo on depo.pk_depo=pay.pk_depo
+             left JOIN BL_SETTLE st ON st.PK_SETTLE =depo.pk_settle
+             WHERE pay.FLAG_PAY='1' and pay.SERIAL_NO is not null
+               AND to_char( pay.DATE_PAY, 'yyyyMMddHHmmss') &lt;= #{dateEnd,jdbcType=VARCHAR}
+               AND to_char( pay.DATE_PAY, 'yyyyMMddHHmmss') &gt;= #{dateDegin,jdbcType=VARCHAR}
+               AND pay.eu_paytype in ('13','14','18','19','0404','0504')
+         </select>
+         <!--交易总笔数金额查询-->
+         <select id = "querytotalAmt" parameterType="java.util.Map" resultType="DynaBean">
+             select count(*) as toles,sum(pay.AMOUNT) as amount from BL_EXT_PAY pay
+             INNER join bl_deposit depo on depo.pk_depo=pay.pk_depo
+             left JOIN BL_SETTLE st ON st.PK_SETTLE =depo.pk_settle
+             WHERE pay.FLAG_PAY='1' and pay.SERIAL_NO is not null
+               AND to_char( pay.DATE_PAY, 'yyyyMMddHHmmss') &lt;= #{dateEnd,jdbcType=VARCHAR}
+               AND to_char( pay.DATE_PAY, 'yyyyMMddHHmmss') &gt;= #{dateDegin,jdbcType=VARCHAR}
+         </select>
+         <select id="queryThirdOrder" resultType="com.zebone.nhis.common.module.pay.BlExtPay">
+         	select * from (
+         	select pay.*
+         	from bl_ext_pay pay
+         	where pay.flag_pay='1' and pay.serial_no is not null
+         	and pay.pk_settle = #{pkSettle,jdbcType=VARCHAR}
+         	) where ROWNUM=1
+         </select>
+
+        <select id="queryThirdOrders" resultType="com.zebone.nhis.common.module.pay.BlExtPay">
+            select * from (
+            select pay.*
+            from bl_ext_pay pay
+            where pay.flag_pay='1' and pay.serial_no is not null
+            and pay.serial_no = #{serialNo,jdbcType=VARCHAR}
+            ) where ROWNUM=1
+        </select>
+
+</mapper>

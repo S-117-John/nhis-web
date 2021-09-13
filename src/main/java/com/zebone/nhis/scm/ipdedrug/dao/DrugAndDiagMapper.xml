@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.ipdedrug.dao.DrugAndDiagMapper">
+
+<select id="qryByPatient" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT	pv.code_pv pvCode,		
+				pv.name_pi piName,	
+				pv.dt_sex sex,					
+				pv.age_pv age,					
+				dept.NAME_DEPT deptPres,					
+				pres.name_emp_pres empPres,								
+				diag.desc_diag diag,		
+				ord.name_ord pdName,		
+				ord.code_supply supply,								
+				ord.dosage,					
+				unit.NAME unitDos,	
+				ord.code_freq freq,				
+				pres.date_conf dateConf 						
+				FROM ex_pres_occ_dt dt					
+				INNER JOIN bd_pd pd ON dt.pk_pd = pd.pk_pd					
+				INNER JOIN ex_pres_occ pres ON dt.pk_presocc = pres.pk_presocc					
+				INNER JOIN cn_order ord ON dt.pk_cnord = ord.pk_cnord					
+				INNER JOIN pv_encounter pv ON pres.pk_pv = pv.pk_pv					
+				INNER JOIN BD_OU_DEPT dept ON dept.PK_DEPT = pres.pk_dept_pres					
+				LEFT JOIN BD_UNIT unit ON unit.PK_UNIT = ord.pk_unit_dos 
+				LEFT OUTER JOIN pv_diag diag ON pv.pk_pv = diag.pk_pv 
+				LEFT OUTER JOIN bd_term_diag td ON diag.pk_diag = td.pk_diag  
+				where 1=1
+				<if test="pkDeptEx!=null and pkDeptEx !='' ">
+					and pres.pk_dept_ex =#{pkDeptEx,jdbcType=VARCHAR}
+				</if>
+				<if test="beginTime!=null">
+					and pres.date_conf &gt;= to_date(#{beginTime}, 'yyyy-MM-dd hh24:mi')
+				</if>
+				<if test="endTime!=null">
+					and pres.date_conf &lt;= to_date(#{endTime}, 'yyyy-MM-dd hh24:mi')
+				</if>
+				<if test='pdList!=null and pdList.size()>0'>
+	             and pd.pk_pd in 
+	             <foreach collection="pdList" item="pdList" index="no" open="(" separator="," close=")">
+	                #{pdList}
+	            </foreach> 
+				</if>
+				<if test='diagList!=null and diagList.size()>0'>
+	             and td.pk_diag in
+	             <foreach collection="diagList" item="diagList" index="no" open="(" separator="," close=")">
+	                #{diagList}
+	            </foreach> 
+         		</if>
+
+</select>
+
+<select id="qryByHospital" parameterType="java.util.Map" resultType="DynaBean">
+				select pv.code_pv pvCode,
+						  pv.name_pi       piName,
+						  pv.dt_sex        sex,
+						  pv.age_pv        age,
+						  dept.NAME_DEPT      deptPres,
+						  ord.name_emp_ord empPres,
+						  diag.desc_diag   diag,
+						  ord.name_ord     pdName,
+						  ord.code_supply  supply,
+						  ord.dosage,
+						  unit.name  unitDos,
+						  ord.code_freq    freq,
+						  dt.date_de       deteConf 
+						FROM ex_pd_de dt
+						  INNER JOIN bd_pd pd ON dt.pk_pd = pd.pk_pd
+						  INNER JOIN cn_order ord ON dt.pk_cnord = ord.pk_cnord
+						  INNER JOIN pv_encounter pv ON dt.pk_pv = pv.pk_pv
+						  INNER JOIN BD_OU_DEPT dept ON dept.PK_DEPT = ord.pk_dept
+						  LEFT JOIN BD_UNIT unit ON unit.PK_UNIT = ord.pk_unit_dos
+						  LEFT OUTER JOIN pv_diag diag ON pv.pk_pv = diag.pk_pv
+						  LEFT OUTER JOIN bd_term_diag td ON diag.pk_diag = td.pk_diag
+						where 1=1
+						<if test="pkDeptEx!=null and pkDeptEx != ''">
+							and dt.pk_dept_de =#{pkDeptEx,jdbcType=VARCHAR}
+						</if>
+						<if test="BeginTime!=null">
+							and dt.date_de &gt;=to_date(#{beginTime}, 'yyyy-MM-dd hh24:mi')
+						</if>
+						<if test="endTime!=null">
+							and dt.date_de &lt;=  to_date(#{endTime}, 'yyyy-MM-dd hh24:mi')
+						</if>
+						<if test='pdList!=null and pdList.size()>0'>
+			             and pd.pk_pd in 
+			             <foreach collection="pdList" item="pdList" index="no" open="(" separator="," close=")">
+			                #{pdList}
+			            </foreach> 
+						</if>
+						<if test='diagList!=null and diagList.size()>0'>
+			             and td.pk_diag in
+			             <foreach collection="diagList" item="item" index="no" open="(" separator="," close=")">
+			                #{item}
+			            </foreach> 
+		         		</if>
+</select>
+
+</mapper>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.PathOrderMapper">
+	
+	<select id="qryPathOrder" resultType="DynaBean">
+	 	select distinct  
+	 	   tsk.pk_cptask,
+	       tsk.sortno,
+	       tsk.name_task,
+	       tsk.spcode,
+	       tsk.d_code,
+	       tsk.code_ordtype,
+	       tsk.eu_reptype,
+	       tsk.dt_pharm,
+	       tsk.flag_mult,
+	       bo.pk_ordtype,
+	       CASE 
+			   WHEN ctc.pk_cpord is null THEN '0' 
+			   ELSE '1' 
+		   END flagUse  
+	  	from bd_cp_task tsk 
+	  	left join bd_ordtype bo on bo.code = tsk.code_ordtype 
+	  	left join cp_temp_cpord ctc on ctc.pk_ord = tsk.pk_cptask and ctc.eu_cpordtype = '1' 
+ 		where tsk.eu_type='0' and 
+	       	tsk.del_flag='0' 
+	    order by tsk.sortno 
+	</select>
+	
+	<select id="qryPathOrderDetail" parameterType="java.lang.String" resultType="DynaBean">
+		select dt.pk_cptaskdt,
+		      dt.pk_ord,
+		      dt.code_ord,
+		      dt.name_ord,
+		      dt.spec,
+		      dt.flag_def,
+		      dt.pk_cptask,
+		      case 
+				when pd.eu_drugtype is null then t.name
+				else case 
+						when pd.eu_drugtype = '0' then '西药' 
+						when pd.eu_drugtype = '1' then '成药' 
+						when pd.eu_drugtype = '2' then '草药' 
+						else ''
+					 end 
+			  end typename  
+		from bd_cp_task_dt dt 
+		left join bd_pd pd on pd.pk_pd = dt.pk_ord 
+		left join bd_ord ord on ord.pk_ord = dt.pk_ord 
+		left join bd_ordtype t on t.pk_ordtype = ord.pk_ordtype 
+		where dt.pk_cptask = #{pkCptask} and 
+		      dt.del_flag='0'
+	</select>
+</mapper>

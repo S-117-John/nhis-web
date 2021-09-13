@@ -1,0 +1,933 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.compay.ins.changzhou.dao.InsCZMedicareMapper">
+    <sql id="sqlWhere">
+        <if test='paramMap.text != null and paramMap.text != ""'>
+            AND (XM.CODE LIKE CONCAT(CONCAT('%',#{paramMap.text}),'%') OR XM.NAME LIKE
+            CONCAT(CONCAT('%',#{paramMap.text}),'%') OR UPPER(XM.SPCODE) LIKE
+            CONCAT(CONCAT('%',UPPER(#{paramMap.text})),'%'))
+        </if>
+        <if test='paramMap.fylb != null and paramMap.fylb != ""'>
+            AND CATE.CODE = #{paramMap.fylb}
+        </if>
+        <if test="paramMap.yblx != null">
+            AND CP.YBLX = #{paramMap.yblx}
+        </if>
+        <if test="paramMap.pkOrg != null">
+            AND CP.PK_ORG = #{paramMap.pkOrg}
+        </if>
+        AND CP.DEL_FLAG = '0'
+    </sql>
+    <insert id="addCompareInfo" parameterType="com.zebone.nhis.compay.ins.changzhou.vo.YBCompareInfo">
+        INSERT INTO INS_CZYB_COMPARE
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="ybCompareInfo.id != null">
+                ID,
+            </if>
+            <if test="ybCompareInfo.sfxmid != null">
+                SFXMID,
+            </if>
+            <if test="ybCompareInfo.sfxmbm != null">
+                SFXMBM,
+            </if>
+            <if test="ybCompareInfo.sfxmmc != null">
+                SFXMMC,
+            </if>
+            <if test="ybCompareInfo.ybbm != null">
+                YBBM,
+            </if>
+            <if test="ybCompareInfo.yblx != null">
+                YBLX,
+            </if>
+            <if test="ybCompareInfo.modifier != null">
+                MODIFIER,
+            </if>
+            <if test="ybCompareInfo.modifyTime != null">
+                MODIFY_TIME,
+            </if>
+            <if test="ybCompareInfo.pkOrg != null">
+                PK_ORG,
+            </if>
+            <if test="ybCompareInfo.delFlag != null">
+                DEL_FLAG,
+            </if>
+            <if test="ybCompareInfo.xmlb != null">
+                XMLB,
+            </if>
+            <if test="ybCompareInfo.sflb != null">
+                SFLB,
+            </if>
+            <if test="ybCompareInfo.ybmc != null">
+                YBMC,
+            </if>
+            <if test="ybCompareInfo.ybxmdj != null">
+                YBXMDJ,
+            </if>
+            <if test="ybCompareInfo.icdCode != null">
+                ICD_CODE,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="ybCompareInfo.id != null">
+                #{ybCompareInfo.id},
+            </if>
+            <if test="ybCompareInfo.sfxmid != null">
+                #{ybCompareInfo.sfxmid},
+            </if>
+            <if test="ybCompareInfo.sfxmbm != null">
+                #{ybCompareInfo.sfxmbm},
+            </if>
+            <if test="ybCompareInfo.sfxmmc != null">
+                #{ybCompareInfo.sfxmmc},
+            </if>
+            <if test="ybCompareInfo.ybbm != null">
+                #{ybCompareInfo.ybbm},
+            </if>
+            <if test="ybCompareInfo.yblx != null">
+                #{ybCompareInfo.yblx},
+            </if>
+            <if test="ybCompareInfo.modifier != null">
+                #{ybCompareInfo.modifier},
+            </if>
+            <if test="ybCompareInfo.modifyTime != null">
+                #{ybCompareInfo.modifyTime},
+            </if>
+            <if test="ybCompareInfo.pkOrg != null">
+                #{ybCompareInfo.pkOrg},
+            </if>
+            <if test="ybCompareInfo.delFlag != null">
+                #{ybCompareInfo.delFlag},
+            </if>
+            <if test="ybCompareInfo.xmlb != null">
+                #{ybCompareInfo.xmlb},
+            </if>
+            <if test="ybCompareInfo.sflb != null">
+                #{ybCompareInfo.sflb},
+            </if>
+            <if test="ybCompareInfo.ybmc != null">
+                #{ybCompareInfo.ybmc},
+            </if>
+            <if test="ybCompareInfo.ybxmdj != null">
+                #{ybCompareInfo.ybxmdj},
+            </if>
+            <if test="ybCompareInfo.icdCode != null">
+                #{ybCompareInfo.icdCode},
+            </if>
+        </trim>
+    </insert>
+    <insert id="insertTest" parameterType="com.zebone.nhis.compay.ins.changzhou.vo.YBCompareInfo">
+        INSERT INTO INS_CZYB_COMPARE
+                (id)
+            values(
+            #{id}
+        )
+    </insert>
+    <insert id="insertLoginInfo">
+        INSERT INTO INS_CZYB_LOGINRECORD
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                ID,
+            </if>
+            <if test="pkEmp != null">
+                PK_EMP,
+            </if>
+            <if test="yblx != null">
+                YBLX,
+            </if>
+            <if test="qdsj != null">
+                QDSJ,
+            </if>
+            <if test="qdywzqh != null">
+                QDYWZQH,
+            </if>
+            <if test="qtsj != null">
+                QTSJ,
+            </if>
+            <if test="qtywzqh != null">
+                QTYWZQH,
+            </if>
+            <if test="qdzt != null">
+                QDZT,
+            </if>
+            <if test="pkOrg != null">
+                PK_ORG,
+            </if>
+            <if test="modifier != null">
+                MODIFIER,
+            </if>
+            <if test="modifyTime != null">
+                MODIFY_TIME,
+            </if>
+            <if test="delFlag != null">
+                DEL_FLAG,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                #{id},
+            </if>
+            <if test="pkEmp != null">
+                #{pkEmp},
+            </if>
+            <if test="yblx != null">
+                #{yblx},
+            </if>
+            <if test="qdsj != null">
+                #{qdsj},
+            </if>
+            <if test="qdywzqh != null">
+                #{qdywzqh},
+            </if>
+            <if test="qtsj != null">
+                #{qtsj},
+            </if>
+            <if test="qtywzqh != null">
+                #{qtywzqh},
+            </if>
+            <if test="qdzt != null">
+                #{qdzt},
+            </if>
+            <if test="pkOrg != null">
+                #{pkOrg},
+            </if>
+            <if test="modifier != null">
+                #{modifier},
+            </if>
+            <if test="modifyTime != null">
+                #{modifyTime},
+            </if>
+            <if test="delFlag != null">
+                #{delFlag},
+            </if>
+        </trim>
+    </insert>
+    <insert id="insertYbRegisterRecord">
+        insert into INS_CZYB_REGISTERRECORD
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                ID,
+            </if>
+            <if test="fsfjylsh != null">
+                FSFJYLSH,
+            </if>
+            <if test="zxjylsh != null">
+                ZXJYLSH,
+            </if>
+            <if test="djly != null">
+                DJLY,
+            </if>
+            <if test="lsh != null">
+                LSH,
+            </if>
+            <if test="yllb != null">
+                YLLB,
+            </if>
+            <if test="zhzf != null">
+                ZHZF,
+            </if>
+            <if test="xjzf != null">
+                XJZF,
+            </if>
+            <if test="jzid != null">
+                JZID,
+            </if>
+            <if test="yldylb != null">
+                YLDYLB,
+            </if>
+            <if test="tcqh != null">
+                TCQH,
+            </if>
+            <if test="zdbm != null">
+                ZDBM,
+            </if>
+            <if test="zdmc != null">
+                ZDMC,
+            </if>
+            <if test="szysbm != null">
+                SZYSBM,
+            </if>
+            <if test="szysmc != null">
+                SZYSMC,
+            </if>
+            <if test="yl1 != null">
+                YL1,
+            </if>
+            <if test="yl2 != null">
+                YL2,
+            </if>
+            <if test="delFlag != null">
+                DEL_FLAG,
+            </if>
+            <if test="pkOrg != null">
+                PK_ORG,
+            </if>
+            <if test="modifier != null">
+                MODIFIER,
+            </if>
+            <if test="modifyTime != null">
+                MODIFY_TIME,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                #{id},
+            </if>
+            <if test="fsfjylsh != null">
+                #{fsfjylsh},
+            </if>
+            <if test="zxjylsh != null">
+                #{zxjylsh},
+            </if>
+            <if test="djly != null">
+                #{djly},
+            </if>
+            <if test="lsh != null">
+                #{lsh},
+            </if>
+            <if test="yllb != null">
+                #{yllb},
+            </if>
+            <if test="zhzf != null">
+                #{zhzf},
+            </if>
+            <if test="xjzf != null">
+                #{xjzf},
+            </if>
+            <if test="jzid != null">
+                #{jzid},
+            </if>
+            <if test="yldylb != null">
+                #{yldylb},
+            </if>
+            <if test="tcqh != null">
+                #{tcqh},
+            </if>
+            <if test="zdbm != null">
+                #{zdbm},
+            </if>
+            <if test="zdmc != null">
+                #{zdmc},
+            </if>
+            <if test="szysbm != null">
+                #{szysbm},
+            </if>
+            <if test="szysmc != null">
+                #{szysmc},
+            </if>
+            <if test="yl1 != null">
+                #{yl1},
+            </if>
+            <if test="yl2 != null">
+                #{yl2},
+            </if>
+            <if test="delFlag != null">
+                #{delFlag},
+            </if>
+            <if test="pkOrg != null">
+                #{pkOrg},
+            </if>
+            <if test="modifier != null">
+                #{modifier},
+            </if>
+            <if test="modifyTime != null">
+                #{modifyTime},
+            </if>
+        </trim>
+    </insert>
+    <insert id="insertYbUpLoadInfo">
+        insert into ins_czyb_cfmx
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="item.id != null">
+                ID,
+            </if>
+            <if test="item.fsfjylsh != null">
+                FSFJYLSH,
+            </if>
+            <if test="item.zxjylsh != null">
+                ZXJYLSH,
+            </if>
+            <if test="item.ccxjje != null">
+                CCXJJE,
+            </if>
+            <if test="item.je != null">
+                JE,
+            </if>
+            <if test="item.zlje != null">
+                ZLJE,
+            </if>
+            <if test="item.zfje != null">
+                ZFJE,
+            </if>
+            <if test="item.sfxmdj != null">
+                SFXMDJ,
+            </if>
+            <if test="item.cfmxid != null">
+                CFMXID,
+            </if>
+            <if test="item.zfyy != null">
+                ZFYY,
+            </if>
+            <if test="item.yl1 != null">
+                YL1,
+            </if>
+            <if test="item.yl2 != null">
+                YL2,
+            </if>
+            <if test="item.yl3 != null">
+                YL3,
+            </if>
+            <if test="item.delFlag != null">
+                DEL_FLAG,
+            </if>
+            <if test="item.modifier != null">
+                MODIFIER,
+            </if>
+            <if test="item.modifyTime != null">
+                MODIFY_TIME,
+            </if>
+            <if test="item.pkOrg != null">
+                PK_ORG,
+            </if>
+            <if test="item.cfh != null">
+                CFH,
+            </if>
+            <if test="item.lsh != null">
+                LSH,
+            </if>
+            <if test="item.qezfbz != null">
+                QEZFBZ,
+            </if>
+            <if test="item.yysfxmnm != null">
+                YYSFXMNM,
+            </if>
+            <if test="item.yysfxmmc != null">
+                YYSFXMMC,
+            </if>
+            <if test="item.sfxmzxbm != null">
+                SFXMZXBM,
+            </if>
+            <if test="item.dj != null">
+                DJ,
+            </if>
+            <if test="item.sl != null">
+                SL,
+            </if>
+            <if test="item.cfrq != null">
+                CFRQ,
+            </if>
+            <if test="item.ysxm != null">
+                YSXM,
+            </if>
+            <if test="item.cfysbm != null">
+                CFYSBM,
+            </if>
+            <if test="item.ksbh != null">
+                KSBH,
+            </if>
+            <if test="item.ksmc != null">
+                KSMC,
+            </if>
+            <if test="item.pkCgOp != null">
+                PK_CGOP,
+            </if>
+            <if test="item.pkCgNew != null">
+                PK_CGNEW,
+            </if>
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="item.id != null">
+                #{item.id},
+            </if>
+            <if test="item.fsfjylsh != null">
+                #{item.fsfjylsh},
+            </if>
+            <if test="item.zxjylsh != null">
+                #{item.zxjylsh},
+            </if>
+            <if test="item.ccxjje != null">
+                #{item.ccxjje},
+            </if>
+            <if test="item.je != null">
+                #{item.je},
+            </if>
+            <if test="item.zlje != null">
+                #{item.zlje},
+            </if>
+            <if test="item.zfje != null">
+                #{item.zfje},
+            </if>
+            <if test="item.sfxmdj != null">
+                #{item.sfxmdj},
+            </if>
+            <if test="item.cfmxid != null">
+                #{item.cfmxid},
+            </if>
+            <if test="item.zfyy != null">
+                #{item.zfyy},
+            </if>
+            <if test="item.yl1 != null">
+                #{item.yl1},
+            </if>
+            <if test="item.yl2 != null">
+                #{item.yl2},
+            </if>
+            <if test="item.yl3 != null">
+                #{item.yl3},
+            </if>
+            <if test="item.delFlag != null">
+                #{item.delFlag},
+            </if>
+            <if test="item.modifier != null">
+                #{item.modifier},
+            </if>
+            <if test="item.modifyTime != null">
+                #{item.modifyTime},
+            </if>
+            <if test="item.pkOrg != null">
+                #{item.pkOrg},
+            </if>
+            <if test="item.cfh != null">
+                #{item.cfh},
+            </if>
+            <if test="item.lsh != null">
+                #{item.lsh},
+            </if>
+            <if test="item.qezfbz != null">
+                #{item.qezfbz},
+            </if>
+            <if test="item.yysfxmnm != null">
+                #{item.yysfxmnm},
+            </if>
+            <if test="item.yysfxmmc != null">
+                #{item.yysfxmmc},
+            </if>
+            <if test="item.sfxmzxbm != null">
+                #{item.sfxmzxbm},
+            </if>
+            <if test="item.dj != null">
+                #{item.dj},
+            </if>
+            <if test="item.sl != null">
+                #{item.sl},
+            </if>
+            <if test="item.cfrq != null">
+                #{item.cfrq},
+            </if>
+            <if test="item.ysxm != null">
+                #{item.ysxm},
+            </if>
+            <if test="item.cfysbm != null">
+                #{item.cfysbm},
+            </if>
+            <if test="item.ksbh != null">
+                #{item.ksbh},
+            </if>
+            <if test="item.ksmc != null">
+                #{item.ksmc},
+            </if>
+            <if test="item.pkCgOp != null">
+                #{item.pkCgOp},
+            </if>
+            <if test="item.pkCgNew != null">
+                #{item.pkCgNew},
+            </if>
+        </trim>
+    </insert>
+    <update id="updateCompareInfo" parameterType="com.zebone.nhis.compay.ins.changzhou.vo.YBCompareInfo">
+        UPDATE INS_CZYB_COMPARE
+        <set>
+            <if test='ybCompareInfo.ybbm != null and ybCompareInfo.ybbm != ""'>
+                YBBM = #{ybCompareInfo.ybbm},
+            </if>
+            <if test='ybCompareInfo.yblx!=null and ybCompareInfo.yblx!=""'>
+                YBLX = #{ybCompareInfo.yblx},
+            </if>
+            <if test="ybCompareInfo.xmlb != null">
+                XMLB = #{ybCompareInfo.xmlb},
+            </if>
+            <if test="ybCompareInfo.ybxmdj != null">
+                YBXMDJ = #{ybCompareInfo.ybxmdj},
+            </if>
+            <if test="ybCompareInfo.sflb != null">
+                SFLB = #{ybCompareInfo.sflb},
+            </if>
+            <if test="ybCompareInfo.ybmc != null">
+                YBMC = #{ybCompareInfo.ybmc},
+            </if>
+            MODIFIER = #{ybCompareInfo.modifier},
+            modify_time = #{ybCompareInfo.modifyTime}
+        </set>
+        WHERE id = #{ybCompareInfo.id}
+    </update>
+    <update id="deleteCompareInfo" parameterType="com.zebone.nhis.compay.ins.changzhou.vo.YBCompareInfo">
+        UPDATE INS_CZYB_COMPARE set DEL_FLAG = '1', MODIFIER = #{ybCompareInfo.modifier}, modify_time = #{ybCompareInfo.modifyTime} WHERE id = #{ybCompareInfo.id}
+    </update>
+    <update id="updateLogoutInfo">
+        UPDATE INS_CZYB_LOGINRECORD
+        <set>
+            <if test="qtsj != null">
+                QTSJ = #{qtsj},
+            </if>
+            <if test="qtywzqh != null">
+                QTYWZQH = #{qtywzqh},
+            </if>
+            <if test="modifier != null">
+                MODIFIER = #{modifier},
+            </if>
+            <if test="modifyTime != null">
+                MODIFY_TIME = #{modifyTime},
+            </if>
+            QDZT = '2'
+        </set>
+        where id = #{id}
+    </update>
+    <update id="updateYbRegisterRecord">
+        update INS_CZYB_REGISTERRECORD
+        SET DEL_FLAG = '1',MODIFIER = #{modifier},MODIFY_TIME = #{modifyTime}
+        WHERE JZID = #{jzid}
+    </update>
+    <update id="updateYbUpLoadInfo">
+        UPDATE INS_CZYB_CFMX SET DEL_FLAG = '1',MODIFIER = #{modifier},MODIFY_TIME= #{modifyTime}
+        <where>
+            <if test='lsh != null and lsh !=""'>
+                AND LSH = #{lsh}
+            </if>
+            <if test='fsfjylsh != null and fsfjylsh != ""'>
+                AND FSFJYLSH = #{fsfjylsh}
+            </if>
+            <if test='cfmxid != null and cfmxid != ""'>
+                AND CFMXID = #{cfmxid}
+            </if>
+        </where>
+    </update>
+    <update id="updateYbSettle">
+        UPDATE INS_CZYB_SETTLEINFO SET DEL_FLAG = '1',MODIFIER = #{modifier},MODIFY_TIME = #{modifyTime} WHERE FYJSID = #{fyjsid}
+    </update>
+    <update id="updateYbRegisterByFyjsid">
+        UPDATE INS_CZYB_REGISTERRECORD REG SET REG.DEL_FLAG = '1' WHERE REG.LSH = (SELECT INFO.LSH FROM INS_CZYB_SETTLEINFO INFO WHERE INFO.FYJSID = #{ybPkSettle})
+    </update>
+    <update id="updateYbCfmxByJsid">
+        update ins_czyb_cfmx mx set mx.pk_cgnew = #{pkCgNew} where mx.pk_cgnew = #{pkCgOld}
+    </update>
+
+    <select id="queryYBItem" resultType="java.util.Map">
+        SELECT * FROM (
+        SELECT YPBM AS YBBM,TYMC AS XMMC,SFXMDJ,SFLB,'1' AS SFXMLB,GG,ZXJLDW as DW,ZXBZSL,YCMC AS SCCJ,SPMPYM AS
+        PYM,SPMWBM AS WBM FROM INS_CZYB_YPML WHERE DEL_FLAG = '0'
+        union all
+        SELECT XMBM AS YBBM,XMMC AS XMMC,SFXMDJ,SFLB,'2' AS SFXMLB,GG,'' AS DW,'' AS ZXBZSL,MP AS SCCJ,PYZJM AS
+        PYM,WBZJM AS WBM FROM INS_CZYB_ZLXM WHERE DEL_FLAG = '0'
+        union all
+        SELECT YLFWSSBM AS YBBM,FWSSMC AS XMMC,'' AS SFXMDJ,SFLB,'3' AS SFXMLB,'' AS GG,'' AS DW,'' AS ZXBZSL,'' AS
+        SCCJ,PYZJM AS PYM,WBZJM AS WBM FROM INS_CZYB_FWSS WHERE DEL_FLAG = '0') YB
+        <where>
+            <if test='paramMap.condition != null and paramMap.condition != ""'>
+                YB.XMMC LIKE CONCAT(CONCAT('%',#{paramMap.condition}),'%') OR UPPER(YB.YBBM) LIKE
+                CONCAT(CONCAT('%',UPPER(#{paramMap.condition})),'%') OR UPPER(YB.PYM) LIKE
+                CONCAT(CONCAT('%',UPPER(#{paramMap.condition})),'%') OR UPPER(YB.WBM) LIKE
+                CONCAT(CONCAT('%',UPPER(#{paramMap.condition})),'%')
+            </if>
+        </where>
+    </select>
+
+    <select id="queryALLMatchedItem" resultType="com.zebone.nhis.compay.ins.changzhou.vo.CompareSearchResult">
+        SELECT CP.ID,XM.SFXMID,XM.CODE,XM.NAME,XM.SPEC,UNIT.NAME AS DW,XM.PRICE, XM.SPCODE AS
+        PYM,YB.YBBM,YB.YBMC,YB.SFXMDJ,CP.MODIFIER,CP.modify_time,FACTORY.NAME AS FACTORYNAME,CP.XMLB,CP.SFLB
+        FROM INS_CZYB_COMPARE CP
+        LEFT JOIN (
+        SELECT PD.PK_PD AS SFXMID,PD.CODE,PD.NAME,PD.SPEC,PD.PK_UNIT_VOL AS PK_UNIT,PD.PRICE,PD.SPCODE,PD.PK_FACTORY
+        FROM BD_PD PD WHERE PD.DEL_FLAG = '0'
+        UNION ALL
+        SELECT ITEM.PK_ITEM AS SFXMID,ITEM.CODE,ITEM.NAME,'' AS SPEC,ITEM.PK_UNIT,ITEM.PRICE,ITEM.SPCODE,ITEM.PK_FACTORY
+        FROM BD_ITEM ITEM WHERE ITEM.DEL_FLAG = '0'
+        ) XM ON CP.SFXMID = XM.SFXMID
+        LEFT JOIN (
+        SELECT YPBM AS YBBM,TYMC AS YBMC,SFXMDJ FROM INS_CZYB_YPML WHERE DEL_FLAG = '0'
+        UNION ALL
+        SELECT XMBM AS YBBM,XMMC AS YBMC,SFXMDJ FROM INS_CZYB_ZLXM WHERE DEL_FLAG = '0'
+        UNION ALL
+        SELECT YLFWSSBM AS YBBM,FWSSMC AS YBMC,'' AS SFXMDJ FROM INS_CZYB_FWSS WHERE DEL_FLAG = '0'
+        ) YB ON CP.YBBM = YB.YBBM
+        LEFT JOIN BD_UNIT UNIT ON XM.PK_UNIT = UNIT.PK_UNIT AND UNIT.DEL_FLAG = '0'
+        LEFT JOIN BD_FACTORY FACTORY ON XM.PK_FACTORY = FACTORY.PK_FACTORY AND FACTORY.DEL_FLAG = '0'
+        <where>
+            XM.SFXMID IS NOT NULL
+            <include refid="sqlWhere"/>
+        </where>
+    </select>
+    <select id="queryMatchedDrug" resultType="com.zebone.nhis.compay.ins.changzhou.vo.CompareSearchResult">
+        SELECT CP.ID,XM.PK_PD as SFXMID,XM.CODE,XM.NAME,XM.SPEC,UNIT.NAME AS DW,XM.PRICE, XM.SPCODE AS PYM,YB.YPBM AS
+        YBBM,YB.TYMC AS YBMC,YB.SFXMDJ,CP.MODIFIER,CP.modify_time,FACTORY.NAME AS FACTORYNAME,CP.XMLB,CP.SFLB
+        FROM INS_CZYB_COMPARE CP
+        LEFT JOIN BD_PD XM ON CP.SFXMID = XM.PK_PD AND XM.DEL_FLAG = '0'
+        LEFT JOIN INS_CZYB_YPML YB ON CP.YBBM = YB.YPBM AND YB.DEL_FLAG = '0'
+        LEFT JOIN BD_UNIT UNIT ON XM.PK_UNIT_VOL = UNIT.PK_UNIT AND UNIT.DEL_FLAG = '0'
+        LEFT JOIN BD_FACTORY FACTORY ON XM.PK_FACTORY = FACTORY.PK_FACTORY AND FACTORY.DEL_FLAG = '0'
+        LEFT JOIN BD_ITEMCATE CATE ON XM.PK_ITEMCATE = CATE.PK_ITEMCATE AND CATE.DEL_FLAG = '0'
+        <where>
+            XM.PK_PD IS NOT NULL
+            <include refid="sqlWhere"/>
+        </where>
+    </select>
+    <select id="queryMatchedSFXM" resultType="com.zebone.nhis.compay.ins.changzhou.vo.CompareSearchResult">
+        SELECT CP.ID,XM.PK_ITEM AS SFXMID,XM.CODE,XM.NAME,XM.SPEC,UNIT.NAME AS DW,XM.PRICE, XM.SPCODE AS
+        PYM,YB.YBBM,YB.YBMC,YB.SFXMDJ,CP.MODIFIER,CP.modify_time,FACTORY.NAME AS FACTORYNAME,CP.XMLB,CP.SFLB
+        FROM INS_CZYB_COMPARE CP
+        LEFT JOIN BD_ITEM XM ON CP.SFXMID = XM.PK_ITEM
+        LEFT JOIN (
+        SELECT XMBM AS YBBM,XMMC AS YBMC,SFXMDJ FROM INS_CZYB_ZLXM WHERE DEL_FLAG = '0'
+        UNION ALL
+        SELECT YLFWSSBM AS YBBM,FWSSMC AS YBMC,'' AS SFXMDJ FROM INS_CZYB_FWSS WHERE DEL_FLAG = '0'
+        ) YB ON CP.YBBM = YB.YBBM
+        LEFT JOIN BD_UNIT UNIT ON XM.PK_UNIT = UNIT.PK_UNIT AND UNIT.DEL_FLAG = '0'
+        LEFT JOIN BD_FACTORY FACTORY ON XM.PK_FACTORY = FACTORY.PK_FACTORY AND FACTORY.DEL_FLAG = '0'
+        LEFT JOIN BD_ITEMCATE CATE ON XM.PK_ITEMCATE = CATE.PK_ITEMCATE AND CATE.DEL_FLAG = '0'
+        <where>
+            XM.PK_ITEM IS NOT NULL
+            <include refid="sqlWhere"/>
+        </where>
+    </select>
+    <select id="queryALLNotMatchedItem" resultType="com.zebone.nhis.compay.ins.changzhou.vo.CompareSearchResult">
+        SELECT XM.SFXMID,XM.CODE,XM.NAME,XM.SPEC,UNIT.NAME AS DW,XM.PRICE ,XM.SPCODE AS PYM,FACTORY.NAME as FACTORYNAME
+        ,CATE.CODE AS XMLB FROM
+        (
+        SELECT PD.PK_PD AS SFXMID,PD.CODE,PD.NAME,PD.SPEC,PD.PK_UNIT_VOL AS
+        PK_UNIT,PD.PRICE,PD.SPCODE,PD.PK_FACTORY,PD.PK_ITEMCATE FROM BD_PD PD WHERE PD.DEL_FLAG = '0'
+        UNION ALL
+        SELECT ITEM.PK_ITEM AS SFXMID,ITEM.CODE,ITEM.NAME,'' AS
+        SPEC,ITEM.PK_UNIT,ITEM.PRICE,ITEM.SPCODE,ITEM.PK_FACTORY,ITEM.PK_ITEMCATE FROM BD_ITEM ITEM WHERE ITEM.DEL_FLAG
+        = '0'
+        ) XM
+        LEFT JOIN INS_CZYB_COMPARE CP ON XM.SFXMID = CP.SFXMID AND CP.DEL_FLAG = '0'
+        LEFT JOIN BD_UNIT UNIT ON XM.PK_UNIT = UNIT.PK_UNIT AND UNIT.DEL_FLAG = '0'
+        LEFT JOIN BD_FACTORY FACTORY ON XM.PK_FACTORY = FACTORY.PK_FACTORY AND FACTORY.DEL_FLAG = '0'
+        LEFT JOIN BD_ITEMCATE CATE ON XM.PK_ITEMCATE = CATE.PK_ITEMCATE AND CATE.DEL_FLAG = '0'
+        <where>
+            <if test='paramMap.text != null and paramMap.text != ""'>
+                (XM.CODE LIKE CONCAT(CONCAT('%',#{paramMap.text}),'%') OR XM.NAME LIKE
+                CONCAT(CONCAT('%',#{paramMap.text}),'%') OR UPPER(XM.SPCODE) LIKE
+                CONCAT(CONCAT('%',UPPER(#{paramMap.text})),'%'))
+            </if>
+            AND CP.ID IS NULL
+        </where>
+    </select>
+    <select id="queryNotMatchedDrug" resultType="com.zebone.nhis.compay.ins.changzhou.vo.CompareSearchResult">
+        SELECT XM.PK_PD as SFXMID,XM.CODE,XM.NAME,XM.SPEC,UNIT.NAME AS DW,XM.PRICE ,XM.SPCODE AS PYM, FACTORY.NAME as
+        FACTORYNAME,CATE.CODE AS XMLB FROM BD_PD XM
+        LEFT JOIN INS_CZYB_COMPARE CP ON XM.PK_PD = CP.SFXMID AND CP.DEL_FLAG = '0'
+        LEFT JOIN BD_UNIT UNIT ON XM.PK_UNIT_VOL = UNIT.PK_UNIT AND UNIT.DEL_FLAG = '0'
+        LEFT JOIN BD_FACTORY FACTORY ON XM.PK_FACTORY = FACTORY.PK_FACTORY AND FACTORY.DEL_FLAG = '0'
+        LEFT JOIN BD_ITEMCATE CATE ON XM.PK_ITEMCATE = CATE.PK_ITEMCATE AND CATE.DEL_FLAG = '0'
+        <where>
+            <if test='paramMap.text != null and paramMap.text != ""'>
+                (XM.CODE LIKE CONCAT(CONCAT('%',#{paramMap.text}),'%') OR XM.NAME LIKE
+                CONCAT(CONCAT('%',#{paramMap.text}),'%') OR UPPER(XM.SPCODE) LIKE
+                CONCAT(CONCAT('%',UPPER(#{paramMap.text})),'%'))
+            </if>
+            <if test="paramMap.fylb != null">
+                AND CATE.CODE = #{paramMap.fylb}
+            </if>
+            AND CP.ID IS NULL
+        </where>
+    </select>
+    <select id="queryNotMatchedSFXM" resultType="com.zebone.nhis.compay.ins.changzhou.vo.CompareSearchResult">
+        SELECT XM.PK_ITEM as SFXMID,XM.CODE,XM.NAME,XM.SPEC,UNIT.NAME AS DW,XM.PRICE ,XM.SPCODE AS PYM, FACTORY.NAME as
+        FACTORYNAME,CATE.CODE AS XMLB FROM BD_ITEM XM
+        LEFT JOIN INS_CZYB_COMPARE CP ON XM.PK_ITEM = CP.SFXMID AND CP.DEL_FLAG = '0'
+        LEFT JOIN BD_UNIT UNIT ON XM.PK_UNIT = UNIT.PK_UNIT AND UNIT.DEL_FLAG = '0'
+        LEFT JOIN BD_FACTORY FACTORY ON XM.PK_FACTORY = FACTORY.PK_FACTORY AND FACTORY.DEL_FLAG = '0'
+        LEFT JOIN BD_ITEMCATE CATE ON XM.PK_ITEMCATE = CATE.PK_ITEMCATE AND CATE.DEL_FLAG = '0'
+        <where>
+            <if test='paramMap.text != null and paramMap.text != ""'>
+                (XM.CODE LIKE CONCAT(CONCAT('%',#{paramMap.text}),'%') OR XM.NAME LIKE
+                CONCAT(CONCAT('%',#{paramMap.text}),'%') OR UPPER(XM.SPCODE) LIKE
+                CONCAT(CONCAT('%',UPPER(#{paramMap.text})),'%'))
+            </if>
+            <if test="paramMap.fylb != null">
+                AND CATE.CODE = #{paramMap.fylb}
+            </if>
+            AND CP.ID IS NULL
+        </where>
+    </select>
+    <select id="queryCountById" resultType="java.lang.Integer">
+        SELECT count(1) FROM INS_CZYB_COMPARE CP WHERE CP.DEL_FLAG = '0' AND CP.SFXMID = #{id}
+    </select>
+    <select id="queryLoginInfo" parameterType="com.zebone.nhis.compay.ins.changzhou.vo.LogInOutInfo"
+            resultType="java.lang.String">
+        SELECT ID FROM INS_CZYB_LOGINRECORD WHERE PK_EMP = #{pkEmp} AND PK_ORG = #{pkOrg} AND QDZT = '1'
+    </select>
+    <select id="queryLogInOutRecord" resultType="com.zebone.nhis.compay.ins.changzhou.vo.LogInOutInfo">
+        SELECT RE.ID,RE.PK_EMP,RE.QDSJ,RE.QDYWZQH,RE.QDZT,RE.QTSJ
+        FROM INS_CZYB_LOGINRECORD RE
+        WHERE RE.QDSJ > #{beginTime} AND #{endTime}> RE.QDSJ
+        AND RE.QDZT = #{status] AND RE.PK_ORG = #{pkOrg} AND RE.DEL_FLAG = '0' AND RE.PK_EMP = #{pkEmp}
+        ORDER BY RE.QDSJ DESC
+    </select>
+    <select id="queryDiseaseList" resultType="com.zebone.nhis.compay.ins.changzhou.vo.CompareSearchResult">
+        SELECT CP.ID,DIAG.PK_CNDIAG AS SFXMID,DIAG.CODE_CD AS CODE,DIAG.CODE_ICD AS ICDCODE,DIAG.NAME_CD AS
+        NAME,DIAG.SPCODE AS PYM,CP.YBBM,BZ.JBMC AS YBMC,CP.MODIFIER,CP.MODIFY_TIME
+        FROM BD_CNDIAG DIAG
+        LEFT JOIN INS_CZYB_COMPARE CP
+        ON DIAG.PK_CNDIAG = CP.SFXMID AND CP.DEL_FLAG = '0'
+        LEFT JOIN INS_CZYB_BZML BZ
+        ON CP.YBBM = BZ.JBBM AND BZ.DEL_FLAG = '0'
+        <where>
+            <if test='paramMap.text != null and paramMap.text !=""'>
+                AND (DIAG.CODE_CD LIKE CONCAT(CONCAT('%',#{paramMap.text}),'%') OR DIAG.NAME_CD LIKE
+                CONCAT(CONCAT('%',#{paramMap.text}),'%') OR UPPER(DIAG.SPCODE) LIKE
+                CONCAT(CONCAT('%',UPPER(#{paramMap.text})),'%'))
+            </if>
+            <if test='paramMap.match == "1"'>
+                AND CP.ID IS NOT NULL AND CP.PK_ORG = #{paramMap.pkOrg} AND CP.YBLX = #{paramMap.yblx}
+            </if>
+            <if test='paramMap.match != "1"'>
+                AND CP.ID IS NULL
+            </if>
+
+        </where>
+    </select>
+    <select id="queryRegisterInfoByPkPv" resultType="com.zebone.nhis.compay.ins.changzhou.vo.YBRegisterInfo">
+        SELECT REG.FSFJYLSH,REG.JZID,REG.LSH,REG.YLLB
+            FROM PV_ENCOUNTER EN
+            LEFT JOIN INS_CZYB_REGISTERRECORD REG
+                ON EN.CODE_PV = REG.LSH AND REG.DEL_FLAG = '0'
+            WHERE EN.PK_PV = #{pkPv}
+    </select>
+    <select id="queryComparedInfo" resultType="com.zebone.nhis.compay.ins.changzhou.vo.YBItem">
+        select sfxmid as hisid,sfxmbm as hisbm,sfxmmc as hismc, ybbm,ybmc,xmlb,sflb,ybxmdj from ins_czyb_compare
+        <where>
+            sfxmid in
+            <foreach collection="idList" item="item" separator="," open="(" close=")" index="index">
+                #{item}
+            </foreach>
+            and del_flag = '0'
+        </where>
+    </select>
+    <select id="queryYbSettleInfo" resultType="com.zebone.nhis.compay.ins.changzhou.vo.YBSettleInfo">
+        SELECT INFO.LSH,INFO.DJH,INFO.YLLB,INFO.FYJSID,INFO.BCZHZF,INFO.GRXJZF,INFO.YLFZFY
+        FROM INS_CZYB_SETTLEINFO INFO
+        LEFT JOIN INS_CZYB_RELATIONSHIP REL
+        ON INFO.FYJSID = REL.PK_PTMZJS AND REL.DEL_FLAG = '0'
+        <where>
+            <if test="pkPv != null">
+                AND REL.PK_PV = #{pkPv} AND REL.YWLX = '0'
+            </if>
+            <if test="pkPtmzjs != null">
+                AND INFO.FYJSID = #{pkPtmzjs}
+            </if>
+            <if test="pkSettle != null">
+                AND REL.PK_SETTLE = #{pkSettle}
+            </if>
+            AND INFO.DEL_FLAG = '0'
+        </where>
+    </select>
+    <select id="queryCfmxByCGOPS" resultType="com.zebone.nhis.compay.ins.changzhou.vo.YBCfmx">
+        SELECT CP.XMLB,
+        CP.SFLB AS FYLB,
+        PRES.PRES_NO AS CFH,
+        PRES.DATE_PRES AS CFRQ,
+        XM.CODE AS YYSFXMNM,
+        CP.YBBM AS SFXMZXBMXM,
+        XM.NAME AS YYSFXMMC,
+        DT.PRICE AS DJ,
+        DT.QUAN AS SL,
+        PRES.PK_EMP_ORD AS CFYSBM,
+        PRES.NAME_EMP_ORD AS YSXM,
+        DEPT.NAME_DEPT AS KSBH,
+        DEPT.NAME_DEPT AS KSMC,
+        DT.PK_CGOP AS PKCGOP
+        FROM (SELECT PRICE,QUAN,PK_CGOP,PK_CNORD,PK_ITEM,DEL_FLAG FROM BL_OP_DT
+        UNION ALL
+        SELECT PRICE,QUAN,PK_CGOP,PK_CNORD,PK_ITEM,DEL_FLAG FROM BL_OP_DT_B) DT
+        LEFT JOIN CN_ORDER CNOR
+        ON DT.PK_CNORD = CNOR.PK_CNORD AND CNOR.DEL_FLAG = '0'
+        LEFT JOIN CN_PRESCRIPTION PRES
+        ON CNOR.PK_PRES = PRES.PK_PRES AND PRES.DEL_FLAG = '0'
+        LEFT JOIN BD_OU_DEPT DEPT
+        ON PRES.PK_DEPT = DEPT.PK_DEPT AND DEPT.DEL_FLAG = '0'
+        LEFT JOIN INS_CZYB_COMPARE CP
+        ON DT.PK_ITEM = CP.SFXMID AND CP.DEL_FLAG = '0'
+        LEFT JOIN (SELECT ITEM.PK_ITEM, ITEM.CODE, ITEM.NAME
+        FROM BD_ITEM ITEM
+        WHERE ITEM.DEL_FLAG = '0'
+        UNION ALL
+        SELECT PD.PK_PD AS PK_ITEM, PD.CODE, PD.NAME
+        FROM BD_PD PD
+        WHERE PD.DEL_FLAG = '0') XM
+        ON XM.PK_ITEM = DT.PK_ITEM
+        <where>
+            DT.PK_CGOP IN
+            <foreach collection="list" item="cgop" separator="," open="(" close=")" index="index">
+                #{cgop}
+            </foreach>
+            AND DT.DEL_FLAG = '0'
+        </where>
+    </select>
+    <select id="queryYbDiagCode" resultType="com.zebone.nhis.compay.ins.changzhou.vo.ComparedDiagInfo">
+        select cp.ybbm as ybCodeDiag,cp.icd_code as codeDiag from ins_czyb_compare cp  where cp.icd_code = #{codeDiag} and cp.del_flag = '0'
+    </select>
+    <select id="queryYbLshByPkPv" resultType="java.lang.String">
+        SELECT DISTINCT STL.LSH
+            FROM INS_CZYB_RELATIONSHIP REL
+            LEFT JOIN INS_CZYB_SETTLEINFO STL
+                ON REL.PK_PTMZJS = STL.FYJSID AND STL.DEL_FLAG = '0'
+            WHERE REL.DEL_FLAG = '0' AND REL.YWLX = '0' AND REL.PK_PV = #{pkPv}
+    </select>
+    <select id="queryRegisterByYbLsh" resultType="com.zebone.nhis.compay.ins.changzhou.vo.YBRegisterInfo">
+        SELECT REG.FSFJYLSH,REG.JZID,REG.LSH,REG.YLLB FROM INS_CZYB_REGISTERRECORD REG WHERE REG.DEL_FLAG = '0' AND REG.LSH = #{ybLsh}
+    </select>
+    <select id="queryCFMXByYbPkSettle" resultType="com.zebone.nhis.compay.ins.changzhou.vo.ParamUpLoad">
+        SELECT MX.LSH,REG.JZID,MX.YYSFXMNM,MX.SFXMZXBM,MX.YYSFXMMC,CP.XMLB,CP.SFLB AS FYLB,MX.DJ,MX.SL,MX.YSXM,MX.CFYSBM,MX.KSBH,MX.KSMC,MX.PK_CGOP AS PKCGOP,MX.PK_CGNEW AS PKCGNEW
+            FROM INS_CZYB_CFMX MX
+            LEFT JOIN INS_CZYB_SETTLEINFO INFO
+                ON MX.CFH = INFO.DJH AND INFO.DEL_FLAG = '0'
+            LEFT JOIN INS_CZYB_COMPARE CP
+                ON MX.SFXMZXBM = CP.YBBM AND CP.DEL_FLAG = '0'
+            LEFT JOIN INS_CZYB_REGISTERRECORD REG
+                ON MX.LSH = REG.LSH AND REG.DEL_FLAG = '0'
+        WHERE INFO.FYJSID = #{fyjsid} AND MX.DEL_FLAG = '0'
+    </select>
+    <select id="queryBdItemAndOrderByPkPv" resultType="java.util.Map">
+        SELECT PV.CODE_PV,CP.XMLB,CP.SFLB AS FYLB,BL.CODE_CG || BL.SORTNO AS CFH, ITEM.CODE AS YYSFXMNM,CP.YBBM AS SFXMZXBM,
+            CASE WHEN BL.FLAG_PD = '1' THEN PD.NAME ELSE ITEM.NAME END  AS YYSFXMMC,BL.QUAN AS SL,TRUNC(BL.PRICE, 4)  AS DJ,APPEMP.NAME_EMP AS YSXM,APPEMP.CODE_EMP AS CFYSBM,
+            DEPTAPP.NAME_DEPT AS KSMC,DEPTAPP.CODE_DEPT AS KSBH,BL.DATE_ENTRY as CFRQ,BL.PK_CGIP AS PKCGOP
+        FROM (SELECT CODE_CG,SORTNO,FLAG_PD,QUAN,PRICE,DATE_ENTRY,PK_CGIP,PK_PV,PK_DEPT_APP,
+                     PK_EMP_APP,PK_UNIT,PK_CNORD,PK_ITEM,FLAG_SETTLE,FLAG_INSU,DEL_FLAG,PK_SETTLE
+                FROM BL_IP_DT
+                UNION ALL
+              SELECT CODE_CG,SORTNO,FLAG_PD,QUAN,PRICE,DATE_ENTRY,PK_CGIP,PK_PV,PK_DEPT_APP,
+                     PK_EMP_APP,PK_UNIT,PK_CNORD,PK_ITEM,FLAG_SETTLE,FLAG_INSU,DEL_FLAG,PK_SETTLE
+                FROM BL_IP_DT_B) BL
+                 INNER JOIN PV_ENCOUNTER PV ON BL.PK_PV = PV.PK_PV
+                 INNER JOIN BD_OU_DEPT DEPTAPP ON DEPTAPP.PK_DEPT = BL.PK_DEPT_APP
+                 INNER JOIN BD_OU_EMPLOYEE APPEMP ON APPEMP.PK_EMP = BL.PK_EMP_APP
+                 LEFT JOIN BD_UNIT UNIT ON UNIT.PK_UNIT = BL.PK_UNIT
+                 LEFT JOIN CN_ORDER CNOR ON CNOR.PK_CNORD = BL.PK_CNORD
+                 LEFT JOIN BD_PD PD ON BL.PK_ITEM = PD.PK_PD
+                 LEFT JOIN BD_ITEM ITEM ON BL.PK_ITEM = ITEM.PK_ITEM
+                 LEFT JOIN INS_CZYB_COMPARE CP ON CP.SFXMID = BL.PK_ITEM AND CP.DEL_FLAG = '0'
+        WHERE BL.PK_PV = #{pkPv}
+          AND (BL.FLAG_SETTLE = '0' OR BL.PK_SETTLE IS NULL)
+          AND BL.FLAG_INSU = '0'
+          AND BL.DEL_FLAG = '0'
+        ORDER BY BL.QUAN DESC
+    </select>
+    <select id="queryErrorFsfjylshByLsh" resultType="java.lang.String">
+        SELECT DISTINCT MX.FSFJYLSH FROM INS_CZYB_CFMX MX
+            LEFT JOIN INS_CZYB_RELATIONSHIP SHIP ON MX.PK_CGNEW = SHIP.PK_CGNEW
+            WHERE MX.PK_CGNEW IS NOT NULL AND SHIP.ID IS NULL AND MX.LSH = #{lsh} AND MX.DEL_FLAG = '0'
+    </select>
+    <select id="queryRegisterInfoByLsh" resultType="com.zebone.nhis.compay.ins.changzhou.vo.YBRegisterInfo">
+        SELECT REG.LSH,REG.JZID FROM INS_CZYB_REGISTERRECORD REG WHERE REG.LSH = #{lsh}
+    </select>
+    <select id="queryRegInfoByMzLsh" resultType="com.zebone.nhis.compay.ins.changzhou.vo.YBRegisterInfo">
+        SELECT REG.LSH,REG.JZID FROM PV_ENCOUNTER PV
+            LEFT JOIN BL_SETTLE BL ON PV.PK_PV = BL.PK_PV AND BL.DT_STTYPE = '00'
+            LEFT JOIN INS_CZYB_RELATIONSHIP REL ON REL.PK_SETTLE = BL.PK_SETTLE
+            LEFT JOIN INS_CZYB_SETTLEINFO INFO ON REL.PK_PTMZJS = INFO.FYJSID AND INFO.DEL_FLAG = '0'
+            LEFT JOIN INS_CZYB_REGISTERRECORD REG ON INFO.LSH = REG.LSH
+        WHERE PV.CODE_PV = #{lsh} AND PV.DEL_FLAG = '0' AND PV.FLAG_CANCEL = '0'
+    </select>
+</mapper>

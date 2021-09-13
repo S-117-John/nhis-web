@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.adt.dao.BAPvAdtMapper">
+
+    <select id="getPvEncounterVoList" parameterType="com.zebone.nhis.pv.pub.vo.PageQryPvParam"
+            resultType="com.zebone.nhis.pv.pub.vo.PvEncounterListVo">
+        select pi.pk_pi,pi.name_pi,pv.pk_pv,pv.code_pv,pi.code_ip,pi.code_pi,pv.bed_no,
+        pv.PK_INSU,hp.NAME name_hp, pv.pk_dept,dept.NAME_DEPT, sex.name sex,
+        pv.age_pv age ,pv.pk_dept_ns,deptNs.NAME_DEPT name_dept_ns,
+        pv.eu_status,pv.name_emp_phy,
+        pv.name_emp_ns,pv.name_emp_reg,
+        PA.adt_begin as date_admit,
+        pv.DATE_BEGIN as date_begin,pv.date_end,
+        pv.date_cancel,pv.flag_cancel,pv.flag_in,pv.flag_settle,pi.ID_NO,idtype.name
+        id_type,pi.UNIT_WORK, pi.BIRTH_DATE, bls.date_st,ca.NAME as name__picate,
+        p.IP_TIMES
+        from pi_master pi
+        inner join pv_encounter pv on pi.pk_pi=pv.pk_pi and pv.del_flag = '0' and pv.eu_pvtype='3'
+        inner join  PV_IP P on pv.PK_PV=P.PK_PV
+        inner join pi_cate ca on ca.PK_PICATE=pv.PK_PICATE
+        left join bd_hp hp on hp.PK_HP = pv.PK_INSU
+        left join bd_ou_dept dept on dept.PK_DEPT = pv.PK_DEPT
+        left join bd_ou_dept deptNs on deptNs.PK_DEPT = pv.PK_DEPT_NS
+        left join BD_DEFDOC idtype on idtype.CODE = pi.DT_IDTYPE and idtype.DEL_FLAG = '0' and idtype.CODE_DEFDOCLIST =
+        '000007'
+        left join BD_DEFDOC sex on sex.CODE = pi.DT_SEX and sex.DEL_FLAG = '0' and sex.CODE_DEFDOCLIST = '000000'
+        left join BD_OU_ORG_AREA orgarea on orgarea.PK_ORGAREA=dept.PK_ORGAREA
+        left join BL_SETTLE bls on pv.pk_pv=bls.pk_pv and bls.FLAG_CANC='0'
+        left join (select PK_PV, max(DATE_BEGIN) as adt_begin from PV_ADT group by PK_PV) PA on PA.PK_PV = pv.PK_PV
+        where 1=1
+        and pv.pk_org = #{pkOrg,jdbcType=VARCHAR}
+        <if test="pkOrgArea != null and pkOrgArea != ''">
+            and dept.PK_ORGAREA = #{pkOrgArea,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDept != null and pkDept != ''">
+            and pv.pk_dept = #{pkDept,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDeptNs != null and pkDeptNs != ''">
+            and pv.pk_dept_ns = #{pkDeptNs,jdbcType=VARCHAR}
+        </if>
+        <if test="codePv != null and codePv != ''">
+            and pv.CODE_PV = #{codePv,jdbcType=VARCHAR}
+        </if>
+        <if test="codePi != null and codePi != ''">
+            and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+        </if>
+        <if test="codeIp != null and codeIp != ''">
+            and pi.code_ip like '%'||#{codeIp,jdbcType=VARCHAR}||'%'
+        </if>
+        <if test="euStatus != null and euStatus != ''">
+            and pv.eu_status = #{euStatus,jdbcType=VARCHAR}
+        </if>
+        <if test="bedNo != null and bedNo != ''">
+            and pv.bed_no = #{bedNo,jdbcType=VARCHAR}
+        </if>
+        <if test="namePi != null and namePi != ''">
+            and pi.name_pi like '%'||#{namePi,jdbcType=VARCHAR}||'%'
+        </if>
+        <if test="dateBeginKs != null and dateBeginKs != ''">
+            and pv.date_begin &gt;=#{dateBeginKs,javaType=java.util.Date}
+        </if>
+        <if test="dateBeginJz != null and dateBeginJz != ''">
+            and pv.date_begin &lt;=#{dateBeginJz,javaType=java.util.Date}
+        </if>
+        <if test="dateEndKs != null and dateEndKs != ''">
+            and pv.date_end &gt;=#{dateEndKs,javaType=java.util.Date}
+        </if>
+        <if test="dateEndJz != null and dateEndJz != ''">
+            and pv.date_end &lt;=#{dateEndJz,javaType=java.util.Date}
+        </if>
+        <if test="dateBeginSt != null and dateBeginSt != ''">
+            and bls.date_st &gt;=#{dateBeginSt,javaType=java.util.Date}
+        </if>
+        <if test="dateEndSt != null and dateEndSt != ''">
+            and bls.date_st &lt;=#{dateEndSt,javaType=java.util.Date}
+        </if>
+        order by pi.code_ip,pv.date_begin,bls.date_st
+    </select>
+</mapper>

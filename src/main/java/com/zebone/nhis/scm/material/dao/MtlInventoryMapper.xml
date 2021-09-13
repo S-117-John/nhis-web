@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.material.dao.MtlInventoryMapper">
+
+<select id="queryInvenList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.material.vo.MtlInventoryVo">
+	select inv.*,
+	       invtype.name invtype 
+	  from pd_inventory inv
+	 inner join bd_defdoc invtype on inv.dt_invtype=invtype.code and invtype.code_defdoclist='080009' 
+	 where inv.pk_store = #{pkStore,jdbcType=CHAR} 
+	   and exists (select 1 from pd_inv_detail dt 
+	                inner join bd_pd pd on pd.pk_pd = dt.pk_pd 
+	                where dt.pk_pdinv = inv.pk_pdinv and pd.dt_pdtype like '1%')<!-- 添加非药品的过滤 -->
+	       <if test="codeInv != null  and  codeInv != ''">
+	          and inv.code_inv = #{codeInv,jdbcType=VARCHAR} 
+	       </if>
+	       <if test="dateBegin != null  and  dateBegin != ''">
+	          and inv.date_inv &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')  
+	       </if>
+	       <if test="dateEnd != null  and  dateEnd != ''">
+	          and inv.date_inv &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+	       </if>
+	       <if test="euStatus != null  and  euStatus != ''"> 
+	          and inv.eu_status = #{euStatus,jdbcType=VARCHAR}
+	       </if>
+	       order by inv.date_inv
+</select>
+
+<select id="queryInvenDtList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.material.vo.MtlInventoryDtVo">
+	select dt.pk_pd,
+	       pd.code pdcode,
+	       pd.name pdname,
+	       pd.spec,
+	       pd.spcode,
+	       pd.flag_single,
+	       unit.name unit,
+	       fa.name factory,
+	       pd.pack_size as pack_size_pd,
+	       sum(dt.quan_pack_acc) as quan_pack_acc, 
+	       sum(dt.quan_min_acc) as quan_min_acc,  
+	       sum(dt.quan_pack) as quan_pack,     
+	       sum(dt.quan_min) as quan_min,      
+	       sum(dt.quan_diff / nvl(dt.pack_size,1)) as quan_diff,     
+	       sum(dt.quan_pack_acc * nvl(dt.pack_size,1) / nvl(pd.pack_size,1) *dt.price) as amt_acc, 
+	       sum(dt.quan_pack * nvl(dt.pack_size,1) / nvl(pd.pack_size,1) * dt.price) as amt,    
+	       dt.reason_diff,      
+	       dt.note
+	  from pd_inv_detail dt
+	 inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+	 inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+	 inner join bd_unit unit on dt.pk_unit_pack=unit.pk_unit
+	 where dt.pk_pdinv = #{pkPdinv,jdbcType=CHAR} 
+	   and pd.dt_pdtype like '1%'
+	 group by dt.pk_pd,
+	          pd.code,
+	          pd.name,
+	          pd.spec,
+	          pd.spcode,
+	          pd.flag_single,
+	          unit.name,
+	          dt.reason_diff,
+	          dt.note,
+	          fa.name,
+	          pd.pack_size      
+</select>
+
+<select id="queryInvenRealDtList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.material.vo.MtlInventoryDtVo">
+	select dt.* 
+	  from pd_inv_detail dt 
+	 inner join bd_pd pd on dt.pk_pd = pd.pk_pd
+	 where dt.pk_pdinv = #{pkPdinv,jdbcType=CHAR}    
+	   and pd.dt_pdtype like '1%'
+</select>
+
+<select id="queryPdStockByConList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.material.vo.MtlInventoryDtVo">
+	select pd.pk_pd,
+	       pd.code pdcode,
+	       pd.name pdname,
+	       pd.spec,
+	       pd.spcode,
+	       pd.flag_single,
+	       pd.pk_unit_pack,
+	       pd.pack_size,
+	       pd.pack_size as pack_size_pd,
+	       unit.name unit,
+	       fa.name factory,
+	       sum(stk.quan_min) quan_min_acc,
+	       sum(stk.quan_min / nvl(pd.pack_size,1)) quan_pack_acc,
+	       sum(stk.amount) amt_acc,
+	       pds.posi_no,
+	       stk.price
+	  from pd_stock stk 
+	       inner join bd_pd_store pds on pds.pk_pd = stk.pk_pd and pds.pk_store = stk.pk_store 
+	       inner join bd_pd pd on pd.pk_pd = stk.pk_pd
+	       inner join bd_unit unit on unit.pk_unit = pd.pk_unit_pack  
+	       inner join bd_factory fa on fa.pk_factory =  pd.pk_factory
+	 where stk.del_flag = '0'
+	   and stk.pk_store = #{pkStore,jdbcType=CHAR} 
+	   and pd.dt_pdtype like '1%'
+	 		<if test="posi != null  and  posi != ''">
+	 		      and pds.posi_no in
+	 		       <foreach item="posi" index="index" collection="posis" open="(" separator="," close=")">
+	            	   #{posi}    
+	               </foreach>
+	       </if>
+	       <if test="pkPdcate != null  and  pkPdcate != ''">
+	          and pd.pk_pdcate in 
+	         <foreach item="pdcate" index="index" collection="pkPdcate" open="(" separator="," close=")">
+	            	   #{pdcate}    
+	          </foreach>
+	        </if>
+	       <if test="dtPdtype != null  and  dtPdtype != ''">
+	         and pd.dt_pdtype in 
+	         <foreach item="pdtype" index="index" collection="dtPdtype" open="(" separator="," close=")">
+	            	   #{pdtype}    
+	          </foreach>
+	       </if>       
+	        <if test="flagSql != null  and  flagSql != ''">
+	          and ( ${flagSql} )
+	        </if>
+	       
+	       <if test=' flagHis=="1" '>
+	        and (${flagHisSql}) 
+	       </if> 
+	  group by pd.pk_pd,
+           	pd.code,
+		    pd.name, 
+			pd.spec, 
+			pd.spcode, 
+			pd.pk_unit_pack,
+			pd.pack_size,
+			pd.flag_single,
+			unit.name, 
+			fa.name, 
+			pds.posi_no, 
+			pd.pack_size,
+			stk.price     
+</select>
+
+<select id="queryPdAccNum"  resultType="com.zebone.nhis.scm.material.vo.MtlInventoryDtVo">
+	select stk.pk_pd,
+	       stk.batch_no,
+	       stk.date_expire,
+	       stk.price_cost,
+	       stk.price,
+	       stk.quan_min as quan_min_acc,
+	       stk.quan_min/nvl(pd.pack_size,1) quan_pack_acc,
+	       stk.quan_min/nvl(pd.pack_size,1) quan_pack,
+	       stk.amount amt_acc,
+	       stk.quan_min, 
+	       pd.pk_unit_pack,
+	       pd.pack_size,
+	       pd.flag_single,
+	       pd.pack_size as pack_size_pd,
+	       unit.name  as unit,
+	       pds.posi_no 
+	  from pd_stock stk
+	       inner join bd_pd_store pds  on pds.pk_pd = stk.pk_pd and pds.pk_store = stk.pk_store 
+	       inner join bd_pd pd on stk.pk_pd=pd.pk_pd
+	       inner join bd_unit unit on pd.pk_unit_pack = unit.pk_unit
+	 where stk.pk_store= #{pkStore,jdbcType=CHAR} 
+	   and pd.pk_pd = #{pkPd,jdbcType=CHAR} 
+	   and pd.dt_pdtype like '1%'
+	   order by stk.batch_no
+</select>
+
+<select id="queryInvtDtByDiff" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.material.vo.MtlInventoryDtVo">
+	select pd.code pdcode,
+	       pd.name pdname,
+	       pd.spec,
+	       pd.pk_pd,
+	       unit.name unit,
+	       fa.name factory,
+	       dt.pack_size,
+	       pd.pack_size as pack_size_pd,
+	       pd.spcode,
+	       dt.pk_unit_pack,
+	       dt.quan_diff / nvl(dt.pack_size,1) as quan_diff,
+	       dt.price_cost,
+	       dt.price,
+	       dt.batch_no,
+	       dt.date_expire,
+	       dt.quan_diff / nvl(pd.pack_size,1) * dt.price_cost amt_cost,
+	       dt.quan_diff / nvl(pd.pack_size,1) * dt.price amt,
+	       dt.pk_pdinvdt
+	  from pd_inv_detail dt
+	       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+	       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+	       inner join bd_unit unit on dt.pk_unit_pack=unit.pk_unit
+	 where dt.pk_pdinv=#{pkPdinv,jdbcType=CHAR} 
+	       <if test='flag =="0"'>
+	        and dt.quan_diff &lt;&gt; 0
+	       </if>
+	 		<if test='flag =="1"'>
+	        and dt.quan_diff &gt; 0
+	       </if>
+	       <if test='flag =="2"'>
+	        and dt.quan_diff &lt; 0
+	       </if>
+</select>
+
+<select id="queryAccNum"   parameterType="java.util.Map"  resultType="com.zebone.nhis.scm.pub.vo.PdStockVo">
+	select stk.pk_pd,
+	       sum(stk.amount) as amount,
+	       sum(stk.quan_min) as quan_min,
+	       sum(stk.quan_min/nvl(pd.pack_size,1)) as quan_pack ,
+	       stk.price
+	  from pd_stock stk 
+	       inner join bd_pd_store pds on pds.pk_pd = stk.pk_pd and pds.pk_store = stk.pk_store 
+	       inner join bd_pd pd on pd.pk_pd = pds.pk_pd   
+	 where stk.pk_store= #{pkStore,jdbcType=CHAR} 
+	   and pd.dt_pdtype like '1%'
+	   and stk.pk_pd in 
+	        <foreach item="pkPd" index="index" collection="pkPds" open="(" separator="," close=")">
+	            	   #{pkPd}    
+	        </foreach>
+	 group by stk.pk_pd,stk.price
+</select>
+
+<select id="queryPdSin" parameterType="java.util.Map" resultType="DynaBean">
+	select sl.pk_pd,
+	       sl.barcode,
+	       sl.note,
+	       sl.eu_status,
+	       sl.pk_single,
+	       sl.pk_pdstdt_out,
+	       sl.pk_pdstdt_in
+	  from pd_single sl
+	 where sl.del_flag = '0'
+	   and sl.pk_store = #{pkStore,jdbcType=CHAR}
+	   <if test="pkPd !=null and pkPd !=''">
+		   and sl.pk_pd= #{pkPd,jdbcType=CHAR}
+	   </if>
+		<if test="pkPdstdtIn !=null and pkPdstdtIn !=''">
+			and sl.pk_pdstdt_in= #{pkPdstdtIn,jdbcType=CHAR}
+		</if>
+		<if test="pkPdstdtOut !=null and pkPdstdtOut !=''">
+			and sl.pk_pdstdt_out= #{pkPdstdtOut,jdbcType=CHAR}
+		</if>
+		<if test="flagOut !=null and flagOut !=''">
+			and sl.flag_out= #{flagOut,jdbcType=VARCHAR}
+		</if>
+		<if test="euStatus !=null and euStatus !=''">
+			and sl.eu_status= #{euStatus,jdbcType=VARCHAR}
+		</if>
+		<if test="barcode !=null and barcode !=''">
+			and sl.barcode= #{barcode,jdbcType=VARCHAR}
+		</if>
+</select>
+
+</mapper>

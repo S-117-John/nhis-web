@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.st.dao.InvoiceCheckMapper">
+<select id="queryPdPuStList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdStVo">
+select st.pk_pdst,
+       sto.name name_store,
+       st.code_st,
+       spr.name spr,
+       st.date_chk,
+       st.name_emp_chk,
+       st.note,
+       st.pk_supplyer 
+  from pd_st st
+       inner join bd_store sto on st.pk_store_st=sto.pk_store
+       inner join bd_supplyer spr on st.pk_supplyer=spr.pk_supplyer
+ where st.flag_chk='1'  and st.pk_org = #{pkOrg,jdbcType=CHAR}
+       and st.eu_direct='1' 
+       and st.flag_pu='1' 
+       and exists (select 1 from pd_st_detail dt inner join bd_pd pd on pd.pk_pd=dt.pk_pd where st.pk_pdst=dt.pk_pdst and dt.flag_chk_rpt='0' and pd.dt_pdtype like '0%')
+       <if test="codeSt != null  and  codeSt != ''">
+          and st.code_st = #{codeSt,jdbcType=VARCHAR} 
+       </if>
+       <if test="pkSupplyer != null  and  pkSupplyer != ''">
+         and st.pk_supplyer = #{pkSupplyer,jdbcType=CHAR}
+       </if>
+       <if test="dateBegin != null  and  dateBegin != ''">
+          and st.date_st &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+       </if>
+       <if test="dateEnd != null  and  dateEnd != ''">
+          and st.date_st &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+       </if>
+       <if test="pkEmpOp != null  and  pkEmpOp != ''">
+          and  st.pk_emp_op = #{pkEmpOp,jdbcType=CHAR} 
+       </if>
+       order by st.date_st
+</select>
+<select id="queryPdPuStDtList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdStDtVo">
+select dt.pk_pdstdt,
+       pd.code pdcode,
+       pd.name pdname,
+       pd.spec,
+       pd.spcode,
+       fa.name factory,
+       unit.name unit,
+       dt.price_cost,
+       dt.quan_pack,
+       dt.amount_cost,
+       100 as disc,
+       dt.amount_cost as amount_pay,
+       dt.receipt_no,
+       sto.name storename,
+       st.code_st,
+       dt.note,
+       st.pk_pdst
+  from pd_st st
+       inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst
+       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+       inner join bd_unit unit on dt.pk_unit_pack=unit.pk_unit
+       inner join bd_store sto on st.pk_store_st=sto.pk_store
+ where dt.flag_chk_rpt='0'
+       and pd.dt_pdtype like '0%'
+  	   and st.pk_pdst in 
+          <foreach item="pkPdSt" index="index" collection="pkPdSts" open="(" separator="," close=")">
+            	   #{pkPdSt}    
+          </foreach>
+</select>
+<select id="queryPdInvoiceList" parameterType="java.util.Map" resultType="DynaBean">
+select distinct
+       dt.receipt_no,      
+       spr.name supplyer, 
+       st.pk_supplyer , 
+       dt.date_chk_rpt,    
+       dt.name_emp_chk_rpt 
+  from pd_st st
+       inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst
+       inner join bd_supplyer spr on st.pk_supplyer=spr.pk_supplyer
+       inner join bd_pd pd on pd.pk_pd=dt.pk_pd
+ where st.flag_pu='1' 
+       and dt.flag_chk_rpt='1'
+       and pd.dt_pdtype like '0%'
+       <if test="receiptNo != null  and  receiptNo != ''">
+          and dt.receipt_no = #{receiptNo,jdbcType=VARCHAR} 
+       </if>
+       <if test="pkSupplyer != null  and  pkSupplyer != ''">
+         and st.pk_supplyer = #{pkSupplyer,jdbcType=CHAR}
+       </if>
+       <if test="dateBegin != null  and  dateBegin != ''">
+          and dt.date_chk_rpt &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+       </if>
+       <if test="dateEnd != null  and  dateEnd != ''">
+          and dt.date_chk_rpt &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+       </if>
+       <if test="pkEmpChkRpt != null  and  pkEmpChkRpt != ''">
+          and dt.pk_emp_chk_rpt = #{pkEmpChkRpt,jdbcType=CHAR} 
+       </if> 
+        order by dt.date_chk_rpt 
+</select>
+<select id="queryPdInvoiceDtList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdStDtVo">
+select dt.pk_pdstdt,
+       pd.code pdcode,
+       pd.name pdname,
+       pd.spec,
+       fa.name factory,
+       unit.name unit,
+       dt.price_cost,
+       dt.quan_pack,
+       dt.amount_cost,
+       dt.disc,
+       dt.amount_pay,
+       dt.receipt_no,
+       sto.name storename,
+       st.code_st,
+       dt.note,
+       pd.spcode
+  from pd_st st
+       inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst
+       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+       inner join bd_unit unit on dt.pk_unit_pack=unit.pk_unit
+       inner join bd_store sto on st.pk_store_st=sto.pk_store
+ where dt.flag_chk_rpt='1'
+ 	   and pd.dt_pdtype like '0%'
+       and dt.receipt_no = #{receiptNo,jdbcType=VARCHAR} 
+       and dt.date_chk_rpt = to_date(#{dateChk},'YYYYMMDDHH24MISS') 
+       and st.pk_supplyer = #{pkSupplyer,jdbcType=CHAR} 
+       order by st.date_st 
+</select>
+</mapper>

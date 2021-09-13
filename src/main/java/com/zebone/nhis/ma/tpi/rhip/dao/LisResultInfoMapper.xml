@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.tpi.rhip.dao.LisResultInfoMapper" >
+  <resultMap id="BaseResultMap" type="com.zebone.nhis.common.module.ma.tpi.rhip.LisResultInfo" >
+    <result column="pat_id" property="rptNo" jdbcType="VARCHAR" />
+    <result column="inpatient_no" property="inpatientNo" jdbcType="VARCHAR" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="sex" property="sex" jdbcType="CHAR" />
+    <result column="unit_name" property="unitName" jdbcType="VARCHAR" />
+    <result column="doctor" property="doctor" jdbcType="VARCHAR" />
+    <result column="diag" property="diag" jdbcType="VARCHAR" />
+    <result column="jy_name" property="jyName" jdbcType="VARCHAR" />
+    <result column="item_code" property="itemCode" jdbcType="CHAR" />
+    <result column="item_name1" property="itemName1" jdbcType="VARCHAR" />
+    <result column="result" property="result" jdbcType="VARCHAR" />
+    <result column="unit" property="unit" jdbcType="CHAR" />
+    <result column="sample_type" property="sampleType" jdbcType="VARCHAR" />
+    <result column="js_date" property="jsDate" jdbcType="TIMESTAMP" />
+    <result column="sh_date" property="shDate" jdbcType="VARCHAR" />
+    <result column="jy_opera" property="jyOpera" jdbcType="VARCHAR" />
+    <result column="sh_name" property="shName" jdbcType="VARCHAR" />
+    <result column="refer1_min" property="refer1Min" jdbcType="VARCHAR" />
+    <result column="refer1_max" property="refer1Max" jdbcType="VARCHAR" />
+    <result column="refer2_min" property="refer2Min" jdbcType="VARCHAR" />
+    <result column="refer2_max" property="refer2Max" jdbcType="VARCHAR" />
+    <result column="item_name" property="itemName" jdbcType="CHAR" />
+    <result column="itm_id" property="itmId" jdbcType="NUMERIC" />
+    <result column="itm_order" property="itmOrder" jdbcType="NUMERIC" />
+  </resultMap>
+ 
+  <select id="queryLisResultInfo" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+              view_jy_resulto_emr_new
+        where name is not null
+   	    <if test="inpatientNo != null" >
+            and inpatient_no = #{inpatientNo,jdbcType=VARCHAR}
+        </if>
+   		<if test="orderBy != null" >
+            ${orderBy}
+        </if>           
+    </select>  
+</mapper>

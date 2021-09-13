@@ -1,0 +1,1042 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.SrvMapper">
+
+   <select id="BdOrdExcluCheckExist" resultType="int" parameterType="java.util.Map">
+		select count(1) from BD_ORD_EXCLU
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+		    <if test="code != null and code != ''">
+		  		and code = #{code,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="name != null and name != ''">
+		  		and name = #{name,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="pkOrg != null and pkOrg != ''">
+		  		and pk_org like #{pkOrg,jdbcType=VARCHAR}||'%'
+		  	</if>
+		  	<if test="pkExclu != null and pkExclu != ''">
+		  		and pk_exclu ! = #{pkExclu,jdbcType=VARCHAR}
+		  	</if>
+  		</trim>
+	</select>
+
+	<!-- 获取医嘱项目及相关所有信息 -->
+	<select id = "getBdOrdByRequires" resultType="com.zebone.nhis.base.bd.vo.BdOrdAndPkDeptVo"  parameterType="java.lang.String">
+		<!-- select ord.*,dept.pk_dept
+		  from bd_ord ord
+		  left join bd_ord_dept dept  on ord.pk_ord=dept.pk_ord	and dept.del_flag='0' and dept.FLAG_DEF='1'
+		 where ord.del_flag = '0' -->
+		 select
+		 ord.*,
+		 org.price,
+		 org.price_chd,
+		 org.price_vip,
+		 bdorg.pk_org,
+		 bdorg.name_org 
+		 from bd_ord ord
+		<if test="dtContype != null and dtContype != '' ">
+			left join BD_ORD_LAB lab on lab.PK_ORD = ord.PK_ORD
+		</if>
+		LEFT join bd_ord_org org on ord.pk_ord = org.pk_ord
+		left join bd_ou_org bdorg on bdorg.pk_org = org.pk_org
+		 where 1=1
+		<if test="searchData != null and searchData != '' and searchData=='0'.toString()">
+			and
+			 not exists (select 1
+			              from bd_ord_org ordorg
+			             where ordorg.del_flag = '0' and
+			             ord.pk_ord=ordorg.pk_ord and
+			                   ordorg.pk_org=#{jg,jdbcType=CHAR})
+		</if>
+		<if test="codeOrdtype != null and codeOrdtype != ''">
+	  		and ord.code_ordtype like #{codeOrdtype,jdbcType=CHAR}||'%'
+	  	</if>
+	    <if test="code != null and code != ''">
+	  		and (ord.code like '%'||#{code,jdbcType=VARCHAR} or ord.code like #{code,jdbcType=VARCHAR}||'%')
+	  	</if>
+	  	<if test="name != null and name != ''">
+	  		and ord.name like '%'||#{name,jdbcType=VARCHAR}||'%'
+	  	</if>
+	  	<if test="pkOrd != null and pkOrd != ''">
+	  		and ord.pk_ord = #{pkOrd,jdbcType=CHAR}
+	  	</if>
+	  	<if test="spcode != null and spcode != ''">
+	  		and ord.spcode like '%'||#{spcode,jdbcType=VARCHAR}||'%'
+	  	</if>
+	  	<if test="dtOrdType != null and dtOrdType != ''">
+	  		and ord.DT_ORDCATE = #{dtOrdType,jdbcType=CHAR}
+	  	</if>
+		<if test="codeExt != null and codeExt != '' ">
+			and ord.CODE_EXT = #{codeExt,jdbcType=VARCHAR}
+		</if>
+		<if test="dtContype != null and dtContype != '' ">
+			and lab.DT_CONTYPE = #{dtContype,jdbcType=CHAR}
+		</if>
+	  	<!-- <if test="pkDept != null and pkDept != ''">
+	  		and dept.pk_dept = #{pkDept,jdbcType=CHAR}
+	  	</if> -->
+		<if test="delFlag != null and delFlag != '' ">
+			and ord.del_flag = #{delFlag,jdbcType=CHAR}
+		</if>
+		<if test="pkOrg != null and pkOrg != '' ">
+			and org.pk_org = #{pkOrg,jdbcType=CHAR}
+		</if>
+	  	ORDER BY ORD.CREATE_TIME DESC
+	</select>
+
+	<select  id = "getBdOrdByJgRequires" resultType="com.zebone.nhis.base.bd.vo.BdOrdAndPkDeptVo"  parameterType="java.lang.String">
+	<!--
+		select d.PK_ORD, d.PK_ORDTYPE,d.CODE_ORDTYPE,d.CODE,d.NAME,
+			g.NAME_PRT, g.SPCODE, g.D_CODE, g.CODE_FREQ, d.SPEC,
+			d.EU_EXCLUDE, d.FLAG_NS, d.FLAG_DR, g.QUAN_DEF,
+			d.FLAG_IP, d.FLAG_OP, d.FLAG_ER, d.FLAG_HM,
+			d.FLAG_PE, d.FLAG_EMR, d.FLAG_CG, d.FLAG_PD,
+			d.FLAG_ACTIVE, d.NOTE, d.CREATOR,d.FLAG_PED,
+			d.CREATE_TIME, d.MODIFIER, d.DEL_FLAG, d.TS,
+			d.PK_UNIT, d.FLAG_UNIT, d.DT_ORDCATE, d.EU_SEX,
+			d.desc_ord, d.except_ord
+		-->
+		  select 	/*G.NAME_PRT,G.SPCODE,G.D_CODE,G.CODE_FREQ,G.QUAN_DEF,*/
+		  d.*,
+		  g.price,
+		  g.price_chd,
+		  g.price_vip,
+		  bdorg.pk_org,
+		  bdorg.name_org 
+		  from bd_ord d
+		       inner join bd_ord_org g on d.pk_ord=g.pk_ord
+		      left join bd_ou_org bdorg on bdorg.pk_org = g.pk_org 
+		<if test="dtContype != null and dtContype != '' ">
+			left join BD_ORD_LAB lab on lab.PK_ORD = d.PK_ORD
+		</if>
+		 where g.del_flag = '0'
+
+		<if test="jg != null and jg != ''">
+	  		and g.pk_org like #{jg,jdbcType=CHAR}||'%'
+	  	</if>
+		<if test="codeOrdtype != null and codeOrdtype != ''">
+	  		and d.code_ordtype like #{codeOrdtype,jdbcType=CHAR}||'%'
+	  	</if>
+	    <if test="code != null and code != ''">
+	  		and (d.code like '%'||#{code,jdbcType=VARCHAR} or d.code like #{code,jdbcType=VARCHAR}||'%')
+	  	</if>
+	  	<if test="name != null and name != ''">
+	  		and d.name like '%'||#{name,jdbcType=VARCHAR}||'%'
+	  	</if>
+	  	<if test="pkOrd != null and pkOrd != ''">
+	  		and d.pk_ord = #{pkOrd,jdbcType=CHAR}
+	  	</if>
+	  	<if test="spcode != null and spcode != ''">
+	  		and d.spcode '%'||#{spcode,jdbcType=VARCHAR}||'%'
+	  	</if>
+	  	<if test="dtOrdType != null and dtOrdType != ''">
+	  		and DT_ORDCATE = #{dtOrdType,jdbcType=CHAR}
+	  	</if>
+		<if test="codeExt != null and codeExt != '' ">
+			and d.CODE_EXT = #{codeExt,jdbcType=VARCHAR}
+		</if>
+		<if test="dtContype != null and dtContype != '' ">
+			and lab.DT_CONTYPE = #{dtContype,jdbcType=CHAR}
+		</if>
+		<if test="delFlag != null and delFlag != '' ">
+			and d.del_flag = #{delFlag,jdbcType=CHAR}
+		</if>
+	  <!-- 	<if test="pkDept != null and pkDept != ''">
+	  		and dept.pk_dept = #{pkDept,jdbcType=CHAR}
+	  	</if>   -->
+	</select>
+
+	<select id = "getBdOrdByPk" resultType="com.zebone.nhis.common.module.base.bd.srv.BdOrd"  parameterType="java.lang.String">
+		select * from bd_ord where pk_ord = #{pkOrd,jdbcType=VARCHAR}
+	</select>
+
+	<select id = "findAllBdOrds" resultType="com.zebone.nhis.common.module.base.bd.srv.BdOrd">
+		select * from bd_ord where del_flag='0'
+	</select>
+
+	<select id = "getBdOrdAliasByOrd" resultType="com.zebone.nhis.common.module.base.bd.srv.BdOrdAlias"  parameterType="java.lang.String">
+		select * from bd_ord_alias where del_flag = '0' and pk_ord = #{pkOrd,jdbcType=VARCHAR} order by pk_org desc
+	</select>
+
+	<select id = "getBdOrdOrgsByOrd" resultType="com.zebone.nhis.base.bd.vo.BdOrdOrgExt"  parameterType="java.lang.String">
+		select dg.*,ug.name_org from bd_ord_org dg left join bd_ou_org ug on ug.pk_org = dg.pk_org where dg.del_flag = '0' and  dg.pk_ord = #{pkOrd,jdbcType=VARCHAR}
+	</select>
+
+	<select id="getBdOrdOrgList" resultType="com.zebone.nhis.base.bd.vo.BdOrdOrgExt"  parameterType="java.lang.String">
+		select  ord.PK_ORDORG,org.CODE_ORG,org.NAME_ORG,org.PK_ORG from BD_OU_ORG org
+        left join  BD_ORD_ORG ord on ord.PK_ORG=org.PK_ORG
+        where org.DEL_FLAG='0' and ord.DEL_FLAG='0' and ord.PK_ORD=#{pkOrd,jdbcType=VARCHAR}
+	</select>
+
+	<select id = "getBdOrdItemsByOrd" resultType="com.zebone.nhis.base.bd.vo.BdOrdItemExt"  parameterType="java.lang.String">
+		select oi.pk_orditem,oi.pk_ord,oi.pk_item,oi.flag_pd,oi.flag_union,oi.ratio_self,oi.pk_payer,
+			   case when oi.flag_pd='0' then item.spec else pd.spec end spec,
+			   case when oi.flag_pd='0' then item.code else pd.code end code,
+			   case when oi.flag_pd='0' then item.code_std else pd.code_std end code_std,
+		       case when oi.flag_pd='0' then item.name else pd.name end name,
+		       oi.quan,oi.del_flag,
+		       case when oi.flag_pd='0' then priceitem.price else pd.price/pd.pack_size end price,
+		       priceitem.pk_org,
+		       bu.NAME priceUnit,
+		       py.NAME as pname,
+		       sp.ratio_children,
+               sp.amount_children,
+               sp.eu_cdmode,
+               sp.eu_spmode,
+               sp.ratio_spec,
+               sp.amount_spec
+		from bd_ord_item oi
+		     left join bd_item item on oi.pk_item=item.pk_item and oi.flag_pd='0' /*and item.flag_active ='1'*/
+		     left join (select  orditem.pk_item,itemprice.pk_org as pk_org,sum(itemprice.price) as price from 
+		     		bd_ord_item orditem 
+		     		inner join bd_item bditem on bditem.pk_item=orditem.pk_item and orditem.flag_pd='0' /*and bditem.flag_active ='1'*/
+		     		inner join bd_item_price itemprice on bditem.pk_item = itemprice.pk_item and itemprice.del_flag='0' and itemprice.flag_stop='0'  
+		     		where orditem.pk_ord = #{pkOrd,jdbcType=VARCHAR} 
+		     		<if test='pkOrg!=null and pkOrg!=""'>
+		     		      and itemprice.pk_org= #{pkOrg,jdbcType=VARCHAR}  
+		     		</if>
+		     		group by orditem.pk_item,itemprice.pk_org
+		     ) priceitem on oi.pk_item=priceitem.pk_item
+		     left outer join bd_pd pd on oi.pk_item=pd.pk_pd and oi.flag_pd='1'
+		     left join BD_ITEM_SP sp on sp.PK_ITEM = item.PK_ITEM and sp.DEL_FLAG = '0' and sp.EU_PVTYPE = '3'
+			left join BD_UNIT bu on bu.PK_UNIT = item.PK_UNIT
+			left join BD_PAYER py on oi.pk_payer=py.pk_payer
+		where  oi.pk_ord = #{pkOrd,jdbcType=VARCHAR}
+	</select>
+
+	<select id = "getBdOrdEmrsByOrd" resultType="com.zebone.nhis.common.module.base.bd.srv.BdOrdEmr"  parameterType="java.lang.String">
+		select * from bd_ord_emr where del_flag = '0' and pk_ord = #{pkOrd,jdbcType=VARCHAR}
+	</select>
+
+	<select id = "getBdOrdLabByOrd" resultType="com.zebone.nhis.common.module.base.bd.srv.BdOrdLab"  parameterType="java.lang.String">
+		select * from bd_ord_lab where del_flag = '0' and  pk_ord = #{pkOrd,jdbcType=VARCHAR}
+	</select>
+
+	<select id = "getBdOrdRisByOrd" resultType="com.zebone.nhis.common.module.base.bd.srv.BdOrdRis"  parameterType="java.lang.String">
+		select * from bd_ord_ris where del_flag = '0' and  pk_ord = #{pkOrd,jdbcType=VARCHAR}
+	</select>
+
+	<select id = "getBdOrdDeptsByOrd" resultType="com.zebone.nhis.common.module.base.bd.srv.BdOrdDept"  parameterType="java.lang.String">
+		select * from bd_ord_dept where del_flag = '0' and  pk_ord = #{pkOrd,jdbcType=VARCHAR}
+	</select>
+
+	<select id="getBdOrdLabColList" resultType="com.zebone.nhis.common.module.base.bd.srv.BdOrdLabCol">
+		select * from bd_ord_lab_col
+			 where
+			 	del_flag = '0'
+			 	and  pk_ord = #{pkOrd,jdbcType=VARCHAR}
+			 	<if test='pkOrg!=null and pkOrg!=""'>
+			 		and pk_org = #{pkOrg,jdbcType=VARCHAR}
+			 	</if>
+	</select>
+
+	<!-- 收费项目-明细查看 -->
+	<select id = "getBdItemByPk" resultType="com.zebone.nhis.common.module.base.bd.srv.BdItem"  parameterType="java.lang.String">
+		select * from bd_item where pk_item = #{pkItem,jdbcType=VARCHAR}
+	</select>
+
+	<select id="getBdPdByPk" resultType="com.zebone.nhis.common.module.scm.pub.BdPd"  parameterType="java.lang.String">
+		select * from bd_pd where pk_pd = #{pkItem,jdbcType=VARCHAR}
+	</select>
+
+	<select id="getBdItemsByCon" resultType="com.zebone.nhis.common.module.base.bd.srv.BdItem" parameterType="list">
+          select item.name||'/ '||unit.name as name ,item.pk_item,item.code,item.pk_unit,item.spec,item.pk_itemcate from bd_item item
+        left join bd_unit unit on item.pk_unit = unit.pk_unit
+        where pk_item  in
+
+        <foreach collection="list" item="vo" index="index"
+            open="(" close=")" separator=",">
+            #{vo.pkItem}
+        </foreach>
+    </select>
+
+	<select id = "getBdItemPriceByItem" resultType="com.zebone.nhis.common.module.base.bd.srv.BdItemPrice"  parameterType="java.lang.String">
+    	select * from bd_item_price where  del_flag = '0' and FLAG_STOP='0' and  pk_item = #{pkItem,jdbcType=VARCHAR}
+		<if test="orgpklist != null">
+		and pk_org in
+		<foreach collection="orgpklist" index="index" item="item" open="(" separator="," close=")">
+				#{item}
+		</foreach>
+		</if>
+	
+	</select>
+	
+	<select id = "getBdItemPriceByItemContainDel" resultType="com.zebone.nhis.common.module.base.bd.srv.BdItemPrice"  parameterType="java.lang.String">
+    	select * from bd_item_price where  pk_item = #{pkItem,jdbcType=VARCHAR} 
+    	<if test='isContainAll !=null and  isContainAll !="1"'>
+			and del_flag = '0' and FLAG_STOP='0'
+		</if>
+		<if test="orgpklist != null">
+		and pk_org in
+		<foreach collection="orgpklist" index="index" item="item" open="(" separator="," close=")">
+				#{item}
+		</foreach>
+		</if>
+	
+	</select>
+	<select id = "getBdItemHpByItem" resultType="com.zebone.nhis.common.module.base.bd.srv.BdItemHp"  parameterType="java.lang.String">
+		select * from bd_item_hp where del_flag = '0' and  pk_item = #{pkItem,jdbcType=VARCHAR}
+	</select>
+
+	<select id = "getBdItemSpByItem" resultType="com.zebone.nhis.common.module.base.bd.srv.BdItemSp"  parameterType="java.lang.String">
+		select * from bd_item_sp where del_flag = '0' and  pk_item = #{pkItem,jdbcType=VARCHAR}
+	</select>
+
+	<select id = "getBdItemSetByItem" resultType="com.zebone.nhis.base.bd.vo.BdItemSetExt"  parameterType="java.lang.String">
+		select s.*,
+			i.code as item_code,
+			i.name as item_name,
+			i.price as item_price,
+			round(i.price*s.quan,4) as item_hj_price 
+		from bd_item_set s left join bd_item i on i.pk_item = s.pk_item_child
+		where s.del_flag = '0' and  s.pk_item = #{pkItem,jdbcType=VARCHAR}
+	</select>
+
+	<select id="getBdItemAttrByItem" resultType="com.zebone.nhis.base.bd.vo.BdItemAttrVo" >
+		select null as pk_dictattr,
+		       tmp.pk_dictattrtemp,--属性主键
+		       tmp.code_attr, --属性编码
+		       tmp.name_attr, --属性名称
+		       tmp.val_attr,  --默认值
+		       tmp.desc_attr, --值域说明
+		       tmp.pk_org_use, --为空表示集团
+		       org.name_org as orgUseName --使用机构名称
+		  from bd_dictattr_temp tmp
+		    left join BD_OU_ORG org on tmp.pk_org_use = org.pk_org
+		 where tmp.dt_dicttype='01'
+		 		<if test='pkOrg!=null and pkOrg!=""'>
+		       	  and (tmp.pk_org_use=#{pkOrg,jdbcType=VARCHAR} or tmp.pk_org_use is null or tmp.pk_org_use='~                               ')
+		       </if>
+		       and tmp.del_flag='0' and
+		       not exists (select 1
+		                     from bd_dictattr att
+		                    where att.pk_dictattrtemp=tmp.pk_dictattrtemp and
+		                          att.pk_dict=#{pkItem,jdbcType=VARCHAR})
+		union all
+		select att.pk_dictattr,
+		       att.pk_dictattrtemp,--属性主键
+		       tmp.code_attr, --属性编码
+		       tmp.name_attr, --属性名称
+		       att.val_attr,  --属性值
+		       tmp.desc_attr, --值域说明
+		       tmp.pk_org_use, --为空表示集团
+		       org.NAME_ORG as orgUseName --使用机构名称
+		  from bd_dictattr att
+		       inner join bd_dictattr_temp tmp on att.pk_dictattrtemp=tmp.pk_dictattrtemp
+		       LEFT JOIN BD_OU_ORG org ON tmp.pk_org_use = org.pk_org
+		 where 1=1
+		 	   <if test='pkOrg!=null and pkOrg!=""'>
+		       	  and (tmp.pk_org_use=#{pkOrg,jdbcType=VARCHAR} or tmp.pk_org_use is null or tmp.pk_org_use='~                               ')
+		       </if>
+		       and att.pk_dict=#{pkItem,jdbcType=VARCHAR}
+		 order by pk_org_use desc
+	</select>
+
+	<select id="getBdItemAttrtemp" resultType="com.zebone.nhis.base.bd.vo.BdItemAttrVo" >
+		select tmp.pk_dictattrtemp,--属性主键
+		       tmp.code_attr, --属性编码
+		       tmp.name_attr, --属性名称
+		       tmp.val_attr,  --默认值
+		       tmp.desc_attr, --值域说明
+		       tmp.pk_org_use, --为空表示集团属性
+		       org.name_org as orgUseName --使用机构名称
+		  from bd_dictattr_temp tmp
+		       left join BD_OU_ORG org on tmp.pk_org_use = org.pk_org
+		 where tmp.dt_dicttype='01' and
+		       tmp.del_flag='0'
+		       <if test='pkOrg!=null and pkOrg!=""'>
+		       	  and (tmp.pk_org_use=#{pkOrg,jdbcType=VARCHAR} or tmp.pk_org_use is null)
+		       </if>
+		order by tmp.pk_org_use desc
+	</select>
+
+	<select id="qryRatStack" resultType="DynaBean">
+		select item.pk_item,
+		       item.code,
+		       item.name,
+		       item.spec,
+		       item.pk_unit,
+		       item.price,
+		       item.eu_pricemode,
+		       item.note,
+		       item.spcode
+		  from bd_item item
+		 where item.flag_set='1' and
+		       item.del_flag='0' and
+		       exists (select 1 from bd_item_set iset
+		                where item.pk_item=iset.pk_item and 
+		                iset.pk_item_child=#{pkItem,jdbcType=CHAR} 
+		                )
+	</select>
+
+	<select id="qryRatOrd" resultType="DynaBean">
+		select ord.pk_ord,  
+		       ord.code,    
+		       ord.name,    
+		       ord.spec,    
+		       ord.pk_ordtype,
+		       ord.code_ordtype, 
+		       ord.note,
+		       ord.spcode
+		  from bd_ord ord
+		 where ord.del_flag='0' and
+		       exists (select 1 from bd_ord_item oi 
+		                where ord.pk_ord=oi.pk_ord and 
+		                oi.pk_item=#{pkItem,jdbcType=CHAR})
+	</select>
+
+	<update id="updateBdord" parameterType="com.zebone.nhis.common.module.base.bd.srv.BdOrdEmr">
+	
+	update bd_ord_emr  set DEL_FLAG='0' ,PK_EMRTEMP =#{pkEmrtemp},eu_pvtype =#{euPvtype},CODE_EMRTEMP =#{codeEmrtemp},NAME_EMRTEMP =#{nameEmrtemp},FLAG_ACTIVE=#{flagActive} ,ts=now()
+                    where  PK_ORD=#{pkOrd,jdbcType=CHAR} and PK_ORDEMR=#{pkOrdemr}
+	
+	</update>
+	<select id="qrySp" resultType="com.zebone.nhis.common.module.base.bd.srv.BdItemSp" parameterType="java.lang.String">
+	select org.name_org nameOrg,
+	       sp.pk_itemsp, 
+	       org.pk_org,   
+	       sp.pk_item, 
+	       sp.eu_pvtype,  
+	       sp.ratio_children, 
+	       sp.ratio_spec      
+	  from bd_ou_org org
+	       left outer join bd_item_sp sp on org.pk_org=sp.pk_org and sp.pk_item=#{pkItem,jdbcType=CHAR}
+	 where not exists (select 1 from bd_ou_org ft where org.pk_org=ft.pk_father)
+	 and org.DEL_FLAG = '0'
+	</select>
+
+	<select id="qryCgDiv" resultType="com.zebone.nhis.base.pub.vo.CgdivItemVo">
+	select div.pk_hpcgdiv pkHpcgdiv,  
+	       div.code_div codeDiv,    
+	       div.name_div nameDiv,    
+	       item.pk_hpcgdivitem pkHpcgdivitem, 
+	       item.pk_item pkItem,    
+	       item.pk_itemcate pkItemcate,				 
+	       item.eu_divide euDivide,  
+	       item.rate rate ,       
+	       item.amount amount    
+	  from bd_hp_cgdiv div
+	       left outer join bd_hp_cgdiv_item item on div.pk_hpcgdiv=item.pk_hpcgdiv    
+				 and item.flag_pd='0' and item.pk_item=#{pkItem,jdbcType=CHAR}
+	 where div.del_flag='0' and item.del_flag='0' 
+	</select>
+
+	<delete id="delSp">
+		delete from bd_item_sp where pk_itemsp=#{pkItemsp,jdbcType=CHAR}
+	</delete>
+
+	<select id="qryCgdivTmp" resultType="com.zebone.nhis.common.module.scm.pub.BdHpCgdivTmp">
+		select distinct code_tmp, name_tmp, eu_type from bd_hp_cgdiv_tmp where eu_type='0' and del_flag='0'
+	</select>
+
+	<select id="qryCgDivTmpDt" parameterType="java.lang.String" resultType="DynaBean">
+		select 
+		     tmp.pk_hpcgdiv,  
+		     div.name_div,
+       		 tmp.eu_divide,   
+             tmp.rate       
+  		from bd_hp_cgdiv_tmp tmp
+  		inner join bd_hp_cgdiv div on div.pk_hpcgdiv=tmp.pk_hpcgdiv
+        where tmp.code_tmp=#{codeTmp,jdbcType=VARCHAR} 
+             and tmp.del_flag='0'
+	</select>
+
+	<select id="getBdOrdAttrByOrd" parameterType="java.util.Map" resultType="DynaBean">
+	select null as pk_dictattr,
+	       tmp.pk_dictattrtemp,
+	       tmp.code_attr,
+	       tmp.name_attr,
+	       tmp.val_attr,
+	       tmp.desc_attr,
+	       tmp.pk_org_use
+	  from bd_dictattr_temp tmp
+	 where tmp.dt_dicttype='02'
+	       <if test="pkOrgUse !=null">
+				and tmp.pk_org_use = #{pkOrgUse,jdbcType=VARCHAR}
+		   </if>
+	       and tmp.del_flag='0'
+	       and not exists (select 1
+	                     from bd_dictattr att
+	                    where att.pk_dictattrtemp=tmp.pk_dictattrtemp and
+	                          att.pk_dict= #{pkDict,jdbcType=VARCHAR}
+	                          <if test="pkOrgUse !=null">
+								 and tmp.pk_org_use = #{pkOrgUse,jdbcType=VARCHAR}
+						 	  </if>
+						 )
+		union all
+
+		select att.pk_dictattr,
+		       att.pk_dictattrtemp,
+		       tmp.code_attr,
+		       tmp.name_attr,
+		       att.val_attr,
+		       tmp.desc_attr,
+		       tmp.pk_org_use
+		  from bd_dictattr att
+		       inner join bd_dictattr_temp tmp on att.pk_dictattrtemp=tmp.pk_dictattrtemp
+		 where att.pk_dict= #{pkDict,jdbcType=VARCHAR}
+		 <if test="pkOrgUse !=null">
+				 and tmp.pk_org_use = #{pkOrgUse,jdbcType=VARCHAR}
+		 </if>
+
+</select>
+
+<select id="qryExcluDt" parameterType="java.lang.String" resultType="java.lang.String">
+	select pk_Ord from bd_ord_exclu_dt where pk_exclu = #{pkExclu}
+</select>
+
+<update id="updateOrdBypk">
+	update bd_ord set eu_exclude = #{euExclude} where pk_ord = #{pkOrd}
+</update>
+
+	<update id="restoreChargeItem">
+		update bd_item set del_flag='0' where pk_item=#{pkItem} and del_flag='1'
+	</update>
+
+	<select id="queryByExcel" parameterType="java.util.Map" resultType="DynaBean">
+		select
+			i.*,
+			u.name unitname,
+		  	di.name dtItemtypeName,
+		  	dc.name dtChcateName,
+			ic.name pkItemcateName,
+			p.price priceName,
+			s.ratio_children ratioChildren,
+			s.ratio_spec ratioSpec
+		from
+			bd_item i
+		left join bd_unit u on u.pk_unit = i.pk_unit
+		left join bd_defdoc di on di.code = i.dt_itemtype and di.code_defdoclist = '030005'
+		left join bd_defdoc dc on dc.code = i.dt_chcate and dc.code_defdoclist = '030800'
+		left join bd_itemcate ic on ic.pk_itemcate = i.pk_itemcate and ic.del_flag = '0'
+		left join bd_item_price p on p.pk_item = i.pk_item and p.del_flag = '0' and p.flag_stop = '0'
+		left join bd_item_sp s on s.pk_item = i.pk_item and s.del_flag = '0' and s.eu_pvtype = '3'
+		where
+			i.del_flag = '0'
+			<if test='code !=null and code != ""'>
+				and i.code like upper('%${code}%')
+			</if>
+			<if test='name !=null and name != ""'>
+				and i.name like upper('%${name}%')
+			</if>
+			<if test='spcode !=null and spcode != ""'>
+				and i.spcode like upper('%${spcode}%')
+			</if>
+			<if test='flag_active !=null and flag_active != ""'>
+				and i.flag_active = #{flagActive}
+			</if>
+			<if test='pkItemcate !=null and pkItemcate != ""'>
+				and i.pk_itemcate = #{pkItemcate}
+			</if>
+
+	</select>
+
+	<select id="countBdOrd" resultType="java.lang.Integer" parameterType="java.lang.String">
+		SELECT COUNT(1) FROM BD_ORD WHERE CODE_ORDTYPE=#{code}
+	</select>
+
+	<select id="countCnOrder" resultType="java.lang.Integer" parameterType="java.lang.String">
+		SELECT COUNT(1) FROM CN_ORDER WHERE CODE_ORDTYPE=#{code}
+	</select>
+
+	<delete id="delBdOrdtype" parameterType="java.lang.String">
+		DELETE FROM BD_ORDTYPE WHERE PK_ORDTYPE=#{pkOrdtype}
+	</delete>
+
+	<select id="getChargeItemList" parameterType="java.util.Map" resultType="DynaBean">
+        select i.*, u.name as unitname, cate.NAME as catename, cate.CODE as catecode,sp.RATIO_CHILDREN,sp.AMOUNT_CHILDREN,sp.eu_cdmode
+        from bd_item i
+        left join bd_unit u on i.pk_unit = u.pk_unit
+        left join bd_itemcate cate on cate.PK_ITEMCATE = i.PK_ITEMCATE and cate.del_flag = '0'
+		left join BD_ITEM_SP sp on sp.PK_ITEM = i.PK_ITEM and sp.DEL_FLAG = '0' and sp.EU_PVTYPE = '3'
+        where 1=1
+        <if test="code != null and code != ''">
+            and (i.code like '%${code}%' or i.CODE_STD like '%${code}%')
+		</if>
+        <if test="name != null and name != ''">
+            and i.name like '%${name}%'
+        </if>
+        <if test="flagActive != null and flagActive != ''">
+            and i.flag_active = #{flagActive}
+        </if>
+        <if test="pkItemcate != null and pkItemcate != ''">
+            and i.pk_itemcate = #{pkItemcate}
+        </if>
+        <if test="spcode != null and spcode != ''">
+            and i.spcode like '%${spcode}%'
+        </if>
+		<if test="codeExt != null and codeExt != ''">
+			and i.CODE_EXT like '%${codeExt}%'
+		</if>
+		order  by  i.MODITY_TIME  desc
+	</select>
+
+	<select id = "getBdOrdByRequiresSqlserver" resultType="com.zebone.nhis.base.bd.vo.BdOrdAndPkDeptVo"  parameterType="java.lang.String">
+		<!-- select ord.*,dept.pk_dept
+		  from bd_ord ord
+		  left join bd_ord_dept dept  on ord.pk_ord=dept.pk_ord	and dept.del_flag='0' and dept.FLAG_DEF='1'
+		 where ord.del_flag = '0' -->
+		select
+		ord.*,
+		org.price,
+		org.price_chd,
+		org.price_vip,
+		bdorg.pk_org,
+		bdorg.name_org 
+		from bd_ord ord
+		<if test="dtContype != null and dtContype != '' ">
+			left join BD_ORD_LAB lab on lab.PK_ORD = ord.PK_ORD
+		</if>
+		LEFT join bd_ord_org org on org.pk_ord = ord.pk_ord
+		left join bd_ou_org bdorg on bdorg.pk_org = org.pk_org
+		where 1 = 1
+		<if test="searchData != null and searchData != '' and searchData=='0'.toString()">
+			and
+			not exists (select 1
+			from bd_ord_org ordorg
+			where ordorg.del_flag = '0' and
+			ord.pk_ord=ordorg.pk_ord and
+			ordorg.pk_org=#{jg,jdbcType=CHAR})
+		</if>
+		<if test="codeOrdtype != null and codeOrdtype != ''">
+			and ord.code_ordtype like #{codeOrdtype,jdbcType=CHAR}||'%'
+		</if>
+		<if test="code != null and code != ''">
+			and (ord.code like '%'||#{code,jdbcType=VARCHAR}||'%')
+		</if>
+		<if test="name != null and name != ''">
+			and ord.name like '%'||#{name,jdbcType=VARCHAR}||'%' escape '#'
+		</if>
+		<if test="pkOrd != null and pkOrd != ''">
+			and ord.pk_ord = #{pkOrd,jdbcType=CHAR}
+		</if>
+		<if test="spcode != null and spcode != ''">
+			and ord.spcode like '%'||#{spcode,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="dtOrdType != null and dtOrdType != ''">
+			and ord.DT_ORDCATE = #{dtOrdType,jdbcType=CHAR}
+		</if>
+		<if test="codeExt != null and codeExt != '' ">
+			and ord.CODE_EXT = #{codeExt,jdbcType=VARCHAR}
+		</if>
+		<if test="dtContype != null and dtContype != '' ">
+			and lab.DT_CONTYPE = #{dtContype,jdbcType=CHAR}
+		</if>
+		<!-- <if test="pkDept != null and pkDept != ''">
+            and dept.pk_dept = #{pkDept,jdbcType=CHAR}
+        </if> -->
+		<if test="delFlag != null and delFlag != '' ">
+			and ord.del_flag = #{delFlag,jdbcType=CHAR}
+		</if>
+		<if test="pkOrg != null and pkOrg != '' ">
+			and org.pk_org = #{pkOrg,jdbcType=CHAR}
+		</if>
+		ORDER BY ord.code 
+	</select>
+
+
+
+	<select  id = "getBdOrdByJgRequiresSqlserver" resultType="com.zebone.nhis.base.bd.vo.BdOrdAndPkDeptVo"  parameterType="java.lang.String">
+		<!--
+            select d.PK_ORD, d.PK_ORDTYPE,d.CODE_ORDTYPE,d.CODE,d.NAME,
+                g.NAME_PRT, g.SPCODE, g.D_CODE, g.CODE_FREQ, d.SPEC,
+                d.EU_EXCLUDE, d.FLAG_NS, d.FLAG_DR, g.QUAN_DEF,
+                d.FLAG_IP, d.FLAG_OP, d.FLAG_ER, d.FLAG_HM,
+                d.FLAG_PE, d.FLAG_EMR, d.FLAG_CG, d.FLAG_PD,
+                d.FLAG_ACTIVE, d.NOTE, d.CREATOR,d.FLAG_PED,
+                d.CREATE_TIME, d.MODIFIER, d.DEL_FLAG, d.TS,
+                d.PK_UNIT, d.FLAG_UNIT, d.DT_ORDCATE, d.EU_SEX,
+                d.desc_ord, d.except_ord
+            -->
+		select 	/*G.NAME_PRT,G.SPCODE,G.D_CODE,G.CODE_FREQ,G.QUAN_DEF,*/
+		d.*,
+		g.price,
+		g.price_chd,
+		g.price_vip,
+		bdorg.pk_org,
+		bdorg.name_org
+		from bd_ord d
+		inner join bd_ord_org g on d.pk_ord=g.pk_ord
+		left join bd_ou_org bdorg on bdorg.pk_org = g.pk_org
+		<if test="dtContype != null and dtContype != '' ">
+			left join BD_ORD_LAB lab on lab.PK_ORD = d.PK_ORD
+		</if>
+		where g.del_flag = '0'
+
+		<if test="jg != null and jg != ''">
+			and g.pk_org like #{jg,jdbcType=CHAR}||'%'
+		</if>
+		<if test="codeOrdtype != null and codeOrdtype != ''">
+			and d.code_ordtype like #{codeOrdtype,jdbcType=CHAR}||'%'
+		</if>
+		<if test="code != null and code != ''">
+			and (d.code like '%'||#{code,jdbcType=VARCHAR} or d.code like #{code,jdbcType=VARCHAR}||'%')
+		</if>
+		<if test="name != null and name != ''">
+			and d.name like '%'||#{name,jdbcType=VARCHAR}||'%' escape '#'
+		</if>
+		<if test="pkOrd != null and pkOrd != ''">
+			and d.pk_ord = #{pkOrd,jdbcType=CHAR}
+		</if>
+		<if test="spcode != null and spcode != ''">
+			and d.spcode '%'||#{spcode,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="dtOrdType != null and dtOrdType != ''">
+			and DT_ORDCATE = #{dtOrdType,jdbcType=CHAR}
+		</if>
+		<if test="codeExt != null and codeExt != '' ">
+			and d.CODE_EXT = #{codeExt,jdbcType=VARCHAR}
+		</if>
+		<if test="dtContype != null and dtContype != '' ">
+			and lab.DT_CONTYPE = #{dtContype,jdbcType=CHAR}
+		</if>
+		<!-- 	<if test="pkDept != null and pkDept != ''">
+                and dept.pk_dept = #{pkDept,jdbcType=CHAR}
+            </if>   -->
+		<if test="delFlag != null and delFlag != '' ">
+			and d.del_flag = #{delFlag,jdbcType=CHAR}
+		</if>
+		order by d.code DESC
+	</select>
+
+	<select id="getSetMealByPkOrd" resultType="com.zebone.nhis.base.bd.vo.BdOrdAndPkDeptVo">
+		SELECT
+		pk_ord,
+		CASE
+			WHEN ( SELECT COUNT ( * ) FROM BD_ORD_ITEM t WHERE t.PK_ORD = ord.PK_ORD AND t.DEL_FLAG= '0' ) > 1 THEN
+			1 ELSE 0
+			END setMeal
+		FROM
+		BD_ORD ord
+		where
+		1=1
+		<if test="list != null and list.size > 0">
+			and ord.PK_ORD  in
+			<foreach collection="list" item="valueList" open="(" close=")" separator=",">
+				#{valueList}
+			</foreach>
+		</if>
+
+	</select>
+
+	<select id="findOrderByItemCode" resultType="com.zebone.nhis.base.bd.vo.BdOrdAndPkDeptVo">
+		select
+		a.*,
+		ord.price,
+		ord.price_chd,
+		ord.price_vip,
+		ord.pk_org,
+		org.name_org 
+		from BD_ORD a
+		LEFT join bd_ord_org ord on ord.pk_ord = a.pk_ord
+		left join bd_ord_item b on a.PK_ORD = b.PK_ORD
+		left join bd_item c on c.PK_ITEM = b.PK_ITEM
+		left join bd_pd d on d.pk_pd = b.PK_ITEM
+		left join bd_ou_org org on org.pk_org = ord.pk_org
+		<if test="dtContype != null and dtContype != '' ">
+			left join BD_ORD_LAB lab on lab.PK_ORD = a.PK_ORD
+		</if>
+		where a.DEL_FLAG = '0'
+		and c.CODE = #{chargeItemCode}
+		or d.code = #{chargeItemCode}
+		<if test="codeOrdtype != null and codeOrdtype != ''">
+			and a.code_ordtype like #{codeOrdtype,jdbcType=CHAR}||'%'
+		</if>
+		<if test="code != null and code != ''">
+			and (a.code like '%'||#{code,jdbcType=VARCHAR} or a.code like #{code,jdbcType=VARCHAR}||'%')
+		</if>
+		<if test="name != null and name != ''">
+			and a.name like '%'||#{name,jdbcType=VARCHAR}||'%' escape '#'
+		</if>
+		<if test="dtOrdType != null and dtOrdType != ''">
+			and a.DT_ORDCATE = #{dtOrdType,jdbcType=CHAR}
+		</if>
+		<if test="codeExt != null and codeExt != '' ">
+			and a.CODE_EXT = #{codeExt,jdbcType=VARCHAR}
+		</if>
+		<if test="dtContype != null and dtContype != '' ">
+			and lab.DT_CONTYPE = #{dtContype,jdbcType=CHAR}
+		</if>
+		<if test="pkOrg != null and pkOrg != '' ">
+			and ord.pk_org = #{pkOrg,jdbcType=CHAR}
+		</if>
+	</select>
+
+	<select id = "getBdItemCount" resultType="java.lang.String"  parameterType="java.lang.String">
+
+		select count(1) from bd_ord_item where PK_ITEM = #{pkItem,jdbcType=VARCHAR}
+
+	</select>
+
+	<select id="getBdItemByItemCate" parameterType="java.util.Map" resultType="DynaBean">
+<choose>
+	<when test="dbType=='sqlserver'">
+		with tem_table(PK_ITEMCATE)
+		as
+		(
+		select itemcate.PK_ITEMCATE
+		from
+		bd_itemcate itemcate
+		where 1=1
+		<if test="pkItemcate != null and pkItemcate != ''">
+			and itemcate.PK_ITEMCATE = #{pkItemcate,jdbcType=VARCHAR}
+		</if>
+		union all
+		select a.PK_ITEMCATE
+		from
+		bd_itemcate a 
+		inner join tem_table b on (a.PK_PARENT = b.PK_ITEMCATE)
+		)
+		select item.*,ca.NAME caName,unit.name unitname,cate.CODE catecode,cate.NAME catename,sp.RATIO_CHILDREN,sp.AMOUNT_CHILDREN,sp.EU_CDMODE  from BD_ITEM item
+		left join BD_UNIT unit on item.PK_UNIT = unit.PK_UNIT
+		left join BD_ITEMCATE cate on cate.PK_ITEMCATE = item.PK_ITEMCATE
+		left join BD_ITEM_SP sp on sp.PK_ITEM = item.PK_ITEM and sp.DEL_FLAG = '0' and sp.EU_PVTYPE = '3'
+		left join bd_audit ca on ca.PK_AUDIT = item.PK_AUDIT
+		where item.PK_ITEMCATE in (select PK_ITEMCATE from tem_table) 
+		<if test="code != null and code != ''">
+			and (item.code like '%${code}%' or item.CODE_STD like '%${code}%')
+		</if>
+		<if test="name != null and name != ''">
+			and item.name like '%${name}%'
+		</if>
+		<if test="flagActive != null and flagActive != ''">
+			and item.flag_active = #{flagActive}
+		</if>
+		<if test="spcode != null and spcode != ''">
+			and item.spcode like '%${spcode}%'
+		</if>
+		<if test="codeExt != null and codeExt != ''">
+			and item.CODE_EXT = #{codeExt}
+		</if>
+	</when>
+	<otherwise>
+		select item.*,ca.NAME caName,unit.name unitname,cate.CODE catecode,cate.NAME catename,sp.RATIO_CHILDREN,sp.AMOUNT_CHILDREN,sp.EU_CDMODE from BD_ITEM item
+		left join BD_UNIT unit on item.PK_UNIT = unit.PK_UNIT
+		left join BD_ITEMCATE cate on cate.PK_ITEMCATE = item.PK_ITEMCATE
+		left join BD_ITEM_SP sp on sp.PK_ITEM = item.PK_ITEM and sp.DEL_FLAG = '0' and sp.EU_PVTYPE = '3'
+		left join bd_audit ca on ca.PK_AUDIT = item.PK_AUDIT
+		where item.PK_ITEMCATE in(select itemcate.PK_ITEMCATE  from bd_itemcate itemcate where itemcate.DEL_FLAG = '0'
+		start with itemcate.PK_ITEMCATE=#{pkItemcate,jdbcType=VARCHAR}
+		connect by prior itemcate.PK_ITEMCATE = itemcate.PK_PARENT)
+		<if test="code != null and code != ''">
+			and (item.code like '%${code}%' or item.CODE_STD like '%${code}%')
+		</if>
+		<if test="name != null and name != ''">
+			and item.name like '%${name}%'
+		</if>
+		<if test="flagActive != null and flagActive != ''">
+			and item.flag_active = #{flagActive}
+		</if>
+		<if test="spcode != null and spcode != ''">
+			and item.spcode like '%${spcode}%'
+		</if>
+		<if test="codeExt != null and codeExt != ''">
+			and item.CODE_EXT = #{codeExt}
+		</if>
+		 order  by  item.MODITY_TIME  desc
+	</otherwise>
+</choose>
+
+	</select>
+
+	 <select id="findOrderPrice" resultType="DynaBean">
+		 select PK_ORD, sum((NVL(item.PRICE, 0) +NVL(pd.PRICE,0 )) *orditem.QUAN) price
+		 from BD_ORD_ITEM orditem
+		 left join BD_ITEM item on item.PK_ITEM = orditem.PK_ITEM
+		 left join BD_PD pd on orditem.PK_ITEM=pd.PK_PD
+		 where orditem.DEL_FLAG='0'and orditem.PK_ORD in
+		 <foreach collection="list" item="valueList" open="(" close=")" separator=",">
+			#{valueList}
+		</foreach>
+		group by orditem.PK_ORD
+	</select>
+	
+	  
+	
+	<select id="findOrderSumPrice" resultType="DynaBean">
+		select orditem.PK_ORD as PkOrd,
+		       sum(NVL(itemprice.PRICE, 0) * orditem.QUAN) Price,
+		       sum((NVL(itemprice.PRICE * (1 + NVL(itemsp.ratio_children, 0)), 0)) * orditem.QUAN) PriceChd,
+		       sum((NVL(itemprice.PRICE * (1 + NVL(itemsp.ratio_spec, 0)), 0)) * orditem.QUAN) PriceVip
+		  from bd_ord_item orditem
+		 inner join bd_item bditem
+		    on bditem.pk_item = orditem.pk_item
+		   and orditem.flag_pd = '0'
+		   and bditem.flag_active = '1'
+		 inner join bd_item_price itemprice
+		    on bditem.pk_item = itemprice.pk_item
+		   and itemprice.del_flag = '0'
+		   and itemprice.flag_stop = '0'
+		  left join bd_item_sp itemsp
+		    on bditem.PK_ITEM = itemsp.PK_ITEM
+		    where orditem.PK_ORD in
+		<foreach collection="list" item="valueList" open="(" close=")" separator=",">
+			#{valueList}
+		</foreach>
+		AND  NVL(itemsp.Eu_Pvtype,'1')='1'
+		group by orditem.PK_ORD  
+	</select>
+	
+	
+	<select id="getUpdateOrderPrice" resultType="DynaBean">
+		select sum(pce.price*oi.quan) price,
+			   sum(pce.price*(1+sp.ratio_children)*oi.quan) price_chd,
+			   sum(pce.price*(1+sp.ratio_spec)*oi.quan) price_vip
+		from bd_ord ord
+				 inner join bd_ord_item oi on ord.pk_ord=oi.pk_ord
+				 inner join bd_item_price pce on oi.pk_item=pce.pk_item
+				 left outer join bd_item_sp sp on pce.pk_item=sp.pk_item and pce.pk_org=sp.pk_org
+		where
+		      ord.pk_ord=#{pkOrd,jdbcType=VARCHAR} and
+		pce.pk_org=#{pkOrg,jdbcType=VARCHAR} and
+		pce.flag_stop='0' and
+		pce.date_begin &lt;= #{dateNow,jdbcType=DATE} and
+		pce.date_end &gt;= #{dateNow,jdbcType=DATE} and
+		(sp.eu_pvtype='0' or
+		sp.eu_pvtype='3')
+	</select>
+
+	<select id="getOrdByPkItem" resultType="DynaBean">
+		select oi.pk_ord
+		from bd_ord_item oi
+		where oi.pk_item=#{pkItem,jdbcType=VARCHAR}
+	</select>
+
+	<update id="SaveItemOld" parameterType="com.zebone.nhis.base.bd.vo.BdOrdItemOldVo">
+
+		update bd_ord_item
+   		set pk_item=#{pkItemOld}
+ 		where pk_item=#{pkItem}
+
+	</update>
+
+	<update id="updateOrdOrgPrice">
+		update bd_ord_org
+		set PRICE = #{price,jdbcType=DOUBLE}
+		  ,price_chd = #{priceChd,jdbcType=DOUBLE}
+		  ,price_vip = #{priceVip,jdbcType=DOUBLE}
+		where PK_ORD = #{pkOrd,jdbcType=VARCHAR}
+		  and PK_ORG = #{pkOrg,jdbcType=VARCHAR}
+	</update>
+	<select id="findOrderPriceSqlSer" resultType="DynaBean">
+		select PK_ORD , sum((isnull(item.PRICE, 0) +isnull(pd.PRICE,0 )) *orditem.QUAN) price
+		from BD_ORD_ITEM orditem
+		left join BD_ITEM item on item.PK_ITEM = orditem.PK_ITEM
+		left join BD_PD pd on orditem.PK_ITEM=pd.PK_PD
+		where orditem.DEL_FLAG='0'and orditem.PK_ORD in
+		<foreach collection="list" item="valueList" open="(" close=")" separator=",">
+			#{valueList}
+		</foreach>
+		group by orditem.PK_ORD
+
+
+	</select>
+	<select id="getBdItemByPkOrd" resultType="com.zebone.nhis.common.module.base.bd.srv.BdOrdItem">
+		select * from BD_ORD_ITEM where PK_ORD = #{pkOrd,jdbcType=VARCHAR}
+	</select>
+
+	<select id="getPrintItemInfo" resultType="com.zebone.nhis.base.bd.vo.PrintItemInfoVo">
+		select ord.name as  ordName
+		,item.code_std
+		,item.NAME as itemName
+		,item.PRICE as price
+		,unit.name as unitName
+		,ordItem.QUAN
+		,itemcate.NAME as itemCateName
+		,ordTyp.NAME as ordTypName
+		,ord.code
+		,dept.NAME_DEPT
+		,(case when ord.flag_active = 1 then '有效' when ord.flag_active =0  then '无效' else '无效'  end ) flag_active
+
+		from bd_ord ord
+		left join bd_ordtype ordtype on ordtype.PK_ORDTYPE =ord.PK_ORDTYPE
+		left join bd_ord_item ordItem on ordItem.pk_ord = ord.PK_ORD
+		left join bd_item item on item.PK_ITEM = ordItem.PK_ITEM and ordItem.flag_pd = '0'
+		left join bd_ord_dept ordDept on ordDept.PK_ORD = ord.PK_ORD
+		left join bd_ou_dept dept on dept.PK_DEPT = ordDept.pk_dept
+		left join bd_unit unit on unit.pk_unit = item.PK_UNIT
+		left join BD_DEFDOC ordTyp on ordTyp.CODE = ord.dt_ordcate   and ordTyp.CODE_DEFDOCLIST = '030000' and ordTyp.DEL_FLAG ='0'
+		left join bd_itemcate itemcate on itemcate.PK_ITEMCATE = item.pk_itemcate  and itemcate.DEL_FLAG = '0'
+		LEFT join bd_ord_org org on ord.pk_ord = org.pk_ord
+		<if test="dtContype != null and dtContype != '' ">
+			left join BD_ORD_LAB lab on lab.PK_ORD = ord.PK_ORD
+		</if>
+		where 1=1
+
+		<if test="codeOrdtype != null and codeOrdtype != ''">
+			and ord.code_ordtype like #{codeOrdtype,jdbcType=CHAR}||'%'
+		</if>
+		<if test="code != null and code != ''">
+			and (ord.code like '%'||#{code,jdbcType=VARCHAR} or ord.code like #{code,jdbcType=VARCHAR}||'%')
+		</if>
+		<if test="name != null and name != ''">
+			and ord.name like '%'||#{name,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="pkOrd != null and pkOrd != ''">
+			and ord.pk_ord = #{pkOrd,jdbcType=CHAR}
+		</if>
+		<if test="spcode != null and spcode != ''">
+			and ord.spcode like '%'||#{spcode,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="dtOrdCate != null and dtOrdCate != ''">
+			and ord.DT_ORDCATE = #{dtOrdCate,jdbcType=CHAR}
+		</if>
+		<if test="codeExt != null and codeExt != '' ">
+			and ord.CODE_EXT = #{codeExt,jdbcType=VARCHAR}
+		</if>
+		<if test="dtContype != null and dtContype != '' ">
+			and lab.DT_CONTYPE = #{dtContype,jdbcType=CHAR}
+		</if>
+		<if test="delFlag != null and delFlag != '' ">
+			and ord.del_flag = #{delFlag,jdbcType=CHAR}
+		</if>
+		order by ord.name
+
+	</select>
+
+	<select id="getPrintItemInfoGroupOrdName" resultType="com.zebone.nhis.base.bd.vo.PrintItemInfoVo">
+		select
+		ord.name as  ordName,sum(item.PRICE*ordItem.QUAN) as countPrice
+		from bd_ord ord
+		left join bd_ordtype ordtype on ordtype.PK_ORDTYPE =ord.PK_ORDTYPE
+		left join bd_ord_item ordItem on ordItem.pk_ord = ord.PK_ORD
+		left join bd_item item on item.PK_ITEM = ordItem.PK_ITEM and ordItem.flag_pd = '0'
+		LEFT join bd_ord_org org on ord.pk_ord = org.pk_ord
+
+		<if test="dtContype != null and dtContype != '' ">
+			left join BD_ORD_LAB lab on lab.PK_ORD = ord.PK_ORD
+		</if>
+
+		where 1=1
+
+		<if test="codeOrdtype != null and codeOrdtype != ''">
+			and ord.code_ordtype like #{codeOrdtype,jdbcType=CHAR}||'%'
+		</if>
+		<if test="code != null and code != ''">
+			and (ord.code like '%'||#{code,jdbcType=VARCHAR} or ord.code like #{code,jdbcType=VARCHAR}||'%')
+		</if>
+		<if test="name != null and name != ''">
+			and ord.name like '%'||#{name,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="pkOrd != null and pkOrd != ''">
+			and ord.pk_ord = #{pkOrd,jdbcType=CHAR}
+		</if>
+		<if test="spcode != null and spcode != ''">
+			and ord.spcode like '%'||#{spcode,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="dtOrdCate != null and dtOrdCate != ''">
+			and ord.DT_ORDCATE = #{dtOrdCate,jdbcType=CHAR}
+		</if>
+		<if test="codeExt != null and codeExt != '' ">
+			and ord.CODE_EXT = #{codeExt,jdbcType=VARCHAR}
+		</if>
+		<if test="dtContype != null and dtContype != '' ">
+			and lab.DT_CONTYPE = #{dtContype,jdbcType=CHAR}
+		</if>
+		<if test="delFlag != null and delFlag != '' ">
+			and ord.del_flag = #{delFlag,jdbcType=CHAR}
+		</if>
+		group by ord.name  order by ord.name
+	</select>
+
+</mapper>

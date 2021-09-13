@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.emr.mgr.dao.NemsEmrMapper">
+
+	<select id="listEmrPatArch" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		select pat.pk_pi AS pkPi,
+		pat.code_pv AS codePv,
+		pat.name_pi AS namePi,
+		pat.dt_sex AS dtSex,
+		pat.age_txt AS ageTxt,
+		pat.pk_emp_refer AS
+		pkEmpRefer,
+		pat.sex_name AS
+		sexName,
+		pat.refer_name AS
+		referName,
+		pat.pk_pv AS pkPv,
+		pat.diag_admit_txt AS diagAdmitTxt,
+		pat.CREATE_TIME_PV AS
+		createTimePv,
+		pat.pk_patrec AS pkPatrec
+		FROM
+		VIEW_EMR_PAT_LIST pat left join emr_pat_rec rec on
+		pat.pk_patrec=rec.pk_patrec
+		WHERE pat.eu_pvtype = '3'
+		AND
+		rec.pk_emp_archive
+		IS NOT NULL
+		And pat.eu_status = '5'
+		AND
+		pat.del_flag='0'
+		<if test="patNo != null and patNo != ''">
+			AND pat.pat_no = #{patNo,jdbcType=VARCHAR}
+		</if>
+		<if test="namePi != null and namePi != ''">
+			AND pat.name_pi = #{namePi,jdbcType=VARCHAR}
+		</if>
+		<if test="pkDept != null and pkDept != ''">
+			AND pat.pk_dept = #{pkDept,jdbcType=VARCHAR}
+		</if>
+		<if test="dateBegin != null and dateBegin != ''">
+			AND pat.date_begin
+			&gt;=to_date(#{dateBegin,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			AND pat.date_end &lt;=to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+	</select>
+
+	<select id="listEmrPat" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		select pat.pk_pi AS pkPi,
+		pat.code_pv AS codePv,
+		pat.name_pi AS namePi,
+		pat.dt_sex AS dtSex,
+		pat.age_txt AS ageTxt,
+		pat.pk_emp_refer AS
+		pkEmpRefer,
+		pat.sex_name AS
+		sexName,
+		pat.refer_name AS
+		referName,
+		pat.pk_pv AS pkPv,
+		pat.diag_admit_txt AS diagAdmitTxt,
+		pat.CREATE_TIME_PV AS
+		createTimePv,
+		pat.pk_patrec AS pkPatrec,
+		rec.PK_RECALL AS pkRecall,
+		rec.pk_emp_app AS pkEmpApp,
+		rec.date_apply AS
+		dateApply,
+		dept.pk_dept AS pkDept,
+		employee.name_emp AS nameEmp
+		FROM
+		VIEW_EMR_PAT_LIST pat INNER JOIN EMR_RECALL_REC rec ON
+		pat.pk_pv
+		=
+		rec.pk_pv left join emr_pat_rec patrec on
+		pat.pk_patrec=patrec.pk_patrec
+		left join bd_ou_empjob empjob on
+		empjob.pk_emp=rec.pk_emp_app
+		left join bd_ou_dept dept on
+		empjob.pk_dept = dept.pk_dept
+		left join bd_ou_employee employee on
+		employee.pk_emp=rec.pk_emp_app
+		WHERE pat.eu_pvtype = '3'
+		AND
+		patrec.pk_emp_archive IS NOT NULL
+		AND pat.del_flag='0'
+		<if test="patNo != null and patNo != ''">
+			AND pat.pat_no = #{patNo,jdbcType=VARCHAR}
+		</if>
+		<if test="namePi != null and namePi != ''">
+			AND pat.name_pi = #{namePi,jdbcType=VARCHAR}
+		</if>
+		<if test="pkDept != null and pkDept != ''">
+			AND pat.pk_dept = #{pkDept,jdbcType=VARCHAR}
+		</if>
+		<if test="dateBegin != null and dateBegin != ''">
+			AND pat.date_begin
+			&gt;=to_date(#{dateBegin,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+		<if test="dateEnd != null and dateEnd != ''">
+			AND pat.date_end &lt;=to_date(#{dateEnd,jdbcType=VARCHAR},
+			'yyyymmddhh24miss')
+		</if>
+	</select>
+
+	<update id="agreeRecall" parameterType="java.util.Map">
+		update emr_pat_rec set
+		pk_emp_archive ='',archive_date='',eu_status='4'
+		where pk_pv
+		=#{pkPv,jdbcType=VARCHAR}
+	</update>
+
+	<!-- 查询封存病人 -->
+	<select id="searchMothPat" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.emr.mgr.vo.EmrSealVo">
+		select rec.type_code,
+		rec.pk_rec,
+		rec.eu_doc_status,
+		type.name,
+		item.date_deal as
+		dateDeal,
+		seal.creator as sealCreator,
+		seal.content_seal as contentSeal,
+		seal.create_time
+		as sealCreateTime,
+		rec.creator as creator,
+		rec.create_time
+		as createTime,
+		rec.name as
+		nameDoc,
+		pat.name as namePi,
+		rec.pk_pv as pkPv,
+		rec.pk_pi as pkPi,
+		seal.eu_status as euStatus,
+		seal.pk_sealrec as pkSealrec,
+		seal.content_seal as
+		contentSeal
+		from emr_med_rec rec left
+		join
+		emr_doc_type type on
+		rec.type_code =
+		type.code
+		left join
+		emr_seal_item
+		item on rec.pk_rec =
+		item.pk_rec
+		left join emr_seal_rec seal on
+		seal.pk_sealrec=
+		item.pk_sealrec
+		left
+		join
+		VIEW_EMR_PAT_LIST pat on
+		pat.pk_pv = rec.pk_pv
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			and rec.del_flag='0'
+			<if test="patNo != null and patNo != ''">
+				and pat.pat_no = #{patNo,jdbcType=VARCHAR}
+			</if>
+			<if test="namePi != null and namePi != ''">
+				and pat.name_pi = #{namePi,jdbcType=VARCHAR}
+			</if>
+			<if test="dateBegin != null and dateBegin != ''">
+				AND pat.date_begin
+				&gt;=to_date(#{dateBegin,jdbcType=VARCHAR},
+				'yyyymmddhh24miss')
+			</if>
+			<if test="dateEnd != null and dateEnd != ''">
+				AND pat.date_end
+				&lt;=to_date(#{dateEnd,jdbcType=VARCHAR},
+				'yyyymmddhh24miss')
+			</if>
+		</trim>
+	</select>
+
+	<update id="updateEmrSealRec" parameterType="com.zebone.nhis.emr.mgr.vo.EmrSealParam">
+		update emr_seal_rec
+		<trim prefix="SET" prefixOverrides=",">
+			<if test="pkPv !=null and pkPv != ''">
+				pk_pi=#{pkPi,jdbcType=VARCHAR},
+			</if>
+			<if test="pkPv !=null and pkPv != ''">
+				pk_pv=#{pkPv,jdbcType=VARCHAR},
+			</if>
+			<if test="euStatus !=null and euStatus != ''">
+				eu_status=#{euStatus,jdbcType=VARCHAR},
+			</if>
+			<if test="pkEmpSeal !=null and pkEmpSeal != ''">
+				pk_emp_seal=#{pkEmpSeal,jdbcType=VARCHAR},
+			</if>
+			<if test="contentSeal !=null and contentSeal != ''">
+				content_seal=#{contentSeal,jdbcType=VARCHAR},
+			</if>
+			<if test="dateSeal !=null and dateSeal != ''">
+				date_seal=to_date(#{dateSeal,jdbcType=VARCHAR},
+				'yyyymmddhh24miss')
+			</if>
+		</trim>
+		where pk_sealrec=#{pkSealrec,jdbcType=VARCHAR}
+	</update>
+
+	<select id="listArchPat" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		select list.pk_pv as pkPv,
+		list.pk_pi as pkPi,
+		list.code_pv as codePv,
+		list.name as nsmePi,
+		list.PK_EMP_REFER as pkEmpRefer,
+		list.pk_dept as
+		pkDept,
+		rec.content_seal as
+		contentSeal,
+		rec.pk_sealrec as pkSealrec,
+		rec.creator as sealCreator,
+		rec.create_time as sealCreateTime
+		from view_emr_pat_list list inner join emr_seal_rec rec on
+		list.PK_PV =
+		rec.PK_PV
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			rec.del_flag='0'
+			<if test="patNo !=null and patNo != ''">
+				AND list.pat_no=#{patNo,jdbcType=VARCHAR}
+			</if>
+			<if test="namePi !=null and namePi != ''">
+				AND list.NAME_PI=#{namePi,jdbcType=VARCHAR}
+			</if>
+			<if test="pkDept !=null and pkDept != ''">
+				AND list.pk_dept=#{pkDept,jdbcType=VARCHAR}
+			</if>
+			<if test="dateBegin != null and dateBegin != ''">
+				AND list.DATE_BEGIN
+				&gt;=to_date(#{dateBegin,jdbcType=VARCHAR},
+				'yyyymmddhh24miss')
+			</if>
+			<if test="dateEnd != null and dateEnd != ''">
+				AND list.DATE_END
+				&lt;=to_date(#{dateEnd,jdbcType=VARCHAR},
+				'yyyymmddhh24miss')
+			</if>
+		</trim>
+	</select>
+	<update id="unlockRec" parameterType="java.util.Map">
+		update emr_seal_rec set del_flag ='1',
+		date_release=to_date(#{resealTime,jdbcType=VARCHAR},'yyyymmddhh24miss')
+		 where pk_pv=#{pkPv,jdbcType=VARCHAR}
+
+	</update>
+
+</mapper>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.CnPathDictionaryMapper" >
+
+	<select id="qryPathCr" resultType="DynaBean">
+		select rs.pk_cpreason,
+	       rs.sortno,
+	       rs.name_reason,
+	       rs.spcode,
+	       rs.d_code,
+	       rs.eu_reason,
+	       rs.flag_nec,
+	       rs.flag_mon,
+	       rs.index_mon
+	  from bd_cp_reason rs
+	 
+	</select>
+	
+	<select id="countCrUse" parameterType="java.util.List" resultType="java.lang.String">
+		select
+		res.name_reason 
+		from
+		cp_rec_reason cp
+		inner join bd_cp_reason res on cp.pk_cpreason = res.pk_cpreason
+		where
+		cp.pk_cpreason in
+		 <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item.pkCpreason}
+        </foreach>
+	</select>
+	
+	<select id="getMaxCrSortno" resultType="java.lang.Integer">
+		select max(sortno) from bd_cp_reason
+	</select>
+	
+	<delete id="delPathCr" parameterType="java.util.List">
+		delete from bd_cp_reason where pk_cpreason in 
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item.pkCpreason}
+        </foreach>
+	</delete>
+	
+	<!-- 变异数据 -->
+	<select id="qryPathCe" resultType="DynaBean">
+		select exp.pk_cpexp,
+	       exp.sortno,
+	       exp.name_exp,
+	       exp.flag_note,
+		   exp.dt_cpexptype,
+	       exp.spcode,
+	       exp.d_code
+	  	from bd_cp_exp exp
+	 	
+	</select>
+	
+	<select id="getMaxCeSortno" resultType="java.lang.Integer">
+		select max(sortno) from bd_cp_exp
+	</select>
+	
+	<select id="countCeUse" parameterType="java.util.List" resultType="java.lang.String">
+		select
+			ce.name_exp
+		from
+			cp_rec_exp rec
+			inner join bd_cp_exp ce on ce.pk_cpexp = rec.pk_cpexp
+		where
+			ce.pk_cpexp in
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item.pkCpexp}
+        </foreach>
+	</select>
+	
+	<delete id="delPathCe" parameterType="java.util.List">
+		delete from bd_cp_exp where pk_cpexp in 
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item.pkCpexp}
+        </foreach>
+	</delete>
+	
+	<!-- 工作数据 -->
+	<select id="qryPathCt" resultType="DynaBean">
+		select tsk.pk_cptask,
+	       tsk.eu_type,
+	       tsk.sortno,
+	       tsk.name_task,
+	       tsk.spcode,
+	       tsk.d_code
+	  	from bd_cp_task tsk
+	 	where tsk.eu_type <![CDATA[>]]> '0' 
+	 		and tsk.del_flag='0' 
+	</select>
+	
+	<select id="getMaxCtSortno"  resultType="java.lang.Integer">
+		select max(sortno)
+	  	from bd_cp_task
+	</select>
+	
+	<select id="countCtUse" parameterType="java.util.List" resultType="java.lang.String">
+		select
+			ct.name_task
+		from
+			cp_temp_cpord ctc
+		inner join bd_cp_task ct on ct.pk_cptask = ctc.pk_ord
+		where
+			ctc.pk_ord in
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item.pkCptask}
+        </foreach>
+	</select>
+	
+	<delete id="delPathCt" parameterType="java.util.List">
+		delete from bd_cp_task where pk_cptask in
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item.pkCptask}
+        </foreach>
+	</delete>
+</mapper>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.task.bd.dao.BdTaskDao">
+	<select id="checkInvCateInfo" resultType="com.zebone.nhis.task.bd.vo.InvCheckVo">
+		select * from (
+		select '门诊发票' as inv_name,icate.code,icate.name from bd_itemcate icate where icate.DEL_FLAG = '0' and not exists (
+			select invcateitem.PK_ITEMCATE from BD_INVCATE_ITEMCATE invcateitem
+			  inner join BD_INVCATE_ITEM cateitem on cateitem.pk_invcateitem = invcateitem.pk_invcateitem and cateitem.DEL_FLAG = '0'
+			  inner join bd_invcate invcate on invcate.pk_invcate = cateitem.pk_invcate and invcate.DEL_FLAG = '0'
+			where invcateitem.DEL_FLAG = '0' and invcate.eu_type = '0' and invcateitem.PK_ITEMCATE = icate.pk_itemcate
+			)
+			union
+			select '住院发票' as inv_name,icate.code,icate.name  from bd_itemcate icate where icate.DEL_FLAG = '0' and not exists (
+			  select invcateitem.PK_ITEMCATE from BD_INVCATE_ITEMCATE invcateitem
+			  inner join BD_INVCATE_ITEM cateitem on cateitem.pk_invcateitem = invcateitem.pk_invcateitem and cateitem.DEL_FLAG = '0'
+			  inner join bd_invcate invcate on invcate.pk_invcate = cateitem.pk_invcate and invcate.DEL_FLAG = '0'
+			where invcateitem.DEL_FLAG = '0' and invcate.eu_type = '1' and invcateitem.PK_ITEMCATE = icate.pk_itemcate
+		)
+		) order by inv_name asc
+	</select>
+	
+	<select id="checkBdItemInfo" resultType="com.zebone.nhis.common.module.base.bd.srv.BdItem">
+		select code,name,pk_unit,spcode,dt_itemtype,pk_itemcate,dt_chcate,EU_PRICEMODE,code_hp from bd_item
+		  where del_flag = '0' and flag_active = '1' and (
+		    code is null or code ='' or name is null or name ='' or spcode is null or spcode = '' or dt_itemtype is null
+		    or dt_itemtype = '' or pk_itemcate is null or pk_itemcate = '' or dt_chcate is null or dt_chcate = ''
+		    or eu_pricemode is null or eu_pricemode = '' or code_hp is null or code_hp = '' or pk_unit is null or pk_unit = ''
+		  )
+	</select>
+	
+	<select id="checkBdOrdInfo" resultType="com.zebone.nhis.common.module.base.bd.srv.BdOrd">
+		select code,name,code_ordtype,spcode,dt_ordcate,eu_sex from bd_ord
+		  where del_flag = '0' and flag_active = '1' and (
+		    code is null or code = '' or name is null or name = '' or code_ordtype is null or code_ordtype = '' or spcode is null
+		    or spcode = '' or dt_ordcate is null or dt_ordcate = '' or eu_sex is null or eu_sex = ''
+		  )
+	</select>
+	
+	<select id="checkBdPdInfo" resultType="com.zebone.nhis.common.module.scm.pub.BdPd">
+		select code,name,spec,dt_dosage,dt_pdtype,spcode,pk_factory,eu_drugtype,pk_unit_min,pk_unit_pack,eu_sex,
+		  eu_pdprice,PK_UNIT_VOL,dt_anti,eu_usecate,dt_pois,dt_abrd,pk_itemcate,dt_chcate,pk_ordtype,eu_muputype,code_hp
+		from bd_pd where del_flag = '0' and (
+		  code is null or code = '' or name is null or name = '' or spec is null or spec = '' or dt_dosage is null or dt_dosage = ''
+		  or spcode is null or spcode = '' or pk_factory is null or pk_factory = '' or eu_drugtype is null or eu_drugtype =''
+		  or pk_unit_min is null or pk_unit_min = '' or pk_unit_pack is null or pk_unit_pack = '' or eu_sex is null or eu_sex = ''
+		  or eu_pdprice is null or eu_pdprice ='' or pk_unit_vol is null or pk_unit_vol = '' or dt_anti is null or dt_anti = ''
+		  or eu_usecate is null or eu_usecate = '' or dt_pois is null or dt_pois = '' or dt_abrd is null or dt_abrd = ''
+		  or pk_itemcate is null or pk_itemcate = '' or dt_chcate is null or dt_chcate = '' or pk_ordtype is null or pk_ordtype = ''
+		  or eu_muputype is null or eu_muputype = '' or code_hp is null or code_hp = ''
+		)
+	</select>
+
+</mapper>

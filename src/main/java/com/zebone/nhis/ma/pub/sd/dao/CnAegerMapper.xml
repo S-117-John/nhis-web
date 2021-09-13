@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.sd.dao.CnAegerMapper">
+
+    <select id="qryOrdInfoByPkPv" resultType="DynaBean">
+        select
+            cnord.NAME_ORD,
+            cnord.SPEC,
+            cnord.dosage,
+            unitdos.NAME dos_name,
+            supply.NAME supply_name,
+            freq.note freq_name,
+            dt.quan,
+            unit.name	 unit_name
+        from cn_order cnord
+            inner join bl_op_dt dt on dt.pk_cnord = cnord.pk_cnord
+            inner join bd_unit unitdos on unitdos.PK_UNIT = cnord.PK_UNIT_DOS
+            inner join bd_unit unit on unit.PK_UNIT = dt.PK_UNIT
+            inner join BD_SUPPLY supply on supply.code = cnord.CODE_SUPPLY
+            inner join BD_TERM_FREQ freq on freq.code = cnord.code_freq
+            inner join PV_ENCOUNTER pv on pv.pk_pv = cnord.pk_pv
+        where cnord.CODE_ORDTYPE like '01%' and pv.EU_PVTYPE != '3'
+        <if test="pkPv!=null and pkPv!=''">
+            and pv.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+    </select>
+</mapper>

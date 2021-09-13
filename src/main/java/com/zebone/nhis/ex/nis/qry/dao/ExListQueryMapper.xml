@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.qry.dao.ExListQueryMapper">
+   <select id="queryExlistByCon" parameterType="java.util.Map" resultType="DynaBean">
+    	select a.* from  (
+				select exlist.date_plan,
+					 exlist.date_occ,
+					 exlist.eu_status,
+					 exlist.pk_pdback,
+					 exlist.pk_exocc,
+					 exlist.pk_cnord,
+					 exlist.date_canc,
+					 exlist.name_emp_occ,
+					 exlist.name_emp_canc,
+					 exlist.pk_dept_occ pk_dept_ex,
+					 exlist.quan_occ,
+					 exlist.pack_size,
+					 unit.name name_unit,
+					 deptex.name_dept name_dept_ex,
+	   				 ord.flag_durg,
+	   				 ord.flag_bl,
+	   				 ord.name_ord,
+					 case when exlist.pk_pdapdt is not null then '1' else '0' end as flag_ap, 
+					 case when dt.flag_de = '1' then '1' else '0' end as flag_de,
+					 case when exlist.pk_pdback is not null then '1' else '0' end as flag_back_ap, 
+					 case when dtRtn.flag_de = '1' then '1' else '0' end as flag_back_de 
+				from ex_order_occ exlist
+	   			left join cn_order ord on ord.pk_cnord = exlist.pk_cnord
+				left join ex_pd_apply_detail dt on dt.pk_pdapdt = exlist.pk_pdapdt and dt.del_flag = '0'
+				left join bd_ou_dept deptex on deptex.pk_dept = exlist.pk_dept_occ and deptex.del_flag = '0'
+				left join ex_pd_apply_detail dtRtn on dtRtn.pk_pdapdt = exlist.pk_pdback and dtRtn.del_flag = '0'
+				left join bd_unit unit on unit.pk_unit = exlist.pk_unit 
+				where exlist.pk_cnord =  #{pkOrd,jdbcType=CHAR}	
+		union all 
+				select exlist.date_plan,
+					 exlist.date_occ,
+					 exlist.eu_status,
+					 exlist.pk_pdback,
+					 exlist.pk_exocc,
+					 exlist.pk_cnord,
+					 exlist.date_canc,
+					 exlist.name_emp_occ,
+					 exlist.name_emp_canc,
+					 exlist.pk_dept_occ pk_dept_ex,
+					 exlist.quan_occ,
+					 exlist.pack_size,
+					 unit.name name_unit,
+					 deptex.name_dept name_dept_ex,
+					 ord.flag_durg,
+	   				 ord.flag_bl,
+	   				 ord.name_ord,
+					 case when exlist.pk_pdapdt is not null then '1' else '0' end as flag_ap, 
+					 case when dt.flag_de = '1' then '1' else '0' end as flag_de,
+					 case when exlist.pk_pdback is not null then '1' else '0' end as flag_back_ap, 
+					 case when dtRtn.flag_de = '1' then '1' else '0' end as flag_back_de 
+				from ex_order_occ_b exlist
+	   			left join cn_order ord on ord.pk_cnord = exlist.pk_cnord
+				left join ex_pd_apply_detail_b dt on dt.pk_pdapdt = exlist.pk_pdapdt and dt.del_flag = '0'
+				left join bd_ou_dept deptex on deptex.pk_dept = exlist.pk_dept_occ and deptex.del_flag = '0'
+				left join ex_pd_apply_detail dtRtn on dtRtn.pk_pdapdt = exlist.pk_pdback and dtRtn.del_flag = '0'
+				left join bd_unit unit on unit.pk_unit = exlist.pk_unit 
+				where exlist.pk_cnord =  #{pkOrd,jdbcType=CHAR}
+			) a 
+			order by date_plan
+	<!-- select exlist.date_plan,
+       exlist.date_occ,
+       exlist.eu_status,
+       exlist.pk_pdback,
+       exlist.pk_exocc,
+       exlist.pk_cnord,
+       exlist.date_canc,
+       exlist.name_emp_occ,
+       exlist.name_emp_canc,
+       exlist.pk_dept_occ pk_dept_ex,
+       exlist.quan_occ,
+       exlist.pack_size,
+       unit.name name_unit,
+       deptex.name_dept name_dept_ex,
+       case when exlist.pk_pdapdt is not null then '1' else '0' end as flag_ap, 
+       case when dt.flag_de = '1' then '1' else '0' end as flag_de,
+       case when exlist.pk_pdback is not null then '1' else '0' end as flag_back_ap, 
+       case when dtRtn.flag_de = '1' then '1' else '0' end as flag_back_de 
+    from ex_order_occ exlist 
+    left join ex_pd_apply_detail dt on dt.pk_pdapdt = exlist.pk_pdapdt and dt.del_flag = '0'
+    left join bd_ou_dept deptex on deptex.pk_dept = exlist.pk_dept_occ and deptex.del_flag = '0'
+    left join ex_pd_apply_detail dtRtn on dtRtn.pk_pdapdt = exlist.pk_pdback and dtRtn.del_flag = '0'
+    left join bd_unit unit on unit.pk_unit = exlist.pk_unit 
+    where exlist.pk_cnord =  #{pkOrd,jdbcType=CHAR}
+    order by exlist.date_plan -->
+   </select>
+   
+   <select id="queryExlistByCg" parameterType="java.util.Map" resultType="DynaBean">
+		   	 select a.* from  (
+				select exlist.date_plan,
+						 exlist.date_occ,
+						 exlist.pk_exocc,
+						 exlist.pk_cnord,
+						 exlist.eu_status,
+						 exlist.name_emp_occ,
+						 exlist.pk_pdback  
+				from ex_order_occ exlist
+			 where exists (select 1
+								from bl_ip_dt cg
+							 where cg.pk_cnord = exlist.pk_cnord
+								 and cg.pk_cgip = #{pkCgip,jdbcType=CHAR})   
+		union all 
+				select exlist.date_plan,
+						 exlist.date_occ,
+						 exlist.pk_exocc,
+						 exlist.pk_cnord,
+						 exlist.eu_status,
+						 exlist.name_emp_occ,
+						 exlist.pk_pdback  
+				from ex_order_occ_b exlist
+			 where exists (select 1
+								from bl_ip_dt_b cg
+							 where cg.pk_cnord = exlist.pk_cnord
+								 and cg.pk_cgip = #{pkCgip,jdbcType=CHAR})  
+				) a 
+				order by date_plan	
+	<!-- select exlist.date_plan,
+       exlist.date_occ,
+       exlist.pk_exocc,
+       exlist.pk_cnord,
+       exlist.eu_status,
+       exlist.name_emp_occ,
+       exlist.pk_pdback  
+  from ex_order_occ exlist
+ where exists (select 1
+          from bl_ip_dt cg
+         where cg.pk_cnord = exlist.pk_cnord
+           and cg.pk_cgip = #{pkCgip,jdbcType=CHAR})   
+         order by exlist.date_plan -->
+   </select>
+    	   
+</mapper>

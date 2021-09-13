@@ -1,0 +1,539 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.material.dao.MtlPdStMapper">
+	
+	<!-- 采购入库 - 查询采购订单 -->
+	<select id="queryPuOrdList" parameterType="java.util.Map" resultType="DynaBean"> 
+	       select pdp.pk_pdpu,
+	       		  spr.name name_spr,
+	       		  pdp.code_pu,
+	       		  pdp.date_pu,
+	       		  pdp.pk_supplyer 
+	     	 from pd_purchase pdp
+	        inner join bd_supplyer spr on pdp.pk_supplyer=spr.pk_supplyer
+	        where pdp.pk_org = #{pkOrg,jdbcType=CHAR}  
+	          and pdp.eu_status='1'
+	          and exists (select 1
+	          				from pd_purchase_dt dt
+	         			   inner join bd_pd pd on pd.pk_pd = dt.pk_pd and pd.del_flag = '0'
+	         			   where pdp.pk_pdpu = dt.pk_pdpu
+	           				 and dt.pk_org_use = #{pkOrg,jdbcType=CHAR}
+	           				 and dt.pk_dept_use = #{pkDept,jdbcType=CHAR} 
+	           				 and dt.pk_store_use = #{pkStore,jdbcType=CHAR} 
+	           				 and pd.dt_pdtype like '1%'
+	           			  )
+	         order by pdp.date_pu
+	</select>
+	
+	<!-- 采购入库 - 查询采购订单明细 -->
+	<select id="queryPuOrdDtList" parameterType="java.util.Map" resultType="DynaBean">  
+	       select dt.pk_pdpudt,
+       dt.pk_pdpu,
+       dt.pk_pd,
+       dt.pk_unit,
+       dt.pack_size,
+       dt.quan_min - dt.quan_in_min as quan_min,
+       pd.code code_pd,
+       pd.name name_pd,
+       pd.spec,
+       pd.spcode,
+       pd.price,
+       pd.eu_pdprice,
+       pd.eu_pap,
+       pd.amt_pap,
+       pd.pap_rate,
+       pd.flag_single,
+       pd.eu_stockmode,
+       pd.date_valid_reg,
+       pd.valid_cnt,
+       pd.eu_valid_unit,
+       pd.pk_unit_pack,
+       pd.pack_size pack_size_pack,
+       unitPd.name name_unit_pack,
+       pd.pk_unit_min as pk_unit_cvt,
+       bu.name as name_unit_cvt,
+       sto.pack_size as pack_size_cvt,
+       dt.quan_in_min,
+       fa.name factory,
+       unit.name unit,
+       sup.price as price_cost,
+       sto.pk_pdstore,
+	              (case when dt.pack_size is null or dt.pack_size = 0 then 0 
+	                    else(dt.quan_min-dt.quan_in_min) / (case dt.pack_size when 0 then 1 else dt.pack_size end) end )as  quan_pack,
+	              sum((stk.quan_min-stk.quan_prep) / (case dt.pack_size when 0 then 1 else dt.pack_size end)) as quan_stk  
+	         from pd_purchase_dt dt  
+	        inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+	        inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+	        inner join bd_unit unit on dt.pk_unit=unit.pk_unit 
+	         left join bd_unit unitPd on pd.pk_unit_pack = unitPd.pk_unit 
+	         left join bd_unit bu on bu.pk_unit = pd.pk_unit_min
+	         left join pd_stock stk on stk.pk_pd = dt.pk_pd  and stk.pk_store = #{pkStore,jdbcType=CHAR}
+	         left join bd_pd_store sto on sto.pk_pd = pd.pk_pd and sto.pk_store = #{pkStore,jdbcType=CHAR}
+	         left join bd_pd_supplyer sup on sup.pk_pd = dt.pk_pd and sup.flag_active='1' and sup.del_flag = '0'  
+	       		   and sup.pk_supplyer = #{pkSupply,jdbcType=CHAR} 
+	       		   and sup.pk_org = #{pkOrg,jdbcType=CHAR} 
+	       		   and sup.date_begin &lt;= to_date(#{curDate},'YYYYMMDDHH24MISS') 
+	       		   and sup.date_end &gt; to_date(#{curDate},'YYYYMMDDHH24MISS') 
+	         where dt.pk_pdpu=#{pkPdpu,jdbcType=CHAR} 
+	           and dt.flag_acc='0' 
+	           and pd.dt_pdtype like '1%'
+	         group by dt.pk_pdpudt,
+          dt.pk_pdpu,
+          dt.pk_pd,
+          pd.code,
+          pd.name,
+          pd.spec,
+          pd.spcode,
+          pd.flag_single,
+          pd.eu_stockmode,
+          pd.date_valid_reg,
+          pd.valid_cnt,
+          pd.eu_valid_unit,
+          pd.pk_unit_pack,
+          pd.pk_unit_min,
+          pd.pack_size,
+          unitPd.name,
+          bu.name,
+          fa.name,
+          dt.pk_unit,
+          unit.name,
+          dt.quan_min - dt.quan_in_min,
+          dt.quan_in_min,
+          pd.price,
+          sup.price,
+          dt.pack_size,
+          pd.eu_pdprice,
+          pd.eu_pap,
+          pd.amt_pap,
+          pd.pap_rate,
+          sto.pack_size,
+          sto.pk_pdstore
+	</select>
+		
+	<!-- 查询出入库单 -->
+	<select id="queryPdStByCon" parameterType="java.util.Map" resultType="DynaBean">
+	   	select st.*,
+	      	   sup.name spr,
+	           stype.name sttype ,
+	           org.NAME_ORG ,
+	           dept.NAME_DEPT,
+	           sto.NAME name_store
+	 	  from pd_st st
+	 	  left join bd_supplyer sup on sup.pk_supplyer = st.pk_supplyer
+	 	 inner join bd_defdoc stype on st.dt_sttype=stype.code and stype.code_defdoclist='080008'
+	 	  left join bd_ou_org org on org.pk_org = st.pk_org_lk
+	 	  left join bd_store sto on sto.PK_STORE = st.PK_STORE_LK
+          left join bd_ou_dept dept on dept.PK_DEPT = st.PK_DEPT_LK
+		 where st.del_flag = '0' 
+	     and exists (select 1 from PD_ST_DETAIL stdt inner join bd_pd pd on pd.PK_PD = stdt.PK_PD
+	                    where stdt.PK_PDST = st.PK_PDST  and pd.DT_PDTYPE like '1%') <!-- 添加物品过滤 -->
+		<if test="euDirect != null"><!-- 出入库方向 -->
+		   and st.eu_direct = #{euDirect,jdbcType=VARCHAR} 
+		</if>
+		<if test="flagPu != null">
+		   and  st.flag_pu  = #{flagPu,jdbcType=VARCHAR} 
+		</if>
+	 	<if test="pkStoreSt != null  and  pkStoreSt != ''"><!-- 当前仓库主键 -->
+		   and st.pk_store_st = #{pkStoreSt,jdbcType=VARCHAR}
+		</if> 
+		<if test="codeSt != null  and  codeSt != ''"><!-- 库单编码 -->
+		   and st.code_st = #{codeSt,jdbcType=VARCHAR}
+		</if>
+		<if test="pkSupplyer != null  and  pkSupplyer != ''"><!-- 供应商 -->
+		   and st.pk_supplyer = #{pkSupplyer,jdbcType=VARCHAR}
+		</if>
+		<if test="dateBegin != null  and  dateBegin != ''"><!-- 单据开始时间 -->
+	       and st.date_st &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+	    </if>
+	    <if test="dateEnd != null  and  dateEnd != ''"><!-- 单据结束时间 -->
+	       and st.date_st &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+	    </if>
+		<if test="pkEmpOp != null  and  pkEmpOp != ''"><!-- 经办人 -->
+		   and st.pk_emp_op = #{pkEmpOp,jdbcType=VARCHAR}
+		</if> 
+		<if test="euStatus != null  and  euStatus != ''"><!-- 单据状态 -->
+		   and st.eu_status = #{euStatus,jdbcType=CHAR}
+		</if>
+		<if test="dtSttype != null  and  dtSttype != ''"><!-- 单据类型 -->
+          and st.dt_sttype = #{dtSttype,jdbcType=VARCHAR} 
+        </if>
+        <if test="pkOrgLk != null  and  pkOrgLk != ''"><!-- 出库机构 -->
+          and st.pk_org_lk = #{pkOrgLk,jdbcType=CHAR} 
+       </if>
+       <if test="pkDeptLk != null  and  pkDeptLk != ''"><!-- 出库部门 -->
+          and st.pk_dept_lk = #{pkDeptLk,jdbcType=CHAR} 
+       </if>
+       <if test="pkStoreLk != null  and  pkStoreLk != ''"><!-- 出库仓库 -->
+          and st.pk_store_lk = #{pkStoreLk,jdbcType=CHAR} 
+       </if> 
+		 order by st.code_st
+	</select>
+		
+	<!-- 查询入库单 - 明细 -->
+	<select id="queryPdStDtByPk" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdStDtVo">
+		 select dt.*,
+	       		pd.code pdcode,
+	       		pd.name pdname,
+	       		pd.spec,
+	       		pd.spcode,
+	       		pd.pk_factory,
+	       		pd.flag_single,
+	       		pd.eu_stockmode,
+	       		pd.date_valid_reg,
+	       		pd.valid_cnt,
+	       		pd.eu_valid_unit,
+	       		fac.name factory,
+	       		unit.name unit_pd,
+	       		unit2.name unit,
+	       		sto.quan quan_stk,
+	       		sto.pk_store,
+	       		bdpds.pk_pdstore pkpdstore,
+		        pd.pack_size  pack_size_pd,
+		       dt.pack_size  packSize
+	  	   from pd_st_detail dt
+	      inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+	       left join (select pk_pd,pk_store,sum(quan_min) quan from pd_stock 
+	                   where pk_store = #{pkStore,jdbcType=CHAR} group by pk_pd,pk_store) sto on dt.pk_pd=sto.pk_pd
+	       left join bd_pd_store bdpds on bdpds.pk_store = #{pkStore,jdbcType=CHAR} and bdpds.del_flag = '0' and bdpds.pk_pd =pd.pk_pd 
+	       left join bd_factory fac on fac.pk_factory = pd.pk_factory and fac.del_flag = '0'
+	       left join bd_unit unit on unit.pk_unit = dt.pk_unit_pack and unit.del_flag = '0'
+	       left join bd_unit unit2 on unit2.pk_unit = bdpds.pk_unit
+	      where dt.del_flag = '0' 
+	       and pd.dt_pdtype like '1%'
+	    <if test="pkPdst != null  and  pkPdst != ''">
+		   and dt.pk_pdst = #{pkPdst,jdbcType=CHAR}
+		</if>
+	      order by dt.sort_no
+	</select>
+	
+	<!-- 查询出库单 - 明细 -->
+	<select id="queryPdStDtOutList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdStDtVo">
+		select dt.*,
+		       pd.code pdcode,
+		       pd.name pdname,
+		       pd.spec,
+		       pd.spcode,
+		       pd.pack_size pack_size_pd,
+		       (pd.pack_size_max*pd.pack_size)/(case dt.pack_size when 0 then 1 else dt.pack_size end) pack_size_max,<!-- 避免除零 -->
+		       fa.name factory,
+		       unit.name unit,
+		       un.name unit_pd,
+		       pd.flag_single,
+		       (stk.quan-stk.quan_prep)/(case dt.pack_size when 0 then 1 else dt.pack_size end) quan_stk <!-- 避免除零 -->
+		  from pd_st_detail dt
+		       left join bd_pd pd on dt.pk_pd=pd.pk_pd 
+		       left join bd_unit un on un.pk_unit = pd.pk_unit_pack  
+		       left join bd_factory fa on pd.pk_factory=fa.pk_factory
+			   left join bd_unit unit on dt.PK_UNIT_PACK=unit.pk_unit
+		       left outer join (select sum(quan_min) quan,pk_pd,sum(quan_prep) quan_prep from pd_stock where pk_store=#{pkStore,jdbcType=CHAR} group by pk_pd) stk on dt.pk_pd=stk.pk_pd
+		 where dt.pk_pdst = #{pkPdst,jdbcType=CHAR}
+	</select>
+	
+	<!-- 查询待入库  - 入库单 -->	
+	<select id="queryToInPdStList" parameterType="java.util.Map" resultType="DynaBean">
+		select st.*,
+		       sttype.name sttype,
+		       org.name_org,
+		       dept.name_dept,
+		       sto.name name_store  
+		  from pd_st st
+		 inner join bd_defdoc sttype on st.dt_sttype=sttype.code and sttype.code_defdoclist='080008'
+		 inner join bd_ou_org org on st.pk_org=org.pk_org
+		  left outer join bd_ou_dept dept on st.pk_dept_st=dept.pk_dept
+		  left outer join bd_store sto on st.pk_store_st=sto.pk_store
+		  and exists (select 1 from PD_ST_DETAIL stdt inner join bd_pd pd on pd.PK_PD = stdt.PK_PD
+	                    where stdt.PK_PDST = st.PK_PDST and pd.DT_PDTYPE like '1%')<!-- 添加物品过滤 -->
+		 where st.pk_store_lk = #{pkStore,jdbcType=CHAR} 
+		   and st.eu_status = '1' 
+		   and st.eu_direct = -1 
+		   and not exists (select 1 from pd_st ins where st.pk_pdst=ins.pk_pdst_sr)
+	    <if test="codeSt != null  and  codeSt != ''">
+		   and st.code_st = #{codeSt,jdbcType=VARCHAR} 
+		</if>
+		<if test="pkOrg != null  and  pkOrg != ''">
+		   and st.pk_org = #{pkOrg,jdbcType=CHAR} 
+		</if>
+		<if test="dateBegin != null  and  dateBegin != ''">
+		   and st.date_st &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+		   and st.date_st &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+		</if>
+		<if test="pkDeptSt != null  and  pkDeptSt != ''">
+		   and st.pk_dept_st = #{pkDeptSt,jdbcType=CHAR} 
+		</if>
+		<if test="pkStoreSt != null  and  pkStoreSt != ''">
+		   and st.pk_store_st = #{pkStoreSt,jdbcType=CHAR} 
+		</if>
+		 order by st.date_st 
+	</select>
+
+	<!-- 查询待出库 - 出库申请单 -->
+	<select id="queryToOutPdStList" parameterType="java.util.Map" resultType="DynaBean">
+		select pla.pk_pdplan,
+		       pla.dt_plantype,
+		       pltype.name pltype,
+		       pla.code_plan,
+		       pla.date_plan,
+		       pla.pk_org,
+		       org.name_org,
+		       pla.pk_dept,
+		       dept.name_dept,
+		       pla.pk_store,
+		       sto.name name_store,
+		       pla.pk_emp_mak,
+		       pla.name_emp_mak,
+		       pla.eu_status,
+		       pla.note,
+		       pla.create_time, 
+		       pla.pk_org_acc,
+		       pla.pk_dept_acc,
+		       pla.pk_store_acc 
+		  from pd_plan pla
+		       inner join bd_defdoc pltype on pla.dt_plantype=pltype.code and pltype.code_defdoclist='080007'
+		       inner join bd_ou_org org on pla.pk_org=org.pk_org
+		       left outer join bd_ou_dept dept on pla.pk_dept=dept.pk_dept
+		       left outer join bd_store sto on pla.pk_store=sto.pk_store
+		 where pla.eu_status='1' and
+		       exists (select 1 
+		                 from pd_plan_detail dt
+		                inner join bd_pd pd on pd.pk_pd = dt.pk_pd
+		                where pla.pk_pdplan=dt.pk_pdplan 
+		                  and dt.pk_store_srv = #{pkStoreSrv,jdbcType=CHAR} 
+		                  and dt.flag_finish='0'
+		                  <!-- and pd.dt_pdtype like '1%'  -->
+		                  )
+		       <if test="codePlan != null  and  codePlan != ''">
+		          and pla.code_plan = #{codePlan,jdbcType=VARCHAR} 
+		       </if>
+		       <if test="dateBegin != null  and  dateBegin != ''">
+		          and pla.date_plan &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+		       </if>
+		       <if test="dateEnd != null  and  dateEnd != ''">
+		           and pla.date_plan &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+		       </if>
+		       <if test="pkOrg != null  and  pkOrg != ''">
+		           and pla.pk_org = #{pkOrg,jdbcType=CHAR}
+		       </if>
+		       <if test="pkDept != null  and  pkDept != ''">
+		           and pla.pk_dept = #{pkDept,jdbcType=CHAR}
+		       </if>
+		       <if test="pkStore != null  and  pkStore != ''">
+		           and pla.pk_store = #{pkStore,jdbcType=CHAR}
+		       </if>
+		       order by pla.date_plan 
+		</select>
+
+	<!-- 查询待出库 - 出库申请单-明细 -->
+	<select id="queryToOutPdStDtList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdPlanDtVo">
+		select dt.*,
+		       pd.code code_pd,
+		       pd.name name_pd,
+		       pd.spec,
+		       pd.spcode,
+		       pd.flag_use,
+		       unit.name unit_name,
+		       un.name unit_pd,
+		       fa.name factory_name
+		  from pd_plan_detail dt
+		 inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+		 inner join bd_unit un on un.pk_unit = pd.pk_unit_pack 
+		 inner join bd_unit unit on dt.pk_unit=unit.pk_unit
+		 inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+		 where dt.pk_pdplan = #{pkPdplan,jdbcType=CHAR} 
+		   and dt.pk_store_srv = #{pkStoreSrv,jdbcType=CHAR} 
+		   and dt.flag_finish='0'
+	</select>
+	
+	<!-- 库存管理 - 查询库存记录 -->
+	<select id="queryPdStInfoList" parameterType="java.util.Map" resultType="DynaBean">
+		select stk.*,
+		       pd.code,
+		       pd.name,
+		       pd.spec,
+		       pd.pack_size pack_size_pd,
+		       pds.PACK_SIZE pack_size,
+		       pd.flag_single,
+		       pd.dt_pdtype,
+		       unit.name unit,
+		       stk.quan_min/pds.pack_size quan,  
+		       stk.quan_prep/pds.pack_size quan_prep, 
+		       (stk.quan_min-stk.quan_prep)/pds.pack_size quan_use,
+		       pds.posi_no, 
+		       fa.name factory
+		       ,pds.flag_stop falgStopCvs,pd.flag_stop flagStopPd
+		  from pd_stock stk
+		 inner join bd_pd pd on stk.pk_pd=pd.pk_pd
+		 inner join bd_pd_store pds on stk.pk_pd=pds.pk_pd and stk.pk_store = pds.pk_store 
+		  left join bd_unit unit on pds.PK_UNIT = unit.pk_unit
+		  left join bd_factory fa on pd.pk_factory=fa.pk_factory
+		 where stk.pk_store = #{pkStore,jdbcType=CHAR}
+		   and pd.dt_pdtype like '1%'
+		<if test="code != null  and  code != ''">
+		   and pd.code like '%${code}%'
+		</if>  
+		<if test="name != null  and  name != ''">
+		   and pd.name like '%${name}%'
+		</if>  
+		<if test="pkPdcate != null  and  pkPdcate != ''">
+		   and pd.pk_pdcate = #{pkPdcate,jdbcType=VARCHAR}
+		</if>  
+		<if test="dtPdtype != null  and  dtPdtype != ''">
+		   and pd.dt_pdtype = #{dtPdtype,jdbcType=VARCHAR}
+		</if>  
+		<if test="dtAbrd != null  and  dtAbrd != ''">
+		   and pd.dt_abrd = #{dtAbrd,jdbcType=VARCHAR}
+		</if>  
+		<if test="dateBegin != null  and  dateBegin != ''">
+		   and stk.date_expire &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+		   and stk.date_expire &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		</if>
+		<if test="flagPrecious != null  and  flagPrecious != ''">
+		   and pd.flag_precious = #{flagPrecious,jdbcType=DECIMAL}
+		</if>
+		<if test='flagUp == "1" '>
+		   and stk.quan_min &gt;= pds.stock_max
+		</if>
+		<if test='flagDown == "1" '>
+		   and stk.quan_min &lt;= pds.stock_min 
+		</if>
+		  order by pd.code 
+	</select>
+	
+	<!-- 库存管理 - 查询可用批次 -->
+	<select id="queryPdBatchList" parameterType="java.util.Map" resultType="DynaBean">
+		select st.date_chk,
+		       (dt.quan_min - nvl(dt.quan_outstore,0)) quan_stk,
+		       dt.pk_unit_pack,
+		       dt.price_cost,
+		       dt.price,
+		       dt.batch_no,
+		       dt.date_fac,
+		       dt.date_expire,
+		       dt.pk_pdstdt
+  		  from pd_st st
+         inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst
+ 		 where st.pk_store_st = #{pkStore,jdbcType=DECIMAL}
+ 		   and dt.pk_pd = #{pkPd,jdbcType=DECIMAL}
+ 		   and st.eu_direct = '1' 
+ 		   and dt.flag_finish = '0'
+		 order by st.date_chk
+	</select>
+
+	<!-- 库存管理 - 查询调价历史 -->
+	<select id="queryHisRePriceList" parameterType="java.util.Map" resultType="DynaBean">
+		select rep.date_reprice,
+		       reptype.name reptype,
+		       rep.quan_rep/rep.pack_size quan_rep,
+		       rep.price_org,
+		       rep.price,
+		       rep.amount_org,
+		       rep.amount,
+		       rep.amount_rep
+		  from pd_reprice_hist rep
+		 inner join bd_defdoc reptype on rep.dt_reptype=reptype.code and reptype.code_defdoclist='080010'
+		 where rep.pk_store = #{pkStore,jdbcType=CHAR} 
+		<if test="pkPd != null  and  pkPd != ''">
+		   and rep.pk_pd = #{pkPd,jdbcType=CHAR} 
+		</if>
+		<if test="dateBegin != null  and  dateBegin != ''">
+		   and rep.date_reprice &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+		   and rep.date_reprice &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+		</if>
+		 order by rep.date_reprice 
+	</select>
+	
+	<!-- 库存管理 - 查询单品记录 -->
+	<select id="queryPdSingleList" parameterType="java.util.Map" resultType="DynaBean">
+		select st.date_chk,   
+       		   sl.barcode,    
+       		   sl.eu_status,  
+       		   dt.batch_no,    
+       	  	   dt.date_fac,    
+       		   dt.date_expire, 
+       		   sl.note        
+  		  from pd_st st
+    inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst
+    inner join pd_single sl on sl.pk_pdstdt_in=dt.pk_pdstdt
+         where st.pk_store_st=#{pkStore,jdbcType=CHAR}
+               <if test="pkPd != null  and  pkPd != ''">
+			       and dt.pk_pd = #{pkPd,jdbcType=CHAR} 
+			   </if>
+               and sl.eu_status='1' 
+               and st.eu_direct='1'
+	</select>
+
+	<!-- 根据条码查询 -->
+	<!--<select id="qryPkStoreByPkdept1" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdStDtVo">
+		select * from bd_pd_store sto
+		inner  join bd_pd pd on sto.pk_pd=pd.pk_pd
+		where sto.del_flag='0' and sto.flag_stop='0'
+		and pd.del_flag='0' and pd.flag_stop='0'
+		<if test="barcode!=null and barcode!=''">
+			and pd.barcode like '%${barcode,jdbcType=VARCHAR}%'
+		</if>
+		<if test="pkStore!=null and pkStore!=''">
+			and sto.pk_store=#{pkStore,jdbcType=VARCHAR}
+		</if>
+	</select>-->
+	<!-- 根据条码查询 -->
+	<select id="qryPkStoreByPkdept" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdStDtVo">
+		select pd.pk_pd,
+       pd.code pdCode,
+       pd.name Pdname,
+       pd.spcode as py_code,
+        '' as d_code,
+        pd.spec,
+        pd.price,
+        pd.pack_size as pack_size_pd,
+        pd.pk_unit_pack,
+        un.name  unit_pd,
+        pd.pk_factory,
+        pd.eu_pdprice,
+        pd.eu_pap,
+        pd.amt_pap,
+        pd.pap_rate,
+        pd.valid_cnt as validCnt,
+        pd.eu_valid_unit as euValidUnit,
+pd.flag_single,pd.barcode,        fac.name                          factory,
+        pd.pk_unit_pack pk_unit,
+        un.name unit,
+        pd.pack_size pack_size,
+        sto.price_cost,
+        stock.quan quan_min,
+        sto.quan_prep,
+        sto.batch_no,
+        to_char(sto.date_expire,'YYYY-MM-DD') date_expire,
+        sto.price as price_stock,
+        sup.price as price_sup,
+        pd.appr_no
+   from bd_pd pd
+   left join bd_factory fac on fac.pk_factory = pd.pk_factory
+  inner join bd_pd_store pds on pds.pk_pd = pd.pk_pd
+   left join bd_unit un on un.pk_unit = pd.pk_unit_pack
+   left join pd_stock sto on sto.pk_store=pds.pk_store and sto.pk_pd = pd.pk_pd
+   left join bd_pd_supplyer sup on sup.pk_pd = pd.pk_pd and sup.del_flag='0'
+        and sup.pk_org = pds.pk_org
+        <if test="pkSupply!=null and pkSupply!=''">
+			and sup.pk_supplyer = #{pkSupply,jdbcType=VARCHAR}
+		</if>
+     left join (select  pk_store,PK_PD, sum(QUAN_MIN) quan  from PD_STOCK   group by  PK_STORE,PK_PD ) stock
+     on stock.PK_PD=pds.PK_PD and stock.PK_STORE=pds.PK_STORE
+  where pds.flag_stop ='0'
+    and pds.del_flag='0'
+    and pd.del_flag='0'
+    and pd.flag_stop='0'
+	and	pd.dt_pdtype like '1%'
+		and pd.eu_stockmode = '0'
+			and( pd.date_valid_reg is null
+			or pd.date_valid_reg > to_date(#{dateNow},'yyyyMMddhh24miss'))
+		<if test="barcode!=null and barcode!=''">
+			and pd.barcode like '%${barcode,jdbcType=VARCHAR}%'
+		</if>
+	</select>
+
+</mapper>

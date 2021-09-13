@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.pd.dao.PdBaseMapper">
+<select id="queryPdBaseByCon" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.nis.pd.vo.PdBaseVo">
+    select base.*,pd.name pdname,pd.code pdCode ,pd.spcode,pd.spec,unit.name unitname
+	 from bd_pd_base base
+	 inner join bd_pd pd on base.pk_pd = pd.pk_pd
+	 inner join bd_unit unit on unit.pk_unit = base.pk_unit_pack
+	 where  base.pk_dept = #{pkDeptNs,jdbcType=CHAR}
+	 <if test="pdname != null  and  pdname != ''">
+		        and (pd.name like '%${pdname}%' or pd.code like '%${pdname}%' or pd.spcode like '%${pdname}%')
+	  </if>
+</select>
+ 
+</mapper>

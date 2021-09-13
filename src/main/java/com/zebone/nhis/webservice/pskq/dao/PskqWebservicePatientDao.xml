@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.pskq.dao.PskqWebservicePatientDao">
+
+
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.webservice.pskq.model.PatientInfo">
+<!--        <id column="PK_PI" jdbcType="CHAR" property="pkPi"/>-->
+<!--        <result column="PK_ORG" jdbcType="CHAR" property="pkOrg"/>-->
+        <result column="CODE_PI" jdbcType="VARCHAR" property="pkPatient"/>
+<!--        <result column="CODE_OP" jdbcType="VARCHAR" property="codeOp"/>-->
+<!--        <result column="CODE_IP" jdbcType="VARCHAR" property="codeIp"/>-->
+<!--        <result column="BARCODE" jdbcType="VARCHAR" property="barcode"/>-->
+<!--        <result column="PK_PICATE" jdbcType="CHAR" property="pkPicate"/>-->
+        <result column="NAME_PI" jdbcType="VARCHAR" property="patientName"/>
+        <result column="DT_IDTYPE" jdbcType="VARCHAR" property="idTypeCode"/>
+        <result column="ID_NO" jdbcType="VARCHAR" property="idNo"/>
+        <result column="HIC_NO" jdbcType="VARCHAR" property="healthCardNo"/>
+        <result column="INSUR_NO" jdbcType="VARCHAR" property="medInsuranceNo"/>
+        <result column="MPI" jdbcType="VARCHAR" property="empiId"/>
+<!--        <result column="FLAG_EHR" jdbcType="CHAR" property="flagEhr"/>-->
+        <result column="DT_SEX" jdbcType="VARCHAR" property="genderCode"/>
+        <result column="BIRTH_DATE" jdbcType="TIMESTAMP" property="dateOfBirth"/>
+<!--        <result column="PLACE_BIRTH" jdbcType="VARCHAR" property="placeBirth"/>-->
+<!--        <result column="DT_MARRY" jdbcType="VARCHAR" property="dtMarry"/>-->
+<!--        <result column="DT_OCCU" jdbcType="VARCHAR" property="dtOccu"/>-->
+<!--        <result column="DT_EDU" jdbcType="VARCHAR" property="dtEdu"/>-->
+<!--        <result column="DT_COUNTRY" jdbcType="VARCHAR" property="dtCountry"/>-->
+<!--        <result column="DT_NATION" jdbcType="VARCHAR" property="dtNation"/>-->
+<!--        <result column="TEL_NO" jdbcType="VARCHAR" property="telNo"/>-->
+<!--        <result column="MOBILE" jdbcType="VARCHAR" property="mobile"/>-->
+<!--        <result column="WECHAT_NO" jdbcType="VARCHAR" property="wechatNo"/>-->
+<!--        <result column="EMAIL" jdbcType="VARCHAR" property="email"/>-->
+<!--        <result column="UNIT_WORK" jdbcType="VARCHAR" property="unitWork"/>-->
+<!--        <result column="TEL_WORK" jdbcType="VARCHAR" property="telWork"/>-->
+<!--        <result column="ADDRESS" jdbcType="VARCHAR" property="address"/>-->
+<!--        <result column="NAME_REL" jdbcType="VARCHAR" property="nameRel"/>-->
+<!--        <result column="TEL_REL" jdbcType="VARCHAR" property="telRel"/>-->
+<!--        <result column="DT_BLOOD_ABO" jdbcType="VARCHAR" property="dtBloodAbo"/>-->
+<!--        <result column="DT_BLOOD_RH" jdbcType="VARCHAR" property="dtBloodRh"/>-->
+<!--        <result column="CREATOR" jdbcType="CHAR" property="creator"/>-->
+<!--        <result column="CREATE_TIME" jdbcType="TIMESTAMP" property="createTime"/>-->
+<!--        <result column="MODIFIER" jdbcType="CHAR" property="modifier"/>-->
+<!--        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>-->
+<!--        <result column="TS" jdbcType="TIMESTAMP" property="ts"/>-->
+<!--        <result column="DT_RALATION" jdbcType="VARCHAR" property="dtRalation"/>-->
+<!--        <result column="ADDRCODE_BIRTH" jdbcType="VARCHAR" property="addrcodeBirth"/>-->
+<!--        <result column="ADDR_BIRTH" jdbcType="VARCHAR" property="addrBirth"/>-->
+<!--        <result column="ADDRCODE_ORIGIN" jdbcType="VARCHAR" property="addrcodeOrigin"/>-->
+<!--        <result column="ADDR_ORIGIN" jdbcType="VARCHAR" property="addrOrigin"/>-->
+<!--        <result column="ADDRCODE_REGI" jdbcType="VARCHAR" property="addrcodeRegi"/>-->
+<!--        <result column="ADDR_REGI" jdbcType="VARCHAR" property="addrRegi"/>-->
+<!--        <result column="ADDR_REGI_DT" jdbcType="VARCHAR" property="addrRegiDt"/>-->
+<!--        <result column="POSTCODE_REGI" jdbcType="VARCHAR" property="postcodeRegi"/>-->
+<!--        <result column="ADDRCODE_CUR" jdbcType="VARCHAR" property="addrcodeCur"/>-->
+<!--        <result column="ADDR_CUR" jdbcType="VARCHAR" property="addrCur"/>-->
+<!--        <result column="ADDR_CUR_DT" jdbcType="VARCHAR" property="addrCurDt"/>-->
+<!--        <result column="POSTCODE_CUR" jdbcType="VARCHAR" property="postcodeCur"/>-->
+<!--        <result column="POSTCODE_WORK" jdbcType="VARCHAR" property="postcodeWork"/>-->
+<!--        <result column="ADDR_REL" jdbcType="VARCHAR" property="addrRel"/>-->
+<!--        <result column="CODE_ER" jdbcType="VARCHAR" property="codeEr"/>-->
+<!--        <result column="DT_IDTYPE_REL" jdbcType="VARCHAR" property="dtIdtypeRel"/>-->
+<!--        <result column="IDNO_REL" jdbcType="VARCHAR" property="idnoRel"/>-->
+<!--        <result column="FLAG_REALNAME" jdbcType="CHAR" property="flagRealname"/>-->
+<!--        <result column="PK_EMP" jdbcType="CHAR" property="pkEmp"/>-->
+<!--        <result column="SPCA_NO" jdbcType="VARCHAR" property="spcaNo"/>-->
+<!--        <result column="SEN_NO" jdbcType="VARCHAR" property="senNo"/>-->
+<!--        <result column="MCNO" jdbcType="VARCHAR" property="mcno"/>-->
+<!--        <result column="CITIZEN_NO" jdbcType="VARCHAR" property="citizenNo"/>-->
+<!--        <result column="DT_SPECUNIT" jdbcType="VARCHAR" property="dtSpecunit"/>-->
+<!--        <result column="DT_SOURCE" jdbcType="VARCHAR" property="dtSource"/>-->
+<!--        <result column="NOTE" jdbcType="VARCHAR" property="note"/>-->
+<!--        <result column="CNT_IP" jdbcType="DECIMAL" property="cntIp"/>-->
+    </resultMap>
+
+    <sql id="Base_Column_List">
+    PK_PI, PK_ORG, CODE_PI, CODE_OP, CODE_IP, BARCODE, PK_PICATE, NAME_PI, DT_IDTYPE,
+    ID_NO, HIC_NO, INSUR_NO, MPI, FLAG_EHR, DT_SEX, BIRTH_DATE, PLACE_BIRTH, DT_MARRY,
+    DT_OCCU, DT_EDU, DT_COUNTRY, DT_NATION, TEL_NO, MOBILE, WECHAT_NO, EMAIL, UNIT_WORK,
+    TEL_WORK, ADDRESS, NAME_REL, TEL_REL, DT_BLOOD_ABO, DT_BLOOD_RH, CREATOR, CREATE_TIME,
+    MODIFIER, DEL_FLAG, TS, DT_RALATION, ADDRCODE_BIRTH, ADDR_BIRTH, ADDRCODE_ORIGIN,
+    ADDR_ORIGIN, ADDRCODE_REGI, ADDR_REGI, ADDR_REGI_DT, POSTCODE_REGI, ADDRCODE_CUR,
+    ADDR_CUR, ADDR_CUR_DT, POSTCODE_CUR, POSTCODE_WORK, ADDR_REL, CODE_ER, DT_IDTYPE_REL,
+    IDNO_REL, FLAG_REALNAME, PK_EMP, SPCA_NO, SEN_NO, MCNO, CITIZEN_NO, DT_SPECUNIT,
+    DT_SOURCE, NOTE, CNT_IP
+    </sql>
+
+    <select id="findByEmpiId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from PI_MASTER
+        where MPI = #{id,jdbcType=VARCHAR}
+    </select>
+
+<!--    <select id="findByEmpiId" resultType="com.zebone.nhis.webservice.pskq.model.PatientInfo">-->
+<!--    SELECT-->
+<!--        pi.*,-->
+<!--        def.ba_code gender_code,-->
+<!--        def.name gender_name,-->
+<!--        defdoc.ba_code as id_type_code,-->
+<!--        defdoc.name as id_type_name,-->
+<!--        nationality.ba_code nationality_code,-->
+<!--        nationality.name nationality_name,-->
+<!--        nation.ba_code ethnic_code,-->
+<!--        nation.name ethnic_name,-->
+<!--        occupation.ba_code occupation_code,-->
+<!--        occupation.name occupation_name,-->
+<!--        marriage.ba_code marital_status_code,-->
+<!--        marriage.name marital_status_name,-->
+<!--        edu.ba_code education_code,-->
+<!--        edu.name education_name,-->
+<!--        zd_addr_birth.prov birth_place_province,-->
+<!--        zd_addr_birth.city birth_place_city,-->
+<!--        zd_addr_birth.dist birth_place_county,-->
+<!--        pi.addr_birth birth_place,-->
+<!--        zd_addr_origin.prov native_place_province,-->
+<!--        zd_addr_origin.city native_place_city,-->
+<!--        pi.addr_origin native_place,-->
+<!--        zd_addr_regi.prov household_address_province,-->
+<!--        zd_addr_regi.city household_address_city,-->
+<!--        zd_addr_regi.dist household_address_county,-->
+<!--        pi.addr_regi household_address_country,-->
+<!--        pi.addr_regi household_address_village,-->
+<!--        pi.addr_regi householdAddressHouseNo,-->
+<!--        pi.addr_regi_dt household_address,-->
+<!--        zd_addr_cur.prov present_address_province,-->
+<!--        zd_addr_cur.city present_address_city,-->
+<!--        zd_addr_cur.dist present_address_county,-->
+<!--        pi.addr_regi present_address_country,-->
+<!--        pi.addr_regi present_address_village,-->
+<!--        pi.addr_regi present_address_house_no,-->
+<!--        pi.addr_cur_dt present_address,-->
+<!--        zd_rel.ba_code contact_relationship_code,-->
+<!--        zd_rel.name contact_relationship_name,-->
+<!--        abo.ba_code abo_blood_type_code,-->
+<!--        abo.name abo_blood_type_name,-->
+<!--        abo.ba_code rh_blood_type_code,-->
+<!--        abo.name rh_blood_type_name,-->
+<!--        nvl((select distinct 1 from  pi_allergic al where al.pk_pi=pi.pk_pi and al.del_flag = '0'),'0') allergy_flag,-->
+<!--        (select wmsys.wm_concat(name_al) from  pi_allergic al where al.pk_pi=pi.pk_pi and al.del_flag = '0') allergy_desc,-->
+<!--        org.code_org org_code,-->
+<!--        org.name_org org_name,-->
+<!--        emp.code_emp enter_opera_id,-->
+<!--        emp.name_emp enter_opera_name,-->
+<!--        empmo.code_emp modify_opera_id,-->
+<!--        empmo.name_emp modify_opera_name,-->
+<!--        pi.pk_pi as patient_id-->
+<!--        FROM-->
+<!--        PI_MASTER pi-->
+<!--        left join bd_defdoc def on pi.dt_sex = def.CODE and def.code_defdoclist='000000'-->
+<!--        left join bd_defdoc defdoc on defdoc.code = pi.dt_idtype and defdoc.code_defdoclist='000007'-->
+<!--        left join bd_defdoc nationality on pi.dt_country = nationality.code and nationality.code_defdoclist = '000009'-->
+<!--        left join bd_defdoc nation on pi.dt_nation = nation.code and nation.code_defdoclist = '000003'-->
+<!--        left join bd_defdoc occupation on pi.dt_occu = occupation.code and occupation.code_defdoclist = '000010'-->
+<!--        left join bd_defdoc marriage on pi.dt_marry = marriage.code and marriage.code_defdoclist = '000006'-->
+<!--        left join bd_defdoc edu  on  edu.code=pi.dt_edu and edu.code_defdoclist = '010302'-->
+<!--        left join bd_defdoc zd_rel on pi.dt_ralation = zd_rel.code and zd_rel.code_defdoclist = '000013'-->
+<!--        left join bd_defdoc abo on  abo.code_defdoclist='000004' and pi.DT_BLOOD_ABO=abo.code-->
+<!--        left join bd_defdoc zd_rh on pi.dt_blood_rh = zd_rh.code and zd_rh.code_defdoclist = '000005'-->
+<!--        left join bd_admin_division zd_addr_cur on pi.addrcode_cur = zd_addr_cur.code_div and zd_addr_cur.del_flag='0'-->
+<!--        left join bd_admin_division zd_addr_birth on pi.addrcode_birth = zd_addr_birth.code_div and zd_addr_birth.del_flag='0'-->
+<!--        left join bd_admin_division zd_addr_origin on pi.addrcode_origin = zd_addr_origin.code_div and zd_addr_origin.del_flag='0'-->
+<!--        left join bd_admin_division zd_addr_regi on pi.addrcode_regi = zd_addr_regi.code_div and zd_addr_regi.del_flag='0'-->
+<!--        left join pi_allergic allergic on pi.pk_pi = allergic.pk_pi  and allergic.del_flag = '0'-->
+<!--        left join bd_ou_org org on pi.pk_org = org.pk_org-->
+<!--        left join BD_OU_EMPLOYEE emp on emp.pk_emp = pi.creator-->
+<!--        left join BD_OU_EMPLOYEE empmo on emp.pk_emp = pi.modifier-->
+<!--        WHERE-->
+<!--        pi.MPI = #{id,jdbcType=VARCHAR}-->
+<!--  </select>-->
+</mapper>

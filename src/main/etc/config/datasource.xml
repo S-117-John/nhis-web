@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<datasources>
+	<datasource name="default">
+		<classname>oracle.jdbc.OracleDriver</classname>
+		<url>jdbc:oracle:thin:@127.0.0.1:1521:orcl</url>
+		<username>nhis</username><!--nhis_lb-->
+		<password>123456</password>
+		<type>1</type>
+		<jndi>default</jndi>
+	</datasource>
+
+	<datasource name="default2">
+		<classname>com.microsoft.sqlserver.jdbc.SQLServerDriver</classname>
+		<url>jdbc:sqlserver://192.168.1.36:1433;database=nhis_test;</url>
+		<username>sa</username>
+		<password>123456</password>
+		<dbtype>sqlserver</dbtype>
+		<filters>stat,wall</filters>
+		<type>1</type>
+		<jndi>aaaa</jndi>
+		<maxactive>200</maxactive>
+	</datasource>
+
+	<datasource name="defaultlocal">
+		<classname>oracle.jdbc.OracleDriver</classname>
+		<url>jdbc:oracle:thin:@127.0.0.1:1521:orcl</url>
+		<username>nhis</username><!--nhis_lb-->
+		<password>nhis</password>
+		<filters>stat</filters>
+		<type>1</type>
+		<jndi>default</jndi>
+		<maxactive>3</maxactive>
+		<initialsize>3</initialsize>
+		<removeAbandoned>true</removeAbandoned>
+		<removeAbandonedTimeout>30000</removeAbandonedTimeout>
+		<logAbandoned>true</logAbandoned>
+	</datasource>
+
+	<datasource name="default100">
+		<classname>oracle.jdbc.driver.OracleDriver</classname>
+		<url>jdbc:oracle:thin:@192.168.100.223:1521:ZB</url>
+		<username>nhis_syx</username>
+		<password>nhis_syx</password>
+		<type>1</type>
+		<jndi>aaaa</jndi>
+	</datasource>
+</datasources>

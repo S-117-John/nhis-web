@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ma.pub.platform.zsrm.dao.ZsrmPiMapper">
+      <select id="getPvDiagCodePv" parameterType="java.lang.String" resultType="DynaBean">
+      select diag.diagcode,
+             diag.diagname,
+      			 pv.eu_pvtype,
+      			 pv.code_pv,
+      			 pvDiga.flag_maj,
+                 pvDiga.sort_no,
+      			 pvDiga.dt_diagtype,
+      			 pvDiga.date_diag,
+      			 pi.name_pi,
+      			 pi.code_pi,
+      			 pi.code_op,
+      			 emp.code_emp,
+      			 emp.name_emp
+      	 from pv_encounter pv
+      left join pv_diag pvDiga on pv.pk_pv=pvDiga.pk_pv
+      left join bd_term_diag diag on diag.pk_diag=pvDiga.pk_diag
+      left join pi_master pi on pv.pk_pi=pi.pk_pi
+      left join bd_ou_employee emp on emp.pk_emp=pvDiga.pk_emp_diag
+      where pvDiga.del_flag='0' and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+      </select>
+
+      <select id="getPiMaster" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.pi.PiMaster">
+         select * from pi_master where DEL_FLAG = '0'
+         <if test="codePi != null  and  codePi != ''">
+         	and code_pi = #{codePi,jdbcType=CHAR}
+         </if>
+          <if test="codeOp != null  and  codeOp != ''">
+              and CODE_OP = #{codeOp,jdbcType=CHAR}
+          </if>
+         <if test="idNo != null  and  idNo != ''">
+             and id_no = #{idNo,jdbcType=CHAR}
+         </if>
+          <if test="dtIdtype != null  and  dtIdtype != ''">
+              and DT_IDTYPE = #{dtIdtype,jdbcType=CHAR}
+          </if>
+          <if test="namePi != null  and  namePi != ''">
+              and  name_pi = #{namePi,jdbcType=CHAR}
+          </if>
+          <if test="idnoRel != null  and  idnoRel != ''">
+              and  idno_rel = #{idnoRel,jdbcType=CHAR}
+          </if>
+          <if test="cardNo != null  and  cardNo != ''">
+              and  exists (select 1 from pi_card where pi_card.pk_pi=pi_master.pk_pi and card_no = #{cardNo,jdbcType=CHAR})
+          </if>
+          <if test="insurNo != null  and  insurNo != ''">
+              and  insur_no = #{insurNo,jdbcType=CHAR}
+          </if>
+          <if test="mcno != null  and  mcno != ''">
+              and  mcno = #{mcno,jdbcType=CHAR}
+          </if>
+          <if test="hicNo != null  and  hicNo != ''">
+              and  hic_no = #{hicNo,jdbcType=CHAR}
+          </if>
+          <if test="birthDate != null and birthDate != ''">
+              and BIRTH_DATE =  to_date(#{birthDate,jdbcType=VARCHAR},'yyyy-MM-DD HH24:MI:SS')
+          </if>
+      </select>
+
+      <select id="getPiMasterIdNo" parameterType="string" resultType="map">
+          select ID_NO as IDNO,idno_rel as IDNOREL from PI_MASTER where CODE_OP =#{codeOp}
+      </select>
+</mapper>

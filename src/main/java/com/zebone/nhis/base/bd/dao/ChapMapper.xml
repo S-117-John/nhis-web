@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.ChapMapper">
+
+
+<select id="findByPkOrg" resultType="com.zebone.nhis.common.module.base.bd.price.BdChap" parameterType="java.util.Map">
+select * from (
+select chap.pk_chap, 
+chap.pk_org,
+chap.del_flag,
+chap.dt_chaptype,   
+chap.val_begin,  
+chap.val_end,     
+chap.flag_pd,    
+chap.pk_item,    
+item.code,        
+item.name,       
+item.spec,        
+chap.eu_direct,   
+chap.eu_calcmode, 
+chap.rate,       
+chap.amount,      
+chap.note        
+from bd_chap chap  
+inner join bd_item item on chap.pk_item=item.pk_item
+
+union all
+
+SELECT
+	chap.pk_chap,
+	chap.pk_org,
+	chap.del_flag,
+	chap.dt_chaptype,
+	chap.val_begin,
+	chap.val_end,
+	chap.flag_pd,
+	chap.pk_item,
+	item.code,
+	item.name,
+	item.spec,
+	chap.eu_direct,
+	chap.eu_calcmode,
+	chap.rate,
+	chap.amount,
+	chap.note 
+FROM
+	bd_chap chap
+	INNER JOIN bd_pd item ON chap.pk_item = item.pk_pd 
+	
+	)  bdchap
+	
+where bdchap.del_flag='0' 
+
+  <if test="pkOrg!=null">
+		and bdchap.pk_org=#{pkOrg,jdbcType=VARCHAR} 
+  </if>
+    <if test="dtChaptype!=null">
+		 and bdchap.dt_chaptype=#{dtChaptype,jdbcType=VARCHAR} 
+  </if>
+
+  <if test="flagPd!=null">
+		 and bdchap.flag_pd=#{flagPd,jdbcType=VARCHAR} 
+  </if>
+     <if test="name!=null and name != ''">
+		 and bdchap.name like CONCAT(CONCAT('%',#{name,jdbcType=VARCHAR}),'%') 
+  </if>
+  <if test="valBegin!=null and valBegin!=''">
+		 and bdchap.val_begin=#{valBegin,jdbcType=VARCHAR}
+  </if>
+  <if test="valEnd!=null and valEnd!=''">
+		 and bdchap.val_end=#{valEnd,jdbcType=VARCHAR}
+  </if>
+		  
+
+
+</select>
+
+<!--  <delete id="delByPkChap">
+	update bd_chap set del_flag='1' where pk_chap=#{pkChap} and del_flag='0'
+	
+</delete>
+-->
+
+</mapper>

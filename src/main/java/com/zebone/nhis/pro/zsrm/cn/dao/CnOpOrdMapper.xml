@@ -1,0 +1,636 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsrm.cn.dao.CnOpOrdMapper">
+    <select id="qryBlOrd" resultType="com.zebone.nhis.common.module.bl.opcg.BlOpDt" parameterType="java.util.Map">
+        select DT.* from BL_OP_DT dt
+        inner join BL_SETTLE st on st.PK_SETTLE = dt.PK_SETTLE
+        where
+        dt.pk_cnord in
+            <foreach collection="orders" index="index" item="item" open="(" separator="," close=")" >
+                #{item.pkCnord, jdbcType=VARCHAR}
+            </foreach>
+         and st.DT_STTYPE= '01' and not exists (select 1 from bl_settle back
+						where st.pk_settle=back.pk_settle_canc
+						and st.pk_pv=back.PK_PV)
+        and exists (select 1 from BL_DEPOSIT depo where depo.DT_PAYMODE in ('12','0601')
+        and st.pk_pv=depo.PK_PV and st.PK_SETTLE=depo.PK_SETTLE )
+    </select>
+    <select id="qryOrd" resultType="com.zebone.nhis.cn.pub.vo.OrdBlVo" parameterType="java.util.Map">
+		select
+			CASE WHEN HS = 1 THEN '' WHEN HS=0 THEN '' WHEN R = 1 AND HS !=0 THEN '┏'
+        	WHEN R = HS THEN '┗' ELSE '┃' END AS Hs,
+			date_start,
+        	ordsn,
+        	ordsn_parent,
+        	eu_always,
+        	name_ord,
+        	dosage,
+        	PK_UNIT_DOS,
+        	unit,
+        	supply,
+        	freq,
+        	ords,
+        	DAYS,
+        	date_stop,
+        	name_emp_ord,
+        	code_ordtype,
+        	price_cg,
+        	quan,
+        	quan_cg,
+        	pk_ord,
+        	pk_dept_exec,
+        	code_ord,
+        	spec,
+        	pk_unit,
+        	pack_size,
+        	code_freq,
+        	code_supply,
+        	pk_pres,
+        	pk_unit_cg,
+        	FLAG_FIT,
+        	eu_st,
+        	PK_CNORD,
+        	DESC_FIT,
+        	dt_excardtype,
+        	DT_HPPROP,
+        	EU_PVTYPE,
+        	name_dept_exec,
+        	pres_no_ord,
+        	dt_prestype,
+        	FLAG_ERASE,
+        	FLAG_DISP,
+        	FLAG_DURG,
+        	date_erase,
+        	NOTE_ORD,
+        	eu_injury
+		from(
+        select
+        	ord.date_start,
+        	ord.ordsn,
+        	ord.ordsn_parent,
+        	ord.eu_always,
+        	ord.name_ord,
+        	ord.dosage,
+        	ord.PK_UNIT_DOS,
+        	unit.name unit,
+        	sup.name supply,
+        	freq.name freq,
+        	ord.ords,
+        	ord.DAYS,
+        	ord.date_stop,
+        	ord.name_emp_ord,
+        	ord.code_ordtype,
+        	ord.price_cg,
+        	ord.quan,
+        	ord.quan_cg,
+        	ord.pk_ord,
+        	ord.pk_dept_exec,
+        	ord.code_ord,
+        	ord.spec,
+        	ord.pk_unit,
+        	ord.pack_size,
+        	ord.code_freq,
+        	ord.code_supply,
+        	ord.pk_pres,
+        	ord.pk_unit_cg,
+        	RANK()OVER(PARTITION BY ord.ordsn_parent ORDER BY ord.ordsn) R,
+        	(SELECT COUNT(*) FROM cn_order
+        	WHERE ord.ordsn_parent=ordsn_parent
+        	and pk_pv=ord.pk_pv
+        	) AS HS,
+        	ord.FLAG_FIT,
+        	ord.eu_st,
+        	ord.PK_CNORD,
+        	ord.DESC_FIT,
+        	sup.dt_excardtype,
+        	ord.DT_HPPROP,
+        	ord.EU_PVTYPE,
+        	dept.name_dept as name_dept_exec,
+        	cnpr.pres_no as pres_no_ord,
+        	cnpr.dt_prestype,
+        	ord.FLAG_ERASE,
+        	ord.FLAG_DISP,
+        	ord.FLAG_DURG,
+        	ord.date_erase,
+        	ord.NOTE_ORD,
+        	ord.eu_injury
+        from cn_order ord
+        left join bd_term_freq freq on ord.code_freq=freq.code
+        left outer join bd_unit unit on ord.pk_unit_dos=unit.pk_unit
+        left outer join bd_supply sup on ord.code_supply=sup.code
+        left outer join BD_OU_DEPT dept on dept.pk_dept=ord.pk_dept_exec
+        left join cn_prescription cnpr on cnpr.pk_pres=ord.pk_pres
+        where ord.pk_pv=#{pkPv, jdbcType=VARCHAR} and ord.DEL_FLAG !='1'
+        UNION
+        select
+        	ord.date_start,
+        	ord.ordsn,
+        	ord.ordsn_parent,
+        	ord.eu_always,
+        	ord.name_ord,
+        	ord.dosage,
+        	ord.PK_UNIT_DOS,
+        	unit.name unit,
+        	sup.name supply,
+        	freq.name freq,
+        	ord.ords,
+        	ord.DAYS,
+        	ord.date_stop,
+        	ord.name_emp_ord,
+        	ord.code_ordtype,
+        	ord.price_cg,
+        	ord.quan,
+        	ord.quan_cg,
+        	ord.pk_ord,
+        	ord.pk_dept_exec,
+        	ord.code_ord,
+        	ord.spec,
+        	ord.pk_unit,
+        	ord.pack_size,
+        	ord.code_freq,
+        	ord.code_supply,
+        	ord.pk_pres,
+        	ord.pk_unit_cg,
+        	RANK()OVER(PARTITION BY ord.ordsn_parent ORDER BY ord.ordsn) R,
+        	(SELECT COUNT(*) FROM cn_order
+        	WHERE ord.ordsn_parent=ordsn_parent
+        	and pk_pv=ord.pk_pv
+        	) AS HS,
+        	ord.FLAG_FIT,
+        	ord.eu_st,
+        	ord.PK_CNORD,
+        	ord.DESC_FIT,
+        	sup.dt_excardtype,
+        	ord.DT_HPPROP,
+        	ord.EU_PVTYPE,
+        	dept.name_dept as name_dept_exec,
+        	cnpr.pres_no as pres_no_ord,
+        	cnpr.dt_prestype,
+        	ord.FLAG_ERASE,
+        	ord.FLAG_DISP,
+        	ord.FLAG_DURG,
+        	ord.date_erase,
+        	ord.NOTE_ORD,
+        	ord.eu_injury
+        from CN_ORDER_B ord
+        left join bd_term_freq freq on ord.code_freq=freq.code
+        left outer join bd_unit unit on ord.pk_unit_dos=unit.pk_unit
+        left outer join bd_supply sup on ord.code_supply=sup.code
+        left outer join BD_OU_DEPT dept on dept.pk_dept=ord.pk_dept_exec
+        left join cn_prescription_b cnpr on cnpr.pk_pres=ord.pk_pres
+        where ord.pk_pv=#{pkPv, jdbcType=VARCHAR} and ord.DEL_FLAG !='1'
+        )cns
+        ORDER BY ordsn_parent,ordsn
+    </select>
+	<select id="qryOrdHis" resultType="com.zebone.nhis.cn.pub.vo.OrdBlVo" parameterType="java.util.Map">
+			select CASE
+                       WHEN HS = 1 THEN ''
+                       WHEN HS = 0 THEN ''
+                       WHEN R = 1 AND HS != 0 THEN '┏'
+                       WHEN R = HS THEN '┗'
+                       ELSE '┃' END AS Hs,
+               date_start,
+               ordsn,
+               ordsn_parent,
+               eu_always,
+               name_ord,
+               dosage,
+               PK_UNIT_DOS,
+               unit,
+               supply,
+               freq,
+               ords,
+               DAYS,
+               date_stop,
+               name_emp_ord,
+               code_ordtype,
+               price_cg,
+               quan,
+               quan_cg,
+               pk_ord,
+               pk_dept_exec,
+               desc_body,
+               dt_ristype,
+               dt_samptype,
+               dt_tubetype,
+               dt_colltype,
+               code_ord,
+               spec,
+               pk_unit,
+               pack_size,
+               code_freq,
+               code_supply,
+               eu_drugtype,
+               age_min,
+               age_max,
+               eu_sex,
+               flag_st,
+               dt_pois,
+               dt_anti,
+               dt_injtype,
+               pk_unit_min,
+               pk_unit_wt,
+               pk_unit_vol,
+               vol,
+               eu_muputype,
+               weight,
+               dosage_def,
+               pk_unit_def,
+               price_pd,
+               pk_unit_cg,
+               flag_fit,
+               dt_prestype,
+               eu_st,
+               PK_CNORD,
+               DESC_FIT,
+               DT_HPPROP,
+               dt_excardtype,
+               pk_pres,
+               EU_PVTYPE,
+               note_dise,
+               pres_no_ord,
+               flag_durg,
+               pk_emp_erase,
+               NAME_EMP_ERASE,
+               FLAG_ERASE,
+               quan_back,
+               code_supply_add,
+               FLAG_DISP,
+               name_dept_exec,
+               NOTE_ORD,eu_injury,
+               AMOUNT_DISC,FLAG_DISCST,FLAG_PLAN
+        from (
+                     select ord.date_start,
+                            ord.ordsn,
+                            ord.ordsn_parent,
+                            ord.eu_always,
+                            ord.name_ord,
+                            ord.dosage,
+                            ord.PK_UNIT_DOS,
+                            unit.name                                                      unit,
+                            sup.name                                                       supply,
+                            freq.name                                                      freq,
+                            ord.ords,
+                            ord.DAYS,
+                            ord.date_stop,
+                            ord.name_emp_ord,
+                            ord.code_ordtype,
+                            ord.price_cg,
+                            ord.quan,
+                            ord.quan_cg,
+                            ord.pk_ord,
+                            ord.pk_dept_exec,
+                            ris.desc_body,
+                            ris.dt_ristype,
+                            lab.dt_samptype,
+                            lab.dt_tubetype,
+                            lab.dt_coltype                                                 dt_colltype,
+                            ord.code_ord,
+                            ord.spec,
+                            ord.pk_unit,
+                            ord.pack_size,
+                            ord.code_freq,
+                            ord.code_supply,
+                            pd.eu_drugtype,
+                            pd.age_min,
+                            pd.age_max,
+                            pd.eu_sex,
+                            pd.flag_st,
+                            pd.dt_pois,
+                            pd.dt_anti,
+                            pd.dt_injtype,
+                            pd.pk_unit_min,
+                            ord.pk_pres,
+                            pd.pk_unit_wt,
+                            pd.pk_unit_vol,
+                            pd.vol,
+                            pd.eu_muputype,
+                            pd.weight,
+                            pd.dosage_def,
+                            pd.pk_unit_def,
+                            pd.price                                                       price_pd,
+                            ord.pk_unit_cg,
+                            RANK() OVER (PARTITION BY ord.ordsn_parent ORDER BY ord.ordsn) R,
+                            (SELECT COUNT(*)
+                             FROM cn_order
+                             WHERE ord.ordsn_parent = ordsn_parent
+                               and pk_pv = ord.pk_pv
+                                    )                                 AS                   HS,
+                            ord.FLAG_FIT,
+                            cnpr.dt_prestype,
+                            ord.eu_st,
+                            ord.PK_CNORD,
+                            ord.DESC_FIT,
+                            sup.dt_excardtype,
+                            ord.DT_HPPROP,
+                            ord.EU_PVTYPE,
+                            ris.note_dise,
+                            cnpr.pres_no                              as                   pres_no_ord,
+                            ord.flag_durg,
+                            ord.pk_emp_erase,
+                            ord.NAME_EMP_ERASE,
+                            ord.FLAG_ERASE,
+                            ord.quan_back,
+                            ord.code_supply_add,
+                            ord.FLAG_DISP,
+                            dept.name_dept                            as                   name_dept_exec,
+                            ord.NOTE_ORD,
+                            ord.eu_injury,ord.AMOUNT_DISC,ord.FLAG_DISCST,ord.FLAG_PLAN
+                     from cn_order ord
+                                  left join bd_term_freq freq on ord.code_freq = freq.code
+                                  left join cn_prescription cnpr on cnpr.pk_pres = ord.pk_pres
+                                  left outer join bd_unit unit on ord.pk_unit_dos = unit.pk_unit
+                                  left outer join bd_supply sup on ord.code_supply = sup.code
+                                  left outer join BD_OU_DEPT dept on dept.pk_dept = ord.pk_dept_exec
+                                  left outer join cn_ris_apply ris on ris.pk_cnord = ord.pk_cnord
+                                  left outer join cn_lab_apply lab on lab.pk_cnord = ord.pk_cnord
+                                  left outer join bd_pd pd on pd.pk_pd = ord.pk_ord
+                     where ord.pk_pv = #{pkPv,jdbcType=VARCHAR}
+                     UNION all
+                     select ord.date_start,
+                            ord.ordsn,
+                            ord.ordsn_parent,
+                            ord.eu_always,
+                            ord.name_ord,
+                            ord.dosage,
+                            ord.PK_UNIT_DOS,
+                            unit.name                                                      unit,
+                            sup.name                                                       supply,
+                            freq.name                                                      freq,
+                            ord.ords,
+                            ord.DAYS,
+                            ord.date_stop,
+                            ord.name_emp_ord,
+                            ord.code_ordtype,
+                            ord.price_cg,
+                            ord.quan,
+                            ord.quan_cg,
+                            ord.pk_ord,
+                            ord.pk_dept_exec,
+                            ris.desc_body,
+                            ris.dt_ristype,
+                            lab.dt_samptype,
+                            lab.dt_tubetype,
+                            lab.dt_coltype                                                 dt_colltype,
+                            ord.code_ord,
+                            ord.spec,
+                            ord.pk_unit,
+                            ord.pack_size,
+                            ord.code_freq,
+                            ord.code_supply,
+                            pd.eu_drugtype,
+                            pd.age_min,
+                            pd.age_max,
+                            pd.eu_sex,
+                            pd.flag_st,
+                            pd.dt_pois,
+                            pd.dt_anti,
+                            pd.dt_injtype,
+                            pd.pk_unit_min,
+                            pd.pk_unit_wt,
+                            pd.pk_unit_vol,
+                            ord.pk_pres,
+                            pd.vol,
+                            pd.eu_muputype,
+                            pd.weight,
+                            pd.dosage_def,
+                            pd.pk_unit_def,
+                            pd.price                                                       price_pd,
+                            ord.pk_unit_cg,
+                            RANK() OVER (PARTITION BY ord.ordsn_parent ORDER BY ord.ordsn) R,
+                            (SELECT COUNT(*)
+                             FROM cn_order_b
+                             WHERE ord.ordsn_parent = ordsn_parent
+                               and pk_pv = ord.pk_pv
+                                    )                                 AS                   HS,
+                            ord.FLAG_FIT,
+                            cnpr.dt_prestype,
+                            ord.eu_st
+                             ,
+                            ord.PK_CNORD,
+                            ord.DESC_FIT,
+                            sup.dt_excardtype,
+                            ord.DT_HPPROP,
+                            ord.EU_PVTYPE,
+                            ris.note_dise,
+                            cnpr.pres_no                              as                   pres_no_ord,
+                            ord.flag_durg,
+                            ord.pk_emp_erase,
+                            ord.NAME_EMP_ERASE,
+                            ord.FLAG_ERASE,
+                            ord.quan_back,
+                            ord.code_supply_add,
+                            ord.FLAG_DISP,
+                            dept.name_dept                            as                   name_dept_exec,
+                            ord.NOTE_ORD,
+                            ord.eu_injury,ord.AMOUNT_DISC,ord.FLAG_DISCST,ord.FLAG_PLAN
+                     from cn_order_b ord
+                                  inner join bd_term_freq freq on ord.code_freq = freq.code
+                                  left join cn_prescription_b cnpr on cnpr.pk_pres = ord.pk_pres
+                                  left outer join bd_unit unit on ord.pk_unit_dos = unit.pk_unit
+                                  left outer join bd_supply sup on ord.code_supply = sup.code
+                                  left outer join BD_OU_DEPT dept on dept.pk_dept = ord.pk_dept_exec
+                                  left outer join cn_ris_apply ris on ris.pk_cnord = ord.pk_cnord
+                                  left outer join cn_lab_apply lab on lab.pk_cnord = ord.pk_cnord
+                                  left outer join bd_pd pd on pd.pk_pd = ord.pk_ord
+                     where ord.pk_pv = #{pkPv,jdbcType=VARCHAR}
+                     ) cns
+        ORDER BY ordsn_parent, ordsn
+    </select>
+	<select id="qryBlByPv" resultType="com.zebone.nhis.cn.pub.vo.OrdBlVo" parameterType="java.util.Map">
+        SELECT dt.PK_CNORD,sum(dt.amount) as amount,sum(case when dt.flag_settle='1' then 1 else 0 end) as settle
+        from BL_OP_DT dt
+        where dt.PK_PV=#{pkPv, jdbcType=VARCHAR} and dt.del_flag !='1' and dt.PK_CNORD is not null
+        GROUP by dt.PK_CNORD
+    </select>
+    <select id="qryOrdEx" resultType="com.zebone.nhis.cn.pub.vo.OrdBlVo" parameterType="java.util.Map">
+        select occ.pk_cnord,sum(case when occ.flag_occ='1' then 1 else 0 end ) as occ,sum(case when occ.flag_refund='1' then 1 else 0 end ) as refund,count(1) as ex_sum
+        from EX_ASSIST_OCC occ
+        where occ.pk_cnord in
+        <foreach collection="orders" index="index" item="item" open="(" separator="," close=")" >
+            #{item.pkCnord, jdbcType=VARCHAR}
+        </foreach>
+        group by occ.pk_cnord
+        UNION
+		SELECT
+		occ.PK_CNORD,
+		0                  as occ,
+		refund,
+		sum(occ.quan_pack) as ex_sum
+		from (select
+		dt.PK_CNORD,
+		pddt.quan_pack,
+		0 as refund
+		from ex_pres_occ_dt dt
+		inner join ex_pres_occ_pddt pddt
+		on dt.pk_presoccdt = pddt.pk_presoccdt and pddt.EU_DIRECT ='1'
+		UNION select
+		dt.PK_CNORD,
+		pddt.quan_pack * pddt.eu_direct as quan_pack ,
+		1 as refund
+		from ex_pres_occ_dt dt
+		inner join ex_pres_occ_pddt pddt
+		on dt.pk_presoccdt = pddt.pk_presoccdt
+		and pddt.eu_direct = '-1'
+		) occ
+        where occ.pk_cnord in
+        <foreach collection="orders" index="index" item="item" open="(" separator="," close=")" >
+            #{item.pkCnord, jdbcType=VARCHAR}
+        </foreach>
+        group by occ.PK_CNORD,occ.refund
+        order by pk_cnord,refund desc
+    </select>
+	<select id="qryBlByOrd" resultType="com.zebone.nhis.cn.pub.vo.OrdBlVo" parameterType="java.util.Map">
+		select occ.pk_cnord,sum(case when occ.flag_occ='1' then 1 else 0 end) as occ,sum(case when occ.flag_refund='1' then 1 else 0 end) as refund,count(1) as ex_sum
+		from EX_ASSIST_OCC occ
+		where occ.pk_cnord in
+		<foreach collection="orders" index="index" item="item" open="(" separator="," close=")" >
+			#{item.pkCnord, jdbcType=VARCHAR}
+		</foreach>
+		group by occ.pk_cnord
+		UNION
+		select pk_cnord,sum(quan_de) as occ,sum(quan_ret) as refund,sum(quan_cg) as ex_sum
+		from EX_PRES_OCC_DT
+		where pk_cnord in
+		<foreach collection="orders" index="index" item="item" open="(" separator="," close=")" >
+			#{item.pkCnord, jdbcType=VARCHAR}
+		</foreach>
+		group by pk_cnord
+	</select>
+	<select id="qryBlSettle" resultType="com.zebone.nhis.pro.zsrm.cn.vo.BlCnOpDt" parameterType="java.util.Map">
+		select DT.*,depo.DT_PAYMODE from BL_OP_DT dt
+		inner join BL_SETTLE st on st.PK_SETTLE = dt.PK_SETTLE
+		INNER JOIN BL_DEPOSIT depo on st.PK_SETTLE=depo.PK_SETTLE
+		where
+		dt.pk_cnord in
+		<foreach collection="orders" index="index" item="item" open="(" separator="," close=")" >
+			#{item.pkCnord, jdbcType=VARCHAR}
+		</foreach>
+		and st.DT_STTYPE= '01' and not exists (select 1 from bl_settle back
+		where st.pk_settle=back.pk_settle_canc
+		and st.pk_pv=back.PK_PV)
+	</select>
+	<select id="qryPdKA" resultType="DynaBean" parameterType="java.util.Map">
+		SELECT
+			ybpd.pk_pi,
+			map.code_hosp,
+			map.pk_item pk_pd
+		FROM
+			ins_qgyb_pd ybpd
+		INNER JOIN ins_qgyb_itemmap map ON ybpd.med_list_code = map.med_list_codg
+		where ybpd.pk_pi = #{pkPi, jdbcType=VARCHAR}
+		and map.pk_item in
+		<foreach collection="pkPds" index="index" item="item" open="(" separator="," close=")" >
+			#{item, jdbcType=VARCHAR}
+		</foreach>
+	</select>
+    <select id="qryBlOrdDetil" resultType="DynaBean" parameterType="java.util.Map">
+        select opbl.PK_CNORD,opbl.NAME_CG,opbl.AMOUNT,opbl.spec,opbl.quan,
+				case when CODE_ORDTYPE ='0103' then opbl.quan else ORD.QUAN_CG end as quan_cg,
+                opbl.pk_dept_ex,dept.name_dept as name_dept_ex,  opbl.eu_additem,
+                ord.code_ordtype,ord.CODE_SUPPLY,supply.name as supply,ord.CODE_FREQ,
+                ord.DAYS,
+				case when CODE_ORDTYPE ='0103' then opbl.quan else ord.DOSAGE end as DOSAGE,
+				ord.PK_UNIT_DOS,
+				case when CODE_ORDTYPE ='0103' then unit1.name else unit.name end as unit_dos,
+        ORD.CODE_APPLY, ord.pk_pres,pres.pres_no,ord.ORDSN,ord.ORDSN_PARENT,ord.eu_injury
+        from BL_OP_DT opbl
+        INNER JOIN CN_ORDER ord on opbl.PK_CNORD=ord.PK_CNORD
+        LEFT JOIN BD_OU_DEPT dept on dept.pk_dept=opbl.pk_dept_ex
+        LEFT JOIN CN_PRESCRIPTION pres on pres.pk_pres=ord.pk_pres
+        LEFT JOIN BD_UNIT unit on unit.PK_UNIT=ord.PK_UNIT_DOS
+				LEFT JOIN BD_UNIT unit1 on unit1.PK_UNIT=opbl.pk_unit
+        LEFT JOIN BD_SUPPLY supply on supply.code=ord.CODE_SUPPLY
+        where
+        opbl.FLAG_SETTLE='0' and opbl.DEL_FLAG='0'
+        AND opbl.pk_pv=#{pkPv, jdbcType=VARCHAR}
+        UNION ALL
+        select
+            opbl.PK_CNORD,opbl.NAME_CG,opbl.AMOUNT,opbl.spec,opbl.quan,
+			opbl.quan quan_cg,
+            opbl.pk_dept_ex,'' as  name_dept_ex,  opbl.eu_additem,
+            '' as code_ordtype,'' as CODE_SUPPLY,'' as supply,'' as CODE_FREQ,
+            1 as DAYS,
+			opbl.quan as DOSAGE,
+			'' as PK_UNIT_DOS,
+			'' as  unit_dos,
+            '' as CODE_APPLY, '' as pk_pres,'' as pres_no,0 as ORDSN,0 as ORDSN_PARENT,null as eu_injury
+        from BL_OP_DT opbl
+        WHERE
+        opbl.FLAG_SETTLE='0' and opbl.DEL_FLAG='0' and opbl.FLAG_PV='1'
+        AND opbl.pk_pv=#{pkPv, jdbcType=VARCHAR}
+    </select>
+    <select id="qryBlSumPv" resultType="DynaBean" parameterType="java.util.Map">
+        select sum(opbl.AMOUNT) as AMOUNT
+        from BL_OP_DT opbl
+        INNER JOIN CN_ORDER ord on opbl.PK_CNORD=ord.PK_CNORD
+        where
+        opbl.FLAG_SETTLE='0' and opbl.DEL_FLAG='0'
+        AND opbl.pk_pv=#{pkPv, jdbcType=VARCHAR}
+    </select>
+
+    <select id="qryBdOrd" parameterType="java.util.Map" resultType="DynaBean">
+        select
+        dt.note,dt.flag_self,ord.spec,dt.pk_ordsetdt,dt.FLAG_PD,dt.quan,dt.PK_ORDSET,
+        dt.sort_no, dt.pk_ord, ord.code ord_code,ord.name ord_name, dt.order_no,dt.parent_no, dt.dosage,
+        null as unit, dt.code_freq,freq.name freq,dt.code_supply, null as supply, dt.days, dt.pk_dept_exec,
+        dept.name_dept,dt.flag_def,dt.name_ord,type.name
+        ordtype,p.price,ord.eu_ordtype,dt.dt_herbusage,ord.spec,ord.code_ordtype,
+        ord.age_max,ord.age_min,ord.eu_sex
+        from bd_ord_set ordset
+        inner join bd_ord_set_dt dt on ordset.pk_ordset = dt.pk_ordset and ordset.del_flag='0'
+        left outer join bd_ord ord on dt.pk_ord=ord.pk_ord and dt.flag_pd=0
+        left outer join bd_term_freq freq on dt.code_freq=freq.code
+        left outer join bd_ou_dept dept on dt.pk_dept_exec=dept.pk_dept
+        left outer join bd_ordtype type on type.code = ord.code_ordtype
+        left outer join (select busi.pk_ord,sum((case when busi.quan=null then 0 else busi.quan end) *
+        (case when item.price=null then 0 else item.price end)) as price
+        from bd_ord_item busi, bd_item item
+        where busi.pk_item = item.pk_item and busi.del_flag='0' and item.del_flag='0'
+        group by busi.pk_ord) p on p.pk_ord = ord.pk_ord
+        where
+        <if test="pid!=null and pid!=''">
+            ordset.pk_ordset=#{pid,jdbcType=VARCHAR}
+        </if>
+        <if test="codeSet!=null and codeSet!=''">
+            ordset.code=#{codeSet,jdbcType=VARCHAR}
+        </if>
+        and dt.flag_pd=0
+        order by dt.sort_no
+    </select>
+
+    <select id="qryBdOrdDrug" parameterType="java.util.Map" resultType="DynaBean">
+        select
+        dt.note,dt.flag_self,dt.pk_ordsetdt,dt.quan,dt.FLAG_PD,dt.PK_ORDSET,dt.sort_no,dt.pk_ord,ord.code ord_code,
+        ord.name ord_name,dt.order_no,dt.parent_no,dt.dosage,unit.name as unit,dt.code_freq,freq.name
+        freq,dt.code_supply,
+        dt.pk_unit_dos,sup.name as
+        supply,dt.days,dt.pk_dept_exec,dept.name_dept,dt.flag_def,dt.name_ord,ord.pk_unit_min,
+        nvl(ord.weight,0) as weight,ord.pk_unit_wt,nvl(ord.vol,0) as vol,ord.pk_unit_vol,dt.pk_unit,null as eu_ordtype,
+        dt.dt_herbusage,ord.spec,type.code code_ordtype
+        ,ord.eu_Drugtype,ord.eu_sex,ord.age_min,ord.age_max,ord.flag_st,ord.Dt_Pois,ord.Dt_Anti,ord.pk_itemcate,
+        ord.pack_size as pack_size_pd,ord.price price_pd,ord.pk_ordtype,ord.flag_stop,ord.flag_stop flag_stop_pd,
+        ord.eu_muputype,ord.eu_muputype_op,dt.dt_prestype,dt.pres_no,bpsp.pack_size,bps.pack_size bps_pack_size,
+        ord.code code_ord,bpsp.pk_unit as pk_unit_cg
+        from bd_ord_set ordset
+        inner join bd_ord_set_dt dt on ordset.pk_ordset = dt.pk_ordset and ordset.del_flag='0'
+        inner join bd_pd ord on dt.pk_ord=ord.pk_pd and dt.flag_pd=1
+        inner join bd_ordtype type on type.pk_ordtype = ord.pk_ordtype and type.del_flag='0' AND type.CODE!='0103'
+        left join bd_pd_store bps on bps.pk_pd = ord.pk_pd and bps.pk_dept =#{pkDeptExec,jdbcType=VARCHAR}
+        left join bd_pd_store_pack bpsp on bpsp.pk_pdstore = bps.pk_pdstore and bpsp.flag_def = '1'
+        left outer join bd_unit unit on dt.pk_unit_dos=unit.pk_unit
+        left outer join bd_term_freq freq on dt.code_freq=freq.code
+        left outer join bd_supply sup on dt.code_supply=sup.code
+        left outer join bd_ou_dept dept on dt.pk_dept_exec=dept.pk_dept
+        where
+        <if test="pid!=null and pid!=''">
+            ordset.pk_ordset=#{pid,jdbcType=VARCHAR}
+        </if>
+        <if test="codeSet!=null and codeSet!=''">
+            ordset.code=#{codeSet,jdbcType=VARCHAR}
+        </if>
+        order by dt.sort_no
+    </select>
+
+
+</mapper>

@@ -1,0 +1,930 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.CpRecMapper" >
+
+  <select id="qryCpRec" resultType="DynaBean" parameterType="java.lang.String" >
+		   select  case when cprec.eu_status='0' then'启用' when cprec.eu_status='1' then'完成'  when cprec.eu_status='2' then'拒绝'  when cprec.eu_status='9' then'退出' end as name_status,
+		       cptemp.name_cp as name_cptemp,
+		       bddiag.diagname,
+		       cprec.date_start,
+		       cprec.date_end,
+		       cprec.date_exit,
+		       cprec.eu_status,
+		       case when cprec.eu_rectype='1' then '1' else '0' end as flag_rectype,
+		       case when cprec.eu_status='0' then'启用原因' else '' end as use_renson,
+		       case when cprec.eu_status='9' then'退出原因' else '' end as exit_renson,
+		       cprec.pk_cprec,
+		       cprec.pk_cptemp,
+		       cprec.pk_diag,
+		       cprec.pk_cpphase,
+		       phase.sortno    
+		from cp_rec cprec 
+		     inner join cp_temp  cptemp on cptemp.pk_cptemp  = cprec.pk_cptemp and cptemp.del_flag='0'  
+		     inner join cp_temp_diag cpdiag on cpdiag.pk_cptemp = cptemp.pk_cptemp and cpdiag.pk_diag =cprec.pk_diag and cpdiag.del_flag='0'  
+		     inner join bd_term_diag bddiag on bddiag.pk_diag = cpdiag.pk_diag and bddiag.del_flag='0'  
+		     left join  cp_temp_phase phase on phase.pk_cpphase = cprec.pk_cpphase and phase.del_flag='0'  
+		where cprec.del_flag='0' and cprec.pk_pv=#{pkPv,jdbcType=CHAR}   
+		order by cprec.eu_status,cprec.date_start desc  
+  </select>
+  <select id="qryCpTempReason" resultType="DynaBean" parameterType="java.lang.String" >
+		select cptempr.name as name_cpreason, 
+		       cptempr.eu_reason,
+		       cptempr.flag_nec,
+		       cptempr.pk_cpreason          
+		from cp_temp_reason cptempr  
+		     inner join cp_temp cptemp  on cptemp.pk_cptemp = cptempr.pk_cptemp and cptemp.del_flag='0'  
+		<where>
+		      cptempr.del_flag='0' and cptempr.pk_cptemp=#{pkCptemp,jdbcType=CHAR} 
+		      <if test="tempType=='start'">
+		           and cptempr.eu_reason ='1'  
+		      </if> 
+		      <if test="tempType=='use'">
+		           and cptempr.eu_reason !='9' 
+		      </if>
+		      <if test="tempType=='nuse'">
+		           and cptempr.eu_reason ='9' 
+		      </if>
+		</where>
+ 
+  </select>
+  <select id="qryCpRecReason" resultType="DynaBean" parameterType="java.lang.String" >
+	    select cpson.name as name_cpreason,
+	           case when cpson.eu_reason='1' then '启用' when cpson.eu_reason='2' then '拒绝' when cpson.eu_reason='9' then '退出' end as eu_reason  
+		from cp_rec_reason recson
+		     inner join cp_rec cprec on cprec.pk_cprec = recson.pk_cprec and cprec.del_flag='0' 
+		     inner join cp_temp_reason cpson on cpson.pk_cpreason = recson.pk_cpreason and cpson.del_flag='0' 
+		where recson.pk_cprec=#{pkCprec,jdbcType=CHAR}
+  </select>
+  
+    <select id="qryRecPhaseOrd" resultType="DynaBean" parameterType="java.lang.String" >
+		  select recdt.*
+			from 
+			( select 
+			     cphase.pk_cpphase,
+			     cphase.name_phase,
+	             cphase.days_min,
+	             cphase.days_max,
+	             recphase.pk_recphase,
+	             cpord.seq,
+	             cpord.pk_cpord,
+	             cpord.pk_ord as cp_pkord,
+	             cpord.pk_parent,
+	             cpord.code_ordtype,
+	             cpord.eu_ordtype,
+	             cpord.code_supply as cp_code_supply,
+	             supply.flag_pivas,
+	             cpord.code_freq as cp_code_freq,
+	             cpord.eu_always as cp_eu_always,
+	             cpord.dosage as cp_dosage,
+	             cpord.pk_unit_dose as cp_unit_dose,
+	             cpord.quan as cp_quan,
+	             cpord.pk_unit as cp_unit,
+	             cpord.flag_nec,
+	             cpord.dt_ristype as cp_ristype,
+	             cnord.date_start,
+	             bddiag.diagcode as code_cpord,
+	             bddiag.diagname as name_cpord,
+	             ''  as spec,
+	             '0' as flag_bl,
+	             '0' as flag_durg,
+	             cnord.name_ord,
+	             cnord.eu_status_ord,
+	             cnord.dosage,
+	             cnord.pk_unit_dos,
+	             cnord.quan,
+	             cnord.pk_unit,
+	             cnord.code_supply,
+	             cnord.code_freq,
+	             cnord.pk_dept_exec,
+	             cnord.date_stop,
+	             cnord.flag_emer,
+	             cnord.flag_thera,
+	             cnord.flag_prev,
+	             cnord.flag_fit,
+	             cnord.pk_cnord,
+	             cnord.pk_ord,
+	             cnord.code_apply,
+	             cnord.ordsn,
+	             cnord.ordsn_parent,
+	             cnord.eu_always,
+	             recdt.pk_recdt,
+	             recdt.eu_status as recdt_eu_status,
+	             '' as pk_unit_min,
+                 '' as pk_unit_wt,
+                 '' as pk_unit_vol,
+                 0  as weight,
+                 0  as vol,
+                 '' as dict_org_exec,
+                 '' as dict_dept_exec,
+                 rec.pk_cprec,
+                 rec.date_start as date_start_rec,
+                 '' as dt_body,
+                 '' as dt_samptype,
+                 '' as dt_contype,
+                 '' as dt_colltype,
+                 '' as pk_ordorg                                  
+	      from cp_temp_ord cpord 
+	           inner join cp_temp_phase cphase on  cphase.pk_cpphase = cpord.pk_cpphase and cphase.del_flag='0'  
+	           inner join bd_term_diag bddiag  on bddiag.pk_diag = cpord.pk_ord and bddiag.del_flag='0' and bddiag.dt_system='01'   
+               inner join cp_rec rec on rec.pk_cptemp = cphase.pk_cptemp and rec.del_flag='0' and rec.pk_cprec=#{pkCprec,jdbcType=CHAR}  
+		       left join cp_rec_phase recphase on recphase.pk_cprec = rec.pk_cprec and recphase.del_flag='0' and recphase.pk_cpphase=#{pkCpphase,jdbcType=CHAR}    
+		       left join cp_rec_dt recdt on recdt.pk_recphase = recphase.pk_recphase   and recdt.pk_cpord = cpord.pk_cpord and recdt.del_flag='0'  
+		       left join cn_order cnord on cnord.pk_cnord = recdt.pk_cnord and cnord.del_flag='0'   
+		       left join bd_supply supply on supply.code = cpord.code_supply and supply.del_flag='0'  
+	      where cpord.pk_cpphase=#{pkCpphase,jdbcType=CHAR}   and cpord.eu_ordtype='3'  
+			
+			union all
+			
+			select 
+			       cphase.pk_cpphase,
+			       cphase.name_phase,
+			       cphase.days_min,
+			       cphase.days_max,
+			       recphase.pk_recphase,
+			       cpord.seq,
+			       cpord.pk_cpord,
+			       cpord.pk_ord as cp_pkord,
+			       cpord.pk_parent,
+			       cpord.code_ordtype,
+			       cpord.eu_ordtype,
+			       cpord.code_supply as cp_code_supply,
+			       supply.flag_pivas,
+			       cpord.code_freq as cp_code_freq,
+			       cpord.eu_always as cp_eu_always,
+			       cpord.dosage as cp_dosage,
+			       cpord.pk_unit_dose as cp_unit_dose,
+			       cpord.quan as cp_quan,
+			       cpord.pk_unit as cp_unit,
+			       cpord.flag_nec,
+			       cpord.dt_ristype as cp_ristype,
+			       cnord.date_start,
+			       cateord.code_ord as code_cpord,
+			       cateord.name_ord as name_cpord,
+			       '' as spec,
+			       '0' as flag_bl,
+			       '0' as flag_durg,
+			       cnord.name_ord,
+			       cnord.eu_status_ord,
+			       cnord.dosage,
+			       cnord.pk_unit_dos,
+			       cnord.quan,
+			       cnord.pk_unit,
+			       cnord.code_supply,
+			       cnord.code_freq,
+			       cnord.pk_dept_exec,
+			       cnord.date_stop,
+			       cnord.flag_emer,
+			       cnord.flag_thera,
+			       cnord.flag_prev,
+			       cnord.flag_fit,
+			       cnord.pk_cnord,
+			       cnord.pk_ord,
+			       cnord.code_apply,
+			       cnord.ordsn,
+	               cnord.ordsn_parent,
+	               cnord.eu_always,
+			       recdt.pk_recdt,
+			       recdt.eu_status as recdt_eu_status,
+			       '' as pk_unit_min,
+                   '' as pk_unit_wt,
+                   '' as pk_unit_vol,
+                   0  as weight,
+                   0  as vol,
+                   '' as dict_org_exec,
+                   '' as dict_dept_exec,
+                   rec.pk_cprec,
+                   rec.date_start as date_start_rec ,
+                   '' as dt_body,
+                   '' as dt_samptype,
+                   '' as dt_contype,
+                   '' as dt_colltype,
+                   '' as pk_ordorg                                                        
+			from cp_temp_ord cpord  
+			     inner join cp_temp_phase cphase on  cphase.pk_cpphase = cpord.pk_cpphase and cphase.del_flag='0'  
+			     inner join bd_cp_cateord cateord  on cateord.pk_cateord = cpord.pk_ord    
+			     inner join cp_rec rec on rec.pk_cptemp = cphase.pk_cptemp and rec.del_flag='0' and rec.pk_cprec=#{pkCprec,jdbcType=CHAR}  
+		         left join cp_rec_phase recphase on recphase.pk_cprec = rec.pk_cprec and recphase.del_flag='0' and recphase.pk_cpphase=#{pkCpphase,jdbcType=CHAR}    
+		         left join cp_rec_dt recdt on recdt.pk_recphase = recphase.pk_recphase   and recdt.pk_cpord = cpord.pk_cpord and recdt.del_flag='0'  
+		         left join cn_order cnord on cnord.pk_cnord = recdt.pk_cnord and cnord.del_flag='0' 
+		         left join bd_supply supply on supply.code = cpord.code_supply and supply.del_flag='0' 
+			where cpord.pk_cpphase=#{pkCpphase,jdbcType=CHAR}  and cpord.eu_ordtype='2'  
+			
+			union all
+			
+			select cphase.pk_cpphase,
+			       cphase.name_phase,
+			       cphase.days_min,
+			       cphase.days_max,
+			       recphase.pk_recphase,
+			       cpord.seq,
+			       cpord.pk_cpord,
+			       cpord.pk_ord as cp_pkord,
+			       cpord.pk_parent,
+			       cpord.code_ordtype,
+			       cpord.eu_ordtype,
+			       cpord.code_supply as cp_code_supply,
+			       supply.flag_pivas,
+			       cpord.code_freq as cp_code_freq,
+			       cpord.eu_always as cp_eu_always,
+			       cpord.dosage as cp_dosage,
+			       cpord.pk_unit_dose as cp_unit_dose,
+			       cpord.quan as cp_quan,
+			       cpord.pk_unit as cp_unit,
+			       cpord.flag_nec,
+			       cpord.dt_ristype as cp_ristype,
+			       cnord.date_start,
+			       pdord.code as code_cpord,
+			       pdord.name as name_cpord,
+			       pdord.spec,
+			       '1' as flag_bl,
+			       '1' as flag_durg,
+			       cnord.name_ord,
+			       cnord.eu_status_ord,
+			       cnord.dosage,
+			       cnord.pk_unit_dos,
+			       cnord.quan,
+			       cnord.pk_unit,
+			       cnord.code_supply,
+			       cnord.code_freq,
+			       cnord.pk_dept_exec,
+			       cnord.date_stop,
+			       cnord.flag_emer,
+			       cnord.flag_thera,
+			       cnord.flag_prev,
+			       cnord.flag_fit,
+			       cnord.pk_cnord,
+			       cnord.pk_ord,
+			       cnord.code_apply,       
+			       cnord.ordsn,
+	               cnord.ordsn_parent,
+	               cnord.eu_always,
+			       recdt.pk_recdt,
+			       recdt.eu_status as recdt_eu_status,
+			       pdord.pk_unit_min,
+	               pdord.pk_unit_wt,
+	               pdord.pk_unit_vol,
+	               pdord.weight,
+	               pdord.vol,
+	               '' as dict_org_exec,
+                   '' as dict_dept_exec,
+                   rec.pk_cprec,
+                   rec.date_start as date_start_rec,
+                   '' as dt_body,
+                   '' as dt_samptype,
+                   '' as dt_contype,
+                   '' as dt_colltype,
+                   '' as pk_ordorg                                                        
+			from cp_temp_ord cpord 
+			     inner join cp_temp_phase cphase on  cphase.pk_cpphase = cpord.pk_cpphase and cphase.del_flag='0'  
+			     inner join bd_pd pdord  on pdord.pk_pd = cpord.pk_ord and pdord.del_flag='0'  
+			     inner join cp_rec rec on rec.pk_cptemp = cphase.pk_cptemp and rec.del_flag='0' and rec.pk_cprec=#{pkCprec,jdbcType=CHAR}  
+		         left join cp_rec_phase recphase on recphase.pk_cprec = rec.pk_cprec and recphase.del_flag='0' and recphase.pk_cpphase=#{pkCpphase,jdbcType=CHAR}    
+		         left join cp_rec_dt recdt on recdt.pk_recphase = recphase.pk_recphase   and recdt.pk_cpord = cpord.pk_cpord and recdt.del_flag='0'  
+		         left join cn_order cnord on cnord.pk_cnord = recdt.pk_cnord and cnord.del_flag='0' 
+		         left join bd_supply supply on supply.code = cpord.code_supply and supply.del_flag='0'  
+			where cpord.pk_cpphase=#{pkCpphase,jdbcType=CHAR}   and cpord.eu_ordtype='1'  
+			
+			union all 
+			
+			select cphase.pk_cpphase,
+			       cphase.name_phase,
+			       cphase.days_min,
+			       cphase.days_max,
+			       recphase.pk_recphase,
+			       cpord.seq,
+			       cpord.pk_cpord,
+			       cpord.pk_ord as cp_pkord,
+			       cpord.pk_parent,
+			       cpord.code_ordtype,
+			       cpord.eu_ordtype,
+			       cpord.code_supply as cp_code_supply,
+			       supply.flag_pivas,
+			       cpord.code_freq as cp_code_freq,
+			       cpord.eu_always as cp_eu_always,
+			       cpord.dosage as cp_dosage,
+			       cpord.pk_unit_dose as cp_unit_dose,
+			       cpord.quan as cp_quan,
+			       cpord.pk_unit as cp_unit,
+			       cpord.flag_nec,
+			       cpord.dt_ristype as cp_ristype,
+			       cnord.date_start,
+			       bdord.code as code_cpord,
+			       bdord.name as name_cpord,
+			       '' as spec,
+			       bdord.flag_cg as flag_bl,
+			       bdord.flag_pd as flag_durg,
+			       cnord.name_ord ,
+			       cnord.eu_status_ord,
+			       cnord.dosage,
+			       cnord.pk_unit_dos,
+			       cnord.quan,
+			       cnord.pk_unit,
+			       cnord.code_supply,
+			       cnord.code_freq,
+			       cnord.pk_dept_exec,
+			       cnord.date_stop,
+			       cnord.flag_emer,
+			       cnord.flag_thera,
+			       cnord.flag_prev,
+			       cnord.flag_fit,
+			       cnord.pk_cnord,
+			       cnord.pk_ord,
+			       cnord.code_apply,
+			       cnord.ordsn,
+	               cnord.ordsn_parent,
+	               cnord.eu_always,
+			       recdt.pk_recdt,
+			       recdt.eu_status as recdt_eu_status,
+			       '' as pk_unit_min,
+                   '' as pk_unit_wt,
+                   '' as pk_unit_vol,
+                   0  as weight,
+                   0  as vol,
+                   dept.pk_org_exec as dict_org_exec,
+                   dept.pk_dept as dict_dept_exec,
+                   rec.pk_cprec,
+                   rec.date_start as date_start_rec,
+                   doc.name as dt_body,
+                   lab.dt_samptype,
+                   lab.dt_contype,
+                   lab.dt_colltype,
+                   org.pk_ordorg                                                                 
+			from cp_temp_ord cpord 
+			     inner join cp_temp_phase cphase on  cphase.pk_cpphase = cpord.pk_cpphase and cphase.del_flag='0'  
+			     inner join bd_ord bdord  on bdord.pk_ord = cpord.pk_ord and bdord.del_flag='0'  
+			     inner join cp_rec rec on rec.pk_cptemp = cphase.pk_cptemp and rec.del_flag='0' and rec.pk_cprec=#{pkCprec,jdbcType=CHAR}  
+		         left join cp_rec_phase recphase on recphase.pk_cprec = rec.pk_cprec and recphase.del_flag='0' and recphase.pk_cpphase=#{pkCpphase,jdbcType=CHAR}    
+		         left join cp_rec_dt recdt on recdt.pk_recphase = recphase.pk_recphase   and recdt.pk_cpord = cpord.pk_cpord and recdt.del_flag='0'   
+		         left join bd_ord_org org on org.pk_ord = bdord.pk_ord  and  org.del_flag = '0'  and org.pk_org = #{pkOrg,jdbcType=CHAR}     
+		         left join bd_ord_lab lab on lab.pk_ord = cpord.pk_ord and lab.del_flag='0'   
+                 left join bd_ord_ris ris on ris.pk_ord = cpord.pk_ord and ris.del_flag='0' 
+                 left join bd_defdoc doc on doc.code = ris.dt_body and doc.code_defdoclist = '030101' and doc.del_flag='0'   
+			     left outer join bd_ord_dept dept on org.pk_ordorg = dept.pk_ordorg  and dept.flag_def = '1'  and dept.del_flag='0'  
+		         left join cn_order cnord on cnord.pk_cnord = recdt.pk_cnord and cnord.del_flag='0'  
+		         left join bd_supply supply on supply.code = cpord.code_supply and supply.del_flag='0' 
+			where cpord.pk_cpphase=#{pkCpphase,jdbcType=CHAR}   and cpord.eu_ordtype='0') recdt 
+			order by recdt.seq  
+  </select>
+   <select id="qryTempLastPhase" resultType="DynaBean" parameterType="java.lang.String" >
+     select  recphase.pk_recphase,recphase.pk_cpphase  from cp_rec_phase  recphase  
+            inner join cp_rec rec on rec.pk_cprec = recphase.pk_cprec and rec.del_flag='0' and rec.pk_cprec=#{pkCprec,jdbcType=CHAR}  
+            inner join cp_temp_phase cpphase on recphase.pk_cpphase = cpphase.pk_cpphase and cpphase.del_flag='0' and  cpphase.sortno=(select max(sortno) from cp_temp_phase where pk_cptemp=#{pkCptemp,jdbcType=CHAR})    
+            where recphase.eu_status='0'  and recphase.del_flag='0'  
+  </select>
+  <select id="qryRecUnStopOrd" resultType="DynaBean" parameterType="java.lang.String" >
+     select cnord.pk_cnord,cnord.name_ord,cpphase.name_phase  
+		from cp_temp_ord cpord   
+		     inner join cp_temp_phase cpphase on cpord.pk_cpphase = cpphase.pk_cpphase and cpphase.del_flag='0'  
+		     inner join cp_rec rec on rec.pk_cptemp = cpphase.pk_cptemp and rec.del_flag='0' and rec.pk_cprec=#{pkCprec,jdbcType=CHAR}  
+		     inner join cp_rec_phase recphase on recphase.pk_cprec = rec.pk_cprec and recphase.del_flag='0'  
+		     <if test="qryType=='phaseUse'">
+				   and recphase.pk_cpphase = #{pkCpphase,jdbcType=CHAR}  
+			 </if>
+		     inner join cp_rec_dt recdt on recdt.pk_recphase = recphase.pk_recphase and recdt.pk_cpord  = cpord.pk_cpord and recdt.del_flag='0' and recdt.eu_status='1' 
+		     inner join cn_order cnord on cnord.pk_cnord = recdt.pk_cnord and cnord.del_flag='0' and cnord.eu_always='0'  and cnord.flag_stop='0'   
+	   <where>
+	         cpord.del_flag='0'    
+	          <if test="qryType=='phaseUse'">
+				   and cpord.pk_cpphase=#{pkCpphase,jdbcType=CHAR}  
+			 </if>
+	   </where>
+	    order by cpphase.sortno 
+   </select>
+  <select id="qryTempNecOrd" resultType="int" parameterType="java.lang.String" >
+    select count(1)  from  
+          (select cpord.pk_cpord from cp_temp_ord cpord   
+		  inner join cp_temp_phase cphase on  cphase.pk_cpphase = cpord.pk_cpphase and cphase.del_flag='0'  
+		  inner join cp_rec rec on rec.pk_cptemp = cphase.pk_cptemp and rec.del_flag='0' and rec.pk_cprec=#{pkCprec,jdbcType=CHAR}  
+		  inner join cp_rec_phase recphase on recphase.pk_cprec = rec.pk_cprec and recphase.del_flag='0' and recphase.pk_cpphase = #{pkCpphase,jdbcType=CHAR}  
+		  inner join cp_rec_dt recdt on recdt.pk_recphase = recphase.pk_recphase   and recdt.pk_cpord = cpord.pk_cpord and recdt.del_flag='0' and recdt.eu_status='0' 
+		  where   cpord.del_flag='0' and cpord.flag_nec='1' and cpord.pk_cpphase=#{pkCpphase,jdbcType=CHAR}     
+          union all  
+	      select cpord.pk_tempwork from cp_temp_work cpord   
+		  inner join cp_temp_phase cphase on  cphase.pk_cpphase = cpord.pk_cpphase and cphase.del_flag='0'  
+		  inner join cp_rec rec on rec.pk_cptemp = cphase.pk_cptemp and rec.del_flag='0' and rec.pk_cprec=#{pkCprec,jdbcType=CHAR}  
+		  inner join cp_rec_phase recphase on recphase.pk_cprec = rec.pk_cprec and recphase.del_flag='0' and recphase.pk_cpphase = #{pkCpphase,jdbcType=CHAR}  
+		  inner join cp_rec_dt recdt on recdt.pk_recphase = recphase.pk_recphase   and recdt.pk_tempwork = cpord.pk_tempwork and recdt.del_flag='0' and recdt.eu_status='0' and recdt.eu_role = '0'   
+		  where  cpord.del_flag='0' and cpord.flag_nec='1' and cpord.pk_cpphase=#{pkCpphase,jdbcType=CHAR} ) necord  
+   </select>
+  <select id="qryTempNsNecOrd" resultType="DynaBean" parameterType="java.lang.String" >
+	      select  temp.name_cp, cphase.name_phase,action.name_act   from cp_temp_work cpord  
+	      inner join bd_cp_action action on action.pk_cpaction = cpord.pk_cpaction and action.del_flag='0'  
+		  inner join cp_temp_phase cphase on  cphase.pk_cpphase = cpord.pk_cpphase and cphase.del_flag='0' 
+		  inner join cp_temp temp on temp.pk_cptemp = cphase.pk_cptemp and temp.del_flag='0'  
+		  inner join cp_rec rec on rec.pk_cptemp = cphase.pk_cptemp and rec.del_flag='0' and rec.pk_cprec=#{pkCprec,jdbcType=CHAR}  
+		  inner join cp_rec_phase recphase on recphase.pk_cprec = rec.pk_cprec and recphase.del_flag='0' and recphase.pk_cpphase = #{pkCpphase,jdbcType=CHAR}  
+		  inner join cp_rec_dt recdt on recdt.pk_recphase = recphase.pk_recphase   and recdt.pk_tempwork = cpord.pk_tempwork and recdt.del_flag='0' and recdt.eu_status='0' and recdt.eu_role = '1'  
+		  where  cpord.del_flag='0' and cpord.flag_nec='1' and cpord.pk_cpphase=#{pkCpphase,jdbcType=CHAR} 
+   </select>
+  <select id="qryTempNecCnOrd" resultType="DynaBean" parameterType="java.lang.String" >
+     select cnord.pk_cnord,cnord.name_ord,cpphase.name_phase  
+     from cp_temp_ord cpord   
+	     inner join cp_temp_phase cpphase on cpord.pk_cpphase = cpphase.pk_cpphase and cpphase.del_flag='0'   
+	     inner join cp_rec rec on rec.pk_cptemp = cpphase.pk_cptemp and rec.del_flag='0' and rec.pk_cprec=#{pkCprec,jdbcType=CHAR} 
+	     inner join cp_rec_dt recdt on recdt.pk_cpord  = cpord.pk_cpord and recdt.del_flag='0' and recdt.eu_status='1'  
+	     inner join cn_order cnord on cnord.pk_cnord = recdt.pk_cnord and cnord.del_flag='0'  
+	  <where>
+	        cpord.del_flag='0' and cpord.flag_nec='1'  
+	          <if test="qryType=='phaseUse'">
+				   and cpord.pk_cpphase=#{pkCpphase,jdbcType=CHAR} 
+			 </if>
+	  </where> 
+   </select>
+   <select id="qryRisOrd" resultType="DynaBean" parameterType="java.lang.String" >
+	    select 
+			ris.*,
+			ord.code_apply,
+			ord.date_start,
+			ord.price_cg,
+			ord.quan,
+			ord.name_ord,
+			ord.code_ordtype,
+			ord.flag_emer,
+			ord.pk_org_exec,
+			ord.pk_dept_exec,
+			ord.note_ord  
+			from cn_order ord  
+			inner join cn_ris_apply ris 
+			on ord.pk_cnord = ris.pk_cnord  
+			and ris.del_flag='0' 
+			where ord.pk_cnord= #{pkCnord,jdbcType=CHAR} 
+			and ord.del_flag='0'  
+   </select>
+   <select id="qryLisOrd" resultType="DynaBean" parameterType="java.lang.String" >
+		  select 
+				lis.*,
+				ord.code_apply,
+				ord.date_start,
+				ord.price_cg,
+				ord.quan,		
+				ord.name_ord,
+				ord.code_ordtype,
+				ord.flag_emer,
+				ord.pk_org_exec,
+				ord.pk_dept_exec,
+				ord.note_ord 
+				from cn_order ord 
+				inner join cn_lab_apply lis 
+				on ord.pk_cnord = lis.pk_cnord 
+				and lis.del_flag='0'   
+				where ord.del_flag='0'  
+				and ord.pk_cnord=#{pkCnord,jdbcType=CHAR} 
+   </select>
+   <select id="qryOpOrd" resultType="com.zebone.nhis.cn.ipdw.vo.CnOpApplyVo" parameterType="java.lang.String" >
+         select 
+				op.*,
+				ord.code_apply,
+				ord.pk_org_exec,
+				ord.pk_dept_exec,
+				ord.name_ord as op_name, 
+				diag.diagname as diagOpName,
+				ord.note_ord,
+				anae.ATTR_DESC
+				from cn_order ord 
+				inner join cn_op_apply op on ord.pk_cnord = op.pk_cnord and op.del_flag='0'  
+				left join bd_term_diag diag on  diag.pk_diag = op.pk_diag_pre and diag.del_flag='0' 
+				left outer join bd_defdoc anae on op.dt_anae=anae.code and anae.code_defdoclist='030300' and anae.del_flag='0'
+				where ord.del_flag='0'  
+				and ord.pk_cnord=#{pkCnord,jdbcType=CHAR} 
+   </select>
+   <select id="qryOpDtOrd" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOpSubjoin"  parameterType="java.lang.String" >
+         select op.*,  
+         dg.diagname as opName,
+         dg.diagcode as opCode    
+         from cn_op_subjoin op  
+         inner join bd_term_diag dg  on op.pk_diag_sub= dg.pk_diag  
+         where op.pk_ordop = #{pkOp,jdbcType=VARCHAR}  
+   </select>
+   <select id="qryRecPhaseAction" resultType="DynaBean"  parameterType="java.lang.String" >
+	  select   tempw.pk_tempwork,
+	           tempw.pk_cpaction,
+		       tempw.flag_nec,
+		       tempw.pk_cpphase,
+		       action.name_act,
+		       phase.days_min,
+               phase.days_max,
+		       action.eu_type as action_eu_type,
+		       action.func, 
+		       action.eu_calltype,
+		       rec.date_start,
+		       recdt.eu_status recdt_eu_status, 
+		       recphase.pk_recphase,
+		       recdt.pk_recdt,
+		       recdt.note as recdt_note,
+		       rec.pk_cprec     
+		from cp_temp_work tempw   
+		     inner join cp_temp_phase phase  on tempw.pk_cpphase = phase.pk_cpphase and phase.del_flag='0'   
+		     inner join bd_cp_action action on tempw.pk_cpaction = action.pk_cpaction and action.del_flag='0' and action.eu_role='0' 
+		     inner join cp_rec rec on rec.pk_cptemp = phase.pk_cptemp and rec.del_flag='0' and rec.pk_cprec=#{pkCprec,jdbcType=CHAR}  
+		     left join cp_rec_phase recphase on recphase.pk_cprec = rec.pk_cprec and recphase.del_flag='0' and recphase.pk_cpphase=#{pkCpphase,jdbcType=CHAR} 
+		     left join cp_rec_dt recdt on recdt.pk_tempwork = tempw.pk_tempwork and recdt.pk_recphase = recphase.pk_recphase and recdt.del_flag='0'  
+		where tempw.del_flag='0' and tempw.pk_cpphase=#{pkCpphase,jdbcType=CHAR}  
+   </select>
+   <select id="qryCateOrdDt" resultType="DynaBean"  parameterType="java.util.Map" >
+	     <if test="qryType=='nameNoPd'">
+        select     ord.code as code_ord,
+		           ord.name as name_ord,
+		           ord.pk_ord,
+		           ord.code_ordtype,
+		           ord.flag_cg,
+		           '0' as flag_pd,
+		           ord.code_freq,
+		           fqed.eu_always,
+		           '' as code_supply,
+		           '0' as flag_pivas,
+				   ord.quan_def,
+			       dept.pk_dept as pk_dept_exec,
+			       dept.pk_org_exec,
+			       doc.name as dt_body,
+                   lab.dt_samptype,
+                   lab.dt_contype,
+                   lab.dt_colltype       
+			from bd_ord  ord  
+			     inner join bd_ord_org org  on ord.pk_ord = org.pk_ord  and org.del_flag='0'  and org.pk_org=#{pkOrg,jdbcType=CHAR}   
+			     left join bd_ord_dept dept on org.pk_ordorg = dept.pk_ordorg  and dept.del_flag='0'  
+			     left join  bd_term_freq fqed on fqed.code = ord.code_freq  and fqed.del_flag = '0' 
+			     left join bd_ord_lab lab on lab.pk_ord = ord.pk_ord and lab.del_flag='0'   
+                 left join bd_ord_ris ris on ris.pk_ord = ord.pk_ord and ris.del_flag='0' 
+                 left join bd_defdoc doc on doc.code = ris.dt_body and doc.code_defdoclist = '030101' and doc.del_flag='0'   
+			where ord.name like '%'||#{nameOrd,jdbcType=VARCHAR}||'%' and ord.flag_dr='1' and ord.flag_ip='1' and ord.flag_active='1'  
+	     </if>
+	     <if test="qryType=='namePd'">
+		   select   pd.pk_pd as pk_ord,
+	                case
+	                  when pd.eu_drugtype = '0' then
+	                   '0101'
+	                  when pd.eu_drugtype = '1' then
+	                   '0102'
+	                  when pd.eu_drugtype = '2' then
+	                   '0103'
+	                end as code_ordtype,
+	                pd.code as code_ord,
+	                pd.name as name_ord,
+	                '1' as flag_pd,
+	                '1' as flag_cg,
+	                pd.code_freq,
+	                fqed.eu_always,
+	                pd.code_supply,
+	                supply.flag_pivas,
+	                pd.dosage_def as quan_def,
+	                pd.pk_unit_def,
+	                pd.pk_unit_min,
+	                pd.weight,
+	                pd.pk_unit_wt,
+	                pd.vol,
+	                pd.pk_unit_vol,
+	                con.spec 
+				from bd_pd pd
+				  inner join bd_pd_convert con on pd.pk_pd = con.pk_pd and con.del_flag = '0'
+				  inner join bd_pd_store pds on con.pk_pdconvert = pds.pk_pdconvert and pds.flag_stop = '0'  and pds.del_flag = '0' and pds.pk_dept=#{pkDept,jdbcType=CHAR} 
+				  inner join bd_unit unit on con.pk_unit = unit.pk_unit and unit.del_flag = '0' 
+				  left  join bd_term_freq fqed on fqed.code = pd.code_freq and fqed.del_flag = '0'  
+				  left join bd_supply supply on supply.code = pd.code_supply and supply.del_flag='0'  
+				where pd.name like '%'||#{nameOrd,jdbcType=VARCHAR}||'%' and pd.flag_stop='0'  and pd.eu_pdtype='0' 
+	     </if>
+	     <if test="qryType=='dictNoPd'">
+	        select ord.code as code_ord,
+		           ord.name as name_ord,
+		           ord.pk_ord,
+		           ord.code_ordtype,
+		           ord.flag_cg,
+		           '0' as flag_pd,
+		           ord.code_freq,
+		           fqed.eu_always,
+		           '' as code_supply,
+		           '0' as flag_pivas,
+				   ord.quan_def,
+			       dept.pk_dept as pk_dept_exec,
+			       dept.pk_org_exec,
+			       doc.name as dt_body,
+                   lab.dt_samptype,
+                   lab.dt_contype,
+                   lab.dt_colltype        
+			from bd_cp_cateord_dt catedt  
+			     inner join bd_ord  ord on ord.pk_ord = catedt.pk_ord and ord.del_flag='0' and ord.flag_dr='1' and ord.flag_ip='1' and ord.flag_active='1'  
+			     inner join bd_ord_org org  on ord.pk_ord = org.pk_ord  and org.del_flag='0'  and org.pk_org=#{pkOrg,jdbcType=CHAR}   
+			     left join bd_ord_dept dept on org.pk_ordorg = dept.pk_ordorg  and dept.del_flag='0'  
+			     left join  bd_term_freq fqed on fqed.code = ord.code_freq  and fqed.del_flag = '0' 
+			     left join bd_ord_lab lab on lab.pk_ord = ord.pk_ord and lab.del_flag='0'   
+                 left join bd_ord_ris ris on ris.pk_ord = ord.pk_ord and ris.del_flag='0' 
+                 left join bd_defdoc doc on doc.code = ris.dt_body and doc.code_defdoclist = '030101' and doc.del_flag='0'   
+			where catedt.pk_cateord=#{pkCateord,jdbcType=CHAR} 
+	     </if>
+	     <if test="qryType=='dictPd'">
+	         select 
+                    pd.pk_pd as pk_ord,
+	                case
+	                  when pd.eu_drugtype = '0' then
+	                   '0101'
+	                  when pd.eu_drugtype = '1' then
+	                   '0102'
+	                  when pd.eu_drugtype = '2' then
+	                   '0103'
+	                end as code_ordtype,
+	                pd.code as code_ord,
+	                pd.name as name_ord,
+	                '1' as flag_pd,
+	                '1' as flag_cg,
+	                pd.code_freq,
+	                fqed.eu_always,
+	                pd.code_supply,
+	                supply.flag_pivas,
+	                pd.dosage_def as quan_def,
+	                pd.pk_unit_def,
+	                pd.pk_unit_min,
+	                pd.weight,
+	                pd.pk_unit_wt,
+	                pd.vol,
+	                pd.pk_unit_vol,
+	                con.spec  
+				from bd_cp_cateord_dt catedt  
+				     inner join  bd_pd pd on pd.pk_pd = catedt.pk_ord and pd.del_flag='0'  and pd.flag_stop='0'  and pd.eu_pdtype='0'  
+				     inner join bd_pd_convert con on pd.pk_pd = con.pk_pd and con.del_flag = '0' 
+				     inner join bd_pd_store pds on con.pk_pdconvert = pds.pk_pdconvert and pds.flag_stop = '0'  and pds.del_flag = '0' and pds.pk_dept=#{pkDept,jdbcType=CHAR}   
+				     inner join bd_unit unit on con.pk_unit = unit.pk_unit and unit.del_flag = '0'  
+				     left  join bd_term_freq fqed on fqed.code = pd.code_freq and fqed.del_flag = '0'  
+				     left join bd_supply supply on supply.code = pd.code_supply and supply.del_flag='0' 
+				where catedt.pk_cateord=#{pkCateord,jdbcType=CHAR}  
+	     </if>
+   </select>
+   <select id="qryRecPhaseCnOrd" resultType="DynaBean"  parameterType="java.util.Map" >
+            select cn.pk_cnord,
+		       cn.pk_org,
+		       cn.eu_always,
+		       cn.date_start,
+		       cn.code_ord,
+		       cn.name_ord,
+		       cn.dosage,
+		       cn.pk_unit_dos,
+		       cn.quan,
+		       cn.pk_unit,
+		       cn.code_supply,
+		       cn.code_freq,
+		       cn.drip_speed,
+		       cn.flag_first,
+		       cn.name_emp_ord,
+		       cn.pk_dept_exec,
+		       cn.pk_org_exec,
+		       cn.date_stop,
+		       cn.spec,
+		       cn.flag_medout,
+	           cn.flag_self,
+	           cn.flag_thera,
+	           cn.flag_prev,
+	           cn.flag_fit,
+	           cn.note_ord,
+	           cn.note_supply,
+	           cn.eu_status_ord,
+	           cn.code_ordtype,
+	           cn.ordsn,
+	           cn.ordsn_parent,
+	           cn.pk_ord,
+	           cn.date_enter,
+	           cn.flag_stop_chk,
+	           cn.flag_erase,
+	           cn.flag_durg,
+	           cn.flag_stop,
+	           cn.pk_emp_stop,
+	           cn.name_emp_stop,
+	           cn.date_stop,
+	           cn.pk_pres,
+	           cn.infant_no,
+		       cn.ts          
+		  from cn_order cn    
+		  where cn.pk_pv = #{pkPv,jdbcType=VARCHAR}  
+		  and cn.flag_doctor='1'  
+		  and cn.flag_cp='0'  
+	      <if test="recDateStart != null">
+			      and  cn.date_start &gt;= to_date(#{recDateStart,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')   
+	      </if> 
+		  order by  cn.ordsn    
+   </select>
+   <select id="qryUnUseNecOrdByRec" resultType="DynaBean"  parameterType="java.lang.String" >
+	select cpord.pk_cpord, recphase.pk_recphase,recdt.pk_recdt   
+            from cp_temp_ord cpord  
+           inner join cp_rec_phase recphase  
+              on cpord.pk_cpphase = recphase.pk_cpphase  
+             and recphase.pk_cprec = #{pkCprec,jdbcType=VARCHAR}   
+             and recphase.eu_status='0'   
+           inner join cp_rec_dt recdt  
+              on recdt.pk_cpord = cpord.pk_cpord and recdt.pk_recphase = recphase.pk_recphase  
+             and recdt.del_flag = '0'  
+             and recdt.eu_status = '0'  
+           where cpord.del_flag = '0'  
+             and cpord.flag_nec = '1' 
+   </select>
+ <select id="qryUnUseNecWorkByRec" resultType="DynaBean"  parameterType="java.lang.String" > 
+  select cpord.pk_tempwork, recphase.pk_recphase,recdt.pk_recdt    
+          from cp_temp_work cpord  
+         inner join cp_rec_phase recphase 
+            on cpord.pk_cpphase = recphase.pk_cpphase 
+           and recphase.pk_cprec = #{pkCprec,jdbcType=VARCHAR}    
+           and recphase.eu_status='0'  
+         inner join cp_rec_dt recdt  
+           on recdt.pk_tempwork = cpord.pk_tempwork and recdt.pk_recphase = recphase.pk_recphase and recdt.eu_status='0' and recdt.del_flag = '0'  
+         where cpord.del_flag = '0' 
+           and cpord.flag_nec = '1' 
+   </select>
+   <select id="qryRecAllValidPhaseOrd" resultType="DynaBean"  parameterType="java.lang.String" > 
+      select recdt.*
+      from 
+      ( 
+      select cphase.name_phase,
+             cphase.days_min,
+             cphase.days_max,
+             cphase.sortno,
+             recphase.pk_recphase,
+             cpord.seq,
+             cpord.pk_cpord,
+             cpord.pk_ord as cp_pkord,
+             cpord.pk_parent,
+             cpord.code_ordtype,
+             cpord.eu_ordtype,
+             cpord.code_supply as cp_code_supply,
+             supply.flag_pivas,
+             cpord.code_freq as cp_code_freq,
+             cpord.eu_always as cp_eu_always,
+             cpord.dosage as cp_dosage,
+             cpord.pk_unit_dose as cp_unit_dose,
+             cpord.quan as cp_quan,
+             cpord.pk_unit as cp_unit,
+             cpord.flag_nec,
+             cpord.dt_ristype as cp_ristype,
+             cnord.date_start,
+             cateord.code_ord as code_cpord,
+             cateord.name_ord as name_cpord,
+             '' as spec,
+             '0' as flag_bl,
+             '0' as flag_durg,
+             cnord.name_ord,
+             cnord.eu_status_ord,
+             cnord.dosage,
+             cnord.pk_unit_dos,
+             cnord.quan,
+             cnord.pk_unit,
+             cnord.code_supply,
+             cnord.code_freq,
+             cnord.pk_dept_exec,
+             cnord.date_stop,
+             cnord.flag_emer,
+             cnord.flag_thera,
+             cnord.flag_prev,
+             cnord.flag_fit,
+             cnord.pk_cnord,
+             cnord.pk_ord,
+             cnord.code_apply,
+             cnord.ordsn,
+             cnord.ordsn_parent,
+             cnord.eu_always,
+             recdt.pk_recdt,
+             recdt.eu_status as recdt_eu_status,
+             '' as pk_unit_min,
+             '' as pk_unit_wt,
+             '' as pk_unit_vol,
+             0  as weight,
+             0  as vol                                              
+      from cp_temp_ord cpord  
+           inner join cp_temp_phase cphase on  cphase.pk_cpphase = cpord.pk_cpphase and cphase.del_flag='0'  
+           inner join bd_cp_cateord cateord  on cateord.pk_cateord = cpord.pk_ord and cateord.del_flag='0'  
+           inner join cp_rec rec on rec.pk_cptemp = cphase.pk_cptemp and rec.del_flag='0' and rec.pk_cprec=#{pkCprec,jdbcType=CHAR}  
+           inner join cp_rec_phase recphase on recphase.pk_cprec = rec.pk_cprec and recphase.del_flag='0' and  recphase.eu_status='1' 
+           inner join cp_rec_dt recdt on recdt.pk_recphase = recphase.pk_recphase   and recdt.pk_cpord = cpord.pk_cpord and recdt.del_flag='0' and recdt.eu_status ='1'  
+           inner join cn_order cnord on cnord.pk_cnord = recdt.pk_cnord and cnord.del_flag='0' and cnord.eu_always='0'  and cnord.flag_stop='0' 
+           left join bd_supply supply on supply.code = cpord.code_supply and supply.del_flag='0' 
+      where cpord.eu_ordtype='2'  
+      
+      union all
+      
+      select cphase.name_phase,
+             cphase.days_min,
+             cphase.days_max,
+             cphase.sortno,
+             recphase.pk_recphase,
+             cpord.seq,
+             cpord.pk_cpord,
+             cpord.pk_ord as cp_pkord,
+             cpord.pk_parent,
+             cpord.code_ordtype,
+             cpord.eu_ordtype,
+             cpord.code_supply as cp_code_supply,
+             supply.flag_pivas,
+             cpord.code_freq as cp_code_freq,
+             cpord.eu_always as cp_eu_always,
+             cpord.dosage as cp_dosage,
+             cpord.pk_unit_dose as cp_unit_dose,
+             cpord.quan as cp_quan,
+             cpord.pk_unit as cp_unit,
+             cpord.flag_nec,
+             cpord.dt_ristype as cp_ristype,
+             cnord.date_start,
+             pdord.code as code_cpord,
+             pdord.name as name_cpord,
+             pdord.spec,
+             '1' as flag_bl,
+             '1' as flag_durg,
+             cnord.name_ord,
+             cnord.eu_status_ord,
+             cnord.dosage,
+             cnord.pk_unit_dos,
+             cnord.quan,
+             cnord.pk_unit,
+             cnord.code_supply,
+             cnord.code_freq,
+             cnord.pk_dept_exec,
+             cnord.date_stop,
+             cnord.flag_emer,
+             cnord.flag_thera,
+             cnord.flag_prev,
+             cnord.flag_fit,
+             cnord.pk_cnord,
+             cnord.pk_ord,
+             cnord.code_apply,       
+             cnord.ordsn,
+             cnord.ordsn_parent,
+             cnord.eu_always,
+             recdt.pk_recdt,
+             recdt.eu_status as recdt_eu_status,
+             pdord.pk_unit_min,
+             pdord.pk_unit_wt,
+             pdord.pk_unit_vol,
+             pdord.weight,
+             pdord.vol                                        
+      from cp_temp_ord cpord 
+           inner join cp_temp_phase cphase on  cphase.pk_cpphase = cpord.pk_cpphase and cphase.del_flag='0'  
+           inner join bd_pd pdord  on pdord.pk_pd = cpord.pk_ord and pdord.del_flag='0'  
+           inner join cp_rec rec on rec.pk_cptemp = cphase.pk_cptemp and rec.del_flag='0' and rec.pk_cprec=#{pkCprec,jdbcType=CHAR}  
+           inner join cp_rec_phase recphase on recphase.pk_cprec = rec.pk_cprec and recphase.del_flag='0' and recphase.eu_status='1'    
+           inner join cp_rec_dt recdt on recdt.pk_recphase = recphase.pk_recphase   and recdt.pk_cpord = cpord.pk_cpord and recdt.del_flag='0'  and recdt.eu_status ='1' 
+           inner join cn_order cnord on cnord.pk_cnord = recdt.pk_cnord and cnord.del_flag='0' and cnord.eu_always='0'  and cnord.flag_stop='0' 
+           left join bd_supply supply on supply.code = cpord.code_supply and supply.del_flag='0'  
+      where  cpord.eu_ordtype='1'  
+      
+      union all 
+      
+      select cphase.name_phase,
+             cphase.days_min,
+             cphase.days_max,
+             cphase.sortno,
+             recphase.pk_recphase,
+             cpord.seq,
+             cpord.pk_cpord,
+             cpord.pk_ord as cp_pkord,
+             cpord.pk_parent,
+             cpord.code_ordtype,
+             cpord.eu_ordtype,
+             cpord.code_supply as cp_code_supply,
+             supply.flag_pivas,
+             cpord.code_freq as cp_code_freq,
+             cpord.eu_always as cp_eu_always,
+             cpord.dosage as cp_dosage,
+             cpord.pk_unit_dose as cp_unit_dose,
+             cpord.quan as cp_quan,
+             cpord.pk_unit as cp_unit,
+             cpord.flag_nec,
+             cpord.dt_ristype as cp_ristype,
+             cnord.date_start,
+             bdord.code as code_cpord,
+             bdord.name as name_cpord,
+             '' as spec,
+             bdord.flag_cg as flag_bl,
+             bdord.flag_pd as flag_durg,
+             cnord.name_ord ,
+             cnord.eu_status_ord,
+             cnord.dosage,
+             cnord.pk_unit_dos,
+             cnord.quan,
+             cnord.pk_unit,
+             cnord.code_supply,
+             cnord.code_freq,
+             cnord.pk_dept_exec,
+             cnord.date_stop,
+             cnord.flag_emer,
+             cnord.flag_thera,
+             cnord.flag_prev,
+             cnord.flag_fit,
+             cnord.pk_cnord,
+             cnord.pk_ord,
+             cnord.code_apply,
+             cnord.ordsn,
+             cnord.ordsn_parent,
+             cnord.eu_always,
+             recdt.pk_recdt,
+             recdt.eu_status as recdt_eu_status,
+             '' as pk_unit_min,
+             '' as pk_unit_wt,
+             '' as pk_unit_vol,
+             0  as weight,
+             0  as vol                                                  
+      from cp_temp_ord cpord 
+           inner join cp_temp_phase cphase on  cphase.pk_cpphase = cpord.pk_cpphase and cphase.del_flag='0'  
+           inner join bd_ord bdord  on bdord.pk_ord = cpord.pk_ord and bdord.del_flag='0'  
+           inner join cp_rec rec on rec.pk_cptemp = cphase.pk_cptemp and rec.del_flag='0' and rec.pk_cprec=#{pkCprec,jdbcType=CHAR}  
+           inner join cp_rec_phase recphase on recphase.pk_cprec = rec.pk_cprec and recphase.del_flag='0' and  recphase.eu_status='1'     
+           inner join cp_rec_dt recdt on recdt.pk_recphase = recphase.pk_recphase   and recdt.pk_cpord = cpord.pk_cpord and recdt.del_flag='0' and recdt.eu_status ='1' 
+           inner join cn_order cnord on cnord.pk_cnord = recdt.pk_cnord and cnord.del_flag='0'  and cnord.eu_always='0'  and cnord.flag_stop='0' 
+           left join bd_supply supply on supply.code = cpord.code_supply and supply.del_flag='0' 
+      where cpord.eu_ordtype='0' 
+      ) recdt 
+      order by  recdt.sortno,recdt.seq  
+   </select>
+</mapper>

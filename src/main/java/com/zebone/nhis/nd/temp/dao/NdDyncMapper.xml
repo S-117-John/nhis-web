@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.nd.temp.dao.NdDyncMapper">
+	<select id="queryRange" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.nd.temp.vo.NdDyncRangeVo">
+		select rg.*,de.name as de_name 
+	    from  nd_dync_range rg
+		left outer join emr_data_element de on rg.code_de=de.code
+		where rg.pk_org = #{pkOrg,jdbcType=CHAR} 
+			<if test="spcode != null  and  spcode != ''"><!-- 支持拼音码与列名模糊检索 -->
+				 and (rg.name like '%${spcode}%' or rg.spcode like '${spcode}%')  
+			</if>
+			<if test="spcode == null  or  spcode == ''">
+				 <if test="pkDept != null  and  pkDept != ''">
+				   <if test=' isQry == "1" '><!-- 精确查询 -->
+				      and rg.pk_dept = #{pkDept,jdbcType=CHAR} 
+				   </if>
+				   <if test=' isQry == "0" '><!-- 匹配全局及精确的科室查询 -->
+				      and (rg.pk_dept = #{pkDept,jdbcType=CHAR} or rg.pk_dept is null)
+				   </if>
+			     </if>
+			     <if test="name != null  and  name != ''">
+				   and rg.name like '%${name}%'
+			    </if>
+			    <if test="dename != null  and  dename != ''">
+				   and ( de.name like '%${dename}%'  or rg.code_de like '%${dename}%')  
+			    </if>
+			</if>
+			order by rg.sortno,rg.name 
+	</select>	
+</mapper>

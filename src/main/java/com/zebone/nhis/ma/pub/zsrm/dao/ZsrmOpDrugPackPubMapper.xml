@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.zsrm.dao.ZsrmOpDrugPackPubMapper">
+    <select id="getPresTypeByPk" parameterType="java.util.List" resultType="DynaBean">
+        select
+        pres.DT_PRESTYPE,occ.PK_PRESOCC
+        from EX_PRES_OCC occ
+        inner join CN_PRESCRIPTION pres on pres.PK_PRES=occ.PK_PRES
+        where occ.PK_PRESOCC in
+        <foreach collection="list" separator="," open="(" item="item" index="index" close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+        group by  pres.DT_PRESTYPE, occ.PK_PRESOCC
+    </select>
+
+    <!-- 订单号构成 从后往前2位窗口号+1位就诊类型+13位（补位）CODE_ST-->
+    <select id="getWesOrder" resultType="java.lang.String" parameterType="com.zebone.nhis.ma.pub.zsrm.vo.DrugQryVo">
+        select distinct lpad(st.CODE_ST||nvl(st.EU_PVTYPE, '1')||lpad(nvl(occ.WINNO_CONF, '0'), 2, '0'), 16,'0') order_id
+        from BL_SETTLE st
+        inner join EX_PRES_OCC occ on st.PK_SETTLE=occ.PK_SETTLE
+        inner join BD_OU_DEPT dept on occ.pk_dept_ex=dept.PK_DEPT
+        where occ.PK_PRESOCC in
+        <foreach collection="pkPressocc" separator="," open="(" item="item" index="index" close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+        <if test="configs!=null and configs.size()>0">
+            and (dept.CODE_DEPT,occ.WINNO_CONF) in
+            <foreach collection="configs" item="conf" index="index" open="(" separator="," close=")">
+                (#{conf.codeDept,jdbcType=VARCHAR},#{conf.wino,jdbcType=VARCHAR})
+            </foreach>
+        </if>
+        and occ.eu_status in ('0','1','2','8')
+    </select>
+
+    <sql id="qryBdpdStoreSql">
+        select lpad(pd.code_hp,6,'0') code
+             ,replace(pd.CODE_EXT,' ','') code_ISN
+             ,(case when pd.PK_UNIT_PACK=pack.PK_UNIT then '01' else '00' end) bs
+             ,pd.NAME,pd.SPCODE,al.D_CODE,pack.PACK_SIZE,pd.SPEC,fac.NAME factory
+             ,'1' flag_in
+             ,pd.name name_sp
+             ,round(pd.PRICE/pd.PACK_SIZE*pack.PACK_SIZE,5) price
+             ,un.NAME unit
+             ,(case when pd.DEL_FLAG ='1' then '0' else '1' end) flag_del
+             ,round(pd.PRICE/pd.PACK_SIZE*pack.PACK_SIZE,5) price_cost
+            ,row_number() over (partition by sto.PK_PDSTORE order by sto.ts desc) idx
+        from BD_PD_STORE sto
+         inner join BD_PD_STORE_PACK pack on sto.PK_PDSTORE=pack.PK_PDSTORE and pack.FLAG_DEF='1'
+         inner join BD_PD pd on sto.PK_PD=pd.PK_PD
+         inner join BD_OU_DEPT dept on sto.PK_DEPT=dept.PK_DEPT
+         left join BD_PD_AS al on pd.PK_PD=al.PK_PD and al.DEL_FLAG='0'
+         inner join BD_UNIT un on pack.PK_UNIT=un.PK_UNIT
+         left join BD_FACTORY fac on pd.PK_FACTORY=fac.PK_FACTORY
+    </sql>
+
+    <select id="getBdPdStoreInfoByPk" resultType="com.zebone.nhis.ma.pub.zsrm.vo.MachDrug">
+        select * from(
+            <include refid="qryBdpdStoreSql"/>
+            where (sto.PK_PDSTORE in
+            <trim suffixOverrides=" OR sto.PK_PDSTORE in()">
+                <foreach collection="pkPdstores" item="pkItem" index="index" open="(" close=")">
+                    <if test="index != 0">
+                        <choose>
+                            <when test="index % 1000 == 999">
+                                ) OR sto.PK_PDSTORE in (
+                            </when>
+                            <otherwise>
+                                ,
+                            </otherwise>
+                        </choose>
+                    </if>
+
+                    #{pkItem,jdbcType=VARCHAR}
+                </foreach>
+            </trim>
+            )
+        ) tmp where tmp.idx=1
+
+    </select>
+</mapper>

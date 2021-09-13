@@ -1,0 +1,55 @@
+server:
+  port: 8081
+  servlet:
+    context-path: /nhis
+    encoding:
+      charset: UTF-8
+  tomcat:
+    additional-tld-skip-patterns: '*.jar'
+
+spring:
+  profiles:
+    active: @profileActive@
+    include: ws
+
+  aop:
+  #开启切面，不必再加入@EnableAspectJAutoProxy
+    auto: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+  data:
+    rest:
+      default-media-type: application/json
+  mvc:
+    view:
+      prefix: /WEB-INF/
+      suffix: .jsp
+    static-path-pattern: /ui/**
+
+  freemarker:
+    expose-request-attributes: true
+    expose-session-attributes: true
+    expose-spring-macro-helpers: false
+    request-context-attribute: request
+    suffix: .html
+  redis:
+    host: ${redis.host}
+    port: ${redis.port}
+    password: ${redis.pass}
+    connect-timeout: 10000
+    lettuce:
+      pool:
+        max-idle: ${redis.maxIdle}
+        max-active: ${redis.maxActive}
+        max-wait: ${redis.maxWait}
+  web:
+    resources:
+      static-locations: classpath:META-INF/public-web-resources/zbui/, classpath:/META-INF/resources/, classpath:/static/
+
+mybatis:
+  config-location: classpath:mybatisConfig.xml
+cxf:
+  path: /static/webservice
+logging:
+  config: classpath:logback-${spring.profiles.active}.xml

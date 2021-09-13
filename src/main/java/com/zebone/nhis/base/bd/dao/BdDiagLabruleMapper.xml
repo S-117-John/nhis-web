@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.BdDiagLabruleMapper">
+
+    <select id="getBdDiagLabruleList" parameterType="java.lang.String" resultType="DynaBean">
+       select rul.PK_LABRULE,
+       rul.PK_ORG,
+       dres.NAME dres_name,
+	   rul.DT_LABRESULT,
+       dpos.NAME dpos_name,
+	   rul.DT_FETALPOS,
+       dtyp.NAME dtyp_name,		 			
+	   rul.DT_LABORTYPE,
+       rul.CODE_ICD,
+       rul.NAME_ICD,
+       rul.CODE_ADD,
+       rul.NAME_ADD,
+       rul.CODE_ADD1,
+       rul.NAME_ADD1,
+	   diag.pk_Diag CODE_ICD_PK, 
+	   diag1.pk_Diag CODE_ADD_PK,
+	   diag2.pk_Diag CODE_ADD1_PK,
+       rul.NOTE
+       from BD_DIAG_LABRULE rul
+       inner join BD_DEFDOC dres on dres.CODE = rul.DT_LABRESULT and dres.CODE_DEFDOCLIST = '140021'
+       inner join BD_DEFDOC dpos on dpos.CODE = rul.DT_FETALPOS and dpos.CODE_DEFDOCLIST = '140015'
+       inner join BD_DEFDOC dtyp on dtyp.CODE = rul.DT_LABORTYPE and dtyp.CODE_DEFDOCLIST = '140020'
+       left join BD_TERM_DIAG diag on diag.diagcode = rul.CODE_ICD
+	   left join BD_TERM_DIAG diag1 on diag1.diagcode = rul.CODE_ADD
+	   left join BD_TERM_DIAG diag2 on diag2.diagcode = rul.CODE_ADD1			 
+       where rul.DEL_FLAG = '0' 
+       <if test="value != null and value !='' ">          
+          and (dres.name like #{value} or dpos.name like  #{value} or dtyp.name like #{value} or rul.NAME_ICD like  #{value})
+       </if>  
+       Order By rul.ts asc     
+    </select>
+</mapper>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.mz.pub.dao.ZsbaOpWinnoMapper">
+    <select id="getPresUsecate" parameterType="java.util.List" resultType="com.zebone.nhis.ma.pub.zsrm.vo.DrugPresUsecateVo">
+        select ord.PK_PRES,bsc.eu_usecate,ord.ordsn from cn_prescription pres
+        inner join CN_ORDER ord on ord.PK_PRES=pres.PK_PRES
+        left join bd_supply sup on sup.CODE=ord.CODE_SUPPLY
+        inner join BD_SUPPLY_CLASS bsc on bsc.PK_SUPPLYCATE=sup.PK_SUPPLYCATE
+        where pres.PK_PRES in
+        <foreach collection="list" close=")" open="(" index="index" item="item" separator="," >
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+        and bsc.eu_usecate is not null
+        order by ord.PK_PRES
+    </select>
+
+    <select id="getDeptExByUsecate" parameterType="java.util.Map" resultType="DynaBean">
+        SELECT
+            count(1) cnt,du.PK_DEPT,ex.name_dept name_dept_ex,ob.pk_dept pk_dept_ap,du.code  winno_conf,  dul.code winno_prep,du.eu_usecate
+        FROM bd_dept_unit du
+        inner join bd_ou_dept ex on ex.pk_dept=du.pk_dept
+        left JOIN bd_dept_unit_obj ob ON du.pk_deptunit = ob.pk_deptunit
+        <if test='areaSysparam==null or areaSysparam=="" or  areaSysparam=="0"' >
+            AND ob.eu_objtype = '0'
+        </if>
+        <if test='areaSysparam!=null and areaSysparam!="" and areaSysparam=="1"' >
+            AND ob.eu_objtype = '1'
+        </if>
+        left JOIN ex_pres_occ pres ON du.pk_dept = pres.pk_dept_ex
+                                           AND du.code = pres.winno_conf
+                                           AND pres.flag_reg = '1'
+                                           AND pres.flag_conf = '0'
+                                           AND pres.flag_canc = '0'
+        LEFT OUTER JOIN bd_dept_unit dul ON du.pk_deptunit_rl = dul.pk_deptunit
+        WHERE du.eu_unittype = '1'
+          AND du.eu_butype = '1'
+          AND du.flag_online = '1'
+          AND du.del_flag = '0'
+          <if test='euUsecate!=null and euUsecate!=""'>
+              and du.eu_usecate = #{euUsecate,jdbcType=VARCHAR}
+          </if>
+        group by du.PK_DEPT,ob.pk_dept,ex.name_dept,du.code,dul.code,du.eu_usecate
+        order by count(1),ob.pk_dept
+    </select>
+
+    <select id="getPresAtt" parameterType="java.util.List" resultType="com.zebone.nhis.ma.pub.zsrm.vo.PressAttInfo">
+        select
+            occ.pk_pres,
+            <!-- mod(dt.QUAN_CG*dt.PACK_SIZE,pd.PACK_SIZE) is_quan, -->
+            case when (pd.PACK_SIZE is null or pd.PACK_SIZE=0) then (dt.QUAN_CG*dt.PACK_SIZE) else (dt.QUAN_CG*dt.PACK_SIZE)%pd.PACK_SIZE end is_quan,
+            nvl(attdef.VAL_ATT,0)                     att_val,
+        nvl(attwin.VAL_ATT,'')                        att_win
+        from EX_PRES_OCC_DT dt
+        inner join EX_PRES_OCC occ on occ.PK_PRESOCC=dt.PK_PRESOCC
+        inner join BD_PD pd on pd.PK_PD=dt.PK_PD
+        left join (select pk_pd,att.VAL_ATT from BD_PD_ATT att
+            inner join BD_PD_ATT_DEFINE def on def.PK_PDATTDEF=att.PK_PDATTDEF where CODE_ATT='0517'
+        ) attdef  on attdef.PK_PD=pd.PK_PD
+        left join (select pk_pd, att.VAL_ATT
+                from BD_PD_ATT att
+                inner join BD_PD_ATT_DEFINE def on def.PK_PDATTDEF = att.PK_PDATTDEF
+                where CODE_ATT = '0519'
+        ) attwin on attwin.PK_PD = pd.PK_PD
+        where occ.PK_PRES in
+            <foreach collection="list" separator="," item="item" index="index" open="(" close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+    </select>
+
+    <select id="getOpCgdtAtt" parameterType="java.util.List" resultType="com.zebone.nhis.ma.pub.zsrm.vo.PressAttInfo">
+        select dt.pk_pres,
+               <!-- mod(dt.QUAN * dt.PACK_SIZE, pd.PACK_SIZE) is_quan, -->
+               case when (pd.PACK_SIZE is null or pd.PACK_SIZE=0) then (dt.QUAN*dt.PACK_SIZE) else (dt.QUAN*dt.PACK_SIZE)%pd.PACK_SIZE end is_quan,
+               nvl(attdef.VAL_ATT, 0)                    att_val,
+               nvl(attwin.VAL_ATT,'')                    att_win
+        from BL_OP_DT dt
+                 inner join BD_PD pd on pd.PK_PD = dt.PK_PD
+                 left join (select pk_pd, att.VAL_ATT
+                            from BD_PD_ATT att
+                                     inner join BD_PD_ATT_DEFINE def on def.PK_PDATTDEF = att.PK_PDATTDEF
+                            where CODE_ATT = '0517'
+                ) attdef on attdef.PK_PD = pd.PK_PD
+                left join (select pk_pd, att.VAL_ATT
+                        from BD_PD_ATT att
+                        inner join BD_PD_ATT_DEFINE def on def.PK_PDATTDEF = att.PK_PDATTDEF
+                        where CODE_ATT = '0519'
+                ) attwin on attwin.PK_PD = pd.PK_PD
+        where dt.FLAG_PD = '1'
+          and dt.PK_PRES is not null
+          and dt.PK_CNORD is not null
+          and dt.QUAN > 0
+          and dt.PK_SETTLE is null
+          and dt.PK_PRES in
+        <foreach collection="list" separator="," item="item" index="index" open="(" close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+</mapper>

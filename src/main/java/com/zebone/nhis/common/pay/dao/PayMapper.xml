@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.common.pay.dao.PayMapper">
+	<!-- 查询订单列表 -->
+	<select id="getOrderListSqlSer" parameterType="java.util.Map"
+		resultType="Dynabean">
+		SELECT
+		pay.PK_EXTPAY,
+		pay.AMOUNT,
+		pay.out_trade_no,
+		pay.BODY_PAY,
+		pay.desc_pay,
+		pay.DATE_PAY,
+		pay.DETAIL_PAY,
+		pay.EU_PAYTYPE,
+		pay.flag_pay,
+		pay.SERIAL_NUM,
+		PI.NAME_PI,
+		SUM (pay1.amount) refund_amount
+		FROM
+		bl_ext_pay pay
+		LEFT OUTER JOIN PI_MASTER pi ON PAY.PK_PI = PI.PK_PI
+		LEFT OUTER JOIN BL_EXT_PAY pay1 ON pay.out_trade_no = pay1.out_trade_no
+		AND pay1.eu_paytype IN (1, 2)
+		AND pay1.flag_pay = 1
+		WHERE
+		pay.flag_pay = 1
+		AND pay.EU_PAYTYPE IN (7, 8)
+		<if test="outTradeNo != null and outTradeNo != ''">
+		AND pay.out_trade_no LIKE '%' || #{outTradeNo,jdbcType=VARCHAR}  || '%'
+		</if>
+		<if test="namePi != null and namePi != ''">
+		AND PI.name_pi LIKE '%' || #{namePi,jdbcType=VARCHAR} || '%'
+		</if>
+		<if test="serialNum != null and serialNum != ''">
+		AND pay.serial_num LIKE '%' ||#{serialNum,jdbcType=VARCHAR}  || '%'
+		</if>
+		<if test="datePay != null and datePay != ''">
+		AND convert(varchar(10),pay.date_pay, 120) = #{datePay,jdbcType=VARCHAR} 
+		</if>
+		GROUP BY
+		pay.PK_EXTPAY,
+		pay.AMOUNT,
+		pay.out_trade_no,
+		pay.BODY_PAY,
+		pay.desc_pay,
+		pay.DATE_PAY,
+		pay.DETAIL_PAY,
+		pay.EU_PAYTYPE,
+		pay.flag_pay,
+		pay.SERIAL_NUM,
+		PI.NAME_PI
+		ORDER BY
+		refund_amount DESC,
+		pay.date_pay DESC
+	</select>
+	<select id="getOrderListOracle" parameterType="java.util.Map"
+		resultType="Dynabean">
+		SELECT
+		pay.PK_EXTPAY,
+		pay.AMOUNT,
+		pay.out_trade_no,
+		pay.BODY_PAY,
+		pay.desc_pay,
+		pay.DATE_PAY,
+		pay.DETAIL_PAY,
+		pay.EU_PAYTYPE,
+		pay.flag_pay,
+		pay.SERIAL_NUM,
+		PI.NAME_PI,
+		SUM (pay1.amount) refund_amount
+		FROM
+		bl_ext_pay pay
+		LEFT OUTER JOIN PI_MASTER pi ON PAY.PK_PI = PI.PK_PI
+		LEFT OUTER JOIN BL_EXT_PAY pay1 ON pay.out_trade_no = pay1.out_trade_no
+		AND pay1.eu_paytype IN (1, 2)
+		AND pay1.flag_pay = 1
+		WHERE
+		pay.flag_pay = 1
+		AND pay.EU_PAYTYPE IN (7, 8)
+		<if test="outTradeNo != null and outTradeNo != ''">
+		AND pay.out_trade_no LIKE '%' || #{outTradeNo,jdbcType=VARCHAR}  || '%'
+		</if>
+		<if test="namePi != null and namePi != ''">
+		AND PI.name_pi LIKE '%' || #{namePi,jdbcType=VARCHAR} || '%'
+		</if>
+		<if test="serialNum != null and serialNum != ''">
+		AND pay.serial_num LIKE '%' ||#{serialNum,jdbcType=VARCHAR}  || '%'
+		</if>
+		<if test="datePay != null and datePay != ''">
+		AND to_char(pay.date_pay, 'yyyy-mm-dd') = #{datePay,jdbcType=VARCHAR} 
+		</if>
+		GROUP BY
+		pay.PK_EXTPAY,
+		pay.AMOUNT,
+		pay.out_trade_no,
+		pay.BODY_PAY,
+		pay.desc_pay,
+		pay.DATE_PAY,
+		pay.DETAIL_PAY,
+		pay.EU_PAYTYPE,
+		pay.flag_pay,
+		pay.SERIAL_NUM,
+		PI.NAME_PI
+		ORDER BY
+		refund_amount DESC,
+		pay.date_pay DESC
+	</select>
+
+</mapper>

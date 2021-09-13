@@ -1,0 +1,785 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.ns.dao.DrugRetreatMapper2">
+
+<select id="queryOccListBySyx" parameterType="java.lang.String" resultType="DynaBean">
+	 select ord.pk_org_exec,
+  			occ.pk_dept_occ pk_dept_exec,<!-- 执行科室 跟着执行单走 -->
+  			dept.name_dept name_dept_exec,
+  			occ.pk_exocc,
+  			occ.date_plan,
+  			occ.date_plan date_plan_dis,
+  			pv.bed_no,
+  			pv.name_pi,
+  			pv.pk_pv,
+  			pd.eu_muputype,
+  			ord.name_ord,
+  			ord.pk_cnord,
+  			occ.quan_occ,
+  			unit.name name_unit,
+  			occ.pack_size,
+  			freq.name name_freq,
+  			freq.cnt,
+  			sup.name name_supply,
+  			ord.first_num,
+  			ord.last_num,
+  			ord.eu_always,
+  			ord.date_stop,
+  			ord.date_start,
+  			ord.spec,
+			ord.price_cg,
+  			occ.name_emp_canc,
+  			occ.date_canc,
+  			occ.flag_pivas,
+  			occ.pk_unit,
+  			dt.pk_pdapdt,
+  			nvl(rtn.quan, 0) as rtn_num,
+  			nvl(dts.quan_min,0)/occ.pack_size as dcl_num,
+  			app.code_apply code_ap,
+  			dt.quan_pack quan_ap,
+  			unitAp.name name_unit_ap,
+  			dt.pack_size pack_size_ap,
+  			de.code_de,
+  			de.quan_pack quan_de,
+  			unitDe.name name_unit_de, 
+  			de.pack_size pack_size_de,
+  			ord.ordsn,
+  			ord.ordsn_parent  ,
+			deapp.NAME_DEPT as name_dept_app,
+	        ord.PK_DEPT as pk_dept_app,
+			ord.PK_DEPT_NS as pk_dept_ns_app
+	   from ex_order_occ occ
+      inner join cn_order ord on occ.pk_cnord = ord.pk_cnord
+	  inner join BD_OU_DEPT deapp on deapp.PK_DEPT=ord.PK_DEPT
+      inner join bd_pd pd on pd.pk_pd = ord.pk_ord
+      inner join ex_pd_apply_detail dt on occ.pk_pdapdt = dt.pk_pdapdt
+      inner join ex_pd_apply app on app.pk_pdap = dt.pk_pdap
+      inner join pv_encounter pv on pv.pk_pv = occ.pk_pv
+	  <if test="pkDept != null  and  pkDept != ''">
+		 and pv.PK_DEPT = ord.PK_DEPT
+	  </if>
+      inner join bd_term_freq freq on freq.code = ord.code_freq
+       left join bd_unit unit on unit.pk_unit = occ.pk_unit
+       left join bd_ou_dept dept on dept.pk_dept = occ.pk_dept_occ
+       left join bd_supply sup on sup.code = ord.code_supply
+       left join ex_pd_de de on de.pk_pdapdt = dt.pk_pdapdt
+       left join bd_unit unitDe on unitDe.pk_unit = de.pk_unit
+       left join bd_unit unitAp on unitAp.pk_unit = dt.pk_unit
+       left join (select sum(y.quan) quan, y.pk_cgip_back 
+       		        from bl_ip_dt y where y.quan &lt; 0 group by y.pk_cgip_back) rtn on rtn.pk_cgip_back = dt.pk_cgip
+       left join (select sum(dtBack.quan_min) quan_min, dtBack.pk_cgip
+               	    from ex_pd_apply_detail dtBack
+                   inner join ex_pd_apply apBack on apBack.pk_pdap = dtBack.pk_pdap
+              where apBack.eu_status = '0' and apBack.flag_cancel = '0'
+                and (dtBack.flag_stop = '0' or dtBack.flag_stop is null)
+                and (dtBack.flag_canc = '0' or dtBack.flag_canc is null)
+                and dtBack.eu_direct = -1 and dtBack.flag_de != '1'
+              group by dtBack.pk_cgip) dts on dts.pk_cgip = dt.pk_cgip
+      where occ.eu_status = '9' <!-- 取消执行 -->
+        and dt.flag_finish = '1' and dt.flag_canc = '0' and dt.flag_stop = '0'<!-- 已发药 -->
+        and occ.flag_base = '0' <!-- 基数药 不可退 --> 
+        and occ.flag_self = '0' <!-- 自备药 不可退 -->
+        and (occ.pk_pdback is null or occ.pk_pdback like '% %') 
+        and dt.quan_min &gt; 0 
+  	    and pv.pk_pv in 
+    <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+          	#{pkpv}
+    </foreach> 
+    <if test=' "0"==flagPo '> <!-- 非口服类 -->
+       and (ord.code_supply not like '01%' and sup.dt_excardtype &lt;&gt; '2')
+    </if>
+    <if test=' "1"==flagPo '> <!-- 口服类 -->
+       and (ord.code_supply like '01%' or sup.dt_excardtype = '2')
+    </if>
+    <if test="flagMedout != null  and  flagMedout != ''"> <!-- 出院带药 -->
+       and ord.flag_medout = #{flagMedout,jdbcType=CHAR} 
+    </if>
+    <if test="euAlways != null  and  euAlways != ''"> <!-- 临时|长期 -->
+       and ord.eu_always = #{euAlways,jdbcType=CHAR} 
+   </if>
+
+	order by pv.bed_no,pv.name_pi,occ.date_plan,ord.ordsn_parent,ord.ordsn
+</select>
+
+<select id="queryCgListByOcc" parameterType="java.lang.String" resultType="DynaBean">
+	select  pv.pk_pv,
+       pv.bed_no,
+       pv.name_pi,
+       cg.pk_item,
+       cg.date_cg,
+       cg.name_cg,
+       cg.spec,
+       case when (cg.quan + nvl(bk.quan,0)-nvl(apback.quan,0))&lt;0 then 0 else cg.quan + nvl(bk.quan,0)-nvl(apback.quan,0) end as quan,  <!--可退数量-->
+       case  when sum(occ.quan_occ) &gt;(case when (cg.quan + nvl(bk.quan,0)-nvl(apback.quan,0))&lt;0 then 0 else cg.quan + nvl(bk.quan,0)-nvl(apback.quan,0) end) 
+       then (case when (cg.quan + nvl(bk.quan,0)-nvl(apback.quan,0))&lt;0 then 0 else cg.quan + nvl(bk.quan,0)-nvl(apback.quan,0) end) 
+       else sum(occ.quan_occ)  end as quan_rtn,
+       cg.price,
+       cg.price*(sum(occ.quan_occ)) as amount,
+       cg.pk_unit,
+       unit.name as name_unit,
+       occUnit.name as name_unit_occ,
+       cg.amount + nvl(bk.amount,0)-nvl(apback.amount,0) amt,
+       cg.pk_ordexdt,
+       cg.pk_cgip,
+       ap.pk_pdapdt,
+       ord.ordsn_parent,
+       ord.pk_cnord,
+       ord.ordsn,
+       de.date_de,
+       de.pk_dept_de,
+       cg.pk_pres,
+       ord.flag_self,
+ 	   ord.flag_base,
+ 	   ord.flag_pivas,
+ 	   ord.flag_emer,
+ 	   ord.flag_medout,
+ 	   cg.pk_pd,
+ 	   cg.batch_no,
+ 	   cg.date_expire,
+ 	   cg.pack_size,
+ 	   occ.pack_size as pack_size_occ,
+ 	   cg.price_cost,
+	   ord.pack_size ord_pack_size,
+	   de.pack_size de_pack_size
+  from ex_order_occ occ
+       inner join ex_pd_apply_detail ap on occ.pk_pdapdt=ap.pk_pdapdt
+       inner join ex_pd_de de on ap.pk_pdapdt=de.pk_pdapdt
+       inner join bl_ip_dt cg on de.pk_pdde=cg.pk_ordexdt 
+       inner join cn_order ord on ord.pk_cnord = de.pk_cnord 
+       inner join pv_encounter pv on cg.pk_pv=pv.pk_pv 
+       inner join bd_unit unit on unit.pk_unit = cg.pk_unit 
+       inner join bd_unit occUnit on occUnit.pk_unit = occ.pk_unit
+	   left outer join (select back.pk_cgip_back,
+	                               sum(back.quan) quan,
+	                               sum(back.amount) amount
+	                          from bl_ip_dt back
+	                         where back.pk_pv in 
+	                         <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+                             	#{pkpv}
+                             </foreach> 
+	                         and  back.flag_pd='1'
+	                         and back.quan &lt; 0
+	                      group by back.pk_cgip_back) bk on cg.pk_cgip=bk.pk_cgip_back
+	   left outer join (select sum(apbk.quan_pack) quan,
+                               sum(apbk.amount) amount,
+                               apbk.pk_cgip
+                          from ex_pd_apply_detail apbk
+                         where apbk.eu_direct='-1' and
+                               apbk.flag_canc='0' and
+                               apbk.flag_finish='0' and 
+                               apbk.flag_stop='0' and 
+                               apbk.pk_cnord in 
+                                <foreach item="pkCnord" index="index" collection="pkCnords" open="(" separator="," close=")">
+                             	#{pkCnord}
+                               </foreach>                           
+                        group by apbk.pk_cgip) apback on cg.pk_cgip=apback.pk_cgip
+	                      
+	 where occ.pk_exocc in 
+	        <foreach item="pkEx" index="index" collection="pkExoccs" open="(" separator="," close=")">
+                     #{pkEx}
+           </foreach> 
+	       and occ.flag_canc='1' 
+	       and occ.pk_pdback is null 
+	       and cg.flag_settle='0'
+	       and cg.quan &gt;0 
+	 group by pv.pk_pv,
+       pv.bed_no,
+       pv.name_pi,
+       cg.pk_item,
+       cg.date_cg,
+       cg.name_cg,
+       cg.spec,
+       cg.quan, 
+       cg.price,
+       bk.quan,
+       cg.pk_unit,
+       unit.name,
+       occUnit.name,
+       cg.amount,
+       cg.pk_ordexdt,
+       cg.pk_cgip,
+       ap.pk_pdapdt,
+       ord.ordsn_parent,
+       ord.pk_cnord,
+       ord.ordsn,
+       de.date_de,
+       de.pk_dept_de,
+       cg.pk_pres,
+       ord.flag_self,
+ 	   ord.flag_base,
+ 	   ord.flag_pivas,
+ 	   ord.flag_emer,
+ 	   ord.flag_medout,
+ 	   cg.pk_pd,
+ 	   cg.batch_no,
+ 	   cg.date_expire,
+ 	   cg.pack_size,
+ 	   occ.pack_size,
+ 	   cg.price_cost,
+ 	   bk.amount,
+ 	   apback.amount,
+ 	   apback.quan,
+	   ord.pack_size,
+	   de.pack_size
+	 order by pv.bed_no,pv.name_pi,ord.ordsn_parent,ord.ordsn
+</select>
+
+	<select id="queryCgListByOccForOrcl" parameterType="java.lang.String" resultType="DynaBean">
+		select  pv.pk_pv,
+		pv.bed_no,
+		pv.name_pi,
+		cg.pk_item,
+		cg.date_cg,
+		cg.name_cg,
+		cg.spec,
+		case when (cg.quan + nvl(bk.quan,0)-nvl(apback.quan,0))&lt;0 then 0 else cg.quan + nvl(bk.quan,0)-nvl(apback.quan,0) end as quan,  <!--可退数量-->
+		case when pd.eu_muputype = 0
+			 then (case  when sum(ceil(occ.quan_occ)) &gt;(case when (ceil(cg.quan) + ceil(nvl(bk.quan,0))-ceil(nvl(apback.quan,0))) &gt; 0 then 0
+			 													else ceil(cg.quan) + ceil(nvl(bk.quan,0))-ceil(nvl(apback.quan,0)) end)
+						 then (case when (ceil(cg.quan) + ceil(nvl(bk.quan,0))-ceil(nvl(apback.quan,0))) &gt; 0 then 0
+						 else ceil(cg.quan) + ceil(nvl(bk.quan,0))-ceil(nvl(apback.quan,0)) end)
+			 else sum(ceil(occ.quan_occ))  end)
+		ELSE(case  when sum(occ.quan_occ) &gt;(case when ceil(cg.quan + nvl(bk.quan,0)-nvl(apback.quan,0)) &gt; 0 then 0
+													else ceil(cg.quan + nvl(bk.quan,0)-nvl(apback.quan,0)) end)
+				   then (case when ceil((cg.quan + nvl(bk.quan,0)-nvl(apback.quan,0)) &gt; 0 then 0
+				   else ceil(cg.quan + nvl(bk.quan,0)-nvl(apback.quan,0)) end)
+		else ceil(sum(occ.quan_occ))  end) end as quan_rtn,
+		cg.price,
+		cg.price*(sum(occ.quan_occ)) as amount,
+		cg.pk_unit,
+		unit.name as name_unit,
+		occUnit.name as name_unit_occ,
+		cg.amount + nvl(bk.amount,0)-nvl(apback.amount,0) amt,
+		cg.pk_ordexdt,
+		cg.pk_cgip,
+		ap.pk_pdapdt,
+		ord.ordsn_parent,
+		ord.pk_cnord,
+		ord.ordsn,
+		de.date_de,
+		de.pk_dept_de,
+		cg.pk_pres,
+		ord.flag_self,
+		ord.flag_base,
+		ord.flag_pivas,
+		ord.flag_emer,
+		ord.flag_medout,
+		cg.pk_pd,
+		cg.batch_no,
+		cg.date_expire,
+		cg.pack_size,
+		occ.pack_size as pack_size_occ,
+		cg.price_cost,
+		ord.pack_size ord_pack_size,
+		de.pack_size de_pack_size
+		from ex_order_occ occ
+		inner join ex_pd_apply_detail ap on occ.pk_pdapdt=ap.pk_pdapdt
+		inner join ex_pd_de de on ap.pk_pdapdt=de.pk_pdapdt
+		inner join bl_ip_dt cg on de.pk_pdde=cg.pk_ordexdt
+		inner join cn_order ord on ord.pk_cnord = de.pk_cnord
+		INNER JOIN bd_pd pd ON pd.pk_pd = ord.pk_ord
+		inner join pv_encounter pv on cg.pk_pv=pv.pk_pv
+		inner join bd_unit unit on unit.pk_unit = cg.pk_unit
+		inner join bd_unit occUnit on occUnit.pk_unit = occ.pk_unit
+		left outer join (select back.pk_cgip_back,
+		sum(back.quan) quan,
+		sum(back.amount) amount
+		from bl_ip_dt back
+		where back.pk_pv in
+		<foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+			#{pkpv}
+		</foreach>
+		and  back.flag_pd='1'
+		and back.quan &lt; 0
+		group by back.pk_cgip_back) bk on cg.pk_cgip=bk.pk_cgip_back
+		left outer join (select sum(apbk.quan_pack) quan,
+		sum(apbk.amount) amount,
+		apbk.pk_cgip
+		from ex_pd_apply_detail apbk
+		where apbk.eu_direct='-1' and
+		apbk.flag_canc='0' and
+		apbk.flag_finish='0' and
+		apbk.flag_stop='0' and
+		apbk.pk_cnord in
+		<foreach item="pkCnord" index="index" collection="pkCnords" open="(" separator="," close=")">
+			#{pkCnord}
+		</foreach>
+		group by apbk.pk_cgip) apback on cg.pk_cgip=apback.pk_cgip
+
+		where occ.pk_exocc in
+		<foreach item="pkEx" index="index" collection="pkExoccs" open="(" separator="," close=")">
+			#{pkEx}
+		</foreach>
+		and occ.flag_canc='1'
+		and occ.pk_pdback is null
+		and cg.flag_settle='0'
+		and cg.quan &gt;0
+		group by pv.pk_pv,
+		pv.bed_no,
+		pv.name_pi,
+		cg.pk_item,
+		pd.eu_muputype,
+		cg.date_cg,
+		cg.name_cg,
+		cg.spec,
+		cg.quan,
+		cg.price,
+		bk.quan,
+		cg.pk_unit,
+		unit.name,
+		occUnit.name,
+		cg.amount,
+		cg.pk_ordexdt,
+		cg.pk_cgip,
+		ap.pk_pdapdt,
+		ord.ordsn_parent,
+		ord.pk_cnord,
+		ord.ordsn,
+		de.date_de,
+		de.pk_dept_de,
+		cg.pk_pres,
+		ord.flag_self,
+		ord.flag_base,
+		ord.flag_pivas,
+		ord.flag_emer,
+		ord.flag_medout,
+		cg.pk_pd,
+		cg.batch_no,
+		cg.date_expire,
+		cg.pack_size,
+		occ.pack_size,
+		cg.price_cost,
+		bk.amount,
+		apback.amount,
+		apback.quan,
+		ord.pack_size,
+		de.pack_size
+		order by pv.bed_no,pv.name_pi,ord.ordsn_parent,ord.ordsn
+	</select>
+
+<select id="queryCgListByOccSqlServer" parameterType="java.lang.String" resultType="DynaBean">
+	select  pv.pk_pv,
+       pv.bed_no,
+       pv.name_pi,
+       cg.pk_item,
+       cg.date_cg,
+       cg.name_cg,
+       cg.spec,
+       case when (cg.quan + nvl(bk.quan,0)-nvl(apback.quan,0))&lt;0 then 0 else convert(float,cg.quan + nvl(bk.quan,0)-nvl(apback.quan,0)) end as quan,  <!--可退数量-->
+       case  when sum(occ.quan_occ) &gt;(case when (cg.quan + nvl(bk.quan,0)-nvl(apback.quan,0))&lt;0 then 0 else convert(float,cg.quan + nvl(bk.quan,0)-nvl(apback.quan,0)) end) 
+       then (case when (cg.quan + nvl(bk.quan,0)-nvl(apback.quan,0))&lt;0 then 0 else convert(float,cg.quan + nvl(bk.quan,0)-nvl(apback.quan,0)) end) 
+       else convert(float,sum(occ.quan_occ))  end as quan_rtn,
+       cg.price,
+       cg.price*(sum(occ.quan_occ)) as amount,
+       cg.pk_unit,
+       unit.name as name_unit,
+       occUnit.name as name_unit_occ,
+       cg.amount + nvl(bk.amount,0)-nvl(apback.amount,0) amt,
+       cg.pk_ordexdt,
+       cg.pk_cgip,
+       ap.pk_pdapdt,
+       ord.ordsn_parent,
+       ord.pk_cnord,
+       ord.ordsn,
+       de.date_de,
+       de.pk_dept_de,
+       cg.pk_pres,
+       ord.flag_self,
+ 	   ord.flag_base,
+ 	   ord.flag_pivas,
+ 	   ord.flag_emer,
+ 	   ord.flag_medout,
+ 	   cg.pk_pd,
+ 	   cg.batch_no,
+ 	   cg.date_expire,
+ 	   cg.pack_size,
+ 	   occ.pack_size as pack_size_occ,
+ 	   cg.price_cost,
+	   ord.pack_size ord_pack_size,
+	   de.pack_size ord_pack_size
+  from ex_order_occ occ
+       inner join ex_pd_apply_detail ap on occ.pk_pdapdt=ap.pk_pdapdt
+       inner join ex_pd_de de on ap.pk_pdapdt=de.pk_pdapdt
+       inner join bl_ip_dt cg on de.pk_pdde=cg.pk_ordexdt 
+       inner join cn_order ord on ord.pk_cnord = de.pk_cnord 
+       inner join pv_encounter pv on cg.pk_pv=pv.pk_pv 
+       inner join bd_unit unit on unit.pk_unit = cg.pk_unit 
+       inner join bd_unit occUnit on occUnit.pk_unit = occ.pk_unit
+	   left outer join (select back.pk_cgip_back,
+	                               sum(back.quan) quan,
+	                               sum(back.amount) amount
+	                          from bl_ip_dt back
+	                         where back.pk_pv in 
+	                         <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+                             	#{pkpv}
+                             </foreach> 
+	                         and  back.flag_pd='1'
+	                         and back.quan &lt; 0
+	                      group by back.pk_cgip_back) bk on cg.pk_cgip=bk.pk_cgip_back
+	   left outer join (select sum(apbk.quan_pack) quan,
+                               sum(apbk.amount) amount,
+                               apbk.pk_cgip
+                          from ex_pd_apply_detail apbk
+                         where apbk.eu_direct='-1' and
+                               apbk.flag_canc='0' and
+                               apbk.flag_finish='0' and 
+                               apbk.flag_stop='0' and 
+                               apbk.pk_cnord in 
+                                <foreach item="pkCnord" index="index" collection="pkCnords" open="(" separator="," close=")">
+                             	#{pkCnord}
+                               </foreach>                           
+                        group by apbk.pk_cgip) apback on cg.pk_cgip=apback.pk_cgip
+	                      
+	 where occ.pk_exocc in 
+	        <foreach item="pkEx" index="index" collection="pkExoccs" open="(" separator="," close=")">
+                     #{pkEx}
+           </foreach> 
+	       and occ.flag_canc='1' 
+	       and occ.pk_pdback is null 
+	       and cg.flag_settle='0'
+	       and cg.quan &gt;0 
+	 group by pv.pk_pv,
+       pv.bed_no,
+       pv.name_pi,
+       cg.pk_item,
+       cg.date_cg,
+       cg.name_cg,
+       cg.spec,
+       cg.quan, 
+       cg.price,
+       bk.quan,
+       cg.pk_unit,
+       unit.name,
+       occUnit.name,
+       cg.amount,
+       cg.pk_ordexdt,
+       cg.pk_cgip,
+       ap.pk_pdapdt,
+       ord.ordsn_parent,
+       ord.pk_cnord,
+       ord.ordsn,
+       de.date_de,
+       de.pk_dept_de,
+       cg.pk_pres,
+       ord.flag_self,
+ 	   ord.flag_base,
+ 	   ord.flag_pivas,
+ 	   ord.flag_emer,
+ 	   ord.flag_medout,
+ 	   cg.pk_pd,
+ 	   cg.batch_no,
+ 	   cg.date_expire,
+ 	   cg.pack_size,
+ 	   occ.pack_size,
+ 	   cg.price_cost,
+ 	   bk.amount,
+ 	   apback.amount,
+ 	   apback.quan,
+	   ord.pack_size,
+	   de.pack_size
+	 order by pv.bed_no,pv.name_pi,ord.ordsn_parent,ord.ordsn
+</select>
+
+	<select id="queryCgListByOccForSqlServer" parameterType="java.lang.String" resultType="DynaBean">
+		select  pv.pk_pv,
+		pv.bed_no,
+		pv.name_pi,
+		cg.pk_item,
+		cg.date_cg,
+		cg.name_cg,
+		cg.spec,
+		case when (cg.quan + nvl(bk.quan,0)-nvl(apback.quan,0))&lt;0 then 0 else convert(float,cg.quan + nvl(bk.quan,0)-nvl(apback.quan,0)) end as quan,  <!--可退数量-->
+		case when pd.eu_muputype = 0
+			then (CASE WHEN SUM(CEILING(occ.quan_occ)) > (CASE WHEN ( CEILING(cg.quan) + CEILING(dbo.nvl ( bk.quan, 0 )) - CEILING(dbo.nvl ( apback.quan, 0 ))) &lt; 0 THEN 0
+															   ELSE (CEILING(cg.quan) + CEILING(dbo.nvl ( bk.quan, 0 )) - CEILING(dbo.nvl ( apback.quan, 0 )))END)
+					   THEN ( CASE WHEN ( CEILING(cg.quan) + CEILING(dbo.nvl ( bk.quan, 0 )) - CEILING(dbo.nvl ( apback.quan, 0 ))) &lt; 0 THEN 0
+								   ELSE (CEILING(cg.quan) + CEILING(dbo.nvl ( bk.quan, 0 )) - CEILING(dbo.nvl ( apback.quan, 0))) END )
+			ELSE SUM(CEILING( occ.quan_occ )) END)
+		else(CASE WHEN SUM ( occ.quan_occ ) > (CASE WHEN CEILING( cg.quan + dbo.nvl ( bk.quan, 0 ) - dbo.nvl ( apback.quan, 0 )) &lt; 0 THEN 0
+													ELSE CEILING(cg.quan + dbo.nvl ( bk.quan, 0 ) - dbo.nvl ( apback.quan, 0 ))END)
+				  THEN ( CASE WHEN CEILING( cg.quan + dbo.nvl ( bk.quan, 0 ) - dbo.nvl ( apback.quan, 0 )) &lt; 0 THEN 0
+							  ELSE CEILING( cg.quan + dbo.nvl ( bk.quan, 0 ) - dbo.nvl ( apback.quan, 0)) END )
+		ELSE CEILING (SUM(occ.quan_occ)) END) END AS quan_rtn,
+		cg.price,
+		cg.price*(sum(occ.quan_occ)) as amount,
+		cg.pk_unit,
+		unit.name as name_unit,
+		occUnit.name as name_unit_occ,
+		cg.amount + nvl(bk.amount,0)-nvl(apback.amount,0) amt,
+		cg.pk_ordexdt,
+		cg.pk_cgip,
+		ap.pk_pdapdt,
+		ord.ordsn_parent,
+		ord.pk_cnord,
+		ord.ordsn,
+		de.date_de,
+		de.pk_dept_de,
+		cg.pk_pres,
+		ord.flag_self,
+		ord.flag_base,
+		ord.flag_pivas,
+		ord.flag_emer,
+		ord.flag_medout,
+		cg.pk_pd,
+		cg.batch_no,
+		cg.date_expire,
+		cg.pack_size,
+		occ.pack_size as pack_size_occ,
+		cg.price_cost,
+		ord.pack_size ord_pack_size,
+		de.pack_size ord_pack_size
+		from ex_order_occ occ
+		inner join ex_pd_apply_detail ap on occ.pk_pdapdt=ap.pk_pdapdt
+		inner join ex_pd_de de on ap.pk_pdapdt=de.pk_pdapdt
+		inner join bl_ip_dt cg on de.pk_pdde=cg.pk_ordexdt
+		inner join cn_order ord on ord.pk_cnord = de.pk_cnord
+		INNER JOIN bd_pd pd ON pd.pk_pd = ord.pk_ord
+		inner join pv_encounter pv on cg.pk_pv=pv.pk_pv
+		inner join bd_unit unit on unit.pk_unit = cg.pk_unit
+		inner join bd_unit occUnit on occUnit.pk_unit = occ.pk_unit
+		left outer join (select back.pk_cgip_back,
+		sum(back.quan) quan,
+		sum(back.amount) amount
+		from bl_ip_dt back
+		where back.pk_pv in
+		<foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+			#{pkpv}
+		</foreach>
+		and  back.flag_pd='1'
+		and back.quan &lt; 0
+		group by back.pk_cgip_back) bk on cg.pk_cgip=bk.pk_cgip_back
+		left outer join (select sum(apbk.quan_pack) quan,
+		sum(apbk.amount) amount,
+		apbk.pk_cgip
+		from ex_pd_apply_detail apbk
+		where apbk.eu_direct='-1' and
+		apbk.flag_canc='0' and
+		apbk.flag_finish='0' and
+		apbk.flag_stop='0' and
+		apbk.pk_cnord in
+		<foreach item="pkCnord" index="index" collection="pkCnords" open="(" separator="," close=")">
+			#{pkCnord}
+		</foreach>
+		group by apbk.pk_cgip) apback on cg.pk_cgip=apback.pk_cgip
+
+		where occ.pk_exocc in
+		<foreach item="pkEx" index="index" collection="pkExoccs" open="(" separator="," close=")">
+			#{pkEx}
+		</foreach>
+		and occ.flag_canc='1'
+		and occ.pk_pdback is null
+		and cg.flag_settle='0'
+		and cg.quan &gt;0
+		group by pv.pk_pv,
+		pv.bed_no,
+		pv.name_pi,
+		cg.pk_item,
+		cg.date_cg,
+		cg.name_cg,
+		cg.spec,
+		cg.quan,
+		pd.eu_muputype,
+		cg.price,
+		bk.quan,
+		cg.pk_unit,
+		unit.name,
+		occUnit.name,
+		cg.amount,
+		cg.pk_ordexdt,
+		cg.pk_cgip,
+		ap.pk_pdapdt,
+		ord.ordsn_parent,
+		ord.pk_cnord,
+		ord.ordsn,
+		de.date_de,
+		de.pk_dept_de,
+		cg.pk_pres,
+		ord.flag_self,
+		ord.flag_base,
+		ord.flag_pivas,
+		ord.flag_emer,
+		ord.flag_medout,
+		cg.pk_pd,
+		cg.batch_no,
+		cg.date_expire,
+		cg.pack_size,
+		occ.pack_size,
+		cg.price_cost,
+		bk.amount,
+		apback.amount,
+		apback.quan,
+		ord.pack_size,
+		de.pack_size
+		order by pv.bed_no,pv.name_pi,ord.ordsn_parent,ord.ordsn
+	</select>
+
+<select id="queryCgListByPk" parameterType="java.lang.String" resultType="com.zebone.nhis.ex.nis.ns.vo.OrderOccCgVo">
+	select distinct cg.pk_pv,
+       cg.quan + nvl(bk.quan,0) quan,  <!--可退数量-->
+       cg.pk_cgip 
+  from bl_ip_dt cg 
+	   left outer join (select back.pk_cgip_back,
+	                               sum(back.quan) quan,
+	                               sum(back.amount) amount
+	                          from bl_ip_dt back
+	                         where back.pk_pv in 
+	                         <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+                             	#{pkpv}
+                             </foreach> 
+	                         and
+	                               back.flag_pd='1'
+	                      group by back.pk_cgip_back) bk on cg.pk_cgip=bk.pk_cgip_back
+	 where cg.pk_cgip in 
+	        <foreach item="pkCgip" index="index" collection="pkCgips" open="(" separator="," close=")">
+                     #{pkCgip}
+           </foreach> 
+	    
+</select>
+
+<select id="queryMedicineListBySyx" parameterType="java.lang.String" 
+	resultType="com.zebone.nhis.ex.nis.ns.vo.MedicineVo">
+	 select pd.name,
+  			pd.spec,
+  			de.pk_pd,
+  			de.quan_pack,
+  			de.date_de,
+  			de.date_expire,
+  			de.batch_no,
+  			de.price,
+  			de.price_cost,
+  			de.name_emp_de,
+  			de.pk_cnord,
+  			de.pk_pdde,
+  			de.pack_size,
+  			de.pk_unit,
+  			de.quan_min,
+  			unit.name as name_unit, 
+  			ord.flag_base,
+  			occ.flag_pivas,
+  			ord.flag_medout,
+  			ord.flag_self,
+  			ord.ords,
+  			ord.pk_pres,
+  			ord.pk_pv,
+  			occ.pk_exocc,
+  			dt.pk_cgip   
+	   from ex_pd_de de 
+      inner join bd_pd pd on pd.pk_pd = de.pk_pd 
+      inner join bd_unit unit on unit.pk_unit = de.pk_unit 
+      inner join cn_order ord on ord.pk_cnord = de.pk_cnord 
+      inner join ex_order_occ occ on occ.pk_pdapdt = de.pk_pdapdt 
+       left join bl_ip_dt dt on dt.pk_ordexdt = de.pk_pdde  
+       left join bd_supply sup on sup.code = ord.CODE_SUPPLY
+      where occ.eu_status = '9' 
+        and (occ.pk_pdback is null or occ.pk_pdback = '') 
+   <if test="pkPvs != null  and  pkPvs != ''"> <!-- 患者就诊主键 -->
+        and occ.pk_pv in 
+   <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+          	#{pkpv}
+   </foreach>  
+   </if>
+   <if test="pkExoccs != null  and  pkExOccs != ''"> <!-- 执行单主键 -->
+        and occ.pk_exocc in 
+   <foreach item="pkExocc" index="index" collection="pkExoccs" open="(" separator="," close=")">
+          	#{pkExocc}
+   </foreach>  
+   </if>
+   <if test="pkPdDes != null  and  pkPdDes != ''"> <!-- 发药主键 -->
+        and de.pk_pdde in 
+   <foreach item="pkPdDe" index="index" collection="pkPdDes" open="(" separator="," close=")">
+          	#{pkPdDe}
+   </foreach>  
+   </if>
+   <if test=' "0"==flagPo '> <!-- 非口服类 -->
+       and (ord.code_supply not like '01%' or sup.dt_excardtype &lt;&gt; '2')
+    </if>
+    <if test=' "1"==flagPo '> <!-- 口服类 -->
+       and (ord.code_supply like '01%' or sup.dt_excardtype = '2')
+    </if>
+   <if test="flagMedout != null  and  flagMedout != ''"> <!-- 出院带药 -->
+       and ord.flag_medout = #{flagMedout,jdbcType=CHAR} 
+   </if>
+   <if test="euAlways != null  and  euAlways != ''"> <!-- 临时|长期 -->
+       and ord.eu_always = #{euAlways,jdbcType=CHAR} 
+   </if>
+  	  order by ord.ordsn_parent,occ.date_plan 
+</select>
+
+<!-- 按医嘱合并待请退药品数量 - sqlserver版本 -->
+<select id="querySumCntByOrd" parameterType="java.lang.String" 
+	resultType="com.zebone.nhis.common.module.ex.nis.ns.ExPdApplyDetail">
+	select ap.pk_pd,          		<!-- 药品PK-->
+	       sum( case when pd.EU_MUPUTYPE = '0' then ceiling((occ.quan_occ*occ.pack_size)/ap.pack_size) 
+	       ELSE (occ.quan_occ*occ.pack_size)/ap.pack_size end) quan_pack,
+	       <!--sum((occ.quan_occ*occ.pack_size)/ap.pack_size) quan_pack, 退药数量(仓库包装)-->
+	       ap.pack_size,      		<!-- 发药包装量-->
+	       ap.pk_unit,        		<!-- 发药单位-->
+	       ap.pk_cnord,        		<!-- 医嘱PK-->
+		   ap.pk_pdapdt             <!-- 领药PK-->
+	  from ex_order_occ occ
+	 inner join ex_pd_apply_detail ap on occ.pk_pdapdt=ap.pk_pdapdt
+	 inner join bd_pd pd on pd.pk_pd = ap.PK_PD and pd.DEL_FLAG = '0'
+	 where occ.pk_exocc in 
+	   <foreach item="pkExocc" index="index" collection="pkExoccs" open="(" separator="," close=")">
+	          	#{pkExocc}
+	   </foreach> 
+	 group by ap.pk_pd,
+	          ap.pack_size,
+	          ap.pk_unit,
+	          ap.pk_cnord,
+			  ap.pk_pdapdt
+</select>
+
+<!-- 按医嘱合并待请退药品数量 - oracle版本 -->
+<select id="querySumCntByOrdInOrcl" parameterType="java.lang.String" 
+	resultType="com.zebone.nhis.common.module.ex.nis.ns.ExPdApplyDetail">
+	select ap.pk_pd,          		<!-- 药品PK-->
+	       sum( case when pd.EU_MUPUTYPE = '0' then ceil((occ.quan_occ*occ.pack_size)/ap.pack_size) 
+	       			 else (occ.quan_occ*occ.pack_size)/ap.pack_size end)   quan_pack,<!--[按批取整的药品，先批次取整] 退药数量(仓库包装)-->
+	       <!-- sum((occ.quan_occ*occ.pack_size)/ap.pack_size) quan_pack,  退药数量(仓库包装)-->
+	       ap.pack_size,      		<!-- 发药包装量-->
+	       ap.pk_unit,        		<!-- 发药单位-->
+	       ap.pk_cnord,        		<!-- 医嘱PK-->
+	       ap.pk_pdapdt             <!-- 领药PK-->
+	  from ex_order_occ occ
+	 inner join ex_pd_apply_detail ap on occ.pk_pdapdt=ap.pk_pdapdt
+	 inner join bd_pd pd on pd.pk_pd = ap.PK_PD and pd.DEL_FLAG = '0'
+	 where occ.pk_exocc in 
+	   <foreach item="pkExocc" index="index" collection="pkExoccs" open="(" separator="," close=")">
+	          	#{pkExocc}
+	   </foreach> 
+	 group by ap.pk_pd,
+	          ap.pack_size,
+	          ap.pk_unit,
+	          ap.pk_cnord,
+	          ap.pk_pdapdt
+</select>
+
+<!-- 按医嘱合并各批次发放药品数量 -->
+<select id="queryPdBatchByOrd" parameterType="java.lang.String" 
+	resultType="com.zebone.nhis.common.module.ex.nis.ns.ExPdApplyDetail">
+	select de.pk_pd,       				<!-- 药品PK -->
+	       sum(de.quan_pack) quan_pack, <!-- 可退药数量(包装) -->
+	       de.pk_unit,     				<!-- 单位 -->
+	       de.pack_size,   				<!-- 包装量 -->
+	       sum(de.quan_min) quan_min,  	<!-- 可退药数量(基本) -->
+	       de.batch_no,    				<!-- 批号 -->
+	       de.date_expire, 				<!-- 效期 -->
+	       de.pk_cnord	     			<!-- 医嘱PK -->
+	  from ex_pd_de de
+     where exists (select 1 from ex_order_occ occ
+                    where occ.pk_pdapdt=de.pk_pdapdt 
+                     and occ.pk_exocc in 
+		   <foreach item="pkExocc" index="index" collection="pkExoccs" open="(" separator="," close=")">
+		          	#{pkExocc}
+		   </foreach> 
+		   )
+	group by de.pk_pd,
+	       de.pk_unit,
+	       de.pack_size,
+	       de.batch_no,
+	       de.date_expire,
+	       de.pk_cnord	       
+</select>
+
+</mapper>

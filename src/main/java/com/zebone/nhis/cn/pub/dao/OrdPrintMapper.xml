@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.pub.dao.OrdPrintMapper">
+    <select id="qryPrint" resultType="DynaBean" parameterType="java.util.Map">
+        select t.*,'1' as source_print from CN_ORDER_PRINT t
+        WHERE  t.pk_pv=#{pkPv,jdbcType=CHAR}
+        and t.eu_Always =#{euAlways,jdbcType=CHAR}
+        <if test="dateStart != null">
+            and t.date_Start &gt;= to_date(#{dateStart,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        </if>
+        <if test="dateEnd != null">
+            and t.date_Start &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        </if>
+        and t.del_flag='0'
+    </select>
+    <select id="qryOrd" resultType="DynaBean" parameterType="java.util.Map">
+        select po.* from (
+			SELECT
+			print.pk_cnord,
+			print.name_ord,
+			print.eu_always,
+			print.pk_pv,
+			print.pk_pi,
+			print.pk_dept_ns,
+			print.pk_org,
+			print.date_start,
+			print.pk_emp_ord,
+			print.name_emp_ord,
+			print.pk_dept,
+			print.date_stop,
+			print.flag_erase,
+			print.flag_stop,
+			print.pk_emp_stop,
+			print.name_emp_stop,
+			print.ts,
+			print.name_emp_chk,
+			print.name_emp_stop_chk,
+			print.desc_ord,
+			print.date_plan_ex,
+			print.name_emp_ex,
+			print.PK_ORDPRINT,
+			print.PK_EMP_CHK,
+			print.PK_EMP_STOP_CHK,
+			print.PAGE_NO,
+			print.ROW_NO,
+			print.PRINT_NO,
+			print.PINAME,
+			print.SEX,
+			print.AGE,
+			print.BEDNO,
+			print.NAME_DEPT,
+			print.PK_EMP_PRINT,
+			print.NAME_EMP_PRINT,
+			print.CREATOR,
+			print.CREATE_TIME,
+			print.MODIFIER,
+			print.MODITY_TIME,
+			print.DEL_FLAG,
+			print.COMBINE_TIME,
+			print.FLAG_EX,
+			print.PK_EMP_EX,
+			cn.code_ord,
+			cn.ordsn,
+			cn.ordsn_parent,
+			case cn.code_ordtype when '0103' then cn.ords else cn.dosage end as dosage,
+			cn.pk_unit_dos pk_unit_dos,
+			cn.eu_st,
+			cn.last_num,
+			dept.dt_depttype,
+			cn.flag_emer,
+			cn.note_ord as name_note,
+			cn.quan,
+			cn.pk_unit,
+			cn.code_supply,
+			sup.flag_pivas,
+			cn.code_freq,
+			freq.cnt,
+			cn.drip_speed,
+			cn.flag_first,
+			cn.pk_dept_exec,
+			cn.pk_org_exec,
+			cn.date_chk,
+			cn.spec,
+			cn.flag_doctor,
+			cn.flag_medout,
+			cn.flag_self,
+			cn.flag_thera,
+			cn.flag_prev,
+			cn.flag_fit,
+			cn.desc_fit,
+			cn.note_ord,
+			cn.note_supply,
+			cn.eu_status_ord,
+			cn.code_ordtype,
+			cn.pk_ord,
+			cn.date_enter,
+			cn.flag_stop_chk,
+			cn.flag_durg,
+			cn.flag_bl,
+			cn.flag_sign,
+			cn.pk_pres,
+			cn.infant_no,
+			pd.pk_unit_min,
+			pd.pk_unit_vol,
+			pd.pk_unit_wt,
+			pd.vol,
+			pd.flag_st,
+			cn.flag_cp,
+			pd.weight,
+			pd.dt_pois,
+			cn.eu_exctype,
+			rtrim(ltrim(cn.name_emp_input))  as name_emp_input,
+			cn.pk_emp_input,
+			cn.eu_intern,
+			ord.pk_unit as srv_pk_unit,
+			ord.eu_exclude as flag_ctl_srv,
+			cn.flag_base,
+			cn.first_num,
+			cn.price_cg,
+			cn.ratio_hp,
+			cn.pk_ord_exc,
+			cn.flag_note,
+			cn.code_apply,
+			sup.NAME AS name_supply,
+			sup.NAME_print AS name_supply_print,
+			freq.NAME AS name_freq,
+			freq.NAME_print AS name_freq_print,
+			cn.flag_print,
+			cn.days,
+			cn.quan_cg,
+			cn.pk_unit_cg,
+			unit.name as name_unit_cg,
+			cn.ords,
+			cn.groupno,
+			'1' flag_ca,
+			st.RESULT,
+			st.batch_no batch_no_st,
+			bd.name as samptype_name
+			FROM CN_ORDER_PRINT print
+			left join CN_ORDER cn on CN.PK_CNORD=PRINT.PK_CNORD
+			left join bd_pd pd on cn.pk_ord = pd.pk_pd and pd.del_flag='0'
+			left join bd_ord ord on ord.pk_ord = cn.pk_ord and ord.del_flag='0'
+			left join bd_supply sup on cn.code_supply = sup.code and sup.del_flag='0'
+			left join bd_term_freq freq on freq.code = cn.code_freq and freq.del_flag='0'
+			left join bd_unit unit on unit.pk_unit = cn.pk_unit_cg and unit.del_flag='0'
+			left join bd_ou_dept dept on dept.pk_dept = cn.pk_dept_ns and dept.del_flag='0'
+			left join ex_st_occ st on st.PK_CNORD=cn.PK_CNORD and st.DEL_FLAG='0'
+			left join cn_lab_apply lab on lab.pk_cnord=cn.pk_cnord and lab.del_flag='0'
+			left join BD_DEFDOC bd on bd.code=lab.dt_samptype and bd.CODE_DEFDOCLIST='030200'
+			where print.pk_pv = #{pkPv,jdbcType=VARCHAR}
+			and cn.del_flag='0'  and cn.flag_doctor='1'
+            <if test="euAlways!=null">
+                and print.eu_always=#{euAlways,jdbcType=VARCHAR}
+            </if>
+            <if test="pkDept!=null">
+                and print.pk_dept=#{pkDept,jdbcType=VARCHAR}
+            </if>
+            <if test="pkDeptNs!=null">
+                and print.pk_dept_ns=#{pkDeptNs,jdbcType=VARCHAR}
+            </if>
+			and PRINT.DEL_FLAG='0'
+			union all
+			SELECT
+			cn.pk_cnord,
+			cn.name_ord name_ord,
+			cn.eu_always,
+			cn.pk_pv,
+			cn.pk_pi,
+			cn.pk_dept_ns,
+			cn.pk_org,
+			cn.date_start,
+			cn.pk_emp_ord,
+			rtrim(ltrim(cn.name_emp_ord))  as name_emp_ord,
+			cn.pk_dept,
+			cn.date_stop,
+			cn.flag_erase,
+			cn.flag_stop,
+			cn.pk_emp_stop,
+			rtrim(ltrim(cn.name_emp_stop))  as name_emp_stop,
+			cn.ts,
+			rtrim(ltrim(cn.name_emp_chk))  as name_emp_chk,
+			rtrim(ltrim(cn.name_emp_stop_chk))  as name_emp_stop_chk,
+			cn.desc_ord,
+			cn.date_plan_ex,
+			rtrim(ltrim(cn.name_emp_ex))  as name_emp_ex,
+			print.PK_ORDPRINT,
+			print.PK_EMP_CHK,
+			print.NAME_EMP_STOP_CHK,
+			print.PAGE_NO,
+			99999 as ROW_NO,
+			print.PRINT_NO,
+			print.PINAME,
+			print.SEX,
+			print.AGE,
+			print.BEDNO,
+			print.NAME_DEPT,
+			print.PK_EMP_PRINT,
+			print.NAME_EMP_PRINT,
+			print.CREATOR,
+			print.CREATE_TIME,
+			print.MODIFIER,
+			print.MODITY_TIME,
+			print.DEL_FLAG,
+			print.COMBINE_TIME,
+			print.FLAG_EX,
+			case when cn.CODE_ORDTYPE='03' then lab.pk_emp_col else CN.PK_EMP_EX end as PK_EMP_EX,
+			cn.code_ord,
+			cn.ordsn,
+			cn.ordsn_parent,
+			case cn.code_ordtype when '0103' then cn.ords else cn.dosage end as dosage,
+			cn.pk_unit_dos pk_unit_dos,
+			cn.eu_st,
+			cn.last_num,
+			dept.dt_depttype,
+			cn.flag_emer,
+			cn.note_ord as name_note,
+			cn.quan,
+			cn.pk_unit,
+			cn.code_supply,
+			sup.flag_pivas,
+			cn.code_freq,
+			freq.cnt,
+			cn.drip_speed,
+			cn.flag_first,
+			cn.pk_dept_exec,
+			cn.pk_org_exec,
+			cn.date_chk,
+			cn.spec,
+			cn.flag_doctor,
+			cn.flag_medout,
+			cn.flag_self,
+			cn.flag_thera,
+			cn.flag_prev,
+			cn.flag_fit,
+			cn.desc_fit,
+			cn.note_ord,
+			cn.note_supply,
+			cn.eu_status_ord,
+			cn.code_ordtype,
+			cn.pk_ord,
+			cn.date_enter,
+			cn.flag_stop_chk,
+			cn.flag_durg,
+			cn.flag_bl,
+			cn.flag_sign,
+			cn.pk_pres,
+			cn.infant_no,
+			pd.pk_unit_min,
+			pd.pk_unit_vol,
+			pd.pk_unit_wt,
+			pd.vol,
+			pd.flag_st,
+			cn.flag_cp,
+			pd.weight,
+			pd.dt_pois,
+			cn.eu_exctype,
+			rtrim(ltrim(cn.name_emp_input))  as name_emp_input,
+			cn.pk_emp_input,
+			cn.eu_intern,
+			ord.pk_unit as srv_pk_unit,
+			ord.eu_exclude as flag_ctl_srv,
+			cn.flag_base,
+			cn.first_num,
+			cn.price_cg,
+			cn.ratio_hp,
+			cn.pk_ord_exc,
+			cn.flag_note,
+			cn.code_apply,
+			sup.NAME AS name_supply,
+			sup.NAME_print AS name_supply_print,
+			freq.NAME AS name_freq,
+			freq.NAME_print AS name_freq_print,
+			cn.flag_print,
+			cn.days,
+			cn.quan_cg,
+			cn.pk_unit_cg,
+			unit.name as name_unit_cg,
+			cn.ords,
+			cn.groupno,
+			'1' flag_ca,
+			st.RESULT,
+			st.batch_no batch_no_st,
+			bd.name as samptype_name
+			from CN_ORDER  cn
+			left join CN_ORDER_PRINT print on CN.PK_CNORD=PRINT.PK_CNORD
+			left join cn_lab_apply lab on cn.pk_cnord=lab.pk_cnord
+			left join bd_pd pd on cn.pk_ord = pd.pk_pd and pd.del_flag='0'
+			left join bd_ord ord on ord.pk_ord = cn.pk_ord and ord.del_flag='0'
+			left join bd_supply sup on cn.code_supply = sup.code and sup.del_flag='0'
+			left join bd_term_freq freq on freq.code = cn.code_freq and freq.del_flag='0'
+			left join bd_unit unit on unit.pk_unit = cn.pk_unit_cg and unit.del_flag='0'
+			left join bd_ou_dept dept on dept.pk_dept = cn.pk_dept_ns and dept.del_flag='0'
+			left join ex_st_occ st on st.PK_CNORD=cn.PK_CNORD and st.DEL_FLAG='0'
+			left join cn_lab_apply lab on lab.pk_cnord=cn.pk_cnord and lab.del_flag='0'
+			left join BD_DEFDOC bd on bd.code=lab.dt_samptype and bd.CODE_DEFDOCLIST='030200'
+			where cn.pk_pv =  #{pkPv,jdbcType=VARCHAR}
+			and cn.del_flag='0'  and cn.flag_doctor='1'
+            <if test="euAlways!=null">
+                and cn.eu_always=#{euAlways,jdbcType=VARCHAR}
+            </if>
+            <if test="pkDept!=null">
+                and cn.pk_dept=#{pkDept,jdbcType=VARCHAR}
+            </if>
+            <if test="pkDeptNs!=null">
+                and cn.pk_dept_ns=#{pkDeptNs,jdbcType=VARCHAR}
+            </if>
+			and PRINT.PK_CNORD is null
+		) po
+		order by po.ROW_NO,po.date_start,po.ordsn_parent,po.ordsn
+    </select>
+	<select id="qryEmpPic" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.base.ou.BdOuEmployee">
+    	select
+			PK_EMP,IMG_SIGN
+		from BD_OU_EMPLOYEE
+    	where 1=1
+		<if test="pkEmp !=null and pkEmp.size()>0">
+			and PK_EMP in
+			<foreach collection="pkEmp" index="index" item="item" open="(" separator="," close=")" >
+				#{item, jdbcType=VARCHAR}
+			</foreach>
+		</if>
+	</select>
+</mapper>

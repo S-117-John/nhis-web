@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.drg.dao.BdTermCchiMapper">
+    <select id="qryTermCchi" parameterType="java.util.Map" resultType="DynaBean">
+        select cchi.pk_cchi,
+        cchi.code_cchi,
+        cchi.name_cchi,
+        cchi.spcode,
+        cchi.d_code,
+        cchi.dt_cchicate,
+        cchi.dt_cchispec,
+        cchi.version,
+        cchi.risk,
+        cchi.diff,
+        cchi.eu_maj,
+        cchi.eu_sex,
+        cchi.age_min,
+        cchi.age_max,
+        cchi.content,
+        cchi.except,
+        cchi.note,
+        cchi.flag_stop,
+        cchi.CREATOR,
+        cchi.CREATE_TIME,
+        cchi.MODIFIER,
+        cchi.FLAG_DEL,
+        cchi.TS
+        from bd_term_cchi cchi
+        where   cchi.flag_del = '0'
+        <if test="codeCchi != null and codeCchi != '' ">
+            and cchi.code_cchi like  '${codeCchi}%'
+        </if>
+        <if test="nameCchi != null and nameCchi != '' ">
+            and cchi.name_cchi like '%${nameCchi}%'
+        </if>
+        <if test="dtCchicate != null and dtCchicate != '' ">
+            and cchi.dt_cchicate= #{dtCchicate}
+        </if>
+        <if test="dtCchispec != null and dtCchispec != '' ">
+            and cchi.dt_cchispec= #{dtCchispec}
+        </if>
+        <if test="risk != null and risk != '' ">
+            and cchi.risk like '%${risk}%'
+        </if>
+        <if test="diff != null and diff != '' ">
+            and cchi.diff like '%${diff}%'
+        </if>
+        <if test="euMaj != null and euMaj != '' ">
+            and cchi.eu_maj= #{euMaj}
+        </if>
+        <if test="version != null and version != '' ">
+            and cchi.version= #{version}
+        </if>
+        <if test="codeOrName !=null and codeOrName != ''">
+            and (cchi.code_cchi like #{codeOrName,jdbcType=VARCHAR} || '%'
+            or cchi.name_cchi like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'
+            or cchi.spcode like '%' || #{codeOrName,jdbcType=VARCHAR} || '%'
+            )
+        </if>
+        order by cchi.code_cchi
+
+    </select>
+
+
+</mapper>

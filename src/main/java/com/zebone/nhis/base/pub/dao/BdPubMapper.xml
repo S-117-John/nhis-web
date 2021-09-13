@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.base.pub.dao.BdPubMapper">
+	<select id="queryBdDefDocByCodeAndDefDocList" resultType="com.zebone.nhis.common.module.base.bd.code.BdDefdoc" parameterType="java.util.Map">
+		 select * from bd_defdoc
+		 where code = #{code,jdbcType=VARCHAR} and code_defdoclist = #{codeDefDocList,jdbcType=VARCHAR} and del_flag='0' 
+	</select>
+	
+	<select id="qryUserOper" resultType="DynaBean" parameterType="java.util.Map" >
+	 	select oper.* from bd_ou_oper oper  
+		inner join  bd_ou_menu menu on menu.pk_oper=oper.pk_oper and MENU.del_flag='0' 
+			and OPER.code_oper=#{codeOper,jdbcType=VARCHAR} 
+		inner join bd_ou_role_oper ro on ro.pk_menu=menu.pk_menu 
+		inner join bd_ou_role role on role.pk_role=ro.pk_role 
+		inner join bd_ou_user_role ur on ur.pk_role=role.pk_role and ur.del_flag='0'
+		inner join bd_ou_user us on ur.pk_user=us.pk_user and us.flag_active='1' 
+			and us.pk_org=#{pkOrg,jdbcType=VARCHAR}  and us.code_user=#{codeUser,jdbcType=VARCHAR}  
+		where oper.flag_active='1' 
+  	</select>
+  	
+  	
+</mapper>

@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.CodeMapper">
+
+
+    <select id="selectBdCodeDateslotByPk" resultType="com.zebone.nhis.common.module.base.bd.code.BdCodeDateslot"
+            parameterType="java.lang.String">
+		select * from BD_CODE_DATESLOT
+		where PK_DATESLOT = #{_parameter,jdbcType=VARCHAR}
+		order by sortno
+	</select>
+
+    <select id="getBdCodeDateslotByPkForType" resultType="com.zebone.nhis.common.module.base.bd.code.BdCodeDateslot"
+            parameterType="java.util.Set">
+        select * from BD_CODE_DATESLOT
+        where dt_dateslottype in
+        (
+        select dt_dateslottype from BD_CODE_DATESLOT
+        where pk_dateslot in
+        <foreach item="item" index="index" collection="pks" open="("
+                 separator="," close=")">
+            #{item}
+        </foreach>
+        )
+        order by sortno
+    </select>
+
+    <select id="BdDefdoclistCheckExist" resultType="int" parameterType="java.util.Map">
+        select count(1) from BD_DEFDOCLIST
+        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+            and del_flag = '0'
+            <if test="code != null and code != ''">
+                and code = #{code,jdbcType=VARCHAR}
+            </if>
+            <if test="pkOrg != null and pkOrg != ''">
+                and pk_org like #{pkOrg,jdbcType=VARCHAR}||'%'
+            </if>
+            <if test="pkDefdoclist != null and pkDefdoclist != ''">
+                and pk_defdoclist ! = #{pkDefdoclist,jdbcType=VARCHAR}
+            </if>
+        </trim>
+    </select>
+
+    <select id="BdWorkcalendruleCheckExist" resultType="int" parameterType="java.util.Map">
+        select count(1) from BD_WORKCALENDRULE
+        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+            and del_flag = '0'
+            <if test="code != null and code != ''">
+                and code = #{code,jdbcType=VARCHAR}
+            </if>
+            <if test="name != null and name != ''">
+                and name = #{name,jdbcType=VARCHAR}
+            </if>
+            <if test="pkOrg != null and pkOrg != ''">
+                and pk_org like #{pkOrg,jdbcType=VARCHAR}||'%'
+            </if>
+            <if test="pkWorkcalendrule != null and pkWorkcalendrule != ''">
+                and pk_workcalendrule ! = #{pkWorkcalendrule,jdbcType=VARCHAR}
+            </if>
+        </trim>
+    </select>
+
+    <select id="BdWorkcalendarCheckExist" resultType="int" parameterType="java.util.Map">
+        select count(1) from BD_WORKCALENDAR
+        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+            <if test="code != null and code != ''">
+                and code = #{code,jdbcType=VARCHAR}
+            </if>
+            <if test="name != null and name != ''">
+                and name = #{name,jdbcType=VARCHAR}
+            </if>
+            <if test="pkOrg != null and pkOrg != ''">
+                and pk_org like '%'||#{pkOrg,jdbcType=VARCHAR}||'%'
+            </if>
+            <if test="calendarDef == '1'">
+                and calendar_def = '1'
+            </if>
+            <if test="pkWorkcalendar != null and pkWorkcalendar != ''">
+                and PK_WORKCALENDAR ! = #{pkWorkcalendar,jdbcType=VARCHAR}
+            </if>
+        </trim>
+    </select>
+
+    <select id="BdCodeDateslotCheckExist" resultType="int" parameterType="java.util.Map">
+        select count(1) from BD_CODE_DATESLOT
+        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+            <if test="codeDateslot != null and codeDateslot != ''">
+                and CODE_DATESLOT = #{codeDateslot,jdbcType=VARCHAR}
+            </if>
+            <if test="nameDateslot != null and nameDateslot != ''">
+                and NAME_DATESLOT = #{nameDateslot,jdbcType=VARCHAR}
+            </if>
+            <if test="pkOrg != null and pkOrg != ''">
+                and pk_org like #{pkOrg,jdbcType=VARCHAR}||'%'
+            </if>
+            <if test="pkDateslot != null and pkDateslot != ''">
+                and PK_DATESLOT ! = #{pkDateslot,jdbcType=VARCHAR}
+            </if>
+        </trim>
+    </select>
+
+
+    <select id="BdAdminDivisionCheckExist" resultType="int" parameterType="java.util.Map">
+        select count(1) from BD_ADMIN_DIVISION
+        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+            and del_flag = '0'
+            <if test="codeDiv != null and codeDiv != ''">
+                and CODE_DIV = #{codeDiv,jdbcType=VARCHAR}
+            </if>
+            <if test="pkDivision != null and pkDivision != ''">
+                and PK_DIVISION ! = #{pkDivision,jdbcType=VARCHAR}
+            </if>
+        </trim>
+    </select>
+
+
+    <select id="getBdCodeDateslotForSortNo" resultType="com.zebone.nhis.common.module.base.bd.code.BdCodeDateslot"
+            parameterType="java.lang.String">
+		select * from BD_CODE_DATESLOT
+		WHERE DT_DATESLOTTYPE = #{_parameter,jdbcType=VARCHAR}
+		ORDER BY TIME_BEGIN,TIME_END
+	</select>
+
+    <update id="batchUpdateBdCodeDateslotSortNo" parameterType="java.util.List">
+        <foreach collection="bdCodeDateslotList" item="item" index="index" open="begin" close="end;" separator="">
+            update BD_CODE_DATESLOT
+            <set>
+                SORTNO = #{item.sortno}
+            </set>
+            where PK_DATESLOT = #{item.pkDateslot} ;
+        </foreach>
+    </update>
+
+    <!-- 根据机构和打印模板编码数组删除打印模板 -->
+    <delete id="deleteBdTempPrtByCodes">
+        delete from bd_temp_prt
+        where pk_org = #{pkOrg} and code in
+        <foreach item="item" index="index" collection="codes" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <!-- 根据机构和打印模板编码数组查询打印模板列表 -->
+    <select id="getBdTempPrtListByCodes" resultType="com.zebone.nhis.common.module.base.bd.code.BdTempPrt">
+        select * from bd_temp_prt
+        WHERE del_flag = '0' and pk_org = #{pkOrg} and code in
+        <foreach item="item" index="index" collection="codes" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getReportByUser" parameterType="java.util.Map"
+            resultType="java.lang.String">
+       select rpt.PK_REPORT
+       from bd_report rpt
+        inner join bd_ou_usrgrp_perm perm on perm.code_dp = rpt.code and perm.dt_datapermtype='01' and rpt.del_flag='0'
+        inner join bd_ou_user u on u.pk_usrgrp = perm.pk_usrgrp  
+        where  u.pk_user = #{pkUser,jdbcType=CHAR}
+        union 
+        select rpt1.PK_REPORT
+        from bd_report rpt1
+        inner join bd_ou_usrgrp_perm perm1 on perm1.code_dp =rpt1.code and perm1.dt_datapermtype='01' and rpt1.del_flag='0' 
+        inner join bd_ou_user_usrgrp ugp on ugp.PK_USRGRP = perm1.PK_USRGRP
+        where ugp.pk_user = #{pkUser,jdbcType=CHAR}  and ugp.del_flag = '0'
+        and not exists (select 1 from bd_report rpt
+        inner join bd_ou_usrgrp_perm perm on perm.code_dp = rpt.code and perm.dt_datapermtype='01' and rpt.del_flag='0'
+        inner join bd_ou_user u on u.pk_usrgrp = perm.pk_usrgrp  
+        where  u.pk_user = #{pkUser,jdbcType=CHAR} and  rpt.PK_REPORT=rpt1.PK_REPORT)
+    </select>
+
+    <update id="delDefdocsByList" parameterType="java.util.List">
+        update bd_defdoc set del_flag = '1' where pk_defdoc in
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <select id="searchWorkcalendars" resultType="DynaBean" parameterType="java.lang.String">
+        select * from BD_WORKCALENDAR where 1 = 1
+        <if test="pkOrg != null and pkOrg != ''">
+            and pk_org = #{pkOrg}
+        </if>
+    </select>
+
+    <select id="searchWorkRules" resultType="DynaBean" parameterType="java.lang.String">
+        select * from BD_WORKCALENDRULE
+        where del_flag = '0'
+        <if test="pkOrg != null and pkOrg != ''">
+            and pk_org = #{pkOrg}
+        </if>
+        <if test="pkWorkcalendrule != null and pkWorkcalendrule != ''">
+            and pk_Workcalendrule = #{pkWorkcalendrule}
+        </if>
+    </select>
+
+    <select id="getDatesSecByDates" resultType="DynaBean" parameterType="java.lang.String">
+        select * from BD_CODE_DATESLOT_SEC
+        where 1 = 1
+        <if test="pkOrg != null and pkOrg != ''">
+            and pk_org = #{pkOrg}
+        </if>
+        <if test="pkDateslot != null and pkDateslot != ''">
+            and pk_dateslot = #{pkDateslot}
+        </if>
+    </select>
+
+    <select id="getDatesTimeByDates" resultType="DynaBean" parameterType="java.lang.String">
+        select * from BD_CODE_DATESLOT_TIME
+        where del_flag = '0'
+        <if test="pkOrg != null and pkOrg != ''">
+            and pk_org = #{pkOrg}
+        </if>
+        <if test="pkDateslot != null and pkDateslot != ''">
+            and pk_dateslot = #{pkDateslot}
+        </if>
+    </select>
+
+    <select id="getTempPrtList" parameterType="java.util.Map" resultType="java.util.HashMap">
+		select temp.PK_TEMPPRT,temp.PK_ORG,temp.CODE,temp.NAME,temp.SPCODE,
+        temp.DT_PRTTEMP,temp.PRINTER,temp.SPCODE,org.NAME_ORG,temp.DT_ORDEXTYPE,pri.NAME PRINTNAME,temp.cnt_print
+        from BD_TEMP_PRT temp
+        <if test="params.dtPrtTemp !=null and params.dtPrtTemp != '' ">
+            inner join BD_DEFDOC doc on temp.DT_PRTTEMP = doc.CODE
+        </if>
+        <if test="params.dtOrdExType !=null and params.dtOrdExType != '' ">
+            inner join BD_DEFDOC doc on temp.DT_ORDEXTYPE = doc.CODE
+        </if>
+        inner join BD_OU_ORG org on temp.PK_ORG = org.PK_ORG
+        inner join BD_DEFDOC pri on temp.PRINTER = pri.CODE
+        where temp.DEL_FLAG = '0' and doc.CODE_DEFDOCLIST = #{params.codeDefDocList}
+        and pri.CODE_DEFDOCLIST = #{params.printCode}
+        <if test="params.pkOrg !=null and params.pkOrg != '' ">
+            and temp.PK_ORG = #{params.pkOrg}
+        </if>
+        <if test="params.dtPrtTemp !=null and params.dtPrtTemp != '' ">
+            and temp.DT_PRTTEMP = #{params.dtPrtTemp}
+        </if>
+        <if test="params.dtOrdExType !=null and params.dtOrdExType != '' ">
+            and temp.DT_ORDEXTYPE = #{params.dtOrdExType}
+        </if>
+        order by org.CODE_ORG
+	</select>
+
+    <select id="getOrgListByPkParamTemp" resultType="DynaBean">
+        select sp.pk_sysparam,
+       sp.pk_org,
+       sp.code,
+       sp.name,
+       sp.val
+        from bd_sysparam sp
+        where sp.pk_paramtemp = #{pkParamTemp}
+    </select>
+
+    <delete id="deleteOrgList">
+        delete from bd_sysparam where pk_paramtemp = #{pkParamTemp}
+    </delete>
+
+    <select id="searchDefdoclist" resultType="java.lang.String" parameterType="java.lang.String">
+        select flag_sys from bd_defdoclist where 1 = 1
+        <if test="pkDefdoclist != null and pkDefdoclist != ''">
+            and PK_DEFDOCLIST = #{pkDefdoclist}
+        </if>
+    </select>
+    <select id="searchDefdoc" resultType="java.lang.String" parameterType="java.lang.String">
+        select flag_sys from bd_defdoc where 1 = 1
+        <if test="pkDefdoc != null and pkDefdoc != ''">
+            and PK_DEFDOC = #{pkDefdoc}
+        </if>
+    </select>
+
+    <select id="getOrgListByCodeTemp" resultType="DynaBean">
+       select org.NAME_ORG,
+       org.PK_ORG,
+       dept.NAME_DEPT,
+       dept.PK_DEPT,
+       pc.NAME PCNAME,
+       argu.CODE_ARGU code,
+       argu.NAME_ARGU name,
+       argu.ARGUVAL val,
+       '' pk_sysparam,argu.pk_pcargu
+       from bd_res_pc_argu argu
+       left join BD_OU_DEPT dept on dept.PK_DEPT =argu.PK_DEPT
+       left join bd_res_pc pc on pc.PK_PC = argu.PK_PC
+       left join BD_OU_ORG org on org.PK_ORG = argu.PK_ORG
+       where argu.DEL_FLAG='0'
+        <if test="code != null and code != ''">
+            and CODE_ARGU = #{code}
+        </if>
+       union all
+       select org.NAME_ORG,
+       org.PK_ORG,
+       '' NAME_DEPT,
+       '' PK_DEPT,
+       '' PCNAME ,
+       code,
+       NAME,
+       VAL,
+       pk_sysparam,'' pk_pcargu
+       from BD_SYSPARAM  parm
+       left join BD_OU_ORG org on org.PK_ORG = parm.PK_ORG
+       where parm.DEL_FLAG='0'
+        <if test="code != null and code != ''">
+            and CODE = #{code}
+        </if>
+    </select>
+</mapper>

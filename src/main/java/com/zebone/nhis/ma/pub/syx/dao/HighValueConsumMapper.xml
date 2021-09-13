@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.syx.dao.HighValueConsumMapper">
+	<select id="qryHighValueConsum" parameterType="java.util.Map" resultType="com.zebone.nhis.ma.pub.syx.vo.HighValueConsumVo">
+		SELECT  bar.item_code,bar.Bar_code barcode,bar.Quantity from t_Inv_BarCode_Entity bar 
+		where  bar.Dept_Code=#{deptCode}  
+		and bar.Bar_code =#{barcode}  
+		and bar.Quantity &gt; 0  
+	</select>
+</mapper>

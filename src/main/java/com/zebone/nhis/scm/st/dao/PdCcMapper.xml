@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.st.dao.PdCcMapper">
+
+	<!-- 根据库存结账主键查询库存结账信息 -->
+	<select id="getPdCcById" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.common.module.scm.st.PdCc">
+		select * from pd_cc where pk_pdcc =
+		#{pkPdcc,jdbcType=VARCHAR} and del_flag = '0'
+	</select>
+
+	<!-- 根据库存结账主键查询库存结账明细列表 -->
+	<select id="getPdCcDetailListById" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.common.module.scm.st.PdCcDetail">
+		select pcd.*,pd.spec,pd.pk_factory
+		from pd_cc_detail pcd
+		inner join bd_pd pd on pd.pk_pd = pcd.pk_pd and pd.del_flag = '0'
+		where pcd.pk_pdcc = #{pkPdcc,jdbcType=VARCHAR} and pcd.del_flag = '0'
+		order by pcd.pk_pd
+	</select>
+
+	<!-- 获取统计时间段内物品基本信息 -->
+	<select id="getPdBaseParamList" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.scm.st.vo.PdBaseParam">
+		select distinct dt.pk_pd, dt.pk_unit as pk_unit_pack, dt.pack_size
+		from pd_cc_detail dt
+		where dt.del_flag = '0'
+		and dt.pk_pdcc = (select cc.pk_pdcc from pd_cc cc where cc.pk_store =
+		#{pkStore,jdbcType=VARCHAR} and cc.month_fin =
+		#{monthFinLast,jdbcType=VARCHAR} and cc.del_flag = '0')
+		union
+		select distinct dt.pk_pd,dt.pk_unit_pack,dt.pack_size
+		from pd_st_detail dt
+		inner join pd_st st on dt.pk_pdst=st.pk_pdst and st.del_flag = '0'
+		where dt.del_flag = '0'
+		and st.pk_store_st = #{pkStore,jdbcType=VARCHAR}
+		and st.date_chk <![CDATA[>=]]>
+		to_date(#{dateBeginStr,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+		and st.date_chk <![CDATA[<=]]>
+		to_date(#{dateEndStr,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+		union 
+		select distinct dt.pk_pd,dt.pk_unit_pack,dt.pack_size 
+        from pd_reprice_hist dt 
+        where dt.pk_store = #{pkStore,jdbcType=VARCHAR} 
+        and dt.date_reprice <![CDATA[>=]]> 
+		to_date(#{dateBeginStr,jdbcType=VARCHAR}, 'yyyymmddhh24miss') 
+		and dt.date_reprice <![CDATA[<=]]> 
+		to_date(#{dateEndStr,jdbcType=VARCHAR}, 'yyyymmddhh24miss') 
+		<!-- and to_char(st.date_chk,'yyyyMMddhh24miss') <![CDATA[>=]]> #{dateBeginStr,jdbcType=VARCHAR} 
+			and to_char(st.date_chk,'yyyyMMddhh24miss') <![CDATA[<]]> #{dateEndStr,jdbcType=VARCHAR} -->
+	</select>
+
+	<!-- 获取财务月份 -->
+	<!-- 
+	<select id="getPcMouth" parameterType="java.util.HashMap"
+		resultType="com.zebone.nhis.common.module.scm.st.PdCc">
+		select nvl(to_char(dbo.sysdate(),'yyyy-MM-DDHH24:MI:SS'),max(month_fin)+1) as month_fin
+		from PD_CC
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="pkOrg != null and pkOrg != ''">
+				pk_org =#{pkOrg,jdbcType=VARCHAR}
+			</if>
+			<if test="pkStroe !=null and pkStroe !=''">
+				and pk_store =#{pkStore,jdbcType=VARCHAR}
+			</if>
+			<if test="pkDept != null and pkDept != ''">
+				and pk_dept=#{pkDept,jdbcType=VARCHAR}
+			</if>
+			and del_flag = '0'
+		</trim>
+	</select>
+ -->
+ 
+<!-- 库存台账：期初 -->
+ <select id="getPdLedgerCCList"  parameterType="java.util.Map" resultType="com.zebone.nhis.scm.st.vo.PdLedgerVo">
+	SELECT
+		dt.pk_pd || '_' || pd.PK_UNIT_MIN AS mapKey,
+		dt.pk_pd,
+		pd.name,pd.spec,
+		pd.spcode,
+		pd.PK_UNIT_MIN AS packUnit,
+		unit.NAME packUnitName,
+		fac.NAME facName,
+		SUM (
+			CASE
+			WHEN DT.pack_size = 0 THEN
+				0
+			ELSE
+				DT.quan_min / DT.pack_size
+			END
+		) quanCC,
+		SUM (dt.amount) amtCC, <!-- 期初零售金额 -->
+		SUM (dt.amount_cost) amtCostCC, <!-- 期初成本金额 --> 
+		${calMonBegin}  as calMonBegin,
+		'${dateBegin}' as dateBegin,
+		'${dateEnd}' as dateEnd 
+		
+	FROM
+		pd_cc cc
+	INNER JOIN pd_cc_detail dt ON cc.pk_pdcc = dt.pk_pdcc
+	INNER JOIN bd_pd pd ON pd.pk_pd = dt.pk_pd
+	LEFT JOIN bd_unit unit ON dt.pk_unit = unit.pk_unit
+	LEFT JOIN bd_factory fac ON pd.pk_factory = fac.pk_factory
+	WHERE
+		1 = 1 
+		and cc.pk_store =#{pkStore,jdbcType=VARCHAR}
+		and cc.month_fin = #{calMonBegin,jdbcType=BIGINT} 
+GROUP BY
+	dt.pk_pd,
+	pd.PK_UNIT_MIN,
+	unit. NAME,
+	fac. NAME,pd.name,pd.spec,pd.spcode
+</select>
+
+ <!-- 库存台账：收入-->
+ <select id="getPdLedgerSTInList"  parameterType="java.util.Map" resultType="com.zebone.nhis.scm.st.vo.PdLedgerVo">
+	SELECT
+		dt.pk_pd || '_' || pd.PK_UNIT_MIN AS mapKey,
+		dt.pk_pd,pd.name,pd.spec,
+		pd.PK_UNIT_MIN AS packUnit,
+		unit. NAME packUnitName,
+		fac. NAME facName,
+		SUM ( case when dt.PK_UNIT_PACK =pd.PK_UNIT_MIN THEN dt.quan_pack else dt.QUAN_PACK * pd.PACK_SIZE END ) quanIncom,
+		SUM (dt.amount) amtInCom,<!-- 收入零售金额-->
+		SUM (dt.amount_cost) amtCostInCom, <!-- 收入成本金额-->  
+		${calMonBegin}  as calMonBegin,
+		'${dateBegin}' as dateBegin,
+		'${dateEnd}' as dateEnd ,
+		pd.spcode
+	FROM
+		pd_st st
+	INNER JOIN pd_st_detail dt ON st.pk_pdst = dt.pk_pdst
+	INNER JOIN bd_pd pd ON pd.pk_pd = dt.pk_pd
+	LEFT JOIN bd_unit unit ON dt.pk_unit_pack = unit.pk_unit
+	LEFT JOIN bd_factory fac ON pd.pk_factory = fac.pk_factory
+	WHERE
+		st.eu_direct = 1 
+		and st.flag_chk='1' 
+		and st.pk_store_st =#{pkStore,jdbcType=VARCHAR}
+		<if test="dateBegin !=null and dateBegin !=''">
+			and to_char(st.date_chk,'yyyyMMddhh24miss') <![CDATA[>=]]> #{dateBegin,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd !=null and dateEnd !=''">
+			and to_char(st.date_chk,'yyyyMMddhh24miss') <![CDATA[<=]]> #{dateEnd,jdbcType=VARCHAR}
+		</if>
+	GROUP BY
+		dt.pk_pd,
+		pd.PK_UNIT_MIN,
+		unit. NAME,
+		fac. NAME,pd.name,pd.spec,pd.spcode
+</select>
+ 
+ <!-- 库存台账：支出-->
+ <select id="getPdLedgerSTOutList"  parameterType="java.util.Map" resultType="com.zebone.nhis.scm.st.vo.PdLedgerVo">
+	SELECT
+		dt.pk_pd || '_' || pd.PK_UNIT_MIN AS mapKey,
+		dt.pk_pd,pd.name,pd.spec,
+		pd.PK_UNIT_MIN AS packUnit,<!-- 支出包装单位 -->
+		unit. NAME packUnitName,
+		fac. NAME facName,
+		SUM ( case when dt.PK_UNIT_PACK =pd.PK_UNIT_MIN THEN dt.quan_pack else dt.QUAN_PACK * pd.PACK_SIZE END ) quanOutcom,
+		SUM (dt.amount) amtOutCom,<!-- 支出零售金额-->
+		SUM (dt.amount_cost) amtCostOutCom, <!-- 支出成本金额-->   
+		${calMonBegin}  as calMonBegin,
+		'${dateBegin}' as dateBegin,
+		'${dateEnd}' as dateEnd ,
+		pd.spcode
+	FROM
+		pd_st st
+	INNER JOIN pd_st_detail dt ON st.pk_pdst = dt.pk_pdst
+	INNER JOIN bd_pd pd ON pd.pk_pd = dt.pk_pd
+	LEFT JOIN bd_unit unit ON dt.pk_unit_pack = unit.pk_unit
+	LEFT JOIN bd_factory fac ON pd.pk_factory = fac.pk_factory
+	WHERE
+		eu_direct = -1 
+ 	    and st.flag_chk='1' 
+		and st.pk_store_st =#{pkStore,jdbcType=VARCHAR}
+		<if test="dateBegin !=null and dateBegin !=''">
+			and to_char(st.date_chk,'yyyyMMddhh24miss') <![CDATA[>=]]> #{dateBegin,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd !=null and dateEnd !=''">
+			and to_char(st.date_chk,'yyyyMMddhh24miss') <![CDATA[<=]]> #{dateEnd,jdbcType=VARCHAR}
+		</if>
+	GROUP BY
+		dt.pk_pd,
+		pd.PK_UNIT_MIN,
+		unit. NAME,
+		fac. NAME,pd.name,pd.spec,pd.spcode
+</select>
+
+<!-- 库存台账：调价，调价只要零售金额，没有成本金额、数量。零售金额归入到 收入/支出-->
+ <select id="getPdLedgerHistList"  parameterType="java.util.Map" resultType="com.zebone.nhis.scm.st.vo.PdLedgerVo">
+	SELECT
+	rep.pk_pd || '_' || pd.PK_UNIT_MIN AS mapKey,
+	rep.pk_pd,pd.name,pd.spec,
+	pd.PK_UNIT_MIN AS packUnit,
+	unit.NAME packUnitName,
+	fac.NAME facName,
+	SUM(case WHEN rep.amount_rep <![CDATA[>=]]> 0 THEN  rep.amount_rep ELSE 0 END) as amtInCom ,<!-- 调价收入零售金额 amtHistInCom -->
+	SUM(case WHEN rep.amount_rep <![CDATA[<=]]> 0 THEN ABS (rep.amount_rep) ELSE 0 END) as amtOutCom,  <!-- 调价支出零售金额  amtHistOutCom-->
+	${calMonBegin}  as calMonBegin,
+	'${dateBegin}' as dateBegin,
+	'${dateEnd}' as dateEnd ,
+	pd.spcode
+	FROM
+		pd_reprice_hist rep
+	INNER JOIN bd_pd pd ON pd.pk_pd = rep.pk_pd
+	LEFT JOIN bd_unit unit ON rep.pk_unit_pack = unit.pk_unit
+	LEFT JOIN bd_factory fac ON pd.pk_factory = fac.pk_factory
+	WHERE
+		1 = 1 
+		and rep.pk_store =#{pkStore,jdbcType=VARCHAR}
+		<if test="dateBegin !=null and dateBegin !=''">
+			and to_char(rep.date_reprice,'yyyyMMddhh24miss') <![CDATA[>=]]> #{dateBegin,jdbcType=VARCHAR}
+		</if>
+		<if test="dateEnd !=null and dateEnd !=''">
+			and to_char(rep.date_reprice,'yyyyMMddhh24miss') <![CDATA[<=]]> #{dateEnd,jdbcType=VARCHAR}
+		</if>
+	GROUP BY
+		rep.pk_pd,
+		pd.PK_UNIT_MIN,
+		unit.NAME,
+		fac.NAME,pd.name,pd.spec,pd.spcode
+</select>
+
+<select id="getPdLedgerDt"  parameterType="java.util.Map" resultType="com.zebone.nhis.scm.st.vo.PdLedgerVo">
+select * from
+(
+	SELECT
+		TO_CHAR (
+			cc.date_end,
+			'yyyyMMddhh24miss'
+		) || '_' || 'A期初结存' AS mapKey,
+		dt.pk_pd,
+		to_date(to_char(cc.date_end,'yyyy-MM-DD'),'yyyy-MM-DD') +1  as ledgerDate, <!--  trunc(cc.date_end) + 1 AS ledgerDate, -->
+		NULL AS oddNum,
+		'期初结存' AS remark,
+		pd. NAME,
+		pd.spec,
+		dt.pk_unit AS packUnit,
+		unit. NAME packUnitName,
+		fac. NAME facName,
+		SUM (
+		CASE
+		WHEN DT.pack_size = 0 THEN
+			0
+		ELSE
+			DT.quan_min / DT.pack_size
+		END
+	) AS quanIncom,
+	SUM (dt.amount) AS amtInCom,
+	SUM (dt.amount_cost) AS amtCostInCom,
+	0 AS quanOutcom,
+	0 AS amtOutCom,
+	0 AS amtCostOutCom
+	FROM
+		pd_cc cc
+	INNER JOIN pd_cc_detail dt ON cc.pk_pdcc = dt.pk_pdcc
+	INNER JOIN bd_pd pd ON pd.pk_pd = dt.pk_pd
+	LEFT JOIN bd_unit unit ON dt.pk_unit = unit.pk_unit
+	LEFT JOIN bd_factory fac ON pd.pk_factory = fac.pk_factory
+	WHERE
+		1 = 1
+	AND cc.pk_store = #{pkStore,jdbcType=VARCHAR}
+	AND dt.pk_pd = #{pkPd,jdbcType=VARCHAR}
+	AND dt.pk_unit = #{packUnit,jdbcType=VARCHAR}
+	AND cc.month_fin =  #{calMonBegin,jdbcType=BIGINT} 
+	GROUP BY
+	cc.date_end,
+	dt.pk_pd,
+	pd. NAME,
+	pd.spec,
+	dt.pk_unit,
+	unit. NAME,
+	fac. NAME
+	
+	union all
+	
+	SELECT
+		TO_CHAR (
+			st.date_chk,
+			'yyyyMMddhh24miss'
+		) || '_' || 'BC收入支出' AS mapKey,
+		dt.pk_pd,
+		st.date_chk,
+		st.code_st,
+		def.name as remark,
+		pd. NAME,
+		pd.spec,
+		pd.PK_UNIT_MIN AS packUnit,
+		unit. NAME packUnitName,
+		fac. NAME facName,
+		sum(case when st.eu_direct=1  then case when dt.PK_UNIT_PACK != pd.PK_UNIT_MIN then dt.quan_pack * pd.PACK_SIZE else dt.QUAN_PACK end else 0 end )  as quanIncom, <!-- 收入数量 -->
+		sum( case when st.eu_direct=1  then dt.amount else 0 end)  as  amtInCom, <!-- 收入零售金额-->
+		sum( case when st.eu_direct=1  then dt.amount_cost else 0 end)  as amtCostInCom, <!-- 收入成本金额--> 
+		sum( case when st.eu_direct=-1 then case when dt.PK_UNIT_PACK != pd.PK_UNIT_MIN then dt.quan_pack * pd.PACK_SIZE else dt.QUAN_PACK end else 0 end ) as quanOutcom, <!-- 支出数量-->
+		sum( case when st.eu_direct=-1  then dt.amount else 0 end)  as amtOutCom,<!-- 支出零售金额--> 
+		sum( case when st.eu_direct=-1  then dt.amount_cost else 0 end ) as amtCostOutCom <!-- 支出成本金额--> 
+	FROM
+		pd_st st
+	INNER JOIN pd_st_detail dt ON st.pk_pdst = dt.pk_pdst
+	INNER JOIN bd_pd pd ON pd.pk_pd = dt.pk_pd
+	LEFT JOIN bd_unit unit ON pd.PK_UNIT_MIN = unit.pk_unit
+	LEFT JOIN bd_factory fac ON pd.pk_factory = fac.pk_factory
+	left join bd_defdoc def on def.code_defdoclist ='080008' and def.del_flag='0' and def.code=st.dt_sttype
+	WHERE
+		1=1
+	AND st.flag_chk = '1'
+	AND st.pk_store_st = #{pkStore,jdbcType=VARCHAR}
+	AND dt.pk_pd = #{pkPd,jdbcType=VARCHAR}
+	
+	AND TO_CHAR (
+		st.date_chk,
+		'yyyyMMddhh24miss'
+	) <![CDATA[>=]]>  #{dateBegin,jdbcType=VARCHAR}
+	<!-- AND TO_CHAR (
+		st.date_chk,
+		'yyyyMMddhh24miss'
+	) <![CDATA[<=]]>  #{dateEnd,jdbcType=VARCHAR}
+	 -->
+	GROUP BY
+	st.date_chk,
+	dt.pk_pd,
+	pd. NAME,
+	pd.spec,
+	pd.PK_UNIT_MIN,
+	st.code_st,
+	unit. NAME,
+	fac. NAME,
+	def. NAME
+	
+	union all
+	
+	SELECT
+		TO_CHAR (
+			rep.date_reprice,
+			'yyyyMMddhh24miss'
+		) || '_' || 'D调价' AS mapKey,
+		rep.pk_pd,
+		rep.date_reprice,
+		rep.code_rep,
+		CASE rep.dt_reptype
+	WHEN '0' THEN
+		'政策条件'
+	WHEN '1' THEN
+		'企业调价'
+	WHEN '2' THEN
+		'其他调价'
+	END AS remark,
+	 pd. NAME,
+	 pd.spec,
+	 rep.pk_unit_pack AS packUnit,
+	 unit. NAME packUnitName,
+	 fac. NAME facName,
+	 0 AS quanIncom,
+	 sum(CASE
+	WHEN rep.amount_rep <![CDATA[>=]]> 0 THEN
+		rep.amount_rep
+	ELSE
+		0
+	END) AS amtInCom,
+	 0 AS amtCostInCom,
+	 0 AS quanOutcom,
+	 sum(CASE
+	WHEN rep.amount_rep <![CDATA[<=]]> 0 THEN
+		ABS (rep.amount_rep)
+	ELSE
+		0
+	END ) AS amtOutCom,
+	 0 AS amtCostOutCom
+	FROM
+		pd_reprice_hist rep
+	INNER JOIN bd_pd pd ON pd.pk_pd = rep.pk_pd
+	LEFT JOIN bd_unit unit ON rep.pk_unit_pack = unit.pk_unit
+	LEFT JOIN bd_factory fac ON pd.pk_factory = fac.pk_factory
+	WHERE
+		1 = 1
+	AND rep.pk_store = #{pkStore,jdbcType=VARCHAR}
+	AND REP.pk_pd = #{pkPd,jdbcType=VARCHAR}
+	and rep.pk_unit_pack = #{packUnit,jdbcType=VARCHAR}
+	AND TO_CHAR (
+		rep.date_reprice,
+		'yyyyMMddhh24miss'
+	) <![CDATA[>=]]>  #{dateBegin,jdbcType=VARCHAR}
+	<!-- AND TO_CHAR (
+		rep.date_reprice,
+		'yyyyMMddhh24miss'
+	) <![CDATA[<=]]> #{dateEnd,jdbcType=VARCHAR} -->
+	GROUP BY
+	rep.pk_pd,
+	rep.date_reprice,
+	rep.code_rep,
+	rep.dt_reptype,
+	pd. NAME,
+	pd.spec,
+	rep.pk_unit_pack,
+	unit. NAME,
+	fac. NAME
+	
+	) 
+	order by ledgerDate
+	
+		
+</select>
+	
+
+</mapper>

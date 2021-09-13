@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.pskq.dao.ExLabOccMessageMapper">
+  <resultMap id="BaseResultMap" type="com.zebone.nhis.webservice.pskq.model.LabResult">
+    <id column="PK_LABOCC" jdbcType="CHAR" property="labApplyId" />
+    <result column="PK_ORG" jdbcType="CHAR" property="orgCode" />
+    <result column="PK_PI" jdbcType="CHAR" property="pkPatient" />
+    <result column="PK_PV" jdbcType="CHAR" property="encounterId" />
+    <result column="PK_CNORD" jdbcType="CHAR" property="placerOrderNo" />
+    <result column="EU_TYPE" jdbcType="VARCHAR" property="encounterTypeCode" />
+
+  </resultMap>
+  <sql id="Base_Column_List">
+    PK_LABOCC, PK_ORG, PK_PI, PK_PV, PK_CNORD, EU_TYPE, NAME_ORD, CODE_APPLY, PK_ORG_OCC, 
+    PK_DEPT_OCC, PK_EMP_OCC, NAME_EMP_OCC, PK_MSP, DATE_OCC, DATE_RPT, FLAG_CHK, DATE_CHK, 
+    PK_EMP_CHK, NAME_EMP_CHK, PK_ORD, SORT_NO, CODE_SAMP, CODE_INDEX, NAME_INDEX, PK_UNIT, 
+    UNIT, VAL_MAX, VAL_MIN, VAL, VAL1, VAL2, VAL3, VAL4, EU_RESULT, CREATOR, CREATE_TIME, 
+    MODIFIER, MODIFY_TIME, DEL_FLAG, TS, CODE_RPT
+  </sql>
+  <select id="findByCodeApply" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from EX_LAB_OCC
+    where CODE_APPLY = #{codeApply,jdbcType=VARCHAR}
+  </select>
+</mapper>

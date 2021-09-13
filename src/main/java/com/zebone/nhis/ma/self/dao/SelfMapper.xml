@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.self.dao.SelfMapper">
+	<select id="findMachinOperInfo" resultType="com.zebone.nhis.common.module.ma.self.BdOuSssOper"
+		parameterType="java.lang.String">
+		select * from bd_ou_sss_oper where pk_oper in (${opers})
+	</select>
+	<select id="getpiMasterByCredent" resultType="com.zebone.nhis.common.module.pi.PiMaster"
+		parameterType="java.lang.String">
+		select * from pi_master where del_flag='0' and
+		pk_org=#{pkOrg,jdbcType=VARCHAR}
+		<if test="idType!=null and idNo!=null">
+			and( dt_idtype=#{idType,jdbcType=VARCHAR}
+			and
+			id_no=#{idNo,jdbcType=VARCHAR} )
+		</if>
+		<if test="insurNo!=null">
+			or insur_no = #{insurNo,jdbcType=VARCHAR}
+		</if>
+		<if test="mobile!=null">
+			or mobile = #{mobile,jdbcType=VARCHAR}
+		</if>
+	</select>
+	<select id="getSqlSerDpInvPkLstOnAppoint" parameterType="java.lang.String"
+		resultType="java.lang.String">
+		select di.pk_dpinv from dp_inv_range dir right join dp_inv
+		di on
+		dir.pk_dpinv=di.pk_dpinv
+		where dir.del_flag='0' and
+		di.flag_range='1' and
+		di.eu_tatype=#{euTatype,jdbcType=VARCHAR}
+		and
+		di.eu_status='1' and di.date_begin
+		&lt;to_date(#{curDate},'YYYYMMDDHH24MISS') and
+		di.date_end&gt;to_date(#{curDate},'YYYYMMDDHH24MISS') and
+		dir.pk_target=#{pkTarget,jdbcType=VARCHAR}
+		and
+		dir.pk_org=#{pkOrg,jdbcType=VARCHAR} and
+		di.pk_org=#{pkOrg,jdbcType=VARCHAR}
+	</select>
+
+	<select id="getDpInvPkLstOnAppoint" parameterType="java.lang.String"
+		resultType="java.lang.String">
+		select di.pk_dpinv from dp_inv_range dir right join dp_inv
+		di on
+		dir.pk_dpinv=di.pk_dpinv
+		where dir.del_flag='0' and
+		di.flag_range='1' and
+		di.eu_tatype=#{euTatype,jdbcType=VARCHAR}
+		and
+		di.eu_status='1' and di.date_begin
+		&lt;to_date(#{curDate},'YYYYMMDDHH24MISS') and
+		di.date_end&gt;to_date(#{curDate},'YYYYMMDDHH24MISS') and
+		dir.pk_target=#{pkTarget,jdbcType=VARCHAR}
+		and
+		dir.pk_org=#{pkOrg,jdbcType=VARCHAR} and
+		di.pk_org=#{pkOrg,jdbcType=VARCHAR}
+	</select>
+	<select id="getBlIpDtsSqlSer" parameterType="java.lang.String"
+	resultType="com.zebone.nhis.common.module.bl.BlIpDt">
+		select bid.* from pv_encounter pv inner join pv_ip ip
+		on
+		pv.pk_pv=ip.pk_pv
+		inner join pi_master pi on pv.pk_pi=pi.pk_pi inner
+		join
+		pi_card pc on
+		pc.pk_pi=pi.pk_pi
+		right join bl_ip_dt bid on bid.pk_pv=pv.pk_pv
+		where 1=1
+		<if test="cardNo != null and cardNo != ''">
+			and pc.card_no=#{cardNo,jdbcType=VARCHAR}
+		</if>
+		<if test="dtCardtype != null and dtCardtype != ''">
+			and pc.dt_cardtype=#{dtCardtype,jdbcType=VARCHAR}
+		</if>
+		<if test="endDate != null and endDate != ''">
+			and bid.date_cg&lt;to_date(SUBSTRING(#{endDate},1,8)||'235959','yyyyMMddhh24miss')
+		</if>
+		<if test="beginDate != null and beginDate != ''">
+			and bid.date_cg&gt;to_date(#{beginDate,'yyyyMMddhh24miss')
+		</if>
+		and pv.pk_org=#{pkOrg,jdbcType=VARCHAR}
+	</select>
+
+	<select id="getBlIpDtsOracle" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.common.module.bl.BlIpDt">
+		select bid.* from pv_encounter pv inner join pv_ip ip
+		on
+		pv.pk_pv=ip.pk_pv
+		inner join pi_master pi on pv.pk_pi=pi.pk_pi inner
+		join
+		pi_card pc on
+		pc.pk_pi=pi.pk_pi
+		right join bl_ip_dt bid on bid.pk_pv=pv.pk_pv
+		where 1=1
+		<if test="cardNo != null and cardNo != ''">
+			and pc.card_no=#{cardNo,jdbcType=VARCHAR}
+		</if>
+		<if test="dtCardtype != null and dtCardtype != ''">
+			and pc.dt_cardtype=#{dtCardtype,jdbcType=VARCHAR}
+		</if>
+		<if test="endDate != null and endDate != ''">
+			and bid.date_cg&lt;to_date(SUBSTR(#{endDate},1,8)||'235959','yyyyMMddhh24miss')
+		</if>
+		<if test="beginDate != null and beginDate != ''">
+			and bid.date_cg&gt;to_date(#{beginDate,'yyyyMMddhh24miss')
+		</if>
+		and pv.pk_org=#{pkOrg,jdbcType=VARCHAR}
+	</select>
+
+</mapper>

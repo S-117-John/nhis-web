@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.cn.ipdw.dao.CnOrdBaMapper">
+    <select id="qryRisOrd" parameterType="java.util.Map" resultType="com.zebone.nhis.pro.zsba.cn.ipdw.vo.CanRisLabVo">
+        select cn.pk_cnord,cn.name_ord,cn.eu_status_ord,ris.eu_status as app_status,occ.eu_status as occ_status,dept.NAME_DEPT
+        from CN_ORDER cn
+        left JOIN cn_ris_apply ris on cn.pk_cnord = ris.pk_cnord
+        left JOIN EX_ORDER_OCC occ on cn.pk_cnord = occ.pk_cnord
+        left JOIN BD_OU_DEPT dept on occ.PK_DEPT_OCC = dept.PK_DEPT
+        where 1=1
+        and cn.ORDSN_PARENT in
+        <foreach item="item" index="index" collection="ordsns" open="(" separator="," close=")">
+            #{item,jdbcType=NUMERIC}
+        </foreach>
+    </select>
+    <select id="qryLabOrd" parameterType="java.util.Map" resultType="com.zebone.nhis.pro.zsba.cn.ipdw.vo.CanRisLabVo">
+        select cn.pk_cnord,cn.name_ord,cn.eu_status_ord,lab.eu_status as app_status,occ.eu_status as occ_status,dept.NAME_DEPT
+        from CN_ORDER cn
+        left JOIN CN_LAB_APPLY lab on cn.pk_cnord = lab.pk_cnord
+        left JOIN EX_ORDER_OCC occ on cn.pk_cnord = occ.pk_cnord
+        left JOIN BD_OU_DEPT dept on occ.PK_DEPT_OCC = dept.PK_DEPT
+        where 1=1
+        and cn.ORDSN_PARENT in
+        <foreach item="item" index="index" collection="ordsns" open="(" separator="," close=")">
+            #{item,jdbcType=NUMERIC}
+        </foreach>
+    </select>
+</mapper>

@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.compay.ins.lb.dao.szyb.InsSzybMapper">
+
+	<select id="querySzybJsList" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.compay.ins.lb.szyb.InsSzybJs">
+		 select * from ins_szyb_js 
+		 where pk_org = #{pkOrg,jdbcType=CHAR} 
+		 <if test=" ywzqh!=null and ywzqh!='' ">
+		      and ywzqh = #{ywzqh,jdbcType=VARCHAR}
+		 </if>
+		 
+	</select>
+	<select id="querySzybJsSummary" parameterType="java.util.Map" resultType="DynaBean">
+		  select ywzqh,sum(ylfyze) as ylfyze,sum(grzhzf) as grzhzf,sum(grxjzf) as grxjzf ,
+		  sum(tczfje) as tczfje,sum(jzjzfje) as jzjzfje,sum(gwybzzfje) as gwybzzfje,sum(dwtcfdje) as dwtcfdje  
+		  from ins_szyb_js 
+		  where pk_org = #{pkOrg,jdbcType=CHAR} 
+		 <if test=" ywzqh!=null and ywzqh!='' ">
+		      and ywzqh = #{ywzqh,jdbcType=VARCHAR}
+		 </if>
+          group by ywzqh 
+	</select>
+	
+	<select id="qryFymxInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.compay.ins.lb.szyb.InsSzybFymx">
+		select * from ins_szyb_fymx where del_flag='0' and ywlsh=#{ywlsh,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="qryLoginreCord" parameterType="java.util.Map" resultType="DynaBean">
+		select * from ins_szyb_loginrecord 
+		where del_flag='0' and ry=#{qdr,jdbcType=VARCHAR}
+		and qdsj &gt;=to_date(#{beginDate},'YYYYMMDDHH24MISS') and qdsj &lt;=to_date(#{endDate},'YYYYMMDDHH24MISS')
+	</select>
+	
+	<select id="qrySumSzybJsKind" parameterType="java.util.Map" resultType="DynaBean">
+		select
+			case when sum(ylfyze) is null then 0.00 else sum(ylfyze) end as ylfyze,
+			case when sum(grzhzf) is null then 0.00 else sum(grzhzf) end as grzhzf,
+			case when sum(grxjzf) is null then 0.00 else sum(grxjzf) end as grxjzf,
+			case when sum(tczfje)  is null then 0.00 else sum(tczfje)  end as tczfje,
+			case when sum(jzjzfje)  is null then 0.00 else sum(jzjzfje)  end as jzjzfje,
+			case when sum(gwybzzfje) is null then 0.00 else sum(gwybzzfje) end as gwybzzfje,
+			case when sum(dwtcfdje)is null then 0.00 else sum(dwtcfdje) end as dwtcfdje,
+			case when sum(qtzlje)  is null then 0.00 else sum(qtzlje)  end as qtzlje
+		from ins_szyb_js where del_flag='0' and ywzqh=#{ywzqh,jdbcType=VARCHAR}
+	</select>
+	
+	<update id="updateLoginrecord" parameterType="com.zebone.nhis.compay.ins.lb.vo.szyb.ParamLoginInSave">
+		update ins_szyb_loginrecord 
+			set qdzt=#{qdzt,jdbcType=VARCHAR},qtsj=to_date(#{qtsj} ,'YYYYMMDDHH24MISS')
+		where DEL_FLAG='0' and qdywzqh=#{qdywzqh,jdbcType=VARCHAR}
+	</update>
+
+	<select id="qryDtSttypeByPkdept" resultType="DynaBean">
+		select pk_dept,dt_stdepttype from bd_ou_dept
+		 where DT_STDEPTTYPE is not null
+		<if test="pkList != null and pkList.size > 0">
+			AND (PK_DEPT in
+			<!-- 处理in的集合超过1000条时Oracle不支持的情况 -->
+			<trim suffixOverrides=" OR PK_DEPT IN()">    <!-- 表示删除最后一个条件 -->
+				<foreach collection="pkList" item="Id" index="index" open="(" close=")">
+					<if test="index != 0">
+						<choose>
+							<when test="index % 1000 == 999">) OR PK_DEPT in (</when>
+							<otherwise>,</otherwise>
+						</choose>
+					</if>
+					#{Id}
+				</foreach>
+			</trim>
+			)
+		</if>
+
+	</select>
+
+	<select id="qryItemMapInfo" resultType="DynaBean">
+		select itemmap.*,
+		  case when yp.SFXMDJ is null and item.sfxmdj is null then '2'
+			else
+			  case when yp.SFXMDJ is not null then yp.SFXMDJ else item.SFXMDJ end
+			end xmdj
+		from INS_SZYB_ITEM_MAP itemmap
+		  left join ins_szyb_yp yp on yp.ypbm = itemmap.code and yp.del_flag = '0'
+		  left join ins_szyb_zlxm item on item.xmbm = itemmap.code and item.del_flag = '0'
+		where itemmap.del_flag = '0'
+			and itemmap.pk_hp = #{pkHp,jdbcType=CHAR}
+			and (
+				itemmap.pk_item in
+				<trim suffixOverrides=" OR itemmap.pk_item IN()">    <!-- 表示删除最后一个条件 -->
+					<foreach collection="pkItems" item="Id" index="index" open="(" close=")">
+						<if test="index != 0">
+							<choose>
+								<when test="index % 1000 == 999">) OR itemmap.pk_item in (</when>
+								<otherwise>,</otherwise>
+							</choose>
+						</if>
+						#{Id}
+					</foreach>
+				</trim>
+			)
+	</select>
+
+	<select id="qryInsuEmpInfo" resultType="DynaBean">
+		select dict.code code_emp,dict.name name_emp,emp.* from INS_DICT dict
+			inner join INS_DICTTYPE dtype on dtype.PK_INSDICTTYPE = dict.PK_INSDICTTYPE
+			inner join INS_SZYB_EMPLOYEE emp on dict.code = emp.code_emp
+		where dtype.CODE_TYPE = 'YS001' and dict.DEL_FLAG = '0' and dtype.DEL_FLAG = '0' and emp.del_flag = '0'
+	</select>
+
+	<select id="qryStInfo" resultType="com.zebone.nhis.compay.ins.lb.vo.szyb.StReceVo">
+		select
+			jsxx.*,
+		  case when ybjs.qdid is not null then '1' else '0' end ywlx,
+		  ybjs.qdid qdid,
+		  ybjs.ywlsh jzid,
+		  ybjs.djh jsid,
+		  ybjs.ddyljgmc yljgmc,
+		  ybjs.ddyljgbh yljgbm,
+		  ybjs.grbh grybbh,
+		  to_char(sysdate,'yyyyMMddHH24miss') sbsj,
+		  ybjs.ywlsh ywlsh,
+		  to_char(st.DATE_ST,'yyyyMMdd') jsksrq,
+		  to_char(st.DATE_ST,'yyyyMMdd') jsjsrq,
+		  ybjs.jbylfyze - ybjs.tczfje grzfu,
+		  ybjs.ylfyze - ybjs.jbylfyze grzf,
+		  ybjs.GRZHZF,
+		  ybjs.GRXJZF,
+		  inv.code_inv pjdm,
+		  inv.code_inv pjhm,
+		  '1' cy31tnzzyjhbz,
+		  tcq.name as cbdbm,
+		  zdkbmap.CODE_INSUR as zdkb,
+			rykbmap.CODE_INSUR as rykb,
+			zkkbmap.CODE_INSUR as zkkb,
+			cykbmap.CODE_INSUR as cykb,
+			xyzdmap.CODE_INSUR as mjzxyzddm,
+			xyzdmap.NAME_INSUR as mjzxyzdmc,
+			zyzdmap.CODE_INSUR as mjzzyzddm,
+			zyzdmap.NAME_INSUR as mjzzyzdmc,
+			ysmap.CODE_INSUR as zzysdm
+		from bl_settle st
+			inner join PV_ENCOUNTER pv on pv.pk_pv = st.pk_pv
+			inner join pv_ip pvip on pvip.pk_pv = pv.pk_pv
+			inner join PI_MASTER pi on pi.pk_pi = pv.pk_pi
+			left join bl_st_inv stinv on stinv.PK_SETTLE = st.pk_settle
+			left join bl_invoice inv on inv.pk_invoice = stinv.pk_invoice
+			left join v_yb_jsxx jsxx on jsxx.bah = pi.code_ip and jsxx.pk_pv=pv.PK_PV and jsxx.zycs = pvip.IP_TIMES
+		  	inner join ins_szyb_js ybjs on ybjs.pk_settle = st.pk_settle and ybjs.del_flag='0'
+		  	left join ins_szyb_tcqh tcq on tcq.code = ybjs.tcqh
+		  	left join ins_szyb_dictmap zdkbmap on zdkbmap.CODE_HIS = jsxx.zdkb1 and zdkbmap.CODE_TYPE = 'KSZD' and zdkbmap.DEL_FLAG = '0'
+			left join ins_szyb_dictmap rykbmap on rykbmap.CODE_HIS = jsxx.rykb1 and rykbmap.CODE_TYPE = 'KSZD' and rykbmap.DEL_FLAG = '0'
+			left join ins_szyb_dictmap zkkbmap on zkkbmap.CODE_HIS = jsxx.zkkb1 and zkkbmap.CODE_TYPE = 'KSZD' and zkkbmap.DEL_FLAG = '0'
+			left join ins_szyb_dictmap cykbmap on cykbmap.CODE_HIS = jsxx.cykb1 and cykbmap.CODE_TYPE = 'KSZD' and cykbmap.DEL_FLAG = '0'
+			left join ins_szyb_dictmap xyzdmap on	xyzdmap.CODE_HIS = jsxx.mjzxyzddm1 and cykbmap.CODE_TYPE = 'BZDZBM' and cykbmap.DEL_FLAG = '0'
+			left join ins_szyb_dictmap zyzdmap on	zyzdmap.CODE_HIS = jsxx.mjzzyzddm1 and zyzdmap.CODE_TYPE = 'BZDZBM' and zyzdmap.DEL_FLAG = '0'
+			left join ins_szyb_dictmap ysmap on	ysmap.CODE_HIS = jsxx.zzysdm1 and ysmap.CODE_TYPE = 'RYZD' and ysmap.DEL_FLAG = '0'
+		where st.pk_settle = #{pkSettle,jdbcType=CHAR} and inv.FLAG_CANCEL = '0' and ybjs.del_flag = '0'
+		order by ybjs.create_time desc
+	</select>
+
+	<select id="qryInsuPayDtls" resultType="DynaBean">
+		select
+		  ybjs.qdid,
+		  ybjs.ywlsh djlsh,
+		  ybjs.djh jsid,
+		  ybjs.JZJZFJE ljjzjj,
+		  ybjs.BCJRGWYTKBZJE gwyylbzjj,
+		  case when jsxx.yblx = '310' then TCZFJE else '0' end zgjbylbxtcjj,
+		  case when jsxx.yblx != '310' then TCZFJE else '0' end cxjmjbylbxjj,
+		  ybjs.grzhzf,
+		  ybjs.bcdbzcje,
+		  ybjs.BCDBZCJE cxjmdbylbxzj
+		from ins_szyb_js ybjs
+		  inner join bl_settle st on st.pk_settle = ybjs.pk_settle
+		  inner join PV_ENCOUNTER pv on pv.pk_pv = st.pk_pv
+		  inner join pv_ip pvip on pvip.pk_pv = pv.pk_pv
+			inner join PI_MASTER pi on pi.pk_pi = pv.pk_pi
+		  inner join v_yb_jsxx jsxx on jsxx.bah = pi.code_ip and jsxx.pk_pv=pv.PK_PV and jsxx.zycs = pvip.IP_TIMES
+		where st.PK_SETTLE = #{pkSettle,jdbcType=CHAR} and  ybjs.del_flag = '0'
+	</select>
+
+	<select id="qryIpDiagList" resultType="DynaBean">
+		select
+			ybjs.qdid,
+			ybjs.ywlsh djlsh,
+			ybjs.djh jsid,
+			xyzdmap.CODE_INSUR as zdbm,
+			xyzdmap.NAME_INSUR as zdmc,
+			zd.rybq,
+			zd.zxy,
+			zd.zdxh
+		from bl_settle st
+			inner join PV_ENCOUNTER pv on pv.pk_pv = st.pk_pv
+			inner join pv_ip pvip on pvip.pk_pv = pv.pk_pv
+			inner join PI_MASTER pi on pi.pk_pi = pv.pk_pi
+			inner join v_yb_zyzd zd on zd.djlsh = pi.CODE_IP||'_'||pvip.IP_TIMES
+			inner join ins_szyb_js ybjs on ybjs.pk_settle = st.pk_settle and ybjs.del_flag='0'
+			left join ins_szyb_dictmap xyzdmap on xyzdmap.CODE_HIS = zd.zdbm1 and xyzdmap.CODE_TYPE = 'BZDZBM' and xyzdmap.DEL_FLAG = '0'
+		where st.pk_settle = #{pkSettle,jdbcType=CHAR}
+	</select>
+
+	<select id="qryChargeDtls" resultType="DynaBean">
+		select
+			ybjs.qdid,
+			ybjs.ywlsh djlsh,
+			ybjs.djh jsid,
+			case when dt.code_bill = '1' then '01'
+				when dt.code_bill = '4' then '02'
+				when dt.code_bill = '5' then '03'
+				when dt.code_bill = '7' then '05'
+				when dt.code_bill = '8' then '06'
+				when dt.code_bill = '13' then '07'
+				when dt.code_bill = '15' then '08'
+				when dt.code_bill = '2' then '09'
+				when dt.code_bill = '3' then '10'
+				else '14' end ylsfxmlb,
+			sum(dt.amount) je,
+			sum(case when ybcg.sfxmdj is not null and ybcg.sfxmdj='1' then dt.amount else 0 end) jlfyhj,
+			sum(case when ybcg.sfxmdj is not null and ybcg.sfxmdj='2' then dt.amount else 0 end) ylfyhj,
+			sum(case when ybcg.sfxmdj is not null and ybcg.sfxmdj='3' then dt.amount else 0 end) zfje,
+			sum(case when ybcg.sfxmdj is null then dt.amount else 0 end) qtje
+		from bl_ip_dt dt
+			inner join bl_settle st on st.pk_settle = dt.pk_settle
+			inner join ins_szyb_js ybjs on ybjs.pk_settle = st.pk_settle and ybjs.del_flag = '0'
+			left join (
+				select * from (
+				  select
+					row_number() over(partition by pk_cgip order by create_time desc) cnt,cg.*
+				  from ins_szyb_fymx cg where DEL_FLAG = '0'and cg.pk_pv = #{pkpv,jdbcType=CHAR}
+				) where cnt = '1'
+			) ybcg on ybcg.pk_cgip = dt.pk_cgip
+		where st.pk_settle = #{pkSettle,jdbcType=CHAR}
+		group by
+			ybjs.qdid,
+			ybjs.ywlsh,
+			ybjs.djh,
+			dt.code_bill
+	</select>
+
+	<select id="qryIclDtls" resultType="DynaBean">
+		select
+			ybjs.qdid,
+			ybjs.YWLSH djlsh,
+			ybjs.djh jsid,
+			zd.ssczlb,
+			xyzdmap.NAME_INSUR  as ssczmc,
+			xyzdmap.CODE_INSUR  as ssczbm,
+			zd.ssjb,
+			zd.ssczrq,
+			zd.mzfs,
+			ysmap.NAME_INSUR as szysxm,
+			ysmap.CODE_INSUR as szysdm,
+			mzysmap.NAME_INSUR as mzysxm,
+			mzysmap.CODE_INSUR as mzysdm,
+			zd.ssczxh
+		from bl_settle st
+			inner join PV_ENCOUNTER pv on pv.pk_pv = st.pk_pv
+			inner join pv_ip pvip on pvip.pk_pv = pv.pk_pv
+			inner join PI_MASTER pi on pi.pk_pi = pv.pk_pi
+			inner join v_yb_sscz zd on zd.djlsh = pi.CODE_IP||'_'||pvip.IP_TIMES
+			inner join ins_szyb_js ybjs on ybjs.pk_settle = st.pk_settle and ybjs.del_flag='0'
+			left join ins_szyb_dictmap xyzdmap on	xyzdmap.CODE_HIS = zd.ssczbm1 and xyzdmap.CODE_TYPE = 'BZDZBM' and xyzdmap.DEL_FLAG = '0'
+			left join ins_szyb_dictmap ysmap on	ysmap.CODE_HIS = zd.szysdm1 and ysmap.CODE_TYPE = 'RYZD' and ysmap.DEL_FLAG = '0'
+			left join ins_szyb_dictmap mzysmap on	mzysmap.CODE_HIS = zd.mzysdm1 and mzysmap.CODE_TYPE = 'RYZD' and mzysmap.DEL_FLAG = '0'
+		where st.pk_settle = #{pkSettle,jdbcType=CHAR}
+	</select>
+
+	<select id="qryInsuStInfo" resultType="DynaBean">
+		select * from ins_szyb_js
+			where pk_settle = #{pkSettle,jdbcType=CHAR} and del_flag = '0'
+		order by CREATE_TIME desc
+	</select>
+
+	<select id="qryStInfoByPkSettle" resultType="DynaBean">
+		select
+		  st.code_st ywlsh,
+		  to_char(st.DATE_ST,'yyyyMMdd') jsksrq,
+		  to_char(st.DATE_ST,'yyyyMMdd') jsjsrq,
+		  inv.code_inv pjdm,
+		  inv.code_inv pjhm
+		from bl_settle st
+			left join bl_st_inv stinv on stinv.PK_SETTLE = st.pk_settle
+			left join bl_invoice inv on inv.pk_invoice = stinv.pk_invoice
+		where st.pk_settle = #{pkSettle,jdbcType=CHAR} and inv.FLAG_CANCEL = '0'
+		order by inv.create_time desc
+	</select>
+
+	<select id="qryPvInfoByPkSettle" resultType="com.zebone.nhis.common.module.pv.PvEncounter">
+		select * from PV_ENCOUNTER pv
+		inner join bl_settle st on st.pk_pv = pv.pk_pv
+		where st.pk_settle = #{pkSettle,jdbcType=CHAR}
+	</select>
+
+	<select id="qryOpStInfo" resultType="com.zebone.nhis.compay.ins.lb.vo.szyb.StReceVo">
+		select
+			jsxx.*,
+		  case when ybjs.qdid is not null then '1' else '0' end ywlx,
+		  ybjs.qdid qdid,
+		  ybjs.ywlsh jzid,
+		  ybjs.djh jsid,
+		  ybjs.ddyljgmc yljgmc,
+		  ybjs.ddyljgbh yljgbm,
+		  ybjs.grbh grybbh,
+		  to_char(sysdate,'yyyyMMddHH24miss') sbsj,
+		  ybjs.ywlsh ywlsh,
+		  to_char(st.DATE_ST,'yyyyMMdd') jsksrq,
+		  to_char(st.DATE_ST,'yyyyMMdd') jsjsrq,
+		  ybjs.jbylfyze - ybjs.tczfje grzfu,
+		  ybjs.ylfyze - ybjs.jbylfyze grzf,
+		  ybjs.GRZHZF,
+		  ybjs.GRXJZF,
+		  inv.code_inv pjdm,
+		  inv.code_inv pjhm,
+		  '1' cy31tnzzyjhbz,
+		  tcq.name as cbdbm,
+		  zdkbmap.CODE_INSUR as zdkb,
+			rykbmap.CODE_INSUR as rykb,
+			zkkbmap.CODE_INSUR as zkkb,
+			cykbmap.CODE_INSUR as cykb,
+			xyzdmap.CODE_INSUR as mjzxyzddm,
+			xyzdmap.NAME_INSUR as mjzxyzdmc,
+			zyzdmap.CODE_INSUR as mjzzyzddm,
+			zyzdmap.NAME_INSUR as mjzzyzdmc,
+			ysmap.CODE_INSUR as zzysdm
+		from bl_settle st
+			inner join PV_ENCOUNTER pv on pv.pk_pv = st.pk_pv
+			inner join PI_MASTER pi on pi.pk_pi = pv.pk_pi
+			left join bl_st_inv stinv on stinv.PK_SETTLE = st.pk_settle
+			left join bl_invoice inv on inv.pk_invoice = stinv.pk_invoice
+			left join v_yb_jsxx jsxx on jsxx.bah = pi.code_op and jsxx.pk_pv=pv.PK_PV and jsxx.codepv = pv.code_pv
+		  	inner join ins_szyb_js ybjs on ybjs.pk_settle = st.pk_settle and ybjs.del_flag='0'
+		  	left join ins_szyb_tcqh tcq on tcq.code = ybjs.tcqh
+		  	left join ins_szyb_dictmap zdkbmap on zdkbmap.CODE_HIS = jsxx.zdkb1 and zdkbmap.CODE_TYPE = 'KSZD' and zdkbmap.DEL_FLAG = '0'
+			left join ins_szyb_dictmap rykbmap on rykbmap.CODE_HIS = jsxx.rykb1 and rykbmap.CODE_TYPE = 'KSZD' and rykbmap.DEL_FLAG = '0'
+			left join ins_szyb_dictmap zkkbmap on zkkbmap.CODE_HIS = jsxx.zkkb1 and zkkbmap.CODE_TYPE = 'KSZD' and zkkbmap.DEL_FLAG = '0'
+			left join ins_szyb_dictmap cykbmap on cykbmap.CODE_HIS = jsxx.cykb1 and cykbmap.CODE_TYPE = 'KSZD' and cykbmap.DEL_FLAG = '0'
+			left join ins_szyb_dictmap xyzdmap on	xyzdmap.CODE_HIS = jsxx.mjzxyzddm1 and cykbmap.CODE_TYPE = 'BZDZBM' and cykbmap.DEL_FLAG = '0'
+			left join ins_szyb_dictmap zyzdmap on	zyzdmap.CODE_HIS = jsxx.mjzzyzddm1 and zyzdmap.CODE_TYPE = 'BZDZBM' and zyzdmap.DEL_FLAG = '0'
+			left join ins_szyb_dictmap ysmap on	ysmap.CODE_HIS = jsxx.zzysdm1 and ysmap.CODE_TYPE = 'RYZD' and ysmap.DEL_FLAG = '0'
+		where st.pk_settle = #{pkSettle,jdbcType=CHAR} and inv.FLAG_CANCEL = '0' and ybjs.del_flag = '0'
+		order by ybjs.create_time desc
+	</select>
+
+	<select id="qryOpInsuPayDtls" resultType="DynaBean">
+		select
+		  ybjs.qdid,
+		  ybjs.ywlsh djlsh,
+		  ybjs.djh jsid,
+		  ybjs.JZJZFJE ljjzjj,
+		  ybjs.BCJRGWYTKBZJE gwyylbzjj,
+		  case when jsxx.yblx = '310' then TCZFJE else '0' end zgjbylbxtcjj,
+		  case when jsxx.yblx != '310' then TCZFJE else '0' end cxjmjbylbxjj,
+		  ybjs.grzhzf,
+		  ybjs.bcdbzcje,
+		  ybjs.BCDBZCJE cxjmdbylbxzj
+		from ins_szyb_js ybjs
+		  inner join bl_settle st on st.pk_settle = ybjs.pk_settle
+		  inner join PV_ENCOUNTER pv on pv.pk_pv = st.pk_pv
+		  inner join PI_MASTER pi on pi.pk_pi = pv.pk_pi
+		  inner join v_yb_jsxx jsxx on jsxx.bah = pi.code_op and jsxx.pk_pv=pv.PK_PV and jsxx.codepv = pv.code_pv
+		where st.PK_SETTLE = #{pkSettle,jdbcType=CHAR} and  ybjs.del_flag = '0'
+	</select>
+
+	<select id="qryOpDiagList" resultType="DynaBean">
+		select
+			ybjs.qdid,
+			ybjs.ywlsh djlsh,
+			ybjs.djh jsid,
+			to_char(pv.date_begin,'yyyyMMddHH24miss') mzmtbjzrq,
+			xyzdmap.CODE_INSUR as zdbm,
+			xyzdmap.NAME_INSUR as zdmc
+		from bl_settle st
+			inner join PV_ENCOUNTER pv on pv.pk_pv = st.pk_pv
+			inner join PI_MASTER pi on pi.pk_pi = pv.pk_pi
+			inner join v_yb_zyzd zd on zd.DJLSH = pv.code_pv
+			inner join ins_szyb_js ybjs on ybjs.pk_settle = st.pk_settle and ybjs.del_flag='0'
+			left join ins_szyb_dictmap xyzdmap on xyzdmap.CODE_HIS = zd.zdbm1 and xyzdmap.CODE_TYPE = 'BZDZBM' and xyzdmap.DEL_FLAG = '0'
+		where st.pk_settle = #{pkSettle,jdbcType=CHAR}
+	</select>
+
+	<select id="qryOpChargeDtls" resultType="DynaBean">
+		select
+			ybjs.qdid,
+			ybjs.ywlsh djlsh,
+			ybjs.djh jsid,
+			case when dt.code_bill = '1' then '01'
+				when dt.code_bill = '4' then '02'
+				when dt.code_bill = '5' then '03'
+				when dt.code_bill = '7' then '05'
+				when dt.code_bill = '8' then '06'
+				when dt.code_bill = '13' then '07'
+				when dt.code_bill = '15' then '08'
+				when dt.code_bill = '2' then '09'
+				when dt.code_bill = '3' then '10'
+				else '14' end ylsfxmlb,
+			sum(dt.amount) je,
+			sum(case when ybcg.sfxmdj is not null and ybcg.sfxmdj='1' then dt.amount else 0 end) jlfyhj,
+			sum(case when ybcg.sfxmdj is not null and ybcg.sfxmdj='2' then dt.amount else 0 end) ylfyhj,
+			sum(case when ybcg.sfxmdj is not null and ybcg.sfxmdj='3' then dt.amount else 0 end) zfje,
+			sum(case when ybcg.sfxmdj is null then dt.amount else 0 end) qtje
+		from bl_op_dt dt
+			inner join bl_settle st on st.pk_settle = dt.pk_settle
+			inner join ins_szyb_js ybjs on ybjs.pk_settle = st.pk_settle and ybjs.del_flag = '0'
+			left join (
+				select * from (
+				  select
+					row_number() over(partition by pk_cgip order by create_time desc) cnt,cg.*
+				  from ins_szyb_fymx cg where DEL_FLAG = '0'and cg.pk_pv = #{pkpv,jdbcType=CHAR}
+				) where cnt = '1'
+			) ybcg on ybcg.pk_cgip = dt.pk_cgop
+		where st.pk_settle = #{pkSettle,jdbcType=CHAR}
+		group by
+			ybjs.qdid,
+			ybjs.ywlsh,
+			ybjs.djh,
+			dt.code_bill
+	</select>
+</mapper>

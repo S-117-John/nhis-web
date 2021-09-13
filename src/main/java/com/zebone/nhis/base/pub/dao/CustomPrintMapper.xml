@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.base.pub.dao.CustomPrintMapper">
+	<select id="QueryCustomPrintList" parameterType="java.lang.String" 
+	resultType="com.zebone.nhis.common.module.base.bd.mk.BdTempOrdex">
+	select tmp.pk_tempordex,
+       tmp.pk_org,
+       tmp.code,
+       tmp.name,
+       tmp.spcode,
+       tmp.data_temp,
+       tmp.flag_active,
+       tmp.note,
+       tmp.printer,
+       tmp.dt_deftemptype
+  from bd_temp_ordex tmp
+ where tmp.pk_org=#{pkorg}
+	</select>
+	
+	<select id="QueryDept" parameterType="java.lang.String"
+	resultType="com.zebone.nhis.base.pub.vo.CustomPrintVo">
+		select exdept.pk_tempordex,
+       exdept.pk_dept,
+       dept.code_dept,
+       dept.name_dept
+  from bd_temp_ordex_dept exdept
+       inner join bd_ou_dept dept on exdept.pk_dept=dept.pk_dept
+ where exdept.pk_tempordex=#{pktempordex}
+	</select>
+	
+	<select id="QueryCustomDept" parameterType="java.lang.String" 
+	resultType="com.zebone.nhis.base.pub.vo.CustomDeptVo">
+	select dept.pk_dept,
+       dept.code_dept,
+       dept.name_dept,
+       exdept.pk_dept flag,
+       exdept.pk_tempdept
+  from bd_ou_dept dept 
+       left outer join bd_temp_ordex_dept exdept on dept.pk_dept=exdept.pk_dept
+        and
+       exdept.pk_tempordex=#{pktempordex}
+ where dept.pk_org=#{organizationid} and
+       dept.dt_depttype='02'
+	</select>
+	
+	<delete id="DeleteCustomDept" parameterType="java.lang.String">
+	delete from bd_temp_ordex_dept where pk_tempordex=#{pktempordex}
+	</delete>
+	
+	<select id="QueryCustomPrintByPy" parameterType="java.util.Map"
+	resultType="com.zebone.nhis.common.module.base.bd.mk.BdTempOrdex">
+		select tmp.pk_tempordex,
+	       tmp.pk_org,
+	       tmp.code,
+	       tmp.name,
+	       tmp.spcode,
+	       tmp.data_temp,
+	       tmp.flag_active,
+	       tmp.printer,
+	       tmp.note,
+	       tmp.dt_deftemptype
+	  from bd_temp_ordex tmp
+	 inner join bd_temp_ordex_dept dept on dept.pk_tempordex=tmp.pk_tempordex
+     where tmp.del_flag='0' 
+       and tmp.pk_org=#{pkorg} 
+     <if test="pkdept !=null and pkdept != ''">
+       and dept.pk_dept = #{pkdept,jdbcType=VARCHAR}
+     </if>
+	   and (tmp.code like ('%'||#{filter}||'%')
+	 or tmp.name like ('%'||#{filter}||'%')
+	 or upper(tmp.spcode) like upper(('%'||#{filter}||'%')))
+	</select>
+	
+	<select id="QueryCustomPrintListG" parameterType="java.util.Map" 
+	resultType="com.zebone.nhis.common.module.base.bd.mk.BdTempOrdex">
+	 select tmp.pk_tempordex,
+       tmp.pk_org,
+       tmp.code,
+       tmp.name,
+       tmp.spcode,
+       tmp.flag_active,
+       tmp.note
+  from bd_temp_ordex tmp
+  inner join bd_temp_ordex_dept dept on dept.pk_tempordex=tmp.pk_tempordex
+ where tmp.pk_org=#{pkorg}
+ and dept.pk_dept=#{pkdept}
+	</select>
+</mapper>

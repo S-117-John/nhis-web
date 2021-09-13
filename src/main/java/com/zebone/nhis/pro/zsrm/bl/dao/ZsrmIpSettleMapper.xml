@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsrm.bl.dao.ZsrmIpSettleMapper">
+<select id="qryPkCgBack" resultType="java.lang.String">
+        select pk_cgip
+        from bl_ip_dt bk
+        where 1=1
+        <if test="pkList != null and pkList.size()>0">
+            and (bk.pk_cgip_back in
+            <trim suffixOverrides=" OR bk.pk_cgip_back in()">
+                <!-- 表示删除最后一个条件 -->
+                <foreach collection="pkList" item="pkList" index="index"
+                         open="(" close=")">
+                    <if test="index != 0">
+                        <choose>
+                            <when test="index % 1000 == 999">
+                                ) OR bk.pk_cgip_back in (
+                            </when>
+                            <otherwise>
+                                ,
+                            </otherwise>
+                        </choose>
+                    </if>
+                    #{pkList}
+                </foreach>
+            </trim>
+            )
+        </if>
+    </select>
+   </mapper>

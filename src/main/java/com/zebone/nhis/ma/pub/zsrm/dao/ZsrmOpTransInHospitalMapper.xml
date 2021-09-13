@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.zsrm.dao.ZsrmOpTransInHospitalMapper">
+    <select id="getOpTransInHospInfo" resultType="com.zebone.nhis.ma.pub.zsrm.vo.ZsrmOpTransInHospitalVo" parameterType="java.util.Map">
+        select
+       pi.CODE_PI                                       patient_id_mz,
+       pi.CODE_OP                                       hisOutPatientId,
+       nvl(pvo.OP_TIMES, 1)                             hisOutPatientTimes,
+       pvde.old_code                                    hisWardCode,
+       indiag.CODE_ICD                                  diagnosisCode,
+       indiag.NAME_DIAG                                 diagnosisName,
+       0                                                status,
+       ''                                               childDiagnosisCode,
+       ''                                               childDiagnosisName,
+       pi.ADDRESS,
+       ''                                               admissionMethod,
+       pi.TEL_REL                                       contactTel,
+       indiag.NAME_DIAG                                 diagnosis,
+       pi.NAME_REL                                      emergencyContact,
+       pv.code_pv                                       hisOrderId,
+       ''                                               hospitalId,
+       pi.BIRTH_DATE                                    patientBirth,
+       pi.ID_NO                                         patientIdCard,
+       pi.NAME_pi                                       patientName,
+       case when pv.dt_sex ='03' then '2' else '1' end  patientSex,
+       case when pv.EU_PVTYPE='2' then '1' else '2' end patientSource,
+       pi.MOBILE                                        patientTel,
+       '1'                                              processMethod,
+
+       pi.code_ip                                       hisInPatientOn,
+       ' '                                              patientLevelValue,
+       ' '                                              patientName,
+
+       ' '                                              patientTypeValue,
+       '0'                                              lendFlag
+from PV_ENCOUNTER pv
+         left join pv_op pvo on pvo.PK_PV = pv.PK_PV
+         left join (select *
+                    from (select row_number() over (partition by pk_pv order by flag_maj desc) cnt,
+                                 diag.pk_pv,
+                                 diag.desc_diag,
+                                 diag.pk_diag,
+                                 diag.CODE_ICD,
+                                 diag.NAME_DIAG
+                          from pv_diag diag) res
+                    where res.cnt = 1) indiag on indiag.PK_PV = pv.PK_PV
+         inner join bd_ou_dept pvde on pvde.PK_DEPT = pv.PK_DEPT
+         inner join pi_master pi on pi.pk_pi = pv.PK_PI
+        where pv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+    </select>
+
+    <select id="getOldHisInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.ma.pub.zsrm.vo.ZsrmOpTransInHospitalVo">
+        select * from zy_SyncMzPatInfo where hisOrderId=#{appId,jdbcType=VARCHAR} and status in ('0','1') order by ts desc
+    </select>
+
+    <select id="getDiagInfo" parameterType="java.lang.String" resultType="DynaBean">
+        select
+            PK_DIAG ,DIAGCODE,DIAGNAME from BD_TERM_DIAG term
+        where term.pk_diag=#{pkDiag,jdbcType=VARCHAR}
+        union  all
+        select PK_DIAG,'' diagcode ,NAME_CD diagname from BD_CNDIAG cn
+        where cn.PK_DIAG=#{pkDiag,jdbcType=VARCHAR}
+
+    </select>
+</mapper>

@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.CpRec2Mapper" >
+
+
+	<select id="qryCpTempsByICD" resultType="DynaBean" parameterType="java.util.Map" >
+		select ctp.*,ctd.code_icd
+	  	 from cp_temp ctp
+	     inner join cp_temp_diag ctd on ctp.pk_cptemp=ctd.pk_cptemp
+	     left outer join cp_temp_dept dept on ctp.pk_cptemp=dept.pk_cptemp
+	 	where (dept.pk_dept_use is null or dept.pk_dept_use=#{pkDept,jdbcType=CHAR}) 
+	      and ctp.eu_status='8' 
+	      and ctp.del_flag='0'
+	      and ctd.code_icd in  
+	      <foreach item="item" index="index" collection="codeIcdList" open="(" separator="," close=")">
+	       	#{item}     
+	      </foreach>
+	      <if test='pkCptemp != null and pkCptemp != "" '>  
+			and  ctp.pk_cptemp=#{pkCptemp,jdbcType=CHAR}  
+		  </if>
+  </select>
+  
+  <select id="qryCpTempPhase" resultType="DynaBean" parameterType="java.util.Map" >
+	select null as pk_parent,ctp.*
+	  from cp_temp ct
+	 inner join cp_temp_phase ctp on ct.pk_cptemp=ctp.pk_cptemp
+	 where ct.pk_cptemp=#{pkCptemp,jdbcType=CHAR} 
+	   and ct.eu_status='8' 
+	    <if test='pkCpphasePre != null and pkCpphasePre != "" '>  
+			and ctp.pk_cpphase_pre=#{pkCpphasePre,jdbcType=CHAR}  
+		</if>
+	   and ctp.del_flag='0'
+	   order by ctp.sortno
+  </select>
+  
+  <select id="qryCpExp" resultType="DynaBean" parameterType="java.util.Map" >
+	select exp.*,cpord.name_ord AS dim_name_ord,cnord.name_ord 
+	  from cp_rec_exp exp
+	 left outer join cp_temp_cpord cpord on exp.pk_cpord=cpord.pk_cpord and cpord.del_flag='0'
+	 left outer join cn_order cnord ON cnord.pk_cnord = exp.pk_cnord and cnord.del_flag='0'
+	 where exp.pk_cprec=#{pkCprec,jdbcType=CHAR} 
+	   and exp.del_flag='0'
+  </select>
+  
+  <select id="qryCpOrd" resultType="DynaBean" parameterType="java.util.Map" >
+	SELECT
+	    cprec.pk_pv,
+	    cprec.pk_org,
+	    
+		tpha.pk_cpphase,<!-- 模板阶段主键-->
+		tpha.name_phase,
+		tpha.sortno as temp_sortno,
+		
+		recdt.pk_recdt,<!-- 路径运用明细主键-->
+		recdt.pk_recphase,<!-- 路径运用阶段主键-->
+		recdt.eu_status,<!--0 未使用，1已使用，2弃用 -->
+		recdt.pk_cnord,<!--对应cn_ord主键 -->
+		recdt.pk_pres,<!--对应cn_prescription主键 -->
+		recdt.note,<!-- 备注-->
+		recdt.date_ex,<!-- 签署日期-->
+		recdt.pk_emp_ex,<!--签署医生-->
+		recdt.name_emp_ex,
+	
+		cpord.pk_cpord,<!--模板医嘱主键 -->
+		cpord.sortno,<!--序号 -->
+		cpord.pk_parent,<!--父医嘱-->
+		cpord.eu_always,<!--长期0，临时1-->
+		cpord.flag_nec,<!--必要项目标志-->
+		cpord.eu_tasktype,<!--0 医嘱，1 诊疗工作，2 护理工作 -->
+		
+		cpord.eu_cpordtype,<!--0 临床医嘱，1 路径医嘱(0-bd_ord.pk_ord, 1- bd_cp_task.pk_cptask) -->
+		cpord.pk_ord as pk_ord_cp,
+		cpord.code_ord as code_ord_cp,
+		task.pk_cptask,<!--作业主键-->
+		task.eu_reptype,<!--0 按名称模糊匹配，1 医嘱字典，2 药理分类,99 所有药品-->
+		nvl(task.flag_mult,'0') as flag_mult,<!--可否多选标示-->  
+		cpord.name_ord AS dim_name_ord,<!--路径医嘱名称-->
+		cpord.dt_pharm, <!--药理分类：030402-->
+		taskdt.pk_ord as def_pk_ord,  <!--默认替代医嘱,只有task.eu_reptype=1可用-->  
+		taskdt.code_ord as def_code_ord,
+		taskdt.name_ord as def_name_ord,
+		cpord.code_op,
+		cpord.name_op,
+		cpord.dt_anae,
+		cpord.desc_op,
+		
+		
+		<!-- Cn_order信息 begin -->
+		cnord.pk_ord,
+		cnord.code_ord,
+		cnord.eu_status_ord,
+		cnord.name_ord,<!--临床医嘱名称-->
+		nvl(cnord.code_ordtype, cpord.code_ordtype) as code_ordtype ,<!--医嘱类型-->
+		nvl(cnord.dosage, cpord.dosage) AS dosage,
+		nvl(cnord.pk_unit_dos,cpord.pk_unit_dose) AS pk_unit_dos,
+		nvl(cnord.code_supply, cpord.code_supply) AS code_supply,
+		nvl(cnord.code_freq, cpord.code_freq) AS code_freq,
+		cnord.quan,
+		cnord.pk_unit,
+		cnord.quan_cg,
+		cnord.pk_unit_cg,
+		cnord.pack_size,
+		cnord.price_cg,
+		cnord.days,
+		cnord.ords,  
+	    cnord.code_apply,
+	    cnord.drip_speed,
+	    cnord.first_num,
+	    cnord.last_num,
+		cnord.spec ,
+		cnord.groupno, 
+		cnord.ordsn,
+		cnord.ordsn_parent,
+		cnord.pk_pres,
+	    cnord.infant_no,  
+	    cnord.note_ord,
+	    cnord.note_supply,
+	    cnord.desc_ord,
+	    cnord.desc_fit,
+	    <!-- Flag、eu、dt字段 -->
+		cnord.flag_cp,
+		cnord.flag_durg,
+		cnord.flag_bl,
+		cnord.flag_emer,
+		cnord.flag_doctor,
+		cnord.flag_medout,
+		cnord.flag_self,
+		cnord.flag_first,
+		cnord.flag_emer,
+	    cnord.flag_prev,
+	    cnord.flag_thera,
+	    cnord.flag_fit,
+	    cnord.flag_stop,
+	    cnord.flag_sign,
+	    cnord.flag_stop_chk,
+	    cnord.flag_erase , 
+	    cnord.flag_pivas,
+	    cnord.eu_exctype,<!-- 排斥类型: 0全排斥，1非全排，为空则不排斥 -->
+	    cnord.eu_intern,<!--实习人员类型0 非实习，1 实习生，2 研究生，3 进修生，4 规培生，9 其他-->
+		cnord.eu_st,
+		cnord.dt_usagenote,
+	    cnord.dt_herbusage,
+	    <!-- 操作人信息 -->
+	    cnord.date_start,
+	    cnord.pk_emp_input,
+	    cnord.name_emp_input,
+	    cnord.pk_emp_ord,
+	    cnord.name_emp_ord,
+	    cnord.pk_dept,
+	    cnord.pk_dept_ns,
+	    cnord.pk_org_exec,
+	    cnord.pk_dept_exec,
+		dept.name_dept as name_dept_exec,
+	    cnord.date_enter, 
+	    cnord.pk_emp_stop,
+	    cnord.name_emp_stop,
+	    cnord.date_stop,
+	    cnord.date_chk ,
+	    cnord.name_emp_chk,
+	    cnord.name_emp_stop_chk,
+	    cnord.ts,
+	    
+	    freq.cnt,
+	    freq.name as name_freq,
+	    ris.dt_type as dt_ristype,
+		ris.desc_att,
+		doc.name as desc_body, 
+		lab.dt_colltype as dt_coltype,
+		lab.dt_contype,
+		lab.dt_samptype,
+		
+		pd.weight,
+        pd.dt_pois,
+        pd.dt_anti,
+        pd.pk_unit_min,
+        pd.pk_unit_vol,
+        pd.pk_unit_wt,
+        pd.vol,
+        pd.flag_st,
+        pd.eu_muputype,
+        pd.dt_injtype
+	    <!-- Cn_order信息 end -->
+  
+	FROM cp_rec cprec
+    INNER JOIN cp_temp_phase tpha on cprec.pk_cptemp=tpha.pk_cptemp and tpha.del_flag='0'
+	INNER JOIN cp_rec_phase rpha ON tpha.pk_cpphase = rpha.pk_cpphase and rpha.pk_cprec=cprec.pk_cprec
+	INNER JOIN cp_rec_dt recdt ON recdt.pk_recphase = rpha.pk_recphase and recdt.del_flag='0'
+	INNER JOIN cp_temp_cpord cpord ON cpord.pk_cpord = recdt.pk_cpord and cpord.del_flag='0'
+	LEFT outer JOIN cn_order cnord ON cnord.pk_cnord = recdt.pk_cnord and cnord.del_flag='0'
+	left outer join bd_cp_task task on cpord.eu_cpordtype='1' and cpord.pk_ord=task.pk_cptask and task.del_flag='0'
+	left outer join bd_cp_task_dt taskdt on task.eu_reptype='1' and  task.pk_cptask=taskdt.pk_cptask and taskdt.flag_def='1' and taskdt.del_flag='0'
+	left outer join bd_ou_dept dept on dept.pk_dept=cnord.pk_dept_exec and dept.del_flag='0'
+	left outer join bd_term_freq freq on nvl(cnord.code_freq, cpord.code_freq)=freq.code and freq.del_flag='0'
+	
+	left join bd_pd pd on cnord.pk_ord = pd.pk_pd and pd.del_flag='0' and cpord.eu_tasktype ='0' and cpord.code_ordtype like '01%'
+	left join bd_ord_ris ris on cnord.pk_ord = ris.pk_ord and ris.del_flag='0' 
+    left join bd_ord_lab lab on cnord.pk_ord = lab.pk_ord and lab.del_flag='0' 
+    left join bd_defdoc doc on ris.dt_body = doc.code and doc.del_flag='0' and doc.code_defdoclist = '030101'  
+	
+   where cprec.pk_cprec=#{pkCprec,jdbcType=CHAR}  
+     and tpha.pk_cptemp=#{pkCptemp,jdbcType=CHAR}  
+   order by cpord.sortno
+
+
+  </select>
+  
+  <select id="qryCpFormItem" resultType="DynaBean" parameterType="java.util.Map" >
+	SELECT
+		cprec.pk_pv,
+		cprec.pk_org,
+		tpha.pk_cpphase,
+		recdt.pk_recdt,
+		cpord.pk_cpord,
+		cpord.sortno,
+		cpord.pk_parent,
+		cpord.eu_always,
+		cpord.flag_nec,
+		cpord.eu_tasktype,
+		cpord.code_ordtype,
+		cpord.eu_cpordtype,
+		cpord.flag_print,
+		
+		temp.name_cp as header,
+		tpha.sortno AS code_phase,
+		tpha.name_phase as title,
+		case tpha.eu_type when '0' then '入院日' when '1' then '诊疗日' when '9' then '出院日' end sub_title,
+		'0' as flag_exp,
+		'' as exp_reason,
+		case when recdt.eu_status='1' then '1' else '0' end as flag_exec,
+		case cpord.eu_always when '0' then '长期医嘱' else '临时医嘱' end as ord_type,
+		cpord.name_form as name_ord
+	
+	FROM
+		cp_rec cprec
+	INNER JOIN cp_temp temp ON cprec.pk_cptemp = temp.pk_cptemp AND temp.del_flag = '0'
+	INNER JOIN cp_temp_phase tpha ON cprec.pk_cptemp = tpha.pk_cptemp AND tpha.del_flag = '0'
+	INNER JOIN cp_temp_cpord cpord ON cpord.pk_cpphase = tpha.pk_cpphase and cpord.del_flag='0'
+	left JOIN cp_rec_phase rpha ON tpha.pk_cpphase = rpha.pk_cpphase AND rpha.pk_cprec = cprec.pk_cprec and rpha.del_flag='0'
+	left JOIN cp_rec_dt recdt ON recdt.pk_recphase = rpha.pk_recphase and recdt.pk_cpord=cpord.pk_cpord and recdt.del_flag='0'
+	where cprec.pk_cprec=#{pkCprec,jdbcType=CHAR}  
+     and tpha.pk_cptemp=#{pkCptemp,jdbcType=CHAR}  
+   order by cpord.eu_always,tpha.sortno,cpord.sortno 
+  </select>
+  
+  
+</mapper>

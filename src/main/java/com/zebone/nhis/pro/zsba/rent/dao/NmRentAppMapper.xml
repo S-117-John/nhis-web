@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.pro.zsba.rent.dao.NmRentAppMapper">
+    <resultMap id="BaseResultMap" type="com.zebone.nhis.pro.zsba.rent.vo.NmRentApp">
+        <id column="pk_app" jdbcType="CHAR" property="pkApp"/>
+        <result column="pk_org" jdbcType="CHAR" property="pkOrg"/>
+        
+        <result column="code_app" jdbcType="VARCHAR" property="codeApp"/>
+        <result column="name_app" jdbcType="VARCHAR" property="nameApp"/>
+        <result column="py_code" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="depo_amt" jdbcType="DECIMAL" property="depoAmt"/>
+        <result column="file_path" jdbcType="VARCHAR" property="filePath"/>
+        
+        <result column="creator" jdbcType="CHAR" property="creator"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="modifier" jdbcType="CHAR" property="modifier"/>
+        <result column="modity_time" jdbcType="TIMESTAMP" property="modityTime"/>
+        <result column="del_flag" jdbcType="CHAR" property="delFlag"/>
+        <result column="ts" jdbcType="TIMESTAMP" property="ts"/>
+    </resultMap>
+        
+    <select id="getById" resultMap="BaseResultMap">
+        SELECT * FROM nm_rent_app WHERE pk_app = #{pkApp ,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAll" resultMap="BaseResultMap">
+          SELECT * FROM nm_rent_app order by del_flag asc
+    </select>
+    
+     <select id="findByUse" resultMap="BaseResultMap">
+          SELECT * FROM nm_rent_app  where del_flag = '0'
+    </select>
+
+    <insert id="saveApp" parameterType="com.zebone.nhis.pro.zsba.rent.vo.NmRentApp" >
+        INSERT INTO nm_rent_app
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkApp != null" > pk_app, </if>
+            <if test="pkOrg != null" >  pk_org, </if>
+            <if test="codeApp != null" > code_app, </if>
+            <if test="nameApp != null" > name_app, </if>
+            <if test="pyCode != null" > py_code, </if>
+            <if test="depoAmt != null" > depo_amt, </if>
+            <if test="filePath != null" >  file_path, </if>
+            
+            <if test="creator != null" > creator, </if>
+            <if test="createTime != null" > create_time, </if>
+            <if test="modifier != null" > modifier, </if>
+            <if test="modityTime != null" > modity_time, </if> 
+            <if test="delFlag != null" > del_flag, </if>
+            <if test="ts != null" > ts, </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkApp != null" > #{pkApp ,jdbcType=CHAR}, </if> 
+            <if test="pkOrg != null" >  #{pkOrg ,jdbcType=CHAR}, </if> 
+            <if test="codeApp != null" >  #{codeApp ,jdbcType=VARCHAR}, </if> 
+            <if test="nameApp != null" >  #{nameApp ,jdbcType=VARCHAR}, </if> 
+            <if test="pyCode != null" > #{pyCode ,jdbcType=VARCHAR}, </if> 
+            <if test="depoAmt != null" > #{depo_amt ,jdbcType=DECIMAL}, </if> 
+            <if test="filePath != null" > #{file_path ,jdbcType=VARCHAR}, </if> 
+            
+            <if test="creator != null" > #{creator ,jdbcType=CHAR}, </if> 
+            <if test="createTime != null" > #{createTime ,jdbcType=TIMESTAMP}, </if> 
+            <if test="modifier != null" > #{modifier ,jdbcType=CHAR}, </if> 
+            <if test="modityTime != null" > #{modityTime ,jdbcType=TIMESTAMP}, </if> 
+            <if test="delFlag != null" > #{delFlag ,jdbcType=CHAR}, </if> 
+            <if test="ts != null" > #{ts ,jdbcType=TIMESTAMP}, </if> 
+        </trim>
+    </insert>
+																					
+    <update id="updateApp" parameterType="com.zebone.nhis.pro.zsba.rent.vo.NmRentApp" >
+        UPDATE nm_rent_app
+        <set>
+            <if test="pkOrg != null" > pk_org = #{pkOrg ,jdbcType=CHAR}, </if>
+            <if test="codeApp != null" >  code_app = #{codeApp ,jdbcType=VARCHAR}, </if>
+            <if test="nameApp != null" > name_app = #{nameApp ,jdbcType=VARCHAR}, </if>
+            <if test="pyCode != null" > py_code = #{pyCode ,jdbcType=VARCHAR}, </if>
+            <if test="depoAmt != null" > depo_amt = #{depo_amt ,jdbcType=DECIMAL}, </if>
+            <if test="filePath != null" > file_path = #{filePath ,jdbcType=VARCHAR}, </if>
+            
+            <if test="creator != null" > creator = #{creator ,jdbcType=CHAR}, </if>
+            <if test="createTime != null" > create_time = #{createTime ,jdbcType=TIMESTAMP}, </if>
+            <if test="modifier != null" > modifier = #{modifier ,jdbcType=CHAR}, </if>
+            <if test="modityTime != null" > modity_time = #{modityTime ,jdbcType=TIMESTAMP}, </if>
+            <if test="delFlag != null" > del_flag = #{delFlag ,jdbcType=CHAR}, </if>
+            <if test="ts != null" > ts = #{ts ,jdbcType=TIMESTAMP}, </if>
+        </set>
+        WHERE 
+            pk_app = #{pkApp ,jdbcType=CHAR}
+    </update>
+    
+    <delete id="deleteApp">
+        DELETE FROM nm_rent_app WHERE pk_app = #{pkApp ,jdbcType=CHAR}
+    </delete>
+    
+</mapper>

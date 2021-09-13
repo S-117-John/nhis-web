@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.arch.dao.ArchiveCollectMapper">
+
+	<select id="qryPatisByCon" parameterType= "com.zebone.nhis.arch.vo.PvRecordVo" resultType = "com.zebone.nhis.arch.vo.PvRecordVo">	
+		  select pv.pk_pv,pv.code_pv,pi.name_pi,pi.code_pi,
+		       ip.ip_times,pv.pk_dept,dept.name_dept,pv.date_begin,
+		       pv.date_end,arch.pk_archive
+		  from pv_encounter pv
+		       inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+		       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		       inner join bd_ou_dept dept on pv.pk_dept=dept.pk_dept
+		       left outer join pv_archive arch on pv.pk_pv=arch.pk_pv
+		 <trim prefix="WHERE" prefixOverrides="AND |OR ">
+		 		and pv.eu_status=2
+		    <if test="codePi != null and codePi != ''">
+		  		and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+		  	</if>
+		  	<if test="namePi != null and namePi != ''">
+		  		and pi.name_pi like '%'||#{namePi,jdbcType=VARCHAR}||'%' 
+		  	</if>   
+		  	<if test="codePv != null and codePv != ''">
+		  		and pv.code_pv= = #{codePv,jdbcType=VARCHAR}
+		  	</if>     
+			<if test="pkOrg != null and pkOrg != ''">
+		  		and pv.pk_org= #{pkOrg,jdbcType=VARCHAR}
+		  	</if>  
+		  	<if test="pkDept != null and pkDept != ''">
+		  		and pv.pk_dept= #{pkDept,jdbcType=VARCHAR}
+		  	</if> 
+		    <if test="dateBegin != null and dateBegin !=''">
+		    	and pv.date_end &gt;=#{dateBegin,jdbcType=DATE}
+		    </if>
+		    <if test="dateEnd != null and dateEnd !=''">
+		    	and pv.date_end &lt;=#{dateEnd,jdbcType=DATE} 
+		    </if> 
+		  </trim>    
+	</select>
+	
+	
+	
+	
+	   
+</mapper>

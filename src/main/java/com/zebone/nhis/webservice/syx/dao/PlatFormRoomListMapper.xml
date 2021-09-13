@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.PlatFormRoomListMapper">
+    <select id="getRoomList" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.RoomListReq"
+            resultType="com.zebone.nhis.webservice.syx.vo.platForm.RoomListRes">
+        
+        SELECT
+			du.code roomCode,
+			du.name roomName,
+			du.code roomNo,
+			dept.code_dept deptCode,
+			dept.name_dept deptName  
+		FROM
+			bd_dept_unit du 
+		INNER join bd_ou_dept dept ON du.pk_dept = dept.pk_dept 
+		WHERE 
+			du.eu_unittype = '0' 
+			<if test = "roomCode != null and roomCode != ''">
+			 	AND du.code = #{roomCode,jdbcType=VARCHAR} 
+			</if>
+    </select>
+</mapper>

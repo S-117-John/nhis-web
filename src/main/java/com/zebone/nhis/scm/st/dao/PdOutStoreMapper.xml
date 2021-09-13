@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.st.dao.PdOutStoreMapper">
+<select id="queryToOutPdStList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdPlanVo">
+select pla.pk_pdplan,
+       pla.dt_plantype,
+       pltype.name pltype,
+       pla.code_plan,
+       pla.date_plan,
+       pla.pk_org,
+       org.name_org,
+       pla.pk_dept,
+       dept.name_dept,
+       pla.pk_store,
+       sto.name name_store,
+       pla.pk_emp_mak,
+       pla.name_emp_mak,
+       pla.eu_status,
+       pla.note,
+       pla.create_time, 
+       pla.pk_org_acc,
+       pla.pk_dept_acc,
+       pla.pk_store_acc 
+  from pd_plan pla
+       inner join bd_defdoc pltype on pla.dt_plantype=pltype.code and pltype.code_defdoclist='080007'
+       inner join bd_ou_org org on pla.pk_org=org.pk_org
+       inner join (
+       	select ppd.pk_pdplan  from pd_plan_detail ppd 
+       	inner join bd_pd bp on bp.pk_pd=ppd.pk_pd and bp.dt_pdtype like '0%' 
+       	group by ppd.pk_pdplan 
+       ) pps on pps.pk_pdplan=pla.pk_pdplan
+       left outer join bd_ou_dept dept on pla.pk_dept=dept.pk_dept
+       left outer join bd_store sto on pla.pk_store=sto.pk_store
+ where pla.eu_status >='1' and
+       exists (select 1 
+                 from pd_plan_detail dt
+                where pla.pk_pdplan=dt.pk_pdplan and
+                      dt.pk_store_srv = #{pkStoreSrv,jdbcType=CHAR} and
+                      dt.flag_finish='0' and dt.quan_min>nvl(dt.quan_de,0))
+       <if test="codePlan != null  and  codePlan != ''">
+          and pla.code_plan = #{codePlan,jdbcType=VARCHAR} 
+       </if>
+       <if test="dateBegin != null  and  dateBegin != ''">
+          and pla.date_plan &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+       </if>
+       <if test="dateEnd != null  and  dateEnd != ''">
+           and pla.date_plan &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+       </if>
+       <if test="pkOrg != null  and  pkOrg != ''">
+           and pla.pk_org = #{pkOrg,jdbcType=CHAR}
+       </if>
+       <if test="pkDept != null  and  pkDept != ''">
+           and pla.pk_dept = #{pkDept,jdbcType=CHAR}
+       </if>
+       <if test="pkStore != null  and  pkStore != ''">
+           and pla.pk_store = #{pkStore,jdbcType=CHAR}
+       </if>
+       order by pla.date_plan 
+</select>
+<select id="queryToOutPdStDtList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdPlanDtVo">
+select dt.*,
+       pd.code code_pd,
+       pd.name name_pd,
+       pd.spec,
+       pd.spcode,
+       unit.name unit_name,
+       un.name unit_pd,
+       fa.name factory_name,
+       pd.PACK_SIZE pack_size_pd
+  from pd_plan_detail dt
+       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+       inner join bd_unit un on un.pk_unit = pd.pk_unit_pack 
+       inner join bd_unit unit on dt.pk_unit=unit.pk_unit
+       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+ where dt.pk_pdplan = #{pkPdplan,jdbcType=CHAR} and
+       dt.pk_store_srv = #{pkStoreSrv,jdbcType=CHAR} and
+       dt.flag_finish='0' and pd.dt_pdtype like '0%'
+</select>
+<select id="queryPdStOutList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdStVo">
+select st.*,
+       sttype.name sttype,
+       org.name_org,
+       dept.name_dept,
+       sto.name name_store 
+  from pd_st st
+       inner join bd_defdoc sttype on st.dt_sttype=sttype.code and sttype.code_defdoclist='080008'
+       left join bd_ou_org org on st.pk_org_lk=org.pk_org
+       left join bd_ou_dept dept on st.pk_dept_lk=dept.pk_dept
+       left join bd_store sto on st.pk_store_lk=sto.pk_store
+ where st.pk_store_st = #{pkStore,jdbcType=CHAR} and
+       st.eu_direct =-1 
+       and exists (select 1 from pd_st_detail dt inner join bd_pd pd on pd.pk_pd=dt.pk_pd where dt.pk_pdst=st.pk_pdst and pd.dt_pdtype like '0%')
+       <if test="dtSttype != null  and  dtSttype != ''">
+          and st.dt_sttype = #{dtSttype,jdbcType=VARCHAR} 
+       </if>
+       <if test="pkOrgLk != null  and  pkOrgLk != ''">
+          and st.pk_org_lk = #{pkOrgLk,jdbcType=CHAR} 
+       </if>
+       <if test="pkDeptLk != null  and  pkDeptLk != ''">
+          and st.pk_dept_lk = #{pkDeptLk,jdbcType=CHAR} 
+       </if>
+       <if test="pkStoreLk != null  and  pkStoreLk != ''">
+          and st.pk_store_lk = #{pkStoreLk,jdbcType=CHAR} 
+       </if>
+       <if test="codeSt != null  and  codeSt != ''">
+          and st.code_st = #{codeSt,jdbcType=VARCHAR} 
+       </if>
+       <if test="dateBegin != null  and  dateBegin != ''">
+          and st.date_st &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') 
+       </if>
+       <if test="dateEnd != null  and  dateEnd != ''">
+          and st.date_st &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS') 
+       </if>
+       <if test="pkEmpOp != null  and  pkEmpOp != ''">
+           and st.pk_emp_op=#{pkEmpOp,jdbcType=CHAR} 
+       </if>
+       <if test="euStatus != null  and  euStatus != ''">
+           and st.eu_status=#{euStatus,jdbcType=VARCHAR} 
+       </if>
+       order by st.date_st desc  
+</select>
+<select id="queryPdStDtOutList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdStDtVo">
+select dt.*,
+       pd.code pdcode,
+       pd.name pdname,
+       pd.spec,
+       pd.spcode,
+       pd.pack_size pack_size_pd,
+       (pd.pack_size_max*pd.pack_size)/dt.pack_size pack_size_max,
+       fa.name factory,
+       unit.name unit,
+       un.name unit_pd,
+       pds.posi_no,
+       sup.name supplyer,
+       (stk.quan-stk.quan_prep)/dt.pack_size quan_stk 
+  from pd_st_detail dt
+       inner join bd_pd pd on dt.pk_pd=pd.pk_pd 
+       inner join bd_unit un on un.pk_unit = pd.pk_unit_pack  
+       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+       inner join bd_unit unit on dt.pk_unit_pack=unit.pk_unit
+       inner join PD_ST pdst on dt.PK_PDST=pdst.PK_PDST
+	   inner join BD_PD_STORE pds on pds.PK_STORE=pdst.PK_STORE_ST and pds.PK_PD=dt.PK_PD
+	   left join bd_supplyer sup on sup.pk_supplyer=dt.pk_supplyer
+       left outer join
+	  (select sum(quan_min) quan,pk_pd,sum(quan_prep) quan_prep
+	   from pd_stock ps where pk_store=#{pkStore,jdbcType=VARCHAR} group by pk_pd
+	  ) stk on dt.pk_pd=stk.pk_pd
+ where dt.pk_pdst = #{pkPdst,jdbcType=CHAR} and pd.dt_pdtype like '0%'
+ order by pds.posi_no,pd.code,dt.batch_no
+</select>
+</mapper>

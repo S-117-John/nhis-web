@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.PlatFormRegRecordsTodayMapper">
+    <select id="getRegRecordsToday" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.RegRecordsTodayReq"
+            resultType="com.zebone.nhis.webservice.syx.vo.platForm.RegRecordsTodayRes">
+        
+        SELECT
+			pv.code_pv orderIdHis,
+			pi.name_pi patientName,
+			pi.code_op patientCradNo,
+			CASE
+				WHEN pi.dt_sex = '02' THEN
+				'男' ELSE '女' 
+			END sex,
+			pv.age_pv age,
+			op.dt_apptype orderType,
+			pv.date_begin registerDate,
+			pv.date_reg registerDateTime,
+			'0' AS seqno,
+			op.ticketno doctorseqno,
+			ds.name_dateslot timeName,
+			dept.name_dept deptName,
+			op.name_emp_pv doctorName,
+			srv.NAME registerType,
+			st.amount_st treatFee,
+			op.date_sign waitTime,
+			'' AS diagnoseRoomName  
+		FROM
+			pv_encounter pv
+			INNER JOIN pv_op op ON pv.pk_pv = op.pk_pv
+			INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+			INNER JOIN bd_ou_dept dept ON op.pk_dept_pv = dept.pk_dept
+			INNER JOIN bd_ou_org_area area ON dept.pk_orgarea = area.pk_orgarea
+			INNER JOIN bd_code_dateslot ds ON op.pk_dateslot = ds.pk_dateslot
+			INNER JOIN sch_srv srv ON op.pk_schsrv = srv.pk_schsrv
+			LEFT OUTER JOIN bl_settle st ON pv.pk_pv = st.pk_pv AND st.dt_sttype = '00'  
+		WHERE 
+		 	pi.name_pi = #{userName,jdbcType=VARCHAR} 
+		 	AND area.CODE_AREA = #{districtDeptId,jdbcType=VARCHAR}
+       		AND pi.code_pi = #{userHisPatientId,jdbcType=VARCHAR} 
+		 	<if test="userCardType == 0">
+		 		AND pi.id_no = #{userCardId,jdbcType=VARCHAR} 
+		 	</if>  
+		 	<if test="userCardType == 1">
+		 		AND pi.code_op = #{userCardId,jdbcType=VARCHAR}
+		 	</if>  
+		 	<if test="userCardType == 2">
+		 		AND pi.citizen_no = #{userCardId,jdbcType=VARCHAR}
+		 	</if>  
+		 	<if test="userCardType == 3">
+		 		AND pi.insur_no = #{userCardId,jdbcType=VARCHAR}
+		 	</if>  
+		 	<if test="userCardType == 4">
+		 		AND pi.mobile = #{userCardId,jdbcType=VARCHAR}
+		 	</if>  
+    </select>
+</mapper>

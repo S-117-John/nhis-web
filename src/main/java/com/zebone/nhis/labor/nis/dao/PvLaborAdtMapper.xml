@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.labor.nis.dao.PvLaborAdtMapper">
+    <select id="queryPvLabor" parameterType="java.util.Map" resultType="com.zebone.nhis.labor.nis.vo.PvLaborVo">
+        select labor.*, pv.pk_emp_ns
+        from pv_labor labor
+                     inner join pv_encounter pv on pv.pk_pv = labor.pk_pv
+                where labor.pk_org = #{pkOrg,jdbcType=CHAR}
+        <if test="pkPv != null  and pkPv != ''">
+            and labor.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        <!-- <if test="pkPvlabor != null  and  pkPvlabor != ''">
+                  and labor.pk_pvlabor = #{pkPvlabor,jdbcType=CHAR}
+        </if> -->
+        <if test="euStatus != null  and euStatus != ''">
+            and labor.eu_status = #{euStatus,jdbcType=VARCHAR}
+        </if>
+        <if test="flagIn != null  and flagIn != ''">
+            and labor.flag_in = #{flagIn,jdbcType=VARCHAR}
+        </if>
+    </select>
+    <!-- 查询待入科患者列表 -->
+    <select id="queryPatisByIn" parameterType="java.util.Map" resultType="Dynabean">
+        select dept.name_dept,
+               deptns.name_dept name_dept_ns,
+               pv.age_pv as     age,
+               pv.pk_pi,
+               pv.eu_status,
+               pv.pk_pv,
+               pv.name_pi,
+               pv.code_pv,
+               pi.code_ip,
+               pv.pk_dept,
+               pv.pk_dept_ns,
+               pv.date_begin,
+               lab.date_prebirth,
+               lab.lab_week,
+               hp.name   as     name_hp,
+               lab.pk_pvlabor
+        from pv_labor lab
+                     inner join pv_encounter pv on pv.pk_pv = lab.pk_pv
+                     inner join pi_master pi on pi.pk_pi = pv.pk_pi
+                     left join bd_ou_dept dept on dept.pk_dept = lab.pk_dept_src
+                     left join bd_ou_dept deptns on deptns.pk_dept = lab.pk_dept_ns_src
+                     left join bd_hp hp on hp.pk_hp = pv.pk_insu
+                where lab.eu_status = '0' <!-- 0：转入申请，1：就诊中，2：就诊结束  -->
+        and lab.flag_in = '0'
+        and lab.pk_org = #{pkOrg,jdbcType=CHAR}
+        and lab.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+        <if test="pkPv != null  and pkPv != ''">
+            and pv.pk_pv = #{pkPv,jdbcType=CHAR}
+        </if>
+        and lab.del_flag = '0'
+                order by pv.code_pv
+    </select>
+    <select id="queryPatisByQuery" resultType="Dynabean">
+        select pv.age_pv as age,
+               pv.pk_pi,
+               pv.pk_pv,
+               pv.eu_status,
+               pv.name_pi,
+               pv.code_pv,
+               pi.code_ip,
+               pv.pk_dept,
+               pv.pk_dept_ns,
+               pv.date_begin,
+               null      as date_prebirth,
+               ''        as lab_week,
+               hp.name   as name_hp ,
+               lab.pk_pvlabor,
+               pl.PK_PILABOR
+        from pv_encounter pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        left join pv_labor  lab on lab.pk_pv = pv.pk_pv
+        left join bd_hp hp on hp.pk_hp = pv.pk_insu
+        left join pi_labor  pl on pl.PK_PI=pi.PK_PI
+        where pv.EU_STATUS = '1'
+        and pv.FLAG_IN = '1'
+        and (lab.eu_status != '1'or lab.eu_status is null )
+        and (1 = 0
+        <if test="namePi != null  and namePi != ''">
+            or pi.NAME_PI   like '%'||#{namePi,jdbcType=VARCHAR}|| '%'
+        </if>
+        <if test="codeIp != null  and codeIp != ''">
+            or pi.CODE_IP =#{codeIp,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDept  != null  and pkDept  != ''">
+           or pv.PK_DEPT = #{pkDept,jdbcType=VARCHAR}
+        </if>
+         )
+         order by pv.code_pv
+    </select>
+
+
+    <select id="quertOutPvInfo" resultType="Dynabean">
+        select pv.age_pv as age,
+        pv.pk_pi,
+        pv.pk_pv,
+        pv.name_pi,
+        pv.code_pv,
+        pv.eu_status,
+        pi.code_ip,
+        pv.pk_dept,
+        pv.pk_dept_ns,
+        pv.date_begin,
+        dept.name_dept,
+        null      as date_prebirth,
+        ''        as lab_week,
+        hp.name   as name_hp ,
+        lab.pk_pvlabor,
+        lab.eu_status status,
+        pl.PK_PILABOR
+        from pv_encounter pv
+        inner join pi_master pi on pi.pk_pi = pv.pk_pi
+        inner join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+        left join pv_labor  lab on lab.pk_pv = pv.pk_pv
+        left join bd_hp hp on hp.pk_hp = pv.pk_insu
+        left join pi_labor  pl on pl.PK_PI=pi.PK_PI
+        where 1 = 1
+        and pi.NAME_PI   like '%'||#{namePi,jdbcType=VARCHAR}|| '%'
+        order by pv.code_pv
+    </select>
+</mapper>

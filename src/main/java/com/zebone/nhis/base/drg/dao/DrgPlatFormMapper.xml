@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.base.drg.dao.DrgPlatFormMapper">
+	<sql id="Base_Column_List" >
+	   '1' as valid_flag,
+	   pv.pk_pv, 
+       pi.code_ip,
+       ip.ip_times,
+       pi.name_pi,
+       pi.dt_sex,
+       pi.birth_date,
+       pv.date_end,
+       pv.pk_dept,
+	   bod.name_dept,
+       pv.name_emp_phy,
+       case when ip.eu_status_doc is null then '-1' else nvl(ip.eu_status_drg,0) end eu_status_drg,
+       ip.DATE_COMMIT_DOC,
+       (select max( DATE_ST )  from BL_SETTLE where PK_PV=pv.PK_PV and DEL_FLAG='0') DATE_ST
+	</sql>
+	
+	<sql id="Base_Column_List_INVALID_CCHI" >
+	   '2' as valid_flag,
+	   pv.pk_pv, 
+       pi.code_ip,
+       ip.ip_times,
+       pi.name_pi,
+       pi.dt_sex,
+       pi.birth_date,
+       pv.date_end,
+       pv.pk_dept,
+	   bod.name_dept,
+       pv.name_emp_phy,
+       case when ip.eu_status_doc is null then '-1' else nvl(ip.eu_status_drg,0) end eu_status_drg,
+       ip.DATE_COMMIT_DOC,
+       (select max( DATE_ST )  from BL_SETTLE where PK_PV=pv.PK_PV and DEL_FLAG='0') DATE_ST
+	</sql>
+	
+	<sql id="Base_Column_List_INVALID_DIAG" >
+	   '3' as valid_flag,
+	   pv.pk_pv, 
+       pi.code_ip,
+       ip.ip_times,
+       pi.name_pi,
+       pi.dt_sex,
+       pi.birth_date,
+       pv.date_end,
+       pv.pk_dept,
+	   bod.name_dept,
+       pv.name_emp_phy,
+       case when ip.eu_status_doc is null then '-1' else nvl(ip.eu_status_drg,0) end eu_status_drg,
+       ip.DATE_COMMIT_DOC,
+       (select max( DATE_ST )  from BL_SETTLE where PK_PV=pv.PK_PV and DEL_FLAG='0') DATE_ST
+	</sql>
+	
+	<sql id="Base_Column_List_INVALID_CCHI_DIAG" >
+	   '4' as valid_flag,
+	   pv.pk_pv, 
+       pi.code_ip,
+       ip.ip_times,
+       pi.name_pi,
+       pi.dt_sex,
+       pi.birth_date,
+       pv.date_end,
+       pv.pk_dept,
+	   bod.name_dept,
+       pv.name_emp_phy,
+       case when ip.eu_status_doc is null then '-1' else nvl(ip.eu_status_drg,0) end eu_status_drg,
+       ip.DATE_COMMIT_DOC,
+       (select max( DATE_ST )  from BL_SETTLE where PK_PV=pv.PK_PV and DEL_FLAG='0') DATE_ST
+	</sql>
+	  
+	<select id="queryPvEncounterList"  parameterType="java.util.Map" resultType="DynaBean">
+	  select *
+	   from
+	   (
+        select 
+        	<include refid="Base_Column_List" />
+        from pv_encounter pv
+        inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+        inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		left join BD_OU_DEPT bod on bod.pk_dept=pv.pk_dept
+        where  
+        	<choose>
+				<when test="euStatusDrg !=null and euStatusDrg != ''">
+					1=1
+				</when>
+				<otherwise>
+					(ip.eu_status_doc>='0' OR ip.eu_status_doc IS NULL)
+				</otherwise>
+			</choose>  
+        	
+        <!--去掉未录入DRG和启用DRG之后旧诊断没维护好的的  开始-->
+        and exists(select 1 from CN_CCHI cchi where cchi.PK_PV = pv.PK_PV)
+        and not exists(
+        select 1 from emr_home_page_diags pdg
+        inner join emr_home_page page on page.PK_PAGE=pdg.PK_PAGE
+        where  pdg.CODE_DCDT is null and page.PK_PV=pv.PK_PV
+        )
+        <if test="excludeBaby !=null and excludeBaby != ''">
+           and pi.code_ip not like '%B%'
+        </if>
+        <!--=========================结束================-->
+        <if test="codeIp !=null and codeIp != ''">
+            and pi.code_ip=#{codeIp,jdbcType=VARCHAR}
+        </if>
+        <if test="euStatusDrg !=null and euStatusDrg != ''">
+			<choose>
+				<when test="euStatusDrg==-1">
+				 	and ip.eu_status_doc IS NULL
+				</when>
+				<otherwise>
+					and ip.eu_status_doc IS not NULL and nvl(ip.eu_status_drg,0)=#{euStatusDrg,jdbcType=VARCHAR}
+				</otherwise>
+			</choose>
+		</if>
+        <if test="namePi !=null and namePi != ''">
+            and pi.name_pi like '%' ||  #{namePi,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test="pkEmpPhy !=null and pkEmpPhy != ''">
+            and pv.pk_emp_phy=#{pkEmpPhy,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDept !=null and pkDept != ''">
+            and pv.pk_dept=#{pkDept,jdbcType=VARCHAR}
+        </if>
+        <if test="beginDateEnd !=null and beginDateEnd != ''">
+        	and pv.date_end<![CDATA[>=]]> to_date(#{beginDateEnd,jdbcType=VARCHAR},'yyyy-mm-dd')
+        </if>
+        <if test="endDateEnd !=null and endDateEnd != ''">
+        	and pv.date_end<![CDATA[<=]]> to_date(#{endDateEnd,jdbcType=VARCHAR} || ' 23:59','yyyy-mm-dd hh24:mi')
+        </if>
+        
+        <if test="beginDateDrg !=null and beginDateDrg != ''">
+        	and ip.date_drg<![CDATA[>=]]> to_date(#{beginDateDrg,jdbcType=VARCHAR},'yyyy-mm-dd')
+        </if>
+        <if test="endDateDrg !=null and endDateDrg != ''">
+        	and ip.date_drg<![CDATA[<=]]> to_date(#{endDateDrg,jdbcType=VARCHAR} || ' 23:59','yyyy-mm-dd hh24:mi')
+        </if>
+        
+        <if test="beginDateCommitDoc !=null and beginDateCommitDoc != ''">
+        	and ip.DATE_COMMIT_DOC<![CDATA[>=]]> to_date(#{beginDateCommitDoc,jdbcType=VARCHAR},'yyyy-mm-dd')
+        </if>
+        <if test="endDateCommitDoc !=null and endDateCommitDoc != ''">
+        	and ip.DATE_COMMIT_DOC<![CDATA[<=]]> to_date(#{endDateCommitDoc,jdbcType=VARCHAR} || ' 23:59','yyyy-mm-dd hh24:mi')
+        </if>
+	union all
+	select 
+        	<include refid="Base_Column_List_INVALID_CCHI" />
+        from pv_encounter pv
+        inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+        inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		left join BD_OU_DEPT bod on bod.pk_dept=pv.pk_dept
+        where  
+        	<choose>
+				<when test="euStatusDrg !=null and euStatusDrg != ''">
+					1=1
+				</when>
+				<otherwise>
+					(ip.eu_status_doc>='0' OR ip.eu_status_doc IS NULL)
+				</otherwise>
+			</choose>  
+        	
+        <!--去掉未录入DRG和启用DRG之后旧诊断没维护好的的  开始-->
+        and not exists(select 1 from CN_CCHI cchi where cchi.PK_PV = pv.PK_PV)
+        and not exists(
+        select 1 from emr_home_page_diags pdg
+        inner join emr_home_page page on page.PK_PAGE=pdg.PK_PAGE
+        where  pdg.CODE_DCDT is null and page.PK_PV=pv.PK_PV
+        )        
+        <if test="excludeBaby !=null and excludeBaby != ''">
+           and pi.code_ip not like '%B%'
+        </if>
+        <!--=========================结束================-->
+        <if test="codeIp !=null and codeIp != ''">
+            and pi.code_ip=#{codeIp,jdbcType=VARCHAR}
+        </if>
+        <if test="euStatusDrg !=null and euStatusDrg != ''">
+			<choose>
+				<when test="euStatusDrg==-1">
+				 	and ip.eu_status_doc IS NULL
+				</when>
+				<otherwise>
+					and ip.eu_status_doc IS not NULL and nvl(ip.eu_status_drg,0)=#{euStatusDrg,jdbcType=VARCHAR}
+				</otherwise>
+			</choose>
+		</if>
+        <if test="namePi !=null and namePi != ''">
+            and pi.name_pi like '%' ||  #{namePi,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test="pkEmpPhy !=null and pkEmpPhy != ''">
+            and pv.pk_emp_phy=#{pkEmpPhy,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDept !=null and pkDept != ''">
+            and pv.pk_dept=#{pkDept,jdbcType=VARCHAR}
+        </if>
+        <if test="beginDateEnd !=null and beginDateEnd != ''">
+        	and pv.date_end<![CDATA[>=]]> to_date(#{beginDateEnd,jdbcType=VARCHAR},'yyyy-mm-dd')
+        </if>
+        <if test="endDateEnd !=null and endDateEnd != ''">
+        	and pv.date_end<![CDATA[<=]]> to_date(#{endDateEnd,jdbcType=VARCHAR} || ' 23:59','yyyy-mm-dd hh24:mi')
+        </if>
+        
+        <if test="beginDateDrg !=null and beginDateDrg != ''">
+        	and ip.date_drg<![CDATA[>=]]> to_date(#{beginDateDrg,jdbcType=VARCHAR},'yyyy-mm-dd')
+        </if>
+        <if test="endDateDrg !=null and endDateDrg != ''">
+        	and ip.date_drg<![CDATA[<=]]> to_date(#{endDateDrg,jdbcType=VARCHAR} || ' 23:59','yyyy-mm-dd hh24:mi')
+        </if>
+        
+        <if test="beginDateCommitDoc !=null and beginDateCommitDoc != ''">
+        	and ip.DATE_COMMIT_DOC<![CDATA[>=]]> to_date(#{beginDateCommitDoc,jdbcType=VARCHAR},'yyyy-mm-dd')
+        </if>
+        <if test="endDateCommitDoc !=null and endDateCommitDoc != ''">
+        	and ip.DATE_COMMIT_DOC<![CDATA[<=]]> to_date(#{endDateCommitDoc,jdbcType=VARCHAR} || ' 23:59','yyyy-mm-dd hh24:mi')
+        </if>
+        union all
+        select 
+        	<include refid="Base_Column_List_INVALID_DIAG" />
+        from pv_encounter pv
+        inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+        inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		left join BD_OU_DEPT bod on bod.pk_dept=pv.pk_dept
+        where  
+        	<choose>
+				<when test="euStatusDrg !=null and euStatusDrg != ''">
+					1=1
+				</when>
+				<otherwise>
+					(ip.eu_status_doc>='0' OR ip.eu_status_doc IS NULL)
+				</otherwise>
+			</choose>  
+        	
+        <!--去掉未录入DRG和启用DRG之后旧诊断没维护好的的  开始-->
+        and exists(select 1 from CN_CCHI cchi where cchi.PK_PV = pv.PK_PV)
+        and exists(
+        select 1 from emr_home_page_diags pdg
+        inner join emr_home_page page on page.PK_PAGE=pdg.PK_PAGE
+        where  pdg.CODE_DCDT is null and page.PK_PV=pv.PK_PV
+        )        
+        <if test="excludeBaby !=null and excludeBaby != ''">
+           and pi.code_ip not like '%B%'
+        </if>
+        <!--=========================结束================-->
+        <if test="codeIp !=null and codeIp != ''">
+            and pi.code_ip=#{codeIp,jdbcType=VARCHAR}
+        </if>
+        <if test="euStatusDrg !=null and euStatusDrg != ''">
+			<choose>
+				<when test="euStatusDrg==-1">
+				 	and ip.eu_status_doc IS NULL
+				</when>
+				<otherwise>
+					and ip.eu_status_doc IS not NULL and nvl(ip.eu_status_drg,0)=#{euStatusDrg,jdbcType=VARCHAR}
+				</otherwise>
+			</choose>
+		</if>
+        <if test="namePi !=null and namePi != ''">
+            and pi.name_pi like '%' ||  #{namePi,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test="pkEmpPhy !=null and pkEmpPhy != ''">
+            and pv.pk_emp_phy=#{pkEmpPhy,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDept !=null and pkDept != ''">
+            and pv.pk_dept=#{pkDept,jdbcType=VARCHAR}
+        </if>
+        <if test="beginDateEnd !=null and beginDateEnd != ''">
+        	and pv.date_end<![CDATA[>=]]> to_date(#{beginDateEnd,jdbcType=VARCHAR},'yyyy-mm-dd')
+        </if>
+        <if test="endDateEnd !=null and endDateEnd != ''">
+        	and pv.date_end<![CDATA[<=]]> to_date(#{endDateEnd,jdbcType=VARCHAR} || ' 23:59','yyyy-mm-dd hh24:mi')
+        </if>
+        
+        <if test="beginDateDrg !=null and beginDateDrg != ''">
+        	and ip.date_drg<![CDATA[>=]]> to_date(#{beginDateDrg,jdbcType=VARCHAR},'yyyy-mm-dd')
+        </if>
+        <if test="endDateDrg !=null and endDateDrg != ''">
+        	and ip.date_drg<![CDATA[<=]]> to_date(#{endDateDrg,jdbcType=VARCHAR} || ' 23:59','yyyy-mm-dd hh24:mi')
+        </if>
+        
+        <if test="beginDateCommitDoc !=null and beginDateCommitDoc != ''">
+        	and ip.DATE_COMMIT_DOC<![CDATA[>=]]> to_date(#{beginDateCommitDoc,jdbcType=VARCHAR},'yyyy-mm-dd')
+        </if>
+        <if test="endDateCommitDoc !=null and endDateCommitDoc != ''">
+        	and ip.DATE_COMMIT_DOC<![CDATA[<=]]> to_date(#{endDateCommitDoc,jdbcType=VARCHAR} || ' 23:59','yyyy-mm-dd hh24:mi')
+        </if>
+	union all
+        select 
+        	<include refid="Base_Column_List_INVALID_CCHI_DIAG" />
+        from pv_encounter pv
+        inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+        inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		left join BD_OU_DEPT bod on bod.pk_dept=pv.pk_dept
+        where  
+        	<choose>
+				<when test="euStatusDrg !=null and euStatusDrg != ''">
+					1=1
+				</when>
+				<otherwise>
+					(ip.eu_status_doc>='0' OR ip.eu_status_doc IS NULL)
+				</otherwise>
+			</choose>  
+        	
+        <!--去掉未录入DRG和启用DRG之后旧诊断没维护好的的  开始-->
+        and not exists(select 1 from CN_CCHI cchi where cchi.PK_PV = pv.PK_PV)
+        and exists(
+        select 1 from emr_home_page_diags pdg
+        inner join emr_home_page page on page.PK_PAGE=pdg.PK_PAGE
+        where  pdg.CODE_DCDT is null and page.PK_PV=pv.PK_PV
+        )        
+        <if test="excludeBaby !=null and excludeBaby != ''">
+           and pi.code_ip not like '%B%'
+        </if>
+        <!--=========================结束================-->
+        <if test="codeIp !=null and codeIp != ''">
+            and pi.code_ip=#{codeIp,jdbcType=VARCHAR}
+        </if>
+        <if test="euStatusDrg !=null and euStatusDrg != ''">
+			<choose>
+				<when test="euStatusDrg==-1">
+				 	and ip.eu_status_doc IS NULL
+				</when>
+				<otherwise>
+					and ip.eu_status_doc IS not NULL and nvl(ip.eu_status_drg,0)=#{euStatusDrg,jdbcType=VARCHAR}
+				</otherwise>
+			</choose>
+		</if>
+        <if test="namePi !=null and namePi != ''">
+            and pi.name_pi like '%' ||  #{namePi,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test="pkEmpPhy !=null and pkEmpPhy != ''">
+            and pv.pk_emp_phy=#{pkEmpPhy,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDept !=null and pkDept != ''">
+            and pv.pk_dept=#{pkDept,jdbcType=VARCHAR}
+        </if>
+        <if test="beginDateEnd !=null and beginDateEnd != ''">
+        	and pv.date_end<![CDATA[>=]]> to_date(#{beginDateEnd,jdbcType=VARCHAR},'yyyy-mm-dd')
+        </if>
+        <if test="endDateEnd !=null and endDateEnd != ''">
+        	and pv.date_end<![CDATA[<=]]> to_date(#{endDateEnd,jdbcType=VARCHAR} || ' 23:59','yyyy-mm-dd hh24:mi')
+        </if>
+        
+        <if test="beginDateDrg !=null and beginDateDrg != ''">
+        	and ip.date_drg<![CDATA[>=]]> to_date(#{beginDateDrg,jdbcType=VARCHAR},'yyyy-mm-dd')
+        </if>
+        <if test="endDateDrg !=null and endDateDrg != ''">
+        	and ip.date_drg<![CDATA[<=]]> to_date(#{endDateDrg,jdbcType=VARCHAR} || ' 23:59','yyyy-mm-dd hh24:mi')
+        </if>
+        
+        <if test="beginDateCommitDoc !=null and beginDateCommitDoc != ''">
+        	and ip.DATE_COMMIT_DOC<![CDATA[>=]]> to_date(#{beginDateCommitDoc,jdbcType=VARCHAR},'yyyy-mm-dd')
+        </if>
+        <if test="endDateCommitDoc !=null and endDateCommitDoc != ''">
+        	and ip.DATE_COMMIT_DOC<![CDATA[<=]]> to_date(#{endDateCommitDoc,jdbcType=VARCHAR} || ' 23:59','yyyy-mm-dd hh24:mi')
+        </if>
+        ) v1 order by v1.DATE_COMMIT_DOC desc
+    </select>
+</mapper>

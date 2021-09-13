@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.sd.wechat.dao.ThirdWeChatPayMapper">
+	<select id="getPatientPvList" parameterType="java.lang.String" resultType="DynaBean">
+		select 
+			pv.CODE_PV,dept.NAME_DEPT name_dept_pv,pv.DATE_REG date_pv,emp.NAME_EMP name_emp_pv,pv.PK_PV 
+		from PV_ENCOUNTER pv
+		inner join PI_MASTER pi on pi.PK_PI=pv.PK_PI
+		inner join BD_OU_DEPT dept on dept.PK_DEPT=pv.PK_DEPT
+		inner join PV_OP op on op.PK_PV=pv.PK_PV
+		inner join SCH_SCH sch on sch.PK_SCH=op.PK_SCH
+		inner join SCH_RESOURCE res on res.PK_SCHRES=sch.PK_SCHRES
+		inner join BD_OU_EMPLOYEE emp on emp.PK_EMP=res.PK_EMP
+		where pi.PK_PI=#{pkPi,jdbcType=VARCHAR}
+		UNION
+		select 
+			pv.CODE_PV,dept.NAME_DEPT name_dept_pv,pv.DATE_REG date_pv,emp.NAME_EMP name_emp_pv,pv.PK_PV 
+		from PV_ENCOUNTER pv
+		inner join PI_MASTER pi on pi.PK_PI=pv.PK_PI
+		inner join BD_OU_DEPT dept on dept.PK_DEPT=pv.PK_DEPT
+		inner join PV_ER er on er.PK_PV=pv.PK_PV
+		inner join SCH_SCH sch on sch.PK_SCH=er.PK_SCH
+		inner join SCH_RESOURCE res on res.PK_SCHRES=sch.PK_SCHRES
+		inner join BD_OU_EMPLOYEE emp on emp.PK_EMP=res.PK_EMP
+		where pi.PK_PI=#{pkPi,jdbcType=VARCHAR}
+	</select>
+	<select id="getPvSettleInfo" parameterType="java.util.List" resultType="DynaBean">
+		SELECT
+		  st.CODE_ST,
+		  st.DATE_ST,
+		  ext.SERIAL_NO third_order_no,
+		  ext.DATE_PAY,
+		  st.AMOUNT_ST,
+		  ext.AMOUNT    amount_order,
+		  CASE WHEN st.DT_STTYPE = '00'
+		    THEN '0'
+		  ELSE '1' END  pay_status,
+		  CASE WHEN hp.CODE = '01'
+		    THEN '1'
+		  ELSE '7' END  hp_type,
+		  ext.DT_BANK   pay_type
+		FROM BL_SETTLE st
+		  inner JOIN BD_HP hp ON hp.PK_HP = st.PK_INSURANCE
+		  LEFT JOIN BL_EXT_PAY ext ON ext.PK_SETTLE = st.PK_SETTLE
+		WHERE st.PK_PV in 
+		<foreach collection="list" close=")" index="i" item="item" open=")" separator=",">
+			#{pkPv,jdbcType=VARCHAR}
+		</foreach>
+	</select>
+	
+	<select id="qryHisSettle" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT
+		      pv.EU_PVTYPE,
+		      pi.CODE_OP,
+		      pv.NAME_PI,
+		      pv.DATE_BEGIN date_pv,
+		      pay.DT_BANK pay_type,
+		      st.DT_STTYPE,
+		      st.DATE_ST,
+		      pay.SERIAL_NO order_no,
+		      st.AMOUNT_PI,
+		      st.AMOUNT_INSU,
+		      st.AMOUNT_ST
+		FROM BL_EXT_PAY pay
+		      INNER JOIN BL_SETTLE st ON st.PK_SETTLE = pay.PK_SETTLE and st.AMOUNT_st &gt;= 0 
+		      INNER JOIN PV_ENCOUNTER pv ON pv.PK_PV = pay.PK_PV
+		      INNER JOIN PI_MASTER pi ON pi.PK_PI = pv.PK_PI
+		WHERE pay.SYSNAME = 'Y160' and pay.AMOUNT &gt;= 0
+		      AND to_char(pay.DATE_PAY, 'yyyyMMdd') = #{datePay,jdbcType=VARCHAR}
+		      <if test=' paytype !=null '>
+		      AND Lower(pay.DT_BANK) = #{paytype,jdbcType=VARCHAR}
+		      </if>	      
+		      <if test=' sttype =="00"'>
+		      AND DT_STTYPE in('00','20')
+		      </if>
+		      <if test=' sttype =="01"'>
+		      AND DT_STTYPE in('01','21')
+		      </if>
+union	
+	SELECT
+		      pv.EU_PVTYPE,
+		      pi.CODE_OP,
+		      pv.NAME_PI,
+		      pv.DATE_BEGIN date_pv,
+		      pay.DT_BANK pay_type,
+		      st.DT_STTYPE freeType,
+		      st.DATE_ST,
+		      pay.SERIAL_NO order_no,
+		      st.AMOUNT_PI,
+		      st.AMOUNT_INSU,
+		      st.AMOUNT_ST
+		FROM BL_EXT_PAY pay
+		      INNER JOIN BL_SETTLE st ON st.PK_SETTLE_CANC = pay.PK_SETTLE and st.AMOUNT_ST &lt; 0 
+		      INNER JOIN PV_ENCOUNTER pv ON pv.PK_PV = pay.PK_PV
+		      INNER JOIN PI_MASTER pi ON pi.PK_PI = pv.PK_PI
+		WHERE pay.SYSNAME = 'Y160' and pay.AMOUNT &lt;= 0
+		      AND to_char(pay.DATE_PAY, 'yyyyMMdd') = #{datePay,jdbcType=VARCHAR}
+		      <if test=' paytype !=null '>
+		      AND Lower(pay.DT_BANK) = #{paytype,jdbcType=VARCHAR}
+		      </if>	   
+		      <if test=' sttype =="00"'>
+		      AND DT_STTYPE in('00','20')
+		      </if>
+		      <if test=' sttype =="01"'>
+		      AND DT_STTYPE in('01','21')
+		      </if>
+	</select>
+</mapper>	

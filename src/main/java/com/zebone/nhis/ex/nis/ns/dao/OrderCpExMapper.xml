@@ -1,0 +1,62 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.ns.dao.OrderCpExMapper">
+	<select id="queryPatiList" parameterType="java.lang.String" resultType="DynaBean">
+		select pv.pk_pv,
+       		   pv.bed_no as code_bed,
+       		   pv.name_pi,
+       		   pv.code_pv as pv_code ,
+       		   pi.code_ip
+          from pv_encounter pv 
+         inner join pi_master pi on pi.pk_pi = pv.pk_pi
+         inner join cp_rec rec on pv.pk_pv=rec.pk_pv
+         where pv.pk_dept_ns = #{_parameter,jdbcType=VARCHAR} 
+           and pv.flag_in='1' 
+           and pv.flag_cancel='0' 
+           and rec.eu_status='1'
+         order by pv.bed_no 
+	</select>
+	
+	<select id="queryOrderCpList" parameterType="java.util.List" resultType="DynaBean">
+		select pv.pk_pv,     
+       		   pv.bed_no,    
+       		   pv.name_pi,    
+       		   tmp.name_cp,  
+       		   rec.pk_cprec,  
+       		   phase.pk_cpphase,
+       		   dt.pk_recdt,   
+       		   dt.pk_recphase,
+       		   dt.pk_cpord,
+       		   cpord.name_form name_act,  
+       		   cpord.flag_nec,
+       		   dt.note,     
+       		   dt.eu_status, 
+       		   dt.date_ex,    
+       		   dt.pk_emp_ex,  
+       		   dt.name_emp_ex,
+       		   rec.date_start,
+       		   act.func,
+       		   act.eu_type,
+       		   tmpphase.days_min,
+       		   tmpphase.days_max,
+       		   tmpphase.name_phase  
+          from pv_encounter pv
+         inner join pi_master pi on pi.pk_pi = pv.pk_pi 
+         inner join cp_rec rec on pv.pk_pv=rec.pk_pv
+         inner join cp_rec_phase phase on rec.pk_cprec=phase.pk_cprec
+         inner join cp_rec_dt dt on phase.pk_recphase=dt.pk_recphase
+         inner join cp_temp tmp on rec.pk_cptemp=tmp.pk_cptemp
+         inner join cp_temp_phase tmpphase on tmpphase.pk_cpphase = phase.pk_cpphase
+         inner join cp_temp_cpord cpord on cpord.pk_cpord = dt.pk_cpord
+          left join bd_cp_action act on dt.pk_cpord =act.pk_cpaction
+         where pv.pk_pv in 
+       <foreach item="item" index="index" collection="pkPvs" open="("  separator="," close=")">  
+            #{item}  
+       </foreach> 
+          and dt.eu_cpordtype='2' 
+       <if test='flagAll =="0" '>
+          and dt.eu_status = '0'  
+       </if>
+        order by pv.bed_no,rec.pk_cprec,tmpphase.name_phase
+	</select>
+	
+</mapper>

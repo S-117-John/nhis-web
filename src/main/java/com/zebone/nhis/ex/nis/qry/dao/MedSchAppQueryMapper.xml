@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.qry.dao.MedSchAppQueryMapper">
+   <select id="queryMedSchApp" parameterType="java.util.Map" resultType="DynaBean">
+	  select pv.code_pv,
+		pi.code_ip,
+		pv.bed_no,
+		pv.name_pi,
+		ord.pk_dept,
+		dept.name_dept,
+		ord.name_emp_ord,
+		ord.date_start,
+		ord.name_ord,
+		ord.pk_dept_exec ,
+		deptex.name_dept name_dept_ex,
+		sch.BEGIN_TIME as date_appt
+		from sch_appt sch
+		inner join pv_encounter pv on pv.pk_pi = sch.pk_pi
+		inner join pi_master pi on pi.pk_pi = pv.pk_pi
+		inner join sch_appt_ord apptord on apptord.pk_schappt = sch.pk_schappt
+		inner join cn_order ord  on ord.pk_cnord = apptord.pk_cnord 
+		left join bd_ou_dept dept on dept.pk_dept = ord.pk_dept
+		left join bd_ou_dept deptex on deptex.pk_dept = ord.pk_dept_exec 
+		where pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR} and pv.eu_status = '1'
+		  <if test="dateEnd != null  and  dateEnd != ''">
+		    and ord.date_start &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS') 
+	      </if>
+	      <if test="dateBegin != null  and  dateBegin != ''">
+		    and ord.date_start &gt;= to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')  
+	      </if>
+	       <if test="codeIp != null  and  codeIp != ''">
+		     and pi.code_ip = #{codeIp,jdbcType=VARCHAR} 
+          </if>
+	      <if test="bedNo != null  and  bedNo != ''">
+			     and pv.bed_no = #{bedNo,jdbcType=VARCHAR} 
+	      </if>
+	      <if test="namePi != null  and  namePi != ''">
+			     and pv.name_pi = #{namePi,jdbcType=VARCHAR} 
+	      </if>
+		  <if test="pkDept != null  and  pkDept != ''">
+			      and ord.pk_dept = #{pkDept,jdbcType=CHAR} 
+	      </if>
+	      <if test="pkDeptEx != null  and  pkDeptEx != ''">
+			     and ord.pk_dept_exec = #{pkDeptEx,jdbcType=CHAR} 
+	      </if>
+   </select>
+  
+</mapper>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.task.sch.dao.CleanAndBackUpsMapper">
+	<delete id="delSchTicketBeforeDay" parameterType="int" >
+		delete from
+		sch_ticket s
+		where
+		s.END_TIME &lt; (trunc(sysdate)-${day})
+	</delete>
+
+	<delete id="delSchTicketBeforeWeekSSB" parameterType="int">
+		delete from sch_sch_b where create_time &lt; (trunc(sysdate)-${day})
+	</delete>
+
+	<delete id="delSchTicketBeforeWeekSAP" parameterType="int">
+		delete from sch_appt_pv where create_time &lt; (trunc(sysdate)-${day})
+	</delete>
+
+	<delete id="delSchTicketBeforeDayPQ" parameterType="int">
+		delete from
+			pv_que s
+		where
+			s.create_time &lt; (trunc(sysdate)-${day})
+	</delete>
+</mapper>

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.sd.dao.FollowUpMapper">
+
+    <select id="queryPvInfo" parameterType="java.lang.String"
+            resultType="com.zebone.nhis.ma.pub.sd.vo.FollowUpPiInfoVo">
+        select pv.CODE_PV                                                        register_No,
+               pi.CODE_PI                                                        patient_Id,
+               dept.NAME_DEPT                                                    dept_Name,
+               pv.NAME_PI                                                        name,
+               case pi.DT_SEX when '02' then '1' when '03' then '2' else '3' end gender,
+               pi.MOBILE                                                         telephone,
+               pv.AGE_PV                                                         age,
+               doc.name                                                          nation,
+               pv.ADDR_REGI                                                      native_Place,
+               case pi.DT_MARRY
+                   when '2' then '1'
+                   when '1' then '2'
+                   when '4' then '3'
+                   when '3' then '4'
+                   else '5' end                                                  marry,
+               to_char(pi.BIRTH_DATE, 'yyyy-mm-dd')                              birthday,
+               case pi.DT_IDTYPE when '01' then '1' else '20' end                id_Type,
+               pi.ID_NO                                                          id_No,
+               pv.ADDR_CUR || pv.ADDR_CUR_DT                                     present_Addr,
+               ocu.NAME                                                          profession,
+               pv.UNIT_WORK                                                      company_Name,
+               pv.TEL_WORK                                                       company_Tel,
+               pi.INSUR_NO                                                       medical_No,
+               ''                                                                disease_Time,
+               ''                                                                disease_Addr,
+               case pv.EU_PVTYPE when '2' then '1' when '1' then '2' end         clinic_Type,
+               pv.DATE_CLINIC                                                    clinic_time,
+               ''                                                                direction,
+               pv.NAME_REL                                                       guardian,
+               pv.TEL_REL                                                        home_Tel,
+               ''                                                                summary,
+               ''                                                                allergy_His,
+               ''                                                                signs_Info,
+               ''                                                                cost_Type,
+               ''                                                                pay_Mode,
+               ''                                                                register_Type
+        from PV_ENCOUNTER pv
+                 inner join PI_MASTER pi on pi.PK_PI = pv.PK_PI
+                 inner join BD_OU_DEPT dept on dept.PK_DEPT = pv.PK_DEPT
+                 left join BD_DEFDOC doc on doc.CODE = pi.DT_NATION and doc.CODE_DEFDOCLIST = '000003'
+                 left join BD_DEFDOC ocu on ocu.CODE = pi.DT_OCCU and ocu.CODE_DEFDOCLIST = '000010'
+        where pv.EU_PVTYPE in ('1', '2')
+          and PK_PV = #{pkPv,jdbcType=VARCHAR}
+    </select>
+
+    <select id="queryOrdInfo" resultType="com.zebone.nhis.ma.pub.sd.vo.FollowUpClinicAdviceItemVo">
+
+        select nvl(op.DATE_BEGIN, er.DATE_BEGIN) begin_Time,
+               ord.NAME_ORD                      advice_Contents,
+               to_char(ord.DOSAGE, 'fm9990.09')  single_Amount,
+               bu.NAME                           medicine_unit,
+               ord.DAYS                          total_Days,
+               freq.NOTE                         frequency,
+               sup.NAME                          usages,
+               ''                                medical_Advice,
+               ''                                exec_Time,
+               deptexec.NAME_DEPT                exec_Dept,
+               ''                                exec_Nature,
+               '3'                               exec_State,
+               empord.NAME_EMP                   advice_Doctor,
+               ord.DATE_ENTER                    advice_Time,
+               ''                                sender,
+               sysdate                           send_Time,
+               ''                                excess_Desc,
+               ''                                basic_Drug,
+               empord.CODE_EMP                   advice_Doctor_Id
+        from CN_ORDER ord
+                 inner join PV_ENCOUNTER pv on pv.PK_PV = ord.PK_PV
+                 inner join BD_OU_DEPT deptexec on deptexec.PK_DEPT = ord.PK_DEPT_EXEC
+                 inner join BD_OU_EMPLOYEE empord on empord.PK_EMP = ord.PK_EMP_ORD
+                 left join BD_UNIT bu on bu.PK_UNIT = ord.PK_UNIT_DOS
+                 left join PV_OP op on pv.PK_PV = op.PK_PV
+                 left join PV_ER er on er.PK_PV = pv.PK_PV
+                 left join BD_TERM_FREQ freq on freq.CODE = ord.CODE_FREQ
+                 left join BD_SUPPLY sup on sup.CODE = ord.CODE_SUPPLY
+        where pv.PK_PV = #{pkPv,jdbcType=VARCHAR}
+
+    </select>
+    <select id="queryDiagInfo" resultType="java.util.Map">
+        select ''             diagnosisId,
+               '2'            source,
+               diag.NAME_DIAG diagnosis,
+               '6'            diagnosisType,
+               diag.SORT_NO   orders
+        from PV_DIAG diag
+        where diag.PK_PV = #{pkPv,jdbcType=VARCHAR}
+    </select>
+
+    <select id="queryDocinfo" resultType="com.zebone.nhis.ma.pub.sd.vo.FollowUpAdviceDoctorInfoVo">
+
+        select empord.CODE_EMP                                                       advice_DoctorId,
+               empord.NAME_EMP                                                       doctor_Name,
+               case empord.DT_SEX when '02' then '1' when '03' then '2' else '3' end gender,
+               empord.MOBILE                                                         telephone,
+               empord.WORKPHONE                                                      dept_tel,
+               empord.IDNO                                                           id_No,
+               deptapp.NAME_DEPT                                                     dept_Name,
+               '1'                                                                   "share",
+               '2'                                                                   source
+        from CN_ORDER ord
+                 inner join PV_ENCOUNTER pv on pv.PK_PV = ord.PK_PV
+                 inner join BD_OU_DEPT deptapp on pv.PK_DEPT = deptapp.PK_DEPT
+                 inner join BD_OU_EMPLOYEE empord on empord.PK_EMP = ord.PK_EMP_ORD
+        where pv.PK_PV = #{pkPv,jdbcType=VARCHAR}
+        group by empord.CODE_EMP, empord.NAME_EMP, empord.WORKPHONE, empord.MOBILE, empord.IDNO, deptapp.NAME_DEPT,
+                 empord.DT_SEX
+
+    </select>
+
+</mapper>

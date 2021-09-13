@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.cn.ipdw.dao.ZsbaCnMedConsultationMapper">
+    <select id="getCnOrdAntiExpre" resultType="DynaBean">
+        select COAE.*,
+               emp.code_emp,
+               emp.name_emp,
+               emp.MOBILE,
+               BD.NAME as JOBNAME,
+               dept.name_dept
+        from CN_ORD_ANTI_EXPRE COAE
+                     inner join bd_ou_employee emp on COAE.PK_EMP_EXPRE = emp.PK_EMP
+                     inner join bd_ou_empjob empjob on empjob.pk_emp = emp.pk_emp
+                     inner join bd_ou_dept dept on empjob.pk_dept = dept.pk_dept
+                     left join BD_DEFDOC BD on BD.CODE = empjob.JOBNAME and BD.CODE_DEFDOCLIST = '010301'
+        where COAE.DEL_FLAG = '0'
+    </select>
+
+    <select id="getCnOrdAntiApply" resultType="DynaBean">
+        select BOD.NAME_DEPT,
+        COAA.DATE_CONS,
+        NAME_EMP_ORD,
+        COAA.eu_status,
+        PM.CODE_IP,
+        PE.BED_NO,
+        GETPVAGE(PM.BIRTH_DATE, Pe.DATE_BEGIN) age,
+        CO.DATE_SIGN,
+        PM.PK_PI,
+        CO.PK_CNORD,
+        COAA.PK_ORDANTIAPPLY,
+        PE.PK_PV,
+        PM.NAME_PI,
+        BD.NAME as sex_name
+        from CN_ORD_ANTI_APPLY COAA
+        inner join CN_ORDER CO on COAA.PK_CNORD = Co.PK_CNORD
+        inner join PV_ENCOUNTER PE on CO.PK_PV = PE.PK_PV
+        inner join PI_MASTER PM on PM.PK_PI = PE.PK_PI
+        inner join BD_OU_DEPT BOD on BOD.PK_DEPT = CO.PK_DEPT
+        inner join BD_DEFDOC BD on PM.DT_SEX = BD.CODE and BD.CODE_DEFDOCLIST = '000000'
+        <where>
+            <if test=" pkDept !=null and pkDept!='' ">
+                CO.PK_DEPT=#{pkDept,jdbcType=VARCHAR}
+            </if>
+            <if test=" pkEmpOrd!=null and pkEmpOrd!='' ">
+                and CO.PK_EMP_ORD=#{pkEmpOrd,jdbcType=VARCHAR}
+            </if>
+
+            <if test=" euStatus!=null and euStatus!='' ">
+                and COAA.eu_status=#{euStatus,jdbcType=VARCHAR}
+            </if>
+
+            <if test=" dateStare!=null and dateStare!='' ">
+                and CO.DATE_SIGN &gt;=to_date(#{dateStare,jdbcType=VARCHAR},'yyyymmddHH24miss')
+            </if>
+
+            <if test=" dateEnd !=null and dateEnd!='' ">
+                and CO.DATE_SIGN &lt;=to_date(#{dateEnd,jdbcType=VARCHAR},'yyyymmddHH24miss')
+            </if>
+
+            <if test=" pkPv !=null and pkPv!='' ">
+                and PE.PK_PV=#{pkPv,jdbcType=VARCHAR}
+            </if>
+            <if test=" pkPv !=null and pkPv!='' ">
+                and PE.PK_PV=#{pkPv,jdbcType=VARCHAR}
+            </if>
+        </where>
+    </select>
+</mapper>

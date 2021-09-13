@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.oi.dao.OinPlaceViewMapper">
+  <select id="searchPlaceIv" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.oi.vo.OinfuPlaceViewVO"> 
+     select place.code,place.name,pv.age_pv,pv.name_pi,place.dt_sex,place.eu_placeattr,dept.name_dept,emp.name_emp,place.pk_placeiv as pk_bed ,place.pk_infuocc,place.eu_status 
+     from bd_place_iv place
+     left join  pv_encounter pv on place.pk_pv = pv.pk_pv
+     left join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+     left join bd_ou_employee emp on emp.pk_emp = pv.pk_emp_phy
+     where place.flag_active='1' and place.pk_deptiv = #{pkDeptiv,jdbcType=VARCHAR}  and place.pk_org = #{pkOrg,jdbcType=VARCHAR}    
+  </select>  
+  <select id="searchPdInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.ex.oi.vo.OinfuPlaceViewVO"> 
+    select pd.name as pd_name,case dt.eu_type when '0' then '输液'  when '1' then '注射'  when '2' then '皮试'  when '3' then '雾化'  end as eu_type
+	 from  ex_infusion_occ occ
+	 left join ex_infusion_reg_dt  dt on dt.pk_infureg = occ.pk_infureg and dt.reg_dt_no = occ.reg_dt_no
+     left outer join bd_pd pd on pd.pk_pd = dt.pk_ord
+	where occ.pk_bed = #{pkPlaceiv,jdbcType=VARCHAR}  and occ.eu_status not in ('2', '9') 
+	</select>
+</mapper>

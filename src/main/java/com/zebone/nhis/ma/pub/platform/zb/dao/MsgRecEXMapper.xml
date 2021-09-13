@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ma.pub.platform.zb.dao.MsgRecEXMapper">
+	<select id="queryOrder" parameterType="java.util.List" resultType="DynaBean">
+		select 
+			co.pk_cnord,co.eu_pvtype,co.pk_pv,co.pk_pi,co.date_effe,co.code_ordtype,
+		  	co.eu_always,co.ordsn,co.ordsn_parent,co.pk_ord,co.code_ord,co.name_ord,
+		  	co.desc_ord,co.code_apply,co.code_freq,co.spec,co.dosage,co.pk_unit_dos,
+		  	co.quan,co.pk_unit,co.code_supply,co.quan_cg,co.pk_unit_cg,co.pack_size,
+		  	co.price_cg,co.note_supply,co.days,co.drip_speed,co.ords,co.flag_first,
+		  	co.last_num,co.pk_dept_exec,co.eu_status_ord,co.date_enter,co.date_start,
+		  	co.flag_durg,co.flag_self,co.flag_note,co.flag_base,co.flag_bl,co.quan_bed,
+		  	co.pk_wg,co.pk_emp_input,co.name_emp_input,co.pk_emp_ord,co.note_ord,co.pk_dept_ns,
+		  	co.name_emp_ord,co.date_sign,co.pk_emp_chk,co.name_emp_chk,co.date_chk,
+		  	co.date_last_ex,co.date_plan_ex,co.date_stop,co.pk_emp_stop,co.name_emp_stop,
+		  	co.flag_stop,co.date_stop_chk,co.pk_emp_stop_chk,co.name_emp_stop_chk,
+		  	co.flag_stop_chk,co.date_erase,co.pk_emp_erase,co.name_emp_erase,co.flag_erase,
+		  	co.date_erase_chk,co.pk_emp_erase_chk,co.name_erase_chk,co.flag_erase_chk,
+		  	co.flag_cp,co.flag_doctor,co.infant_no,co.pk_event,co.flag_print,co.flag_medout,
+		  	co.eu_exctype,co.pk_ord_exc,co.flag_emer,co.flag_thera,co.flag_prev,co.flag_fit,
+		  	co.pk_unit_dos,co.eu_st, 
+
+		  	<!-- bid.pk_cgip,bid.flag_pd,bid.code_bill,bid.code_audit,bid.pk_itemcate,
+		  	bid.pk_item,bid.name_cg,bid.pk_disc,bid.ratio_disc,
+		  	bid.price_org,bid.price,bid.amount,bid.ratio_self,bid.amount_pi,
+		  	bid.pk_org_app,bid.pk_dept_app,bid.pk_dept_ns_app,bid.pk_wg,bid.pk_emp_app,
+		  	bid.name_emp_app,bid.pk_org_ex,bid.pk_dept_ex,bid.date_hap,
+		  	bid.pk_pd,bid.batch_no,bid.pk_unit_pd,bid.price_cost,bid.flag_settle,
+		  	bid.pk_settle,bid.pk_pres,bid.flag_insu,bid.pk_cgip_back,bid.code_cg,
+		  	bid.date_cg,bid.pk_dept_cg,bid.pk_emp_cg,bid.name_emp_cg, epd.name_decate,epd.code_de,epd.flag_prt, -->
+		  	
+		  	pv.pk_dept
+
+		from cn_order co
+		<!-- 
+		left join bl_ip_dt bid on co.pk_cnord=bid.pk_cnord 
+		left join  ex_pd_de epd on epd.pk_cnord=co.pk_cnord
+		-->
+		left join pv_encounter pv on pv.pk_pv=co.pk_pv
+		<where>
+			co.pk_cnord in
+			<foreach item="pkCnords" collection="list" separator=","  open="(" close=")" index="">
+				#{pkCnords,jdbcType=VARCHAR}
+			</foreach>
+		</where> 
+	</select>
+	
+	<select id="queryOrderItem" parameterType="java.util.List" resultType="DynaBean">
+		select 
+			co.pk_cnord,co.eu_pvtype,co.pk_pv,co.pk_pi,co.date_effe,co.code_ordtype,
+		  	co.eu_always,co.ordsn,co.ordsn_parent,co.pk_ord,co.code_ord,co.name_ord,
+		  	co.desc_ord,co.code_apply,co.code_freq,co.spec,co.dosage,co.pk_unit_dos,
+		  	co.quan,co.pk_unit,co.code_supply,co.quan_cg,co.pk_unit_cg,co.pack_size,
+		  	co.price_cg,co.note_supply,co.days,co.drip_speed,co.ords,co.flag_first,
+		  	co.last_num,co.pk_dept_exec,co.eu_status_ord,co.date_enter,co.date_start,
+		  	co.flag_durg,co.flag_self,co.flag_note,co.flag_base,co.flag_bl,co.quan_bed,
+		  	co.pk_wg,co.pk_emp_input,co.name_emp_input,co.pk_emp_ord,co.note_ord,co.pk_dept_ns,
+		  	co.name_emp_ord,co.date_sign,co.pk_emp_chk,co.name_emp_chk,co.date_chk,
+		  	co.date_last_ex,co.date_plan_ex,co.date_stop,co.pk_emp_stop,co.name_emp_stop,
+		  	co.flag_stop,co.date_stop_chk,co.pk_emp_stop_chk,co.name_emp_stop_chk,
+		  	co.flag_stop_chk,co.date_erase,co.pk_emp_erase,co.name_emp_erase,co.flag_erase,
+		  	co.date_erase_chk,co.pk_emp_erase_chk,co.name_erase_chk,co.flag_erase_chk,
+		  	co.flag_cp,co.flag_doctor,co.infant_no,co.pk_event,co.flag_print,co.flag_medout,
+		  	co.eu_exctype,co.pk_ord_exc,co.flag_emer,co.flag_thera,co.flag_prev,co.flag_fit,
+		  	
+		  	
+		  	eoo.pk_exocc,eoo.date_plan,eoo.date_occ,eoo.quan_occ,eoo.price_ref,eoo.eu_status,
+		  	eoo.pk_org_occ,eoo.pk_dept_occ,eoo.pk_emp_occ,eoo.name_emp_occ,eoo.flag_canc,
+		  	eoo.pk_dept_canc,eoo.pk_emp_canc,eoo.name_emp_canc,eoo.date_canc,eoo.pk_pdapdt,
+		  	eoo.pk_pdback,eoo.pk_exevent,eoo.pk_pdde,eoo.pk_cg,eoo.pk_cg_cancel,
+
+		  	bid.pk_cgip,bid.flag_pd,bid.code_bill,bid.code_audit,bid.pk_itemcate,
+		  	bid.pk_item,bid.name_cg,bid.pk_disc,bid.ratio_disc,
+		  	bid.price_org,bid.price,bid.amount,bid.ratio_self,bid.amount_pi,
+		  	bid.pk_org_app,bid.pk_dept_app,bid.pk_dept_ns_app,bid.pk_wg,bid.pk_emp_app,
+		  	bid.name_emp_app,bid.pk_org_ex,bid.pk_dept_ex,bid.date_hap,
+		  	bid.pk_pd,bid.batch_no,bid.pk_unit_pd,bid.price_cost,bid.flag_settle,
+		  	bid.pk_settle,bid.pk_pres,bid.flag_insu,bid.pk_cgip_back,bid.code_cg,
+		  	bid.date_cg,bid.pk_dept_cg,bid.pk_emp_cg,bid.name_emp_cg,
+		  	
+		  	pv.pk_dept,
+		  	
+		  	epd.name_decate,epd.code_de,epd.flag_prt
+		  	
+		from cn_order co
+		INNER JOIN bl_ip_dt bid ON co.pk_cnord = bid.pk_cnord
+        INNER JOIN ex_order_occ eoo ON eoo.pk_cnord = co.pk_cnord  and bid.PK_ORDEXDT=eoo.PK_EXOCC
+        LEFT JOIN pv_encounter pv ON pv.pk_pv = co.pk_pv
+        LEFT JOIN ex_pd_de epd ON epd.pk_cnord = co.pk_cnord and epd.PK_PDAPDT=eoo.PK_PDAPDT
+		<where>
+			eoo.pk_exocc in
+			<foreach item="occList" collection="list" separator=","  open="(" close=")" index="">
+				#{occList,jdbcType=VARCHAR}
+			</foreach>
+		</where>
+	</select>
+</mapper>	

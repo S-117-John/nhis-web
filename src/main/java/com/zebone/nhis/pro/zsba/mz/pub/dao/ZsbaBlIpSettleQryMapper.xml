@@ -1,0 +1,1520 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.mz.pub.dao.ZsbaBlIpSettleQryMapper">
+	
+	<!-- 根据条件查询机构下的患者信息 -->
+	<select id="qryStRecords" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.SettleRecord">
+		  select pv.pk_pv,pv.date_begin,st.dt_sttype,st.pk_settle,st.eu_pvtype, sttype.name sttype, st.date_st,pi.code_pi,pi.code_ip, 
+		       	pi.code_op,pi.name_pi, hp.name hp,st.amount_st, st.amount_pi,dept.name_dept,st.name_emp_st,st.eu_stresult,st.reason_canc,
+		       	pv.code_pv,st.code_st,stold.code_st as old_code_st,stold.amount_st as old_amount_st,st.pk_settle_recharge 
+		  from pi_master pi
+		       inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+		       inner join bl_settle st on pv.pk_pv=st.pk_pv
+		       inner join bd_hp hp on st.pk_insurance=hp.pk_hp
+		       inner join bd_ou_dept dept on st.pk_dept_st=dept.pk_dept
+		       inner join bd_defdoc sttype on st.dt_sttype=sttype.code and sttype.code_defdoclist='110102'
+		       inner join BD_OU_EMPLOYEE us on us.pk_emp = st.pk_emp_st
+				left join bl_settle stold on stold.pk_settle = st.PK_SETTLE_CANC
+		 where st.pk_org = #{pkOrg,jdbcType=VARCHAR} 
+		 <if test='isIpSettle!=null and isIpSettle!="" and isIpSettle.equals("1")'>
+		 	and pv.eu_pvtype in(1,2,3,4)
+		 </if>
+		 <if test='isIpSettle!=null and isIpSettle!="" and isIpSettle.equals("0")'>
+		 	and pv.eu_pvtype in(1,2,4)
+		 </if>
+		 <if test="codeOp != null  and  codeOp != ''">
+		 	and pi.code_op = #{codeOp,jdbcType=VARCHAR}
+		 </if>
+		 <if test="dtSttype != null  and  dtSttype != ''">
+		 	and st.dt_sttype = #{dtSttype,jdbcType=VARCHAR}
+		 </if>
+		 <if test="codePi != null  and  codePi != ''">
+		 	and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+		 </if>
+		 <if test='codeIp!=null and codeIp!=""'>
+		 	and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+		 </if>
+		 <if test="namePi != null  and  namePi != ''">
+		 	and pi.name_pi like '%' || #{namePi,jdbcType=VARCHAR} || '%' 
+		 </if>
+		 <if test="codePv != null  and  codePv != ''">
+		 	and  pv.code_pv = #{codePv,jdbcType=VARCHAR}
+		 </if>
+		 <if test="dateBegin != null  and  dateBegin != ''">
+		 	and st.date_st &gt;= to_date(substr(#{dateBegin,jdbcType=VARCHAR} ,1,8)||'000000', 'yyyymmddhh24miss')
+		 </if>
+		 <if test="dateEnd != null  and  dateEnd != ''">
+		 	and st.date_st &lt;= to_date( substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'yyyymmddhh24miss')
+		 </if>
+		  <if test="euStresult != null  and  euStresult != ''">
+		 	and st.eu_stresult= #{euStresult,jdbcType=VARCHAR} 
+		 </if>
+		 <if test="nameEmpSt != null  and  nameEmpSt != ''">
+		 	and (st.name_emp_st like '%' || #{nameEmpSt,jdbcType=VARCHAR} || '%' 
+		 		 or	us.code_emp = #{nameEmpSt,jdbcType=VARCHAR}
+		 		)
+		 </if>
+		 <if test="codeInv != null  and  codeInv != ''">
+		 	and  exists (select 1
+                 from bl_st_inv stinv 
+                      inner join bl_invoice inv on stinv.pk_invoice=inv.pk_invoice
+                where stinv.pk_settle=st.pk_settle and
+                      inv.code_inv=#{codeInv,jdbcType=VARCHAR})
+		 </if>
+		 <if test="euPvtype!=null and euPvtype!=''">
+		 	and pv.eu_pvtype='3'
+		 </if>
+		 <if test="euPvtype==null or euPvtype==''">
+		 	and pv.eu_pvtype in(1,2,4)
+		 </if>
+		 <if test="pkInsu != null and pkInsu != ''">
+		 	and st.PK_INSURANCE = #{pkInsu,jdbcType=CHAR}
+		 </if>
+		  <if test="idNo != null and idNo != ''">
+		 	and ( pi.id_no = #{idNo,jdbcType=CHAR} or pi.insur_no = #{idNo,jdbcType=CHAR} )
+		 </if>
+		 order by st.date_st desc
+	</select>
+	<!-- 门诊：根据条件查询机构下的患者信息 -->
+	<select id="qryStRecordAll" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.SettleRecord">
+		  select pv.pk_pv,st.dt_sttype,st.pk_settle,st.eu_pvtype, sttype.name sttype, st.date_st,pi.code_pi, 
+		       pi.code_op,pi.name_pi, hp.name hp,st.amount_st, st.amount_pi,dept.name_dept,st.name_emp_st,st.eu_stresult,st.reason_canc,
+		       pv.code_pv,st.code_st,stold.code_st as old_code_st,stold.amount_st as old_amount_st,st.pk_settle_recharge 
+		  from pi_master pi
+		       inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+		       inner join bl_settle st on pv.pk_pv=st.pk_pv
+		       inner join bd_hp hp on st.pk_insurance=hp.pk_hp
+		       inner join bd_ou_dept dept on st.pk_dept_st=dept.pk_dept
+		       inner join bd_defdoc sttype on st.dt_sttype=sttype.code and sttype.code_defdoclist='110102'
+		       inner join BD_OU_EMPLOYEE us on us.pk_emp = st.pk_emp_st
+			   left join bl_settle stold on stold.pk_settle = st.PK_SETTLE_CANC
+		 where st.dt_sttype in ('00','01','20','21') and st.eu_pvtype in('1','2','4')		  
+		 and st.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		 
+		 <if test="codePi != null  and  codePi != ''">
+		 	and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+		 </if>
+		 <if test="namePi != null  and  namePi != ''">
+		 	and pi.name_pi like '%' || #{namePi,jdbcType=VARCHAR} || '%' 
+		 </if>
+		 <if test="codePv != null  and  codePv != ''">
+		 	and  pv.code_pv = #{codePv,jdbcType=VARCHAR}
+		 </if>
+		 <if test="dateBegin != null  and  dateBegin != ''">
+		 	and st.date_st &gt;= to_date(substr(#{dateBegin,jdbcType=VARCHAR} ,1,8)||'000000', 'yyyymmddhh24miss')
+		 </if>
+		 <if test="dateEnd != null  and  dateEnd != ''">
+		 	and st.date_st &lt;= to_date( substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'yyyymmddhh24miss')
+		 </if>
+		  <if test="euStresult != null  and  euStresult != ''">
+		 	and st.eu_stresult= #{euStresult,jdbcType=VARCHAR} 
+		 </if>
+		 <if test="nameEmpSt != null  and  nameEmpSt != ''">
+		 	and (st.name_emp_st like '%' || #{nameEmpSt,jdbcType=VARCHAR} || '%' 
+		 		 or	us.code_emp = #{nameEmpSt,jdbcType=VARCHAR}
+		 		)
+		 </if>
+		 <if test="codeInv != null  and  codeInv != ''">
+		 	and  exists (select 1
+                 from bl_st_inv stinv 
+                      inner join bl_invoice inv on stinv.pk_invoice=inv.pk_invoice
+                where stinv.pk_settle=st.pk_settle and
+                      inv.code_inv=#{codeInv,jdbcType=VARCHAR})
+		 </if>
+		 <if test="codeOp != null  and  codeOp != ''">
+		 	and pi.code_op = #{codeOp,jdbcType=VARCHAR}
+		 </if>
+		 <if test="euPvtype!=null and euPvtype!=''">
+		 	and pv.eu_pvtype='3'
+		 </if>
+		 <if test="euPvtype==null or euPvtype==''">
+		 	and pv.eu_pvtype in('1','2','4')
+		 </if>
+		 <if test="pkInsu != null and pkInsu != ''">
+		 	and st.PK_INSURANCE = #{pkInsu,jdbcType=CHAR}
+		 </if>
+		 <if test="idNo != null and idNo != ''">
+		 	and ( pi.id_no = #{idNo,jdbcType=CHAR} or pi.insur_no = #{idNo,jdbcType=CHAR} )
+		 </if>
+		 order by st.date_st desc
+	</select>
+	
+	
+	<!-- 住院：根据条件查询机构下的患者信息 -->
+	<select id="qryIpStRecordAll" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.SettleRecord">
+		  select pv.pk_pv,st.dt_sttype,st.pk_settle,st.eu_pvtype, sttype.name sttype, st.date_st,pi.code_pi, 
+		       pi.name_pi, hp.name hp,st.amount_st, st.amount_pi,dept.name_dept,st.name_emp_st,st.eu_stresult,st.reason_canc   
+		  from pi_master pi
+		       inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+		       inner join bl_settle st on pv.pk_pv=st.pk_pv
+		       inner join bd_hp hp on st.pk_insurance=hp.pk_hp
+		       inner join bd_ou_dept dept on st.pk_dept_st=dept.pk_dept
+		       inner join bd_defdoc sttype on st.dt_sttype=sttype.code and sttype.code_defdoclist='110102'
+		 where st.dt_sttype in ('10','11','20','21') and		 
+		 st.pk_org = #{pkOrg,jdbcType=VARCHAR} and st.eu_pvtype='3'
+		 
+		 <if test="codePi != null  and  codePi != ''">
+		 	and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+		 </if>
+		 <if test="namePi != null  and  namePi != ''">
+		 	and pi.name_pi like '%' || #{namePi,jdbcType=VARCHAR} || '%' 
+		 </if>
+		 <if test="codePv != null  and  codePv != ''">
+		 	and  pv.code_pv = #{codePv,jdbcType=VARCHAR}
+		 </if>
+		 <if test="dateBegin != null  and  dateBegin != ''">
+		 	and st.date_st &gt;= to_date(substr(#{dateBegin,jdbcType=VARCHAR} ,1,8)||'000000', 'yyyymmddhh24miss')
+		 </if>
+		 <if test="dateEnd != null  and  dateEnd != ''">
+		 	and st.date_st &lt;= to_date( substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'yyyymmddhh24miss')
+		 </if>
+		  <if test="euStresult != null  and  euStresult != ''">
+		 	and st.eu_stresult= #{euStresult,jdbcType=VARCHAR} 
+		 </if>
+		 <if test="nameEmpSt != null  and  nameEmpSt != ''">
+		 	and st.name_emp_st like '%' || #{nameEmpSt,jdbcType=VARCHAR} || '%' 
+		 </if>
+		 <if test="codeInv != null  and  codeInv != ''">
+		 	and  exists (select 1
+                 from bl_st_inv stinv 
+                      inner join bl_invoice inv on stinv.pk_invoice=inv.pk_invoice
+                where stinv.pk_settle=st.pk_settle and
+                      inv.code_inv=#{codeInv,jdbcType=VARCHAR})
+		 </if>
+	</select>
+	
+	
+	
+	<!-- 查询某个结算主键所对应的结算记录并且发票主键相等-->
+	<select id="qryInvInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.StQryInvInfo">
+		  select inv.pk_invoice, inv.code_inv,inv.date_inv,inv.amount_inv, inv.amount_pi,  
+		       inv.name_emp_inv,inv.flag_cancel,inv.date_cancel,inv.name_emp_cancel,
+		       inv.EBILLBATCHCODE,inv.EBILLNO,inv.EBILLBATCHCODE_CANCEL,inv.EBILLNO_CANCEL,
+		       inv.qrcode_ebill,inv.checkcode,inv.qrcode_ebill_cancel,inv.url_netebill,inv.url_ebill 
+		  from bl_st_inv stinv
+		       inner join bl_invoice inv on stinv.pk_invoice=inv.pk_invoice
+		 where stinv.pk_settle=#{pkSettle,jdbcType=VARCHAR}	 
+		 order by inv.FLAG_CANCEL,inv.date_inv desc
+	</select>
+	<!-- 查询 交款记录并且付款类型为非住院预交金-->
+	<select id="qryDepoInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.StQryDepoInfo">
+		  select depo.amount,paymode.name paymode, bank.name bank,depo.bank_no ,depo.dt_paymode,depo.pk_depo,
+		         depo.pk_emp_pay,depo.name_emp_pay
+		  from bl_deposit depo
+		       inner join bd_defdoc paymode on depo.dt_paymode=paymode.code and paymode.code_defdoclist='110100' and paymode.del_flag='0'
+		       left outer join bd_defdoc bank on depo.dt_bank=bank.code and bank.code_defdoclist='040005'
+		 where depo.eu_dptype&lt;9 
+		       and depo.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+	</select>
+	<!-- 根据结算主键查询结算记录 -->
+	<select id="qryInsuSt" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.StQryInsuSt">
+		  select hp.name hp,  payer.name payer,stdt.amount
+		  from bl_settle_detail stdt
+		       left outer join bd_payer payer on stdt.pk_payer=payer.pk_payer
+		       left outer join bd_hp hp on stdt.pk_insurance=hp.pk_hp
+		 where stdt.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 查询门急诊收费明细 -->
+	<select id="qryCgStOp" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.StQryCharge">
+		<!--  以下语句关联了bd_invcate_item，但是却没有传pk_invate参数，会导致查询数据重复，故注释掉
+		select dt.name_cg,bi.name nameBill,bi.pk_invcateitem pkBill,dt.code_bill codeBill, 
+		 dt.spec,unit.name unit,dt.price,sum(dt.quan) quan,sum(dt.amount) amount,sum
+		 (dt.amount_pi) amountPi
+		 from bl_op_dt dt
+		       left join bd_unit unit on dt.pk_unit=unit.pk_unit
+		       left join bd_invcate_item bi on dt.code_bill=bi.code
+		 where dt.pk_settle=#{pkSettle,jdbcType=VARCHAR} and bi.del_flag='0' and bi.pk_org=#{pkOrg,jdbcType=VARCHAR}
+		 group by 
+			dt.name_cg,dt.spec,unit.name,dt.price,bi.name,bi.pk_invcateitem,dt.code_bill
+		 union all
+		 select dt.name_cg,bi.name nameBill,bi.pk_invcateitem pkBill,dt.code_bill codeBill,
+         dt.spec,unit.name unit,dt.price,sum(dt.quan) quan,sum(dt.amount) amount,sum
+         (dt.amount_pi) amountPi
+		 from bl_op_dt_b dt
+		       left join bd_unit unit on dt.pk_unit=unit.pk_unit
+		       left join bd_invcate_item bi on dt.code_bill=bi.code
+		 where dt.pk_settle=#{pkSettle,jdbcType=VARCHAR} and bi.del_flag='0' and bi.pk_org=#{pkOrg,jdbcType=VARCHAR}
+		 group by 
+            dt.name_cg,dt.spec,unit.name,dt.price,bi.name,bi.pk_invcateitem,dt.code_bill
+           -->
+         select dt.name_cg, dt.spec,unit.name unit,dt.price,sum(dt.quan) quan,sum(dt.amount) amount,sum(dt.amount_pi) amount_pi
+         		,dt.name_emp_app,deptex.name_dept as name_dept_ex,case when dt.flag_pd = '1' then cnord.dosage else cnord.quan end yl_Quan
+         		,su.name name_supply,cnord.name_ord,occ.WINNO_CONF
+		 from bl_op_dt dt
+		      left join bd_unit unit on dt.pk_unit=unit.pk_unit
+		      left join bd_ou_dept deptex on deptex.pk_dept = dt.pk_dept_ex
+			  left join cn_order cnord on cnord.pk_cnord = dt.pk_cnord
+			  left join bd_supply su on su.code = cnord.code_supply and su.del_flag = '0'
+			  left join ex_pres_occ occ on occ.pk_pres = dt.pk_pres 
+		 where dt.pk_settle=#{pkSettle,jdbcType=VARCHAR} 
+		 <if test="codeBill != null  and  codeBill != ''">
+		 	 and dt.code_bill = #{codeBill,jdbcType=VARCHAR}
+		 </if>
+		 group by dt.name_cg,dt.spec,unit.name,dt.price,dt.name_emp_app,deptex.name_dept,
+		 case when dt.flag_pd = '1' then cnord.dosage else cnord.quan end ,su.name,cnord.name_ord,occ.WINNO_CONF
+		 union all
+		 select dt.name_cg,dt.spec, unit.name unit,dt.price,sum(dt.quan) quan,sum(dt.amount) amount,sum(dt.amount_pi) amount_pi
+		 		,dt.name_emp_app,deptex.name_dept as name_dept_ex,case when dt.flag_pd = '1' then cnord.dosage else cnord.quan end yl_Quan
+		 		,su.name name_supply,cnord.name_ord,occ.WINNO_CONF
+		 from bl_op_dt_b dt
+		      left join bd_unit unit on dt.pk_unit=unit.pk_unit
+		      left join bd_ou_dept deptex on deptex.pk_dept = dt.pk_dept_ex
+			  left join cn_order cnord on cnord.pk_cnord = dt.pk_cnord
+			  left join bd_supply su on su.code = cnord.code_supply and su.del_flag = '0'
+			  left join ex_pres_occ occ on occ.pk_pres = dt.pk_pres
+		 where dt.pk_settle=#{pkSettle,jdbcType=VARCHAR} 
+		 <if test="codeBill != null  and  codeBill != ''">
+		 	 and dt.code_bill = #{codeBill,jdbcType=VARCHAR}
+		 </if>
+		 group by dt.name_cg, dt.spec,unit.name, dt.price,dt.name_emp_app,deptex.name_dept,
+		 case when dt.flag_pd = '1' then cnord.dosage else cnord.quan end ,su.name,cnord.name_ord,occ.WINNO_CONF
+	</select>
+	
+	<!-- 查询住院收费明细 -->
+	<select id="qryCgStIp" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.StQryCharge">
+		 select dt.name_cg, dt.spec,unit.name unit,dt.price,sum(dt.quan) quan,sum(dt.amount) amount,sum(dt.amount_pi) amount_pi
+		 		,dt.name_emp_app,deptex.name_dept as name_dept_ex,case when dt.flag_pd = '1' then cnord.dosage else cnord.quan end yl_Quan,su.name name_supply,cnord.name_ord
+		 from bl_ip_dt dt
+		       inner join bd_unit unit on dt.pk_unit=unit.pk_unit
+		       left join bd_ou_dept deptex on deptex.pk_dept = dt.pk_dept_ex
+		       left join cn_order cnord on cnord.pk_cnord = dt.pk_cnord
+				left join bd_supply su on su.code = cnord.code_supply and su.del_flag = '0'
+		 where dt.pk_settle=#{pkSettle,jdbcType=VARCHAR} 
+		 <if test="codeBill != null  and  codeBill != ''">
+		 	 and dt.code_bill = #{codeBill,jdbcType=VARCHAR}
+		 </if>	 
+		 group by dt.name_cg,dt.spec,unit.name,dt.price,dt.name_emp_app,deptex.name_dept,case when dt.flag_pd = '1' then cnord.dosage else cnord.quan end ,su.name,cnord.name_ord
+		 union all
+		 select dt.name_cg,dt.spec, unit.name unit,dt.price,sum(dt.quan) quan,sum(dt.amount) amount,sum(dt.amount_pi) amount_pi
+		 		,dt.name_emp_app,deptex.name_dept as name_dept_ex,case when dt.flag_pd = '1' then cnord.dosage else cnord.quan end yl_Quan,su.name name_supply,cnord.name_ord
+		 from bl_ip_dt_b dt
+		       inner join bd_unit unit on dt.pk_unit=unit.pk_unit
+		       left join bd_ou_dept deptex on deptex.pk_dept = dt.pk_dept_ex
+		       left join cn_order cnord on cnord.pk_cnord = dt.pk_cnord
+				left join bd_supply su on su.code = cnord.code_supply and su.del_flag = '0'
+		 where dt.pk_settle=#{pkSettle,jdbcType=VARCHAR} 
+		 <if test="codeBill != null  and  codeBill != ''">
+		 	 and dt.code_bill = #{codeBill,jdbcType=VARCHAR}
+		 </if>	 
+		 group by dt.name_cg, dt.spec,unit.name, dt.price,dt.name_emp_app,deptex.name_dept,case when dt.flag_pd = '1' then cnord.dosage else cnord.quan end ,su.name,cnord.name_ord
+	</select>
+	<!-- 查询发票明细 根据发票主键-->
+	<select id="qyrInvDt" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.StQryInvDt">
+      select dt.pk_bill,dt.code_bill,dt.name_bill,dt.amount from bl_invoice_dt dt where dt.pk_invoice=#{pkInvoice,jdbcType=VARCHAR}
+	</select>
+	<!-- 查询结算记录，根据就诊主键-->
+	<select id="querySettleRecordByPv"  parameterType="java.util.Map" resultType="Dynabean">
+      select st.pk_settle,st.date_st,doc.name as name_sttype,st.amount_st,st.amount_pi,st.amount_insu,st.name_emp_st
+	  from bl_settle st 
+	  left join bd_defdoc doc on doc.code = st.dt_sttype and doc.code_defdoclist = '110102' 
+	  where st.del_flag = '0' and  st.pk_pv = #{pkPv,jdbcType=CHAR}
+	  order by st.date_st
+	</select>
+	 <select id="QryInvItemInfo" resultType="com.zebone.nhis.common.module.bl.InvItemVo">
+		         select invitem.pk_invcateitem,invitem.code,  invitem.name, sum(bl.amount) amount
+		  			from bd_invcate_item invitem
+		      		 inner join bd_invcate cate on invitem.pk_invcate=cate.pk_invcate and cate.del_flag = '0'
+		      		 inner join bd_invcate_itemcate iicate on invitem.pk_invcateitem=iicate.pk_invcateitem and iicate.del_flag = '0'
+		      		 inner join bl_ip_dt bl on iicate.pk_itemcate=bl.pk_itemcate and bl.del_flag = '0'
+				 where cate.eu_type = '1' and invitem.del_flag = '0' 
+			<if test="pkPv != null  and  pkPv != ''">
+			    and    	bl.pk_pv  = #{pkPv,jdbcType=VARCHAR}   
+	      </if>
+	      <if test="pkOrg != null  and  pkOrg != ''">
+			    and    	cate.pk_org  = #{pkOrg,jdbcType=VARCHAR}   
+	      </if>
+	       <if test="dateBegin!= null  and  dateBegin!= ''">
+			    and  bl.date_cg &gt;= to_date(substr(#{dateBegin,jdbcType=VARCHAR}, 1, 8)||'000000', 'YYYYMMDDHH24MISS') 
+	      </if>
+	       <if test="dateEnd != null  and  dateEnd != ''">
+			    and  bl.date_cg&lt;= to_date( substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'yyyymmddhh24miss')
+	      </if>
+	      <if test="pkSettle != null  and  pkSettle != ''">
+	      		and bl.pk_settle = #{pkSettle,jdbcType=CHAR} 
+	      </if>
+    	<if test="pkDepts != null ">
+    	   and bl.pk_dept_app in 
+			   <foreach collection="pkDepts" item="vo" index="index"
+			      open="(" close=")" separator=",">
+			      #{vo.pkDept,jdbcType=VARCHAR} 
+			  </foreach>
+	      </if>
+		group by invitem.pk_invcateitem,
+         invitem.code,
+         invitem.name
+    </select>
+    <select id="QryAmtAndPi" resultType = 'com.zebone.nhis.common.module.bl.BlAmtVo'  >
+
+	select sum(amount) amt_sum,sum(amount_pi) amt_pi  from bl_ip_dt  where pk_pv = #{pkPv,jdbcType=VARCHAR}
+	<if test="dateBegin != null  and  dateBegin != ''">
+		and date_cg &gt;=  to_date(substr(#{dateBegin,jdbcType=VARCHAR} ,1,8)||'000000', 'yyyymmddhh24miss')   
+	</if>
+	<if test="dateEnd != null  and  dateEnd != ''">
+		and date_cg &lt;=  to_date( substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'235959', 'yyyymmddhh24miss')
+	</if> 
+	<if test="pkSettle!=null and pkSettle!=''">
+		and pk_settle = #{pkSettle,jdbcType=CHAR}
+	</if>
+</select>
+	<select id="QryAmtAndPiFT" resultType = "com.zebone.nhis.common.module.bl.BlAmtVo">
+		select sum(bl.amount - bl.amount_add) amt_sum,
+		       sum(bl.amount_pi - bl.amount_add) amt_pi
+		  from bl_ip_dt bl
+		 where bl.pk_settle = #{pkSettle,jdbcType=CHAR}
+	</select>
+	
+	<select id="QryAmtAndPiT" resultType = "com.zebone.nhis.common.module.bl.BlAmtVo">
+		select sum(bl.amount_add) amt_sum,
+		       sum(bl.amount_add) amt_pi
+		  from bl_ip_dt bl
+		 where bl.pk_settle = #{pkSettle,jdbcType=CHAR}
+	</select>
+	
+	<select id="queryChargePrePay" parameterType="java.util.Map" resultType="DynaBean">
+	   select depo.date_pay,
+       depo.rept_no,
+       depo.amount,
+       paymode.name NamePaymode,
+       depo.bank_no,
+       depo.pay_info,
+       depo.eu_direct,
+       depo.name_emp_pay NameEmpPay,
+       depo.note,
+       depo.pk_depo_back, 
+       depo.pk_depo
+	   from bl_deposit depo
+	       inner join bd_defdoc paymode on depo.dt_paymode=paymode.code and paymode.code_defdoclist='110100'
+	   where depo.eu_dptype = 9
+	   <if test='pkPv!=null and pkPv!=""'>
+	   		and  depo.pk_pv = #{pkPv,jdbcType=VARCHAR}
+	   </if>
+	   <if test='pkSettle==null or pkSettle==""'>
+	        and flag_settle = 0
+	   </if>
+	   <if test='dateBegin!=null'>
+	   	and depo.date_pay &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss') 
+	   </if>
+	   <if test='dateEnd!=null'>
+	   	and depo.date_pay &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+	   </if>
+	   <if test='flagFilter!=null and flagFilter!="" and flagFilter=="1"'>
+	   	and depo.eu_direct='1' and not exists (select 1 from bl_deposit back where depo.pk_depo=back.pk_depo_back)
+	   </if>
+	   <if test='pkSettle!=null and pkSettle!=""'>
+	        and flag_settle = 1
+	   		and depo.pk_settle = #{pkSettle,jdbcType=CHAR}
+	   </if>
+	</select>
+	<!-- 查询费用分类信息 -->
+	<select id="queryChargeItem" parameterType="java.util.Map" resultType="DynaBean">
+		 select blip.name_cg,
+		       blip.spec,
+		       unit.name name_unit,
+		       blip.price,
+		       sum(blip.quan) quan,
+		       sum(blip.amount) amt,
+		       sum(blip.amount_pi) amt_pi
+		 from bl_ip_dt blip
+		       left join bd_unit unit on blip.pk_unit=unit.pk_unit
+		 where blip.flag_settle = 0 and  blip.pk_pv = #{pkPv,jdbcType=VARCHAR} and
+		       blip.date_cg &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss') and
+	           blip.date_cg &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+		 group by blip.name_cg,
+		         blip.name_cg,
+		         blip.spec,
+		         unit.name,
+		         blip.price
+	</select>
+	<!-- 查询费用分类信息 -->
+	<select id="queryChargeClassify" parameterType="java.util.Map" resultType="DynaBean">
+	select cate.name name,
+       sum(blip.amount) amt,
+       sum(blip.amount_pi) amt_pi
+	  from bd_itemcate cate
+	       inner join bl_ip_dt blip on cate.pk_itemcate=blip.pk_itemcate
+	 where 1=1
+	       <if test="pkCgips != null and  pkCgips != ''">
+    	   and (blip.pk_cgip in 
+			  <trim suffixOverrides=" OR blip.pk_cgip in()">    <!-- 表示删除最后一个条件 -->
+		          <foreach collection="pkCgips" item="pkCgips" index="index" open="(" close=")">
+		            <if test="index != 0">
+		              <choose>
+		                 <when test="index % 1000 == 999">) OR blip.pk_cgip in (</when>
+		                     <otherwise>,</otherwise>
+		              </choose>
+		            </if>
+		            #{pkCgips}
+		          </foreach>
+		       </trim>
+			)
+	       </if>
+	       <if test="pkPv != null and  pkPv != ''">
+	        and blip.flag_settle = 0 
+	       	and blip.pk_pv = #{pkPv,jdbcType=VARCHAR} and
+	        blip.date_hap &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss') and
+	        blip.date_hap &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+	       </if>
+	       <if test="pkSettle != null and  pkSettle != ''">
+	         and blip.flag_settle = 1 
+	       	 and blip.pk_settle = #{pkSettle,jdbcType=VARCHAR}
+	       </if>
+	       
+	group by cate.name
+
+	</select>
+	
+	<!-- 查询患者未结算项目 -->
+	<select id="getPatientChargeItem" parameterType="java.util.Map" resultType="DynaBean">
+	select cg.pk_cgip,  
+	         cg.date_cg,  
+	         cg.pk_itemcate,
+	         cate.name itemcate,
+	         cg.name_cg,  
+	         cg.spec,    
+	         cg.quan,     
+	         cg.amount,
+	         case when bi.spcode is null then bp.spcode else bi.spcode end spcode, 
+	         cg.pk_dept_ex, 
+             dept.name_dept,
+             cg.pk_dept_app,
+             deptApp.name_dept nameDeptApp,
+             cg.date_hap
+      from   bl_ip_dt cg
+      left join bd_item bi on cg.pk_item = bi.pk_item
+      left join bd_pd bp on cg.pk_item = bp.pk_pd
+      left join bd_itemcate cate on cate.pk_itemcate = cg.pk_itemcate
+      left join bd_ou_dept dept on cg.pk_dept_ex=dept.pk_dept
+      left join bd_ou_dept deptApp on cg.pk_dept_app = deptApp.pk_dept
+     where cg.flag_settle='0' and
+           cg.pk_pv = #{pkPv,jdbcType=VARCHAR} and
+           cg.date_hap &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+
+	</select>
+	
+	<select id="qryWaitChargeItem" parameterType="java.util.Map" resultType="DynaBean">
+		select cg.pk_cgip,     
+		       bk.pk_cgip_back,
+		       cg.date_cg,     
+		       cg.pk_itemcate,     
+		       cate.name itemcate, 
+		       cg.name_cg,     
+		       cg.spec,        
+		       cg.quan+case when bk.pk_cgip_back is null then 0 else bk.quan end quan,        
+		       cg.amount+case when bk.pk_cgip_back is null then 0 else bk.amount end amount,      
+		       cg.pk_dept_ex,  
+		       dept.name_dept,  
+		       cg.amount_pi,
+		       case when cg.flag_pd='1' then pd.spcode else item.spcode end spcode
+		  from bl_ip_dt cg
+		       inner join bd_itemcate cate on cg.pk_itemcate=cate.pk_itemcate
+		       left outer join bd_item item on cg.pk_item = item.pk_item and cg.flag_pd='0'
+		       left outer join bd_pd pd on cg.pk_item=pd.pk_pd and cg.flag_pd='1'
+		       inner join bd_ou_dept dept on cg.pk_dept_ex=dept.pk_dept
+		       left outer join (select sum(quan) quan,
+		                               sum(amount) amount,
+		                               pk_cgip_back
+		                          from bl_ip_dt
+		                         where pk_pv=#{pkPv,jdbcType=CHAR} and
+		                               quan&lt;0 and
+		                               flag_settle='0'
+		                      group by pk_cgip_back) bk on cg.pk_cgip=bk.pk_cgip_back
+		 where cg.pk_pv=#{pkPv,jdbcType=CHAR} and
+		       cg.quan>0 and
+		       cg.flag_settle='0'
+	</select>
+	
+	<select id="qrySpecInvItem" resultType="com.zebone.nhis.common.module.bl.InvItemVo">
+		select invitem.pk_invcateitem,invitem.code,  invitem.name, sum(bl.amount_add) amount
+		  			from bd_invcate_item invitem
+		      		 inner join bd_invcate cate on invitem.pk_invcate=cate.pk_invcate and cate.del_flag = '0'
+		      		 inner join bd_invcate_itemcate iicate on invitem.pk_invcateitem=iicate.pk_invcateitem and iicate.del_flag = '0'
+		      		 inner join bl_ip_dt bl on iicate.pk_itemcate=bl.pk_itemcate and bl.del_flag = '0'
+				 where cate.eu_type = '1' and invitem.del_flag = '0'
+		           and bl.pk_settle=#{pkSettle,jdbcType=CHAR}
+		group by invitem.pk_invcateitem,
+		         invitem.code,
+		         invitem.name
+	</select>
+	
+	<select id="qryNotSpecInvItem" resultType="com.zebone.nhis.common.module.bl.InvItemVo">
+		select invitem.pk_invcateitem,invitem.code,  invitem.name, sum(bl.amount-bl.amount_add) amount
+		  			from bd_invcate_item invitem
+		      		 inner join bd_invcate cate on invitem.pk_invcate=cate.pk_invcate and cate.del_flag = '0'
+		      		 inner join bd_invcate_itemcate iicate on invitem.pk_invcateitem=iicate.pk_invcateitem and iicate.del_flag = '0'
+		      		 inner join bl_ip_dt bl on iicate.pk_itemcate=bl.pk_itemcate and bl.del_flag = '0'
+				 where cate.eu_type = '1' and invitem.del_flag = '0'
+		          and bl.pk_settle=#{pkSettle,jdbcType=CHAR}
+		group by invitem.pk_invcateitem,
+		         invitem.code,
+		         invitem.name
+	</select>
+	
+	<select id="qryAmtCate" resultType="DynaBean">
+		select cate.pk_itemcate codeBill,
+		       cate.name cate,
+		       cg.RATIO_SELF,
+		       sum(cg.amount) amt
+		  from bl_ip_dt cg
+		       inner join bd_itemcate cate on cate.pk_itemcate=cg.pk_itemcate
+		 where cg.flag_settle='0'
+		       and cg.pk_pv=#{pkPv,jdbcType=CHAR}
+		 		<if test='euSttype!=null and euSttype!="" and euSttype=="11"'>
+		 			and cg.date_hap &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        			and cg.date_hap &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+		 		</if>
+		group by cate.name,cate.pk_itemcate,cg.RATIO_SELF
+		order by cate.name,cg.RATIO_SELF asc
+	</select>
+	
+	<select id="qryCateDtlsInfo" resultType="DynaBean">
+		select 
+			cg.*,
+			hp.rate_ip,
+			case when cg.amount=cg.amount_hppi then 0
+           else cg.amount-cg.amount_hppi end amount_insu
+		  from bl_ip_dt cg
+		  inner join PV_ENCOUNTER pv on cg.pk_pv = pv.pk_pv
+          inner join bd_hp hp on pv.pk_insu = hp.pk_hp
+		 where cg.flag_settle='0' and
+		       cg.pk_itemcate=#{pkItemcate,jdbcType=CHAR} 
+		       and cg.pk_pv=#{pkPv,jdbcType=CHAR}
+		       <if test='euSttype!=null and euSttype!="" and euSttype=="11"'>
+		       		and cg.date_hap &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        			and cg.date_hap &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+		       </if>
+		       and cg.ratio_self = #{ratioSelf,jdbcType=NUMERIC}
+		   order by cg.date_hap asc
+	</select>
+	
+	<select id="qrySumCateDtlsInfo" resultType="DynaBean">
+		select
+			cg.PK_ITEM,
+	      cg.name_cg,
+	      cg.SPEC,
+	      cg.PK_UNIT,
+	      cg.PRICE,
+	      sum(cg.quan) quan,
+	      sum(cg.amount) amount,
+	      cg.ratio_self,
+	      sum(cg.amount_pi) amount_pi,
+				case when cg.amount=cg.amount_hppi then 0
+	           else cg.amount-cg.amount_hppi end amount_insu
+			  from bl_ip_dt cg
+			  inner join PV_ENCOUNTER pv on cg.pk_pv = pv.pk_pv
+	          inner join bd_hp hp on pv.pk_insu = hp.pk_hp
+			 where cg.flag_settle='0' and
+		       cg.pk_itemcate=#{pkItemcate,jdbcType=CHAR} 
+		       and cg.pk_pv=#{pkPv,jdbcType=CHAR}
+		       <if test='euSttype!=null and euSttype!="" and euSttype=="11"'>
+		       		and cg.date_hap &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        			and cg.date_hap &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+		       </if>
+		       and cg.ratio_self = #{ratioSelf,jdbcType=NUMERIC}
+	      group by
+	        cg.PK_ITEM,
+	      cg.name_cg,
+	      cg.SPEC,
+	      cg.PK_UNIT,
+	      cg.PRICE,
+	      cg.ratio_self,
+				case when cg.amount=cg.amount_hppi then 0
+	           else cg.amount-cg.amount_hppi end
+	</select>
+	
+	<select id="qryPvDiags" parameterType="java.lang.String" resultType="com.zebone.nhis.bl.pub.vo.PvDiagVo">
+		select diag.dt_diagtype, 
+       diag.code_icd,    
+       diag.name_diag,   
+       diag.date_diag,   
+       diag.name_emp_diag ,
+       diag.pk_diag 
+  from pv_diag diag
+ where diag.pk_pv=#{pkPv}
+		
+	</select>
+	
+	<select id="qryPvEncounters" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.PvEncounterVo">
+		select pi.pk_pi,
+		       pi.code_ip,
+		       pv.pk_pv,
+		       pv.name_pi,
+		       pv.dt_sex,
+		       pv.age_pv,
+		       hp.pk_hp pk_insu,
+		       hp.name hp,
+		       pc.name picate,
+		       pv.unit_work,
+		       dept.name_dept dept,
+		       ns.name_dept ns,
+		       pv.bed_no,
+		       pv.date_begin,
+		       pv.date_end,
+		       pv.date_end-pv.date_begin days,
+		       sum(cg.amount) amt,
+		       sum(case when cg.ratio_self=1 then cg.amount else 0 end) amount_pi,
+		       dp.amt depo,
+		       hp.bedquota,
+		       ip.ip_times,
+		       pv.pk_dept,
+		       pv.pk_dept_ns
+		  from pv_encounter pv
+		       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		       left join bl_ip_dt cg on pv.pk_pv=cg.pk_pv
+		       left outer join (select sum(amount) amt,pk_pv
+		                          from bl_deposit
+		                         where pk_pv=#{pkPv} and
+		                               eu_dptype='9'
+		                        group by pk_pv ) dp on pv.pk_pv=dp.pk_pv
+		       inner join bd_hp hp on pv.pk_insu=hp.pk_hp
+		       inner join pi_cate pc on pv.pk_picate=pc.pk_picate
+		       inner join bd_ou_dept dept on pv.pk_dept=dept.pk_dept
+		       inner join bd_ou_dept ns on pv.pk_dept_ns=ns.pk_dept
+		       inner join pv_ip ip on ip.pk_pv = pv.pk_pv
+		 where pi.code_ip=#{codeIp} and
+		       pi.code_pi=#{codePi} and 
+		       pv.flag_cancel = '0'
+		group by pi.pk_pi,
+		       pi.code_ip,
+		       pv.pk_pv,
+		       pv.name_pi,
+		       pv.dt_sex,
+		       pv.age_pv,
+		       hp.pk_hp,
+		       hp.name,
+		       pc.name,
+		       pv.unit_work,
+		       dept.name_dept,
+		       ns.name_dept,
+		       pv.bed_no,
+		       pv.date_begin,
+		       pv.date_end,
+		       pv.date_end-pv.date_begin,
+		       dp.amt,
+		       hp.bedquota,
+		       ip.ip_times,
+		       pv.pk_dept,
+		       pv.pk_dept_ns
+       order by pv.date_begin desc
+	</select>
+	
+	<select id="qryPvInfoSqlServer" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.PvEncounterVo">
+		select pi.pk_pi,
+		       pi.code_ip,
+		       pv.pk_pv,
+		       pv.name_pi,
+		       pv.dt_sex,
+		       pv.age_pv,
+		       hp.pk_hp pk_insu,
+		       hp.name hp,
+		       pc.name picate,
+		       pv.unit_work,
+		       dept.name_dept dept,
+		       ns.name_dept ns,
+		       pv.bed_no,
+		       pv.date_begin,
+		       pv.date_end,
+		       DATEDIFF(day,pv.date_begin,pv.date_end) days,
+		       sum(cg.amount) amt,
+		       sum(case when cg.ratio_self=1 then cg.amount else 0 end) amount_pi,
+		       dp.amt depo,
+		       hp.bedquota,
+		       ip.ip_times,
+		       pv.pk_dept,
+		       pv.pk_dept_ns
+		  from pv_encounter pv
+		       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		       left join bl_ip_dt cg on pv.pk_pv=cg.pk_pv
+		       left outer join (select sum(amount) amt,pk_pv
+		                          from bl_deposit
+		                         where pk_pv=#{pkPv} and
+		                               eu_dptype='9'
+		                        group by pk_pv ) dp on pv.pk_pv=dp.pk_pv
+		       inner join bd_hp hp on pv.pk_insu=hp.pk_hp
+		       inner join pi_cate pc on pv.pk_picate=pc.pk_picate
+		       inner join bd_ou_dept dept on pv.pk_dept=dept.pk_dept
+		       inner join bd_ou_dept ns on pv.pk_dept_ns=ns.pk_dept
+		       inner join pv_ip ip on ip.pk_pv = pv.pk_pv
+		 where pi.code_ip=#{codeIp} and
+		       pi.code_pi=#{codePi} and 
+		       pv.flag_cancel = '0'
+		group by pi.pk_pi,
+		       pi.code_ip,
+		       pv.pk_pv,
+		       pv.name_pi,
+		       pv.dt_sex,
+		       pv.age_pv,
+		       hp.pk_hp,
+		       hp.name,
+		       pc.name,
+		       pv.unit_work,
+		       dept.name_dept,
+		       ns.name_dept,
+		       pv.bed_no,
+		       pv.date_begin,
+		       pv.date_end,
+		       pv.date_end-pv.date_begin,
+		       dp.amt,
+		       hp.bedquota,
+		       ip.ip_times,
+		       pv.pk_dept,
+		       pv.pk_dept_ns
+       order by pv.date_begin desc
+	</select>
+	
+	<select id="qryBlSettles" parameterType="java.lang.String" resultType="com.zebone.nhis.bl.pub.vo.BlSettleVo">
+	    select a.* from  (
+				select * from (
+					select st.pk_settle,
+				       st.date_st,
+				       st.dt_sttype,
+				       st.code_st,
+				       st.date_begin,
+				       st.date_end,
+				       st.amount_prep,
+				       st.amount_st,
+				       st.amount_pi,
+				       st.amount_insu,
+				       st.amount_disc,
+				       st.name_emp_st,
+				       st.reason_canc,
+				       st.pk_settle_canc,
+				       sum(case when dt.ratio_self=1 then dt.amount else 0 end) total_amt_pi
+				  from bl_settle st
+				    inner join bl_ip_dt dt on st.PK_SETTLE = dt.PK_SETTLE
+				 where st.pk_pv=#{pkPv} 
+				   group by
+				      st.pk_settle,
+				       st.date_st,
+				       st.dt_sttype,
+				       st.code_st,
+				       st.date_begin,
+				       st.date_end,
+				       st.amount_prep,
+				       st.amount_st,
+				       st.amount_pi,
+				       st.amount_insu,
+				       st.amount_disc,
+				       st.name_emp_st,
+				       st.reason_canc,
+				       st.pk_settle_canc
+						
+				) aa
+				UNION ALL
+				select * from (
+					select st.pk_settle,
+				       st.date_st,
+				       st.dt_sttype,
+				       st.code_st,
+				       st.date_begin,
+				       st.date_end,
+				       st.amount_prep,
+				       st.amount_st,
+				       st.amount_pi,
+				       st.amount_insu,
+				       st.amount_disc,
+				       st.name_emp_st,
+				       st.reason_canc,
+				       st.pk_settle_canc,
+				       sum(case when dt.ratio_self=1 then dt.amount else 0 end) total_amt_pi
+				  from bl_settle st
+				    inner join bl_ip_dt_b dt on st.PK_SETTLE = dt.PK_SETTLE
+				 where st.pk_pv=#{pkPv} 
+				   group by
+				      st.pk_settle,
+				       st.date_st,
+				       st.dt_sttype,
+				       st.code_st,
+				       st.date_begin,
+				       st.date_end,
+				       st.amount_prep,
+				       st.amount_st,
+				       st.amount_pi,
+				       st.amount_insu,
+				       st.amount_disc,
+				       st.name_emp_st,
+				       st.reason_canc,
+				       st.pk_settle_canc
+				) aa
+		) a
+		ORDER BY a.date_st DESC
+		<!-- select st.pk_settle,
+		       st.date_st,
+		       st.dt_sttype,
+		       st.code_st,
+		       st.date_begin,
+		       st.date_end,
+		       st.amount_prep,
+		       st.amount_st,
+		       st.amount_pi,
+		       st.amount_insu,
+		       st.amount_disc,
+		       st.name_emp_st,
+		       st.reason_canc,
+		       st.pk_settle_canc,
+		       sum(case when dt.ratio_self=1 then dt.amount else 0 end) total_amt_pi
+		  from bl_settle st
+		    inner join bl_ip_dt dt on st.PK_SETTLE = dt.PK_SETTLE
+		 where st.pk_pv=#{pkPv} 
+		   group by
+		      st.pk_settle,
+		       st.date_st,
+		       st.dt_sttype,
+		       st.code_st,
+		       st.date_begin,
+		       st.date_end,
+		       st.amount_prep,
+		       st.amount_st,
+		       st.amount_pi,
+		       st.amount_insu,
+		       st.amount_disc,
+		       st.name_emp_st,
+		       st.reason_canc,
+		       st.pk_settle_canc
+				ORDER BY st.date_st DESC -->
+	</select>
+	
+	<select id="qryBlStInv" parameterType="java.lang.String" resultType="com.zebone.nhis.bl.pub.vo.BlStInvVo">
+		select inv.date_inv,
+       inv.code_inv,
+       inv.amount_inv,
+       inv.name_emp_inv,
+       inv.date_cancel,
+       inv.name_emp_cancel
+  from bl_st_inv si 
+       inner join bl_invoice inv on si.pk_invoice=inv.pk_invoice
+ where si.pk_settle = #{pkSettle} 
+	</select>
+	
+	<select id="qryBlIpDts" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.BlIpDtsVo">
+	select a.* from  (
+		select * from (
+			select
+				 cg.pk_pv,
+					 cg.pk_settle,
+					 cg.code_bill,
+					 cg.PK_ITEMCATE,
+					 cate.name,
+					 cg.ratio_self,
+					 sum(cg.amount) amount,
+					 sum(cg.amount-cg.amount_hppi) amt_hp,
+					 sum(cg.amount_pi) amt_pi
+			from bl_ip_dt cg
+			left join BD_ITEMCATE cate on cate.PK_ITEMCATE = cg.PK_ITEMCATE
+			where ((1=#{num} and cg.pk_settle=#{pkSettle}) or
+	        (0=#{num} and cg.pk_pv=#{pkPv}  and cg.FLAG_SETTLE = '0'))
+			group by cg.PK_ITEMCATE,cate.name,cg.ratio_self,cg.code_bill,
+	         cg.pk_pv,
+	         cg.pk_settle
+		) aa
+		UNION ALL
+		select * from (
+			select
+				 cg.pk_pv,
+					 cg.pk_settle,
+					 cg.code_bill,
+					 cg.PK_ITEMCATE,
+					 cate.name,
+					 cg.ratio_self,
+					 sum(cg.amount) amount,
+					 sum(cg.amount-cg.amount_hppi) amt_hp,
+					 sum(cg.amount_pi) amt_pi
+			from bl_ip_dt_b cg
+					 left join BD_ITEMCATE cate on cate.PK_ITEMCATE = cg.PK_ITEMCATE
+			where ((1=#{num} and cg.pk_settle=#{pkSettle}) or
+	             (0=#{num} and cg.pk_pv=#{pkPv}  and cg.FLAG_SETTLE = '0'))
+			group by cg.PK_ITEMCATE,cate.name,cg.ratio_self,cg.code_bill,
+	         cg.pk_pv,
+	         cg.pk_settle
+		) aa
+	) a
+	order by a.NAME asc
+		<!-- select
+		   cg.pk_pv,
+	       cg.pk_settle,
+	       cg.code_bill,
+	       cg.PK_ITEMCATE,
+	       cate.name,
+	       cg.ratio_self,
+	       sum(cg.amount) amount,
+	       sum(cg.amount-cg.amount_hppi) amt_hp,
+	       sum(cg.amount_pi) amt_pi
+	  from bl_ip_dt cg
+	       left join BD_ITEMCATE cate on cate.PK_ITEMCATE = cg.PK_ITEMCATE
+	 where ((1=#{num} and cg.pk_settle=#{pkSettle}) or
+	        (0=#{num} and cg.pk_pv=#{pkPv}  and cg.FLAG_SETTLE = '0'))
+	group by cg.PK_ITEMCATE,cate.name,cg.ratio_self,cg.code_bill,
+	         cg.pk_pv,
+	         cg.pk_settle
+        order by cate.NAME asc -->
+	</select>
+
+	<select id="qryBlIpDtCount" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.BlIpDtsVo">
+		select a.* from  (
+		select * from (
+		select
+		cg.pk_settle,
+		cg.pk_pv,
+		cg.code_bill,
+		cg.PK_ITEMCATE,
+		cate.name,
+		cg.ratio_self,
+		sum(cg.amount) amount,
+		sum(cg.amount-cg.amount_hppi) amt_hp,
+		sum(cg.amount_pi) amt_pi
+		from bl_ip_dt cg
+		left join BD_ITEMCATE cate on cate.PK_ITEMCATE = cg.PK_ITEMCATE
+		where ((1=#{num} and cg.pk_settle=#{pkSettle}) or
+		(0=#{num} and cg.pk_pv=#{pkPv}  and cg.FLAG_SETTLE = '0'))
+		group by cg.PK_ITEMCATE,cate.name,cg.ratio_self,cg.code_bill,
+		cg.pk_pv,cg.pk_settle
+		) aa
+		UNION ALL
+		select * from (
+		select
+		cg.pk_settle,
+		cg.pk_pv,
+		cg.code_bill,
+		cg.PK_ITEMCATE,
+		cate.name,
+		cg.ratio_self,
+		sum(cg.amount) amount,
+		sum(cg.amount-cg.amount_hppi) amt_hp,
+		sum(cg.amount_pi) amt_pi
+		from bl_ip_dt_b cg
+		left join BD_ITEMCATE cate on cate.PK_ITEMCATE = cg.PK_ITEMCATE
+		where ((1=#{num} and cg.pk_settle=#{pkSettle}) or
+		(0=#{num} and cg.pk_pv=#{pkPv}  and cg.FLAG_SETTLE = '0'))
+		group by cg.PK_ITEMCATE,cate.name,cg.ratio_self,cg.code_bill,
+		cg.pk_pv,cg.pk_settle
+		) aa
+		) a
+		order by a.NAME asc
+	</select>
+	
+	<select id="qryBlIpDtInfo" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.BlIpDtsVo">
+	    select a.* from  (
+				select cg.date_cg,
+				       cg.name_cg,
+				       cg.spec,
+				       cg.pk_unit,
+				       un.name uName,
+				       cg.quan,
+				       cg.amount,
+					   cg.amount_pi,
+				       ex.name_dept,
+				       case when cg.flag_pd='1' then pd.code_hp else item.code_hp end code_hp,
+				       case when cg.flag_pd='1' then pd.code else item.code end item_code,
+				       cg.date_hap
+				  from bl_ip_dt cg
+				  	   INNER JOIN bd_unit un on cg.pk_unit=un.pk_unit
+				       left outer join bd_pd pd on cg.pk_pd=pd.pk_pd 
+				       left outer join bd_item item on cg.pk_item=item.pk_item and cg.flag_pd='0'
+				       left outer join bd_ou_dept ex on cg.pk_dept_ex=ex.pk_dept
+				 where cg.pk_pv=#{pkPv} and cg.ratio_self = #{ratioSelf,jdbcType=NUMERIC} 
+				 	<if test="pkSettle != null and pkSettle != '' ">
+				 		and cg.pk_settle=#{pkSettle}
+				 	</if>
+				 	<if test="codeBill != null and codeBill != ''">
+				 		and cg.code_bill=#{codeBill}
+				 	</if>
+				 	<if test="pkItemcate != null and pkItemcate != ''">
+				 		and cg.PK_ITEMCATE=#{pkItemcate,jdbcType=CHAR}
+				 	</if>
+				 	<if test="pkSettle == null or pkSettle == '' ">
+				 		and cg.flag_settle = '0'
+				 	</if>
+				UNION ALL
+					select cg.date_cg,
+				       cg.name_cg,
+				       cg.spec,
+				       cg.pk_unit,
+				       un.name uName,
+				       cg.quan,
+				       cg.amount,
+					   cg.amount_pi,
+				       ex.name_dept,
+				       case when cg.flag_pd='1' then pd.code_hp else item.code_hp end code_hp,
+				       case when cg.flag_pd='1' then pd.code else item.code end item_code,
+				       cg.date_hap
+				  from bl_ip_dt_b cg
+				  	   INNER JOIN bd_unit un on cg.pk_unit=un.pk_unit
+				       left outer join bd_pd pd on cg.pk_pd=pd.pk_pd 
+				       left outer join bd_item item on cg.pk_item=item.pk_item and cg.flag_pd='0'
+				       left outer join bd_ou_dept ex on cg.pk_dept_ex=ex.pk_dept
+				 where cg.pk_pv=#{pkPv} and cg.ratio_self = #{ratioSelf,jdbcType=NUMERIC} 
+				 	<if test="pkSettle != null and pkSettle != '' ">
+				 		and cg.pk_settle=#{pkSettle}
+				 	</if>
+				 	<if test="codeBill != null and codeBill != ''">
+				 		and cg.code_bill=#{codeBill}
+				 	</if>
+				 	<if test="pkItemcate != null and pkItemcate != ''">
+				 		and cg.PK_ITEMCATE=#{pkItemcate,jdbcType=CHAR}
+				 	</if>
+				 	<if test="pkSettle == null or pkSettle == '' ">
+				 		and cg.flag_settle = '0'
+				 	</if>
+		) a
+			    
+		<!-- select cg.date_cg,
+		       cg.name_cg,
+		       cg.spec,
+		       cg.pk_unit,
+		       un.name uName,
+		       cg.quan,
+		       cg.amount,
+		       ex.name_dept,
+		       case when cg.flag_pd='1' then pd.code_hp else item.code_hp end code_hp,
+		       case when cg.flag_pd='1' then pd.code else item.code end item_code,
+		       cg.date_hap
+		  from bl_ip_dt cg
+		  	   INNER JOIN bd_unit un on cg.pk_unit=un.pk_unit
+		       left outer join bd_pd pd on cg.pk_pd=pd.pk_pd 
+		       left outer join bd_item item on cg.pk_item=item.pk_item and cg.flag_pd='0'
+		       left outer join bd_ou_dept ex on cg.pk_dept_ex=ex.pk_dept
+		 where cg.pk_pv=#{pkPv} and cg.ratio_self = #{ratioSelf,jdbcType=NUMERIC} 
+		 	<if test="pkSettle != null and pkSettle != '' ">
+		 		and cg.pk_settle=#{pkSettle}
+		 	</if>
+		 	<if test="codeBill != null and codeBill != ''">
+		 		and cg.code_bill=#{codeBill}
+		 	</if>
+		 	<if test="pkItemcate != null and pkItemcate != ''">
+		 		and cg.PK_ITEMCATE=#{pkItemcate,jdbcType=CHAR}
+		 	</if>
+		 	<if test="pkSettle == null or pkSettle == '' ">
+		 		and cg.flag_settle = '0'
+		 	</if> -->
+	</select>
+	
+	<select id="qryBlDeposits"  parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.BlDepositVo">
+	select dp.date_pay,   
+       dp.rept_no,    
+       dp.dt_paymode, 
+       dp.amount,   
+       dp.dt_bank,  
+       dp.bank_no,  
+       dp.name_emp_pay,
+       dp.note      
+  from bl_deposit dp 
+ where ((0=#{num} and dp.pk_pv=#{pkPv}) or 
+        (1=#{num} and dp.pk_settle=#{pkSettle})) and 
+       dp.eu_dptype='9'
+	</select>
+	
+	<select id="qryBlSettleDetail" parameterType="java.lang.String" resultType="com.zebone.nhis.bl.pub.vo.BlSettleDetailVo">
+		select hp.name hp,  
+       payer.name payer, 
+       dt.amount,  
+       hp.bedquota  
+  from bl_settle_detail dt 
+       inner join bd_payer payer on dt.pk_payer=payer.pk_payer
+       left outer join bd_hp hp on dt.pk_insurance=hp.pk_hp
+ where dt.pk_settle=#{pkSettle}
+	</select>
+	
+	<select id="qryBlDepositInfo" parameterType="java.lang.String" resultType="com.zebone.nhis.bl.pub.vo.BlDepositVo">
+		select dp.dt_paymode, 
+       dp.amount,     
+       dp.dt_bank,    
+       dp.bank_no     
+  from bl_deposit dp 
+ where dp.eu_dptype &lt; '9'
+ and pk_settle = #{pkSettle}
+	</select>
+	
+	<select id="qryPkOrg" parameterType="java.lang.String" resultType="DynaBean">
+		SELECT pk_org,unit_work from PI_MASTER WHERE pk_pi =#{pkPi}
+	</select>
+	
+	<select id="qryInvoice" parameterType="java.lang.String" resultType="DynaBean">
+		select st.code_st,  
+       pi.insur_no, 
+       inv.code_inv,
+       pv.pk_dept,  
+       pi.code_ip,  
+       org.dt_grade,
+       inv.date_inv,
+       inv.amount_inv,
+       pi.name_pi,  
+       pv.eu_pvtype,
+       pv.date_begin,  
+       pv.date_end,    
+       doc.name dtSex,    
+       st.amount_insu, 
+       inv.amount_pi,    
+       dt.name_bill,   
+       dt.amount,      
+       st.amount_prep, 
+       dp.amount amountQu,      
+       st.amount_st,  
+       pv.pk_insu,     
+       emp.code_emp, 
+       inv.flag_cancel, 
+       dept.name_dept,
+       docdt.name   dtPaymode , 
+       inv.note  flag_spec
+  from bl_settle st
+       LEFT OUTER JOIN bl_deposit dp on st.pk_settle=dp.pk_settle and dp.eu_dptype &lt;'9'
+       LEFT OUTER JOIN pv_encounter pv on st.pk_pv=pv.pk_pv
+       LEFT OUTER JOIN pi_master pi on pv.pk_pi=pi.pk_pi
+       inner join bl_st_inv si on st.pk_settle=si.pk_settle
+       inner join bl_invoice inv on si.pk_invoice=inv.pk_invoice
+       inner join bl_invoice_dt dt on inv.pk_invoice=dt.pk_invoice
+       inner join bd_ou_org org on st.pk_org=org.pk_org
+       inner join bd_ou_employee emp on inv.pk_emp_inv=emp.pk_emp
+       LEFT OUTER JOIN bd_ou_dept dept on dept.pk_dept =pv.pk_dept
+       LEFT OUTER JOIN bd_defdoc doc on doc.code =pi.dt_sex and doc.code_defdoclist='000000'
+       LEFT OUTER JOIN bd_defdoc docdt on docdt.code =dp.dt_paymode and docdt.code_defdoclist='110100'
+ where inv.pk_invoice = #{pkInvoice}
+ 		
+	</select>
+	
+	<select id="qryPkInvoices" parameterType="java.lang.String" resultType="java.lang.String">
+		select pk_invoice from bl_st_inv where pk_settle = #{pkSettle}
+	</select>
+	
+	<select id="qryPkOrgByPkPv" parameterType="java.lang.String" resultType="java.lang.String">
+		select pk_org from PV_ENCOUNTER where pk_pv=#{pkPv} 
+	</select>
+	<select id="qryMaleMedicine" parameterType="java.lang.String" resultType="DynaBean">
+		select code_bill,sum(amount)-sum(amount_add) as limitAmt from bl_ip_dt where FLAG_PD = '1' and RATIO_SELF = 1  and pk_settle = #{pkSettle} group by CODE_BILL
+	</select>
+	<select id="qryNotInvitem" parameterType="java.util.List" resultType="com.zebone.nhis.bl.pub.vo.BlIpDtsVo">
+		select PK_ITEMCATE,NAME from BD_ITEMCATE 
+	 		where DEL_FLAG = '0'
+			and pk_itemcate not in 
+			 <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+	            #{item}
+	        </foreach>
+	</select>
+	
+	<select id="qryDebtStInfo" resultType="DynaBean">
+		select pv.pk_pv,
+		       st.pk_settle,
+		       pi.code_ip,  
+		       pi.name_pi,  
+		       pv.pk_insu,  
+		       hp.name name_hp,
+		       st.amount_prep, 
+		       st.amount_st,   
+		       st.amount_pi,   
+		       ar.amt_ar,      
+		       st.date_st,     
+		       st.name_emp_st, 
+		       pv.pk_dept,     
+		       dept.name_dept dept_name,
+		       pv.pk_dept_ns,  
+		       deptNs.name_dept dept_ns_name,
+		       pv.date_end     
+		  from bl_settle st
+		       inner join bl_settle_ar ar on st.pk_settle=ar.pk_settle
+		       inner join pv_encounter pv on st.pk_pv=pv.pk_pv
+		       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		       inner join bd_ou_dept dept on pv.pk_dept = dept.pk_dept
+  			   inner join bd_ou_dept deptNs on pv.pk_dept_ns = deptNs.pk_dept
+  			   inner join bd_hp hp on hp.pk_hp = pv.pk_insu
+		 where st.eu_stresult='1' and st.flag_canc!='1'
+		 	   <if test='codeIp!=null and codeIp!=""'>
+		 	   		and pi.code_ip=#{codeIp,jdbcType=VARCHAR}
+		 	   </if>
+		 	   <if test='namePi!=null and namePi!=""'>
+		 	   		and pi.name_pi like '%${namePi}%'
+		 	   </if>
+		 	   <if test='pkDept!=null and pkDept!=""'>
+		 	   		and pv.pk_dept=#{pkDept,jdbcType=VARCHAR}
+		 	   </if>
+		 	   <if test='pkDeptNs!=null and pkDeptNs!=""'>
+		 	   		and pv.pk_dept_ns=#{pkDeptNs,jdbcType=VARCHAR}
+		 	   </if>
+		 	   <if test='dateBegin!=null and dateBegin!=""'>
+		 	   		and pv.date_end &gt;= to_date(substr(#{dateBegin,jdbcType=VARCHAR}, 1, 8)||'000000' , 'yyyymmddhh24miss')
+		 	   </if>
+		 	   <if test='dateEnd!=null and dateEnd!=""'>
+		 	   		and pv.date_end &lt;= to_date(substr(#{dateEnd,jdbcType=VARCHAR}, 1, 8)||'000000' , 'yyyymmddhh24miss')
+		 	   </if>
+		       <if test='flagArclare!=null and flagArclare!=""'>
+		 	   		and st.flag_arclare=#{flagArclare,jdbcType=VARCHAR}
+		 	   </if>
+		 	   <if test='flagArclare!=null and flagArclare!="" and flagArclare.equals("1")'>
+		 			and ar.flag_cl = '1'
+		 	   </if>
+		 	   <if test='flagArclare!=null and flagArclare!="" and flagArclare.equals("0")'>
+		 			and ar.flag_cl = '0'
+		 	   </if>
+		       
+	</select>
+	
+	<select id="qryDebtPatiInfo" resultType="DynaBean">
+		select pv.pk_pv,
+		       st.pk_settle,
+		       pi.pk_pi,
+		       pi.code_ip,
+		       pi.name_pi,
+		       pi.dt_sex,
+		       sexDoc.name as name_sex,
+		       pv.age_pv,
+		       pv.pk_insu,
+		       hp.name as name_hp,
+		       pv.pk_dept,
+		       pv.pk_dept_ns,
+		       pv.bed_no,
+		       pv.date_begin,
+		       pv.date_end,
+		       st.amount_prep,
+		       st.amount_st,
+		       st.amount_pi,
+		       ar.amt_ar,
+		       st.flag_arclare,
+		       case when st.flag_arclare='1' then '已结清' else '' end name_arclare,
+		       cate.name as name_cate,
+		       dept.name_dept dept_name,
+		       deptNs.name_dept dept_ns_name
+		  from bl_settle st
+		       inner join bl_settle_ar ar on st.pk_settle=ar.pk_settle and ar.flag_cl != '1'
+		       inner join pv_encounter pv on st.pk_pv=pv.pk_pv
+		       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		       inner join bd_hp hp on pv.pk_insu = hp.pk_hp
+		       left join pi_cate cate on cate.pk_picate = pv.pk_picate
+		       inner join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+		       inner join bd_ou_dept deptNs on deptNs.pk_dept = pv.pk_dept_ns
+		       inner join bd_defdoc sexDoc on sexDoc.code = pi.dt_sex and sexDoc.code_defdoclist = '000000' and sexDoc.DEL_FLAG = '0'
+		 where pv.pk_pv=#{pkPv,jdbcType=CHAR} and st.pk_settle=#{pkSettle,jdbcType=CHAR} 
+	</select>
+	
+	<select id="qryDebtCateAmtInfo" resultType="DynaBean">
+		select cg.pk_settle,
+		       cg.code_bill,
+		       iit.name,
+		       sum(cg.amount) amt_hp,
+		       sum(cg.amount_pi) amt_pi
+		  from bl_ip_dt cg
+		       inner join bd_invcate_item iit on cg.code_bill=iit.code
+		       inner join bd_invcate ict on iit.pk_invcate=ict.pk_invcate
+		 where ict.eu_type='1' and
+		       ict.pk_org=#{pkOrg,jdbcType=CHAR} and
+		       cg.pk_settle=#{pkSettle,jdbcType=CHAR}
+		group by cg.code_bill,
+		         iit.name,
+		         cg.pk_settle
+	</select>
+	
+	<select id="qryDebtPerpAmtInfo" resultType="DynaBean">
+		select dp.date_pay,
+		       dp.rept_no,
+		       dp.dt_paymode,
+		       dp.amount,
+		       dp.dt_bank,
+		       dp.bank_no,
+		       dp.name_emp_pay,
+		       dp.note,
+           paymodeDoc.name as name_paymode,
+           bankDoc.name as name_bank
+		  from bl_deposit dp
+        left join bd_defdoc paymodeDoc on paymodeDoc.code = dp.dt_paymode and paymodeDoc.code_defdoclist = '110100' and paymodeDoc.DEL_FLAG = '0'
+        left join bd_defdoc bankDoc on bankDoc.code = dp.dt_bank and bankDoc.code_defdoclist = '040005' and bankDoc.DEL_FLAG = '0'
+		 where dp.pk_settle=#{pkSettle,jdbcType=CHAR} and
+		       dp.eu_dptype='9'
+	</select>
+	
+	<select id="qryOpCntByPkSt" resultType="java.lang.Double">
+		select sum(opCnt+billCnt) op_cnt from (
+		    select count(1) as opCnt,0 as billCnt from bl_op_dt where pk_settle = #{pkSettle,jdbcType=CHAR}
+		    union ALL
+		        select 0 as opCnt,count(count(code_bill)) as billCnt from bl_op_dt where pk_settle =  #{pkSettle,jdbcType=CHAR}
+		        group by code_bill
+		)
+	</select>
+	
+	<select id="qryInvCateType" resultType="java.lang.String" >
+		select EU_TYPE from BD_INVCATE cate
+		 inner join BL_INVOICE inv on inv.pk_invcate = cate.pk_invcate
+		  where inv.PK_INVOICE = #{pkInvoice,jdbcType=CHAR}
+	</select>
+	
+	<select id="qryOpListByPkinv" resultType="com.zebone.nhis.common.module.bl.opcg.BlOpDt">
+		select dt.* from bl_op_dt dt
+		  inner join bl_st_inv stinv on stinv.PK_SETTLE = dt.PK_SETTLE
+		  inner join bl_invoice inv on inv.PK_INVOICE = stinv.PK_INVOICE
+		where inv.PK_INVOICE = #{pkInvoice,jdbcType=CHAR}
+	</select>
+	
+	<select id="qryPvtypeByPkInvoice" resultType="java.lang.String">
+		select st.eu_pvtype from bl_settle st
+		  left join bl_st_inv stinv on stinv.pk_settle = st.pk_settle
+		  left join bl_invoice inv on inv.pk_invoice = stinv.pk_invoice
+		where 1=1 
+		 <if test='pkInvoice!=null and pkInvoice!=""'>
+		 	and inv.pk_invoice = #{pkInvoice,jdbcType=CHAR}
+		 </if>
+		 <if test='pkSettle!=null and pkSettle!=""'>
+		 	and st.pk_settle = #{pkSettle,jdbcType=CHAR}
+		 </if>
+		 
+	</select>
+	
+	<select id="qyrOpdtByPkInvoice" resultType="com.zebone.nhis.bl.pub.vo.StQryInvDt">
+		select invitem.pk_invcateitem as pk_bill,invitem.CODE as code_bill,invitem.NAME as name_bill,sum(dt.amount) as amount from bl_op_dt dt
+		  inner join bd_invcate_itemcate cate on cate.PK_ITEMCATE = dt.PK_ITEMCATE
+		  inner join bd_invcate_item invitem on invitem.pk_invcateitem=cate.pk_invcateitem
+		  inner join bd_invcate inv on invitem.pk_invcate=inv.pk_invcate
+		  inner join bl_settle st on st.pk_settle = dt.pk_settle
+		where inv.eu_type = '0' and invitem.del_flag ='0'  and cate.del_flag ='0' and inv.del_flag='0'
+		 and st.PK_SETTLE= #{pkSettle,jdbcType=CHAR}
+		 <if test="pkOrg!=null and pkOrg!=''">
+			and invitem.pk_org = #{pkOrg,jdbcType=CHAR}
+		 </if>
+		group by invitem.pk_invcateitem,invitem.CODE,invitem.NAME
+		order by invitem.NAME,invitem.CODE asc
+	</select>
+	
+	<select id="qryPreStInfo" resultType="DynaBean">
+		select
+		  st.PK_SETTLE,
+		  st.pk_pv,
+		  st.amount_st as amt_st,
+		  st.AMOUNT_PREP as Amt_Prep,
+		  st.AMOUNT_INSU as Amt_Insu,
+		  st.AMOUNT_PI as Amt_Pi,
+		  st.AMOUNT_ST-st.AMOUNT_INSU-st.AMOUNT_PREP as amt_get
+		from bl_settle st
+		where st.pk_settle = #{pkSettle,jdbcType=CHAR}
+	</select>
+	
+	<select id="qryDtListByDeptEx" resultType="com.zebone.nhis.bl.pub.vo.OpdtGroupVo">
+		select cg.pk_settle,cg.pk_dept_ex,
+		       dept.name_dept,
+		       lis.dt_lisgroup,
+		       grp.name lisgroup_name,
+		       iitem.name cate_name,
+		       cg.name_cg,
+		       cg.spec ,
+		       cg.price ,
+		       sum(cg.quan) ,
+		       sum(cg.amount) amt,
+		       cg.price,
+		       cg.pk_cgop
+		  from bl_op_dt cg
+		       inner join bd_invcate_item iitem on cg.code_bill=iitem.code
+		       inner join bd_invcate inv on iitem.pk_invcate=inv.pk_invcate
+		       inner join bd_ou_dept dept on cg.pk_dept_ex=dept.pk_dept
+		       left outer join cn_order ord on cg.pk_cnord=ord.pk_cnord
+		       left outer join bd_ord_lab lis on ord.pk_ord=lis.pk_ord
+		       left outer join bd_defdoc grp on lis.dt_lisgroup=grp.code and grp.code_defdoclist='030202'
+		 where cg.pk_settle = #{pkSettle,jdbcType=CHAR} and
+		       inv.eu_type='0'
+		group by cg.pk_settle,cg.pk_dept_ex,
+		         dept.name_dept,
+		         lis.dt_lisgroup,
+		         grp.name,
+		         iitem.name,
+		         cg.name_cg,
+		         cg.spec,
+		         cg.price,
+		        cg.pk_cgop
+	</select>
+	
+	<select id="qryStInvInfo" resultType="com.zebone.nhis.common.module.bl.BlInvoice">
+		select inv.* from bl_invoice inv
+		  inner join bl_st_inv stinv on stinv.pk_invoice = inv.pk_invoice
+		where stinv.pk_settle = #{pkSettle,jdbcType=CHAR}
+	</select>
+	
+	<select id="qryCashDepoInfo" resultType="com.zebone.nhis.common.module.bl.BlDeposit">
+		select
+		  depo.pk_depo,
+		  depo.pk_pi,
+		  depo.pk_pv,
+		  depo.DT_PAYMODE,
+		  depo.pk_dept,
+		  depo.amount + (CASE WHEN bk.backamt is null THEN 0 ELSE bk.backamt END) as amount,
+		  paymode.name as paymode_name
+		from BL_DEPOSIT depo
+		  left outer join (
+		    select sum(back.amount) backamt,back.pk_depo_back from BL_DEPOSIT back
+		      where DT_PAYMODE = '1' and back.EU_DIRECT = '-1' and back.amount&lt;0 and FLAG_SETTLE = '0' and pk_pv = #{pkPv,jdbcType=CHAR}
+		    group by back.pk_depo_back
+		  ) bk on depo.pk_depo = bk.pk_depo_back
+		  INNER JOIN bd_defdoc paymode ON depo.dt_paymode = paymode.code AND paymode.code_defdoclist = '110100' and paymode.del_flag='0'
+		where DT_PAYMODE = '1' and depo.EU_DIRECT = '1' and depo.EU_DPTYPE = '9'  and flag_settle = '0' and pk_pv = #{pkPv,jdbcType=CHAR}
+		order by depo.amount desc
+	</select>
+	
+	<select id="qryStBackDepo" resultType="DynaBean">
+		select * from (
+		SELECT
+		  depo.pk_depo,
+		  depo.rept_no,
+		  depo.dt_paymode,
+		  paymode.name paymode,
+		  depo.date_pay,
+		  depo.eu_direct,
+		  depo.name_emp_pay,
+		  depo.pk_depo_back,
+		  depo.code_depo,
+		  depo.amount,
+		  (CASE WHEN bk.backamt is null THEN 0 ELSE bk.backamt END)*-1 as back_amount,
+		  depo.amount + (CASE WHEN bk.backamt is null THEN 0 ELSE bk.backamt END) as  ref_amount,
+		  pay.pk_extpay
+		FROM bl_deposit depo
+		  INNER JOIN bd_defdoc paymode ON depo.dt_paymode = paymode.code AND paymode.code_defdoclist = '110100' and paymode.del_flag='0'
+		  left outer join (
+		            select sum(back.amount) backamt,back.pk_depo_back from BL_DEPOSIT back
+			       where back.EU_DIRECT = '-1' and back.amount &lt; 0 and FLAG_SETTLE = '0' and
+		               pk_pv = #{pkPv,jdbcType=CHAR}
+		            group by back.pk_depo_back
+			) bk on depo.pk_depo = bk.pk_depo_back
+		  left join bl_ext_pay pay on pay.PK_DEPO = depo.pk_depo and pay.flag_pay = '1'
+		WHERE depo.pk_pv = #{pkPv,jdbcType=CHAR}
+		      AND depo.flag_settle = 0 AND depo.eu_dptype = 9 and depo.EU_DIRECT = '1'
+		ORDER BY depo.date_pay DESC
+		) stdepo where stdepo.ref_amount>0 order by DT_PAYMODE,ref_amount DESC
+	</select>
+		<select id="qyrOpdtItemcate" parameterType="java.lang.String" resultType="DynaBean">
+		select invitem.pk_invcateitem as pk_bill,invitem.CODE as code_bill,invitem.NAME as name_bill,sum(dt.amount) as amount from bl_op_dt dt
+		  inner join bd_invcate_itemcate cate on cate.PK_ITEMCATE = dt.PK_ITEMCATE
+		  inner join bd_invcate_item invitem on invitem.pk_invcateitem=cate.pk_invcateitem
+		  inner join bd_invcate inv on invitem.pk_invcate=inv.pk_invcate
+		  inner join bl_settle st on st.pk_settle = dt.pk_settle
+		where inv.eu_type = '0' and invitem.del_flag ='0'  and cate.del_flag ='0' and inv.del_flag='0'
+		 and st.PK_SETTLE= #{pkSettle,jdbcType=CHAR}
+			<!-- <if test="pkOrg!=null and pkOrg!=''">
+				and invitem.pk_org = #{pkOrg,jdbcType=CHAR}
+			</if> -->
+		group by invitem.pk_invcateitem,invitem.CODE,invitem.NAME
+		order by invitem.NAME,invitem.CODE asc
+	</select>
+
+	<select id="qryPvtypeByPkSettle" resultType="java.lang.String">
+		select st.eu_pvtype from bl_settle st
+		<where>
+			<if test='pkSettle!=null and pkSettle!=""'>
+				st.pk_settle = #{pkSettle,jdbcType=CHAR}
+			</if>
+		</where>
+
+	</select>
+
+	<select id="qyrIpdtByPkSettle" resultType="com.zebone.nhis.bl.pub.vo.StQryInvDt">
+		select invitem.pk_invcateitem as pk_bill,invitem.CODE as code_bill,invitem.NAME as name_bill,sum(dt.amount) as amount from bl_ip_dt dt
+		  inner join bd_invcate_itemcate cate on cate.PK_ITEMCATE = dt.PK_ITEMCATE
+		  inner join bd_invcate_item invitem on invitem.pk_invcateitem=cate.pk_invcateitem
+		  inner join bd_invcate inv on invitem.pk_invcate=inv.pk_invcate
+		  inner join bl_settle st on st.pk_settle = dt.pk_settle
+		where inv.eu_type = '0' and invitem.del_flag ='0'  and cate.del_flag ='0' and inv.del_flag='0'
+		 and st.PK_SETTLE= #{pkSettle,jdbcType=CHAR}
+		<if test="pkOrg!=null and pkOrg!=''">
+			and invitem.pk_org = #{pkOrg,jdbcType=CHAR}
+		</if>
+		group by invitem.pk_invcateitem,invitem.CODE,invitem.NAME
+		order by invitem.NAME,invitem.CODE asc
+	</select>
+
+	<select id="qryMirHpInfoByPkPv" resultType="DynaBean">
+		select hp.* from PV_ENCOUNTER pv
+			inner join pv_insurance pvin on pvin.pk_pv = pv.pk_pv and pvin.del_flag = '0'
+			inner join bd_hp hp on hp.pk_hp = pvin.pk_hp
+		where pv.pk_pv = #{pkPv,jdbcType=CHAR} and pvin.flag_maj != '1'
+	</select>
+</mapper>

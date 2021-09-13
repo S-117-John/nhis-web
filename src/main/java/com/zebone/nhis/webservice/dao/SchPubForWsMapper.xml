@@ -1,0 +1,730 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.webservice.dao.SchPubForWsMapper">
+	
+	<!-- 获取排班科室信息 -->
+	<select id="getSchDeptInfo" resultType="DynaBean">
+		select
+   			dept.pk_dept,
+   			dept.pk_org,
+   			org.code_org,
+   			dept.name_dept,
+   			dept.code_dept,
+   			dept.pk_father,
+   			dept.shortname,
+   			dept.bednum,
+   			dept.bednum_open,
+   			dept.name_place,
+   			dept.dept_desc,
+   			dept.py_code,
+   			dept.flag_active,
+			dept.del_flag,
+			dept.flag_op,
+			dept.flag_er,
+			dept.flag_ip,
+			dept.flag_pe,
+			dept.flag_hm,
+  			dept.pk_orgarea as pk_area
+		from bd_ou_dept dept
+		inner join bd_ou_org org on org.pk_org = dept.pk_org
+		where  EXISTS (select 1 from  sch_resource res where  res.eu_schclass = '0' and  dept.pk_dept = res.pk_dept_belong )
+		and  dept.flag_active = '1' and dept.del_flag = '0'
+		<if test="pkOrg != null  and  pkOrg != ''">
+			and dept.pk_org = #{pkOrg,jdbcType=CHAR} 
+		</if>
+		<if test="codeOrg != null  and  codeOrg != ''">
+			and org.code_org = #{codeOrg,jdbcType=VARCHAR} 
+		</if>
+		<if test="codeDept != null  and  codeDept != ''">
+			and dept.code_dept = #{codeDept,jdbcType=VARCHAR} 
+		</if>
+		<if test="flagOp != null  and  flagOp != ''">
+		 	and (dept.flag_op =#{flagOp,jdbcType=VARCHAR} OR flag_er = #{flagOp,jdbcType=VARCHAR})
+		 	AND dt_depttype = '01'
+		</if>
+	</select>
+	
+	<!-- 获取当天目前可用的排班 -->
+	<select id="LbTodaySchInfosByDate" resultType="DynaBean">
+     SELECT
+        count(srv.pk_ord),
+        SUM(item.price) as price,
+	    to_char(sch.date_work,'YYYY-MM-DD') as date_work,
+	    s.code AS typeCode,
+	    s."NAME" AS typeName,
+	    s.eu_srvtype,
+	    dept.pk_dept,
+	    dept.code_dept,
+	    dept.name_dept,
+	    dept.name_place,
+	    dept.dept_desc,
+	    dept.sortno,
+	    emp.pk_emp,
+	    emp.code_emp,
+	    emp.name_emp,
+		emp.SPEC,
+	    bd_defdoc.code,
+	    (case res.name
+        WHEN NULL THEN
+      res.name
+          ELSE substr(res.name,instr(res.name,'）')+1,length(res.name)) 
+       END) as name,
+	    slot.dt_dateslottype,
+	    slot.name_dateslot,
+	    slot.time_begin,
+	    slot.time_end,
+	    sch.cnt_total,
+	    sch.cnt_appt,
+	    sch.cnt_used,
+	    sch.flag_stop,
+	    sch.Pk_sch,
+	    sch.PK_SCHPLAN,
+	    sch.PK_SCHSRV,
+	    sch.PK_SCHRES,
+	    sch.PK_DATESLOT,
+	    UNIT.NAME as UNIT_NAME
+     FROM
+	    sch_sch sch
+     INNER JOIN sch_srv s ON sch.pk_schsrv = s.pk_schsrv AND s.eu_schclass = '0'
+     INNER JOIN sch_resource res ON sch.pk_schres = res.pk_schres AND res.eu_schclass = '0'
+     left JOIN SCH_PLAN plan ON plan.pk_schres = res.pk_schres
+     left JOIN BD_DEPT_UNIT UNIT  ON UNIT.PK_DEPTUNIT = plan.PK_DEPTUNIT
+     LEFT JOIN bd_code_dateslot slot ON sch.pk_dateslot = slot.pk_dateslot
+     LEFT JOIN bd_ou_dept dept ON dept.pk_dept = res.pk_dept_belong
+     LEFT JOIN bd_ou_employee emp ON emp.pk_emp = res.pk_emp
+     LEFT JOIN bd_defdoc on bd_defdoc.code=emp.dt_empsrvtype and code_defdoclist='010305'
+     LEFT JOIN bd_code_dateslot_time d_time ON d_time.pk_dateslot = slot.pk_dateslot
+     LEFT JOIN sch_srv_ord srv ON srv.PK_SCHSRV = s.pk_schsrv
+     LEFT JOIN bd_ord_item orit ON orit.pk_ord = srv.pk_ord
+     LEFT JOIN bd_item item ON orit.pk_item = item.pk_item
+	   where sch.del_flag = '0'
+		AND	sch.eu_status ='8'
+		<if test="flagStop != null  and  flagStop != ''">
+		   AND sch.flag_stop = #{flagStop,jdbcType=VARCHAR}
+		</if>
+		and sch.cnt_total &gt; 0
+		and sch.cnt_total - sch.cnt_used &gt; 0
+        AND sch.eu_appttype &lt; '2'
+		 <if test="codeDept != null  and  codeDept != ''">
+		   and dept.code_Dept = #{codeDept,jdbcType=VARCHAR}
+		 </if>
+		 <if test="pkDept != null  and  pkDept != ''">
+		   and dept.pk_Dept = #{pkDept,jdbcType=VARCHAR}
+		 </if>
+		 <if test="doctCode != null  and  doctCode != ''">
+		   and emp.code_emp = #{doctCode,jdbcType=VARCHAR}
+		 </if>
+		 <if test="pkEmp != null  and  pkEmp != ''">
+		   and emp.pk_emp = #{pkEmp,jdbcType=VARCHAR}
+		 </if>
+		 <if test="nowDate != null  and  nowDate != ''">
+		    AND TO_CHAR (sch.date_work, 'YYYY-MM-DD') = #{nowDate}
+		 </if>
+		 <if test="nowDates != null  and  nowDates != ''">
+		    AND TO_CHAR (sch.date_work, 'YYYY-MM-DD') &gt; #{nowDates}
+		 </if>
+		 <if test="nowTime != null  and  nowTime != ''">
+		    AND slot.time_begin &lt;= #{nowTime}
+            AND slot.time_end &gt;= #{nowTime}
+		 </if>
+		 <if test="StartDate != null  and  StartDate != ''">
+		    AND sch.date_work &gt;=to_date(#{StartDate},'YYYY-MM-DD') 
+		 </if>
+		 <if test="EndDate != null  and  EndDate != ''">
+            AND sch.date_work &lt;= to_date(#{EndDate},'YYYY-MM-DD') 
+		 </if>
+		 <if test="total != null  and  total != ''">
+            AND sch.cnt_appt &gt; ${total}
+            and (s.eu_srvtype='0' or s.eu_srvtype='1')
+		 </if>
+		 <if test="totals != null  and  totals != ''">
+            AND sch.cnt_appt &gt; ${totals}
+            and (s.eu_srvtype='0' or s.eu_srvtype='1')
+            and slot.dt_dateslottype='01'
+		 </if>
+		 <if test="nameDateslot != null  and  nameDateslot != ''">
+             and slot.name_dateslot like '%'||#{nameDateslot,jdbcType=VARCHAR}
+		 </if>
+		 <if test="srvCode != null  and  srvCode != ''">
+			AND s.code = #{srvCode,jdbcType=VARCHAR}
+		 </if>
+         <if test="pkOrg != null  and  pkOrg != ''">
+		   AND sch.pk_org = #{pkOrg}
+		 </if>
+		 <if test="pkSch != null  and  pkSch != ''">
+		   AND sch.Pk_sch = #{pkSch}
+		 </if>
+          group by srv.pk_ord,item.price,sch.pk_sch,TO_CHAR (sch.date_work, 'YYYY-MM-DD'),s.code,s."NAME",dept.code_dept,sch.PK_SCHPLAN,
+	               sch.PK_SCHSRV,sch.PK_SCHRES,sch.PK_DATESLOT,
+	               dept.pk_dept,dept.name_dept,dept.name_place,emp.pk_emp,emp.code_emp,emp.name_emp,bd_defdoc.code,res.name,slot.dt_dateslottype,
+	               s.eu_srvtype,slot.name_dateslot,slot.time_begin,slot.time_end,sch.cnt_total,sch.cnt_used,sch.cnt_appt,sch.flag_stop,emp.SPEC,
+	               dept.dept_desc,dept.sortno,UNIT.NAME
+	      ORDER BY emp.name_emp,slot.time_begin
+	</select>
+	
+	<!-- 获取可用的预约排班 -->
+	<select id="PskqTodaySchInfos" resultType="DynaBean">
+     SELECT
+        SUM(item.price) as price,
+	    to_char(sch.date_work,'YYYY-MM-DD') as date_work,
+	    s.code AS typeCode,
+	    s."NAME" AS typeName,
+	    s.eu_srvtype,
+	    dept.pk_dept,
+	    dept.code_dept,
+	    dept.name_dept,
+	    dept.name_place,
+	    dept.dept_desc,
+	    emp.pk_emp,
+	    emp.code_emp,
+	    emp.name_emp,
+		emp.SPEC,
+	    bd_defdoc.code,
+	    (case res.name
+        WHEN NULL THEN
+      res.name
+          ELSE substr(res.name,instr(res.name,'）')+1,length(res.name)) 
+       END) as name,
+	    slot.dt_dateslottype,
+	    slot.name_dateslot,
+	    slot.time_begin,
+	    slot.time_end,
+	    sch.cnt_appt cnt_total,
+	    sch.cnt_appt,
+	    sch.cnt_used,
+	    sch.flag_stop,
+	    sch.Pk_sch,
+	    sch.PK_SCHPLAN,
+	    sch.PK_SCHSRV,
+	    sch.PK_SCHRES,
+	    sch.PK_DATESLOT,
+	    UNIT.NAME as UNIT_NAME
+     FROM
+	    sch_sch sch
+     INNER JOIN sch_srv s ON sch.pk_schsrv = s.pk_schsrv AND s.eu_schclass = '0'
+     INNER JOIN sch_resource res ON sch.pk_schres = res.pk_schres AND res.eu_schclass = '0'
+     left JOIN SCH_PLAN plan ON plan.pk_schres = res.pk_schres
+     left JOIN BD_DEPT_UNIT UNIT  ON UNIT.PK_DEPTUNIT = plan.PK_DEPTUNIT
+     LEFT JOIN bd_code_dateslot slot ON sch.pk_dateslot = slot.pk_dateslot
+     LEFT JOIN bd_ou_dept dept ON dept.pk_dept = res.pk_dept_belong
+     LEFT JOIN bd_ou_employee emp ON emp.pk_emp = res.pk_emp
+     LEFT JOIN bd_defdoc on bd_defdoc.code=emp.dt_empsrvtype and code_defdoclist='010305'
+     LEFT JOIN bd_code_dateslot_time d_time ON d_time.pk_dateslot = slot.pk_dateslot
+     LEFT JOIN sch_srv_ord srv ON srv.PK_SCHSRV = s.pk_schsrv
+     LEFT JOIN bd_ord_item orit ON orit.pk_ord = srv.pk_ord
+     LEFT JOIN bd_item item ON orit.pk_item = item.pk_item
+	   where sch.del_flag = '0'
+		AND	sch.eu_status ='8'
+		AND sch.flag_stop = '0'
+		and sch.CNT_APPT>0
+        AND sch.eu_appttype &lt; '2'
+		 <if test="codeDept != null  and  codeDept != ''">
+		   and dept.code_Dept = #{codeDept,jdbcType=VARCHAR}
+		 </if>
+		 <if test="pkDept != null  and  pkDept != ''">
+		   and dept.pk_Dept = #{pkDept,jdbcType=VARCHAR}
+		 </if>
+		 <if test="doctCode != null  and  doctCode != ''">
+		   and emp.code_emp = #{doctCode,jdbcType=VARCHAR}
+		 </if>
+		 <if test="pkEmp != null  and  pkEmp != ''">
+		   and emp.pk_emp = #{pkEmp,jdbcType=VARCHAR}
+		 </if>
+		 <if test="nowDate != null  and  nowDate != ''">
+		    AND TO_CHAR (sch.date_work, 'YYYY-MM-DD') = #{nowDate}
+		 </if>
+		 <if test="StartDate != null  and  StartDate != ''">
+		    AND sch.date_work &gt;=to_date(#{StartDate},'YYYY-MM-DD') 
+		 </if>
+		 <if test="EndDate != null  and  EndDate != ''">
+            AND sch.date_work &lt;= to_date(#{EndDate},'YYYY-MM-DD') 
+		 </if>
+         <if test="pkOrg != null  and  pkOrg != ''">
+		   AND sch.pk_org = #{pkOrg}
+		 </if>
+		 <if test="pkSch != null  and  pkSch != ''">
+		   AND sch.Pk_sch = #{pkSch}
+		 </if>
+          group by srv.pk_ord,item.price,sch.pk_sch,TO_CHAR (sch.date_work, 'YYYY-MM-DD'),s.code,s."NAME",dept.code_dept,sch.PK_SCHPLAN,
+	               sch.PK_SCHSRV,sch.PK_SCHRES,sch.PK_DATESLOT,
+	               dept.pk_dept,dept.name_dept,dept.name_place,emp.pk_emp,emp.code_emp,emp.name_emp,bd_defdoc.code,res.name,slot.dt_dateslottype,
+	               s.eu_srvtype,slot.name_dateslot,slot.time_begin,slot.time_end,sch.cnt_used,sch.cnt_appt,sch.flag_stop,emp.SPEC,
+	               dept.dept_desc,UNIT.NAME 
+	      ORDER BY emp.name_emp,slot.time_begin
+	</select>
+	
+	
+	<select id="getSchTicketNotUsedSum" resultType="int" >
+	   select 
+	     count(*)
+	     from sch_ticket where flag_used !='1'
+	     <if test="pkSch != null  and  pkSch != ''">
+		   and PK_SCH=#{pkSch,jdbcType=VARCHAR}
+		 </if>
+	</select>
+
+	<select id="querySchInfo" parameterType="java.util.Map" resultType="DynaBean">
+	    select bi.price,ss.pk_sch,st.ticketno from sch_ticket st
+        inner join Sch_sch ss on  ss.pk_sch = st.pk_sch
+        inner join  sch_srv srv  on srv.pk_schsrv = ss.pk_schsrv
+        inner join sch_srv_ord sso on  sso.pk_schsrv = srv.pk_schsrv
+        inner join bd_ord_item boi on boi.pk_ord = sso.pk_ord
+        inner join BD_ITEM bi on bi.pk_item = boi.pk_item
+        where ss.del_flag = '0' and st.flag_used ='1' and st.flag_stop ='0' and st.del_flag = '0'
+		<if test="pkSchticket != null  and  pkSchticket != ''">
+		and st.pk_schticket = #{pkSchticket,jdbcType=CHAR} 
+		</if>		
+	</select>
+	
+   <select id="querySchAppSec" parameterType="java.util.Map" resultType="DynaBean">
+   SELECT * FROM ( 
+      SELECT pk_dateslotsec,time_begin,time_end,max(cnt) cnt,max(cnt_appt) cnt_appt from (
+	      select sec.pk_dateslotsec,(case when tk.time_begin is null THEN sec.time_begin else tk.time_begin end) time_begin,
+		  (case when tk.time_end is null THEN sec.time_end else tk.time_end end) time_end,
+		  (case when tk.cnt is null THEN 0 ELSE tk.cnt END) as cnt,(case when tk.cnt_appt is null THEN 0 ELSE tk.cnt_appt END) as cnt_appt
+		  from bd_code_dateslot_sec sec
+		  LEFT JOIN sch_sch sch on sec.pk_dateslot = SCH.pk_dateslot LEFT JOIN
+		  (select to_char(begin_time, 'hh24:mi:ss') time_begin,to_char(end_time, 'hh24:mi:ss') time_end,count(*) cnt,sum(case when flag_appt=1 then 1 else 0 end) cnt_appt,
+		  pk_sch from sch_ticket
+		  where pk_sch=#{pkSch,jdbcType=CHAR} and flag_used='0' and FLAG_STOP ='0' 
+		  <if test="flagAppt != null  and  flagAppt != ''">
+		      and FLAG_APPT=#{flagAppt}
+		  </if>
+		  <if test="dtApptype != null  and  dtApptype != ''">
+		      and (DT_APPTYPE is null or DT_APPTYPE &lt;&gt; #{dtApptype,jdbcType=CHAR} )
+		  </if>
+		  <if test="dtapptype != null  and  dtapptype != ''">
+		      and (DT_APPTYPE is null or DT_APPTYPE &lt;&gt; #{dtapptype,jdbcType=CHAR} )
+		  </if>
+		  group by begin_time,end_time,pk_sch) tk ON sch.pk_sch = tk.pk_sch and sec.time_begin=tk.time_begin and sec.time_end=tk.time_end where SEC.pk_dateslot=#{pkDateslot,jdbcType=CHAR}
+		  and sch.pk_sch=#{pkSch,jdbcType=CHAR}) tb
+		  group by pk_dateslotsec,time_begin,time_end ORDER BY time_begin
+		  ) WHERE 1=1
+		  <if test="time != null  and  time != ''">
+		      and time_end &gt;=  #{time} 
+		  </if>
+   </select>
+   
+      <select id="querySchAppTicket" parameterType="java.util.Map" resultType="DynaBean">
+  	 SELECT * FROM ( 
+      SELECT pk_dateslotsec,time_begin,time_end,max(cnt) cnt,max(cnt_appt) cnt_appt, max(cnt_used) cnt_used  from (
+	      select sec.pk_dateslotsec,(case when tk.time_begin is null THEN sec.time_begin else tk.time_begin end) time_begin,
+		  (case when tk.time_end is null THEN sec.time_end else tk.time_end end) time_end,
+		  (case when tk.cnt is null THEN 0 ELSE tk.cnt END) as cnt,(case when tk.cnt_appt is null THEN 0 ELSE tk.cnt_appt END) as cnt_appt,
+		  (case when tk.cnt_used is null THEN 0 ELSE tk.cnt_used END) as cnt_used 
+		  from bd_code_dateslot_sec sec
+		  LEFT JOIN sch_sch sch on sec.pk_dateslot = SCH.pk_dateslot 
+		  LEFT JOIN
+		  (select to_char(begin_time, 'hh24:mi:ss') time_begin,to_char(end_time, 'hh24:mi:ss') time_end,
+		  count(*) cnt,
+		  sum(case when  (flag_appt ='1' and flag_used ='0')  then '1' else '0' end) cnt_appt,
+		  sum(case when  flag_used ='1' then '1' else '0' end) cnt_used,pk_sch from sch_ticket
+		  where pk_sch=#{pkSch,jdbcType=CHAR}  and FLAG_STOP ='0' 
+		   <if test="dtApptype != null  and  dtApptype != ''">
+		      and (DT_APPTYPE is null or DT_APPTYPE &lt;&gt; #{dtApptype,jdbcType=CHAR})
+		  </if>
+		  <if test="dtapptype != null  and  dtapptype != ''">
+		      and (DT_APPTYPE is null or DT_APPTYPE &lt;&gt; #{dtapptype,jdbcType=CHAR})
+		  </if>
+		   group by begin_time,end_time,pk_sch) tk ON sch.pk_sch = tk.pk_sch and sec.time_begin=tk.time_begin and sec.time_end=tk.time_end where SEC.pk_dateslot=#{pkDateslot,jdbcType=CHAR}
+		  and sch.pk_sch=#{pkSch,jdbcType=CHAR}) tb
+		  group by pk_dateslotsec,time_begin,time_end ORDER BY time_begin
+		  ) WHERE 1=1
+		  <if test="time != null  and  time != ''">
+		      and time_end &gt;=  #{time} 
+		  </if>
+   </select>
+   
+   <select id="querySchResInfo" parameterType="java.util.Map" resultType="DynaBean">
+      select res.eu_restype,res.pk_dept,res.pk_emp,emp.name_emp 
+      from sch_resource res 
+      left join bd_ou_employee emp on emp.pk_emp = res.pk_emp 
+      where res.pk_schres = #{pkSchres,jdbcType=CHAR}
+   </select>
+   
+   <select id="QueryRegisteredRecords"  parameterType="java.util.Map" resultType="DynaBean">
+      SELECT 
+        count(srv.pk_ord),
+        SUM(item.price) as price,
+        appt.pk_schappt,
+        appt.ticket_no,
+        to_char(ticket.begin_time,'hh24:mi:ss') as begin_time,
+        to_char(ticket.end_time,'hh24:mi:ss') as end_time,
+        slot.dt_dateslottype,
+        slot.name_dateslot,
+        slot.time_begin,
+        slot.time_end,
+        appt.Pk_sch,
+        to_char(appt.date_appt,'YYYY-MM-DD') as date_work,
+        s.code AS typeCode,
+        s."NAME" AS typeName,
+        s.eu_srvtype,
+        dept.code_dept,
+        dept.name_dept,
+        dept.name_place,
+        emp.code_emp,
+        emp.name_emp,
+        bd_defdoc.code,
+        appt.eu_status,
+        (case res.name
+            WHEN NULL THEN
+         res.name
+            ELSE substr(res.name,instr(res.name,'）')+1,length(res.name)) 
+         END) as name
+      FROM sch_appt appt
+    INNER JOIN sch_ticket ticket on ticket.pk_sch=appt.pk_sch and appt.ticket_no=ticket.ticketno
+    INNER JOIN sch_srv s ON appt.pk_schsrv = s.pk_schsrv AND s.eu_schclass = '0'
+    INNER JOIN sch_resource res ON appt.pk_schres = res.pk_schres AND res.eu_schclass = '0'
+    INNER JOIN bd_code_dateslot slot ON appt.pk_dateslot = slot.pk_dateslot
+    INNER JOIN bd_ou_dept dept ON dept.pk_dept = res.pk_dept_belong
+    INNER JOIN bd_ou_employee emp ON emp.pk_emp = res.pk_emp
+    INNER JOIN bd_defdoc on bd_defdoc.code=emp.dt_empsrvtype and code_defdoclist='010305'
+    INNER JOIN bd_code_dateslot_time d_time ON d_time.pk_dateslot = slot.pk_dateslot
+    INNER JOIN sch_srv_ord srv ON srv.PK_SCHSRV = s.pk_schsrv
+    INNER JOIN bd_ord_item orit ON orit.pk_ord = srv.pk_ord
+    INNER JOIN bd_item item ON orit.pk_item = item.pk_item
+    where 1=1 and appt.pk_pi= #{patientId}
+	   <if test="nowDate != null  and  nowDate != ''">
+		   AND TO_CHAR (appt.date_appt, 'YYYY-MM-DD') &gt;= #{nowDate}
+	   </if>
+	   <if test="endDate != null  and  endDate != ''">
+		   AND TO_CHAR (appt.date_appt, 'YYYY-MM-DD') &lt;= #{endDate}
+	   </if>
+    group by  srv.pk_ord,slot.dt_dateslottype,slot.name_dateslot,slot.time_begin,slot.time_end,appt.Pk_sch,appt.date_appt,s.code,
+              s."NAME",s.eu_srvtype,dept.code_dept,dept.name_dept,dept.name_place,emp.code_emp,emp.name_emp,bd_defdoc.code,res.name,appt.pk_schappt,
+              item.price,ticket.begin_time,ticket.end_time,appt.ticket_no,appt.eu_status 
+    ORDER BY appt.date_appt
+   </select>
+   
+   <select id="LbgetSchPlanInfo" resultType="DynaBean" parameterType="java.util.Map">
+    SELECT
+    ticket.ticketno,
+	ticket.pk_sch,
+	ticket.PK_SCHTICKET,
+	sch.pk_schsrv,
+	sch.PK_DATESLOT,
+	srv.NAME AS stv_name,
+	srv.eu_srvtype,
+	sch.pk_schsrv,
+    sch.pk_schres,
+	emp.name_emp,
+	dept.name_place,
+	dept.pk_dept,
+    dept.name_dept as name,
+    dept.code_dept,
+    emp.code_emp,
+    emp.name_emp
+   FROM
+	sch_ticket ticket
+   LEFT JOIN sch_sch sch ON ticket.pk_sch = sch.pk_sch
+   LEFT JOIN sch_srv srv ON sch.PK_SCHSRV = srv.PK_SCHSRV
+   LEFT JOIN sch_resource res ON sch.pk_schres = res.pk_schres
+   LEFT JOIN bd_ou_employee emp ON emp.pk_emp = res.pk_emp
+   LEFT JOIN bd_ou_dept dept ON dept.pk_dept = res.pk_dept_belong
+   WHERE ticket.del_flag = '0'
+	   <if test="pkSchticket != null  and  pkSchticket != ''">
+		   AND ticket.pk_schticket = #{pkSchticket,jdbcType=VARCHAR}
+	   </if>
+       <if test="pkSch != null  and  pkSch != ''">
+		   AND ticket.pk_sch = #{pkSch,jdbcType=VARCHAR}
+	   </if>
+	   <if test="ticketno != null  and  ticketno != ''">
+		   AND ticket.FLAG_USED = '1'
+		   AND ticket.ticketno = #{ticketno,jdbcType=VARCHAR}
+	   </if>
+   </select>
+   
+   <select id="getRegistered"  parameterType="java.util.Map" resultType="DynaBean">
+     select sch.pk_sch,
+     		appt.pk_schappt pk_registered,
+      			appt.pk_pi pk_patient,
+     		    pi.code_op code_patient,
+     		    pi.name_pi name_patient, 
+     		    '' level_patient,
+     		    pi.birth_date age ,
+               appt.begin_time date_registered,
+      			appt.pk_dept_ex pk_dept_registered, 
+      			'' pk_clinic_registered, 
+      			'' pk_doctor_registered, 
+      			case srv.eu_srvtype when '1' then '1' when '9' then '3' else '2' end cate_registered, 
+      			'' card_no,
+      			appt.ticket_no registered_no, 
+     			 '1' is_pre_registered,
+      			 '' medical_insurance,
+      			dl.name_dateslot flagSch, 
+      			'' visiting, 
+      			'' cate_dept,
+      			appt.begin_time,
+      			appt.end_time
+      			from sch_appt appt 
+      			inner join pi_master pi on pi.pk_pi = appt.pk_pi  
+      			inner join sch_srv srv on srv.pk_schsrv = appt.pk_schsrv  
+      			inner join sch_sch sch on sch.pk_sch = appt.pk_sch  
+      			inner join bd_code_dateslot dl on dl.pk_dateslot = sch.pk_dateslot 
+      			where appt.eu_status = '0'  and appt.del_flag = '0'
+      			    <if test="#{dateWork}!=null">
+           				and appt.date_appt &gt;= to_date(#{dateWork}, 'yyyy-MM-dd') and appt.date_appt &lt;to_date(#{dateWork}, 'yyyy-mm-dd') + 1 
+      			   </if>
+      			   <if test="pkOrg != null and pkOrg != ''">
+			  		and appt.pk_org = #{pkOrg,jdbcType=VARCHAR}
+			  	</if> 
+      			<if test="insurNo != null and insurNo != ''">
+						and pi.insur_no =#{insurNo,jdbcType=VARCHAR}
+				</if>
+	  </select>
+	  
+	  <select id="LbgetSchAppt" resultType="DynaBean">
+	       SELECT  APPT.code,APPT.begin_time,APPT.end_time,slot.code_dateslot,appt.create_time,dept.code_dept,
+	               dept.name_dept,emp.code_emp,emp.name_emp,sum(item.price) price,pi.name_pi,pi.mobile,APPT.eu_status
+             FROM sch_appt appt
+           INNER JOIN pi_master pi on pi.pk_pi=appt.pk_pi
+           INNER JOIN bd_code_dateslot slot ON appt.pk_dateslot = slot.pk_dateslot
+           INNER JOIN sch_resource res ON appt.pk_schres = res.pk_schres AND res.eu_schclass = '0'
+           INNER JOIN bd_ou_dept dept ON dept.pk_dept = res.pk_dept_belong
+           INNER JOIN bd_ou_employee emp ON emp.pk_emp = res.pk_emp
+           INNER JOIN sch_srv_ord srv ON srv.PK_SCHSRV = appt.pk_schsrv
+           INNER JOIN bd_ord_item orit ON orit.pk_ord = srv.pk_ord
+           INNER JOIN bd_item item ON orit.pk_item = item.pk_item
+              WHERE 1=1
+              <if test="PatientName != null and PatientName != ''">
+				  and pi.name_pi LIKE '%'||#{PatientName,jdbcType=VARCHAR}
+			  </if>
+              <if test="CardNo != null and CardNo != ''">
+                  and pi.dt_idtype='01'
+				  and pi.id_no=#{CardNo}
+			  </if>
+			  <if test="OrderCode != null and OrderCode != ''">
+                  and APPT.code =#{OrderCode}
+			  </if>
+              <if test="DateFlag != null and DateFlag ='1'">
+                  <if test="StartDate != null and StartDate != ''">
+			           and APPT.begin_time &gt;=to_date(#{StartDate},'YYYY-MM-DD HH24:MI:SS')
+			      </if>
+			      <if test="EndDate != null and EndDate != ''">
+			           and APPT.end_time &lt;= to_date(#{EndDate},'YYYY-MM-DD HH24:MI:SS') 
+			      </if>
+			  </if>
+			  <if test="DateFlag != null and DateFlag ='0'">
+			      <if test="StartDate != null and StartDate != ''">
+			           and APPT.create_time &gt;=to_date(#{StartDate},'YYYY-MM-DD HH24:MI:SS')
+			      </if>
+			      <if test="EndDate != null and EndDate != ''">
+			           and APPT.create_time &lt;= to_date(#{EndDate},'YYYY-MM-DD HH24:MI:SS') 
+			      </if>
+			  </if>
+			  and APPT.eu_status !='9'
+            GROUP BY APPT.code,APPT.begin_time,APPT.end_time,slot.code_dateslot,appt.create_time,
+                     dept.code_dept,dept.name_dept,emp.code_emp,emp.name_emp,pi.name_pi,pi.mobile,APPT.eu_status
+            ORDER BY APPT.code
+	  </select>
+	<!--  查询预约号源信息按时间段分组-灵璧 -->
+   <select id="getTicketsGroupDate" resultType="DynaBean">
+		SELECT to_char( t.begin_time, 'hh24:mi' ) begin_Time_Str,to_char(t.end_time, 'hh24:mi') end_Time_Str,
+					   sum( CASE WHEN t.flag_appt = 1 THEN 1 ELSE 0 END ) cnt_appt,t.pk_sch 
+		FROM sch_ticket t
+	    left join sch_sch sch on sch.PK_SCH=t.PK_SCH
+		WHERE t.pk_sch = #{pkSch} and t.FLAG_USED='0' and t.DEL_FLAG = '0'  and t.flag_stop='0' and sch.eu_status ='8'
+		GROUP BY t.begin_time,t.end_time,t.pk_sch
+		ORDER BY t.begin_time
+   </select>
+   <!--  微信公众号查询号源信息 -灵璧 -->
+   <select id="queryTicketsBySchAndTimeList" parameterType="java.util.Map"  resultType="DynaBean">
+		SELECT t.*
+		FROM sch_ticket t
+		left join sch_sch sch on sch.PK_SCH=t.PK_SCH
+		WHERE t.FLAG_USED='0' and t.DEL_FLAG = '0'  and t.flag_stop='0' and sch.eu_status ='8'
+			<if test="pkSch != null and pkSch != ''">
+	           and t.pk_sch = #{pkSch}
+	        </if>
+			<if test="beginDate != null and beginDate != ''">
+	           and t.BEGIN_TIME=to_date(#{beginDate},'YYYY-MM-DD HH24:MI:SS') 
+	        </if>
+			<if test="endDate != null and endDate != ''">
+	           and t.END_TIME=to_date(#{endDate},'YYYY-MM-DD HH24:MI:SS') 
+	        </if>
+		ORDER BY t.TICKETNO
+   </select>
+   
+   <update id="updateSchTicketFlagUsed" parameterType="java.util.Map">
+      update sch_ticket set FLAG_USED =#{flagUsed} where pk_schticket =#{pkSchticket} and FLAG_USED=#{flagUseds}
+   </update>
+
+   <update id="updateSchTicketAppt" parameterType="java.util.Map">
+      update sch_ticket set FLAG_USED =#{flagUsed} where FLAG_USED=#{flagUseds} and pk_sch=#{pkSch} and ticketno=#{ticketno}
+   </update>
+   
+   <update id="updateSchSchTicketNo" parameterType="java.lang.String">
+      update sch_sch  set TICKET_NO = nvl(TICKET_NO,0)+1,cnt_used=cnt_used+1 where PK_SCH = #{pkSch} and cnt_used &lt; cnt_total
+   </update>
+   
+   <update id="updateSchCntUsed" parameterType="java.lang.String">
+      update sch_sch set cnt_used = cnt_used + 1 where pk_sch = #{pkSch}
+   </update>
+ 
+   <update id="updateSchApptEuStatus" parameterType="java.util.Map">
+      update sch_appt set eu_status =#{euStatus} where pk_pi=#{pkPi} and pk_sch=#{pkSch} and eu_status='0'
+   </update>
+   
+   <update id="updateSchApptPkSchappt" parameterType="java.util.Map">
+      update SCH_APPt 
+      set 
+        eu_status =#{euStatus},
+        flag_cancel=#{flagCancel},
+        date_cancel=#{dateCancel},
+        pk_emp_cancel=#{pkEmpCancel} 
+      where 
+        flag_cancel=#{flagCancel} 
+        and eu_status=#{euStatuss} 
+        and pk_schappt=#{pkSchappt}
+   </update>
+   <select id="getRegistRecord" resultType="DynaBean" parameterType="java.util.Map">
+		 select st.BEGIN_TIME,st.END_TIME,srs.pk_emp,bod.name_dept,bod.pk_dept,en.CODE_PV code,en.pk_pv pk_schappt,en.eu_status
+					,(case when op.pk_schsrv is null then er.pk_schsrv else op.pk_schsrv end) pk_schsrv,(case when op.pk_res is null then er.pk_res else op.pk_res end) pk_res,(case when op.pk_dateslot is null then er.pk_dateslot else op.pk_dateslot end) pk_dateslot,(case when op.pk_sch is null then er.pk_sch else op.pk_sch end)pk_sch,srv.name as srvName,bi.code_inv,en.flag_cancel,s.receipt_no, nvl(op.EU_REGTYPE,0) as EU_REGTYPE
+		 from pv_encounter en
+		 left join bl_settle s on s.pk_pv = en.pk_pv and s.del_flag = '0' and s.dt_sttype = '00'
+		 left join bl_st_inv si on si.pk_settle = s.pk_settle and si.del_flag = '0' and EXISTS (select 1  from BL_INVOICE iv where iv.pk_invoice=si.pk_invoice and iv.del_flag = '0' and iv.flag_cancel = '0')
+		 left join bl_invoice bi on bi.pk_invoice = si.pk_invoice and bi.del_flag = '0' and bi.flag_cancel = '0'
+		 left join pv_op op on op.pk_pv = en.pk_pv and op.del_flag = '0'
+		 left join pv_er er on en.pk_pv=er.pk_pv and er.del_flag = '0'
+		 
+		 left join sch_srv srv on ((srv.pk_schsrv = op.pk_schsrv or srv.pk_schsrv = er.pk_schsrv) and srv.del_flag = '0')
+		 
+		 left join SCH_TICKET st on st.PK_SCH=op.PK_SCH and st.TICKETNO=op.TICKETNO
+		 left join SCH_SCH ss on ss.PK_SCH=op.PK_SCH
+		 left join sch_resource srs on srs.PK_SCHRES=ss.PK_SCHRES
+		 inner join bd_ou_dept bod on srs.pk_dept_belong = bod.pk_dept
+		 where en.eu_pvtype in ('1','2') 
+		  and   ((op.EU_REGTYPE is not null and op.EU_REGTYPE in ('0','1')) or op.EU_REGTYPE is null)
+		 and en.date_reg> sysdate -30
+		<if test="pkPi != null">
+			and en.pk_pi = #{pkPi, jdbcType=VARCHAR}
+		</if>
+		<if test="pkOrg != null and pkOrg != ''">
+			and en.pk_org = #{pkOrg,jdbcType=VARCHAR}
+		</if> 
+		order by en.code_pv desc
+    </select>
+
+    <select id="querOpSchHedule" resultType="DynaBean">
+		select viewops.* from VIEW_OPSCHEDULE_NHIS02 viewops
+        INNER JOIN CN_ORDER cn on cn.PK_CNORD=viewops.PK_CNORD
+        where
+		<if test="ordsn != null  and  ordsn != ''">
+			cn.ORDSN = #{ordsn}
+		</if>
+	</select>
+	
+	  <select id="getApptRegRecords"  parameterType="java.util.Map" resultType="DynaBean">
+      SELECT 
+        SUM(item.price) as price,
+        appt.pk_schappt,
+        appt.code as appt_code,
+        ticket.pk_schticket,
+        appt.ticket_no,
+        pi.code_pi,
+        to_char(ticket.begin_time,'hh24:mi:ss') as begin_time,
+        to_char(ticket.end_time,'hh24:mi:ss') as end_time,
+        slot.dt_dateslottype,
+        slot.name_dateslot,
+        slot.time_begin,
+        slot.time_end,
+        appt.Pk_sch,
+        to_char(appt.date_appt,'YYYY-MM-DD') as date_work,
+        s.code AS typeCode,
+        s."NAME" AS typeName,
+        s.eu_srvtype,
+        dept.code_dept,
+        dept.name_dept,
+        dept.name_place,
+        emp.code_emp,
+        emp.name_emp,
+        bd_defdoc.code,
+        appt.eu_status,
+        (case res.name
+            WHEN NULL THEN
+         res.name
+            ELSE substr(res.name,instr(res.name,'）')+1,length(res.name)) 
+         END) as name
+      FROM sch_appt appt
+    INNER JOIN pi_master pi on pi.pk_pi=appt.pk_pi 
+    INNER JOIN sch_ticket ticket on ticket.pk_sch=appt.pk_sch and appt.ticket_no=ticket.ticketno
+    INNER JOIN sch_srv s ON appt.pk_schsrv = s.pk_schsrv AND s.eu_schclass = '0'
+    INNER JOIN sch_resource res ON appt.pk_schres = res.pk_schres AND res.eu_schclass = '0'
+    INNER JOIN bd_code_dateslot slot ON appt.pk_dateslot = slot.pk_dateslot
+    INNER JOIN bd_ou_dept dept ON dept.pk_dept = res.pk_dept_belong
+    INNER JOIN bd_ou_employee emp ON emp.pk_emp = res.pk_emp
+    INNER JOIN bd_defdoc on bd_defdoc.code=emp.dt_empsrvtype and code_defdoclist='010305'
+    INNER JOIN bd_code_dateslot_time d_time ON d_time.pk_dateslot = slot.pk_dateslot
+    INNER JOIN sch_srv_ord srv ON srv.PK_SCHSRV = s.pk_schsrv
+    INNER JOIN bd_ord_item orit ON orit.pk_ord = srv.pk_ord
+    INNER JOIN bd_item item ON orit.pk_item = item.pk_item
+    where 1=1 and pi.code_pi= #{codePi}
+	<if test="nowDate != null  and  nowDate != ''">
+		AND TO_CHAR (appt.date_appt, 'YYYY-MM-DD') &gt;= #{nowDate}
+	</if>
+    group by  srv.pk_ord,slot.dt_dateslottype,slot.name_dateslot,slot.time_begin,slot.time_end,appt.Pk_sch,appt.date_appt,appt.code,s.code,
+              s."NAME",s.eu_srvtype,dept.code_dept,dept.name_dept,dept.name_place,emp.code_emp,emp.name_emp,bd_defdoc.code,res.name,appt.pk_schappt,
+              item.price,ticket.begin_time,ticket.end_time,appt.ticket_no,appt.eu_status,ticket.PK_SCHTICKET,pi.code_pi
+    ORDER BY appt.date_appt
+   </select>
+   <select id="searchSchAppt" resultType="com.zebone.nhis.webservice.vo.PskqSchApptVo" parameterType="com.zebone.nhis.webservice.vo.LbSHRequestVo">
+		select 
+		   appt.pk_schappt,
+		   appt.code,
+	       pi.name_pi,
+	       pi.id_no,
+	       pi.mobile,
+	       pi.code_op,
+	       org.name_org,
+	       dept.name_dept,
+	       pv.name_emp_phy,
+	       to_char(appt.date_appt,'YYYY-MM-DD') ||' '|| to_char(appt.begin_time,'hh24:mi')||'-'||to_char(appt.end_time,'hh24:mi') date_appt,
+	       appt.ticket_no,
+	       appt.eu_status,
+	       appttype.name appttype,
+	       appt.flag_notice,
+	       appt.name_emp_reg,
+	       to_char(appt.date_reg,'YYYY-MM-DD HH24:MI:SS') date_reg,
+	       appt.name_emp_cancel,
+	       to_char(appt.date_cancel,'YYYY-MM-DD HH24:MI:SS') date_cancel,
+	       appt.flag_notice_canc,
+	       appt.note,
+	       appt.flag_pay,
+	       pv.pk_pv
+	  	from sch_appt appt
+	       left join sch_appt_pv pv on appt.pk_schappt=pv.pk_schappt
+	       inner join pi_master pi on appt.pk_pi=pi.pk_pi
+	       inner join bd_ou_org org on appt.pk_org_ex=org.pk_org
+	       inner join bd_ou_dept dept on appt.pk_dept_ex=dept.pk_dept
+	       inner join bd_code_dateslot ds on appt.pk_dateslot=ds.pk_dateslot
+			LEFT JOIN SCH_RESOURCE res on RES.PK_SCHRES = APPT.PK_SCHRES
+			LEFT JOIN sch_emp schemp on schemp.pk_sch = appt.pk_sch
+	       left join bd_defdoc appttype on appt.dt_apptype=appttype.code and appttype.code_defdoclist='020100'
+	       left join BD_OU_EMPLOYEE be on be.PK_EMP=pv.PK_EMP_PHY
+       <trim prefix="WHERE" prefixOverrides="AND |OR ">
+       	   appt.eu_schclass = '0'
+		   <if test="startDate != null and startDate != ''">
+		   	  and appt.date_appt &gt;= to_date(#{startDate,jdbcType=VARCHAR},'yyyy-mm-dd') 
+		   </if>
+		   <if test="endDate != null and endDate != ''">
+		   	  and appt.date_appt &lt;= to_date(#{endDate,jdbcType=VARCHAR},'yyyy-mm-dd') 
+		   </if>
+		   <if test="doctCode != null and doctCode != ''">
+		   	  and be.CODE_EMP=#{doctCode,jdbcType=VARCHAR}
+		   </if>
+       </trim>
+	order by appt.date_reg desc,appt.TICKET_NO 
+	</select>
+
+	<select id="getLbzySchSrv" resultType="DynaBean">
+	     select s.PK_SCHSRV,s.code,s.name,SUM(item.price) as price
+	        from sch_srv s
+	        left JOIN sch_srv_ord srv ON srv.PK_SCHSRV = s.pk_schsrv
+	        left JOIN bd_ord_item orit ON orit.pk_ord = srv.pk_ord
+	        left JOIN bd_item item ON orit.pk_item = item.pk_item
+	        where s.eu_schclass = '0'
+	        group by s.name,s.code,s.PK_SCHSRV
+	    ORDER BY s.code
+    </select>
+
+</mapper>

@@ -1,0 +1,438 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.opds.dao.ScmOpDispense2Mapper">
+    <sql id="showSelfCloum">
+        <if test="qrySelf!=null and qrySelf">
+            ,nvl((select count(distinct ord.PK_CNORD) - sum(case ord.FLAG_SELF when '1' then 1 else 0 end) from CN_ORDER
+            ord where ord.PK_PRES=pres.PK_PRES),-1) cnt_self
+        </if>
+    </sql>
+
+    <select id="qryLocalPdUpForm" parameterType="java.util.Map" resultType="DynaBean">
+        select pc.pk_deptunit, du.code, du.name, du.flag_open, du.flag_online
+        from bd_res_pc pc
+                     inner join bd_dept_unit du on pc.pk_deptunit = du.pk_deptunit
+        where pc.addr = #{namePc,jdbcType=VARCHAR}
+          and pc.flag_active = '1'
+          and du.eu_unittype = '1'
+          and du.eu_butype = '1'
+          and du.del_flag = '0'
+          and pc.del_flag = '0'
+          and du.pk_org = #{pkOrg,jdbcType=CHAR}
+          and du.pk_dept = #{pkDept,jdbcType=VARCHAR}
+    </select>
+
+    <select id="qryUnFinishedPiInfo" parameterType="java.util.Map" resultType="DynaBean">
+        select
+        distinct
+        pv.pk_pv,
+        pv.code_pv,
+        pv.name_pi,
+        pv.dt_sex,
+        pv.pk_pi,
+        pv.age_pv,
+        to_char(pres.date_reg,'yyyy-MM-dd HH24:mi:ss') date_reg,
+        pres.eu_detype,
+        pi.mobile,
+        pi.code_op,
+        pres.pres_no
+        <!-- ,pres.pk_presocc -->
+        from ex_pres_occ pres
+        inner join pv_encounter pv on pres.pk_pv = pv.pk_pv
+        inner join pi_master pi on pi.pk_pi=pv.pk_pi
+        <if test=' dateEndPlan !=null or dateBeginPlan !=null '>
+        inner join bl_settle bl on bl.pk_settle = pres.pk_settle
+        </if>
+        where pres.pk_dept_ex =#{pkDept,jdbcType=CHAR}
+        <if test="winno !=null and winno !=''">
+            and pres.winno_conf=#{winno,jdbcType=VARCHAR}
+        </if>
+        and pres.flag_reg='1'
+        and pres.flag_prep='1'
+        and pres.flag_conf='0'
+        and pres.flag_canc='0'
+        and (pres.flag_susp='0' OR pres.flag_susp IS NULL )
+        <if test='datePres!=null and datePres!=""'>
+            and pres.date_pres &gt;=to_date(#{datePres,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+        </if>
+        <if test='dateReg!=null and dateReg!=""'>
+            and pres.DATE_REG &gt;=to_date(#{dateReg,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+        </if>
+        <if test='codeOp!=null and codeOp!=""'>
+            and pi.code_op=#{codeOp,jdbcType=VARCHAR}
+        </if>
+        <if test='presNo!=null and presNo!=""'>
+            and (pres.PRES_NO = #{presNo,jdbcType=VARCHAR} or pi.code_op=#{presNo,jdbcType=VARCHAR} )
+        </if>
+        
+        <if test=' dateEndPlan !=null and dateEndPlan !=""'>
+            and bl.date_st &lt;=to_date(#{dateEndPlan,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+        </if>
+        <if test=' dateBeginPlan !=null and dateBeginPlan !=""'>
+            and bl.DATE_st &gt;=to_date(#{dateBeginPlan,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+        </if>
+        <!-- order by pres.date_reg -->
+    </select>
+
+    <select id="qryFinishedPiInfo" parameterType="java.util.Map" resultType="DynaBean">
+        SELECT
+        DISTINCT
+        pv.pk_pv,
+        pv.code_pv,
+        pv.name_pi,
+        pv.dt_sex,
+        pv.pk_pi,
+        pv.age_pv,
+        to_char(pres.date_reg,'yyyy-MM-dd HH24:mi:ss') date_reg,
+        pres.eu_detype,
+        pi.mobile,
+        pi.code_op
+        , pres.pres_no
+        <!-- ,pres.pk_presocc -->
+        FROM ex_pres_occ pres
+        INNER JOIN pv_encounter pv ON pres.pk_pv = pv.pk_pv
+        inner join pi_master pi on pi.pk_pi=pv.pk_pi
+        WHERE pres.pk_dept_ex =#{pkDept,jdbcType=CHAR}
+        <if test="winno !=null and winno !=''">
+            AND pres.winno_conf=#{winno,jdbcType=VARCHAR}
+        </if>
+        AND pres.flag_conf='1'
+        AND pres.flag_canc = '0'
+        AND pres.date_conf &gt;=to_date(#{dateStart,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        AND pres.date_conf &lt;=to_date(#{dateEnd,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        <if test='presNo!=null and presNo!=""'>
+            and (pres.PRES_NO = #{presNo,jdbcType=VARCHAR} or pi.code_op=#{presNo,jdbcType=VARCHAR} )
+        </if>
+        <!-- order by pres.date_reg -->
+    </select>
+
+
+    <select id="qryPendingPiInfo" parameterType="java.util.Map" resultType="DynaBean">
+        select
+        distinct
+        pv.pk_pv,
+        pv.code_pv,
+        pv.name_pi,
+        pv.dt_sex,
+        pv.pk_pi,
+        pv.age_pv,
+        pres.date_reg,
+        pres.eu_detype,
+        pi.code_op
+        , pres.pres_no
+        <!-- ,pres.pk_presocc -->
+        FROM ex_pres_occ pres
+        inner join pv_encounter pv on pres.pk_pv = pv.pk_pv
+        inner join pi_master pi on pi.pk_pi=pv.pk_pi
+        where pres.pk_dept_ex =#{pkDept,jdbcType=CHAR}
+        <if test="winno !=null and winno !=''">
+            and pres.winno_conf=#{winno,jdbcType=VARCHAR}
+        </if>
+        and pres.flag_prep='1'
+        and pres.flag_conf='0'
+        and pres.flag_susp='1'
+        and pres.flag_canc = '0'
+        <!-- order by pres.date_reg -->
+        <if test='datePres!=null and datePres!=""'>
+            and pres.date_pres &gt;=to_date(#{datePres,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+        </if>
+        <if test='presNo!=null and presNo!=""'>
+            and (pres.PRES_NO = #{presNo,jdbcType=VARCHAR} or pi.code_op=#{presNo,jdbcType=VARCHAR} )
+        </if>
+    </select>
+    <select id="qryUnFinishedPresInfo" parameterType="java.util.Map" resultType="DynaBean">
+        SELECT
+        pres.pk_presocc,
+        pres.pk_pres,
+        pres.pres_no,
+        st.date_st,
+        pres.date_pres,
+        pres.date_prep,
+        pres.pk_dept_pres,
+        pres.pk_emp_pres,
+        pres.name_emp_pres,
+        pres.name_emp_prep,
+        indiag.pk_diag,
+        indiag.desc_diag diagname,
+        to_char(pres.ts,'yyyy-MM-dd HH24:mm:ss') ts,
+        pres.eu_detype,
+        dept.name_dept name_dept_pres,
+        pres.dt_prestype,
+        pres.code_basket,
+        st.code_st
+        <include refid="showSelfCloum"/>
+        FROM ex_pres_occ pres
+        INNER JOIN bl_settle st ON pres.pk_settle = st.pk_settle
+        left join (select desc_diag ,pk_pv,PK_DIAG from (select row_number() over(partition by pk_pv order by flag_maj
+        desc) cnt, diag.pk_pv,diag.desc_diag ,diag.pk_diag from pv_diag diag ) res where res.cnt = 1) indiag on
+        indiag.PK_PV=pres.PK_PV
+        inner join bd_ou_dept dept on dept.pk_dept=pres.pk_dept_pres
+        where pres.pk_pv=#{pkPv,jdbcType=VARCHAR}
+        and pres.pk_dept_ex=#{pkDept,jdbcType=VARCHAR}
+        <if test="winno !=null and winno !=''">
+            and pres.winno_conf=#{winno,jdbcType=VARCHAR}
+        </if>
+        and pres.flag_reg='1' <!--已签到  -->
+        and pres.flag_prep='1' <!--已配药 -->
+        and pres.flag_conf='0' <!--未发药  -->
+        and pres.flag_canc='0'
+        and pres.flag_susp='0' <!-- 挂起 -->
+        <if test='euDetype!=null and euDetype!=""'>
+            <!-- 解决前台未传入此参数无法查询到处方明细问题 -->
+            and pres.eu_detype=#{euDetype,jdbcType=VARCHAR}
+        </if>
+        <if test='presNo!=null and presNo!=""'>
+            and pres.PRES_NO = #{presNo,jdbcType=VARCHAR}
+        </if>
+        <!-- and pres.pk_presocc =#{pkPresocc,jdbcType=VARCHAR} -->
+        <if test='dbType!=null and dbType!="" and dbType=="oralce"'>
+            and to_char(pres.date_reg,'YYYY-MM-dd HH:mm:ss')=to_char(to_date(#{dateReg},'yyyymmddhh24miss'),'YYYY-MM-dd HH:mm:ss')
+        </if>
+        <if test='dbType!=null and dbType!="" and dbType=="sqlserver"'>
+            AND CONVERT(VARCHAR(19),pres.date_reg, 20)= CONVERT(VARCHAR(19),to_date(#{dateReg}, 'yyyymmddhh24miss' ),
+            20)
+        </if>
+    </select>
+    <select id="qryFinishedPresInfo" parameterType="java.util.Map" resultType="DynaBean">
+        SELECT
+        pres.pk_presocc,
+        pres.pk_pres,
+        pres.pres_no,
+        st.date_st,
+        pres.date_pres,
+        pres.date_prep,
+        pres.pk_dept_pres,
+        pres.pk_emp_pres,
+        pres.name_emp_pres,
+        pres.name_emp_prep,
+        indiag.pk_diag,
+        indiag.DESC_DIAG diagname,
+        to_char(pres.ts,'yyyy-MM-dd HH24:mm:ss') ts,
+        pres.eu_detype,
+        dept.name_dept name_dept_pres,
+        pres.dt_prestype,
+        st.code_st
+        <include refid="showSelfCloum"/>
+        FROM ex_pres_occ pres
+        INNER JOIN bl_settle st ON pres.pk_settle = st.pk_settle
+        left join (select desc_diag ,pk_pv,PK_DIAG from (select row_number() over(partition by pk_pv order by flag_maj
+        desc) cnt, diag.pk_pv,diag.desc_diag ,diag.pk_diag from pv_diag diag ) res where res.cnt = 1) indiag on
+        indiag.PK_PV=pres.PK_PV
+        inner join bd_ou_dept dept on dept.pk_dept=pres.pk_dept_pres
+        where pres.pk_pv=#{pkPv,jdbcType=VARCHAR}
+        and pres.pk_dept_ex=#{pkDept,jdbcType=VARCHAR}
+        and pres.winno_conf=#{winno,jdbcType=VARCHAR}
+        and pres.flag_conf='1' <!--已发药 -->
+        and pres.flag_canc='0'
+        and pres.eu_detype=#{euDetype,jdbcType=VARCHAR}
+        <!-- and pres.pk_presocc =#{pkPresocc,jdbcType=VARCHAR} -->
+
+        <if test='dbType!=null and dbType!="" and dbType=="oralce"'>
+            and to_char(pres.date_reg,'YYYY-MM-dd HH:mm:ss')=to_char(to_date(#{dateReg},'yyyymmddhh24miss'),'YYYY-MM-dd HH:mm:ss')
+        </if>
+        <if test='dbType!=null and dbType!="" and dbType=="sqlserver"'>
+            AND CONVERT(VARCHAR(19),pres.date_reg, 20)= CONVERT(VARCHAR(19),to_date(#{dateReg}, 'yyyymmddhh24miss' ),
+            20)
+        </if>
+    </select>
+    <select id="qryPendingPresInfo" parameterType="java.util.Map" resultType="DynaBean">
+        select
+        pres.pk_presocc,
+        pres.pk_pres,
+        pres.pres_no,
+        st.date_st,
+        pres.date_pres,
+        pres.date_prep,
+        pres.pk_dept_pres,
+        pres.pk_emp_pres,
+        pres.name_emp_pres,
+        pres.name_emp_prep,
+        pres.pk_diag,
+        indiag.desc_diag diagname,
+        to_char(pres.ts,'yyyy-MM-dd HH24:mm:ss') ts,
+        pres.eu_detype,
+        dept.name_dept name_dept_pres,
+        pres.dt_prestype,
+        pres.code_basket,
+        st.code_st
+        <include refid="showSelfCloum"/>
+        from ex_pres_occ pres
+        inner join bl_settle st ON pres.pk_settle = st.pk_settle
+        left join (select desc_diag ,pk_pv,PK_DIAG from (select row_number() over(partition by pk_pv order by flag_maj
+        desc) cnt, diag.pk_pv,diag.desc_diag ,diag.pk_diag from pv_diag diag ) res where res.cnt = 1) indiag on
+        indiag.PK_PV=pres.PK_PV
+        inner join bd_ou_dept dept on dept.pk_dept=pres.pk_dept_pres
+        where pres.pk_pv=#{pkPv,jdbcType=VARCHAR}
+        and pres.pk_dept_ex=#{pkDept,jdbcType=VARCHAR}
+        and pres.winno_conf=#{winno,jdbcType=VARCHAR}
+        and pres.flag_prep='1' <!--已配药 -->
+        and pres.flag_conf='0' <!--未发药  -->
+        and pres.flag_susp='1' <!--挂起  -->
+        and pres.flag_canc='0'
+        and pres.eu_detype=#{euDetype,jdbcType=VARCHAR}
+        <!-- and pres.pk_presocc =#{pkPresocc,jdbcType=VARCHAR} -->
+
+        <if test='dbType!=null and dbType!="" and dbType=="oralce"'>
+            and to_char(pres.date_reg,'YYYY-MM-dd HH:mm:ss')=to_char(to_date(#{dateReg},'yyyymmddhh24miss'),'YYYY-MM-dd HH:mm:ss')
+        </if>
+        <if test='dbType!=null and dbType!="" and dbType=="sqlserver"'>
+            AND CONVERT(VARCHAR(19),pres.date_reg, 20)= CONVERT(VARCHAR(19),to_date(#{dateReg}, 'yyyymmddhh24miss' ),
+            20)
+        </if>
+    </select>
+
+    <select id="qryPresDetialInfo" parameterType="java.util.Map" resultType="DynaBean">
+        select dt.pk_presoccdt,
+               dt.pk_pd,
+               dt.pack_size,
+               pd.name,
+               pd.pk_factory,
+               pd.spec,
+               dt.pk_unit,
+               dt.quan_cg,
+               dt.price,
+               dt.amount_cg,
+               ord.pk_unit_dos,
+               ord.code_supply,
+               ord.code_freq,
+               ord.NOTE_ORD,
+               pds.posi_no,
+               ord.ordsn_parent,
+               ord.ordsn,
+               fa.name                                                                    factory,
+               unit.name                                                                  unit,
+               freq.name                                                                  freq,
+               pack.name                                                                  pack_name,
+               min.name                                                                   min_name,
+               pd.pack_size                                                               pack_size_pd,
+               ord.FLAG_SELF,
+               case when ord.code_ordtype = '0103' then herbdoc.name else supply.name end supply,
+               case when ord.code_ordtype = '0103' then herb.quan else ord.dosage end     dosage,
+               case when ord.code_ordtype = '0103' then herbunit.name else un.name end    unitdos,
+               case when ord.code_ordtype = '0103' then ord.ords else ord.days end        days
+        FROM bd_pd pd
+                     inner join ex_pres_occ_dt dt on pd.pk_pd = dt.pk_pd
+                     inner join cn_order ord on dt.pk_cnord = ord.pk_cnord
+                     inner join bd_pd_store pds on pd.pk_pd = pds.pk_pd and pds.pk_dept = ord.pk_dept_exec
+                     left join bd_factory fa on fa.pk_factory = pd.pk_factory
+                     left join bd_unit unit on unit.pk_unit = dt.pk_unit
+                     left join bd_unit un on un.pk_unit = ord.pk_unit_dos
+                     left join bd_supply supply on supply.code = ord.code_supply
+                     left join bd_term_freq freq on freq.code = ord.code_freq
+                     left join cn_ord_herb herb on herb.pk_cnord = ord.pk_cnord and herb.pk_pd = dt.pk_pd
+                     left join bd_unit herbunit on herbunit.pk_unit = herb.pk_unit
+                     left join bd_unit pack on pack.PK_UNIT = pd.PK_UNIT_PACK
+                     left join BD_UNIT min on min.PK_UNIT = pd.PK_UNIT_MIN
+                     left join bd_defdoc herbdoc
+                on herbdoc.code_defdoclist = '030410' and herbdoc.code = herb.dt_herbusage
+        where dt.pk_presocc = #{pkPresocc,jdbcType=VARCHAR}
+          and (dt.quan_ret = '0' or dt.quan_ret is null)
+        order by ord.ordsn_parent, ord.ordsn
+    </select>
+
+    <select id="selectPdUpForm" parameterType="java.util.Map" resultType="DynaBean">
+        select
+        du.pk_deptunit,du.code,du.name,du.flag_open,du.flag_online
+        from bd_dept_unit du
+        where du.pk_dept=#{pkDept,jdbcType=VARCHAR}
+        and du.eu_unittype='1'
+        and du.eu_butype='1'
+        and du.del_flag='0'
+        <if test="pkDeptunit !=null and pkDeptunit!=''">
+            and du.pk_deptunit!=#{pkDeptunit,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+    <update id="updatePendingPd" parameterType="java.util.Map">
+        update ex_pres_occ pres
+        set pres.flag_susp='1',
+        pres.eu_status='8'
+        where pres.pk_presocc in
+        <foreach collection="pkPresoccs" item="pkPresocc" index="index" open="(" close=")" separator=",">
+            #{pkPresocc,jdbcType=VARCHAR}
+        </foreach>
+        and pres.winno_conf=#{winno,jdbcType=VARCHAR}
+        and pres.flag_conf='0'
+        and pres.flag_susp='0'
+    </update>
+
+    <update id="startPdForm" parameterType="java.util.Map">
+        update bd_dept_unit
+        set flag_online='1'
+        where eu_unittype = '1'
+          and eu_butype = '1'
+          and pk_dept = #{pkDept,jdbcType=VARCHAR}
+          and code = #{code,jdbcType=VARCHAR}
+          and flag_online = '0'
+    </update>
+
+    <update id="stopPdForm" parameterType="java.util.Map">
+        update bd_dept_unit
+        set flag_online='0'
+        where eu_unittype = '1'
+          and eu_butype = '1'
+          and pk_dept = #{pkDept,jdbcType=VARCHAR}
+          and code = #{code,jdbcType=VARCHAR}
+          and flag_online = '1'
+    </update>
+
+    <select id="qryHerbOrder" parameterType="java.util.Map" resultType="DynaBean">
+        select
+        ret.pk_pv,
+        pv.code_pv,
+        pv.name_pi,
+        ret.pres_no,
+        ret.eu_status,
+        ret.orderid order_no,
+        ret.create_time date_conf,
+        emp.NAME_EMP name_emp_ex
+        from ex_pd_ext_ret ret
+        inner join pv_encounter pv on pv.pk_pv =ret.pk_pv
+        inner join bd_ou_employee emp on emp.PK_EMP=ret.CREATOR
+        inner join ex_pres_occ occ on occ.pres_no =ret.pres_no and occ.pk_pv=ret.pk_pv
+        where occ.pk_dept_ex=#{pkDept,jdbcType=VARCHAR}
+        <if test='codePv!=null and codePv!=""'>
+            and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+        </if>
+        <if test='presNo!=null and presNo!=""'>
+            and pv.presNo=#{presNo,jdbcType=VARCHAR}
+        </if>
+        <if test='dateStart!=null and dateStart!=""'>
+            and ret.create_time &gt;= to_date(#{dateStart},'YYYYMMDDHH24MISS')
+        </if>
+        <if test='dateEnd!=null and dateEnd!=""'>
+            and ret.create_time &lt;=to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+        </if>
+    </select>
+
+    <select id="getCodeOpByPiInfo" parameterType="java.util.Map" resultType="java.lang.String">
+        select
+        pi.code_op
+        from pi_master pi
+        inner join pv_encounter pv on pv.pk_pi=pi.pk_pi
+        left join pi_card card on card.pk_pi=pi.pk_pi
+        where 1=1
+        <if test='codeType!=null and codeType=="0"'>
+            and pi.code_op like '%' || #{code,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test='codeType!=null and codeType=="5"'>
+            and pi.code_pi like '%' || #{code,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test='codeType!=null and codeType=="1"'>
+            and pi.id_no like '%' || #{code,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test='codeType!=null and codeType=="3"'>
+            and pi.insur_no like '%' || #{code,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test='codeType!=null and codeType=="4"'>
+            and pv.code_pv like '%' || #{code,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test='codeType!=null and codeType=="2"'>
+            and card.card_no like '%' || #{code,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test='codeType!=null and codeType=="6"'>
+            and pi.hic_no like '%' || #{code,jdbcType=VARCHAR} || '%'
+        </if>
+        group by pi.code_op
+    </select>
+</mapper>

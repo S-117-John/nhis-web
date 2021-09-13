@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.platform.common.dao.UserMapper">
+
+   <select id="queryMenuElements"  parameterType="java.lang.String" resultType="com.zebone.platform.common.support.UserMenuElement">
+	   SELECT DISTINCT el.PK_MENU,el.PK_ORG,el.PK_ELEMENT,el.CODE_EL,el.NAME_EL,el.FLAG_ENABLE,el.NOTE
+       FROM BD_OU_USER u
+       LEFT OUTER JOIN BD_OU_USER_ROLE ur ON u.PK_USER = ur.PK_USER 
+       LEFT OUTER JOIN BD_OU_ROLE r ON ur.PK_ROLE = r.PK_ROLE 
+       LEFT OUTER JOIN BD_OU_ROLE_OPER ro  ON ro.PK_ROLE = r.PK_ROLE 
+       LEFT OUTER JOIN BD_OU_MENU m  ON m.PK_MENU = ro.PK_MENU
+       LEFT OUTER JOIN BD_OU_OPER o ON m.PK_OPER = o.PK_OPER
+       left outer join BD_OU_ELEMENT el on el.PK_MENU = m.PK_MENU
+       WHERE ur.DEL_FLAG = '0' and m.FLAG_ACTIVE = '1'  
+       and el.DEL_FLAG='0' 
+		<if test="pkUser != null  and  pkUser != ''">
+			AND u.PK_USER = #{pkUser,jdbcType=CHAR}  
+		</if> 
+	  order by el.PK_MENU
+	</select>
+	 
+</mapper>

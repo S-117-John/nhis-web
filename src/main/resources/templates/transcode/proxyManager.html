@@ -1,0 +1,67 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>代理名称管理</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+    <link href="${ctx}/ui/css/main.css" rel="stylesheet" type="text/css" />
+    <script src="${ctx}/ui/boot.js" type="text/javascript"></script>
+    
+
+    <style type="text/css">
+    html, body
+    {
+        font-size:12px;
+        padding:0;
+        margin:0;
+        border:0;
+        height:100%;
+        overflow:hidden;
+    }
+    </style>
+</head>
+<body>    
+   <div id="treegrid" class = "zbui-treegrid" style="width:100%;height:100%;"  url="${ctx}/transcode/loadAllProxyNames" 
+   showTreeIcon="true" treeColumn="module" idField="id" parentField="pid" resultAsTree="false"  expandOnLoad="true" 
+   allowCellEdit="true" allowCellSelect="true">
+   			<div property="columns">
+		        <div type="indexcolumn" width="40px"></div>
+		        <div name="module" field="text" align="left" headerAlign="center">模块功能名称</div>
+		        <div field="proxyname" align="center" headerAlign="center">代理名称
+		        	<input property="editor" class="zbui-textbox" style="width:100%;" />
+		        </div>
+		        <div field="id" align="center" headerAlign="center">模块</div>
+		        <div field="pid" align="center" headerAlign="center">父模块</div>
+		    </div>
+   </div>
+
+<script type="text/javascript">
+zbui.parse();
+
+var treegrid = zbui.get("treegrid");
+
+treegrid.on('cellendedit',function(e){
+	console.info(e.row.id);
+	console.info(e.value);
+	var proname = null;
+	if(e.value != null){
+		proname = e.value.toUpperCase();
+	}
+	var json = zbui.encode({ id : e.row.id, proxyname : proname});
+	$.ajax({
+		  url: "${ctx}/oper/saveProxyNames",//更新代理名称
+          data: { transCode : json },
+          success: function (text) {
+        	  if(text.indexOf("<title>404 - 页面不存在</title>") != -1){
+          		alert("正式运行环境下，无此操作权限！");
+          		return ;
+          	  }
+        	  treegrid.reload();
+          }
+	});
+});
+
+</script> 
+</body>
+</html>

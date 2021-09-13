@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.opdw.dao.OpOrderMapper" >
+
+  <select id="getEmpPresAuthority" parameterType="java.util.Map" resultType="DynaBean">
+		select emp.dt_empsrvtype, --医疗项目权限
+		       emp.flag_pres,     --处方权
+		       emp.flag_anes,     --麻醉处方权
+		       emp.flag_spir_one, --精一药品
+		       emp.flag_spir_sec, --精二药品
+		       emp.flag_poi,       --毒性药品
+		       emp.eu_drtype,
+		       emp.eu_drtype as dt_drtype,
+		       emp.dt_identype  
+		from bd_ou_employee emp
+		where emp.pk_emp=#{pkEmp,jdbcType=VARCHAR} and 
+		       emp.flag_active='1'
+  </select>  
+  
+  <select id="getDrugStore" parameterType="java.util.Map" resultType="DynaBean">
+		 select busa.pk_dept, busa.pk_org   
+		 from bd_dept_bus bus
+		       inner join bd_dept_bu bu on bus.pk_deptbu=bu.pk_deptbu
+		       inner join bd_dept_bus busa on bus.pk_deptbu=busa.pk_deptbu
+		 where busa.dt_depttype='0402' and
+		       bu.dt_butype='06' and
+		       bus.pk_dept=#{pkDept,jdbcType=VARCHAR} and
+		       busa.del_flag=0
+  </select> 
+  
+  <select id="getPrescription" parameterType="java.util.Map" resultType="DynaBean">
+		 select distinct
+		      pres.pk_pres,     --主键
+		      pres.pk_pv,  --就诊记录号
+		      pres.pk_pi,
+		      pres.pres_no,     --处方号码
+		      prestype.name prestype,--处方类型
+		      pres.dt_properties,--处方性质
+		      pres.date_pres,   --处方日期
+		      pres.name_emp_ord,--开立医生
+		      pres.pk_diag,     --诊断
+		      pres.note,        --备注
+		      pres.DT_EXTREASON,        --延长处方用药时间原因
+		      cg.flag_acc,      --账户支付标志
+              cg.flag_settle,
+		      pres.dt_prestype,  --处方类型编码
+		      pres.ts,
+		      pres.name_agent,
+		      pres.idno_agent,
+		      pres.addr_agent,
+		      pres.tel_agent,
+		      pres.pk_dept_ns,
+		      diag.diagname	--诊断名称
+		      --(case when tempp.pk_temp_cgo is null then '0' else '1' end) flagBarPrint
+		 from cn_prescription pres
+		      inner join bd_defdoc prestype on pres.dt_prestype=prestype.code and prestype.code_defdoclist='060101'
+		      --inner join bl_op_dt cg on pres.pk_pres=cg.pk_pres
+		      left outer join bl_op_dt cg on pres.pk_pres=cg.pk_pres
+			  -- left outer join bl_settle st on st.pk_settle=cg.pk_settle
+			  -- left outer join temp_bl_op_dt temp on (temp.pk_pres=pres.pk_pres and temp.del_flag='0')
+		      left join bd_term_diag diag on diag.pk_diag=pres.pk_diag
+		 where pres.pk_pv=#{pkPv,jdbcType=VARCHAR}
+		 <if test="pkEmp != null and pkEmp != ''">
+		  and  pres.creator=#{pkEmp,jdbcType=VARCHAR}
+		  </if>
+		  and
+		      pres.dt_prestype &lt;&gt; '02' --02为草药处方
+		      and cg.pk_cgop_back is null
+			  -- 	and not exists (select 1 from bl_settle back
+			  -- 		where st.pk_settle=back.pk_settle_canc
+			  -- 		and st.pk_pv=back.pk_pv)
+		 order by pres.pres_no  
+  </select> 
+  
+  
+  
+   <select id="getPrescriptionNems" parameterType="java.util.Map" resultType="DynaBean">
+		 select distinct
+		      pres.pk_pres,     --主键
+		      pres.pk_pv,  --就诊记录号
+		      pres.pk_pi,  
+		      pres.pres_no,     --处方号码
+		      prestype.name prestype,--处方类型
+		      pres.dt_properties,--处方性质
+		      pres.date_pres,   --处方日期
+		      pres.name_emp_ord,--开立医生
+		      pres.pk_diag,     --诊断
+		      pres.note,        --备注
+		      pres.DT_EXTREASON,        --延长处方用药时间原因
+		      cg.flag_acc,      --账户支付标志
+		      pres.dt_prestype,  --处方类型编码
+		      pres.ts,
+		      pres.name_agent, 
+		      pres.idno_agent,  
+		      pres.addr_agent,  
+		      pres.tel_agent,
+		      pres.pk_dept_ns,
+		      diag.diagname,	--诊断名称
+		      dept.CODE_DEPT,
+		      dept.name_dept,
+		      emp.code_emp as code_emp_ord,
+		      (case when temp.pk_temp_cgop is null then '0' else '1' end) flagBarPrint  
+		 from cn_prescription pres
+		      inner join bd_defdoc prestype on pres.dt_prestype=prestype.code and prestype.code_defdoclist='060101'
+		      --inner join bl_op_dt cg on pres.pk_pres=cg.pk_pres
+		      left outer join bl_op_dt cg on pres.pk_pres=cg.pk_pres
+		      left outer join bl_settle st on st.pk_settle=cg.pk_settle 
+		      left outer join temp_bl_op_dt temp on (temp.pk_pres=pres.pk_pres and temp.del_flag='0')
+		      left join bd_term_diag diag on diag.pk_diag=pres.pk_diag
+		      left join bd_ou_dept dept on dept.pk_dept=pres.pk_dept
+		      left join bd_ou_employee emp on emp.pk_emp=pres.pk_emp_ord
+		      
+		 where pres.pk_pv=#{pkPv,jdbcType=VARCHAR} 
+		 <if test="pkEmp != null and pkEmp != ''">
+		  and  pres.creator=#{pkEmp,jdbcType=VARCHAR}
+		  </if>
+		  and 	      
+		      pres.dt_prestype &lt;&gt; '02' --02为草药处方
+		      and cg.pk_cgop_back is null
+		      and not exists (select 1 from bl_settle back 
+						where st.pk_settle=back.pk_settle_canc 
+						and st.pk_pv=back.pk_pv)
+		 order by pres.pres_no     
+  </select> 
+  <select id="getPrescriptionDetail" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+		       distinct
+		       ord.*,  
+		       ordtype.name as name_ord_type,
+		       unit.name unit,  --单位名称
+		       unit_dos.name unit_dos,--单位名称
+		       sup.name supply, --用法名称
+		       freq.name freq,  --频次名称
+		       ord.price_cg as price_org,     --单价
+		       (ord.price_cg * ord.quan_cg) as amount,   --金额
+		       pd.pk_unit_min, 
+		       pd.pk_unit_wt,  
+		       pd.pk_unit_vol,
+	           pd.eu_Drugtype,
+
+	           pd.eu_sex,
+	           pd.age_min,
+	           pd.age_max,
+	           pd.flag_st,
+	           pd.Dt_Pois,
+	           pd.Dt_Anti,
+				  pd.pk_ordtype,
+				  pd.pk_itemcate,
+		       pd.vol,
+	           nvl(attr.Val_Attr,'1') as val_attr,
+		       <if test="pkDeptExec != null and pkDeptExec != ''">stk.quan_min/ord.pack_size as quan_pack,</if>
+		       factory.name as NameFactory,
+		       pres.note 
+		from cn_order ord
+		       left outer join bd_unit unit on ord.pk_unit_cg=unit.pk_unit
+		       left outer join bd_unit unit_dos on ord.pk_unit_dos=unit_dos.pk_unit
+		       left outer join bd_term_freq freq on ord.code_freq=freq.code
+		       left outer join bd_supply sup on ord.code_supply=sup.code
+		       left outer join bd_pd pd on ord.pk_ord=pd.pk_pd
+	           left join bd_dictattr attr on pd.pk_pd = attr.pk_dict
+	           left join bd_dictattr_temp attrtmp
+	           on attrtmp.pk_dictattrtemp = attr.pk_dictattrtemp
+	             and  attrtmp.code_attr = '0505'
+		       <if test="pkDeptExec != null and pkDeptExec != ''">
+		   	   left outer join (select sum(quan_min - quan_prep) quan_min, pk_pd 
+                             from pd_stock
+                            where del_flag = '0'
+                              and pk_dept = #{pkDeptExec,jdbcType=VARCHAR} and flag_stop_op='0'  
+                            group by pk_pd) stk
+                on pd.pk_pd = stk.pk_pd 
+		     </if>
+		      
+		       left outer join bd_factory factory ON pd.pk_factory=factory.pk_factory AND factory.DEL_FLAG = '0'
+		       LEFT OUTER JOIN CN_PRESCRIPTION pres ON pres.pk_pres = ord.pk_pres
+		       left join
+			   BD_ORDTYPE ordtype on
+			   ordtype.code=ord.CODE_ORDTYPE
+		where ord.pk_pres=#{pkPres,jdbcType=VARCHAR}
+
+  </select>   
+  <select id="getPresDetailChargeAdd" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+             *
+		from bl_op_dt charge
+		where 
+		     charge.pk_item in (select pk_item from bd_supply_item) and
+		     charge.pk_pres=#{pkPres,jdbcType=VARCHAR}
+  </select>     
+  
+    <select id="getSupplyItem" parameterType="java.util.Map" resultType="DynaBean">
+      select 
+             supply.code code_supply,  
+             supply.name name_supply ,
+             supplyitem.pk_supply, 
+             supplyitem.eu_pvtype,
+             supplyitem.quan, 
+             item.pk_item, 
+             item.code, 
+             item.name, 
+             item.pk_unit, 
+             item.pk_itemcate, 
+             item.note, 
+             item.price, 
+             item.spec, 
+             item.flag_pd,
+             supplyitem.eu_mode
+        from bd_supply_item supplyitem 
+         inner join bd_supply supply on supplyitem.pk_supply = supply.pk_supply
+         inner join bd_item item on item.pk_item = supplyitem.pk_item and item.flag_active = '1' and item.del_flag = '0' 
+       where supplyitem.eu_pvtype in ('1','2') or supplyitem.eu_pvtype is null or supplyitem.EU_PVTYPE=''
+  </select>   
+  <!-- 获取临床医嘱相关数据  -->
+	<select id="listCnOrder" parameterType="java.util.Map"
+		resultType="java.util.Map">
+	SELECT
+		cn.PK_ORD AS PkOrd,
+		cn.PK_PRES AS PkPres,
+		cn.NAME_ORD AS NameOrd,
+		cn.CODE_ORDTYPE AS
+		CodeOrdType,
+		cn.QUAN AS QUAN,
+		bdo.PK_ORDTYPE PkOrdType,
+		bdt.NAME AS
+		NameOrdType,
+		cn.PK_PI AS PkPi,
+		cn.pk_cnord PkCnord,
+		cn.PK_PV AS PkPv,
+		cn.code_freq AS CodeFreq,
+		cn.code_supply AS CodeSupply,
+		cn.quan AS Quan,
+		cn.quan_cg AS QuanCg,
+		cn.pk_dept_exec AS PkDeptExec,
+		cn.date_start AS
+		DateStart,
+		cn.pk_emp_ord AS PkEmpOrd,
+		cn.eu_status_ord AS EuStatusOrd,
+		cn.pk_unit AS PkUnit,
+		cn.spec AS Spec,
+		cn.note_supply AS NoteSupply,
+		cn.ordsn AS Ordsn,
+		cn.ords AS Ords,
+		cn.ordsn_parent AS OrdsnParent,
+		cn.pk_emp_ord AS PkEmpOrd,
+		cn.name_emp_ord AS NameEmpOrd,
+		cn.DATE_ENTER AS DateEnter,
+		cn.ts as Ts,
+		occ.eu_status as EuStatus,
+		occ.pk_emp_occ as PkEmpOcc,
+		occ.name_emp_occ as NameEmpOcc,
+		occ.date_occ as DateOcc,
+		pi.name_pi as NamePi,
+		pv.code_pv as CodePv,
+		emp.dt_emptype as DtEmptype
+		<!-- ,bl.PK_CGOP -->
+		FROM
+		CN_ORDER cn
+		LEFT JOIN bd_ou_employee emp ON cn.pk_emp_ord =
+		emp.pk_emp
+		AND
+		emp.DEL_FLAG = '0'
+		LEFT JOIN BD_ORD bdo ON cn.PK_ORD =
+		bdo.PK_ORD
+		AND bdo.DEL_FLAG = '0'
+		LEFT JOIN EX_ORDER_OCC occ ON cn.PK_CNORD =
+		occ.PK_CNORD
+		AND occ.DEL_FLAG = '0'
+		LEFT JOIN BD_ORDTYPE bdt ON
+		bdo.PK_ORDTYPE = bdt.PK_ORDTYPE
+		AND bdt.DEL_FLAG = '0'
+		LEFT JOIN
+		pi_master pi ON cn.PK_PI = pi.PK_PI
+		AND pi.DEL_FLAG = '0'
+		LEFT JOIN
+		pv_encounter pv ON cn.PK_PV = pv.PK_PV
+		AND pv.DEL_FLAG = '0'
+		WHERE
+		cn.DEL_FLAG = '0'
+		<if test="pkCnord != null and pkCnord != ''">
+			AND cn.pk_cnord = #{pkCnord,jdbcType=VARCHAR}
+		</if>
+		<if test="euStatusOrd != null and euStatusOrd != ''">
+			AND cn.eu_status_ord = #{euStatusOrd,jdbcType=VARCHAR}
+		</if>
+		<if test="flagPrint != null and flagPrint != ''">
+			AND cn.FLAG_PRINT = #{flagPrint,jdbcType=VARCHAR}
+		</if>
+		<if test="pkPvs != null">
+			AND cn.pk_pv in
+			<foreach collection="pkPvs" item="pkPv" index="index"
+				open="(" close=")" separator=",">
+				#{pkPv,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+		<if test="codeOrdtypes != null">
+		AND		
+			<foreach collection="codeOrdtypes" item="codeOrdtype" index="index"
+				open="(" close=")" separator="or">
+				cn.CODE_ORDTYPE LIKE '${codeOrdtype}%'
+			</foreach>
+		</if>
+	</select>
+	
+	<select id="GetPiCurrMonthPdDays" parameterType="java.util.Map" resultType="java.util.Map">
+	select ord.pk_ord,
+       ord.name_ord,
+       sum(ord.days) days,
+       sum(cg.quan) quan
+  from cn_order ord
+       inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+       left outer join bl_op_dt cg on ord.pk_cnord=cg.pk_cnord
+ where 
+        <if test="pkPi != null and pkPi != ''">
+			pv.pk_pi = #{pkPi,jdbcType=VARCHAR} and
+		</if>
+       pv.eu_pvtype='1' and   
+       ord.flag_durg='1' and
+       ord.code_ordtype <![CDATA[ < ]]> '0103'
+       <if test="firstDayOfMonth != null and firstDayOfMonth != ''">
+			and ord.date_start &gt;= to_date(#{firstDayOfMonth,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+		</if>
+		<if test="lastDayOfMonth != null and lastDayOfMonth != ''">
+			and ord.date_start &lt;= to_date(#{lastDayOfMonth,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+		</if>
+		<if test="pkPv != null and pkPv != ''">
+			and ord.pk_pv != #{pkPv,jdbcType=VARCHAR}
+		</if>          
+group by ord.pk_ord,
+       ord.name_ord
+having nvl(sum(cg.quan),1) <![CDATA[ > ]]> 0
+	
+	</select>
+</mapper>

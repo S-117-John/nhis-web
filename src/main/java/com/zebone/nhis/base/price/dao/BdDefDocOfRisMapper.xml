@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.base.price.dao.BdDefDocOfRisMapper">
+	
+	<!-- 查询检验标本|容器 - 码表数据 -->
+	<select id="queryDefdocOfRis"  parameterType="java.util.Map" resultType="DynaBean">
+		select def.* 
+		  from bd_defdoc def
+		 where def.del_flag = '0' and ltrim(rtrim(def.pk_org)) ='~' 
+		 <!--  yangxue注释
+		<if test="pkOrg !=null and pkOrg != ''">
+			and def.pk_org=#{pkOrg,jdbcType=CHAR}
+		</if>
+		-->
+		<if test="codeDefdoclist !=null and codeDefdoclist != ''">
+		    and def.code_defdoclist = #{codeDefdoclist,jdbcType=CHAR}
+		</if>
+		<if test="codeDefdoc !=null and codeDefdoc != ''">
+			and def.code = #{codeDefdoc,jdbcType=CHAR}
+		</if>
+		<if test="code !=null and code != ''">
+			and ( def.code like '%${code}%' 
+			   or def.name like '%${code}%' 
+ 		       or def.py_code like '%${code}%'   
+ 		  	   or def.d_code like '%${code}%' 
+			)
+		</if>
+		  order by code
+	</select>
+	
+	<!-- 查询检验标本|容器 - 对应收费项目 -->
+	<select id="queryItemDefdocOfRis"  parameterType="java.util.Map" resultType="DynaBean">
+		select item.code code_item,
+			   item.name name_item,
+			   item.spec,
+			   item.price,
+			   unit.name name_unit,
+			   bid.*
+ 		  from bd_item_defdoc bid 
+	     inner join bd_item item on bid.pk_item=item.pk_item
+	      left join bd_unit unit on item.pk_unit=unit.pk_unit 
+		 where bid.del_flag = '0' 
+		<if test="codeDefdoc !=null and codeDefdoc != ''">
+			and bid.code_defdoc = #{codeDefdoc,jdbcType=CHAR}
+		</if>
+		<if test="codeDefdoclist !=null and codeDefdoclist != ''">
+		    and bid.code_defdoclist = #{codeDefdoclist,jdbcType=CHAR}
+		</if>
+		  order by item.code
+	</select>
+	
+	<!-- 判断容器|标本的编码|名称是否唯一 -->
+	<select id="queryDefdocCntByCon" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(1) from bd_defdoc 
+		 where del_flag='0'
+		<if test="codeDefdoclist !=null and codeDefdoclist != ''">
+		   and code_defdoclist = #{codeDefdoclist,jdbcType=CHAR}
+		</if>
+		 <if test="code !=null and code != ''">
+		   and code = #{code,jdbcType=CHAR}
+		</if>
+		<if test="name !=null and name != ''">
+		   and name = #{name,jdbcType=CHAR}
+		</if>
+		<if test="pkDefdoc !=null and pkDefdoc != ''">
+		   and pk_defdoc &lt;&gt; #{pkDefdoc,jdbcType=CHAR}
+		</if>
+	</select>
+	
+	<!-- 删除检验标本|容器 - 码表数据 -->
+	<delete id="deleteDefdocOfRis" parameterType="java.util.Map">
+		delete from bd_defdoc 
+		 where code_defdoclist = #{codeDefdoclist,jdbcType=CHAR} 
+		   and pk_defdoc = #{pkDefdoc,jdbcType=CHAR}
+	</delete>
+	
+	<!-- 删除检验标本|容器 - 对应收费项目 -->
+	<delete id="deleteItemDefdocOfRis" parameterType="java.util.Map">
+		delete from bd_item_defdoc where del_flag = '0'
+		<if test="codeDefdoc !=null and codeDefdoc != ''">
+			and code_defdoc = #{codeDefdoc,jdbcType=CHAR}
+		</if>
+		<if test="codeDefdoclist !=null and codeDefdoclist != ''">
+			and code_defdoclist = #{codeDefdoclist,jdbcType=CHAR} 
+		</if>
+		<if test="pkItemdefdoc !=null and pkItemdefdoc != ''">
+			and pk_itemdefdoc = #{pkItemdefdoc,jdbcType=CHAR}
+		</if>
+	</delete>
+</mapper>

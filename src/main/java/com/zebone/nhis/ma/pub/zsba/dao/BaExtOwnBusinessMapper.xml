@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.zsba.dao.BaExtOwnBusinessMapper">
+    <select id="queryRisAndLisPkCnords" resultType="java.lang.String">
+        select cn.PK_CNORD
+        from CN_ORDER cn
+        inner join BD_ORD bd on cn.PK_ORD = bd.PK_ORD
+        where exists(select 1
+        from BD_ORDTYPE bdt
+        where substr(bdt.CODE, 1, 2) in ('03', '02','12') and bdt.CODE = bd.CODE_ORDTYPE)
+        and cn.PK_CNORD in
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+
+    </select>
+    <select id="queryExOrderOcc" resultType="com.zebone.nhis.common.module.ex.nis.ns.ExOrderOcc">
+        select PK_EXOCC,PK_CNORD,PK_PV
+        from EX_ORDER_OCC
+        where PK_CNORD in
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+
+    </select>
+    <select id="queryBlIpDt" resultType="com.zebone.nhis.common.module.bl.BlIpDt">
+
+        select PK_CGIP, PK_PV, PK_CNORD, PK_EMP_APP, NAME_EMP_APP
+        from BL_IP_DT
+        where PK_CNORD in
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+
+    </select>
+
+</mapper>

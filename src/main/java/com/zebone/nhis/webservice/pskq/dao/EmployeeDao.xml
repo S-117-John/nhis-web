@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.pskq.dao.EmployeeDao">
+
+<resultMap id="empResultMap" type="com.zebone.nhis.webservice.pskq.model.Employee">
+    <id column="PK_EMP" jdbcType="CHAR" property="pkEmployee" />
+    <result column="CODE_EMP" jdbcType="VARCHAR" property="employeCode" />
+    <result column="NAME_EMP" jdbcType="VARCHAR" property="employeName" />
+    <result column="codesex" jdbcType="VARCHAR" property="genderCode" />
+    <result column="namesex" jdbcType="VARCHAR" property="genderName" />
+    <result column="codeid" jdbcType="VARCHAR" property="idTypeCode" />
+    <result column="nameid" jdbcType="VARCHAR" property="idTypeName" />
+    <result column="IDNO" jdbcType="VARCHAR" property="idNo" />
+    <result column="PY_CODE" jdbcType="VARCHAR" property="spellCode" />
+    <result column="BIRTHDAY" jdbcType="TIMESTAMP" property="dateOfBirth" />
+    <result column="HOMEPHONE" jdbcType="VARCHAR" property="homePhoneNo" />
+    <result column="WORKPHONE" jdbcType="VARCHAR" property="workPhoneNo" />
+    <result column="MOBILE" jdbcType="VARCHAR" property="phoneNo" />
+    <result column="codeEmpType" jdbcType="VARCHAR" property="positionTypeCode" />
+    <result column="nameEmpType" jdbcType="VARCHAR" property="positionTypeName" />
+    <result column="CODE_DEPT" jdbcType="VARCHAR" property="deptId" />
+    <result column="NAME_DEPT" jdbcType="VARCHAR" property="deptName" />
+    <result column="CODE_ORG" jdbcType="VARCHAR" property="orgCode" />
+    <result column="NAME_ORG" jdbcType="VARCHAR" property="orgName" />
+</resultMap>
+
+
+    <select id="findEmpInfoById"   resultMap="empResultMap" >
+        select bdEmp.PK_EMP ,bdEmp.CODE_EMP,bdEmp.NAME_EMP,bdSex.code codesex,bdSex.NAME namesex,
+               bdId.CODE codeid,bdId.name nameid,bdEmp.IDNO,bdEmp.PY_CODE,bdEmp.BIRTHDAY,
+               bdEmp.HOMEPHONE,bdEmp.WORKPHONE,bdEmp.MOBILE,bdemp.HOMEPHONE,bdemp.WORKPHONE,
+               bdEmpType.code codeEmpType,bdEmpType.name nameEmpType,bdDept.NAME_DEPT,bdDept.CODE_DEPT,bdOrg.CODE_ORG,bdOrg.NAME_ORG
+
+          from BD_OU_EMPLOYEE bdEmp
+	      left join bd_defdoc bdSex on bdEmp.DT_SEX = bdSex.code and bdSex.CODE_DEFDOCLIST = '000000'
+          left join bd_defdoc bdId on bdId.code = bdEmp.dt_identype  and bdId.CODE_DEFDOCLIST = '000007'
+          left join bd_defdoc bdEmpType on bdEmpType.code = bdEmp.dt_emptype  and bdEmpType.CODE_DEFDOCLIST ='010300'
+          left join bd_ou_org bdOrg on bdOrg.PK_ORG = bdEmp.PK_ORG
+          left join bd_ou_empjob bdEmpJob on bdEmpJob.PK_EMP = bdEmp.PK_EMP and bdEmpJob.IS_MAIN = '1'
+          LEFT JOIN BD_OU_DEPT bdDept on bdDept.PK_DEPT = bdEmpJob.PK_DEPT
+          where bdEmp.PK_EMP=#{id} and bdEmp.del_flag = '0'
+
+
+    </select>
+
+    <select id="findByOrgCode" resultMap="empResultMap">
+        select bdEmp.PK_EMP ,bdEmp.CODE_EMP,bdEmp.NAME_EMP,bdSex.code codesex,bdSex.NAME namesex,
+               bdId.CODE codeid,bdId.name nameid,bdEmp.IDNO,bdEmp.PY_CODE,bdEmp.BIRTHDAY,
+               bdEmp.HOMEPHONE,bdEmp.WORKPHONE,bdEmp.MOBILE,bdemp.HOMEPHONE,bdemp.WORKPHONE,
+               bdEmpType.code codeEmpType,bdEmpType.name nameEmpType,bdDept.NAME_DEPT,bdDept.CODE_DEPT,bdOrg.CODE_ORG,bdOrg.NAME_ORG
+
+          from BD_OU_EMPLOYEE bdEmp
+	      left join bd_defdoc bdSex on bdEmp.DT_SEX = bdSex.code and bdSex.CODE_DEFDOCLIST = '000000'
+          left join bd_defdoc bdId on bdId.code = bdEmp.dt_identype  and bdId.CODE_DEFDOCLIST = '000007'
+          left join bd_defdoc bdEmpType on bdEmpType.code = bdEmp.dt_emptype  and bdEmpType.CODE_DEFDOCLIST ='010300'
+          left join bd_ou_org bdOrg on bdOrg.PK_ORG = bdEmp.PK_ORG
+          left join bd_ou_empjob bdEmpJob on bdEmpJob.PK_EMP = bdEmp.PK_EMP and bdEmpJob.IS_MAIN = '1'
+          LEFT JOIN BD_OU_DEPT bdDept on bdDept.PK_DEPT = bdEmpJob.PK_DEPT
+          where bdEmp.PK_EMP=#{code} and bdEmp.del_flag = '0'
+    </select>
+
+
+</mapper>

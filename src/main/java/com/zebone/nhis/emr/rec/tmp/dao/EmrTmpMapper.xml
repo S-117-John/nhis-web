@@ -1,0 +1,1402 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.emr.rec.tmp.dao.EmrTmpMapper">
+    <resultMap id="ResultMapEmrTemplate" type="com.zebone.nhis.common.module.emr.rec.tmp.EmrTemplate">
+        <id column="PK_TMP" jdbcType="CHAR" property="pkTmp"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="DESCRIBE" jdbcType="VARCHAR" property="describe"/>
+        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+        <result column="EU_TMP_LEVEL" jdbcType="INTEGER" property="euTmpLevel"/>
+        <result column="TMP_TITLE" jdbcType="VARCHAR" property="tmpTitle"/>
+        <result column="TEXT_TITLE" jdbcType="VARCHAR" property="textTitle"/>
+        <result column="SORT_CODE" jdbcType="DECIMAL" property="sortCode"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="PK_WARD" jdbcType="VARCHAR" property="pkWard"/>
+        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+        <result column="FLAG_AUDIT" jdbcType="CHAR" property="flagAudit"/>
+        <result column="AUDIT_LEVEL" jdbcType="DECIMAL" property="auditLevel"/>
+        <result column="AUDIT_LEVEL_SET" jdbcType="VARCHAR" property="auditLevelSet"/>
+        <result column="LIMIT_NUM" jdbcType="DECIMAL" property="limitNum"/>
+        <result column="FLAG_DEFAULT" jdbcType="CHAR" property="flagDefault"/>
+        <result column="FLAG_OPEN" jdbcType="CHAR" property="flagOpen"/>
+        <result column="FLAG_MERGE" jdbcType="CHAR" property="flagMerge"/>
+        <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp"/>
+        <result column="FLAG_SYS" jdbcType="CHAR" property="flagSys"/>
+        <result column="EU_TYPE" jdbcType="CHAR" property="euType"/>
+        <result column="FLAG_EXT" jdbcType="CHAR" property="flagExt"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="DOC_DATA" jdbcType="BLOB" property="docData"/>
+        <result column="DOC_XML" jdbcType="CLOB" property="docXml"/>
+        <result column="ASSOCIATION_RULES" jdbcType="CLOB" property="associationRules"/>
+        <result column="TMP_PATH" jdbcType="VARCHAR" property="tmpPath"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    <resultMap id="ResultMapTmpTypeName" type="com.zebone.nhis.common.module.emr.rec.tmp.EmrTemplate">
+        <id column="PK_TMP" jdbcType="CHAR" property="pkTmp"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="DESCRIBE" jdbcType="VARCHAR" property="describe"/>
+        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+        <result column="EU_TMP_LEVEL" jdbcType="INTEGER" property="euTmpLevel"/>
+        <result column="TMP_TITLE" jdbcType="VARCHAR" property="tmpTitle"/>
+        <result column="TEXT_TITLE" jdbcType="VARCHAR" property="textTitle"/>
+        <result column="SORT_CODE" jdbcType="DECIMAL" property="sortCode"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="PK_WARD" jdbcType="VARCHAR" property="pkWard"/>
+        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+        <result column="FLAG_AUDIT" jdbcType="CHAR" property="flagAudit"/>
+        <result column="AUDIT_LEVEL" jdbcType="DECIMAL" property="auditLevel"/>
+        <result column="AUDIT_LEVEL_SET" jdbcType="VARCHAR" property="auditLevelSet"/>
+        <result column="LIMIT_NUM" jdbcType="DECIMAL" property="limitNum"/>
+        <result column="FLAG_DEFAULT" jdbcType="CHAR" property="flagDefault"/>
+        <result column="FLAG_OPEN" jdbcType="CHAR" property="flagOpen"/>
+        <result column="FLAG_MERGE" jdbcType="CHAR" property="flagMerge"/>
+        <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp"/>
+        <result column="FLAG_SYS" jdbcType="CHAR" property="flagSys"/>
+        <result column="EU_TYPE" jdbcType="CHAR" property="euType"/>
+        <result column="FLAG_EXT" jdbcType="CHAR" property="flagExt"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="ASSOCIATION_RULES" jdbcType="CLOB" property="associationRules"/>
+        <result column="TMP_PATH" jdbcType="VARCHAR" property="tmpPath"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+        <result column="TYPE_NAME" jdbcType="VARCHAR" property="typeName"/>
+    </resultMap>
+    <resultMap id="ResultMapTmpType" type="com.zebone.nhis.common.module.emr.rec.tmp.EmrTemplate">
+        <id column="PK_TMP" jdbcType="CHAR" property="pkTmp"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="TMP_CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="DESCRIBE" jdbcType="VARCHAR" property="describe"/>
+        <result column="TYPE_CODE" jdbcType="VARCHAR" property="typeCode"/>
+        <result column="EU_TMP_LEVEL" jdbcType="DECIMAL" property="euTmpLevel"/>
+        <result column="TMP_TITLE" jdbcType="VARCHAR" property="tmpTitle"/>
+        <result column="TEXT_TITLE" jdbcType="VARCHAR" property="textTitle"/>
+        <result column="SORT_CODE" jdbcType="DECIMAL" property="sortCode"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+        <result column="PK_WARD" jdbcType="VARCHAR" property="pkWard"/>
+        <result column="EU_STATUS" jdbcType="CHAR" property="euStatus"/>
+        <result column="FLAG_AUDIT" jdbcType="CHAR" property="flagAudit"/>
+        <result column="AUDIT_LEVEL" jdbcType="DECIMAL" property="auditLevel"/>
+        <result column="AUDIT_LEVEL_SET" jdbcType="VARCHAR" property="auditLevelSet"/>
+        <result column="LIMIT_NUM" jdbcType="DECIMAL" property="limitNum"/>
+        <result column="FLAG_DEFAULT" jdbcType="CHAR" property="flagDefault"/>
+        <result column="FLAG_OPEN" jdbcType="CHAR" property="flagOpen"/>
+        <result column="FLAG_MERGE" jdbcType="CHAR" property="flagMerge"/>
+        <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp"/>
+        <result column="FLAG_SYS" jdbcType="CHAR" property="flagSys"/>
+        <result column="EU_TYPE" jdbcType="CHAR" property="euType"/>
+        <result column="FLAG_EXT" jdbcType="CHAR" property="flagExt"/>
+        <result column="FLAG_PUB" jdbcType="CHAR" property="flagPub"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="FLAG_GAUGE" jdbcType="CHAR" property="flagGauge"/>
+        <result column="DOC_DATA" jdbcType="BLOB" property="docData"/>
+        <result column="DOC_XML" jdbcType="CLOB" property="docXml"/>
+        <result column="ASSOCIATION_RULES" jdbcType="CLOB" property="associationRules"/>
+        <result column="TMP_PATH" jdbcType="VARCHAR" property="tmpPath"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+        <result column="FLAG_DEPT_SET" jdbcType="CHAR" property="flagDeptSet"/>
+        <result column="NAME_EMP" jdbcType="VARCHAR" property="nameEmp"/>
+ 		<!-- property: 指的是属性的值, javaType：指的是元素的类型 -->  
+        <association property="docType" javaType="com.zebone.nhis.common.module.emr.rec.dict.EmrDocType">  
+            <id column="PK_DOCTYPE" jdbcType="CHAR" property="pkDoctype"/>
+	        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+	        <result column="TYPE_CODE" jdbcType="VARCHAR" property="code"/>
+	        <result column="TYPE_NAME" jdbcType="VARCHAR" property="name"/>
+	        <result column="PARENT_TYPE" jdbcType="VARCHAR" property="parentType"/>
+	        <result column="LEVELS" jdbcType="DECIMAL" property="levels"/>
+	        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+	        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+	        <result column="WS_CODE" jdbcType="VARCHAR" property="wsCode"/>
+	        <result column="EU_VISIT" jdbcType="CHAR" property="euVisit"/>
+	        <result column="EU_USED" jdbcType="CHAR" property="euUsed"/>
+	        <result column="SORT_NUM" jdbcType="DECIMAL" property="sortNum"/>
+	        <result column="TITLE" jdbcType="VARCHAR" property="title"/>
+	        <result column="FLAG_COURSE" jdbcType="CHAR" property="flagCourse"/>
+	        <result column="FLAG_FIRST" jdbcType="CHAR" property="flagFirst"/>
+	        <result column="FLAG_NEW_PAGE" jdbcType="CHAR" property="flagNewPage"/>
+	        <result column="FLAG_HOME_PAGE" jdbcType="CHAR" property="flagHomePage"/>
+	        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+	        <result column="PK_DEPT" jdbcType="VARCHAR" property="pkDept"/>
+	        <result column="PK_WARD" jdbcType="VARCHAR" property="pkWard"/>
+	        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+	        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+	        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+	        <result column="TS" jdbcType="DATE" property="ts"/> 
+        </association>          
+    </resultMap> 
+    
+    <select id="getEmrTemplateById" resultMap="ResultMapEmrTemplate">
+        SELECT
+            *
+        FROM
+             EMR_TEMPLATE
+        WHERE            
+            PK_TMP = #{pkTmp,jdbcType=CHAR}
+    </select>
+    
+    <select id="queryConsultTmpByCode" resultMap="ResultMapEmrTemplate">
+        SELECT
+            *
+        FROM
+             EMR_TEMPLATE
+        WHERE type_code='100109'
+          and eu_tmp_level = #{euTmpLevel,jdbcType=VARCHAR}
+          and code = #{code,jdbcType=VARCHAR}
+		<if test='pkDept != null and pkDept != "" '>  
+		  and pk_dept=#{pkDept,jdbcType=VARCHAR}
+		</if>
+   
+    </select>
+    
+    
+    <select id="queryAllTmpList" resultMap="ResultMapTmpTypeName">
+        SELECT t.PK_TMP,
+	       t.PK_ORG,
+	       t.NAME,
+	       t.DESCRIBE,
+	       t.TYPE_CODE,
+	       t.EU_TMP_LEVEL,
+	       t.TMP_TITLE,
+	       t.TEXT_TITLE,
+	       t.SORT_CODE,
+	       t.PY_CODE,
+	       t.D_CODE,
+	       t.PK_DEPT,
+	       t.PK_WARD,
+	       t.EU_STATUS,
+	       t.FLAG_AUDIT,
+	       t.AUDIT_LEVEL,
+	       t.LIMIT_NUM,
+	       t.FLAG_DEFAULT,
+	       t.FLAG_OPEN,
+	       t.FLAG_SYS,
+	       t.EU_TYPE,
+	       t.FLAG_EXT,
+	       t.PK_EMP,
+	       t.TMP_PATH,
+	       t.DEL_FLAG,
+	       t.REMARK,
+	       t.CREATOR,
+	       t.CREATE_TIME,
+	       t.TS,
+	       t.AUDIT_LEVEL_SET,
+	       typ.name type_name  
+        FROM
+             EMR_TEMPLATE t,
+             emr_doc_type typ
+        WHERE t.type_code=typ.code and             
+            nvl(t.del_flag,'0')='0'
+       order by typ.sort_num,t.code       
+    </select>    
+    <select id="queryTmpDataById" resultMap="ResultMapEmrTemplate">
+        SELECT
+            *
+        FROM
+             EMR_TEMPLATE
+        WHERE            
+            PK_TMP = #{pkTmp,jdbcType=CHAR}
+    </select>
+     
+    <delete id="deleteEmrTemplate">
+        DELETE
+        FROM
+             EMR_TEMPLATE
+        WHERE            
+            PK_TMP = #{pkTmp,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrTemplate" parameterType="com.zebone.nhis.common.module.emr.rec.tmp.EmrTemplate" >
+        INSERT INTO EMR_TEMPLATE
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkTmp != null" >
+                PK_TMP,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="describe != null" >
+                DESCRIBE,
+            </if>
+            <if test="typeCode != null" >
+                TYPE_CODE,
+            </if>
+            <if test="euTmpLevel != null" >
+                EU_TMP_LEVEL,
+            </if>
+            <if test="tmpTitle != null" >
+                TMP_TITLE,
+            </if>
+            <if test="textTitle != null" >
+                TEXT_TITLE,
+            </if>
+            <if test="sortCode != null" >
+                SORT_CODE,
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE,
+            </if>
+            <if test="dCode != null" >
+                D_CODE,
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT,
+            </if>
+            <if test="pkWard != null" >
+                PK_WARD,
+            </if>
+            <if test="euStatus != null" >
+                EU_STATUS,
+            </if>
+            <if test="flagAudit != null" >
+                FLAG_AUDIT,
+            </if>
+            <if test="auditLevel != null" >
+                AUDIT_LEVEL,
+            </if>
+            <if test="auditLevelSet != null" >
+                AUDIT_LEVEL_SET,
+            </if>
+            <if test="limitNum != null" >
+                LIMIT_NUM,
+            </if>
+            <if test="flagDefault != null" >
+                FLAG_DEFAULT,
+            </if>
+            <if test="flagOpen != null" >
+                FLAG_OPEN,
+            </if>
+            <if test="flagMerge != null" >
+                FLAG_MERGE,
+            </if>
+            <if test="flagGauge != null" >
+                FLAG_GAUGE,
+            </if>
+            <if test="pkEmp != null" >
+                PK_EMP,
+            </if>
+            <if test="flagSys != null" >
+                FLAG_SYS,
+            </if>
+            <if test="euType != null" >
+                EU_TYPE,
+            </if>
+            <if test="flagExt != null" >
+                FLAG_EXT,
+            </if>
+            <if test="flagPub != null" >
+                FLAG_PUB,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="docData != null" >
+                DOC_DATA,
+            </if>
+            <if test="docXml != null" >
+                DOC_XML,
+            </if>
+            <if test="associationRules != null" >
+                ASSOCIATION_RULES,
+            </if>
+            <if test="tmpPath != null" >
+                TMP_PATH,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkTmp != null" >
+                #{pkTmp,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="describe != null" >
+                #{describe,jdbcType=VARCHAR},
+            </if> 
+            <if test="typeCode != null" >
+                #{typeCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="euTmpLevel != null" >
+                #{euTmpLevel,jdbcType=DECIMAL},
+            </if> 
+            <if test="tmpTitle != null" >
+                #{tmpTitle,jdbcType=VARCHAR},
+            </if> 
+            <if test="textTitle != null" >
+                #{textTitle,jdbcType=VARCHAR},
+            </if> 
+            <if test="sortCode != null" >
+                #{sortCode,jdbcType=DECIMAL},
+            </if> 
+            <if test="pyCode != null" >
+                #{pyCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="dCode != null" >
+                #{dCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkDept != null" >
+                #{pkDept,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkWard != null" >
+                #{pkWard,jdbcType=VARCHAR},
+            </if> 
+            <if test="euStatus != null" >
+                #{euStatus,jdbcType=CHAR},
+            </if> 
+            <if test="flagAudit != null" >
+                #{flagAudit,jdbcType=CHAR},
+            </if> 
+            <if test="auditLevel != null" >
+                #{auditLevel,jdbcType=DECIMAL},
+            </if> 
+            <if test="auditLevelSet != null" >
+                #{auditLevelSet,jdbcType=VARCHAR},
+            </if> 
+            <if test="limitNum != null" >
+                #{limitNum,jdbcType=DECIMAL},
+            </if> 
+            <if test="flagDefault != null" >
+                #{flagDefault,jdbcType=CHAR},
+            </if> 
+            <if test="flagOpen != null" >
+                #{flagOpen,jdbcType=CHAR},
+            </if> 
+            <if test="flagMerge != null" >
+                #{flagMerge,jdbcType=CHAR},
+            </if> 
+            <if test="flagGauge != null" >
+                #{flagGauge,jdbcType=CHAR},
+            </if> 
+            <if test="pkEmp != null" >
+                #{pkEmp,jdbcType=VARCHAR},
+            </if> 
+            <if test="flagSys != null" >
+                #{flagSys,jdbcType=CHAR},
+            </if>
+            <if test="euType != null" >
+                #{euType,jdbcType=CHAR},
+            </if> 
+            <if test="flagExt != null" >
+                #{flagExt,jdbcType=CHAR},
+            </if>  
+            <if test="flagPub != null" >
+                #{flagPub,jdbcType=CHAR},
+            </if>  
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="docData != null" >
+                #{docData,jdbcType=BLOB},
+            </if> 
+            <if test="docXml != null" >
+                #{docXml,jdbcType=CLOB},
+            </if> 
+            <if test="associationRules != null" >
+                #{associationRules,jdbcType=CLOB},
+            </if>
+            <if test="tmpPath != null" >
+                #{tmpPath,jdbcType=VARCHAR},
+            </if>  
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrTemplate" parameterType="com.zebone.nhis.common.module.emr.rec.tmp.EmrTemplate" >
+        UPDATE EMR_TEMPLATE
+        <set>
+            <if test="pkTmp != null" >
+                PK_TMP = #{pkTmp,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="describe != null" >
+                DESCRIBE = #{describe,jdbcType=VARCHAR},
+            </if>
+            <if test="typeCode != null" >
+                TYPE_CODE = #{typeCode,jdbcType=VARCHAR},
+            </if>
+            <if test="euTmpLevel != null" >
+                EU_TMP_LEVEL = #{euTmpLevel,jdbcType=INTEGER},
+            </if>
+            <if test="tmpTitle != null" >
+                TMP_TITLE = #{tmpTitle,jdbcType=VARCHAR},
+            </if>
+            <if test="textTitle != null" >
+                TEXT_TITLE = #{textTitle,jdbcType=VARCHAR},
+            </if>
+            <if test="sortCode != null" >
+                SORT_CODE = #{sortCode,jdbcType=DECIMAL},
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE = #{pyCode,jdbcType=VARCHAR},
+            </if>
+            <if test="dCode != null" >
+                D_CODE = #{dCode,jdbcType=VARCHAR},
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT = #{pkDept,jdbcType=VARCHAR},
+            </if>
+            <if test="pkWard != null" >
+                PK_WARD = #{pkWard,jdbcType=VARCHAR},
+            </if>
+            <if test="euStatus != null" >
+                EU_STATUS = #{euStatus,jdbcType=CHAR},
+            </if>
+            <if test="flagAudit != null" >
+                FLAG_AUDIT = #{flagAudit,jdbcType=CHAR},
+            </if>
+            <if test="flagGauge != null" >
+               FLAG_GAUGE= #{flagGauge,jdbcType=CHAR},
+            </if>
+            <if test="auditLevel != null" >
+                AUDIT_LEVEL = #{auditLevel,jdbcType=DECIMAL},
+            </if>
+            <if test="auditLevelSet != null" >
+                AUDIT_LEVEL_SET = #{auditLevelSet,jdbcType=VARCHAR},
+            </if>
+            <if test="limitNum != null" >
+                LIMIT_NUM = #{limitNum,jdbcType=DECIMAL},
+            </if>
+            <if test="flagDefault != null" >
+                FLAG_DEFAULT = #{flagDefault,jdbcType=CHAR},
+            </if>
+            <if test="flagOpen != null" >
+                FLAG_OPEN = #{flagOpen,jdbcType=CHAR},
+            </if>
+            <if test="flagMerge != null" >
+                FLAG_MERGE = #{flagMerge,jdbcType=CHAR},
+            </if>
+            <if test="pkEmp != null" >
+                PK_EMP = #{pkEmp,jdbcType=VARCHAR},
+            </if>
+            <if test="flagSys != null" >
+                FLAG_SYS = #{flagSys,jdbcType=CHAR},
+            </if>
+            <if test="euType != null" >
+                EU_TYPE = #{euType,jdbcType=CHAR},
+            </if>
+            <if test="flagExt != null" >
+                FLAG_EXT = #{flagExt,jdbcType=CHAR},
+            </if>
+            <if test="flagPub != null" >
+                FLAG_PUB = #{flagPub,jdbcType=CHAR},
+            </if> 
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="docData != null" >
+                DOC_DATA = #{docData,jdbcType=BLOB},
+            </if>
+            <if test="docXml != null" >
+                DOC_XML = #{docXml,jdbcType=CLOB},
+            </if>
+            <if test="associationRules != null" >
+                ASSOCIATION_RULES = #{associationRules,jdbcType=CLOB},
+            </if>
+            <if test="tmpPath != null" >
+                TMP_PATH = #{tmpPath,jdbcType=VARCHAR},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_TMP = #{pkTmp,jdbcType=CHAR}
+    </update>
+    
+    <select id="queryTmpList" resultMap="ResultMapEmrTemplate">
+        SELECT
+           PK_TMP,
+	       PK_ORG,
+	       NAME,
+	       DESCRIBE,
+	       TYPE_CODE,
+	       EU_TMP_LEVEL,
+	       TMP_TITLE,
+	       TEXT_TITLE,
+	       SORT_CODE,
+	       PY_CODE,
+	       D_CODE,
+	       PK_DEPT,
+	       PK_WARD,
+	       EU_STATUS,
+	       FLAG_AUDIT,
+	       AUDIT_LEVEL,
+	       LIMIT_NUM,
+	       FLAG_DEFAULT,
+	       FLAG_OPEN,
+	       FLAG_SYS,
+	       EU_TYPE,
+	       FLAG_EXT,
+	       PK_EMP,
+	       TMP_PATH,
+	       DEL_FLAG,
+	       REMARK,
+	       CREATOR,
+	       CREATE_TIME,
+	       TS,
+	       AUDIT_LEVEL_SET 
+        FROM
+             EMR_TEMPLATE
+        WHERE            
+            ((PK_DEPT like #{pkDept,jdbcType=VARCHAR}  and eu_tmp_level=1) or (eu_tmp_level=0)) 
+            and  del_flag!='1'
+		   <if test="euType != null" >
+              and nvl(eu_type,'1') = #{euType,jdbcType=CHAR}
+           </if>
+		   <if test="euVisit != null" >
+		   	  and exists (select 1 from emr_doc_type typ where (typ.eu_visit=#{euType,jdbcType=CHAR} or typ.eu_visit='0') and typ.code=type_code) 
+           </if>                         
+       order by type_code,name,sort_code,pk_tmp 
+    </select>
+    <select id="queryTypeTmpList" resultMap="ResultMapTmpType">
+        SELECT
+           tmp.PK_TMP,
+	       tmp.PK_ORG,
+	       tmp.CODE TMP_CODE,
+	       tmp.NAME,
+	       tmp.DESCRIBE,
+	       tmp.TYPE_CODE,
+	       tmp.EU_TMP_LEVEL,
+	       tmp.TMP_TITLE,
+	       tmp.TEXT_TITLE,
+	       tmp.SORT_CODE,
+	       tmp.PY_CODE,
+	       tmp.D_CODE,
+	       tmp.PK_DEPT,
+	       tmp.PK_WARD,
+	       tmp.EU_STATUS,
+	       tmp.FLAG_AUDIT,
+	       tmp.AUDIT_LEVEL,
+	       tmp.LIMIT_NUM,
+	       tmp.FLAG_DEFAULT,
+	       tmp.FLAG_OPEN,
+	       tmp.FLAG_SYS,
+	       tmp.EU_TYPE,
+	       tmp.FLAG_EXT,
+	       tmp.FLAG_PUB,
+	       tmp.PK_EMP,
+	       tmp.DEL_FLAG,
+	       tmp.TMP_PATH,
+	       tmp.REMARK,
+	       tmp.CREATOR,
+	       tmp.CREATE_TIME,
+	       tmp.TS,
+	       tmp.AUDIT_LEVEL_SET,
+	       typ.*,
+	       emp.name_emp,
+		   <!--(select wm_concat(name_dept) from bd_ou_dept d,emr_tmp_org eto where eto.pk_tmp = tmp.pk_tmp and d.pk_dept=eto.pk_dept ) org_dept -->
+	       (case when (select count(1) from emr_tmp_org where tmp.pk_tmp=emr_tmp_org.pk_tmp)>0 then '1' else '0' end) flag_dept_set  
+        FROM
+             EMR_TEMPLATE tmp 
+             inner join EMR_DOC_TYPE typ on tmp.type_code=typ.code
+             left join bd_ou_employee emp on tmp.creator=emp.pk_emp
+        WHERE typ.del_flag!='1' 
+<!--   			<choose> -->
+<!-- 	            <when test="pkDept != null"> -->
+<!-- 	               and tmp.PK_DEPT = #{pkDept,jdbcType=VARCHAR} and tmp.eu_tmp_level=1 -->
+<!-- 	            </when> -->
+<!-- 	            <otherwise> -->
+<!-- 	               and tmp.eu_tmp_level=0 -->
+<!-- 	            </otherwise> -->
+<!--         	</choose> -->
+            <!-- <if test="pkOrg != null" >
+               and tmp.PK_ORG like #{pkOrg,jdbcType=VARCHAR}
+            </if>   
+            <if test="pkDept != null" >
+               and tmp.pk_dept like #{pkDept,jdbcType=VARCHAR}
+            </if>    -->
+            and tmp.del_flag!='1'
+			<if test="flagOpen != null" >
+               and tmp.flag_open = #{flagOpen,jdbcType=CHAR}
+            </if>            
+			<if test="euTmpLevel != null" >
+               and tmp.eu_tmp_level = #{euTmpLevel,jdbcType=CHAR}
+            </if>
+            <if test="euType != null" >
+               and nvl(tmp.eu_type,'1') = #{euType,jdbcType=CHAR}
+            </if>            
+			<if test="name != null and name != ''"  >
+               and tmp.name like '%'||#{name,jdbcType=VARCHAR}||'%'
+            </if>
+			<if test="pkOrg != null and pkOrg !=''" >
+			   and (exists (select pk_org
+				          from emr_tmp_org org
+				         where org.del_flag != '1'
+				           and org.pk_tmp=tmp.pk_tmp 
+			               and org.pk_org like #{pkOrg,jdbcType=VARCHAR}
+			            <if test="pkDept != null and pkDept !=''" >
+			               and org.pk_dept like #{pkDept,jdbcType=VARCHAR}
+			            </if> )
+			         or not exists (select pk_org
+				          from emr_tmp_org org
+				         where org.del_flag != '1'
+				           and org.pk_tmp=tmp.pk_tmp)  
+				   )
+	        </if>
+	        <if test="pkOrgNs != null and pkOrgNs !=''" >
+			   and (exists (select pk_org
+				          from emr_tmp_org org
+				         where org.del_flag != '1'
+				           and org.pk_tmp=tmp.pk_tmp 
+			               and org.pk_org like #{pkOrgNs,jdbcType=VARCHAR}
+			            <if test="pkDeptNs != null and pkDeptNs !=''" >
+			               and ((org.pk_dept like #{pkDeptNs,jdbcType=VARCHAR} and tmp.eu_tmp_level=1) or (tmp.eu_tmp_level='0'))
+			            </if> )
+				   )
+	        </if>
+	        <if test="creator != null" >
+               and tmp.creator = #{creator,jdbcType=VARCHAR}
+            </if>                                   
+       order by tmp.type_code,tmp.name,tmp.sort_code,tmp.pk_tmp 
+    </select>
+    <select id="queryTypeTmpListDept" resultMap="ResultMapTmpType">
+        SELECT distinct 
+           tmp.PK_TMP,
+	       tmp.PK_ORG,
+	       tmp.CODE TMP_CODE,
+	       tmp.NAME,
+	       tmp.DESCRIBE,
+	       tmp.TYPE_CODE,
+	       tmp.EU_TMP_LEVEL,
+	       tmp.TMP_TITLE,
+	       tmp.TEXT_TITLE,
+	       tmp.SORT_CODE,
+	       tmp.PY_CODE,
+	       tmp.D_CODE,
+	       tmp.PK_DEPT,
+	       tmp.PK_WARD,
+	       tmp.EU_STATUS,
+	       tmp.FLAG_AUDIT,
+	       tmp.AUDIT_LEVEL,
+	       tmp.LIMIT_NUM,
+	       tmp.FLAG_DEFAULT,
+	       tmp.FLAG_OPEN,
+           tmp.FLAG_MERGE,
+	       tmp.flag_sys,
+	       tmp.PK_EMP,
+	       tmp.TMP_PATH,
+	       tmp.DEL_FLAG,
+	       tmp.REMARK,
+	       tmp.CREATOR,
+	       tmp.CREATE_TIME,
+	       tmp.TS,
+	       tmp.AUDIT_LEVEL_SET,
+	       cast(tmp.code as int) sort_no,
+	       typ.*,
+	       typ.code type_code,
+	       typ.name type_name  
+        FROM EMR_TEMPLATE tmp
+  inner join EMR_DOC_TYPE typ on tmp.type_code=typ.code 
+  inner join emr_tmp_org org on tmp.pk_tmp=org.pk_tmp
+       WHERE typ.del_flag!='1' 
+            and org.del_flag!='1' 
+            and org.pk_org like #{pkOrg,jdbcType=VARCHAR}
+            <if test="pkDept != null and (qryStu == 0 or qryStu == null) ">
+            	and ((org.pk_dept = #{pkDept,jdbcType=VARCHAR} and tmp.eu_tmp_level=1) or (tmp.eu_tmp_level=0) or (tmp.eu_tmp_level=2 and tmp.creator=#{pkEmp,jdbcType=VARCHAR}))
+            </if>
+			<if test="typeCode != null" >
+            	and tmp.type_code like #{typeCode,jdbcType=VARCHAR}
+            </if>
+            and tmp.del_flag!='1'
+            and tmp.flag_open = '1'
+            and nvl(tmp.eu_type,'1') = '1' 
+       order by tmp.type_code,tmp.name,cast(tmp.code as int),tmp.pk_tmp 
+    </select>
+    <select id="queryTypeTmpListDeptBak" resultMap="ResultMapTmpType">
+        SELECT
+           tmp.PK_TMP,
+	       tmp.PK_ORG,
+	       tmp.CODE TMP_CODE,
+	       tmp.NAME,
+	       tmp.DESCRIBE,
+	       tmp.TYPE_CODE,
+	       tmp.EU_TMP_LEVEL,
+	       tmp.TMP_TITLE,
+	       tmp.TEXT_TITLE,
+	       tmp.SORT_CODE,
+	       tmp.PY_CODE,
+	       tmp.D_CODE,
+	       tmp.PK_DEPT,
+	       tmp.PK_WARD,
+	       tmp.EU_STATUS,
+	       tmp.FLAG_AUDIT,
+	       tmp.AUDIT_LEVEL,
+	       tmp.LIMIT_NUM,
+	       tmp.FLAG_DEFAULT,
+	       tmp.FLAG_OPEN,
+	       tmp.flag_sys,
+	       tmp.PK_EMP,
+	       tmp.DEL_FLAG,
+	       tmp.TMP_PATH,
+	       tmp.REMARK,
+	       tmp.CREATOR,
+	       tmp.CREATE_TIME,
+	       tmp.TS,
+	       tmp.AUDIT_LEVEL_SET,
+	       typ.*  
+        FROM
+             EMR_TEMPLATE tmp,EMR_DOC_TYPE typ
+        WHERE tmp.type_code=typ.code and  typ.del_flag!='1' 
+            and ((tmp.PK_DEPT = #{pkDept,jdbcType=VARCHAR} and tmp.eu_tmp_level=1) or (tmp.eu_tmp_level=0))
+            and tmp.PK_ORG like #{pkOrg,jdbcType=VARCHAR}
+            and tmp.del_flag!='1'
+            and tmp.flag_open = '1'
+       order by tmp.type_code,tmp.name,tmp.sort_code,tmp.pk_tmp 
+    </select>    
+	<select id="queryTmpListOrg" resultMap="ResultMapTmpType">
+        SELECT
+           tmp.PK_TMP,
+	       tmp.PK_ORG,
+	       tmp.CODE TMP_CODE,
+	       tmp.NAME,
+	       tmp.DESCRIBE,
+	       tmp.TYPE_CODE,
+	       tmp.EU_TMP_LEVEL,
+	       tmp.TMP_TITLE,
+	       tmp.TEXT_TITLE,
+	       tmp.SORT_CODE,
+	       tmp.PY_CODE,
+	       tmp.D_CODE,
+	       tmp.PK_DEPT,
+	       tmp.PK_WARD,
+	       tmp.EU_STATUS,
+	       tmp.FLAG_AUDIT,
+	       tmp.AUDIT_LEVEL,
+	       tmp.LIMIT_NUM,
+	       tmp.FLAG_DEFAULT,
+	       tmp.FLAG_OPEN,
+	       tmp.FLAG_SYS,
+	       tmp.PK_EMP,
+	       tmp.EU_TYPE,
+	       tmp.FLAG_EXT,
+	       tmp.TMP_PATH,
+	       tmp.DEL_FLAG,
+	       tmp.REMARK,
+	       tmp.CREATOR,
+	       tmp.CREATE_TIME,
+	       tmp.TS,
+	       tmp.AUDIT_LEVEL_SET,
+	       typ.*  
+        FROM
+             EMR_TEMPLATE tmp,EMR_DOC_TYPE typ
+        WHERE tmp.type_code=typ.code and  
+            typ.del_flag!='1' and           
+            tmp.PK_ORG = #{pkOrg,jdbcType=VARCHAR}  and  
+            tmp.del_flag!='1'
+       order by tmp.type_code,tmp.name,tmp.sort_code,tmp.pk_tmp 
+    </select>      
+    <select id="queryTmpById" resultMap="ResultMapTmpType">
+        SELECT
+           tmp.PK_TMP,
+	       tmp.PK_ORG,
+	       tmp.CODE TMP_CODE,
+	       tmp.NAME,
+	       tmp.DESCRIBE,
+	       tmp.TYPE_CODE,
+	       tmp.EU_TMP_LEVEL,
+	       tmp.TMP_TITLE,
+	       tmp.TEXT_TITLE,
+	       tmp.SORT_CODE,
+	       tmp.PY_CODE,
+	       tmp.D_CODE,
+	       tmp.PK_DEPT,
+	       tmp.PK_WARD,
+	       tmp.EU_STATUS,
+	       tmp.FLAG_AUDIT,
+	       tmp.AUDIT_LEVEL,
+	       tmp.FLAG_MERGE,
+	       tmp.LIMIT_NUM,
+	       tmp.FLAG_DEFAULT,
+	       tmp.FLAG_OPEN,
+	       tmp.flag_sys,
+	       tmp.PK_EMP,
+	       tmp.DOC_DATA,
+	       tmp.DOC_XML,
+	       tmp.DEL_FLAG,
+	       tmp.EU_TYPE,
+	       tmp.FLAG_EXT,
+	       tmp.TMP_PATH,
+	       tmp.REMARK,
+	       tmp.CREATOR,
+	       tmp.CREATE_TIME,
+	       tmp.TS,
+	       tmp.AUDIT_LEVEL_SET,
+	       type.*  
+        FROM
+             EMR_TEMPLATE tmp,EMR_DOC_TYPE type
+        WHERE tmp.PK_TMP = #{pkTmp,jdbcType=VARCHAR} and tmp.type_code=type.code
+    </select>
+    <select id="queryTmpByIdNoData" resultMap="ResultMapTmpType">
+        SELECT
+           tmp.PK_TMP,
+	       tmp.PK_ORG,
+	       tmp.CODE TMP_CODE,
+	       tmp.NAME,
+	       tmp.DESCRIBE,
+	       tmp.TYPE_CODE,
+	       tmp.EU_TMP_LEVEL,
+	       tmp.TMP_TITLE,
+	       tmp.TEXT_TITLE,
+	       tmp.SORT_CODE,
+	       tmp.PY_CODE,
+	       tmp.D_CODE,
+	       tmp.PK_DEPT,
+	       tmp.PK_WARD,
+	       tmp.EU_STATUS,
+	       tmp.FLAG_AUDIT,
+	       tmp.AUDIT_LEVEL,
+	       tmp.FLAG_MERGE,
+	       tmp.LIMIT_NUM,
+	       tmp.FLAG_DEFAULT,
+	       tmp.FLAG_OPEN,
+	       tmp.flag_sys,
+	       tmp.PK_EMP,
+	       tmp.DEL_FLAG,
+	       tmp.EU_TYPE,
+	       tmp.FLAG_EXT,
+	       tmp.TMP_PATH,
+	       tmp.REMARK,
+	       tmp.DOC_XML,
+	       tmp.CREATOR,
+	       tmp.CREATE_TIME,
+	       tmp.TS,
+	       tmp.AUDIT_LEVEL_SET,
+	       type.*  
+        FROM
+             EMR_TEMPLATE tmp,EMR_DOC_TYPE type
+        WHERE tmp.PK_TMP = #{pkTmp,jdbcType=VARCHAR} and tmp.type_code=type.code
+    </select>  
+    <select id="queryTmpByCode" resultMap="ResultMapTmpType">
+        SELECT
+           tmp.PK_TMP,
+	       tmp.PK_ORG,
+	       tmp.CODE TMP_CODE,
+	       tmp.NAME,
+	       tmp.DESCRIBE,
+	       tmp.TYPE_CODE,
+	       tmp.EU_TMP_LEVEL,
+	       tmp.TMP_TITLE,
+	       tmp.TEXT_TITLE,
+	       tmp.SORT_CODE,
+	       tmp.PY_CODE,
+	       tmp.D_CODE,
+	       tmp.PK_DEPT,
+	       tmp.PK_WARD,
+	       tmp.EU_STATUS,
+	       tmp.FLAG_AUDIT,
+	       tmp.AUDIT_LEVEL,
+	       tmp.LIMIT_NUM,
+	       tmp.FLAG_DEFAULT,
+	       tmp.FLAG_OPEN,
+	       tmp.FLAG_SYS,
+	       tmp.EU_TYPE,
+	       tmp.FLAG_EXT,
+	       tmp.PK_EMP,
+	       tmp.DOC_DATA,
+	       tmp.DOC_XML,
+	       tmp.DEL_FLAG,
+	       tmp.TMP_PATH,
+	       tmp.REMARK,
+	       tmp.CREATOR,
+	       tmp.CREATE_TIME,
+	       tmp.TS,
+	       tmp.FLAG_GAUGE,
+	       tmp.AUDIT_LEVEL_SET,
+	       dt.*  
+        FROM
+             EMR_TEMPLATE tmp,EMR_DOC_TYPE dt,EMR_TMP_ORG org
+        WHERE tmp.code = #{code,jdbcType=VARCHAR} and 
+              tmp.type_code=dt.code and 
+              nvl(tmp.del_flag,'0')='0' and
+              tmp.pk_tmp=org.pk_tmp
+		<if test="pkOrg != null" >
+              and org.pk_org like #{pkOrg,jdbcType=VARCHAR}
+           </if>        
+    </select>                   
+    <select id="queryTmpByConds" resultMap="ResultMapEmrTemplate" parameterType="java.util.Map">
+          SELECT tmp.* FROM EMR_TEMPLATE tmp,emr_doc_type typ
+           where tmp.type_code=typ.code 
+             and tmp.del_flag!='1' 
+			<if test="pkTmp != null" >
+               and tmp.pk_tmp != #{pkTmp,jdbcType=CHAR}
+            </if>
+               and (tmp.pk_org like #{pkOrg,jdbcType=VARCHAR} or tmp.pk_org is null or tmp.pk_org like '~%')
+			<if test="code != null" >
+               and tmp.code = #{code,jdbcType=VARCHAR}
+            </if>
+			<if test="name != null" >
+               and tmp.name = #{name,jdbcType=VARCHAR}
+            </if>
+			<if test="pkDept != null" >
+               and (tmp.pk_dept = #{pkDept,jdbcType=VARCHAR} or tmp.pk_dept='~')
+            </if>
+			<if test="typeCode != null" >
+               and tmp.type_code = #{typeCode,jdbcType=VARCHAR}
+            </if>
+			<if test="flagDefault != null" >
+               and tmp.flag_default = #{flagDefault,jdbcType=VARCHAR}
+            </if>
+			<if test="delFlag != null" >
+               and tmp.del_flag = #{delFlag,jdbcType=VARCHAR}
+            </if>
+			<if test="flagOpen != null" >
+               and tmp.flag_open = #{flagOpen,jdbcType=VARCHAR}
+            </if>
+            <if test="euTmpLevel  &gt;=0" >
+               and (tmp.eu_tmp_level = #{euTmpLevel,jdbcType=INTEGER} or tmp.eu_tmp_level=0)
+            </if>
+			<if test="euUsed != null" >
+               and (typ.eu_used='0' or typ.eu_used = #{euUsed,jdbcType=VARCHAR})
+            </if>
+            <if test="euType != null" >
+               and tmp.eu_type = #{euType,jdbcType=CHAR}
+            </if>
+			<if test="orderBy != null" >
+	            ${orderBy}
+	        </if>              
+    </select>
+    <select id="queryDeptTmpList" resultMap="ResultMapEmrTemplate" parameterType="java.util.Map">
+          SELECT tmp.* 
+            FROM EMR_TEMPLATE tmp
+      inner join EMR_DOC_TYPE typ on tmp.type_code=typ.code 
+  	  inner join emr_tmp_org org on tmp.pk_tmp=org.pk_tmp
+           where tmp.del_flag!='1' 
+			<if test="pkOrg != null" >
+               and org.pk_org like #{pkOrg,jdbcType=VARCHAR}
+            </if>
+			<if test="pkDept != null" >
+               and ((org.pk_dept = #{pkDept,jdbcType=VARCHAR} and tmp.eu_tmp_level=1) or (tmp.eu_tmp_level=0))
+            </if>
+			<if test="typeCode != null" >
+               and tmp.type_code = #{typeCode,jdbcType=VARCHAR}
+            </if>
+			<if test="flagDefault != null" >
+               and tmp.flag_default = #{flagDefault,jdbcType=VARCHAR}
+            </if>
+			<if test="flagOpen != null" >
+               and tmp.flag_open = #{flagOpen,jdbcType=VARCHAR}
+            </if>
+            <if test="euType != null" >
+               and tmp.eu_type = #{euType,jdbcType=CHAR}
+            </if>
+			<if test="euUsed != null" >
+               and (typ.eu_used='0' or typ.eu_used = #{euUsed,jdbcType=VARCHAR})
+            </if>
+            <if test="typeCodeLevel != null" >
+               and tmp.type_code like #{typeCodeLevel,jdbcType=VARCHAR}||'%'
+            </if>
+			<if test="orderBy != null" >
+	            ${orderBy}
+	        </if>              
+    </select>    
+    <resultMap id="ResultMapTmpSet" type="com.zebone.nhis.common.module.emr.rec.tmp.EmrTmpSet">
+        <id column="PK_SET" jdbcType="CHAR" property="pkSet"/>
+        <result column="PK_ORG" jdbcType="VARCHAR" property="pkOrg"/>
+        <result column="PK_TMP" jdbcType="VARCHAR" property="pkTmp"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="PY_CODE" jdbcType="VARCHAR" property="pyCode"/>
+        <result column="D_CODE" jdbcType="VARCHAR" property="dCode"/>
+        <result column="PK_EMP" jdbcType="VARCHAR" property="pkEmp"/>
+        <result column="SET_XML" jdbcType="CLOB" property="setXml"/>
+        <result column="REMARK" jdbcType="VARCHAR" property="remark"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>    
+    <select id="getEmrTmpSetById" resultMap="ResultMapTmpSet">
+        SELECT
+            *
+        FROM
+             EMR_TMP_SET
+        WHERE            
+            PK_SET = #{pkSet,jdbcType=CHAR}
+    </select>
+    
+    <select id="findAllEmrTmpSet" resultMap="ResultMapTmpSet">
+          SELECT * FROM EMR_TMP_SET 
+    </select>
+    
+    <delete id="deleteEmrTmpSet">
+        DELETE
+        FROM
+             EMR_TMP_SET
+        WHERE            
+            PK_SET = #{pkSet,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrTmpSet" parameterType="com.zebone.nhis.common.module.emr.rec.tmp.EmrTmpSet" >
+        INSERT INTO EMR_TMP_SET
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkSet != null" >
+                PK_SET,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="pkTmp != null" >
+                PK_TMP,
+            </if>
+            <if test="code != null" >
+                CODE,
+            </if>
+            <if test="name != null" >
+                NAME,
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE,
+            </if>
+            <if test="dCode != null" >
+                D_CODE,
+            </if>
+            <if test="pkEmp != null" >
+                PK_EMP,
+            </if>
+            <if test="setXml != null" >
+                SET_XML,
+            </if>
+            <if test="remark != null" >
+                REMARK,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkSet != null" >
+                #{pkSet,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkTmp != null" >
+                #{pkTmp,jdbcType=VARCHAR},
+            </if> 
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if> 
+            <if test="name != null" >
+                #{name,jdbcType=VARCHAR},
+            </if> 
+            <if test="pyCode != null" >
+                #{pyCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="dCode != null" >
+                #{dCode,jdbcType=VARCHAR},
+            </if> 
+            <if test="pkEmp != null" >
+                #{pkEmp,jdbcType=VARCHAR},
+            </if> 
+            <if test="setXml != null" >
+                #{setXml,jdbcType=CLOB},
+            </if> 
+            <if test="remark != null" >
+                #{remark,jdbcType=VARCHAR},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrTmpSet" parameterType="com.zebone.nhis.common.module.emr.rec.tmp.EmrTmpSet" >
+        UPDATE EMR_TMP_SET
+        <set>
+            <if test="pkSet != null" >
+                PK_SET = #{pkSet,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=VARCHAR},
+            </if>
+            <if test="pkTmp != null" >
+                PK_TMP = #{pkTmp,jdbcType=VARCHAR},
+            </if>
+            <if test="code != null" >
+                CODE = #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null" >
+                NAME = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="pyCode != null" >
+                PY_CODE = #{pyCode,jdbcType=VARCHAR},
+            </if>
+            <if test="dCode != null" >
+                D_CODE = #{dCode,jdbcType=VARCHAR},
+            </if>
+            <if test="pkEmp != null" >
+                PK_EMP = #{pkEmp,jdbcType=VARCHAR},
+            </if>
+            <if test="setXml != null" >
+                SET_XML = #{setXml,jdbcType=CLOB},
+            </if>
+            <if test="remark != null" >
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_SET = #{pkSet,jdbcType=CHAR}
+    </update> 
+    
+    <select id="queryTmpSetByCode" resultMap="ResultMapTmpSet">
+        SELECT
+           * 
+        FROM
+             EMR_TMP_SET
+        WHERE            
+            PK_TMP = #{pkTmp,jdbcType=CHAR} and CODE like #{code,jdbcType=VARCHAR} and nvl(del_flag,'0')!='1'
+            
+    </select>       
+    <select id="queryTmpSetByTmp" resultMap="ResultMapTmpSet">
+        SELECT
+           * 
+        FROM
+             EMR_TMP_SET
+        WHERE            
+            PK_TMP = #{pkTmp,jdbcType=CHAR}  and nvl(del_flag,'0')!='1'
+            
+    </select>
+    <resultMap id="ResultMapTmpOrg" type="com.zebone.nhis.common.module.emr.rec.tmp.EmrTmpOrg">
+        <id column="PK_TMPORG" jdbcType="CHAR" property="pkTmporg"/>
+        <result column="PK_TMP" jdbcType="CHAR" property="pkTmp"/>
+        <result column="PK_ORG" jdbcType="CHAR" property="pkOrg"/>
+        <result column="PK_DEPT" jdbcType="CHAR" property="pkDept"/>
+        <result column="CREATOR" jdbcType="VARCHAR" property="creator"/>
+        <result column="CREATE_TIME" jdbcType="DATE" property="createTime"/>
+        <result column="DEL_FLAG" jdbcType="CHAR" property="delFlag"/>
+        <result column="TS" jdbcType="DATE" property="ts"/>
+    </resultMap>
+    <select id="getEmrTmpOrgById" resultMap="ResultMapTmpOrg">
+        SELECT
+            *
+        FROM
+             EMR_TMP_ORG
+        WHERE            
+            PK_TMPORG = #{pkTmporg,jdbcType=CHAR}
+    </select>
+    <select id="queryTmpOrgByTmpId" resultMap="ResultMapTmpOrg">
+        SELECT
+            t.*,o.name_org org_name,d.name_dept dept_name
+        FROM
+             EMR_TMP_ORG t
+             left outer join bd_ou_org o on t.pk_org=o.pk_org 
+             left outer join bd_ou_dept d on t.pk_dept=d.pk_dept
+        WHERE            
+            t.pk_tmp = #{pkTmp,jdbcType=CHAR} and
+           	nvl(t.del_flag,'0')='0' 
+    </select>
+    
+    <select id="findAllEmrTmpOrg" resultMap="ResultMapTmpOrg">
+          SELECT * FROM EMR_TMP_ORG 
+    </select>
+    
+    <delete id="deleteEmrTmpOrg">
+        DELETE
+        FROM
+             EMR_TMP_ORG
+        WHERE            
+            PK_TMPORG = #{pkTmporg,jdbcType=CHAR}
+    </delete>
+
+    <insert id="saveEmrTmpOrg" parameterType="com.zebone.nhis.common.module.emr.rec.tmp.EmrTmpOrg" >
+        INSERT INTO EMR_TMP_ORG
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="pkTmporg != null" >
+                PK_TMPORG,
+            </if>
+            <if test="pkTmp != null" >
+                PK_TMP,
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG,
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT,
+            </if>
+            <if test="creator != null" >
+                CREATOR,
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME,
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG,
+            </if>
+            <if test="ts != null" >
+                TS,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="pkTmporg != null" >
+                #{pkTmporg,jdbcType=CHAR},
+            </if> 
+            <if test="pkTmp != null" >
+                #{pkTmp,jdbcType=CHAR},
+            </if> 
+            <if test="pkOrg != null" >
+                #{pkOrg,jdbcType=CHAR},
+            </if> 
+            <if test="pkDept != null" >
+                #{pkDept,jdbcType=CHAR},
+            </if> 
+            <if test="creator != null" >
+                #{creator,jdbcType=VARCHAR},
+            </if> 
+            <if test="createTime != null" >
+                #{createTime,jdbcType=DATE},
+            </if> 
+            <if test="delFlag != null" >
+                #{delFlag,jdbcType=CHAR},
+            </if> 
+            <if test="ts != null" >
+                #{ts,jdbcType=DATE},
+            </if> 
+        </trim>
+    </insert>
+
+    <update id="updateEmrTmpOrg" parameterType="com.zebone.nhis.common.module.emr.rec.tmp.EmrTmpOrg" >
+        UPDATE EMR_TMP_ORG
+        <set>
+            <if test="pkTmporg != null" >
+                PK_TMPORG = #{pkTmporg,jdbcType=CHAR},
+            </if>
+            <if test="pkTmp != null" >
+                PK_TMP = #{pkTmp,jdbcType=CHAR},
+            </if>
+            <if test="pkOrg != null" >
+                PK_ORG = #{pkOrg,jdbcType=CHAR},
+            </if>
+            <if test="pkDept != null" >
+                PK_DEPT = #{pkDept,jdbcType=CHAR},
+            </if>
+            <if test="creator != null" >
+                CREATOR = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                CREATE_TIME = #{createTime,jdbcType=DATE},
+            </if>
+            <if test="delFlag != null" >
+                DEL_FLAG = #{delFlag,jdbcType=CHAR},
+            </if>
+            <if test="ts != null" >
+                TS = #{ts,jdbcType=DATE},
+            </if>
+        </set>
+        WHERE 
+            PK_TMPORG = #{pkTmporg,jdbcType=CHAR}
+    </update>
+    
+    <select id="queryTmpOrgByConds" resultMap="ResultMapTmpOrg" parameterType="java.util.Map">
+          SELECT o.* FROM EMR_TMP_ORG o
+           where o.del_flag!='1' 
+			<if test="pkTmp != null" >
+               and o.pk_tmp = #{pkTmp,jdbcType=CHAR}
+            </if>
+			<if test="pkOrg != null" >
+               and o.pk_org = #{pkOrg,jdbcType=VARCHAR}
+            </if>
+			<if test="pkDept != null" >
+               and (o.pk_dept = #{pkDept,jdbcType=VARCHAR})
+            </if>
+			
+    </select>       
+</mapper>

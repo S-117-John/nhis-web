@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.compay.ins.shenzhen.dao.yd.ShenZhenYdMapper">
+
+
+    <select id="qryUploadDetails" resultType="DynaBean" parameterType="java.util.Map">
+        select pv.code_pv,
+               bl.CODE_CG || bl.SORTNO                                                    as ykc610,
+               nvl(hpit.AKA111, '13')                                                     as yka111,
+               nvl(dict.NAME, '未分类')                                                      as yka112,
+               hpit.ake001,
+               hpit.ake002,
+               hpit.bkm017                                                                as ake114,
+               hpit.BKM007                                                                as yke231,
+               case when bl.flag_pd = '1' then pd.code else item.code end                 as ake005,
+               BL.name_cg                                                                 as ake006,
+               to_char(bl.DATE_HAP, 'YYYYMMDD')                                           as akc221,
+               bl.Quan                                                                    as akc226,
+               trunc(bl.Price, 4)                                                         as akc225,
+               bl.Amount                                                                  as akc264,
+               hpit.ala026                                                                as ykc611,
+               case when hpit.AKA074 is null then '-' else substr(hpit.AKA074, 0, 50) end as aka074,
+               UNIT.name                                                                  as aka067,
+               hpit.aka070,
+               appemp.NAME_EMP                                                            as akc273,
+               deptapp.NAME_DEPT                                                          as aae386,
+               case when cnor.FLAG_FIT is null then '0' else cnor.FLAG_FIT end            as aka185,
+               bl.NAME_ITEMSET                                                            as transid
+        from bl_ip_dt bl
+                 inner join pv_encounter pv on BL.pk_pv = pv.pk_pv
+                 inner join BD_OU_DEPT deptapp on deptapp.PK_DEPT = bl.PK_DEPT_APP
+                 inner join BD_OU_EMPLOYEE appemp on appemp.PK_EMP = bl.PK_EMP_APP
+                 left join bd_unit unit on unit.pk_unit = BL.pk_unit
+                 left join cn_order cnor on cnor.pk_cnord = bl.pk_cnord
+                 left join bd_pd pd on BL.pk_item = pd.pk_pd
+                 left join bd_item item on BL.pk_item = item.pk_item
+                 left join ins_szyb_itemmap imap on bl.PK_ITEM = imap.PK_ITEM and imap.EU_HPDICTTYPE = '02' and imap.DEL_FLAG = '0'
+                 left join ins_szyb_item hpit on hpit.PK_INSITEM = imap.PK_INSITEM and hpit.EU_HPDICTTYPE = '02'
+                 left join INS_SZYB_DICT dict
+                           on dict.CODE = hpit.AKA111 and dict.CODE_TYPE = 'YKA111' and dict.EU_HPDICTTYPE = '02' and
+                              dict.FLAG_CHD = '1'
+        where bl.pk_pv = #{pkPv}
+          AND (bl.flag_settle = '0' OR bl.PK_SETTLE IS NULL)
+          AND bl.flag_insu = '0'
+          AND bl.del_flag = '0'
+        order by bl.QUAN desc
+    </select>
+
+    <select id="getHpDictmap" parameterType="java.lang.String" resultType="DynaBean">
+        select CODE_TYPE,
+               NAME,
+               PK_HIS,
+               CODE_HIS,
+               NAME_HIS,
+               CODE_INSUR,
+               NAME_INSUR
+        from INS_SZYB_DICTMAP
+        where CODE_TYPE = 'AKF001'
+          and PK_HIS = #{pkDept}
+    </select>
+
+</mapper>

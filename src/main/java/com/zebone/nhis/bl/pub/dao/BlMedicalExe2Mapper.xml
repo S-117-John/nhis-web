@@ -1,0 +1,1489 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.bl.pub.dao.BlMedicalExe2Mapper">
+    <!-- 住院医技申请单查询 -->
+    <select id="qryIpMedAppInfo" parameterType="java.util.Map" resultType="DynaBean">
+        select ord.pk_cnord,
+        ord.ordsn,
+        ord.ordsn_parent,
+        ord.pk_pi,
+        ord.pk_pv,
+        ord.pk_dept_ns,
+        pi.code_ip,
+        pv.code_pv,
+        pv.name_pi,
+        pv.dt_sex,
+        pv.BED_NO,
+        ris.eu_status Ris_Status,
+        lis.eu_status Lis_Status,
+        ord.code_apply,
+        ord.flag_emer,
+        ord.name_ord,
+        ord.quan,
+        ord.quan*ord.price_cg as price_cg,
+        ord.date_start,
+        dept.name_dept as pk_dept,
+        dept.pk_dept as pk_dept_app,
+        nowde.NAME_DEPT now_dept,
+        ord.name_emp_ord,
+        ord.note_ord,
+        occ.pk_exocc,
+        ord.eu_pvtype,
+        ord.code_ordtype,
+        ord.pk_ord,
+        ord.eu_ordtype,
+        occ.PK_ORG_OCC,
+        occ.date_occ,
+        occ.PK_DEPT_OCC,
+        occ.date_plan,
+        occ.EU_STATUS eu_status_occ,
+        ris.DESC_BODY,
+        ris.PURPOSE,
+        occ.TS ,
+        bdia.name_cd as dmiss_diag,
+        ris.flag_print2,
+        ris.pk_ordris,
+        (select count(1)
+        from CN_ORDER
+        where PK_DEPT_EXEC = ord.pk_dept_exec
+        and PK_PV = pv.PK_PV
+        and ORDSN=ORDSN_PARENT
+        and DATE_START &gt;= to_date(#{recentDay,jdbcType=VARCHAR}, 'yyyymmddhh24miss')) as recent_apply,
+        ord.pk_wg,
+        ord.pk_wg_org
+        from cn_order ord
+        inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+        inner join BD_OU_DEPT nowde on nowde.PK_DEPT=pv.PK_DEPT
+        left  join pv_diag pdia on pdia.pk_pv=pv.pk_pv and pdia.FLAG_MAJ='1'
+        left join bd_cndiag bdia on bdia.pk_cndiag=pdia.pk_diag
+        inner join pi_master pi on pv.pk_pi=pi.pk_pi
+        inner join ex_order_occ occ on ord.pk_cnord=occ.pk_cnord and occ.flag_canc='0'
+        LEFT JOIN cn_ris_apply ris ON ris.PK_CNORD = ord.PK_CNORD
+        left outer join cn_lab_apply lis on ord.pk_cnord=lis.pk_cnord
+        left outer join cn_trans_apply trans on ord.pk_cnord = trans.pk_cnord
+        inner join  bd_ou_dept dept on ord.pk_dept = dept.pk_dept
+        <where>
+            pv.flag_in='1'
+            AND (
+            (ris.EU_STATUS>'0' AND ord.code_ordtype like '02%') OR
+            (lis.EU_STATUS>'0' AND ord.code_ordtype like '03%') OR
+            (trans.EU_STATUS>'0' AND ord.code_ordtype='12') OR
+            (ord.code_ordtype like '05%') or (ord.code_ordtype like '99%') or (ord.code_ordtype like '09%') or
+            (ord.code_ordtype like '07%') or (ord.code_ordtype = '04' and ord.pk_ord is not null )
+            )
+            <if test="pkDeptExec != null  and  pkDeptExec != ''">
+                and ord.pk_dept_exec = #{pkDeptExec,jdbcType=VARCHAR}
+                and occ.PK_DEPT_OCC=#{pkDeptExec,jdbcType=VARCHAR}
+            </if>
+            and ord.eu_pvtype='3'
+            <choose>
+                <!-- 已作废 -->
+                <when test="euCharge == 3">
+                    and ord.flag_erase='1'
+                </when>
+                <otherwise>
+                    and ord.flag_erase='0'
+                </otherwise>
+            </choose>
+            <if test="codeApply != null  and  codeApply != ''">
+                and ord.code_apply = #{codeApply,jdbcType=VARCHAR}
+            </if>
+            <if test="codeIp != null  and  codeIp != ''">
+                and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+            </if>
+            <if test="pkDept != null  and  pkDept != ''">
+                and ord.pk_dept = #{pkDept,jdbcType=VARCHAR}
+            </if>
+            <if test="dateBegin != null  and  dateBegin != ''">
+                and ord.date_start &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+            </if>
+            <if test="dateEnd != null  and  dateEnd != ''">
+                and ord.date_start &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+            </if>
+            <if test="dateBeginPlan != null  and  dateBeginPlan != ''">
+                and occ.date_plan &gt;= to_date(#{dateBeginPlan,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+            </if>
+            <if test="dateEndPlan != null  and  dateEndPlan != ''">
+                and occ.date_plan &lt;= to_date(#{dateEndPlan,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+            </if>
+
+            <if test="pkCnord != null  and  pkCnord != ''">
+                and ord.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+            </if>
+            <if test="ordtype != null and ordtype != '' ">
+                and ord.code_ordtype  like  concat(#{ordtype,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="applySaved == 1">
+                <!-- 申请单不为空的同组检查申请 -->
+                AND exists(SELECT 1 FROM CN_ORDER ord2 LEFT JOIN CN_RIS_APPLY ris2 on ris2.PK_CNORD=ord2.PK_CNORD WHERE
+                ris2.FORM_APP is not null and ord2.ORDSN_PARENT=ord.ORDSN_PARENT)
+            </if>
+        </where>
+    </select>
+
+    <!-- 医疗记录：医技申请单查询 (住院)-->
+    <select id="qryMedAppInfoIp" parameterType="java.util.Map" resultType="DynaBean">
+        SELECT
+        ord.pk_cnord,
+        ord.eu_pvtype,
+        pv.code_pv,
+        pv.name_pi,
+        pi.pk_pi,
+        pi.code_ip,
+        ord.code_apply,
+        ord.date_chk,
+        ord.name_ord,
+        ord.ordsn,
+        ord.ordsn_parent,
+        CASE WHEN ord.quan_cg IS NULL OR ord.quan_cg = '0' THEN ord.quan ELSE ord.quan_cg END quan_cg,
+        (select sum(dt.amount) from bl_ip_dt dt where dt.pk_cnord=ord.pk_cnord) amount,
+        (select max(dt.flag_settle) as flag_settle from bl_ip_dt dt
+        where dt.pk_cnord=ord.pk_cnord group by dt.pk_cnord) flag_bl,
+        ord.price_cg,
+        ord.date_start,
+        bod.name_dept AS pk_dept,
+        ord.name_emp_ord,
+        deptec.name_dept name_dept_exec,
+        occ.pk_exocc,
+        pv.flag_in,
+        case when ris.eu_status is not null then ris.eu_status
+        when lis.eu_status is not null then lis.eu_status
+        when trans.eu_status is not null then trans.eu_status
+        when opa.eu_status is not null then opa.eu_status end app_status,
+        case when ris.pk_ordris is not null then ris.pk_ordris else '' end pk_ordris,
+        occ.EU_STATUS as oc_status,
+        pv.EU_STATUS,
+        case when cg.cnt is null then 0 else cg.cnt end cnt,
+        cg.item_num,
+        pp.IP_TIMES,
+        ord.code_ordtype,
+        ord.EU_STATUS_ORD
+        FROM cn_order ord
+        INNER JOIN pv_encounter pv ON ord.pk_pv = pv.pk_pv
+        INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+        INNER JOIN PV_IP pp on pp.PK_PV=pv.PK_PV
+        inner join bd_ou_dept deptec on deptec.pk_dept=ord.pk_dept_exec
+        left outer join ex_order_occ occ ON ord.pk_cnord = occ.pk_cnord
+        left outer join cn_ris_apply ris ON ris.pk_cnord = ord.pk_cnord
+        left outer join cn_lab_apply lis on ord.pk_cnord=lis.pk_cnord
+        left outer join cn_trans_apply trans on ord.pk_cnord = trans.pk_cnord
+        left outer join cn_op_apply opa on ord.pk_cnord=opa.pk_cnord
+        LEFT JOIN bd_ou_dept bod ON ord.pk_dept = bod.pk_dept
+        left outer join (
+        select
+        sum(dt.amount) cnt,
+        dt.pk_ordexdt,
+        count(1) as item_num
+        from
+        bl_ip_dt dt
+        group by
+        dt.pk_ordexdt
+        ) cg on occ.pk_exocc = cg.pk_ordexdt
+        WHERE 1=1 AND ord.eu_pvtype = '3' AND ord.code_apply IS NOT NULL
+        <if test="pkDeptExec != null  and  pkDeptExec != ''">
+            and ord.pk_dept_exec = #{pkDeptExec,jdbcType=VARCHAR}
+        </if>
+        <if test="euPvtype != null  and  euPvtype != ''">
+            and ord.eu_pvtype = #{euPvtype,jdbcType=VARCHAR}
+        </if>
+        <if test="codeOrdtype != null  and  codeOrdtype != '' and codeOrdtype != 99 ">
+            and ord.code_ordtype like '%' || #{codeOrdtype,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test="codeIp != null  and  codeIp != ''">
+            and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+        </if>
+        <if test="codeOp != null  and  codeOp != ''">
+            and pi.code_op = #{codeOp,jdbcType=VARCHAR}
+        </if>
+        <if test="namePi != null  and  namePi != ''">
+            and pv.name_pi like '%' || #{namePi,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test="pkDept != null  and  pkDept != ''">
+            and ord.pk_dept = #{pkDept,jdbcType=VARCHAR}
+        </if>
+        <if test="codeApply != null  and  codeApply != ''">
+            and ord.code_apply = #{codeApply,jdbcType=VARCHAR}
+        </if>
+
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and ord.date_start &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        </if>
+
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and ord.date_start &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        </if>
+    </select>
+
+    <!-- 医疗记录：医技申请单查询 (门诊)-->
+    <select id="qryMedAppInfoOp" parameterType="java.util.Map" resultType="DynaBean">
+        SELECT
+        ord.pk_cnord,
+        ord.eu_pvtype,
+        pv.code_pv,
+        pv.name_pi,
+        pi.pk_pi,
+        pi.CODE_OP,
+        ord.code_apply,
+        ord.name_ord,
+        ord.ordsn,
+        ord.ordsn_parent,
+        ord.date_chk,
+        CASE WHEN ord.quan_cg IS NULL OR ord.quan_cg = '0' THEN ord.quan ELSE ord.quan_cg END quan_cg,
+        (select sum(dt.amount) from bl_op_dt dt where dt.pk_cnord=ord.pk_cnord) amount,
+        (select max(dt.flag_settle) as flag_settle from bl_op_dt dt
+        where dt.pk_cnord=ord.pk_cnord group by dt.pk_cnord) flag_bl,
+        ord.price_cg,
+        ord.date_start,
+        bod.name_dept AS pk_dept,
+        ord.name_emp_ord,
+        NULL AS pk_exocc,
+        case when ris.eu_status is not null then ris.eu_status
+        when lis.eu_status is not null then lis.eu_status
+        when trans.eu_status is not null then trans.eu_status
+        when opa.eu_status is not null then opa.eu_status end app_status,
+        case when ris.pk_ordris is not null then ris.pk_ordris else '' end pk_ordris,
+        case when ris.eu_status is not null then ris.eu_status
+        when lis.eu_status is not null then lis.eu_status
+        when trans.eu_status is not null then trans.eu_status
+        when opa.eu_status is not null then opa.eu_status end oc_status,
+        pv.EU_STATUS,
+        ord.code_ordtype,
+        deptec.name_dept name_dept_exec,
+        ord.EU_STATUS_ORD
+        FROM cn_order ord
+        INNER JOIN pv_encounter pv ON ord.pk_pv = pv.pk_pv
+        INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+        inner join bd_ou_dept deptec on deptec.pk_dept=ord.pk_dept_exec
+        left outer join EX_ORDER_OCC occ on occ.PK_CNORD=ord.PK_CNORD
+        left outer join bd_ou_dept bod ON ord.pk_dept = bod.pk_dept
+        left outer join cn_ris_apply ris ON ris.pk_cnord = ord.pk_cnord
+        left outer join cn_lab_apply lis on ord.pk_cnord=lis.pk_cnord
+        left outer join cn_trans_apply trans on ord.pk_cnord = trans.pk_cnord
+        left outer join cn_op_apply opa on ord.pk_cnord=opa.pk_cnord
+        WHERE 1=1 AND ord.eu_pvtype != '3' AND ord.code_apply IS NOT NULL
+        <if test="pkDeptExec != null  and  pkDeptExec != ''">
+            and ord.pk_dept_exec = #{pkDeptExec,jdbcType=VARCHAR}
+        </if>
+        <if test="euPvtype != null  and  euPvtype != ''">
+            and ord.eu_pvtype = #{euPvtype,jdbcType=VARCHAR}
+        </if>
+        <if test="codeOp != null  and  codeOp != ''">
+            and pi.code_op = #{codeOp,jdbcType=VARCHAR}
+        </if>
+        <if test="codeIp != null  and  codeIp != ''">
+            and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+        </if>
+        <if test="namePi != null  and  namePi != ''">
+            and pv.name_pi like '%' || #{namePi,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test="pkDept != null  and  pkDept != ''">
+            and ord.pk_dept = #{pkDept,jdbcType=VARCHAR}
+        </if>
+        <if test="codeApply != null  and  codeApply != ''">
+            and ord.code_apply = #{codeApply,jdbcType=VARCHAR}
+        </if>
+
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and ord.date_start &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        </if>
+
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and ord.date_start &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        </if>
+    </select>
+
+    <!-- 门急诊医技申请单查询 -->
+    <select id="qryOpMedAppInfo" parameterType="java.util.Map" resultType="DynaBean">
+        select ord.pk_cnord,
+        ord.pk_pi,
+        ord.pk_pv,
+        ord.ordsn,
+        ord.ordsn_parent,
+        pv.code_pv,
+        pv.name_pi,
+        pv.dt_sex,
+        ord.code_apply,
+        ord.flag_emer,
+        ord.name_ord,
+        ord.quan_cg as quan,
+        ord.price_cg,
+        ord.date_start,
+        bod.name_dept as pk_dept,
+        ord.name_emp_ord,
+        cg.cnt,
+        ord.note_ord,
+        pi.code_op,
+        ris.pk_ordris,
+        (case when ass.EU_STATUS = '1' then '已执行' when ass.EU_STATUS = '9' then '取消执行' else '未执行' end) euStatusName
+        from cn_order ord
+        inner join pv_encounter pv on ord.pk_pv = pv.pk_pv
+        INNER JOIN PI_MASTER pi ON pi.PK_PI = pv.PK_PI
+        INNER join (select sum(dt.amount) cnt, dt.pk_cnord
+        from bl_op_dt dt
+        where
+        dt.pk_dept_ex = #{pkDeptExec,jdbcType=VARCHAR}
+        and dt.flag_settle = '1'
+        group by dt.pk_cnord) cg on ord.pk_cnord = cg.pk_cnord
+        left outer join bd_ord_dept dept on ord.pk_ord = dept.pk_ord and dept.del_flag = 0
+        left outer join bd_ou_dept bod on ord.pk_dept = bod.pk_dept
+        left join cn_ris_apply ris ON ris.PK_CNORD = ord.PK_CNORD
+        left outer join cn_lab_apply lis on ord.pk_cnord=lis.pk_cnord
+        left outer join cn_trans_apply trans on ord.pk_cnord = trans.pk_cnord
+        left join ex_assist_occ_dt assdt on assdt.pk_cnord=ord.PK_CNORD
+        left join ex_assist_occ ass on ass.pk_assocc=assdt.pk_assocc
+        where
+        <if test="pkDeptExec != null  and  pkDeptExec != ''">
+            ((ord.pk_dept_exec = #{pkDeptExec,jdbcType=VARCHAR} and dept.pk_dept is null) or dept.pk_dept =
+            #{pkDeptExec,jdbcType=VARCHAR})
+        </if>
+        and ord.eu_pvtype in ('1','2','4') and cg.cnt &gt; '0' and ord.flag_erase='0'
+        <if test="codeApply != null  and  codeApply != ''">
+            and ord.code_apply = #{codeApply,jdbcType=VARCHAR}
+        </if>
+        <if test="codeOp != null  and  codeOp != ''">
+            and pi.CODE_OP = #{codeOp,jdbcType=VARCHAR}
+        </if>
+        <if test="codePv != null  and  codePv != ''">
+            and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDept != null  and  pkDept != ''">
+            and ord.pk_dept = #{pkDept,jdbcType=VARCHAR}
+        </if>
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and ord.date_start &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        </if>
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and ord.date_start &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        </if>
+        <if test="pkCnord != null  and  pkCnord != ''">
+            and ord.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+        </if>
+        <if test='exStatus!=null and exStatus!="" and exStatus.equals("0")'>
+            and ass.EU_STATUS='0'
+        </if>
+        <if test='exStatus!=null and exStatus!="" and exStatus.equals("1")'>
+            and ass.EU_STATUS='1'
+        </if>
+        <if test='exStatus!=null and exStatus!="" and exStatus.equals("9")'>
+            and ass.EU_STATUS='9'
+        </if>
+        <if test="ordtype != null and ordtype != '' ">
+            and ord.code_ordtype  like  concat(#{ordtype,jdbcType=VARCHAR},'%')
+        </if>
+    </select>
+
+    <!-- 查询住院医技已记费-申请对应费用明细 -->
+    <select id="qryIpMedBlDtInfo" parameterType="java.util.Map" resultType="DynaBean">
+        select cg.pk_cgip,
+        case when cg.flag_pd='0' then item.code else pd.code end code,
+        case when cg.flag_pd='0' and cg.name_cg like '%/%' then substr(cg.name_cg,0,instr(cg.name_cg,'/')-1) else
+        cg.name_cg end as yjName,
+        cg.spec,
+        cg.quan as quancg,
+        cg.amount,
+        cg.flag_settle,
+        cg.batch_no,
+        cg.date_expire,
+        cg.date_hap,
+        cg.flag_pd,
+        cg.name_emp_app,
+        cg.name_emp_cg,
+        cg.pack_size,
+        cg.pk_cnord,
+        cg.pk_dept_app,
+        cg.pk_dept_cg,
+        cg.pk_dept_ex,
+        cg.pk_emp_app,
+        cg.pk_emp_cg,
+        cg.pk_item,
+        cg.pk_org,
+        cg.pk_org_app,
+        cg.pk_org_ex,
+        cg.pk_pi,
+        cg.pk_pres,
+        cg.pk_pv,
+        cg.pk_unit_pd,
+        cg.price,
+        cg.price_cost
+        from bl_ip_dt cg
+        left outer join bd_item item on cg.pk_item=item.pk_item and cg.flag_pd='0'
+        left outer join bd_pd pd on cg.pk_item=pd.pk_pd and cg.flag_pd='1'
+        where 1=1 and cg.quan>'0'
+        <if test="pkCnord != null  and  pkCnord != ''">
+            and cg.pk_cnord = #{pkCnord,jdbcType=VARCHAR}
+        </if>
+        <if test="pkExocc != null  and  pkExocc != ''">
+            and cg.pk_ordexdt = #{pkExocc,jdbcType=VARCHAR}
+        </if>
+        and not exists (select 1 from bl_ip_dt bk where cg.pk_cgip=bk.pk_cgip_back)
+    </select>
+
+    <!-- 查询住院医技未记费-申请对应费用明细 -->
+    <select id="qryIpMedBlDtCharge" parameterType="java.util.Map" resultType="DynaBean">
+        select item.code,
+        item.name as yjName,
+        <!-- item.name||'/ '||nvl(bu.name,'') as yjName, -->
+        item.spec,
+        oi.quan,
+        item.price*oi.quan amount,
+        ord.name_ord,
+        ord.spec,
+        ord.quan as quancg,
+        item.flag_pd as flag_pd,
+        ord.name_emp_ord as name_emp_app,
+        ord.pack_size,
+        ord.pk_cnord,
+        ord.pk_dept as pk_dept_app,
+        ord.pk_dept_exec as pk_dept_ex,
+        item.pk_item as pk_item,
+        ord.pk_org,
+        ord.pk_org_exec as pk_org_ex,
+        ord.pk_pi,
+        ord.pk_pres,
+        ord.pk_pv,
+        ord.pk_unit_cg as pk_unit_pd,
+        ord.price_cg as price,
+        ord.price_cg as price_cost
+        from bd_item item
+        left join BD_UNIT bu on bu.pk_unit=item.pk_unit
+        inner join bd_ord_item oi on item.pk_item=oi.pk_item
+        inner join cn_order ord on oi.pk_ord=ord.pk_ord
+        where 1=1 and oi.del_flag = '0'
+        <if test="pkCnord != null  and  pkCnord != ''">
+            and ord.pk_cnord = #{pkCnord,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+
+    <!-- 查询门诊医技申请对应费用明细 -->
+    <select id="qryOpMedBlDtInfo" parameterType="java.util.Map" resultType="DynaBean">
+        select cg.pk_cgop,
+        case when cg.flag_pd='0' then item.code else pd.code end code,
+        cg.name_cg as yjName,
+        cg.spec,
+        cg.quan as quancg,
+        cg.amount,
+        cg.flag_settle,
+        cg.eu_additem,
+        cg.batch_no,
+        cg.date_expire,
+        cg.date_hap,
+        cg.flag_pd,
+        cg.name_emp_app,
+        cg.name_emp_cg,
+        cg.pack_size,
+        cg.pk_cnord,
+        cg.pk_dept_app,
+        cg.pk_dept_cg,
+        cg.pk_dept_ex,
+        cg.pk_emp_app,
+        cg.pk_emp_cg,
+        cg.pk_item,
+        cg.pk_org,
+        cg.pk_org_app,
+        cg.pk_org_ex,
+        cg.pk_pi,
+        cg.pk_pres,
+        cg.pk_pv,
+        cg.pk_unit_pd,
+        cg.price,
+        cg.price_cost
+        from bl_op_dt cg
+        left outer join bd_item item on cg.pk_item=item.pk_item and cg.flag_pd='0'
+        left outer join bd_pd pd on cg.pk_item=pd.pk_pd and cg.flag_pd='1'
+        where 1=1 and cg.quan>'0'
+        <if test="pkCnord != null  and  pkCnord != ''">
+            and cg.pk_cnord = #{pkCnord,jdbcType=VARCHAR}
+        </if>
+        and not exists (select 1 from bl_op_dt bk where cg.pk_cgop=bk.pk_cgop_back)
+    </select>
+
+    <!-- 查询医技申请单-执行记录 -->
+    <select id="queryExAssistOccList" parameterType="java.util.Map" resultType="DynaBean">
+        select occ.pk_assocc,
+        occ.code_occ,
+        occ.quan_occ,
+        occ.date_plan,
+        occ.date_appt,
+        occ.date_occ,
+        occ.name_emp_occ,
+        occ.note,
+        occ.flag_occ,
+        occ.flag_prt,
+        occ.pk_msp,
+        occ.pk_cnord,
+        occ.name_emp_conf,
+        occdp.NAME_DEPT name_dept_occ,
+        0 is_checked,
+        occ.times_occ,
+        (case when occ.EU_STATUS = '1' then '已执行' when occ.EU_STATUS = '9' then '取消执行' else '未执行' end) euStatusName
+        from ex_assist_occ occ
+        left join BD_OU_DEPT occdp on occ.PK_DEPT_OCC=occdp.PK_DEPT
+        where occ.flag_canc='0'
+        <if test="pkCnord != null  and  pkCnord != ''">
+            and occ.pk_cnord = #{pkCnord,jdbcType=VARCHAR}
+        </if>
+        <if test="pkExocc != null  and  pkExocc != ''">
+            and occ.pk_exocc = #{pkExocc,jdbcType=VARCHAR}
+        </if>
+        and (occ.flag_refund ='0' or occ.flag_refund is null)
+        order by times_occ
+    </select>
+
+    <!-- 取消执行 -->
+    <update id="cancleExocc" parameterType="java.util.Map">
+        update ex_assist_occ
+        set
+        flag_occ='0',
+        date_occ=null,
+        pk_emp_occ=null ,
+        name_emp_occ=null,
+        pk_dept_job=null,
+        pk_emp_conf=null,
+        name_emp_conf=null,
+        pk_msp=null,
+        eu_status='0',
+        date_canc=to_date(#{dateCanc,jdbcType=VARCHAR}, 'yyyymmddhh24miss'),
+        pk_emp_canc=#{pkEmpCanc,jdbcType=VARCHAR},
+        name_emp_canc=#{nameEmpCanc,jdbcType=VARCHAR}
+        where flag_occ='1' and flag_canc='0' and
+        pk_assocc in
+        <foreach collection="pkAssOccs" item="pkAssOccs" index="index"
+                 open="(" close=")" separator=",">
+            #{pkAssOccs}
+        </foreach>
+    </update>
+
+    <!-- 查询计费记录主键 -->
+    <select id="queryCharge" parameterType="string" resultType="string">
+        select pk_cg
+        from ex_order_occ
+        where pk_exocc = #{PkExocc,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 查询计费记录明细 -->
+    <select id="queryBlIpDt" parameterType="string" resultType="DynaBean">
+        select *
+        from bl_ip_dt
+        where pk_cgip = #{PkCg,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 门诊数据校验 -->
+    <select id="opDataCheck" parameterType="string" resultType="int">
+        select count(1)
+        from bl_op_dt
+        where pk_cnord = #{pkCnord,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 住院数据校验 -->
+    <select id="ipDataCheck" parameterType="string" resultType="DynaBean">
+        select pk_cgip, pk_cnord
+        from bl_ip_dt
+        where pk_cnord = #{pkCnord,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 医技执行 -->
+    <update id="medExeOcc" parameterType="java.util.Map">
+        update ex_assist_occ
+        set flag_occ=1,
+            date_occ = to_date(#{dateOcc,jdbcType=VARCHAR}, 'yyyy-MM-dd hh24:mi:ss'),
+            pk_emp_occ=#{pkEmpOcc,jdbcType=VARCHAR},
+            name_emp_occ=#{nameEmpOcc,jdbcType=VARCHAR},
+            eu_status=1,
+            pk_org_occ=#{pkOrgOcc,jdbcType=VARCHAR},
+            pk_dept_occ=#{pkDeptOcc,jdbcType=VARCHAR},
+            pk_msp=#{pkMsp,jdbcType=VARCHAR}
+        where flag_occ = 0
+          and flag_canc = '0'
+          and flag_refund = '0'
+          and pk_assocc = #{pkAssocc,jdbcType=VARCHAR}
+    </update>
+
+    <!-- ==================================医技重构开始======================================= -->
+    <select id="getTotalAmount" parameterType="java.util.List" resultType="java.lang.Double">
+        select case when sum(cg.amount) is null then 0 else sum(cg.amount) end totalAmount
+        from bl_ip_dt cg
+        where
+        cg.pk_ordexdt in
+        <foreach item="item" index="index" collection="list" open="("
+                 separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <!-- 查询费用记录（未记费）重构 -->
+    <select id="qryIpMedBlDtCharge_refactor" parameterType="java.util.List" resultType="DynaBean">
+        select oi.pk_item,
+        case when oi.flag_pd='0' then item.code else pd.code end code,
+        case when oi.flag_pd='0' then item.name else pd.name end yjName,
+        case when oi.flag_pd='0' then item.spec else pd.spec end spec,
+        oi.quan,
+        case when oi.flag_pd='0' then item.price*oi.quan else pd.price/pd.pack_size*oi.quan end amount,
+        ord.name_ord,
+        ord.spec,
+        ord.quan*oi.quan as quancg,
+        oi.flag_pd as flag_pd,
+        ord.name_emp_ord as name_emp_app,
+        ord.pk_cnord,
+        ord.pk_dept as pk_dept_app,
+        ord.pk_dept_exec as pk_dept_ex,
+        item.pk_item as pk_item,
+        ord.pk_org,
+        ord.pk_org_exec as pk_org_ex,
+        ord.pk_pi,
+        ord.pk_pres,
+        ord.pk_pv,
+        CASE WHEN ord.eu_ordtype='1' THEN ord.pk_ord ELSE null END as pk_ord,<!-- 科研医嘱查询医嘱项目主键，非科研医嘱不查询 -->
+        ord.eu_ordtype,
+        CASE WHEN oi.flag_pd='1' THEN pd.PRICE/pd.PACK_SIZE ELSE item.PRICE END as price,
+        CASE WHEN oi.flag_pd='1' THEN pd.PRICE ELSE NULL END as price_cost,
+        CASE WHEN oi.flag_pd='1' THEN pd.PK_UNIT_MIN ELSE '' END as pk_unit_pd,
+        CASE WHEN oi.flag_pd='1' THEN '~' ELSE '' END as batch_no,
+        1 as pack_size,
+        ord.pk_cnord
+        from cn_order ord
+        inner join bd_ord_item oi on ord.pk_ord=oi.pk_ord AND oi.DEL_FLAG='0'
+        left outer join bd_item item on oi.pk_item=item.pk_item and oi.flag_pd='0' and item.flag_active='1'
+        left outer join bd_pd pd on oi.pk_item=pd.pk_pd and oi.flag_pd='1' and pd.flag_stop!='1'
+        where 1=1
+        and ord.pk_cnord in
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <!-- 查询费用记录（已记费） 重构 -->
+    <select id="qryIpMedBlDtInfo_refactor" parameterType="java.util.Map" resultType="DynaBean">
+        select cg.pk_cgip,
+        case when cg.flag_pd='0' then item.code else pd.code end code,
+        cg.name_cg as yjName,
+        cg.spec,
+        cg.quan as quancg,
+        cg.amount,
+        cg.amount,
+        cg.flag_settle,
+        cg.batch_no,
+        cg.date_expire,
+        cg.date_hap,
+        cg.flag_pd,
+        cg.name_emp_app,
+        cg.name_emp_cg,
+        cg.pack_size,
+        cg.pk_cnord,
+        cg.pk_dept_app,
+        cg.pk_dept_cg,
+        cg.pk_dept_ex,
+        cg.pk_emp_app,
+        cg.pk_emp_cg,
+        cg.pk_item,
+        cg.pk_org,
+        cg.pk_org_app,
+        cg.pk_org_ex,
+        cg.pk_pi,
+        cg.pk_pres,
+        cg.pk_pv,
+        cg.pk_unit_pd,
+        cg.price,
+        cg.price_cost,
+        cg.pk_cnord,
+        dic.val_attr,
+        cg.quan quan_ret,
+        bu.NAME name_unit,
+        cg.note_cg
+        from bl_ip_dt cg
+        left outer join bd_item item on cg.pk_item=item.pk_item and cg.flag_pd='0'
+        left outer join bd_pd pd on cg.pk_item=pd.pk_pd and cg.flag_pd='1'
+        left join bd_dictattr dic on dic.PK_DICT = item.pk_item and dic.code_attr = '0112' and dic.DEL_FLAG = '0'
+        LEFT JOIN BD_UNIT bu ON bu.PK_UNIT = cg.pk_unit
+        where 1=1
+        and cg.flag_settle='0'
+        <if test="pkExoccList != null">
+            And cg.pk_ordexdt in
+            <foreach item="item" index="index" collection="pkExoccList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="pkCnordList != null">
+            and cg.pk_cnord in
+            <foreach item="item" index="index" collection="pkCnordList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        And cg.quan>0
+        and not exists (select 1 from bl_ip_dt bk where cg.pk_cgip=bk.pk_cgip_back)
+    </select>
+
+    <!-- 查询医技执行单 -->
+    <select id="queryExAssistOccList_refactor" parameterType="java.lang.String" resultType="DynaBean">
+        select occ.pk_assocc,
+               occ.code_occ,
+               occ.quan_occ,
+               occ.date_appt,
+               occ.date_occ,
+               occ.name_emp_occ,
+               occ.note,
+               occ.flag_occ,
+               occ.flag_prt,
+               occ.pk_msp,
+               occ.pk_cnord,
+               (case
+                       when occ.EU_STATUS = '1' then '已执行'
+                       when occ.EU_STATUS = '9' then '取消执行'
+                       else '未执行' end) euStatusName
+        from ex_assist_occ occ
+        where occ.flag_canc = '0'
+          and occ.flag_refund = '0'
+          and exists(
+                select 1
+                from ex_assist_occ_dt dt
+                where occ.pk_assocc = dt.pk_assocc
+                  and dt.pk_cnord = #{pkCnordFather}
+                  and dt.pk_exocc = #{pkExoccFather}
+                )
+    </select>
+    <!-- 查询收费组套明细 -->
+    <select id="qrycgSet" parameterType="java.lang.String" resultType="DynaBean">
+        SELECT a.*,
+               bu.NAME unit
+        FROM (SELECT dt.*,
+                     item.NAME,
+                     item.CODE,
+                     item.spec,
+                     item.price,
+                     item.pk_unit    pk_unit,
+                     item.PK_UNIT as pk_Unit_Pd,
+                     '0'          as flag_pd,
+                     null         as batch_no,
+                     1            as pack_Size,
+                     null         as price_cost
+              FROM bl_cgset_dt dt
+                           INNER JOIN bd_item item ON item.pk_item = dt.pk_item and item.flag_active = '1'
+              WHERE dt.pk_cgset = #{pkCgset}
+              UNION ALL
+              SELECT dt.*,
+                     bp.NAME,
+                     bp.CODE,
+                     bp.spec,
+                     bp.price / bp.PACK_SIZE as price,
+                     bp.pk_unit_min             pk_unit,
+                     bp.PK_UNIT_MIN          as pk_Unit_Pd,
+                     '1'                     as flag_pd,
+                     '~'                     as batch_no,
+                     1                       as pack_Size,
+                     bp.price                as price_cost
+              FROM bl_cgset_dt dt
+                           INNER JOIN bd_pd bp ON bp.pk_pd = dt.pk_item and bp.flag_stop != '1'
+              WHERE dt.pk_cgset = #{pkCgset}) a
+                     INNER JOIN BD_UNIT bu ON bu.PK_UNIT = a.pk_unit
+        where a.DEL_FLAG = '0'
+        order by a.SORTNO
+    </select>
+
+    <select id="isRefund" parameterType="java.util.List" resultType="java.lang.Integer">
+        select sum(AMOUNT_PI) from bl_ip_dt where pk_ordexdt in
+        <foreach item="item" index="index" collection="list" open="("
+                 separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <!-- 查询要退费对应的记费记录pk_cg -->
+    <select id="queryCharge_refactor" parameterType="java.util.List" resultType="java.lang.String">
+        select cg.pk_cgip
+        from bl_ip_dt cg
+        where cg.pk_ordexdt in
+        <foreach item="item" index="index" collection="list" open="("
+                 separator="," close=")">
+            #{item}
+        </foreach>
+        and cg.quan>0
+        and not exists (select 1
+        from bl_ip_dt back
+        where cg.pk_cgip=back.pk_cgip_back)
+    </select>
+    <!-- 根据记费主键，查询到具体的记费数据 -->
+    <select id="queryBlIpDt_refactor" parameterType="java.util.List"
+            resultType="com.zebone.nhis.common.module.bl.BlIpDt">
+        select * from bl_ip_dt where pk_cgip in
+        <foreach item="item" index="index" collection="list" open="("
+                 separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <update id="updateExOrdOcc" parameterType="java.util.List">
+        update ex_order_occ set date_occ= null, pk_emp_occ= null, name_emp_occ= null, pk_cg= null, eu_status='0' where
+        pk_exocc in
+        <foreach item="item" index="index" collection="list" open="("
+                 separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+    <!-- 删除医技执行单明细 -->
+    <delete id="deleteExOrdOccDt" parameterType="java.util.List">
+        delete from ex_assist_occ_dt where 1=1 and pk_exocc in
+        <foreach item="item" index="index" collection="list" open="("
+                 separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+    <!-- 删除医技执行单 -->
+    <delete id="deleteExOrdOcc" parameterType="java.util.List">
+        delete from ex_assist_occ where flag_occ='0' and pk_exocc in
+        <foreach item="item" index="index" collection="list" open="("
+                 separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <!-- 计费功能：更新医嘱执行单 -->
+    <update id="updateOrdOcc" parameterType="java.util.Map">
+        update ex_order_occ
+        <set>
+            date_occ=to_date(#{dateOcc,jdbcType=VARCHAR}, 'yyyymmddhh24miss'),
+            pk_emp_occ=#{pkEmpOcc},
+            name_emp_occ=#{nameEmpOcc},
+            eu_status='1',
+            pk_org_occ=#{pkOrgOcc},
+            pk_dept_occ=#{pkDeptOcc}
+        </set>
+        where pk_exocc in
+        <foreach item="item" index="index" collection="pkExoccList" open="("
+                 separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <!-- 医技执行-F2计费功能：更新医嘱执行单 -->
+    <update id="updateOrdOccSpec" parameterType="java.util.Map">
+        update ex_order_occ
+        <set>
+            pk_org_occ=#{pkOrgOcc},
+            pk_dept_occ=#{pkDeptOcc}
+        </set>
+        where pk_exocc in
+        <foreach item="item" index="index" collection="pkExoccList" open="("
+                 separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <!-- 计费功能：更新医嘱 -->
+    <update id="updateCnOrder" parameterType="java.util.Map">
+        update cn_order
+        <set>
+            pk_org_exec=#{pkOrgExec},
+            pk_dept_exec=#{pkDeptExec}
+        </set>
+        where pk_cnord in
+        <foreach item="item" index="index" collection="pkCnordList" open="("
+                 separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <!-- 判断是否有未执行的医嘱执行单，返回值大于0时返回，返回值为0时生成医技执行单 -->
+    <select id="isCharging" parameterType="java.util.List" resultType="java.lang.Integer">
+        select count(1) from ex_assist_occ_dt where pk_exocc in
+        <foreach item="item" index="index" collection="list" open="("
+                 separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="qryAppPrtByPkPv" parameterType="java.util.Map" resultType="com.zebone.nhis.bl.pub.vo.RisPrintInfoVo">
+        select ris.PK_ORDRIS,
+        ris.form_app
+        from cn_order ord
+        inner join cn_ris_apply ris on ord.pk_cnord = ris.pk_cnord and ris.del_flag = '0'
+        inner join ex_order_occ occ on ord.pk_cnord = occ.pk_cnord
+        inner join pi_master pi on pi.pk_pi = ord.pk_pi
+        inner join PV_ENCOUNTER pv on pv.PK_PV=ord.PK_PV
+        where 1 = 1
+        and ord.ordsn = ord.ordsn_parent
+        and ord.PK_DEPT_EXEC = #{pkDept}
+        and occ.EU_STATUS = '0'
+        and ris.FORM_APP is not null
+        and ris.FLAG_PRINT2 = '0'
+        and ris.EU_STATUS > '0'
+        <if test="pkPvs != null">
+            and pv.PK_PV in
+            <foreach collection="pkPvs" item="pkPv" separator="," open="(" close=")">
+                #{pkPv}
+            </foreach>
+        </if>
+        order by pi.code_ip
+    </select>
+
+    <!-- 查询检查打印申请单 -->
+    <select id="qryRisPrintInfo" parameterType="java.lang.String" resultType="com.zebone.nhis.bl.pub.vo.RisPrintInfoVo">
+        select ord.pk_cnord,
+        ris.PK_ORDris,
+        ris.PK_ORG,
+        ris.DT_risTYPE,
+        ris.DESC_BODY,
+        ris.PURPOSE,
+        ris.PK_MSP,
+        ris.DATE_APPO,
+        ris.DATE_EXAM,
+        ris.ris_NOTICE,
+        ris.TICKETNO,
+        ris.EU_STATUS,
+        ris.FLAG_BED,
+        ris.NOTE,
+        ris.PK_DIAG,
+        ris.NAME_DIAG,
+        ris.PK_EMP_APPO,
+        ris.NAME_EMP_APPO,
+        ris.FLAG_PRINT,
+        ris.flag_print2,<!-- 标识医技科室的打印标志 -->
+        ris.CREATOR,
+        ris.CREATE_TIME,
+        ris.MODIFIER,
+        ris.MODITY_TIME,
+        ris.DEL_FLAG,
+        ris.NOTE_DISE,
+        ris.TS,
+        ris.flag_fasting,
+        ris.dt_patitrans,
+
+        ord.pk_pv,
+        ord.pk_ord,
+        ord.price_cg,
+        ord.eu_status_ord,
+        ord.code_apply,
+        ord.date_start,
+        ord.name_ord,
+        ord.quan,
+        ord.flag_emer,
+        ord.pk_dept,
+        ord.pk_org_exec,
+        ord.pk_dept_exec,
+        ord.note_ord,
+        ord.code_ordtype,
+        ord.infant_no,
+        ord.flag_cp,
+        ord.eu_intern,
+        ord.name_emp_input,
+        ord.name_emp_ord,
+        ord.groupno,
+        ord.ordsn,
+        ord.ordsn_parent,
+        ris.form_app,
+        case when ris.form_app is null then '0' else '1' end as has_form,
+        dept.name_dept as NameDeptExec
+        from cn_order ord
+        inner join cn_ris_apply ris on ord.pk_cnord=ris.pk_cnord and ris.del_flag='0'
+        inner join pi_master pi on pi.pk_pi=ord.pk_pi
+        left join ex_order_occ occ on ord.pk_cnord=occ.pk_cnord
+        left join bd_ou_dept dept on ord.pk_dept_exec=dept.pk_dept and dept.del_flag='0'
+        where 1=1
+
+        and ris.pk_ordris in
+        <foreach item="item" index="index" collection="pkOrdris" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and ord.ordsn=ord.ordsn_parent and
+        ord.pk_dept_exec=#{pkDeptExec}
+        order by pi.code_ip,ord.ordsn_parent
+        <!-- and occ.eu_status='1' -->
+    </select>
+
+    <!-- 批量更新申请单（检查、检验、输血） -->
+    <update id="updateApply" parameterType="java.util.List">
+        <if test="list != null">
+            <foreach collection="list" item="item" index="index" open="" close="" separator=";">
+                update
+                <if test="item.type != null and item.type==02">
+                    cn_ris_apply
+                </if>
+                <if test="item.type != null and item.type==03">
+                    cn_lab_apply
+                </if>
+                <if test="item.type != null and item.type==12">
+                    cn_trans_apply
+                </if>
+                <set>
+                    eu_status='1'
+                </set>
+                <where>
+                    pk_cnord=#{item.pkCnord} and
+                    eu_status='3'
+                </where>
+            </foreach>
+        </if>
+    </update>
+
+    <!-- 查询常用的收费项目 -->
+    <select id="qryUsuItem" parameterType="java.util.Map" resultType="DynaBean">
+        SELECT cg.pk_item,
+        cg.name_cg name,
+        cg.spec,
+        case when cg.FLAG_PD = '1' then bp.PRICE / bp.PACK_SIZE else bi.PRICE end price,
+        1 AS quan,
+        bu.name as unit,
+        1 as pack_Size,
+        <!--count(1)                                                               as Rate,-->
+        CASE
+        WHEN bi.code IS NOT NULL
+        THEN bi.code
+        WHEN bp.code IS NOT NULL
+        THEN bp.code
+        ELSE NULL END AS code,
+        CASE WHEN bp.PK_PD IS NOT NULL THEN '1' ELSE '0' end as flag_pd,
+        CASE WHEN bp.PK_PD IS NOT NULL THEN '~' ELSE null end as batch_no,
+        CASE WHEN bp.PK_PD IS NOT NULL THEN bp.price ELSE null end as price_cost,
+        CASE WHEN bp.PK_PD IS NOT NULL THEN bp.pk_unit_min ELSE bi.pk_unit end as pk_Unit_Pd
+        FROM bl_ip_dt cg
+        INNER JOIN cn_order ord ON cg.pk_cnord = ord.pk_cnord
+        INNER JOIN bd_unit bu ON bu.pk_unit = cg.pk_unit
+        LEFT JOIN bd_item bi ON bi.pk_item = cg.pk_item and bi.flag_active='1'
+        LEFT JOIN bd_pd bp ON bp.pk_pd = cg.pk_item and bp.flag_stop!='1'
+        WHERE cg.date_cg &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyy-MM-dd hh24:mi:ss')
+        AND cg.date_cg &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyy-MM-dd hh24:mi:ss')
+        AND cg.pk_dept_ex = #{pkDeptEx}
+        AND NOT exists(SELECT 1
+        FROM bd_ord_item oi
+        WHERE ord.pk_ord = oi.pk_ord
+        AND cg.pk_item = oi.pk_item)
+        GROUP BY cg.pk_item,
+        cg.name_cg,
+        cg.spec,
+        cg.price_org,
+        bu.name,
+        bi.code,
+        bp.code,
+        bp.PK_PD,
+        bp.price,
+        bp.pk_unit_min,
+        bi.pk_unit, bp.PACK_SIZE, cg.FLAG_PD, bi.PRICE
+        ORDER BY count(1) DESC
+    </select>
+
+    <!-- 查询科室收费项目 -->
+    <select id="qryDeptItem" parameterType="java.util.Map" resultType="DynaBean">
+        SELECT dt.eu_itemtype,
+               CASE dt.eu_itemtype WHEN '0' THEN item.code ELSE pd.code END                  code,
+               CASE dt.eu_itemtype WHEN '0' THEN item.pk_item ELSE pd.pk_pd END              pk_item,
+               CASE dt.eu_itemtype WHEN '0' THEN item.name ELSE pd.name END                  name,
+               CASE dt.eu_itemtype WHEN '0' THEN item.spcode ELSE pd.spcode END              spcode,
+               CASE dt.eu_itemtype WHEN '0' THEN item.spec ELSE pd.spec END                  spec,
+               CASE dt.eu_itemtype WHEN '0' THEN unit.name ELSE punit.name END               unit,
+               CASE dt.eu_itemtype WHEN '0' THEN '0' ELSE '1' END                            flag_pd,
+               CASE dt.eu_itemtype WHEN '0' THEN null ELSE '~' END                           batch_no,
+               CASE dt.eu_itemtype WHEN '0' THEN null ELSE pd.price END                      price_cost,
+               CASE dt.eu_itemtype WHEN '0' THEN item.pk_unit ELSE pd.pk_unit_min END        pk_Unit_Pd,
+               1 as                                                                          pack_Size,
+               CASE dt.eu_itemtype WHEN '0' THEN item.price ELSE pd.price / pd.pack_size END price,
+               dt.quan
+        FROM bl_cgset cs
+                     INNER JOIN bl_cgset_dt dt ON cs.pk_cgset = dt.pk_cgset
+                     LEFT OUTER JOIN bd_item item ON dt.pk_item = item.pk_item AND dt.eu_itemtype = '0'
+                     LEFT OUTER JOIN bd_pd pd ON dt.pk_item = pd.pk_pd AND dt.eu_itemtype = '1'
+                     LEFT OUTER JOIN bd_unit unit ON item.pk_unit = unit.pk_unit
+                     LEFT OUTER JOIN bd_unit punit ON pd.pk_unit_min = punit.pk_unit
+        WHERE cs.pk_dept = #{pkDept}
+          AND cs.eu_type = '1'
+          and dt.EU_ITEMTYPE = #{status}
+    </select>
+
+    <!-- 退回医技申请 -->
+    <update id="cancelApply" parameterType="java.util.List">
+        update cn_ris_apply
+        set eu_status='0'
+        where pk_ordris = #{pkOrdries}
+    </update>
+
+    <!--查询存在医技申请单的患者-->
+    <select id="qryPiInfo" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.PK_PV,
+        pv.PK_PI,
+        pv.NAME_PI,
+        pi.CODE_IP
+        from PV_ENCOUNTER pv
+        inner join PI_MASTER pi on pi.PK_PI = pv.PK_PI
+        inner join (select ord.PK_PV
+        from CN_ORDER ord
+        LEFT JOIN cn_ris_apply ris ON ris.PK_CNORD = ord.PK_CNORD
+        left outer join cn_lab_apply lis on ord.pk_cnord = lis.pk_cnord
+        left outer join cn_trans_apply trans on ord.pk_cnord = trans.pk_cnord
+        left join (select sum(bl.AMOUNT) tol, osn.ORDSN_PARENT
+        from BL_IP_DT bl
+        inner join CN_ORDER osn on osn.PK_CNORD = bl.PK_CNORD
+        group by osn.ORDSN_PARENT) cg on cg.ORDSN_PARENT = ord.ORDSN_PARENT
+        where 1 = 1
+        and ord.PK_DEPT_EXEC = #{pkDeptExec,,jdbcType=VARCHAR}
+        <if test="dateBegin != null and dateBegin != ''">
+            and ord.DATE_SIGN &gt; to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyyMMddhh24:mi:ss')
+        </if>
+        <if test="dateEnd != null and dateEnd != ''">
+            and ord.DATE_SIGN &lt; to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyyMMddhh24:mi:ss')
+        </if>
+        <if test="flagIn == 0 ">
+            and (cg.tol is null or tol = 0)<!--未收费-->
+            and (ris.eu_status>'0' or lis.eu_status>'0' or trans.eu_status>'0')
+        </if>
+        AND (
+        (ord.code_ordtype like '02%') OR
+        (ord.code_ordtype like '03%') OR
+        (ord.code_ordtype = '12') OR
+        (ord.code_ordtype like '05%') or (ord.code_ordtype like '99%') or
+        (ord.code_ordtype like '07%')
+        ) group by ord.pk_pv) app on app.PK_PV=pv.PK_PV
+        where 1 = 1
+        and pv.EU_PVTYPE = '3'
+        <!--and pv.FLAG_IN = '1'-->
+        <!--and exists()-->
+        <if test="flagIn == 1 ">
+            and pv.FLAG_SETTLE = '1'
+        </if>
+        <if test="flagIn == 0 ">
+            and pv.FLAG_SETTLE = '0' <!--在院-->
+        </if>
+        <if test="codeIp != null and codeIp != '' ">
+            and pi.code_ip=#{codeIp,,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDept != null and pkDept != ''">
+            and pv.pk_dept=#{pkDept,jdbcType=VARCHAR}
+        </if>
+        order by pi.code_ip
+    </select>
+
+    <!--根据患者的就诊主键查询患者所有的申请单-->
+    <select id="qryApplyByPkPv" parameterType="java.util.Map" resultType="DynaBean">
+        select ord.pk_cnord,
+        ord.ordsn,
+        ord.ordsn_parent,
+        ord.pk_pi,
+        ord.pk_pv,
+        ord.pk_dept_ns,
+        pi.code_ip,
+        pv.code_pv,
+        pv.name_pi,
+        pv.dt_sex,
+        pv.BED_NO,
+        pv.flag_settle,
+        pvip.ip_times,
+        ord.code_apply,
+        ord.flag_emer,
+        ord.name_ord,
+        ord.quan,
+        ord.quan*ord.price_cg as price_cg,
+        ord.DATE_SIGN date_start,
+        nowde.name_dept as pk_dept,
+        nowde.pk_dept as pk_dept_app,
+        ord.name_emp_ord,
+        case when cnt is null then 0 else cg.cnt end cnt,
+        ord.note_ord,
+        occ.pk_exocc,
+        ord.eu_pvtype,
+        ord.code_ordtype,
+        ord.pk_ord,
+        occ.PK_ORG_OCC,
+        occ.date_occ,
+        occ.PK_DEPT_OCC,
+        occ.date_plan,
+        occ.EU_STATUS eu_status_occ,
+        ris.DESC_BODY,
+        ris.PURPOSE,
+        bdia.name_cd as dmiss_diag,
+        cg.item_num,
+        ris.flag_print2,
+        ris.pk_ordris,
+        ris.eu_status
+        from cn_order ord
+        inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+        inner join PV_IP pvip on pvip.PK_PV=pv.PK_PV
+        left join pv_diag pdia on pdia.pk_pv=pv.pk_pv and pdia.FLAG_MAJ='1'
+        left join bd_cndiag bdia on bdia.pk_cndiag=pdia.pk_diag
+        inner join pi_master pi on pv.pk_pi=pi.pk_pi
+        inner join BD_OU_DEPT nowde on nowde.PK_DEPT=pv.PK_DEPT
+        LEFT join ex_order_occ occ on ord.pk_cnord=occ.pk_cnord and occ.flag_canc='0'
+        LEFT JOIN cn_ris_apply ris ON ris.PK_CNORD = ord.PK_CNORD
+        left outer join cn_lab_apply lis on ord.pk_cnord=lis.pk_cnord
+        left outer join cn_trans_apply trans on ord.pk_cnord = trans.pk_cnord
+        left outer join (select sum(dt.amount) cnt,
+        dt.pk_ordexdt,
+        dt.pk_dept_ex,
+        count(1) as item_num
+        from bl_ip_dt dt
+        group by dt.pk_ordexdt,dt.pk_dept_ex) cg on occ.pk_exocc=cg.pk_ordexdt
+        <!-- left join bd_ord_dept bod on ord.pk_ord = bod.pk_ord and bod.del_flag = 0 -->
+        left outer join bd_ou_dept dept on ord.pk_dept = dept.pk_dept
+        where 1=1
+        <!--AND pv.flag_in='1'-->
+        AND (
+        (ord.code_ordtype like '02%') OR
+        (ord.code_ordtype like '03%') OR
+        (ord.code_ordtype='12') OR
+        (ord.code_ordtype like '05%') or (ord.code_ordtype like '99%') or
+        (ord.code_ordtype like '07%')
+        )
+        and ord.pk_dept_exec = #{pkDeptExec,jdbcType=VARCHAR}
+        and ord.eu_pvtype='3'
+        <if test="euCharge == 1">
+            <!-- 已收费 -->
+            and ((cg.cnt &gt; 0 AND cg.pk_dept_ex = #{pkDeptExec,jdbcType=VARCHAR}) or ((cg.cnt = '0' or cg.cnt is null)
+            and occ.eu_status=1))
+        </if>
+        <if test="euCharge == 0">
+            <!-- 未收费 -->
+            and ((cg.cnt ='0' or cg.cnt is null) and occ.eu_status=0)
+
+            and not exists(SELECT 1 FROM CN_ORDER ord3
+            inner join (SELECT
+            sum(dt.amount) cnt,
+            dt.pk_cnord,
+            count(1) AS item_num
+            FROM bl_ip_dt dt
+            where dt.PK_DEPT_EX=#{pkDeptExec,jdbcType=VARCHAR} AND
+            dt.FLAG_SETTLE='0'
+            GROUP BY dt.pk_cnord
+            having sum(dt.amount)=0 and count(1)>0) cg1 ON ord3.pk_cnord = cg1.pk_cnord
+            WHERE ord3.ORDSN_PARENT=ord.ORDSN_PARENT )
+        </if>
+        <if test="euCharge == 2">
+            <!-- 已退费 -->
+            and exists(SELECT 1 FROM CN_ORDER ord3
+            inner join (SELECT
+            sum(dt.amount) cnt,
+            dt.pk_cnord,
+            count(1) AS item_num
+            FROM bl_ip_dt dt
+            where dt.PK_DEPT_EX=#{pkDeptExec,jdbcType=VARCHAR} AND
+            dt.FLAG_SETTLE='0'
+            GROUP BY dt.pk_cnord
+            having sum(dt.amount)=0 and count(1)>0) cg1 ON ord3.pk_cnord = cg1.pk_cnord
+            WHERE ord3.ORDSN_PARENT=ord.ORDSN_PARENT )
+        </if>
+        <if test="euCharge == 9">
+            <!-- 全部 -->
+            and ((cg.cnt &gt; 0 AND cg.pk_dept_ex = #{pkDeptExec,jdbcType=VARCHAR}) OR (cg.cnt ='0' or cg.cnt is null))
+        </if>
+        and pv.PK_PV=#{pkPv,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 查询费用记录（已记费） 可部分退 -->
+    <select id="qryIpMedBlDtPartialRefundInfo" parameterType="java.util.Map" resultType="DynaBean">
+        select cg.pk_cgip,
+        case when cg.flag_pd='0' then item.code else pd.code end code,
+        cg.name_cg as yjName,
+        cg.spec,
+        cg.quan as quancg,
+        cg.amount,
+        cg.amount,
+        cg.flag_settle,
+        cg.batch_no,
+        cg.date_expire,
+        cg.date_hap,
+        cg.flag_pd,
+        cg.name_emp_app,
+        cg.name_emp_cg,
+        cg.pack_size,
+        cg.pk_cnord,
+        cg.pk_dept_app,
+        cg.pk_dept_cg,
+        cg.pk_dept_ex,
+        cg.pk_emp_app,
+        cg.pk_emp_cg,
+        cg.pk_item,
+        cg.pk_org,
+        cg.pk_org_app,
+        cg.pk_org_ex,
+        cg.pk_pi,
+        cg.pk_pres,
+        cg.pk_pv,
+        cg.pk_unit_pd,
+        cg.price,
+        cg.price_cost,
+        cg.pk_cnord,
+        dic.val_attr,
+        cg.quan + nvl(bk.quan,0) quan_ret,
+        bu.NAME name_unit,
+        cg.note_cg
+        from bl_ip_dt cg
+        left outer join bd_item item on cg.pk_item=item.pk_item and cg.flag_pd='0'
+        left outer join bd_pd pd on cg.pk_item=pd.pk_pd and cg.flag_pd='1'
+        left join bd_dictattr dic on dic.PK_DICT = item.pk_item and dic.code_attr = '0112' and dic.DEL_FLAG = '0'
+        LEFT JOIN BD_UNIT bu ON bu.PK_UNIT = cg.pk_unit
+        left outer join (select back.pk_cgip_back,
+        sum(back.quan) quan,
+        sum(back.amount) amount
+        from bl_ip_dt back
+        where back.pk_cnord in
+        <foreach item="item" index="index" collection="pkCnordList" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        group by back.pk_cgip_back) bk on cg.pk_cgip=bk.pk_cgip_back
+        where 1=1
+        and cg.flag_settle='0' and dic.val_attr = '1'
+        <if test="pkExoccList != null">
+            And cg.pk_ordexdt in
+            <foreach item="item" index="index" collection="pkExoccList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="pkCnordList != null">
+            and cg.pk_cnord in
+            <foreach item="item" index="index" collection="pkCnordList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+
+    <select id="qryIpMedBlDtInfoRefactors" parameterType="java.util.Map" resultType="DynaBean">
+        select cg.pk_cgip,
+        case when cg.flag_pd='0' then item.code else pd.code end code,
+        cg.name_cg as yjName,
+        cg.spec,
+        cg.quan as quancg,
+        cg.amount,
+        cg.amount,
+        cg.flag_settle,
+        cg.batch_no,
+        cg.date_expire,
+        cg.date_hap,
+        cg.flag_pd,
+        cg.name_emp_app,
+        cg.name_emp_cg,
+        cg.pack_size,
+        cg.pk_cnord,
+        cg.pk_dept_app,
+        cg.pk_dept_cg,
+        cg.pk_dept_ex,
+        cg.pk_emp_app,
+        cg.pk_emp_cg,
+        cg.pk_item,
+        cg.pk_org,
+        cg.pk_org_app,
+        cg.pk_org_ex,
+        cg.pk_pi,
+        cg.pk_pres,
+        cg.pk_pv,
+        cg.pk_unit_pd,
+        cg.price,
+        cg.price_cost,
+        cg.pk_cnord,
+        dic.val_attr,
+        cg.quan quan_ret,
+        bu.NAME name_unit,
+        cg.note_cg
+        from bl_ip_dt cg
+        left outer join bd_item item on cg.pk_item=item.pk_item and cg.flag_pd='0'
+        left outer join bd_pd pd on cg.pk_item=pd.pk_pd and cg.flag_pd='1'
+        left join bd_dictattr dic on dic.PK_DICT = item.pk_item and dic.code_attr = '0112' and dic.DEL_FLAG = '0'
+        LEFT JOIN BD_UNIT bu ON bu.PK_UNIT = cg.pk_unit
+        where 1=1
+        and cg.flag_settle='0' AND (dic.val_attr ='0' or dic.val_attr is null)
+        <if test="pkExoccList != null">
+            And cg.pk_ordexdt in
+            <foreach item="item" index="index" collection="pkExoccList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="pkCnordList != null">
+            and cg.pk_cnord in
+            <foreach item="item" index="index" collection="pkCnordList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        And cg.quan>0
+        and not exists (select 1 from bl_ip_dt bk where cg.pk_cgip=bk.pk_cgip_back)
+    </select>
+    <!-- 门急诊医技申请单查询 -->
+    <select id="queryOpBaMedicalApp" parameterType="java.util.Map" resultType="DynaBean">
+        select * from (
+        select ord.pk_cnord,
+        ord.pk_pi,
+        ord.pk_pv,
+        ord.ordsn,
+        ord.ordsn_parent,
+        pv.code_pv,
+        pv.name_pi,
+        pv.dt_sex,
+        ord.code_apply,
+        ord.flag_emer,
+        ord.name_ord,
+        ord.quan_cg as quan,
+        ord.price_cg,
+        ord.date_start,
+        bod.name_dept as pk_dept,
+        ord.name_emp_ord,
+        diag.NAME_DIAG,
+        ord.note_ord,
+        BO.SPCODE,
+        BO.CODE_ORDTYPE,
+        pi.code_op,
+        ris.pk_ordris,
+        GETPVAGE(pi.BIRTH_DATE,pv.DATE_BEGIN) age
+        from cn_order ord
+        inner join pv_encounter pv on ord.pk_pv = pv.pk_pv
+        INNER JOIN PI_MASTER pi ON pi.PK_PI = pv.PK_PI
+        left outer join bd_ou_dept bod on ord.pk_dept = bod.pk_dept
+        left join cn_ris_apply ris ON ris.PK_CNORD = ord.PK_CNORD
+        inner join pv_diag diag on diag.pk_pv = pv.pk_pv and diag.flag_maj = '1'
+        left outer join cn_lab_apply lis on ord.pk_cnord=lis.pk_cnord
+        left outer join cn_trans_apply trans on ord.pk_cnord = trans.pk_cnord
+        inner join  BD_ORD BO on BO.PK_ORD=ord.PK_ORD
+        where
+        <if test="pkDeptExec != null  and  pkDeptExec != ''">
+           ord.pk_dept_exec = #{pkDeptExec,jdbcType=VARCHAR}
+        </if>
+        and ord.eu_pvtype in ('1','2','4')  and ord.flag_erase='0'
+        and exists(
+        select 1
+        from BL_OP_DT  where BL_OP_DT.PK_CNORD=ord.PK_CNORD and FLAG_SETTLE='1'
+        )
+        <if test="codeApply != null  and  codeApply != ''">
+            and ord.code_apply = #{codeApply,jdbcType=VARCHAR}
+        </if>
+
+        <if test="dtOrdcateLIst != null">
+            and BO.DT_ORDCATE    in
+            <foreach item="item" index="index" collection="dtOrdcateLIst" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="codeOp != null  and  codeOp != ''">
+            and pi.CODE_OP = #{codeOp,jdbcType=VARCHAR}
+        </if>
+        <if test="codePv != null  and  codePv != ''">
+            and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDept != null  and  pkDept != ''">
+            and ord.pk_dept = #{pkDept,jdbcType=VARCHAR}
+        </if>
+        <if test="dateBegin != null  and  dateBegin != ''">
+            and ord.date_start &gt;= to_date(#{dateBegin,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        </if>
+        <if test="dateEnd != null  and  dateEnd != ''">
+            and ord.date_start &lt;= to_date(#{dateEnd,jdbcType=VARCHAR}, 'yyyymmddhh24miss')
+        </if>
+        <if test="pkCnord != null  and  pkCnord != ''">
+            and ord.pk_cnord=#{pkCnord,jdbcType=VARCHAR}
+        </if>
+        ) t where 1=1
+        <if test='exStatus!=null and exStatus!="" and exStatus.equals("0")'>
+            and exists(select 1 from ex_assist_occ where (EU_STATUS = '0' or EU_STATUS is null ) and (flag_refund ='0'
+            or flag_refund is null) and t.PK_CNORD = PK_CNORD )
+        </if>
+        <if test='exStatus!=null and exStatus!="" and exStatus.equals("1")'>
+            and exists(select 1 from ex_assist_occ where EU_STATUS = '1' and (flag_refund ='0' or flag_refund is null)
+            and t.PK_CNORD = PK_CNORD )
+        </if>
+        <if test='exStatus!=null and exStatus!="" and exStatus.equals("2")'>
+            and exists(select 1 from ex_assist_occ where EU_STATUS = '1' and (flag_refund ='0' or flag_refund is null)
+            and t.PK_CNORD = PK_CNORD ) and exists(select 1 from ex_assist_occ where (EU_STATUS = '0' or EU_STATUS is
+            null ) and t.PK_CNORD = PK_CNORD )
+        </if>
+        <if test='exStatus!=null and exStatus!="" and exStatus.equals("9")'>
+            and exists(select 1 from ex_assist_occ where EU_STATUS = '9' and (flag_refund ='0' or flag_refund is null)
+            and t.PK_CNORD = PK_CNORD )
+        </if>
+        ORDER BY name_pi
+    </select>
+
+
+    <!-- ==================================医技重构结束======================================= -->
+</mapper>

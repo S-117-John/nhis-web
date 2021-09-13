@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.CnIpPressMapper">
+
+	<select id="qryCnOrder" parameterType="java.lang.String" resultType="DynaBean">		 
+			select o.desc_ord,
+				       o.dosage,
+				       unit.name  as dosage_name,
+				       sup.name   as code_supply,
+				       freq.name  as code_freq,
+				       o.days,
+				       o.quan,	
+				       o.eu_intern,			       
+         			   o.pk_cnord,
+         			   o.ts,
+				       pack.name as package_name
+			  from cn_order o
+				 left join bd_unit unit
+				    on unit.pk_unit = o.pk_unit_dos
+				 left join bd_supply sup
+				    on sup.code = o.code_apply
+				 left join bd_term_freq freq
+				    on freq.code = o.code_freq
+				 left join bd_unit pack
+				    on pack.pk_unit = o.pk_unit_cg
+	         where o.pk_pres = #{id}
+	         order by cast(case when o.ordsn is null then 0 else o.ordsn end as int)
+    </select>
+    
+    <select id="qryCnPress" parameterType="java.lang.String" resultType="DynaBean">
+    	select p.pk_pres,
+		       d.name as DT_PRESTYPE,
+		       dd.name as dt_properties,
+		       p.pres_no,
+		       p.date_pres
+		  from cn_prescription p
+			 inner join bd_defdoc d
+			    on p.dt_prestype = d.code_defdoclist
+			   and d.code_defdoclist = '060101'
+			 inner join bd_defdoc dd
+			    on p.dt_properties = dd.code_defdoclist
+			   and dd.code_defdoclist = '060103'		   
+		   where p.pk_pv=#{id}
+    </select>
+    
+     <select id="qryDrugStore" parameterType="java.lang.String" resultType="DynaBean">
+        select 
+               sto.pk_store,
+	           busa.pk_dept,
+               busa.pk_org  
+         from bd_dept_bus bus  
+              inner join bd_dept_bu bu on bus.pk_deptbu=bu.pk_deptbu  and bu.del_flag='0'  
+              inner join bd_dept_bus busa on bus.pk_deptbu=busa.pk_deptbu  and busa.del_flag='0' 
+              inner join bd_store sto on sto.pk_dept=busa.pk_dept and sto.del_flag='0'       
+        where busa.dt_depttype='0402' and  
+              bu.dt_butype='02' and  
+              bus.pk_dept=#{id} 
+              and bus.del_flag='0'
+              and busa.flag_def ='1' 
+    </select>
+                       
+    <select id="qryStoreQuanMin" parameterType="java.util.Map" resultType="Integer">
+    	select  sum(stk.quan_min) quan_min
+			  from bd_pd pd
+			     inner join bd_pd_store pds
+			     on pd.pk_pd = pds.pk_pd
+			    inner join cn_order ord on ord.pk_ord=pds.pk_pd 
+			  left outer join (select sum(quan_min - quan_prep) quan_min, pk_pd
+			                     from pd_stock
+			                    where pk_store = #{pkStore,jdbcType=CHAR}
+			                    group by pk_pd, price) stk
+			    on pds.pk_pd = stk.pk_pd where ord.pk_ord=#{pkOrd,jdbcType=CHAR}
+    </select>
+    
+    <select id="qryDeptExec" parameterType="java.util.Map" resultType="DynaBean">
+            select 
+	           busa.pk_dept,
+               busa.pk_org  
+         from bd_dept_bus bus  
+              inner join bd_dept_bu bu on bus.pk_deptbu=bu.pk_deptbu  and bu.del_flag='0'  
+              inner join bd_dept_bus busa on bus.pk_deptbu=busa.pk_deptbu  and busa.del_flag='0'       
+        where busa.dt_depttype='0402' and  
+              bu.dt_butype=#{code,jdbcType=CHAR} and  
+              bus.pk_dept=#{pkDept,jdbcType=CHAR}
+              and bus.del_flag='0'  
+    </select>      
+    
+    <select id="qryBussinessLine" parameterType="java.lang.String" resultType="DynaBean">
+		select busa.pk_dept
+	         from bd_dept_bus bus
+	              inner join bd_dept_bu bu on bus.pk_deptbu=bu.pk_deptbu
+	              inner join bd_dept_bus busa on bus.pk_deptbu=busa.pk_deptbu              
+	         where busa.dt_depttype='02' and
+	              bu.dt_butype='01' and
+	              bus.pk_dept=#{id}
+    </select> 
+    
+    <select id="getApplies" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.cn.ipdw.CnTransApply">
+    	SELECT * FROM CN_TRANS_APPLY WHERE PK_CNORD = #{pkCnord,jdbcType=VARCHAR} AND DEL_FLAG = '0'
+    </select> 
+    
+    <select id="queryEmpAndDept" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.base.ou.BdOuDept">
+    	SELECT dept.* FROM  BD_OU_DEPT dept 
+			INNER JOIN BD_OU_EMPJOB job 
+			ON job.PK_DEPT = dept.PK_DEPT 
+			WHERE job.PK_EMP = #{pkEmpRep,jdbcType=VARCHAR} AND dept.DEL_FLAG = '0' 
+    </select>
+       		   
+</mapper>

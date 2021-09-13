@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.st.dao.SpecialPdStatisticMapper">
+<select id="querySpecialPdNumList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.st.vo.SpecialPdVo"> 
+     select pd.pk_pd,
+       pd.code,
+       pd.name,
+       pd.spec,
+       case when pd.flag_precious='1' then '贵重' else pois.name end spectype,
+       quanQc/cvt.pack_size quanQc,amountQc,
+       quanSt/cvt.pack_size quanSt,amountSt,
+       quanOut/cvt.pack_size quanOut,amountOut,
+       (case when quanQc/cvt.pack_size is null then 0 else quanQc/cvt.pack_size end) +
+       (case when quanSt/cvt.pack_size is null then 0 else quanSt/cvt.pack_size end)-
+       (case when quanOut/cvt.pack_size is null then 0 else quanOut/cvt.pack_size end) as quanJc,  
+       (case when amountQc is null then 0 else amountQc end)+(case when amountSt is null then 0 else amountSt end)-(case when amountOut is null then 0 else amountOut end)  as amountJc,
+       unit.name as unitName 
+       from bd_pd pd
+       inner join bd_pd_store pdst on pd.pk_pd=pdst.pk_pd  and (pd.dt_pois &gt;'00' or  pd.flag_precious='1') and  pdst.pk_dept=#{pkDept,jdbcType=CHAR} 
+        <if test="code != null  and  code != ''">
+	       and pd.code like '%${code}%'  
+	    </if>
+	    <if test="name != null  and  name != ''">
+	       and pd.name like '%${name}%' 
+	    </if>
+	    <if test="dtPois != null  and  dtPois != ''">
+	       and pd.dt_pois = #{dtPois,jdbcType=VARCHAR}
+	    </if>
+	    <if test="flagPrecious != null  and  flagPrecious != ''">
+	       and pd.flag_precious = #{flagPrecious,jdbcType=VARCHAR}
+	    </if>
+	   inner join bd_defdoc pois on pd.dt_pois=pois.code and pois.code_defdoclist='030403' 
+       left join bd_pd_convert cvt on cvt.pk_pdconvert = pdst.pk_pdconvert 
+       left join bd_unit unit on unit.pk_unit = cvt.pk_unit 
+       left join (
+       select pk_pd,sum(quan) quanQc,sum(amount) amountQc
+       from (
+         <!--  select dt.pk_pd,
+          	case when sum(dt.quan_min) is null then 0 else sum(dt.quan_min) end  quan,
+          	case when sum(dt.amount) is null then 0 else sum(dt.amount)  end  amount 
+          from pd_cc cc
+          inner join pd_cc_detail dt on cc.pk_pdcc = dt.pk_pdcc
+          inner join bd_pd pd on dt.pk_pd = pd.pk_pd  
+          	where cc.date_end = (select max(date_end) from pd_cc where pk_dept=#{pkDept,jdbcType=CHAR}) 
+          		and  cc.pk_dept = #{pkDept,jdbcType=CHAR} and  
+          	(pd.dt_pois &gt; '00' or pd.flag_precious = '1')
+           group by dt.pk_pd
+           union all -->
+           
+           select dt.pk_pd,
+           	case when sum(dt.quan_min*st.eu_direct) is null then 0 else sum(dt.quan_min*st.eu_direct)  end quan,
+           	case when sum(dt.amount*st.eu_direct) is null then 0 else sum(dt.amount*st.eu_direct) end amount
+           from pd_st st
+           inner join pd_st_detail dt on st.pk_pdst = dt.pk_pdst  
+           		where 
+           		<!-- st.date_chk &gt;= (select max(date_cc) from pd_cc where pk_dept=#{pkDept,jdbcType=CHAR}) and  -->
+          		st.date_chk &lt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')  and 
+          		st.pk_dept_st = #{pkDept,jdbcType=CHAR} 
+          group by dt.pk_pd
+          ) initval group by pk_pd
+          ) qc on qc.pk_pd = pd.pk_pd 
+    	  left join (
+          select dt.pk_pd,
+          case when sum(dt.quan_min) is null then 0 else sum(dt.quan_min) end quanSt,
+          case when sum(dt.amount) is null then 0 else sum(dt.amount) end amountSt 
+          from pd_st st
+          inner join pd_st_detail dt on st.pk_pdst = dt.pk_pdst  
+          where st.date_chk  &gt; to_date(#{dateBegin},'YYYYMMDDHH24MISS') and 
+          st.date_chk &lt; to_date(#{dateEnd},'YYYYMMDDHH24MISS') and 
+          st.pk_dept_st = #{pkDept,jdbcType=CHAR}  and st.eu_direct=1
+          group by dt.pk_pd
+          ) instore on instore.pk_pd = pd.pk_pd 
+          left join (
+          select dt.pk_pd,
+          case when sum(dt.quan_min) is null then 0 else sum(dt.quan_min) end quanOut,
+          case when sum(dt.amount) is null then 0 else  sum(dt.amount) end amountOut
+          from pd_st st
+          inner join pd_st_detail dt on st.pk_pdst = dt.pk_pdst 
+          where st.date_chk &gt; to_date(#{dateBegin},'YYYYMMDDHH24MISS') and 
+          st.date_chk &lt; to_date(#{dateEnd},'YYYYMMDDHH24MISS')  and 
+          st.pk_dept_st = #{pkDept,jdbcType=CHAR}  and st.eu_direct=-1
+          group by dt.pk_pd
+    ) outstore on outstore.pk_pd = pd.pk_pd  
+</select>
+<select id="queryStDetailByPd" parameterType="java.util.Map" resultType="DynaBean"> 
+       select st.eu_direct, 
+       st.dt_sttype,   
+       doc.name as name_sttype,
+       st.code_st,     
+       st.date_st,   
+       dt.pk_unit_pack,
+       unit.name as name_unit_pack ,
+       dt.quan_pack, 
+       round(dt.price/pd.PACK_SIZE* dt.PACK_SIZE,4) price ,     
+       dt.amount,     
+       dt.batch_no    
+       from pd_st st
+       inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst
+       inner join BD_PD pd on pd.PK_PD=dt.PK_PD
+       left join  bd_defdoc doc on doc.code = st.DT_STTYPE and  doc.CODE_DEFDOCLIST ='080008'
+       left join bd_unit unit on unit.pk_unit = dt.pk_unit_pack
+       where dt.pk_pd = #{pkPd,jdbcType=CHAR}  and
+       st.date_chk &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS') and 
+       st.date_chk &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')  and 
+       st.pk_dept_st = #{pkDept,jdbcType=CHAR} 
+       <if test="euDirect != null and  euDirect != '0' ">
+	       and st.eu_direct = #{euDirect,jdbcType=VARCHAR}
+	    </if>
+ </select>
+</mapper>

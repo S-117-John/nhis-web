@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.DiseaseSetMapper">
+
+	<select id="qryDiseaseInfo" resultType="DynaBean">
+		select dis.pk_gzgydisease, 
+		       dis.dt_diseasetype, 
+		       distype.name,    
+		       dis.pk_diag,     
+		       dis.code_diag,   
+		       dis.name_diag,   
+		       dis.amount,
+		       dis.amount_year,      
+		       dis.note         
+		  from ins_gzgy_disease dis
+		       inner join bd_defdoc distype on dis.dt_diseasetype=distype.code and distype.code_defdoclist='060011'
+		 where dis.del_flag='0'
+		 	<if test='dtDiseasetype!=null and dtDiseasetype!=""'>
+		 		and dis.dt_diseasetype=#{dtDiseasetype,jdbcType=VARCHAR} 
+		 	</if>
+		 	<if test='codeDiag!=null and codeDiag!=""'>
+		 		and dis.code_diag like '${codeDiag}%' 
+		 	</if>
+		 	<if test='nameDiag!=null and nameDiag!=""'>
+		 		and dis.name_diag like '%${nameDiag}%'   
+		 	</if>    
+		 	<if test='pkGzgydisease!=null and pkGzgydisease!=""'>
+		 		and dis.pk_gzgydisease = #{pkGzgydisease,jdbcType=CHAR}
+		 	</if>
+	</select>
+	
+	<select id="qryHpByPkDiseae" resultType="DynaBean">
+		select div.pk_hpdiv,
+		       hp.pk_hp ,
+		       div.eu_divtype,
+		       div.pk_div,
+		       hp.code,
+		       hp.name
+		  from ins_gzgy_hp_div div
+		       inner join bd_hp hp on div.pk_hp=hp.pk_hp
+		 where div.eu_divtype='10' 
+		 	   and div.del_flag = '0'
+		       and div.pk_div=#{pkGzgydisease,jdbcType=CHAR}
+	</select>
+	
+	<select id="qryOrdByPkDiseae" resultType="DynaBean">
+		select ord.pk_diseaseord,
+			   ord.pk_gzgydisease,
+			   ord.eu_ordtype,
+		       ord.pk_ord,
+		       ord.code_ord,
+		       ord.name_ord,
+		       ord.days,
+		       ord.note
+		  from ins_gzgy_disease_ord ord
+		 where ord.pk_gzgydisease=#{pkGzgydisease,jdbcType=CHAR} and
+		       ord.del_flag='0'
+	</select>
+	
+	<select id="qryWaitChooseHp" resultType="DynaBean">
+		select hp.pk_hp,
+		       hp.code,
+		       hp.name,
+		       hp.spcode
+		  from bd_hp hp
+		 where hp.eu_hptype = '3' 
+		 	   or (hp.eu_hptype = '1' 
+		 	   and hp.code like '0301%') 
+		       and hp.del_flag='0' 
+		       <if test='spcode!=null and spcode!=""'>
+		       	and UPPER(hp.SPCODE) like '%${nameDiag}%' 
+		       </if>
+		       <if test='pkGzgydisease!=null and pkGzgydisease!=null!=""'>
+		       	and not exists (select 1
+		                     from ins_gzgy_hp_div hpdiv
+		                    where hp.pk_hp=hpdiv.pk_hp 
+		                          and hpdiv.eu_divtype='10' 
+		                          and hpdiv.del_flag = '0'
+		                          and hpdiv.pk_div=#{pkGzgydisease,jdbcType=CHAR})
+		       </if>             
+	</select>
+	
+	<select id="qrySelectedHp" resultType="DynaBean">
+		select hpdiv.pk_hpdiv,
+			   hpdiv.eu_divtype,
+		       hpdiv.pk_div,
+		       hp.pk_hp,      
+		       hp.code,       
+		       hp.name,       
+		       hp.spcode      
+		  from ins_gzgy_hp_div hpdiv
+		       inner join bd_hp hp on hpdiv.pk_hp=hp.pk_hp
+		 where hpdiv.eu_divtype='10' 
+		 		and hpdiv.del_flag = '0'
+		 		<if test='spcode!=null and spcode!=""'>
+		       		and UPPER(hp.SPCODE) like '%${nameDiag}%' 
+		       	</if>
+		       		and hpdiv.pk_div=#{pkGzgydisease,jdbcType=CHAR}
+	</select>
+	
+</mapper>

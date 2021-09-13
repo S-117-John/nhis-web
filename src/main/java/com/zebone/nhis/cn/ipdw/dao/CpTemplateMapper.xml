@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.ipdw.dao.CpTemplateMapper" >
+
+  <select id="getTemplateList" resultType="com.zebone.nhis.common.module.cn.cp.CpTemp" parameterType="java.lang.String" >
+	select distinct tpl.*
+	from cp_temp tpl 
+	     left outer join cp_temp_diag diag on tpl.pk_cptemp = diag.pk_cptemp 
+	     left outer join cp_temp_dept dept on tpl.pk_cptemp = dept.pk_cptemp
+	where tpl.name_cp like '%'||#{cpName,jdbcType=CHAR}||'%'
+		<if test="pkOrg != null" >  
+	      and dept.pk_org_use = #{pkOrg,jdbcType=CHAR}
+	    </if> 
+		<if test="pkDept != null" >  
+	      and dept.pk_dept_use = #{pkDept,jdbcType=CHAR}
+	    </if> 
+		<if test="pkDiag != null" >  
+	      and diag.pk_diag = #{pkDiag,jdbcType=CHAR}
+	    </if> 
+	order by tpl.name_cp, tpl.version
+  </select>
+  
+  <select id="getTemplate" resultType="com.zebone.nhis.common.module.cn.cp.CpTemp" parameterType="java.lang.String" >
+	select *
+	from cp_temp 
+	where pk_cptemp = #{pkTemp,jdbcType=CHAR}
+  </select>
+
+  <!-- <select id="getRecPhases" resultType="com.zebone.nhis.common.module.cn.cp.CpTempPhase" parameterType="java.lang.String" >
+	select tp.* , rp.eu_status
+	from cp_temp_phase tp left outer join cp_rec_phase rp  on tp.pk_cpphase = rp.pk_cpphase
+	where rp.pk_cprec = #{pkRec,jdbcType=CHAR}
+	order by tp.sortno
+  </select>   -->
+
+  <select id="getTemplatePhases" resultType="com.zebone.nhis.common.module.cn.cp.CpTempPhase" parameterType="java.lang.String" >
+	select *
+	from cp_temp_phase 
+	where pk_cptemp = #{pkTemp,jdbcType=CHAR}
+	order by sortno
+  </select>
+
+  <select id="getOrders" resultType="com.zebone.nhis.common.module.cn.cp.CpTempOrd" parameterType="java.lang.String" >
+	select ord.*, view_ord.*, phs.name_phase ,freq.eu_always as srv_eu_always  
+	from cp_temp_ord ord inner join cp_temp_phase phs on ord.pk_cpphase=phs.pk_cpphase
+		 inner join (
+	         select pk_ord, code as code_ord,name as name_ord, '0' as flag_drug, '' as spec from bd_ord 
+	         union all
+	         select pk_pd, code as code_ord,name as name_ord , '1' as flag_drug , spec from bd_pd 
+	         union all
+	         select pk_diag, diagcode as code_ord,diagname as name_ord, '0' as flag_drug, '' from bd_term_diag
+	         where dt_system = '01'
+	         union all
+	         select pk_cateord, code_ord,name_ord, eu_ordtype as flag_drug, ''  from bd_cp_cateord     ) view_ord
+  			on ord.pk_ord = view_ord.pk_ord  
+  	  inner join bd_term_freq freq on freq.code = ord.code_freq and freq.del_flag='0' 
+	where phs.pk_cptemp = #{pkTemp,jdbcType=CHAR}
+	order by phs.sortno, ord.seq
+  </select>
+
+  <select id="getWorks" resultType="com.zebone.nhis.common.module.cn.cp.CpTempWork" parameterType="java.lang.String" >
+	select work.*, act.name_act, act.eu_type, act.eu_role, act.func, act.eu_calltype 
+	from cp_temp_work work inner join cp_temp_phase phs on work.pk_cpphase=phs.pk_cpphase 
+		inner join bd_cp_action act on work.pk_cpaction=act.pk_cpaction 
+	where phs.pk_cptemp = #{pkTemp,jdbcType=CHAR}
+	order by phs.sortno, work.seq
+  </select>
+
+  <select id="getReasons" resultType="com.zebone.nhis.common.module.cn.cp.CpTempReason" parameterType="java.lang.String" >
+	select *
+	from cp_temp_reason 
+	where pk_cptemp = #{pkTemp,jdbcType=CHAR}
+  </select>
+
+  <select id="getDiags" resultType="com.zebone.nhis.common.module.cn.cp.CpTempDiag" parameterType="java.lang.String" >
+	select cd.*, dg.diagname as name_diag,dg.diagcode as code_diag 
+	from cp_temp_diag cd inner join bd_term_diag dg on cd.pk_diag = dg.pk_diag
+	where pk_cptemp = #{pkTemp,jdbcType=CHAR}
+  </select>
+
+  <select id="getDepts" resultType="com.zebone.nhis.common.module.cn.cp.CpTempDept" parameterType="java.lang.String" >
+	select cd.*, org.name_org as name_org_use, dept.name_dept as name_dept_use 
+	from cp_temp_dept cd inner join bd_ou_org org on cd.pk_org_use=org.pk_org inner join bd_ou_dept dept on cd.pk_dept_use=dept.pk_dept  
+	where pk_cptemp = #{pkTemp,jdbcType=CHAR}
+  </select>
+
+  <delete id="removeTemplate" parameterType="java.lang.String" >
+    begin
+    delete cp_temp_reason
+  	where pk_cptemp = #{pkTemp,jdbcType=CHAR};
+  	delete cp_temp
+  	where pk_cptemp = #{pkTemp,jdbcType=CHAR};
+  	end;
+  </delete>		 
+
+  <update id="auditTemplate" parameterType="java.lang.String" >
+	update cp_temp
+	set eu_status = #{euStatus,jdbcType=VARCHAR}, pk_emp_chk=#{empSn,jdbcType=VARCHAR}, name_emp_chk=#{empName,jdbcType=VARCHAR}, date_chk= #{dateChk,jdbcType=DATE}   
+	where pk_cptemp = #{pkTemp,jdbcType=CHAR} and eu_status='1' 
+  </update>
+
+  <select id="getMaxVersion" resultType="java.lang.Double" parameterType="java.lang.String" >
+	select max(version)
+	from cp_temp
+	where name_cp = #{cpName,jdbcType=CHAR}
+  </select>
+  
+  <select id="queryCateOrdList" resultType="com.zebone.nhis.common.module.cn.cp.BdCpCateord" parameterType="java.lang.String" >
+	select * 
+	from bd_cp_cateord
+	where name_ord like #{nameOrd,jdbcType=CHAR} and eu_catetype like #{typeOrd,jdbcType=CHAR}
+  </select>
+
+  <select id="getCateord" resultType="com.zebone.nhis.common.module.cn.cp.BdCpCateord" parameterType="java.lang.String" >
+	select * 
+	from bd_cp_cateord
+	where pk_cateord = #{pkOrd,jdbcType=CHAR}
+  </select>
+
+  <select id="getCateordDetails" resultType="com.zebone.nhis.common.module.cn.cp.BdCpCateordDt" parameterType="java.lang.String" >
+	<if test="orderType == 0 " >  
+		select dt.*, ord.name as nameord, ord.code as codeord  
+		from bd_cp_cateord_dt dt inner join bd_ord ord on dt.pk_ord=ord.pk_ord
+		where pk_cateord = #{pkOrd,jdbcType=CHAR}
+    </if> 
+	<if test="orderType == 1 " >  
+		select dt.*, pd.name as nameord, pd.code as codeord,con.spec   
+		from bd_cp_cateord_dt dt inner join bd_pd pd on dt.pk_ord=pd.pk_pd 
+		inner join bd_pd_convert con  on pd.pk_pd = con.pk_pd and con.del_flag = '0'  and con.flag_ip='1'
+		where pk_cateord = #{pkOrd,jdbcType=CHAR}
+    </if> 
+
+
+</select>
+
+</mapper>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.MKMapper">
+
+	<!-- 根据主键获取医嘱用法信息 -->
+	<select id="getBdSupplyById" resultType="com.zebone.nhis.common.module.base.bd.mk.BdSupply">
+		select * from BD_SUPPLY where pk_supply = #{pkSupply,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 根据医嘱用法主键获取医嘱用法附加费用列表  -->
+	<select id="getBdSupplyItemListBySupplyId" resultType="com.zebone.nhis.common.module.base.bd.mk.BdSupplyItem">
+		<!-- select * from BD_SUPPLY_ITEM where pk_supply = #{pkSupply,jdbcType=VARCHAR} order by pk_item -->
+		SELECT s.PK_SUPPLYITEM,s.PK_SUPPLY,s.PK_ITEM,s.EU_PVTYPE,s.QUAN, u.NAME unit,b.SPEC,b.PRICE,s.EU_MODE
+	    FROM  BD_SUPPLY_ITEM s
+	    left join bd_item b
+	    on s.pk_item = b.pk_item
+		left join BD_UNIT u on u.PK_UNIT = b.PK_UNIT
+	    where s.pk_supply = #{pkSupply,jdbcType=VARCHAR} and b.FLAG_ACTIVE = '1'  order by pk_item
+	</select>
+	
+	<!-- 获取当前常用诊断数量 -->
+	<select id="getDiagQuantity" resultType="int" parameterType="java.util.Map">
+		select count(*) from BD_TERM_DIAG_DEPT diagDept
+			INNER JOIN BD_TERM_DIAG diag ON diag.PK_DIAG=diagDept.PK_DIAG
+				where diagDept.DEL_FLAG='0' 
+				AND diagDept.pk_dept = #{pkDept,jdbcType=VARCHAR}
+	</select>
+	
+	<delete id="delTermDiagAlias" parameterType="java.util.Map">
+		DELETE FROM BD_TERM_DIAG_ALIAS WHERE PK_DIAGALIAS=#{pkDiagAlias}
+	</delete>
+	
+	<select id="qryTermDiag" parameterType="java.util.Map" resultType="DynaBean">
+		select diag .*,d.NAME as dt_diagcate_name 
+		from bd_term_diag diag 
+		left join bd_defdoc d on d.CODE=diag.DT_DIAGCATE and d.CODE_DEFDOCLIST='060009' and d.del_flag='0'
+		where diag.del_flag = '0' 
+		<if test="diagcode != null and diagcode != '' ">
+			and diagcode like '${diagcode}%'
+		</if>
+		<if test="diagname != null and diagname != '' ">
+			and diagname like '%${diagname}%'
+		</if>
+		<if test="dtCodeEhr != null and dtCodeEhr != '' ">
+			and dt_code_ehr =#{dtCodeEhr}
+		</if>
+		<if test="dtSystem != null and dtSystem != '' ">
+			and dt_system =#{dtSystem}
+		</if>
+		<if test="dtDiagtype != null and dtDiagtype != '' ">
+			and dt_Diagtype =#{dtDiagtype}
+		</if>
+		<if test="version != null and version != '' ">
+			and Version =#{version}
+		</if>
+		<if test="flagStop != null and flagStop != '' ">
+			and Flag_Stop =#{flagStop}
+		</if>
+		order by diagcode
+		</select>
+</mapper>

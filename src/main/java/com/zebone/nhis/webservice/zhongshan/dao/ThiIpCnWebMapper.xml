@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.webservice.zhongshan.dao.ThiIpCnWebMapper">
+    <select id="getCnOrder" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOrder">
+        select CO.PK_CNORD, Co.PK_EMP_ORD, CO.NAME_EMP_ORD,CO.PK_DEPT,CO.PK_ORG,CO.PK_DEPT_EXEC
+        from CN_ORDER CO
+        inner join PV_ENCOUNTER PE on CO.PK_PV = PE.PK_PV
+        where 
+        CO.ORDSN = #{ordsn,jdbcType=VARCHAR} or CO.pk_cnord= #{ordsn,jdbcType=VARCHAR}
+        <if test=" param!=null and param!=''">
+            ${param}
+        </if>
+    </select>
+
+   <select id="getCnOrderPkCnord" resultType="com.zebone.nhis.common.module.cn.ipdw.CnOrder">
+        select CO.PK_CNORD, Co.PK_EMP_ORD, CO.NAME_EMP_ORD,CO.PK_DEPT,CO.PK_ORG,CO.PK_DEPT_EXEC
+        from CN_ORDER CO
+        inner join PV_ENCOUNTER PE on CO.PK_PV = PE.PK_PV
+        where  CO.pk_cnord= #{pkCnord,jdbcType=VARCHAR}
+        <if test=" param!=null and param!=''">
+            ${param}
+        </if>
+    </select>
+    
+    <update id="updateCancleCnorder">
+        update CN_ORDER
+        <set>
+            EU_STATUS_ORD=#{euStatusOrd,jdbcType=VARCHAR},PK_EMP_ERASE=#{pkEmpErase,jdbcType=VARCHAR},
+            NAME_EMP_ERASE=#{nameEmpErase,jdbcType=VARCHAR},DATE_ERASE=#{dateErase,jdbcType=TIMESTAMP},
+            FLAG_BASE=#{flagBase,jdbcType=VARCHAR}
+            <if test=" flagEraseChk !=null and flagEraseChk!=''">
+                ,FLAG_ERASE_CHK=#{flagEraseChk,jdbcType=VARCHAR}
+                ,DATE_ERASE_CHK=#{dateEraseChk,jdbcType=TIMESTAMP}
+                ,NAME_ERASE_CHK=#{nameEmpErase,jdbcType=VARCHAR}
+                ,PK_EMP_ERASE_CHK=#{pkEmpEraseChk,jdbcType=VARCHAR}
+            </if>
+        </set>
+
+        where PK_CNORD=#{pkCnord,jdbcType=VARCHAR}
+    </update>
+
+    <select id="getPvInfo" resultType="DynaBean">
+        SELECT PE.EU_PVTYPE EU_PV_TYPE,
+        PM.CODE_PI,
+        PE.PK_PV,
+        PM.CODE_IP,
+        PM.CODE_OP,
+        PM.ID_SN,
+        PM.NAME_PI NAME,
+        BD.NAME SEX,
+        GETPVAGE(BIRTH_DATE, PE.DATE_BEGIN) AGE,
+        PE.BED_NO,
+        PM.DT_NATION,
+        BD1.NAME NAME_NATION,
+        PD.CODE_ICD CODE_DIAG,
+        PD.NAME_DIAG,
+        BOD.PK_DEPT,
+        BOD.NAME_DEPT,
+        BOD1.PK_DEPT PK_DEPT_NS,
+        BOD1.NAME_DEPT NAME_DEPT_NS,
+        PE.DATE_ADMIT,
+        PE.NAME_EMP_PHY,
+        PM.ID_NO CARD_ID,
+        PM.MOBILE,
+        BH.NAME NAME_HP,
+        (
+        select IP_TIMES
+        from PV_IP
+        where PK_PV =PE.PK_PV
+        union all
+        select OP_TIMES
+        from PV_OP  where PK_PV=PE.PK_PV
+        ) pv_times
+        FROM PV_ENCOUNTER PE
+        INNER JOIN PI_MASTER PM ON PE.PK_PI = PM.PK_PI
+        INNER JOIN BD_DEFDOC BD ON BD.CODE = PM.DT_SEX AND BD.CODE_DEFDOCLIST = '000000'
+        INNER JOIN BD_DEFDOC BD1 ON BD1.CODE = PM.DT_NATION AND BD1.CODE_DEFDOCLIST = '000003'
+        LEFT JOIN PV_DIAG PD ON PE.PK_PV = PD.PK_PV
+        INNER JOIN BD_OU_DEPT BOD ON PE.PK_DEPT = BOD.PK_DEPT
+        INNER JOIN BD_OU_DEPT BOD1 ON PE.PK_DEPT_NS = BOD1.PK_DEPT
+        INNER JOIN BD_HP BH ON BH.PK_HP = PE.PK_INSU
+        <where>
+            PD.FLAG_MAJ = '1'
+            and EU_STATUS = '1'
+            and PE.FLAG_IN = '1'
+            <choose>
+                <when test="type=='1'.toString()">
+                    AND BOD.PK_DEPT=#{code,jdbcType=VARCHAR}
+                </when>
+                <when test="type=='2'.toString()">
+                    AND BOD1.PK_DEPT=#{code,jdbcType=VARCHAR}
+                </when>
+                <when test="type=='3'.toString()">
+                    AND PM.CODE_IP=#{code,jdbcType=VARCHAR}
+                </when>
+            </choose>
+            <choose>
+                <when test="range=='1'.toString()">
+                    AND PE.EU_PVTYPE=#{range,jdbcType=CHAR}
+                </when>
+                <otherwise>
+                    AND PE.EU_PVTYPE='3'
+                </otherwise>
+            </choose>
+        </where>
+    </select>
+
+    <select id="getBlIpDts" resultType="com.zebone.nhis.common.module.bl.BlIpDt">
+        select PK_CGIP,QUAN,PK_ORG
+        from BL_IP_DT BID
+        where PK_SETTLE is null and PK_CGIP in
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and not exists(
+        select 1 from BL_IP_DT B where B.PK_CGIP_BACK = BID.PK_CGIP
+        )
+    </select>
+
+    <update id="updateCancleExOrdExcc">
+        update ex_order_occ
+        set eu_status     = 9,
+            flag_canc     = '1',
+            date_canc     = #{dateErase,jdbcType=TIMESTAMP},
+            pk_dept_canc  = #{pkDept,jdbcType=VARCHAR},
+            pk_emp_canc   = #{pkEmpErase,jdbcType=VARCHAR},
+            name_emp_canc = #{nameEmpErase,jdbcType=VARCHAR}
+        where PK_CNORD = #{pkCnord,jdbcType=VARCHAR}
+          and eu_status = '0'
+    </update>
+
+    <select id="getThiBdOrdLab" resultType="com.zebone.nhis.webservice.zhongshan.vo.ThiBdOrdLab">
+        select BO.PK_ORD,
+               BO.CODE  codeOrd,
+               BO.NAME,
+               BO1.CODE codeOrdtype,
+               BO.CODE_FREQ,
+               BO.FLAG_CG,
+               BOL.DT_SAMPTYPE,
+               BOL.DT_CONTYPE,
+               BOL.DT_COLLTYPE
+        from BD_ORD BO
+                     inner join BD_ORD_LAB BOL on BOL.PK_ORD = BO.PK_ORD
+                     inner join BD_ORDTYPE BO1 on BO1.PK_ORDTYPE = BO.PK_ORDTYPE
+        where BO.CODE = #{codeItem,jdbcType=VARCHAR}
+          and BO.DEL_FLAG = '0'
+    </select>
+
+    <delete id="deleteCnorder">
+        delete
+        from CN_ORDER
+        where PK_CNORD in (
+                select distinct PK_CNORD
+                from BL_OP_DT
+                where PK_PV = #{pkPv,jdbcType=VARCHAR}
+                  and FLAG_SETTLE = '0'
+                )
+    </delete>
+    <delete id="deleteCnLabApply">
+        delete
+        from CN_LAB_APPLY
+        where PK_CNORD in (select distinct PK_CNORD
+                           from BL_OP_DT
+                           where PK_PV = #{pkPv,jdbcType=VARCHAR}
+                             and FLAG_SETTLE = '0')
+    </delete>
+
+    <delete id="deleteExAssistOcc">
+        delete
+        from EX_ASSIST_OCC
+        where PK_ASSOCC in (
+                select EAOD.PK_ASSOCC
+                from EX_ASSIST_OCC_DT EAOD
+                where EAOD.PK_CNORD in (
+                        select distinct PK_CNORD
+                        from BL_OP_DT
+                        where PK_PV = #{pkPv,jdbcType=VARCHAR}
+                          and FLAG_SETTLE = '0'
+                        )
+                )
+    </delete>
+
+    <delete id="deleteExAssistOccDt">
+        delete
+        from EX_ASSIST_OCC_DT
+        where PK_CNORD in (select distinct PK_CNORD
+                           from BL_OP_DT
+                           where PK_PV = #{pkPv,jdbcType=VARCHAR}
+                             and FLAG_SETTLE = '0')
+    </delete>
+
+    <select id="getThiPeBdOrd" resultType="com.zebone.nhis.webservice.zhongshan.vo.ThiPeBdOrd">
+        select BO.PK_ORD,
+        BO.CODE codeOrd,
+        BO.NAME,
+        BO1.CODE codeOrdtype,
+        BO.CODE_FREQ,
+        BO.FLAG_CG,
+        BOL.DT_SAMPTYPE,
+        BOL.DT_CONTYPE,
+        BOL.DT_COLLTYPE,
+        '' DT_BODY,
+        '' DESC_ATT
+        from BD_ORD BO
+        inner join BD_ORD_LAB BOL on BOL.PK_ORD = BO.PK_ORD
+        inner join BD_ORDTYPE BO1 on BO1.PK_ORDTYPE = BO.PK_ORDTYPE
+        <where>
+            BO.DEL_FLAG = '0'
+            <if test=" pkOrd!=null and  pkOrd!=''">
+               and BO.PK_ORD =#{pkOrd,jdbcType=VARCHAR}
+            </if>
+            <if test=" codeOrd!=null and  codeOrd!=''">
+               and BO.CODE = #{codeOrd,jdbcType=VARCHAR}
+            </if>
+            and SUBSTRING(BO.code_ordtype,1,2) = '03'
+        </where>
+
+        union all
+        select BO.PK_ORD,
+        BO.CODE codeOrd,
+        BO.NAME,
+        BO1.CODE codeOrdtype,
+        BO.CODE_FREQ,
+        BO.FLAG_CG,
+        '' DT_SAMPTYPE,
+        '' DT_CONTYPE,
+        '' DT_COLLTYPE,
+        BOR.DT_BODY,
+        bor.DESC_ATT
+        from BD_ORD BO
+        inner join BD_ORD_RIS BOR on BO.PK_ORD = bor.PK_ORD
+        inner join BD_ORDTYPE BO1 on BO1.PK_ORDTYPE = BO.PK_ORDTYPE
+        <where>
+            BO.DEL_FLAG = '0'
+            <if test=" pkOrd!=null and  pkOrd!=''">
+                and  BO.PK_ORD =#{pkOrd,jdbcType=VARCHAR}
+            </if>
+            <if test=" codeOrd!=null and  codeOrd!=''">
+                and BO.CODE = #{codeOrd,jdbcType=VARCHAR}
+            </if>
+            and SUBSTRING(BO.code_ordtype,1,2) != '03'
+        </where>
+    </select>
+    
+    <select id="getBlIpDtsByPkCgipBack" resultType="com.zebone.nhis.common.module.bl.BlIpDt">
+        select PK_CGIP,QUAN,PK_ORG
+        from BL_IP_DT BID
+        where PK_SETTLE is null and PK_CGIP in
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and exists(
+        select 1 from BL_IP_DT B where B.PK_CGIP_BACK = BID.PK_CGIP
+        )
+    </select>
+</mapper>

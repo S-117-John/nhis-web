@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.arch.dao.ArchPrtCateSettingMapper">
+
+	<!-- 查询已选打印文档类型 -->
+	<select id="qryArchDocType_chosen" resultType="com.zebone.nhis.arch.vo.ArchDoctypeVo">
+		  select doc.pk_doctype,
+		       doc.code_doctype,
+		       doc.name_doctype,
+		       doc.dt_systype,
+		       systype.name systype
+		  from bd_arch_doctype doc
+		 inner join bd_arch_prtcate_doctype prtdoc on doc.pk_doctype=prtdoc.pk_doctype
+		 inner join bd_defdoc systype on systype.code_defdoclist='051001' and doc.dt_systype=systype.code
+		 where prtdoc.pk_prtcate= #{pkPrtcate,jdbcType=VARCHAR}
+		 order by doc.code_doctype
+	</select>
+	
+	<!-- 查询备选打印文档类型 -->
+	<select id="qryArchDocType_alter" resultType="com.zebone.nhis.arch.vo.ArchDoctypeVo">
+		  select doc.pk_doctype,
+		       doc.code_doctype,
+		       doc.name_doctype,
+		       doc.dt_systype,
+		       systype.name systype
+		  from bd_arch_doctype doc
+		 inner join bd_defdoc systype on systype.code_defdoclist='051001' and doc.dt_systype=systype.code
+		 where doc.pk_org=#{pkOrg,jdbcType=VARCHAR} 
+		   and doc.flag_active = '1'
+		 order by doc.code_doctype
+	</select>
+	
+	
+	
+	   
+</mapper>

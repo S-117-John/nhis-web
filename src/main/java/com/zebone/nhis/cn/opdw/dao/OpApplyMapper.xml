@@ -1,0 +1,419 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.cn.opdw.dao.OpApplyMapper">
+
+	<select id="getApplyRecord" parameterType="java.util.Map"
+		resultType="DynaBean">
+		select
+				distinct
+				ord.*,
+				ot.name ordtype,    --类型名称
+				ord.quan * ord.price_cg amount, --金额
+				org.name_org,      --机构名称
+				dept.name_dept,    --科室名称
+				cg.flag_acc,       --账户支付标志
+				cg.flag_settle,    --结算标志
+				lab.eu_status lab_status,    --检验申请状态为4报告返回
+				ris.eu_status ris_status,    --检查申请状态为4报告返回
+				ris.desc_body
+				--(case when temp.pk_temp_cgop is null then '0' else '1' end) flagBarPrint
+		from cn_order ord
+		inner join bd_ordtype ot on ord.code_ordtype=ot.code
+		left outer join (select sum(dt.price_org) price,
+							sum(dt.amount) amount,
+							dt.pk_cnord,
+							dt.flag_acc,
+							dt.flag_settle
+							from bl_op_dt dt
+							where dt.pk_pv=#{pkPv,jdbcType=VARCHAR}
+							group by dt.pk_cnord,
+							dt.flag_acc,
+							dt.flag_settle) cg on ord.pk_cnord=cg.pk_cnord
+		left outer join bd_ou_org org on ord.pk_org_exec=org.pk_org
+		left outer join bd_ou_dept dept on ord.pk_dept_exec=dept.pk_dept
+		left outer join cn_lab_apply lab on ord.pk_cnord=lab.pk_cnord
+		left outer join cn_ris_apply ris on ord.pk_cnord=ris.pk_cnord
+		--left outer join temp_bl_op_dt temp on (temp.pk_cnord=ord.pk_cnord and temp.del_flag='0')
+		where ord.pk_pv=#{pkPv,jdbcType=VARCHAR} and
+			  ord.flag_durg=0 and
+			  ord.pk_pres is null
+		order by ord.date_enter
+	</select>
+
+	<select id="getRisRecord_del" parameterType="java.util.Map"
+		resultType="DynaBean">
+		select ris.*
+		from cn_ris_apply ris
+		inner join cn_order ord on ris.pk_cnord = ord.pk_cnord
+		where ord.pk_pv=#{pkPv,jdbcType=VARCHAR}
+	</select>
+
+	<select id="getRisTemplates" parameterType="java.util.Map"
+		resultType="DynaBean">
+		select
+		pk_ordtype,
+		pk_parent,
+		code code_ordtype,
+		name name_ordtype,
+		code pk_ord,
+		null code_ord,
+		name name_ord,
+		0 price,
+		'0' flag
+		from bd_ordtype
+		where code like '02%' and del_flag = '0' and code &lt;&gt; '02'
+		order by
+		code
+	</select>
+	<select id="getRisTemplatesItem" parameterType="java.util.Map"
+		resultType="DynaBean">
+		select
+    	ord.pk_ord,
+		ordtype.pk_ordtype,
+		ordtype.pk_parent,
+		ordtype.code code_ordtype,
+		ordtype.name name_ordtype,
+		ord.code code_ord,
+		ord.name name_ord,
+		sum(item.price*orditem.quan) price,
+		'1' flag,
+		doc.name as desc_body,
+		ris.dt_type
+		from bd_ordtype ordtype
+		inner join bd_ord ord on ordtype.code=ord.code_ordtype AND ord.FLAG_OP = '1' 
+		inner join bd_ord_org orgord on ord.pk_ord=orgord.pk_ord and orgord.pk_org
+		= #{pk_org,jdbcType=CHAR} and orgord.del_flag = '0'
+		inner join bd_ord_item orditem on orgord.pk_ord=orditem.pk_ord
+		inner join bd_item item on orditem.pk_item=item.pk_item and
+		item.del_flag='0'
+		--inner join bd_item_price price on item.pk_item=price.pk_item and
+		--price.pk_org=orgord.pk_org
+		left outer join bd_ord_ris ris on ord.pk_ord = ris.pk_ord and
+		ris.del_flag='0'
+		left outer join bd_defdoc doc on ris.dt_body = doc.code and
+		doc.del_flag='0' and doc.code_defdoclist = '030101'
+		where ord.flag_active='1' and
+		--price.flag_stop='0' and
+		ord.code_ordtype like '02%'
+		group by
+        ord.pk_ord,
+		ordtype.pk_ordtype,
+		ordtype.pk_parent,
+		ordtype.code,
+		ordtype.name,
+		ord.code,
+		ord.name,
+		doc.name,
+		ris.dt_type
+		order by ordtype.code
+	</select>
+	<select id="getLabTemplates" parameterType="java.util.Map"
+		resultType="DynaBean">
+		select
+		pk_ordtype,
+		pk_parent,
+		code code_ordtype,
+		name name_ordtype,
+		code pk_ord,
+		null code_ord,
+		name name_ord,
+		0 price,
+		'0' flag
+		from bd_ordtype
+		where code like '03%' and del_flag = '0' and code &lt;&gt; '03'
+		order by
+		code
+	</select>
+	<select id="getLabTemplatesItem" parameterType="java.util.Map"
+		resultType="DynaBean">
+		select
+		ordtype.pk_ordtype,
+		ordtype.pk_parent,
+		ordtype.code code_ordtype,
+		ordtype.name name_ordtype,
+		ord.pk_ord,
+		ord.code code_ord,
+		ord.name name_ord,
+		--sum(price.price*orditem.quan)/count(ord.pk_ord) price,
+		sum(item.price*orditem.quan) price,
+		'1' flag,
+		lis.dt_samptype,
+		lis.dt_contype as dt_tubetype,
+		lis.dt_colltype
+		from bd_ordtype ordtype
+		inner join bd_ord ord on ordtype.code=ord.code_ordtype
+		inner join bd_ord_org orgord on ord.pk_ord=orgord.pk_ord and orgord.pk_org
+		= #{pk_org,jdbcType=CHAR} and orgord.del_flag = '0'
+		inner join bd_ord_item orditem on orgord.pk_ord=orditem.pk_ord and
+		orditem.del_flag='0'
+		inner join bd_item item on orditem.pk_item=item.pk_item and
+		item.del_flag='0'
+		--inner join bd_item_price price on item.pk_item=price.pk_item and
+		--price.pk_org=orgord.pk_org
+		left outer join bd_ord_lab lis on ord.pk_ord = lis.pk_ord and
+		lis.del_flag='0'
+		where ord.flag_active='1' AND ord.FLAG_OP = '1' AND 
+		--price.flag_stop='0' and
+		ord.code_ordtype like '03%'
+		group by
+		ordtype.pk_ordtype,
+		ordtype.pk_parent,
+		ordtype.code,
+		ordtype.name,
+		ord.pk_ord,
+		ord.code,
+		ord.name,
+		lis.dt_samptype,
+		lis.dt_contype,
+		lis.dt_colltype
+		order by ordtype.code
+	</select>
+
+	<select id="getRisTemplatePerson" parameterType="java.lang.String"
+		resultType="DynaBean">
+		select
+		comm.pk_ordcomm,
+		comm.pk_org,
+		comm.pk_emp,
+		comm.code_ordtype,
+		comm.pk_ord,
+		comm.creator,
+		comm.create_time,
+		comm.modifier,
+		comm.modity_time,
+		comm.del_flag,
+		comm.ts,
+		ord.code code_ord,
+		ord.name name_ord,
+		ord.code_ordtype,
+		ord.flag_cg,
+		ord.quan_def quan,
+		sum(item.price*orditem.quan) price,
+		dept.pk_org_exec,
+		dept.pk_dept as pk_dept_exec ,
+		doc.name as desc_body,
+		ris.dt_type,
+		'1' flag
+		from bd_ord_comm comm
+		inner join bd_ord ord on comm.pk_ord = ord.pk_ord and ord.del_flag = '0'
+		inner join bd_ord_org ordorg on ord.pk_ord = ordorg.pk_ord and
+		ordorg.del_flag = '0' and ordorg.pk_org = #{pk_org,jdbcType=CHAR}
+		left outer join bd_ord_dept dept on ordorg.pk_ordorg = dept.pk_ordorg and
+		dept.flag_def = '1' and dept.del_flag='0'
+		left outer join bd_ord_ris ris on ord.pk_ord = ris.pk_ord and
+		ris.del_flag='0'
+		left join bd_defdoc doc on doc.code = ris.dt_body and doc.code_defdoclist
+		= '030101' and doc.del_flag='0'
+		inner join bd_ord_item orditem on ordorg.pk_ord=orditem.pk_ord
+		inner join bd_item item on orditem.pk_item=item.pk_item
+		where comm.del_flag = '0'
+		and substr(comm.code_ordtype, 1, 2) = '02'
+		and comm.pk_emp = #{pk_emp,jdbcType=CHAR}
+		group by
+		comm.pk_ordcomm,
+		comm.pk_org,
+		comm.pk_emp,
+		comm.code_ordtype,
+		comm.pk_ord,
+		comm.creator,
+		comm.create_time,
+		comm.modifier,
+		comm.modity_time,
+		comm.del_flag,
+		comm.ts,
+		ord.code,
+		ord.name,
+		ord.code_ordtype,
+		ord.flag_cg,
+		ord.quan_def,
+		dept.pk_org_exec,
+		dept.pk_dept,
+		doc.name,
+		ris.dt_type
+		order by ord.code
+
+	</select>
+
+	<select id="getLisTemplatePerson" parameterType="java.lang.String"
+		resultType="DynaBean">
+		select comm.pk_ord, comm.pk_emp,
+		comm.code_ordtype,
+		ord.code code_ord, ord.name name_ord, ord.code_ordtype, ord.flag_cg,
+		ord.quan_def quan,
+		ordorg.price org_price,
+		sum(price.price*orditem.quan)/count(comm.pk_ord) price,
+		--sum(item.price*orditem.quan) price,
+		dept.pk_org_exec, dept.pk_dept as pk_dept_exec,
+		lis.dt_samptype, lis.dt_contype as dt_tubetype, lis.dt_colltype, '1' flag
+		from bd_ord_comm comm
+		inner join bd_ord ord on comm.pk_ord = ord.pk_ord and ord.del_flag = '0'  AND ord.FLAG_OP = '1'  
+		inner join bd_ord_org ordorg on ord.pk_ord = ordorg.pk_ord and
+		ordorg.del_flag = '0' and ordorg.pk_org = #{pk_org,jdbcType=CHAR}
+		left outer join bd_ord_dept dept on ordorg.pk_ordorg = dept.pk_ordorg and
+		dept.flag_def = '1' and dept.del_flag='0'
+		left outer join bd_ord_lab lis on ord.pk_ord = lis.pk_ord and
+		lis.del_flag='0'
+		inner join bd_ord_item orditem on ordorg.pk_ord=orditem.pk_ord
+		inner join bd_item item on orditem.pk_item=item.pk_item
+		inner join bd_item_price price on item.pk_item=price.pk_item and
+		price.pk_org=ordorg.pk_org
+		where comm.del_flag = '0' and
+		comm.pk_emp = #{pk_emp,jdbcType=CHAR} and
+		substr(comm.code_ordtype, 1, 2) = '03'
+		group by comm.pk_ord, comm.pk_emp, comm.code_ordtype,
+		ord.code, ord.name, ord.code_ordtype, ord.flag_cg, ord.quan_def,
+		ordorg.price,
+		dept.pk_org_exec, dept.pk_dept,
+		lis.dt_samptype, lis.dt_contype, lis.dt_colltype
+	</select>
+
+	<select id="getRisRecord" parameterType="java.lang.String"
+		resultType="DynaBean">
+		select
+		ris.*,
+		ord.pk_ord,
+		ord.eu_status_ord,
+		ord.code_apply,
+		ord.date_start,
+		ord.name_ord,
+		ord.quan,
+		ord.flag_emer,
+		ord.pk_org_exec,
+		ord.pk_dept_exec,
+		ord.note_ord,
+		ord.code_ordtype,
+		ord.infant_no,
+		ord.name_emp_ord
+		from cn_order ord
+		inner join cn_ris_apply ris
+		on ord.pk_cnord = ris.pk_cnord
+		and ris.del_flag='0'
+		where ord.pk_pv= #{pkPv,jdbcType=VARCHAR}
+		and ord.del_flag='0'
+		order by ord.ordsn
+	</select>
+
+	<select id="getLabRecord" parameterType="java.lang.String"
+		resultType="DynaBean">
+		select
+		lis.*,
+		isnull(lis.samp_no,'') as
+		samp_no,
+		ord.pk_ord,
+		ord.eu_status_ord,
+		ord.code_apply,
+		ord.date_start,
+		ord.name_ord,
+		ord.quan,
+		ord.flag_emer,
+		ord.pk_org_exec,
+		ord.pk_dept_exec,
+		ord.note_ord,
+		ord.code_ordtype,
+		ord.infant_no,
+		ord.name_emp_ord,
+		ord.code_ord,
+		pv.code_pv,
+		pv.dt_sex,
+		pv.name_pi,
+		pv.age_pv,
+		pv.pk_dept,
+		pv.pk_dept_ns,
+		pv.bed_no,
+		pi.dt_blood_abo,
+		pi.dt_blood_rh,
+		pi.code_pi,
+		pi.dt_nation,
+		dept.code_dept,
+		ns.code_dept as nsCodeDept
+		from cn_order
+		ord
+		inner join cn_lab_apply lis
+		on ord.pk_cnord = lis.pk_cnord
+		and lis.del_flag='0'
+		--and lis.eu_status='1'
+		left join pv_encounter pv on ord.pk_pv=pv.pk_pv
+		left join pi_master pi on
+		pv.pk_pi=pi.pk_pi
+		left join bd_ou_dept dept on pv.pk_dept=dept.pk_dept
+		left join bd_ou_dept ns on pv.pk_dept_ns=ns.pk_dept
+		left join em_pt pt on pt.pk_pv=ord.pk_pv
+		where ord.pk_pv =
+		#{pkPv,jdbcType=VARCHAR}
+		and ord.del_flag='0'
+		AND (
+		pt.flag_green = '1'
+		OR EXISTS (
+		SELECT
+		1
+		FROM
+		bl_op_dt bl
+		WHERE
+		bl.pk_cnord = ord.pk_cnord
+		AND bl.flag_settle = '0'
+		)
+		)
+		order by ord.ordsn
+	</select>
+	<select id="getLabRecordOracle" parameterType="java.lang.String"
+		resultType="DynaBean">
+		select
+		lis.*,
+		ord.pk_ord,
+		ord.eu_status_ord,
+		ord.code_apply,
+		ord.date_start,
+		ord.name_ord,
+		ord.quan,
+		ord.flag_emer,
+		ord.pk_org_exec,
+		ord.pk_dept_exec,
+		ord.note_ord,
+		ord.code_ordtype,
+		ord.infant_no,
+		ord.name_emp_ord,
+		ord.code_ord,
+		pv.code_pv,
+		pv.dt_sex,
+		pv.name_pi,
+		pv.age_pv,
+		pv.pk_dept,
+		pv.pk_dept_ns,
+		pv.bed_no,
+		pi.dt_blood_abo,
+		pi.dt_blood_rh,
+		pi.code_pi,
+		pi.dt_nation,
+		dept.code_dept,
+		ns.code_dept as nsCodeDept
+		from cn_order
+		ord
+		inner join cn_lab_apply lis
+		on ord.pk_cnord = lis.pk_cnord
+		and lis.del_flag='0'
+		and lis.eu_status='1'
+		left join pv_encounter pv on ord.pk_pv=pv.pk_pv
+		left join pi_master pi on
+		pv.pk_pi=pi.pk_pi
+		left join bd_ou_dept dept on pv.pk_dept=dept.pk_dept
+		left join bd_ou_dept ns on pv.pk_dept_ns=ns.pk_dept
+		left join em_pt pt on pt.pk_pv=ord.pk_pv
+		where ord.pk_pv =
+		#{pkPv,jdbcType=VARCHAR}
+		and ord.del_flag='0'
+		AND (
+		pt.flag_green = '1'
+		OR EXISTS (
+		SELECT
+		1
+		FROM
+		bl_op_dt bl
+		WHERE
+		bl.pk_cnord = ord.pk_cnord
+		AND bl.flag_settle = '0'
+		)
+		)
+		order by ord.ordsn
+	</select>
+
+</mapper>

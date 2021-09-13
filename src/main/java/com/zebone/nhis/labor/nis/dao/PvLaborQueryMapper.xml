@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.labor.nis.dao.PvLaborQueryMapper">
+	<select id="queryPvLabor" parameterType="java.util.Map" resultType="Dynabean">
+		select
+			 pv.name_pi,
+			 pv.bed_no,
+			 lab.date_in,
+			 lab.date_out,
+			 lab.flag_in,
+			 pv.age_pv age,
+			 pv.code_pv,
+			 pv.pk_pv,
+			 pv.date_begin,
+			 pv.date_end,
+			 pv.eu_status,
+			 pv.pk_dept,
+			 pv.pk_dept_ns,
+			 pi.code_pi, 
+			 pi.code_ip,
+			 dept.name_dept,
+			 deptns.name_dept name_dept_ns
+		from pv_labor lab
+	   inner join pv_encounter pv on pv.pk_pv = lab.pk_pv
+	   inner join pi_master pi on pi.pk_pi = pv.pk_pi  
+	   left join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+	   left join bd_ou_dept deptns on deptns.pk_dept = pv.pk_dept_ns
+	   where lab.eu_status &gt; 0 and lab.pk_org = #{pkOrg,jdbcType=CHAR}
+		 <!--  and pv.flag_in = '1' -->
+		<if test="namePi != null  and  namePi != ''">
+			and pv.name_pi like '%${namePi}%'
+		</if>
+		<if test="bedNo != null  and  bedNo != ''">
+			and pv.bed_no like '%${bedNo}%'
+		</if>
+		<if test="codePv != null  and  codePv != ''">
+			and pv.code_pv like '%${codePv}%'
+		</if>
+		<if test="codeIp != null  and  codeIp != ''">
+			and pi.code_ip like '%${codeIp}%'
+		</if>
+		<if test="flagIn != null  and  flagIn != ''">
+			and lab.flag_in = #{flagIn,jdbcType=CHAR}
+		</if>
+		<if test="pkDept != null  and  pkDept != ''">
+			and pv.pk_dept = #{pkDept,jdbcType=CHAR}
+		</if>
+		<if test="pkDeptNs != null  and  pkDeptNs != ''">
+			and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		</if>
+		<if test="dateBegin != null  and  dateBegin != ''">
+			and lab.date_out &gt;=to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+			and lab.date_out &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+		</if>
+		
+		union 
+		
+		select
+			 pv.name_pi,
+			 pv.bed_no,
+			 lab.date_in,
+			 lab.date_out,
+			 lab.flag_in,
+			 pv.age_pv age,
+			 pv.code_pv,
+			 pv.pk_pv,
+			 pv.date_begin,
+			 pv.date_end,
+			 pv.eu_status,
+			 pv.pk_dept,
+			 pv.pk_dept_ns,
+			 pi.code_pi, 
+			 pi.code_ip,
+			 dept.name_dept,
+			 deptns.name_dept name_dept_ns
+		from pv_labor lab
+	   inner join pv_encounter pv on pv.pk_pv = lab.pk_pv
+	   inner join pi_master pi on pi.pk_pi = pv.pk_pi  
+	   left join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+	   left join bd_ou_dept deptns on deptns.pk_dept = pv.pk_dept_ns
+	   left join PV_FUNCTION ion on ion.pk_pv=pv.pk_pv
+	   where lab.eu_status &gt; 0 and lab.pk_org = #{pkOrg,jdbcType=CHAR}
+		 <!--  and pv.flag_in = '1' -->
+		<if test="namePi != null  and  namePi != ''">
+			and pv.name_pi like '%${namePi}%'
+		</if>
+		<if test="bedNo != null  and  bedNo != ''">
+			and pv.bed_no like '%${bedNo}%'
+		</if>
+		<if test="codePv != null  and  codePv != ''">
+			and pv.code_pv like '%${codePv}%'
+		</if>
+		<if test="codeIp != null  and  codeIp != ''">
+			and pi.code_ip like '%${codeIp}%'
+		</if>
+		<if test="flagIn != null  and  flagIn != ''">
+			and lab.flag_in = #{flagIn,jdbcType=CHAR}
+		</if>
+		<if test="pkDept != null  and  pkDept != ''">
+			and pv.pk_dept = #{pkDept,jdbcType=CHAR}
+		</if>
+		<if test="pkDeptNs != null  and  pkDeptNs != ''">
+			and pv.pk_dept_ns = #{pkDeptNs,jdbcType=CHAR}
+		</if>
+		<if test="dateBegin != null  and  dateBegin != ''">
+			and lab.date_out &gt;=to_date(#{dateBegin}, 'YYYYMMDDHH24MISS')
+		</if>
+		<if test="dateEnd != null  and  dateEnd != ''">
+			and lab.date_out &lt;= to_date(#{dateEnd}, 'YYYYMMDDHH24MISS')
+		</if>
+		<if test="usePkDept != null  and  usePkDept != ''">
+			and ion.pk_dept = #{usePkDept,jdbcType=CHAR}
+		</if>
+	</select>
+
+</mapper>

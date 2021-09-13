@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.webservice.dao.ExPubForWsMapper">
+	<!-- 根据不同条件查询医嘱执行单 -->
+<select id="queryExecListByCon" parameterType="java.util.Map" resultType="DynaBean">
+	select pv.pk_pv,
+	       pv.bed_no,
+	       pv.name_pi,
+	       pv.pk_pi,
+	       pv.eu_pvtype ,
+	       pv.pk_dept as pk_dept_pv,
+	       pv.code_pv,
+	       pi.code_ip,
+	       pvpi.ip_times,
+	       exlist.pk_exocc,
+	       exlist.pk_cnord,
+	       exlist.date_plan,
+	       exlist.quan_occ,
+	       exlist.name_emp_occ,
+	       exlist.name_emp_occ2,
+	       exlist.pk_emp_occ,
+	       exlist.pk_emp_occ2,
+	       exlist.pk_unit,
+	       exlist.eu_status,
+	       unit.name as name_unit,
+	       dept.name_dept as name_dept_occ,
+	       org.name_org as name_org_occ,
+	       case when exlist.pk_pdapdt is not null then '1' else '0' end as flag_ap,
+	       case when exlist.pk_pdback is not null then '1' else '0' end as flag_back,
+	       case when dt.flag_de = '1' then '1' else '0' end as flag_de,
+	       exlist.flag_self,
+	       exlist.flag_base,
+	       exlist.flag_pivas,
+	       ord.flag_durg,
+	       ord.name_ord,
+	       ord.date_start,
+	       ord.flag_bl,
+	       ord.infant_no,
+	       ord.pk_ord,
+	       ord.pk_pres,
+	       ord.pk_org,
+	       ord.pk_dept,
+	       ord.pk_dept_exec,
+	       ord.pk_dept_ns,
+	       ord.pk_emp_ex,
+	       ord.name_emp_ex,
+	       ord.date_plan_ex,
+	       exlist.pk_org_occ,
+	       exlist.pack_size,
+	       ord.code_supply,
+	       ord.ordsn,
+	       ord.flag_fit,
+	       ord.desc_fit,
+	       ord.note_ord,
+	       ord.first_num,
+	       ord.Last_num,
+	       ord.pk_emp_ord,
+	       ord.name_emp_ord,
+	       ord.ordsn_parent,
+	       ord.price_cg,
+	       pd.flag_st,
+	       freq.name as name_freq,
+	       freq.cnt cnt_freq,
+	       freq.eu_always as eu_always_freq,
+	       supply.name as name_supply,
+	       ord.eu_always,    
+	       ord.eu_st,
+	       ord.dosage,
+	       ord.spec,
+	       unitDos.name as name_unit_dos,
+	       ordtype.name as ordtype,
+	       ord.code_freq,
+	       ord.date_stop,
+	       ord.CODE_ORDTYPE code_Ordtype,
+	       ord.code_ord
+	  from ex_order_occ exlist
+	  inner join cn_order ord on ord.pk_cnord = exlist.pk_cnord
+	  inner join pv_encounter pv on pv.pk_pv = exlist.pk_pv
+	  left join pv_ip pvpi on pvpi.pk_pv = pv.pk_pv
+	  inner join pi_master pi on pi.pk_pi=pv.pk_pi
+	  left join bd_pd pd on pd.pk_pd = ord.pk_ord and pd.del_flag = '0'
+	  left join bd_unit unit on unit.pk_unit = exlist.pk_unit
+	  left join bd_unit unitDos on unitDos.pk_unit = ord.pk_unit_dos
+	  left join bd_ou_dept dept on dept.pk_dept = exlist.pk_dept_occ
+	  left join BD_OU_DEPT depts on depts.pk_dept=ord.pk_dept_ns
+	  left join bd_ou_org org on org.pk_org = exlist.pk_org_occ
+	  left join bd_term_freq freq on freq.code = ord.code_freq
+	  left join bd_supply supply on supply.code = ord.code_supply 
+	  left join bd_ordtype ordtype on ordtype.code = ord.code_ordtype and ordtype.del_flag = '0'
+	  left join ex_pd_apply_detail dt on dt.pk_pdapdt = exlist.pk_pdapdt  
+	 where 
+	     1=1
+	     <if test="pkExocc != null  and  pkExocc != ''">
+		       and exlist.PK_EXOCC=#{pkExocc}
+	     </if>
+		 <if test="pkPi != null  and  pkPi != ''">
+		       and pv.pk_pi=#{pkPi}
+	     </if>
+	     <if test="codePi != null  and  codePi != ''">
+		       and pi.code_pi=#{codePi}
+	     </if>
+	     <if test="pkPv != null  and  pkPv != ''">
+		       and pv.pk_pv=#{pkPv}
+	     </if>
+	     <if test="dateBegin!=nul and dateBegin!=''">
+			and TO_CHAR (exlist.date_plan, 'YYYY-MM-DD HH:mm:ss') &gt;= #{dateBegin}
+		</if>
+		<if test="dateEnd!=nul and dateEnd!=''">
+			and TO_CHAR (exlist.date_plan, 'YYYY-MM-DD HH:mm:ss') &lt;= #{dateEnd}
+		</if>
+	     <if test="pkPvs != null  and  pkPvs != ''">
+		   and pv.pk_pv in 
+		       <foreach item="pkpv" index="index" collection="pkPvs" open="(" separator="," close=")">
+            	#{pkpv}   
+               </foreach>
+	     </if>
+	     <if test="codePv != null  and  codePv != ''">
+		       and pv.code_pv=#{codePv}
+	     </if>
+	     <if test="pkDeptNs != null  and  pkDeptNs != ''">
+		       and ord.pk_dept_ns=#{pkDeptNs}
+	     </if>
+	     <if test="codeDeptNs != null  and  codeDeptNs != ''">
+		       and depts.code_dept = #{codeDeptNs}
+	     </if>
+	     <if test="codeOrdtype != null  and  codeOrdtype != ''">
+		      and ord.CODE_ORDTYPE = #{codeOrdtype}
+		 </if>
+	     <if test="codePis != null  and  codePis != ''">
+		   and pi.code_pi in 
+		       <foreach item="codePi" index="index" collection="codePis" open="(" separator="," close=")">
+            	#{codePi}   
+               </foreach>
+	     </if>
+	     <if test="codePvs != null  and  codePvs != ''">
+		   and pv.code_pv in 
+		       <foreach item="codePv" index="index" collection="codePvs" open="(" separator="," close=")">
+            	#{codePv}   
+               </foreach>
+	     </if>
+	     <if test=" pkCnord != null  and  pkCnord != ''">
+		       and exlist.pk_cnord =#{pkCnord}
+	     </if>
+	     <if test=" pkCnords != null  and  pkCnords != ''">
+		   and exlist.pk_cnord in 
+		       <foreach item="pkCnord" index="index" collection="pkCnords" open="(" separator="," close=")">
+            	#{pkCnord}   
+               </foreach>
+	     </if>
+	     <if test=" euStatus != null  and  euStatus != ''">
+		       and exlist.eu_status =#{euStatus}
+	     </if>
+	     
+	</select>
+</mapper>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.labor.nis.dao.PvLaborRecMapper">
+
+	<select id="queryPvLaborRec" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.labor.nis.vo.PvLaborRecVo">
+		select * from pv_labor_rec 
+		   where pk_org = #{pkOrg,jdbcType=CHAR} 
+		   and pk_pv = #{pkPv,jdbcType=CHAR}
+		<if test="pkLaborrec != null  and  pkLaborrec != ''">
+			 and pk_laborrec = #{pkLaborrec,jdbcType=CHAR}
+		</if>
+		     and del_flag = '0' 
+	</select>
+	
+	<select id="queryPvLaborRecDt" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.common.module.labor.nis.PvLaborRecDt">
+		select PLRD.*,
+		BOE.NAME_EMP as NAME_PLA_EMP
+		from pv_labor_rec_dt PLRD
+		left join BD_OU_EMPLOYEE BOE on PLRD.PLA_EMP=BOE.PK_EMP
+		   where 1=1 
+		<if test="pkLaborrec != null  and  pkLaborrec != ''">
+			 and PLRD.pk_laborrec = #{pkLaborrec,jdbcType=CHAR}
+		</if>
+		<if test="pkLaborrecdt != null  and  pkLaborrecdt != ''">
+			 and PLRD.pk_laborrecdt = #{pkLaborrecdt,jdbcType=CHAR}
+		</if>
+		     and PLRD.del_flag = '0'
+		   order by sort_no
+	</select>
+	<select id="queryPvInfant" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.ex.pub.vo.PvInfantVo">
+		select inf.*,inf.APGAR agpar,se.name sex,pv.date_begin from pv_infant inf
+		  left join bd_defdoc se on se.code = inf.dt_sex and se.code_defdoclist = '000000'
+		  left join pv_encounter pv on pv.pk_pv=inf.pk_pv_infant
+		   where 1=1 
+		<if test="pkLaborrec != null  and  pkLaborrec != ''">
+			 and inf.pk_laborrec = #{pkLaborrec,jdbcType=CHAR}
+		</if>
+		<if test="pkLaborrecdt != null  and  pkLaborrecdt != ''">
+			 and inf.pk_laborrecdt = #{pkLaborrecdt,jdbcType=CHAR}
+		</if>
+		     and inf.del_flag = '0' 
+		   order by inf.sort_no
+	</select>
+
+</mapper>

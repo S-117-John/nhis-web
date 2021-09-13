@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.platform.receive.yh.dao.CnMsgMapper">	
+	
+	<select id="getBdItemsByCon" resultType="com.zebone.nhis.common.module.base.bd.srv.BdItem" parameterType="com.zebone.nhis.common.module.base.bd.srv.BdItem">
+        select item.name + '/ ' + unit.name as name ,item.pk_item,item.code,item.pk_unit,item.spec,item.pk_itemcate from bd_item item 
+               left join bd_unit unit on item.pk_unit = unit.pk_unit
+               where pk_item = #{pkItem,jdbcType=VARCHAR}  
+    </select>
+    
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+

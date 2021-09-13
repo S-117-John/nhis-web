@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.base.ou.dao.EmpMapper">
+
+	
+	<sql id="Base_Column_WithoutPhoto_List" >
+	    emp.pk_emp, emp.pk_org, emp.code_emp, emp.name_emp, emp.dt_sex, emp.dt_identype, emp.idno, emp.py_code, emp.d_code, emp.birthday, emp.work_date, emp.addr,
+	    emp.homephone, emp.workphone, emp.mobile, emp.dt_emptype, emp.dt_empsrvtype, emp.flag_pres, emp.flag_anes, emp.flag_spir_one, emp.flag_spir_sec,
+		emp.flag_poi, emp.flag_spec, emp.flag_active, emp.email, emp.spec, emp.creator, emp.create_time, emp.del_flag, emp.ts
+  </sql>
+	
+	<select id="getEmpInfos"  parameterType="java.util.Map" resultType="DynaBean">
+        select 
+        	<include refid="Base_Column_WithoutPhoto_List" />
+		       		 ,empjob.pk_dept 
+        from bd_ou_employee emp 
+        left outer join bd_ou_empjob empjob on empjob.pk_emp = emp.pk_emp and empjob.del_flag = '0' 
+        left join bd_ou_dept bod on bod.pk_dept = empjob.pk_dept 
+        where    
+        	emp.del_flag = '0'        	 
+        <if test="pkOrg !=null and pkOrg != ''">
+            and emp.pk_org = #{pkOrg,jdbcType=CHAR}
+        </if>
+        <if test="codeEmp !=null and codeEmp != ''">
+            and emp.code_emp like '%' || #{codeEmp,jdbcType=VARCHAR} || '%'
+        </if>
+        <if test="nameEmp !=null and nameEmp != ''">
+            and emp.name_emp like '%' || #{nameEmp,jdbcType=VARCHAR} || '%'   
+        </if>
+        <if test="dtSex !=null and dtSex != ''">
+            and emp.dt_sex = #{dtSex,jdbcType=VARCHAR}
+        </if>
+        <if test="dtIdentype !=null and dtIdentype != ''">
+            and emp.dt_identype = #{dtIdentype,jdbcType=VARCHAR}
+        </if>
+        <if test="idNo !=null and idNo != ''">
+            and emp.idno = #{idNo,jdbcType=VARCHAR}
+        </if>
+        <if test="pkDept !=null and pkDept != ''">
+            and empjob.pk_dept = #{pkDept,jdbcType=CHAR}
+        </if>
+        <if test="flagActive !=null and flagActive != ''">
+            and emp.flag_active = #{flagActive,jdbcType=CHAR}
+        </if>
+        <if test="deptDl !=null and deptDl != ''">
+            and bod.code_dept like CONCAT(#{deptDl,jdbcType=CHAR},'%')
+            
+            
+        </if>
+    </select>
+    
+    <select id="getDeptEmpInfos"  parameterType="java.util.Map" resultType="DynaBean">
+    	select  
+		    <include refid="Base_Column_WithoutPhoto_List" />
+			,empjob.pk_dept   
+		from bd_ou_empjob empjob join bd_ou_employee emp on empjob.pk_emp = emp.pk_emp 
+		where empjob.del_flag = '0'
+        <if test="delFlag !=null and delFlag != ''">
+        and emp.del_flag =  #{delFlag,jdbcType=CHAR}
+        </if>
+		<if test="pkDept !=null and pkDept != ''">
+            and empjob.pk_dept = #{pkDept,jdbcType=CHAR}
+        </if> 
+		
+    </select>
+    
+   
+</mapper>

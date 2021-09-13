@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.bl.pub.dao.DoctorMaintainMapper">
+<select id="QueryList" parameterType="java.lang.String"
+resultType="com.zebone.nhis.bl.pub.vo.DoctorMaintainVo">
+select mt.pk_ordmt,
+       case when mt.flag_pd='1' then pd.pk_pd else ord.pk_ord end pk_ord, 
+       case when mt.flag_pd='1' then pd.name else ord.name end ordname,   
+       case when mt.flag_pd='1' then pd.spec else ord.spec end spec,      
+       mt.dosage,  
+       pd.vol, 
+       mt.pk_unit_dos,
+       unit_med.name unit_med,
+       mt.code_supply,
+       mt.flag_pd,
+       sup.name supply,
+       mt.code_freq,  
+       freq.name freq,
+       mt.quan,       
+       mt.pk_unit,    
+       unit.name unit,   
+       mt.price,         
+       mt.pk_dept,  
+       mt.note,     
+       mt.flag_stop 
+  from bd_ord_mt mt
+       left outer join bd_pd pd on mt.pk_ord=pd.pk_pd and mt.flag_pd='1' 
+       left outer join bd_ord ord on mt.pk_ord=ord.pk_ord and mt.flag_pd='0'
+       left outer join bd_unit unit on mt.pk_unit=unit.pk_unit
+       left outer join bd_unit unit_med on mt.pk_unit_dos=unit_med.pk_unit
+       left outer join bd_term_freq freq on mt.code_freq=freq.code
+       left outer join bd_supply sup on mt.code_supply=sup.code
+ where mt.pk_dept=#{pkdept} and mt.del_flag='0'
+</select>
+
+<select id="QueryListByCode" parameterType="java.util.Map"
+resultType="com.zebone.nhis.bl.pub.vo.DoctorMaintainVo">
+select mt.pk_ordmt,
+       case when mt.flag_pd='1' then pd.pk_pd else ord.pk_ord end pk_ord, 
+       case when mt.flag_pd='1' then pd.name else ord.name end ordname,   
+       case when mt.flag_pd='1' then pd.spec else ord.spec end spec,      
+       mt.dosage,  
+       pd.vol, 
+       mt.pk_unit_dos,
+       unit_med.name unit_med,
+       mt.code_supply,
+       mt.flag_pd,
+       sup.name supply,
+       mt.code_freq,  
+       freq.name freq,
+       mt.quan,       
+       mt.pk_unit,    
+       unit.name unit,   
+       mt.price,         
+       mt.pk_dept,  
+       mt.note,     
+       mt.flag_stop 
+  from bd_ord_mt mt
+       left outer join bd_pd pd on mt.pk_ord=pd.pk_pd and mt.flag_pd='1' 
+       left outer join bd_ord ord on mt.pk_ord=ord.pk_ord and mt.flag_pd='0'
+       left outer join bd_unit unit on mt.pk_unit=unit.pk_unit
+       left outer join bd_unit unit_med on mt.pk_unit_dos=unit_med.pk_unit
+       left outer join bd_term_freq freq on mt.code_freq=freq.code
+       left outer join bd_supply sup on mt.code_supply=sup.code
+ where mt.pk_dept=#{pkdept}  and mt.del_flag='0'
+ <if test="name != null  and  name != ''">
+ and (pd.name like '%${name}%' or ord.name like '%${name}%' )
+ </if>
+ <if test="pycode != null  and  pycode != ''">
+  and ( pd.spcode like '%${pycode}%'or ord.spcode like '%${pycode}%' )
+ </if>
+</select>
+</mapper>

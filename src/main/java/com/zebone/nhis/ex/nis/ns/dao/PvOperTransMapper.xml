@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.nis.ns.dao.PvOperTransMapper">
+
+	<select id="queryPvOperTrans" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.common.module.ex.nis.ns.PvOperTrans">
+		select * from pv_oper_trans 
+		   where pk_org = #{pkOrg,jdbcType=CHAR}
+			 and pk_ordop = #{pkOrdop,jdbcType=CHAR}
+		     and del_flag = '0'
+	</select>
+	
+	<select id="queryPvOperTransItem" parameterType="java.util.Map"
+		resultType="com.zebone.nhis.ex.nis.ns.vo.PvOperTransItemVo">
+		select defItem.name name_item,
+		       defItem.shortname,
+		       item.* 
+		  from pv_oper_trans_item item
+		  left join bd_defdoc defItem on defItem.code = item.dt_item and defItem.code_defdoclist = '140009'
+		 where item.pk_opertrans = #{pkOpertrans,jdbcType=CHAR}
+		   and item.del_flag = '0'
+	</select>
+
+</mapper>

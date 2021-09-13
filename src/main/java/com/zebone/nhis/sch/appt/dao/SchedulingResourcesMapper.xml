@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.sch.appt.dao.SchedulingResourcesMapper">
+<select id="getSchedulingResources_sql"  resultType="com.zebone.nhis.sch.appt.vo.SchedulingResources" parameterType="String">
+
+SELECT
+	MAX (SCH.DATE_WORK) AS last_DateTime,
+	SCH.PK_SCHSRV,
+	SRV.NAME srv_name,
+	SCH.PK_SCHRES,
+	res.NAME res_name,
+	res.PK_EMP,
+	emp.NAME_EMP,
+  	DATALENGTH (emp.PHOTO) AS PHOTO, 
+	res.EU_RESTYPE,
+	dept.NAME_DEPT,
+	job.JOBNAME
+FROM
+	SCH_SCH sch
+INNER JOIN SCH_SRV srv ON SCH.PK_SCHSRV = SRV.PK_SCHSRV
+INNER JOIN BD_OU_DEPT dept ON sch.PK_DEPT = dept.PK_DEPT
+INNER JOIN SCH_RESOURCE res ON SCH.PK_SCHRES = res.pk_schres
+LEFT JOIN BD_OU_EMPLOYEE emp ON emp.PK_EMP = res.PK_EMP
+LEFT JOIN BD_OU_EMPJOB job ON emp.PK_EMP = job.PK_EMP
+
+WHERE
+	SCH.EU_SCHCLASS = '0'
+AND SCH.DATE_WORK > getdate()  
+AND sch.PK_DEPT = #{pkDept,jdbcType=VARCHAR} 
+GROUP BY
+	SCH.PK_SCHSRV,
+	SRV.NAME,
+	SCH.PK_SCHRES,
+	res.NAME,
+	res.PK_EMP,
+	emp.NAME_EMP,
+	DATALENGTH (emp.PHOTO) ,
+	res.EU_RESTYPE,
+	dept.NAME_DEPT,
+	job.JOBNAME
+</select>
+
+<select id="getSchedulingResources_oracle"  resultType="com.zebone.nhis.sch.appt.vo.SchedulingResources" parameterType="String">
+
+SELECT
+    MAX (SCH.DATE_WORK) AS last_DateTime,
+    SCH.PK_SCHSRV,
+    SRV.NAME srv_name,
+    SCH.PK_SCHRES,
+    res.NAME res_name,
+    res.PK_EMP,
+    emp.NAME_EMP,
+    DATALENGTH (emp.PHOTO) AS PHOTO, 
+    res.EU_RESTYPE,
+    dept.NAME_DEPT,
+    job.JOBNAME
+FROM
+    SCH_SCH sch
+INNER JOIN SCH_SRV srv ON SCH.PK_SCHSRV = SRV.PK_SCHSRV
+INNER JOIN BD_OU_DEPT dept ON sch.PK_DEPT = dept.PK_DEPT
+INNER JOIN SCH_RESOURCE res ON SCH.PK_SCHRES = res.pk_schres
+LEFT JOIN BD_OU_EMPLOYEE emp ON emp.PK_EMP = res.PK_EMP
+LEFT JOIN BD_OU_EMPJOB job ON emp.PK_EMP = job.PK_EMP
+
+WHERE
+    SCH.EU_SCHCLASS = '0'
+AND SCH.DATE_WORK > sysdate  
+AND sch.PK_DEPT = #{pkDept,jdbcType=VARCHAR} 
+GROUP BY
+    SCH.PK_SCHSRV,
+    SRV.NAME,
+    SCH.PK_SCHRES,
+    res.NAME,
+    res.PK_EMP,
+    emp.NAME_EMP,
+    DATALENGTH (emp.PHOTO) ,
+    res.EU_RESTYPE,
+    dept.NAME_DEPT,
+    job.JOBNAME
+</select>
+</mapper>

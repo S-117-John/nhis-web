@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ma.pub.platform.zsba.dao.VtsInpatientMapper">
+
+  <resultMap id="InpatientResultMap" type="com.zebone.nhis.ma.pub.platform.zsba.vo.Inpatient">
+    <id column="patient_id" jdbcType="VARCHAR" property="patient_id" />
+    <result column="visit_id" jdbcType="INTEGER" property="visit_id" />
+    <result column="inp_no" jdbcType="VARCHAR" property="inp_no" />
+    <result column="inpatient_no" jdbcType="VARCHAR" property="inpatient_no" />
+    <result column="ward_code" jdbcType="VARCHAR" property="ward_code" />
+    <result column="ward_name" jdbcType="VARCHAR" property="ward_name" />
+    <result column="dept_code" jdbcType="VARCHAR" property="dept_code" />
+    <result column="dept_name" jdbcType="VARCHAR" property="dept_name" />
+    <result column="bed_no" jdbcType="VARCHAR" property="bed_no" />
+    <result column="bed_label" jdbcType="VARCHAR" property="bed_label" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="sex" jdbcType="VARCHAR" property="sex" />
+    <result column="pk_pv" jdbcType="VARCHAR" property="pk_pv" />
+    <result column="pk_org" jdbcType="VARCHAR" property="pk_org" />
+    <result column="pk_dept" jdbcType="VARCHAR" property="pk_dept" />
+    <result column="pk_dept_ns" jdbcType="VARCHAR" property="pk_dept_ns" />
+    <result column="ip_times" jdbcType="VARCHAR" property="ip_times" />
+    <result column="code_pv" jdbcType="VARCHAR" property="code_pv" />
+  </resultMap>
+
+  <resultMap id="EmployeesResultMap" type="com.zebone.nhis.ma.pub.platform.zsba.vo.Employee">
+    <id column="user_id" jdbcType="VARCHAR" property="user_id" />
+    <result column="user_name" jdbcType="VARCHAR" property="user_name" />
+    <result column="pk_emp" jdbcType="VARCHAR" property="pk_emp" />
+  </resultMap>
+
+  <!--查询患者信息（单人或者病区）-->
+  <select id="selectInpatients" resultMap="InpatientResultMap">
+    select
+      pi.pk_pi patient_id,
+      pi.name_pi name,
+      pi.code_ip inpatient_no,
+      pv.bed_no bed_no,
+      pv.pk_pv pk_pv,
+      pv.pk_org pk_org,
+      pv.pk_dept pk_dept,
+      pv.pk_dept_ns pk_dept_ns,
+      dept.code_dept dept_code,
+      dept.name_dept dept_name,
+      ns.code_dept ward_code,
+      ns.name_dept ward_name,
+      pv.CODE_PV
+    from pi_master pi
+    inner join pv_encounter pv on pv.pk_pi = pi.pk_pi and pv.eu_pvtype = '3'
+    inner join bd_res_bed bed on bed.pk_pi = pv.pk_pi and bed.code = pv.bed_no and bed.flag_ocupy = '1' and bed.eu_status = '02'
+    inner join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+    inner join bd_ou_dept ns on ns.pk_dept = pv.pk_dept_ns
+    where 1=1
+    <if test="codeIp != null and codeIp != '' ">
+      and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+    </if>
+    <if test="codeDept != null and codeDept != '' ">
+      and ns.code_dept = #{codeDept,jdbcType=VARCHAR}
+    </if>
+    order by dept.code_dept
+  </select>
+
+  <!--获取护士信息-->
+  <select id="selectEmployees" resultMap="EmployeesResultMap">
+    select
+    name_emp user_name,
+    code_emp user_id,
+    pk_emp pk_emp
+    from bd_ou_employee
+    where 1=1
+    <if test="userId != null and userId != '' ">
+      and code_emp = #{userId,jdbcType=VARCHAR}
+    </if>
+  </select>
+
+</mapper>

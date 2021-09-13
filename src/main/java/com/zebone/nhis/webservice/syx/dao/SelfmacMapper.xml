@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.SelfmacMapper">
+
+    <select id="qrySettleInfo" parameterType="com.zebone.nhis.webservice.syx.vo.selfmac.SettleInfoReq" resultType="com.zebone.nhis.webservice.syx.vo.selfmac.SettleInfoVo">
+    
+		select pi.code_ip ipSeqnoText,
+		       pi.name_pi patientName,
+		       sex.NAME patientSex,
+		       st.pk_insurance pkHp,
+		       hp.NAME patientHp,
+		       dept.name_dept deptName,
+		       pv.bed_no bedNo,
+		       st.code_st stCode,
+		       st.amount_st payAmout,
+		       to_char(st.date_begin,'yyyy-MM-dd HH24:mi:ss') beginDate,
+		       to_char(st.date_end,'yyyy-MM-dd HH24:mi:ss') endDate,
+		       St.CNT_PRINTLIST cntPrintList   
+		  from pv_encounter pv
+		       Inner Join bl_settle st On pv.pk_pv=st.pk_pv
+		       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+		       inner join bd_ou_dept dept on pv.pk_dept=dept.pk_dept 
+		       left join bd_defdoc sex on sex.code = pi.dt_sex and sex.code_defdoclist='000000' and sex.del_flag='0' 
+		       left join bd_hp hp on hp.pk_hp = st.pk_insurance and hp.del_flag='0' 
+		 where
+		        (pi.id_no=#{userCardId,jdbcType=VARCHAR} 
+		        and pi.name_pi=#{patientName,jdbcType=VARCHAR} 
+		        or pi.code_ip=#{ipSeqnoText,jdbcType=VARCHAR})
+		     	and st.date_st &gt;=to_date(#{beginDate,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi:ss')
+		        and st.date_st &lt;=to_date(#{endDate,jdbcType=VARCHAR},'yyyy-MM-dd HH24:mi:ss')  
+ 
+    </select>
+    <select id="qrySettleInfoDetail" parameterType="com.zebone.nhis.webservice.syx.vo.selfmac.SettleInfoDetailReq" resultType="com.zebone.nhis.webservice.syx.vo.selfmac.SettleInfoDtVo">
+    
+		select
+		       CASE WHEN cg.FLAG_PD='1' THEN (CASE pdhp.eu_level WHEN '0' THEN '甲类' WHEN '1' THEN '乙类' else'自费' end ) ELSE (CASE itemhp.eu_level WHEN '0' THEN '甲类' WHEN '1' THEN '乙类' else'自费' end) END  name_level,
+		       pv.name_pi patientName,
+		       st.amount_st payAmout,
+		       iitem.name detailFee,
+		       cg.pk_cgip detailId,
+		       CASE WHEN cg.FLAG_PD='1' THEN pd.code ELSE item.code END  detailCode,
+		       cg.name_cg detailName,
+		       cg.spec detailSpec,
+		       cg.price detailPrice,
+		       cg.quan detailCount,
+		       unit.name detailUnit,
+		       cg.amount detailAmout 
+		  from pv_encounter pv 
+		       inner join bl_settle st on pv.pk_pv=st.pk_pv 
+		       inner join bl_ip_dt cg on st.pk_settle=cg.pk_settle 
+		       inner join bd_unit unit on cg.pk_unit=unit.pk_unit 
+		       inner join bd_invcate_item iitem on cg.code_bill=iitem.code 
+		       inner join bd_invcate icate on iitem.pk_invcate=icate.pk_invcate 
+		       LEFT Join bd_item item On cg.pk_item=item.pk_item 
+		       left Join bd_pd pd On cg.pk_item=pd.PK_PD 
+		       LEFT JOIN BD_ITEM_HP itemhp ON itemhp.PK_ITEM = item.PK_ITEM AND itemhp.DT_HPDICTTYPE=#{dtHpdicttype,jdbcType=VARCHAR} AND itemhp.DEL_FLAG='0'
+		       LEFT JOIN BD_ITEM_HP pdhp ON pdhp.PK_ITEM = pd.PK_PD AND pdhp.DT_HPDICTTYPE=#{dtHpdicttype,jdbcType=VARCHAR} AND pdhp.DEL_FLAG='0'
+		       
+		 where st.code_st=#{stCode,jdbcType=VARCHAR}
+		 and  icate.eu_type='1' 
+    </select>
+</mapper> 

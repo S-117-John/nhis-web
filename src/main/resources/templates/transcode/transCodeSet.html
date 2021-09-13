@@ -1,0 +1,249 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <title>树形联动</title>
+    <link href="${ctx}/ui/css/main.css" rel="stylesheet" type="text/css" />
+    <link href="${ctx}/ui/css/custom_icons.css" rel="stylesheet" type="text/css" />
+    <script src="${ctx}/ui/boot.js" type="text/javascript"></script>
+    <style type="text/css">
+    body{
+        margin:0;padding:0;border:0;width:100%;height:100%;overflow:hidden;
+    }    
+    </style>  
+    <!--引入皮肤样式-->
+    <!--<link href="../../scripts/zbuiui/themes/blue/skin.css" rel="stylesheet" type="text/css" />-->
+
+</head>
+<body>
+   
+    
+<div class="zbui-splitter" style="width:100%;height:100%;" borderStyle="border:0;">
+    <div size="240" showCollapseButton="true" style="border:1px solid #909aa6;">
+        <div  class="zbui-toolbar" style="padding:2px;border-top:0;border-left:0;border-right:0;">                
+            <span style="padding-left:5px;">名称：</span>
+            <input class="zbui-textbox" width="120" id="getName"/>
+            <a class="zbui-button" iconCls="icon-find" plain="true" id="findname">查找</a>                  
+        </div>
+        <div class="zbui-fit" >
+            <ul id="tree1" class="zbui-tree" url="${ctx}/transcode/gettranscodeSet" style="width:100%;"
+                showTreeIcon="true" textField="text" idField="id" parentField="pid" resultAsTree="false"
+                contextMenu="#treemenu"
+            >        
+            </ul>
+            
+            <ul id="treemenu" class="zbui-contextmenu"  onbeforeopen="onBeforeOpen">        
+			    <li>
+					<span iconCls="icon-add">新增节点</span>
+					<ul>
+					    <li onclick="onAddBefore">插入节点前</li>                
+			            <li onclick="onAddAfter">插入节点后</li>	
+						<li onclick="onAddNode">插入子节点</li>	             
+					</ul>
+				</li>
+				<li name="edit" iconCls="icon-edit" onclick="onEditNode">编辑节点</li>
+				<li name="remove" iconCls="icon-remove" onclick="onRemoveNode">删除节点</li>        
+			</ul>
+        </div>
+    </div>
+    <div >
+        <div class="zbui-toolbar" style="padding:2px;border-left:0;">                
+             <a class="zbui-button" iconCls="icon-add" plain="true" onclick="addRow">新增修改</a>
+            <a class="zbui-button" iconCls="icon-remove" plain="true" id="btn_del">删除</a>     
+            <span class="separator"></span>             
+            <a class="zbui-button" iconCls="icon-save" plain="true" onclick="saveData">保存</a>       
+        </div>
+        <div class="zbui-fit" >
+            <div id="grid1" class="zbui-datagrid" style="width:100%;height:100%;" 
+                borderStyle="border-left:0;border-top:0;"
+                url="${ctx}/transcode/gettranscodeSetByTj"
+                showFilterRow="true" allowCellSelect="true" allowCellEdit="true"                
+            >
+                <div property="columns" >            
+                    <div field="id" width="120" headerAlign="center" allowSort="true">交易码
+                        <input  class="zbui-textbox" style="width:100%;"/>
+                    </div>      
+                    <div field="text" width="120" headerAlign="center" allowSort="true">功能描述                 
+                        <input property="editor" class="zbui-textbox" style="width:100%;"/>
+                    </div>                
+                    <div field="pid" width="100" allowSort="true" renderer="onGenderRenderer" align="center" headerAlign="center">父ID
+                        <input allowInput="false"  class="zbui-textbox" style="width:100%;" />
+                    </div>            
+                    <div field="cjsj" width="100" headerAlign="center" dateFormat="yyyy-MM-dd hh:mm:ss" allowSort="true">创建日期
+                    <input  class="zbui-datepicker" style="width:100%;"/>
+                    </div>                
+                </div>
+            </div>  
+        </div>
+    </div>        
+</div>
+    
+    <script type="text/javascript">
+        zbui.parse();
+        var names=zbui.get("getName");
+		var names=zbui.get("getName");
+        var tree = zbui.get("tree1");
+        var grid = zbui.get("grid1");
+        tree.on("nodeselect", function (e) {
+                grid.load({data:e.node.id});
+        });
+        //////////////////////////////////////////////
+     	zbui.get('findname').on('click',function(){
+     		var data=names.getValue();
+     		console.info(data);
+     		var json=zbui.encode(data);
+     		console.info(json);
+     		//console.info(form);
+     		$.ajax({
+     			url:"${ctx}/transcode/gettranscodeSetByText",
+     			type:"post",
+     			data:{data:json},
+     			success: function (text) {
+     				var data=zbui.decode(text);
+     				console.info(data);
+     				tree.loadList(data, "id", "pid");
+                }
+     		});
+     	})
+     	var forMax=0;
+        var pidNode=1234;
+        function addRow() { 
+            var node = tree.getSelectedNode();
+            
+            var list=[];
+            list=tree.getChildNodes(node);
+            //去后3位数字+1
+            console.info(list);
+            var max=0;
+           for(var i=0;i<list.length;i++){
+            	var ne=list[i];
+            	var nu=Number(ne.id);
+            	//alert(list[i]);
+            	//console.info(list[i].id);
+            	if(max<nu){
+            		max=nu;
+            	}
+            } 
+            console.info(max+1);
+            var rasl="";
+            var maxss=max+1;
+            console.info(forMax);
+            if(pidNode!=node){//切换
+            	forMax=0;
+           	 pidNode=node;
+           }
+            if(forMax==0){
+            	forMax=maxss;
+            }
+            else if(forMax!=0){
+            	forMax=forMax+1;
+            }
+            console.info(forMax);
+            var nextnu=(forMax).toString();
+            if(nextnu.length<=3){
+            	rasl=fill3lengthstr(nextnu);
+            }else if(nextnu.length>3&&nextnu.length<=6){
+            	rasl=fill6Transcode(nextnu);
+            }else if(nextnu.length>6&&nextnu.length<=9){
+            	rasl=fillTranscode(nextnu);
+            }
+            if (node) {
+            	if(node.id.length>=9){
+            		alert("末节点不可增加！");
+            		return false;
+            	}
+                var newRow = { text: "请在此填入描述。" };
+                if(list.length==0){
+                	newRow.id = node.id+rasl;
+                }else{
+                	newRow.id = rasl;
+                }
+                newRow.pid = node.id;
+                //console.info(newRow.id);
+                grid.addRow(newRow,node+1);
+            }
+        }
+        
+        /*补足9位交易号*/
+        function fillTranscode(transcode){
+        	var full = "000000000";//9位
+        	var last = full.substring(0,full.length-transcode.length);
+        	return last+transcode;
+        }
+        function fill6Transcode(transcode){
+        	var full = "000000";//6位
+        	var last = full.substring(0,full.length-transcode.length);
+        	return last+transcode;
+        }
+        /*将位数<=3的数字左边补0*/
+        function fill3lengthstr(numstr){
+        	var full = "000";//3位
+        	var last = full.substr(0,full.length-numstr.length);
+        	return last+numstr;
+        }
+        zbui.get('btn_del').on('click',function(){
+        	var rows = grid.getSelecteds();
+        	if(rows[0]==null){
+        		alert("请选中一条记录");
+        	}else{
+        		/* if(rows[0].id.length<=3){
+            		return false;
+            	} */
+        	}
+        	console.info(rows[0]);
+        	//需要进行验证 ，
+            if (rows.length > 0) {
+                if (confirm("确定删除选中记录？")) {
+                    var json = zbui.encode(rows);
+                    //console.info(json);
+                    grid.loading("删除中，请稍后......");
+                    $.ajax({
+                        url: "${ctx}/oper/delTransCodeModul",
+                        type: 'post',
+                        data: { data : json },
+                        success: function (text) {
+                        	var obstr = zbui.encode(text);
+                        	if(obstr.indexOf("<title>404 - 页面不存在</title>") != -1){
+    	                		alert("正式运行环境下，无此操作权限！");
+    	                		return ;
+    	                	}
+                        	if(!text){
+                        		alert("该交易码下有子类交易码！不能删除");
+                        	}
+                            grid.reload();
+                            tree.reload();
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                        	alert(jqXHR.responseText);
+                        }
+                    });  
+                }
+            }
+        });
+        function saveData() {
+            var data = grid.getChanges();
+            var json = zbui.encode(data);
+            console.info(json);
+            grid.loading("保存中，请稍后......");
+            $.ajax({
+                url: "${ctx}/oper/changeTransCodeModul",
+                data: { data: json },
+                type: "post",
+                success: function (text) {
+                	if(text.indexOf("<title>404 - 页面不存在</title>") != -1){
+                		alert("正式运行环境下，无此操作权限！");
+                		return ;
+                	}
+                    grid.reload();
+                    tree.reload();
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    alert(jqXHR.responseText);
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>

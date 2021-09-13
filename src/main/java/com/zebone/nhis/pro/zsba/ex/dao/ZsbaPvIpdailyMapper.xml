@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.ex.dao.ZsbaPvIpdailyMapper">
+    <select id="queryDeptByOrg" parameterType="java.util.List" resultType="java.lang.String">
+        select distinct a.pk_dept from bd_ou_dept a
+        inner join bd_dept_bus b on b.pk_dept=a.pk_dept and b.dt_depttype=#{dtDepttype,jdbcType=VARCHAR} and
+        b.del_flag='0'
+        where a.pk_org in
+        <foreach collection="pkOrgArr" item="pkOrg" index="index" open="(" separator="," close=")">
+            #{pkOrg}
+        </foreach>
+        group by a.pk_dept
+    </select>
+    <!-- 额定床位 -->
+    <select id="getBedNumByDept" parameterType="java.util.Map" resultType="DynaBean">
+        select pk_dept,bednum,bednum_open from bd_ou_dept where pk_dept in
+        <foreach collection="pkDepts" item="pkDept" index="index" open="(" separator="," close=")">
+            #{pkDept}
+        </foreach>
+    </select>
+    <!-- 期初人数 -->
+    <select id="getQichuNumByDept" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.pk_dept_ns ,count(1) as inhospYd
+        from pv_encounter pv
+        where flag_in = '1' and eu_pvtype = '3'
+        and (date_end &lt;= to_date(#{yesBeforeEnd}, 'YYYYMMDDHH24MISS') or date_end is null)
+        and pk_dept_ns in
+        <foreach collection="pkDepts" item="pkDept" index="index" open="(" separator="," close=")">
+            #{pkDept}
+        </foreach>
+        group by pk_dept_ns
+    </select>
+    <!-- 今日入院 -->
+    <select id="getDayInNumByDept" parameterType="java.util.Map" resultType="DynaBean">
+        select adt.pk_dept_ns ,count(1) as admit
+        from pv_encounter pv inner join pv_adt adt on pv.pk_pv=adt.pk_pv
+        where adt.flag_admit = '1' and
+        adt.date_begin &gt;= to_date(#{yesBegin}, 'YYYYMMDDHH24MISS') and
+        adt.date_begin &lt;= to_date(#{yesEnd}, 'YYYYMMDDHH24MISS') and
+        pv.flag_cancel = '0' and adt.pk_dept_ns in
+        <foreach collection="pkDepts" item="pkDept" index="index" open="(" separator="," close=")">
+            #{pkDept}
+        </foreach>
+        group by adt.pk_dept_ns
+    </select>
+    <!-- 今日出院 -->
+    <select id="getDayOutNumByDept" parameterType="java.util.Map" resultType="DynaBean">
+        select adt.pk_dept_ns , count(1) as discharge
+        from pv_encounter pv inner join pv_adt adt on pv.pk_pv=adt.pk_pv
+        where adt.flag_dis = '1' and
+        adt.date_end &gt;= to_date(#{yesBegin}, 'YYYYMMDDHH24MISS') and
+        adt.date_end &lt;= to_date(#{yesEnd}, 'YYYYMMDDHH24MISS') and
+        pv.flag_cancel = '0' and adt.pk_dept_ns in
+        <foreach collection="pkDepts" item="pkDept" index="index" open="(" separator="," close=")">
+            #{pkDept}
+        </foreach>
+        group by adt.pk_dept_ns
+    </select>
+    <!-- 死亡人数 -->
+    <select id="getDeathByDept" parameterType="java.util.Map" resultType="DynaBean">
+        select ord.pk_dept_ns ,count(pk_cnord) as deathnum
+        from cn_order ord
+        inner join bd_ord bdord on bdord.pk_ord = ord.pk_ord
+        where ord.flag_durg='0'
+        and bdord.name like '%死亡%'
+        and ord.eu_status_ord &gt; '1'
+        and ord.date_chk &gt;= to_date(#{yesBegin}, 'YYYYMMDDHH24MISS')
+        and ord.date_chk &lt;= to_date(#{yesEnd}, 'YYYYMMDDHH24MISS')
+        and ord.pk_dept_ns in
+        <foreach collection="pkDepts" item="pkDept" index="index" open="("
+                 separator="," close=")">
+            #{pkDept}
+        </foreach>
+        group by ord.pk_dept_ns
+    </select>
+    <!-- 转往他科 -->
+    <select id="getDeptAdtOutNumByDept" parameterType="java.util.Map" resultType="DynaBean">
+        select adts.pk_dept_ns , count(1) as transOut
+        from pv_encounter pv
+        inner join pv_adt adts on pv.pk_pv=adts.pk_pv
+        inner join pv_adt adtd on adts.pk_adt=adtd.pk_adt_source
+        where adts.date_end &gt;= to_date(#{yesBegin}, 'YYYYMMDDHH24MISS')
+        and adts.date_end &lt;= to_date(#{yesEnd}, 'YYYYMMDDHH24MISS')
+        and adts.pk_dept_ns in
+        <foreach collection="pkDepts" item="pkDept" index="index" open="("
+                 separator="," close=")">
+            #{pkDept}
+        </foreach>
+        group by adts.pk_dept_ns
+    </select>
+    <!-- 他科转入 -->
+    <select id="getDeptAdtInByDept" parameterType="java.util.Map" resultType="DynaBean">
+        select adtd.pk_dept_ns,count(1) as transIn
+        from pv_encounter pv
+        inner join pv_adt adts on pv.pk_pv=adts.pk_pv
+        inner join pv_adt adtd on adts.pk_adt=adtd.pk_adt_source
+        where adtd.flag_admit != '1' and adtd.eu_status = '1'
+        and adtd.date_begin &gt;= to_date(#{yesBegin}, 'YYYYMMDDHH24MISS')
+        and adtd.date_begin &lt;= to_date(#{yesEnd}, 'YYYYMMDDHH24MISS')
+        and pv.flag_cancel = '0' and adtd.pk_dept_ns in
+        <foreach collection="pkDepts" item="pkDept" index="index" open="("
+                 separator="," close=")">
+            #{pkDept}
+        </foreach>
+        group by adtd.pk_dept_ns
+    </select>
+    <!-- 病重人数 -->
+    <select id="getBzNumByDept" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.pk_dept_ns, count(1) as severenum
+        from pv_encounter pv
+        inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+        where pv.flag_in = '1'
+        and pv.flag_cancel ='0'
+        and ip.dt_level_dise = '02'
+        and pv.pk_dept_ns in
+        <foreach collection="pkDepts" item="pkDept" index="index" open="("
+                 separator="," close=")">
+            #{pkDept}
+        </foreach>
+        group by pv.pk_dept_ns
+    </select>
+    <!-- 病危人数 -->
+    <select id="getBwNumByDept" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.pk_dept_ns, count(1) as riskynum
+        from pv_encounter pv
+        inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+        where pv.flag_in = '1'
+        and pv.flag_cancel = '0' and ip.dt_level_dise = '03'
+        and pv.pk_dept_ns in
+        <foreach collection="pkDepts" item="pkDept" index="index" open="("
+                 separator="," close=")">
+            #{pkDept}
+        </foreach>
+        group by pv.pk_dept_ns
+    </select>
+    <!-- 某及护理人数 -->
+    <select id="getHLNumByDept" parameterType="java.util.Map" resultType="DynaBean">
+        select pv.pk_dept_ns, count(1) as hlnum
+        from pv_encounter pv
+        inner join pv_ip ip on pv.pk_pv=ip.pk_pv
+        where pv.flag_in = '1'
+        and pv.flag_cancel = '0' and ip.dt_level_ns = #{hldj,jdbcType=VARCHAR}
+        and pv.pk_dept_ns in
+        <foreach collection="pkDepts" item="pkDept" index="index" open="(" separator="," close=")">
+            #{pkDept}
+        </foreach>
+        group by pv.pk_dept_ns
+    </select>
+    <!-- 留陪人数 -->
+    <select id="getAttendNumByDept" parameterType="java.util.Map" resultType="DynaBean">
+        select ord.pk_dept_ns , count(pk_cnord) as accomnum
+        from cn_order ord where code_ordtype ='14'
+        and ord.eu_status_ord &gt; 1 and (ord.date_stop is null or ord.date_stop &gt;= to_date(#{yesEnd},
+        'YYYYMMDDHH24MISS'))
+        and ord.pk_dept_ns in
+        <foreach collection="pkDepts" item="pkDept" index="index" open="(" separator="," close=")">
+            #{pkDept}
+        </foreach>
+        group by ord.pk_dept_ns
+    </select>
+
+    <select id="getQichuNumByDeptDe" resultType="DynaBean">
+        select pv.pk_dept ,count(1) as inhospYd
+        from pv_encounter pv
+        inner join PV_IP PI on pv.PK_PV = PI.PK_PV
+        where flag_in = '1' and eu_pvtype = '3'
+        and (date_end &lt;= to_date(#{yesBeforeEnd}, 'YYYYMMDDHH24MISS') or date_end is null)
+        and (pi.FLAG_INFANT ='0'or (PI.FLAG_INFANT='1'and PI.QUAN_INFANT>0))
+        and pv.pk_dept in
+        <foreach collection="pkDeptList" item="pkDept" index="index" open="(" separator="," close=")">
+            #{pkDept}
+        </foreach>
+        group by pk_dept
+    </select>
+
+    <select id="getDayInNumByDeptDe" resultType="DynaBean">
+        select adt.pk_dept ,count(1) as admit
+        from pv_encounter pv inner join pv_adt adt on pv.pk_pv=adt.pk_pv
+        where adt.flag_admit = '1' and
+        adt.date_begin &gt;= to_date(#{yesBegin}, 'YYYYMMDDHH24MISS') and
+        adt.date_begin &lt;= to_date(#{yesEnd}, 'YYYYMMDDHH24MISS') and
+        pv.flag_cancel = '0' and adt.pk_dept in
+        <foreach collection="pkDeptList" item="pkDept" index="index" open="(" separator="," close=")">
+            #{pkDept}
+        </foreach>
+        group by adt.pk_dept
+    </select>
+
+    <select id="getDayOutNumByDeptDe" resultType="DynaBean">
+        select adt.pk_dept , count(1) as discharge
+        from pv_encounter pv inner join pv_adt adt on pv.pk_pv=adt.pk_pv
+        inner join PV_IP PI on pv.PK_PV = PI.PK_PV
+        where adt.flag_dis = '1'
+        and adt.date_end &gt;= to_date(#{yesBegin}, 'YYYYMMDDHH24MISS')
+        and adt.date_end &lt;= to_date(#{yesEnd}, 'YYYYMMDDHH24MISS')
+        and (pi.FLAG_INFANT ='0'or (PI.FLAG_INFANT='1'and PI.QUAN_INFANT>0))
+        and pv.flag_cancel = '0' and adt.pk_dept in
+        <foreach collection="pkDeptList" item="pkDept" index="index" open="(" separator="," close=")">
+            #{pkDept}
+        </foreach>
+        group by adt.pk_dept
+    </select>
+
+    <select id="getDeptAdtOutNumByDeptDe" resultType="DynaBean">
+        select adts.pk_dept , count(1) as transOut
+        from pv_encounter pv
+        inner join pv_adt adts on pv.pk_pv=adts.pk_pv
+        inner join pv_adt adtd on adts.pk_adt=adtd.pk_adt_source
+        inner join PV_IP PI on pv.PK_PV = PI.PK_PV
+        where adts.date_end &gt;= to_date(#{yesBegin}, 'YYYYMMDDHH24MISS')
+        and adts.date_end &lt;= to_date(#{yesEnd}, 'YYYYMMDDHH24MISS')
+        and (pi.FLAG_INFANT ='0'or (PI.FLAG_INFANT='1'and PI.QUAN_INFANT>0))
+        and adts.pk_dept in
+        <foreach collection="pkDeptList" item="pkDept" index="index" open="("
+                 separator="," close=")">
+            #{pkDept}
+        </foreach>
+        group by adts.pk_dept
+    </select>
+
+    <select id="getDeptAdtInByDeptDe" resultType="DynaBean">
+        select adtd.pk_dept,count(1) as transIn
+        from pv_encounter pv
+        inner join pv_adt adts on pv.pk_pv=adts.pk_pv
+        inner join pv_adt adtd on adts.pk_adt=adtd.pk_adt_source
+        inner join PV_IP PI on pv.PK_PV = PI.PK_PV
+        where adtd.flag_admit != '1' and adtd.eu_status = '1'
+        and adtd.date_begin &gt;= to_date(#{yesBegin}, 'YYYYMMDDHH24MISS')
+        and adtd.date_begin &lt;= to_date(#{yesEnd}, 'YYYYMMDDHH24MISS')
+        and (pi.FLAG_INFANT ='0'or (PI.FLAG_INFANT='1'and PI.QUAN_INFANT>0))
+        and pv.flag_cancel = '0' and adtd.pk_dept in
+        <foreach collection="pkDeptList" item="pkDept" index="index" open="("
+                 separator="," close=")">
+            #{pkDept}
+        </foreach>
+        group by adtd.pk_dept
+    </select>
+</mapper>

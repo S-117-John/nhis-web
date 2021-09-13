@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.compay.ins.zsrm.dao.ZsrmSgsMapper">
+	<update id="updateInsSgsYbVisit">
+		update ins_sgsyb_visit
+		<set>
+			<if test='pkPv != null and pkPv != ""'>
+				pk_pv = #{pkPv},
+			</if>
+			<if test='pkHp != null and pkHp != ""'>
+				pk_hp = #{pkHp},
+			</if>
+			<if test='pkPi != null and pkPi != ""'>
+				pk_pi = #{pkPi},
+			</if>
+			<if test='delFlag != null and delFlag != ""'>
+				del_flag = #{delFlag},
+			</if>
+		</set>
+		<where>
+			aaz218 = #{aaz218}
+		</where>
+	</update>
+	<update id="updateFlagInsu">
+		update BL_IP_DT set FLAG_INSU = '1'
+		where PK_CGIP in
+		<foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+			#{item.pkCgip}
+		</foreach>
+	</update>
+    <update id="updateInsSgsYbSt">
+		update ins_sgs_st set pk_settle = #{pkSettle}
+		where pk_pv = #{pkPv}
+	</update>
+
+    <select id="qryPvHp" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.base.bd.price.BdHp">
+		select
+		hp.*
+		from PV_ENCOUNTER pv
+		left join bd_hp hp on hp.pk_hp=pv.pk_insu and hp.del_flag='0'
+		where
+		pv.del_flag='0' and
+		pv.PK_PV=#{pkPv,jdbcType=VARCHAR}
+	</select>
+
+	<select id="qryInsBasePre" parameterType="java.lang.String" resultType="DynaBean">
+		select
+		'aac002' as bka895,
+		pi.ID_NO as
+		bka896
+
+		from
+		PV_ENCOUNTER pv
+		left join pi_master pi on pi.pk_pi=pv.PK_PI and pi.del_flag='0'
+		where pv.del_flag='0' and
+		pv.PK_PV=#{pkPv,jdbcType=VARCHAR}
+
+	</select>
+	<select id="qryInsRegPre" parameterType="java.lang.String" resultType="DynaBean">
+		select
+		'akc002' as bka895,
+		pi.ID_NO as
+		bka896,
+		emp.CODE_EMP as
+		bka014,
+		emp.NAME_EMP as bka015,
+		dept.CODE_DEPT as bka021,
+		dept.NAME_DEPT
+		as bka022,
+		dept.CODE_DEPT as
+		bka019,
+		dept.NAME_DEPT as bka020,
+		diag.CODE_ICD as bka026,
+		pv.CODE_PV as bka025,
+		to_char(pv.DATE_BEGIN,'yyyyMMdd' ) as
+		bka017
+
+		from PV_ENCOUNTER pv
+		left join pi_master pi on pi.pk_pi = pv.PK_PI and pi.del_flag = '0'
+		left join BD_OU_EMPLOYEE emp on emp.PK_EMP=pv.PK_EMP_PHY and emp.DEL_FLAG='0'
+		left join bd_ou_dept dept on dept.PK_DEPT=pv.PK_DEPT and dept.DEL_FLAG='0'
+		left join pv_diag diag on diag.PK_PV=pv.pk_pv and diag.FLAG_MAJ='1' and diag.DEL_FLAG='0'
+		where
+		pv.del_flag = '0'
+		and
+		pv.PK_PV = #{pkPv,jdbcType=VARCHAR}
+
+	</select>
+
+	<select id="qryInsVisit" parameterType="java.lang.String" resultType="DynaBean">
+
+	</select>
+	<select id="qryPvDiag" parameterType="java.lang.String" resultType="DynaBean">
+
+	</select>
+
+
+	<select id="qryChargeDetailNoUpload" parameterType="java.lang.String" resultType="DynaBean">
+		select 
+			case when dt.FLAG_PD='1' then pd.CODE
+				else item.CODE end as
+			ake005,
+			case when dt.FLAG_PD='1' then pd.name
+			else
+			item.name end as
+			ake006,
+			doc.NAME as bka052,<!--剂型 -->
+			substr(bd_factory.NAME,0,50) as bka053,<!--厂家 -->
+			dt.spec as bka054,<!--规格 -->
+			to_char(dt.DATE_CG, 'yyyyMMdd') as bka051,<!--费用发生时间 -->
+			unit.NAME as bka055,<!--计量单位 -->
+			dt.PRICE as bka056, <!--单价 -->
+			dt.QUAN as bka057, <!--用量 -->
+			dt.amount as bka058,<!--金额 -->
+			'' as aaz213,<!--费用序列号 -->
+			pres.PRES_NO as bka070,<!--处方号 -->
+			empPres.CODE_EMP as bka074,<!--处方医生编号 -->
+			empPres.NAME_EMP as bka075,<!--处方医生姓名 -->
+			'' as bka071,<!--医院费用的唯一标识 -->
+			case when ord.flag_fit is null then '0' else ord.flag_fit end as aaz267, <!--限制使用标识 -->
+			case when ord.eu_injury is null then '0' else ord.eu_injury end as bka061 <!--伤病分离使用标志 -->
+		from pv_encounter pv
+		left join BL_OP_DT dt on dt.pk_pv=pv.pk_pv
+		left join CN_ORDER ord on ord.PK_CNORD=dt.PK_CNORD
+		left join CN_PRESCRIPTION pres on pres.PK_PRES =dt.PK_PRES
+		left join BD_OU_EMPLOYEE empPres on empPres.PK_EMP=pres.PK_EMP_ORD
+		left join bd_pd pd on pd.pk_pd=dt.PK_ITEM and dt.FLAG_PD='1'
+		left join BD_DEFDOC doc on doc.CODE_DEFDOCLIST='030400' and doc.CODE=pd.DT_DOSAGE
+		left join bd_factory on bd_factory.PK_FACTORY=pd.PK_FACTORY
+		left join BD_UNIT unit on unit.PK_UNIT=dt.PK_UNIT
+		left join bd_item item on item.pk_item=dt.pk_item and item.del_flag='0'
+		left join BD_itemcate cate on cate.pk_itemcate=dt.pk_itemcate
+		where pv.EU_PVTYPE in (1,2,4) 
+			and cate.code not in ('96')
+			<if test="rePay == null">
+				AND (dt.flag_settle = '0' OR dt.PK_SETTLE IS NULL)
+			</if>
+			AND nvl(dt.flag_insu,'0') = '0'
+			AND dt.del_flag = '0'
+			AND pv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+			<if test="pkCgops != null">
+				and dt.pk_cgop IN
+				<foreach collection="pkCgops" item="pkCgop" index="index" open="(" close=")" separator=",">
+					#{pkCgop,jdbcType=VARCHAR}
+				</foreach>
+			</if>
+			<if test="codePv != null">
+				and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+			</if>
+
+	</select>
+	<select id="qryChargeDetailNoUploadSpec" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.bl.opcg.BlOpDt">
+	select dt.*
+	from pv_encounter pv
+    left join BL_OP_DT dt on dt.pk_pv = pv.pk_pv
+    left join BD_itemcate cate on cate.pk_itemcate = dt.pk_itemcate
+	where pv.EU_PVTYPE in (1,2,4) and cate.code in ('96')
+	<if test="rePay == null">
+		AND (dt.flag_settle = '0' OR dt.PK_SETTLE IS NULL)
+	</if>
+	AND nvl(dt.flag_insu,'0') = '0'
+	AND dt.del_flag = '0'
+	and pv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+	<if test="pkCgops != null">
+		and dt.pk_cgop IN
+		<foreach collection="pkCgops" item="pkCgop" index="index" open="(" close=")" separator=",">
+			#{pkCgop,jdbcType=VARCHAR}
+		</foreach>
+	</if>
+	<if test="codePv != null">
+		and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+	</if>
+
+	</select>
+	
+	<select id="qryChargeDts" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.bl.opcg.BlOpDt">
+	select dt.*
+	from pv_encounter pv
+    left join BL_OP_DT dt on dt.pk_pv = pv.pk_pv
+    left join BD_itemcate cate on cate.pk_itemcate = dt.pk_itemcate
+	where pv.EU_PVTYPE in (1,2,4) 
+	<if test="rePay == null">
+		AND (dt.flag_settle = '0' OR dt.PK_SETTLE IS NULL)
+	</if>
+	AND nvl(dt.flag_insu,'0') = '0'
+	AND dt.del_flag = '0'
+	and pv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+	<if test="pkCgops != null">
+		and dt.pk_cgop IN
+		<foreach collection="pkCgops" item="pkCgop" index="index" open="(" close=")" separator=",">
+			#{pkCgop,jdbcType=VARCHAR}
+		</foreach>
+	</if>
+	<if test="codePv != null">
+		and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+	</if>
+
+	</select>
+
+	<select id="qryBlSt" parameterType="java.lang.String" resultType="DynaBean">
+		select
+		st.amount_st as aggregate_amount,
+		st.amount_pi as patients_pay,
+		st.amount_insu as medicare_payments,
+		st.*
+		from
+		bl_settle st
+		where
+		st.eu_pvtype in (1,2,4)
+		and
+		st.pk_pv=#{pkPv,jdbcType=VARCHAR}
+		<if test="pkSettle != null and pkSettle != ''">
+			and st.pk_settle=#{pkSettle,jdbcType=VARCHAR}
+		</if>
+
+	</select>
+
+	<select id="qryPksettleCanc" parameterType="java.lang.String" resultType="java.lang.String">
+		select st.PK_SETTLE
+		from INS_SGSYB_ST insst
+		left join INS_SGSYB_ST insst_canc on
+		insst_canc.PK_INSST=insst.PK_INSST_CANCEL
+		left join bl_settle st on
+		st.PK_SETTLE_CANC=insst_canc.PK_SETTLE
+		where
+		insst.yb_pksettle=#{ybPksettle,jdbcType=VARCHAR}
+		and insst.del_flag='0'
+		<if test="pkPv != null and pkPv != ''">
+			and insst.pk_pv=#{pkPv,jdbcType=VARCHAR}
+		</if>
+		and ROWNUM='1'
+
+	</select>
+
+
+	<select id="qrySgsMedicalInsuranceSum" resultType="DynaBean" parameterType="java.util.Map">
+		--省工伤对账_查询his记录sql_1225
+		select sgsst.code_op,
+			   sgsst.name_pi,
+			   sgsst.sex_name,
+			   sgsst.date_begin,
+			   sgsst.name_dept,
+			   sgsst.AAZ218 as pv_code,
+			   sum(AKC264)  as amount_st,
+			   sum(akb067)  as amount_pi,
+			   sum(BKA832)  as amount_insu,
+			   sgsst.code_pv
+		from (
+				 --收费
+				 select pi.code_op,
+						pi.name_pi,
+						defSex.name as sex_name,
+						pv.date_begin,
+						dept.name_dept,
+						sgs.AAZ218,
+						sgs.AKC264,
+						sgs.akb067,
+						sgs.BKA832,
+						pv.code_pv
+				 from ins_sgsyb_st sgs
+						  inner join PV_ENCOUNTER pv on pv.pk_pv = sgs.pk_pv
+						  inner join pi_master pi on pi.pk_pi = sgs.pk_pi
+						  inner join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+						  inner join BL_SETTLE sett on sett.pk_settle = sgs.PK_SETTLE and sett.DT_STTYPE = '01'
+						  inner join bd_defdoc defSex on pi.dt_sex =defSex.code
+				 where defSex.code_defdoclist='000000' and defSex.del_flag = '0'
+		           <if test="deBegn != null and deBegn != ''">
+			          and to_char(sett.date_st,'yyyy-MM-dd') &gt;= #{deBegn,jdbcType=VARCHAR}
+				   </if>
+		           <if test="deEnd != null and deEnd != ''">
+			           and to_char(sett.date_st,'yyyy-MM-dd') &lt;= #{deEnd,jdbcType=VARCHAR}
+				   </if>
+				 union all
+				 --退费
+				 select pi.code_op,
+						pi.name_pi,
+						defSex.name as sex_name,
+						pv.date_begin,
+						dept.name_dept,
+						sgs.AAZ218,
+						sgscancel.AKC264,
+						sgscancel.akb067,
+						sgscancel.BKA832,
+						pv.code_pv
+				 from ins_sgsyb_st sgscancel
+						  left join ins_sgsyb_st sgs on sgs.PK_INSST = sgscancel.PK_INSST_CANCEL
+						  inner join PV_ENCOUNTER pv on pv.pk_pv = sgscancel.pk_pv
+						  inner join pi_master pi on pi.pk_pi = sgscancel.pk_pi
+						  inner join bd_ou_dept dept on dept.pk_dept = pv.pk_dept
+						  inner join BL_SETTLE sett on sett.PK_SETTLE_CANC = sgs.PK_SETTLE and sett.DT_STTYPE = '21'
+						  inner join bd_defdoc defSex on pi.dt_sex =defSex.code
+				 where sgscancel.PK_INSST_CANCEL is not null and defSex.code_defdoclist='000000' and defSex.del_flag = '0'
+		             <if test="deBegn != null and deBegn != ''">
+			               and to_char(sett.date_st,'yyyy-MM-dd') &gt;= #{deBegn,jdbcType=VARCHAR}
+		             </if>
+		             <if test="deEnd != null and deEnd != ''">
+			               and to_char(sett.date_st,'yyyy-MM-dd') &lt;= #{deEnd,jdbcType=VARCHAR}
+		              </if>
+			 ) sgsst
+		group by sgsst.sex_name,sgsst.code_op, sgsst.date_begin, sgsst.name_pi, sgsst.name_dept, sgsst.AAZ218,sgsst.code_pv
+    </select>
+	<select id="qryDeptInfoByPkDept" resultType="com.zebone.nhis.common.module.base.ou.BdOuDept">
+		select code_dept,name_dept from BD_OU_DEPT
+		<where>
+			<if test='pkDept != null and pkDept != ""'>
+				pk_dept = #{pkDept}
+			</if>
+		</where>
+	</select>
+	<select id="qryZyChargeDetail" resultType="com.zebone.nhis.compay.ins.zsrm.vo.ZyChargeDetail">
+		select
+		emp.code_emp as bka063,
+		emp.name_emp as bka064,
+		case when dt.FLAG_PD='1' then pd.CODE
+		else item.CODE end as
+		ake005,
+		case when dt.FLAG_PD='1' then pd.name
+		else
+		item.name end as
+		ake006,
+		doc.NAME as bka052,
+		substr(bd_factory.NAME,0,50) as bka053,
+		dt.spec as bka054,
+		to_char(dt.DATE_CG, 'yyyyMMdd') as bka051,
+		unit.NAME as bka055,
+		dt.PRICE_ORG as bka056,
+		dt.QUAN as bka057,
+-- 		dt.amount as bka058,
+		'' as aaz213,
+		pres.PRES_NO as bka070,
+		empPres.CODE_EMP as bka074,
+		empPres.NAME_EMP as bka075,
+		'' as bka071,
+		case when ord.flag_fit is null then '0' else ord.flag_fit end as aka036,
+		dt.pk_cgip
+		from pv_encounter pv
+		left join BL_IP_DT dt on dt.pk_pv=pv.pk_pv
+		left join bd_ou_employee emp on emp.pk_emp = dt.pk_emp_cg
+		left join CN_ORDER ord on ord.PK_CNORD=dt.PK_CNORD
+		left join CN_PRESCRIPTION pres on pres.PK_PRES =dt.PK_PRES
+		left join BD_OU_EMPLOYEE empPres on empPres.PK_EMP=pres.PK_EMP_ORD
+		left join bd_pd pd on pd.pk_pd=dt.PK_ITEM and dt.FLAG_PD='1'
+		left join BD_DEFDOC doc on doc.code_defdoclist='030400' and doc.CODE=pd.DT_DOSAGE
+		left join bd_factory on bd_factory.PK_FACTORY=pd.PK_FACTORY
+		left join BD_UNIT unit on unit.PK_UNIT=dt.PK_UNIT
+		left join bd_item item on item.pk_item=dt.pk_item and item.del_flag='0'
+		left join BD_itemcate cate on cate.pk_itemcate=dt.pk_itemcate
+		where pv.EU_PVTYPE = '3'
+		and cate.code not in ('96')
+		<if test="rePay == null">
+			AND (dt.flag_settle = '0' OR dt.PK_SETTLE IS NULL)
+		</if>
+		AND nvl(dt.flag_insu,'0') = '0'
+		AND dt.del_flag = '0'
+		AND pv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+		<if test="pkCgips != null">
+			and dt.pk_cgip IN
+			<foreach collection="pkCgips" item="pkCgip" index="index" open="(" close=")" separator=",">
+				#{pkCgip,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+		<if test="codePv != null">
+			and pv.code_pv=#{codePv,jdbcType=VARCHAR}
+		</if>
+	</select>
+	<select id="qryInsSgsYbVisit" resultType="com.zebone.nhis.compay.ins.zsrm.vo.InsSgsybVisit">
+		select sgs.*,pv.code_pv as bka025 from INS_SGSYB_VISIT sgs
+		left join PV_ENCOUNTER pv on sgs.pk_pv = pv.pk_pv
+		where sgs.del_flag = '0' and sgs.pk_pv = #{pkPv}
+	</select>
+	<select id="qryZyHpDisParam" resultType="com.zebone.nhis.compay.ins.zsrm.vo.ZyHpDisParam">
+		select ip.code_diag as bka031,case ip.dt_intype when '01' then '2' else '1' end as bkf002 from pv_encounter pv
+		left join ins_sgsyb_visit sgs on sgs.pk_pv = pv.pk_pv
+		inner join pv_ip ip on pv.pk_pv = ip.pk_pv
+		where ip.del_flag = '0' and  pv.pk_pv = #{pkPv}
+	</select>
+	<select id="qryIpInfoByPkPv" resultType="com.zebone.nhis.compay.ins.zsrm.vo.ZyHpDisParam">
+		select ip.code_diag as bka031, case ip.dt_intype when '01' then '1' else '2' end as bkf002,
+		case ip.dt_level_dise when '00' then '3' when '03' then '1' else '2' end as bkf003,
+      	case ip.dt_outcomes when '00' then '01' when '01' then '02' when '02' then '04' when '03' then '05' else '99' end as bkf004
+		from pv_ip ip where ip.PK_PV = #{pkPv}
+	</select>
+</mapper>

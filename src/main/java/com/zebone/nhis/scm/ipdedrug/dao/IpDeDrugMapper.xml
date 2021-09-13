@@ -1,0 +1,1866 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.ipdedrug.dao.IpDeDrugMapper">
+
+	<!-- 根据患者的主键查询患者的请领单明细 -->
+	<select id="qryAppListDetail" parameterType="com.zebone.nhis.scm.ipdedrug.vo.IpDeDrugDto"
+		resultType="DynaBean">
+		select dt.pk_pdapdt,<!-- 请领单明细主键 -->
+		ap.pk_dept_ap,<!-- 申请部门 -->
+		pi.dt_sex,
+		pv.code_pv,
+		pv.pk_dept,
+		ap.pk_pdap,<!-- 请领单主键 -->
+		ap.pk_org pk_org_ap,<!-- 申请机构 -->
+		pv.bed_no,<!-- 床号 -->
+		pv.pk_pv,
+		pi.name_pi,<!-- 患者姓名 -->
+		dt.pk_pd,<!-- 药品主键 -->
+		pd.name name_pd,<!-- 药品名称 -->
+		fa.name factory,<!-- 生产厂家名称 -->
+		pd.spec,<!-- 规格 -->
+		dt.pk_unit,
+		unit.name unit,<!-- 单位 -->
+		dt.quan_pack,<!-- 数量 -->
+		dt.quan_pack actual_quan_pack,<!-- 实发数量 -->
+		(case de.quan_pack 
+			when null then 0
+			else sum(de.quan_pack) end
+		) quan_de,<!-- 已发数量 -->
+		dt.quan_min,<!-- 基本单位 -->
+		dt.pack_size ,<!-- 包装量 -->
+		pd.pack_size pd_pack_size,<!-- 包装量 -->
+		pd.eu_muputype, <!-- 包装单位取整模式 -->
+		ord.ordsn_parent,<!-- 父医嘱号 -->
+		ord.dosage,<!-- 剂量 -->
+		unit_dos.name unit_dos,<!-- 剂量单位 -->
+		sup.name supply,<!-- 医嘱用法 -->
+		freq.name freq,<!-- 频次 -->
+		stk.quan / dt.pack_size quan,<!-- 库存 -->
+        dt.price,<!-- 单价 -->
+        dt.flag_emer,<!-- 加急标志 -->
+        dt.amount,<!-- 金额 -->
+		dt.eu_detype,<!-- 发放类型 -->
+		dt.pk_cnord<!-- 医嘱主键 -->,
+		dt.flag_pivas,
+		dt.flag_self,
+		case when stk.flag_stop='0' then '0' else '1' end flag_stop_stk
+		<if test="pkPddecate!=null and pkPddecate!=''">
+			,'${pkPddecate}' as pk_pddecate 
+		</if>
+		<if test="nameDecate!=null and nameDecate!=''">
+			,'${nameDecate}' as name_decate  
+		</if>
+		<if test="codeDecate!=null and codeDecate!=''">
+			,'${codeDecate}' as code_decate  
+		</if>
+		from pi_master pi
+		inner join pv_encounter pv on pi.pk_pi = pv.pk_pi
+		inner join ex_pd_apply_detail dt on pv.pk_pv = dt.pk_pv and dt.quan_min &gt; 0 
+		inner join ex_pd_apply ap  on ap.pk_pdap=dt.pk_pdap 
+		inner join bd_pd pd on dt.pk_pd = pd.pk_pd
+		inner join bd_factory fa on pd.pk_factory = fa.pk_factory
+		inner join bd_unit unit on dt.pk_unit = unit.pk_unit
+		inner join cn_order ord on dt.pk_cnord = ord.pk_cnord  
+		left join bd_supply sup on ord.code_supply = sup.code
+		inner join bd_term_freq freq on ord.code_freq = freq.code
+		inner join bd_unit unit_dos on ord.pk_unit_dos = unit_dos.pk_unit
+		left outer join (select pk_pd, sum(quan_min - quan_prep) quan,flag_stop from pd_stock
+			where pk_store = #{pkPdStock,jdbcType=VARCHAR} and flag_stop='0' group by pk_pd,flag_stop
+		) stk on dt.pk_pd = stk.pk_pd
+		left outer join ex_pd_de de on dt.pk_pdapdt = de.pk_pdapdt
+		where dt.pk_pdap in
+		<foreach collection="pkPdaps" index="index" item="pkPdap"
+			open="(" separator="," close=")">
+			#{pkPdap}
+		</foreach>
+		and ord.pk_pres is null
+		and dt.eu_direct = '1'
+		and dt.flag_stop = '0'
+		and dt.flag_finish = '0'
+		and (dt.flag_canc='0' or dt.flag_canc is null)
+		and dt.pk_org=#{pkOrg,jdbcType=VARCHAR}
+		and (dt.flag_self not in ('1') or dt.flag_pivas='1')<!-- 过滤掉非静配自备药 -->
+		<if test="pvIpCodes!=null">
+			and pv.code_pv in
+			<foreach collection="pvIpCodes" index="index" item="pvIpCode"
+				open="(" separator="," close=")">
+				#{pvIpCode}
+			</foreach>
+		</if>
+		<if test="deCateWhereSql!=null and deCateWhereSql!=''">
+			and ${deCateWhereSql}
+		</if>
+		group by dt.pk_pdapdt,
+		pv.bed_no,
+	    pv.pk_pv,
+	    pi.name_pi,
+	    dt.pk_pd,
+	    pd.name,
+	    pd.eu_muputype,
+	    fa.name,
+	    pd.spec,
+	    dt.pk_unit,
+	    unit.name,
+	    dt.quan_pack, 
+	    de.quan_pack, 
+	    dt.quan_min,
+	    dt.pack_size,
+	    pd.pack_size,<!-- 包装量 -->
+	    ord.ordsn_parent,
+	    ord.dosage,
+	    unit_dos.name,
+	    sup.name,
+	    freq.name,
+	    stk.quan,
+       	dt.price,
+       	dt.amount,
+	    dt.eu_detype,
+	    ap.pk_dept_ap,
+	    ap.pk_org,
+	    ap.pk_pdap,
+	    dt.flag_emer,
+	    dt.pk_cnord,
+	    pi.dt_sex,
+	    pv.code_pv,
+	    pv.pk_dept,
+	    dt.flag_pivas,
+	    dt.flag_self,
+	    stk.flag_stop
+		order by
+		pv.bed_no,pv.pk_pv,ord.ordsn_parent
+	</select>
+	<select id="qryDeDrugPrintRecord" resultType="DynaBean">
+		select  
+		pdde.eu_direct,
+		dept.pk_dept,
+		dept.name_dept,<!-- 请领科室 -->
+		pdde.code_de,<!-- 发药单号 -->
+		pdde.date_de,<!-- 发药日期 -->
+		pdde.name_emp_de,<!-- 发药人 -->
+		pdde.flag_pivas,<!-- 静配标志 -->
+		pdde.flag_prt,<!-- 打印标志 -->
+		pdde.name_decate, <!-- 发放分类 ，如果是处方，存放处方类型-->
+		pdde.pk_pddecate<!-- 发放分类主键,如果是处方，存放处方主键 -->
+		from ex_pd_de pdde
+		inner join bd_ou_dept dept on pdde.pk_dept_ap = dept.pk_dept
+		where pdde.pk_dept_de = #{pkDept,jdbcType=VARCHAR} and pdde.pk_org=#{pkOrg,jdbcType=VARCHAR} 
+		 <if test="codeDe!=null and codeDe!=''">
+		   and pdde.code_de = #{codeDe,jdbcType=VARCHAR}
+		 </if>
+		 <if test="euDirect!=null and euDirect!=''">
+		   and pdde.eu_direct = #{euDirect,jdbcType=VARCHAR}
+		 </if>
+		<if test="flagDept!=1">
+			and dept.dt_depttype='02'
+		</if>
+		<if test="pkAppDeptNs!=null and pkAppDeptNs!=''">
+			and pdde.pk_dept_ap=#{pkAppDeptNs,jdbcType=VARCHAR}
+		</if>
+		<if test="pkPddecate!=null and pkPddecate!=''">
+			and pdde.pk_pddecate=#{pkPddecate,jdbcType=CHAR}
+		</if>
+		<if test="nameDecate!=null and nameDecate!=''">
+			and pdde.name_decate=#{nameDecate,jdbcType=VARCHAR}
+		</if>
+		<if test='euAptype!=null and !"0".equals(euAptype)'><!-- 科室领药限制 -->
+			and exists (select 1 from ex_pd_apply ap inner join ex_pd_apply_detail dt on dt.pk_pdap=ap.pk_pdap where dt.pk_pdapdt=pdde.pk_pdapdt and ap.eu_aptype in ('1','2','3'))
+		</if>
+		<if test='euAptype==null or "".equals(euAptype)  or "0".equals(euAptype)'><!--非科室领药  -->
+			and exists (select 1 from cn_order ord where pdde.pk_cnord = ord.pk_cnord  and ord.pk_pres is
+			<if test="isPres == 1"><!-- 处方限制 -->
+				not
+			</if>
+			null)
+		</if>
+		<if test='codeAp!=null and codeAp!=""'>
+			and exists (select 1 from ex_pd_apply ap inner join ex_pd_apply_detail dt on dt.pk_pdap=ap.pk_pdap
+			 where ap.code_apply=#{codeAp,jdbcType=VARCHAR} and dt.pk_pdapdt=pdde.pk_pdapdt)
+		</if>
+		<if test="dateStart!=null and dateStart!=''">
+		    and pdde.date_de &gt;=#{dateStart,javaType=java.util.Date}
+		</if>
+		<if test="dateEnd!=null and dateEnd!=''">
+		    and pdde.date_de &lt;=#{dateEnd,javaType=java.util.Date}
+		</if>
+		<if test='flagPrt!=null and flagPrt!="-1"'>
+			and pdde.flag_prt=#{flagPrt,jdbcType=VARCHAR}
+		</if>
+		group by
+		  pdde.EU_DIRECT,
+		  dept.pk_dept,
+		  dept.name_dept,
+		  pdde.code_de,
+		  pdde.date_de,
+		  pdde.name_emp_de,
+		  pdde.flag_pivas,
+		  pdde.flag_prt,
+		  pdde.name_decate,
+		  pdde.pk_pddecate
+		order by date_de desc
+	</select>
+	<!-- 根据请领单查询处方信息 -->
+	<select id="qryIpDePresDrugDetailByCDT" resultType="DynaBean">
+		select 
+		pi.code_ip,
+		pv.pk_dept,<!--就诊科室  -->
+       	pv.code_pv,<!--就诊号  -->
+       	pi.dt_sex, <!--性别  -->
+		pres.pk_pres,
+		pres.pres_no,
+		pv.bed_no,<!-- 床号 -->
+		pv.pk_pv,
+		pi.name_pi,<!-- 患者姓名 -->
+		pres.pk_dept,
+		dept.name_dept,
+		pres.name_emp_ord,
+		pi.pk_pi,
+		pd.name name_pd,
+		pd.pk_pd,
+		fa.name factory,
+		ord.spec,
+		ord.pk_cnord,
+		unit.name unit,
+		dt.pk_pdap,
+		dt.pk_pres,
+		dt.pk_unit,
+		dt.quan_pack,
+		dt.quan_min,
+		dt.pack_size,
+		pd.pack_size pd_pack_size,
+		dt.pk_pdapdt,
+		dt.date_expire,
+		dt.price_cost,
+		dt.price,
+		dt.pk_cgip,
+		dt.batch_no,
+		dt.eu_detype,<!-- 发放类型 -->
+		app.pk_dept_ap,
+		app.pk_org pk_org_ap,
+		ord.ordsn_parent,
+		ord.dosage,
+		unit_dos.name unit_dos,
+		doc.name as pres_name,<!-- 处方名称 -->
+		(case sup.name 
+			when null then herb.note_use
+			else sup.name end) supply,
+		<!-- decode(sup.name,null,herb.note_use,sup.name) supply, -->
+		freq.name freq,
+		dt.flag_medout,
+		pres.dt_prestype,
+		docPro.name properties_pres,
+		ord.ords,
+		hp.name hp_name,
+		stk.quan / dt.pack_size quan,<!-- 库存 -->
+        <!-- stk.price / pd.pack_size*dt.pack_size price,单价 -->
+       <!--  (stk.price / pd.pack_size) * dt.quan_min amount --> <!-- 金额 -->
+        area.NAME_AREA
+		from ex_pd_apply_detail dt
+		inner join ex_pd_apply app on app.pk_pdap=dt.pk_pdap  
+		inner join bd_pd pd on dt.pk_pd = pd.pk_pd
+		inner join bd_factory fa on pd.pk_factory = fa.pk_factory
+		inner join bd_unit unit on dt.pk_unit = unit.pk_unit
+		inner join cn_order ord on dt.pk_cnord = ord.pk_cnord
+		left join bd_supply sup on ord.code_supply = sup.code and sup.del_flag='0' 
+		left join cn_ord_herb herb on dt.pk_pd=herb.pk_pd  and dt.pk_cnord=herb.pk_cnord   
+		inner join bd_term_freq freq on ord.code_freq = freq.code and freq.del_flag='0' 
+		left join bd_unit unit_dos on ord.pk_unit_dos = unit_dos.pk_unit 
+		inner join cn_prescription pres on pres.pk_pres = dt.pk_pres 
+		inner join bd_defdoc doc on pres.dt_prestype = doc.code and doc.del_flag='0'  and  doc.code_defdoclist ='060101' 
+		left join bd_defdoc docPro on pres.dt_properties = docPro.code and docPro.del_flag='0'  and  docPro.code_defdoclist ='060103' 
+		inner join bd_ou_dept dept on pres.pk_dept = dept.pk_dept
+		inner join pv_encounter pv on pres.pk_pv = pv.pk_pv
+		inner join pi_master pi on pv.pk_pi = pi.pk_pi
+		inner join bd_hp hp on hp.pk_hp=pv.pk_insu
+		LEFT JOIN BD_OU_ORG_AREA area on dept.PK_ORGAREA=area.PK_ORGAREA
+		left outer join (select pk_pd, sum(quan_min -quan_prep) quan from pd_stock
+		where pk_store = #{pkPdStock,jdbcType=VARCHAR} and flag_stop='0'  group by pk_pd) stk
+		on dt.pk_pd = stk.pk_pd
+		where dt.pk_pdap in
+		<foreach collection="pkPdaps" index="index" item="pkPdap"
+			open="(" separator="," close=")">
+			#{pkPdap}
+		</foreach>
+		<if test="pkPress != null and pkPress != ''">
+			and dt.pk_pres in
+			<foreach collection="pkPress" index="index" item="pkPres"
+					 open="(" separator="," close=")">
+				#{pkPres}
+			</foreach>
+		</if>
+		and dt.flag_finish='0' and dt.flag_stop = '0'
+		and (dt.flag_canc='0' or dt.flag_canc is null)
+		and pres.pk_org=#{pkOrg,jdbcType=VARCHAR} 
+	</select>
+	<select id="qryIpReBackDrugDetailByCDT" resultType="DynaBean">
+		select dt.pk_pdapdt,
+		pv.bed_no,<!-- 床号 -->
+		pv.pk_pv,
+		pi.name_pi,<!-- 患者姓名 -->
+		dt.pk_pd,<!-- 药品主键 -->
+		pd.name name_pd,<!-- 药品名称 -->
+		fa.name factory,<!-- 生产厂家名称 -->
+		pd.spec,<!-- 规格 -->
+		dt.pk_unit,
+		dt.pk_cgip,
+		unit.name unit,<!-- 单位 -->
+		dt.quan_pack * -1 quan_pack,<!-- 数量 -->
+		dt.batch_no,
+		dt.quan_min,<!-- 基本单位 -->
+		dt.pack_size,<!-- 包装量 -->
+		dt.price_cost,<!-- 成本价 -->
+		dt.price,<!-- 单价 -->
+		dt.pk_cnord,
+		dt.date_expire,
+		dt.pk_pdap,
+		dt.eu_detype,<!-- 发放类型 -->
+		dt.amount * -1 amount, <!-- 金额 -->
+		ap.pk_dept_ap,
+		pd.eu_usecate,
+		ap.pk_org pk_org_ap ,
+		ord.code_ordtype
+		<if test="pkPddecate!=null and pkPddecate!=''">
+			,'${pkPddecate}' as pk_pddecate 
+		</if>
+		<if test="nameDecate!=null and nameDecate!=''">
+			,'${nameDecate}' as name_decate  
+		</if>
+		<if test="codeDecate!=null and codeDecate!=''">
+			,'${codeDecate}' as code_decate  
+		</if>
+		from pi_master pi
+		inner join pv_encounter pv on pi.pk_pi = pv.pk_pi
+		inner join ex_pd_apply_detail dt on pv.pk_pv = dt.pk_pv
+		inner join ex_pd_apply ap  on ap.pk_pdap=dt.pk_pdap
+		inner join cn_order ord on ord.pk_cnord=dt.pk_cnord
+		inner join bd_pd pd on dt.pk_pd = pd.pk_pd
+		inner join bd_factory fa on pd.pk_factory =fa.pk_factory
+		inner join bd_unit unit on dt.pk_unit = unit.pk_unit
+		where dt.pk_pdap in
+		<foreach collection="pkPdaps" index="index" item="pkPdap"
+			open="(" separator="," close=")">
+			#{pkPdap}
+		</foreach>
+		and dt.eu_direct = '-1'
+		and dt.flag_stop = '0'
+		and dt.flag_finish = '0'
+		and (dt.flag_canc='0' or dt.flag_canc is null)
+	</select>
+	<select id="queryDeDrugDetail" resultType="DynaBean">
+		select pv.bed_no,
+		pi.name_pi,
+		pd.name name_pd,
+		fa.name factory,
+		pd.spec,
+		pd.pk_pd,
+		pd.code pd_code,
+		pd.name_chem,
+		pd.spcode,
+		unit.name unit,
+		pdde.eu_direct*pdde.quan_pack quan_pack,
+		pdde.price,
+		pdde.eu_direct*pdde.amount amount,
+		pdde.batch_no,
+		pdde.flag_pivas,
+		pdde.flag_barcode,
+		pdde.code_de,
+    	pv.pk_pv,
+    	pdde.pk_pdapdt,
+    	pdde.eu_direct,
+    	deptap.name_dept name_dept_ap,
+		dept.NAME_DEPT name_dept_ord,
+    	pdde.date_de,
+    	ap.code_apply,
+    	pres.pres_no
+		from pi_master pi
+		inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+		inner join ex_pd_de pdde on pdde.pk_pv=pv.pk_pv
+		inner join ex_pd_apply_detail dt on pdde.pk_pdapdt=dt.pk_pdapdt
+		LEFT join CN_ORDER ord on ord.PK_CNORD = dt.PK_CNORD
+		inner join ex_pd_apply ap on dt.pk_pdap=ap.pk_pdap
+		left outer join cn_prescription pres on dt.pk_pres=pres.pk_pres
+		inner join bd_pd pd on pdde.pk_pd=pd.pk_pd
+		inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+		inner join bd_unit unit on pdde.pk_unit=unit.pk_unit
+		inner join bd_ou_dept deptap on deptap.pk_dept=pdde.pk_dept_ap
+		LEFT join bd_ou_dept dept on dept.pk_dept=ord.PK_DEPT
+		where pdde.pk_dept_de=#{pkDept,jdbcType=VARCHAR} 
+		<!-- and exists (select 1 from ex_pd_apply_detail dt inner join ex_pd_apply ap on
+		dt.pk_pdap=ap.pk_pdap where pdde.pk_pdapdt=dt.pk_pdapdt and ap.eu_aptype='0') -->
+		<if test='codeDe !=null and codeDe!="" and flagOfCodeDe!="1"'>
+			and pdde.code_de like '%'||#{codeDe}
+		</if>
+		<if test='codeDe !=null and codeDe!="" and flagOfCodeDe=="1"'>
+			and pdde.code_de = #{codeDe}
+		</if>
+		<if test="codeAp !=null and codeAp!=''">
+			and ap.code_apply like '%'||#{codeAp}
+		</if>
+		<if test="dateStart != null and dateStart!='' ">
+			and pdde.date_de &gt;=#{dateStart,javaType=java.util.Date}
+			
+			<!-- and to_timestamp(to_char(pdde.date_de,'yyyy-MM-dd hh24:mi:ss'),'yyyy-MM-dd hh24:mi:ss') &gt;=#{dateStart,javaType=java.util.Date} -->
+		</if>
+		<if test="dateEnd != null and dateEnd!=''">
+			and pdde.date_de &lt;=#{dateEnd,javaType=java.util.Date}
+			<!-- and to_timestamp(to_char(pdde.date_de,'yyyy-MM-dd hh24:mi:ss'),'yyyy-MM-dd hh24:mi:ss') &lt;= #{dateEnd,javaType=java.util.Date} -->
+		</if>
+		<if test="pkAppDeptNs!=null and pkAppDeptNs!=''">
+			and pdde.pk_dept_ap=#{pkAppDeptNs,jdbcType=VARCHAR}
+		</if>
+		<if test="bedNo!=null and bedNo!=''">
+			and pv.bed_no=#{bedNo,jdbcType=VARCHAR}
+		</if>
+		<if test="namePi!=null and namePi!=''">
+			and pi.name_pi like '%'||#{namePi}||'%'
+		</if>
+		<if test="pkPd!=null and pkPd!=''">
+			and pd.pk_pd= #{pkPd,jdbcType=VARCHAR}
+		</if>
+		<if test="namePd!=null and namePd!=''">
+			and (pd.name like '%'||#{namePd}||'%')
+		</if>
+		<if test="flagPivas!=null and flagPivas!=''">
+			and pdde.flag_pivas= #{flagPivas,jdbcType=VARCHAR}
+		</if>
+		<if test="pkEmpDe!=null and pkEmpDe!=''">
+			and pdde.name_emp_de like '%'||#{pkEmpDe}||'%'
+		</if>
+		<if test="euDirect!=null and euDirect!=''">
+			and pdde.eu_direct=#{euDirect,jdbcType=VARCHAR}
+		</if>
+		<if test="presNo!=null and presNo!=''">
+			and pres.pres_no like '%'||#{presNo}||'%'
+		</if>
+		<if test='codeIp!=null and codeIp!=""'>
+			and pi.code_ip=#{codeIp,jdbcType=VARCHAR}
+		</if>
+		<if test='pkPddecate!=null and pkPddecate!=""'>
+			and pdde.PK_PDDECATE=#{pkPddecate,jdbcType=VARCHAR}
+		</if>
+		<if test="codeDeEt !=null and codeDeEt!=''">
+			and pdde.code_de  = #{codeDeEt,jdbcType=VARCHAR}
+		</if>
+		<if test="codeApEt !=null and codeApEt!=''">
+			and ap.CODE_APPLY = #{codeApEt,jdbcType=VARCHAR}
+		</if>
+		<if test="queryCode !=null and queryCode!=''">
+			and (pd.code like '%'||#{queryCode}||'%' or pd.spcode like '%'||#{queryCode}||'%')
+		</if>
+		<if test="codeDes !=null">
+			and pdde.code_de in
+			<foreach collection="codeDes" item="codeDe" open="(" separator="," close=")">
+				#{codeDe,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+       order by pv.PK_PV
+	</select>
+	<select id="queryDeDrugList" resultType="DynaBean">
+		select distinct
+		pdde.code_de,
+		to_date(to_char(pdde.date_de,'yyyy-MM-dd hh24:mi:ss'),'yyyy-MM-dd hh24:mi:ss') date_de,
+		dept.name_dept,
+		pdde.name_emp_de,
+		pdde.eu_direct,
+		pdde.flag_prt,
+		pdde.name_decate,
+		dept.pk_dept pk_dept_ap
+		from ex_pd_de pdde
+		inner join bd_ou_dept dept on
+		pdde.pk_dept_ap=dept.pk_dept
+		where
+		pdde.pk_dept_de=#{pkDept,jdbcType=VARCHAR}
+		<if test="codeDe !=null and codeDe!=''">
+			and pdde.code_de like '%' || #{codeDe,jdbcType=VARCHAR} || '%'
+		</if>
+		<if test="dateStart != null and dateStart!='' ">
+			and pdde.date_de &gt;=#{dateStart,javaType=java.util.Date}
+			<!-- and to_date(to_char(pdde.date_de,'yyyy-MM-dd hh24:mi:ss'),'yyyy-MM-dd hh24:mi:ss')&gt;=#{dateStart,javaType=java.util.Date} -->
+			<!-- and to_timestamp(to_char(pdde.date_de,'yyyy-MM-dd hh24:mi:ss'),'yyyy-MM-dd hh24:mi:ss') &gt;=#{dateStart,javaType=java.util.Date} -->
+		</if>
+		<if test="dateEnd != null and dateEnd!=''">
+			and pdde.date_de &lt;=#{dateEnd,javaType=java.util.Date}
+			<!-- and to_timestamp(to_char(pdde.date_de,'yyyy-MM-dd hh24:mi:ss'),'yyyy-MM-dd hh24:mi:ss') &lt;= #{dateEnd,javaType=java.util.Date} -->
+		</if>
+		<if test="pkAppDeptNs!=null and pkAppDeptNs!=''">
+			and pdde.pk_dept_ap=#{pkAppDeptNs,jdbcType=VARCHAR}
+		</if>
+		<if test='euAptype!=null and !"".equals(euAptype)'><!-- 科室领药限制 -->
+			and exists (select 1 from ex_pd_apply ap inner join ex_pd_apply_detail dt on dt.pk_pdap=ap.pk_pdap where dt.pk_pdapdt=pdde.pk_pdapdt and ap.eu_aptype=#{euAptype,jdbcType=VARCHAR})
+		</if>
+		<if test="flagPivas!=null and flagPivas!=''">
+			and pdde.flag_pivas= #{flagPivas,jdbcType=VARCHAR}
+		</if>
+		<if test="flagPrt!=null and flagPrt!=''">
+			and pdde.flag_prt= #{flagPrt,jdbcType=VARCHAR}
+		</if>
+		order by pdde.code_de,date_de,dept.name_dept
+	</select>
+	<select id="queryApDrugDetail" resultType="DynaBean">
+		select pv.bed_no,
+		pi.name_pi,
+		ord.eu_always,
+		pd.name name_pd,
+		fa.name factory,
+		pd.spec,
+		unit.name unit,
+		dt.pk_pdapdt,
+		dt.price,
+		dt.quan_pack,
+		dt.amount,
+		dt.flag_de,
+		dt.flag_finish,
+		dt.flag_stop,
+		dt.eu_detype <!-- 发放类型 -->
+		from pi_master pi
+		inner join pv_encounter pv
+		on pi.pk_pi=pv.pk_pi
+		inner join ex_pd_apply_detail dt on
+		pv.pk_pv=dt.pk_pv
+		inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+		inner join
+		bd_factory fa on pd.pk_factory=fa.pk_factory
+		inner join bd_unit unit on
+		dt.pk_unit=unit.pk_unit
+		left outer join cn_order ord on
+		dt.pk_cnord=ord.pk_cnord
+		where dt.pk_pdap=#{pkPdap,jdbcType=VARCHAR}
+		and dt.pk_org=#{pkOrg,jdbcType=VARCHAR}
+	</select>
+	<!--根据请领单查询发药明细-->
+	<select id="queryDeDetailByAp" resultType="DynaBean">
+		select CODE_DE, DATE_DE, QUAN_MIN, un.NAME, de.NAME_DECATE
+			from ex_pd_de de
+       inner join BD_PD pd on pd.PK_PD = de.PK_PD
+       inner join BD_UNIT un on un.PK_UNIT = pd.PK_UNIT_MIN
+		where  pk_pdapdt=#{pkPdapDt,jdbcType=VARCHAR}
+	</select>
+	<select id="queryApDrugDetailDept" resultType="DynaBean">
+		select dt.pk_pdapdt,
+		app.pk_dept_ap,<!-- 申请部门 -->
+		app.pk_pdap,<!-- 请领单主键 -->
+		app.pk_org pk_org_ap,<!-- 申请机构 -->
+		app.CODE_APPLY,
+		app.DATE_AP,
+		pv.bed_no,
+		pv.pk_pv,
+		pi.name_pi,
+		dt.pk_pd,
+		pd.name name_pd,
+		fa.name factory,
+		pd.spec,
+		dt.pk_unit,
+		unit.name unit,
+		dt.quan_pack*dt.eu_direct quan_pack,
+		dt.quan_min,
+		dt.pack_size,
+		pd.pack_size pdPackSize,
+		dt.pk_cnord,<!-- 医嘱主键 -->
+		dt.price,
+		dt.eu_detype,<!-- 发放类型 -->
+		dt.amount*dt.eu_direct amount,
+		data.quan_stk quan,
+		blipdt.PK_CGIP,
+		blipdt.PK_PDAPDT PK_PDAPDT_BACK
+		from pi_master pi
+		inner join pv_encounter pv on pi.pk_pi=pv.pk_pi
+		inner join ex_pd_apply_detail dt on pv.pk_pv=dt.pk_pv
+		inner join ex_pd_apply app on app.pk_pdap=dt.pk_pdap
+		inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+		inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+		inner join bd_unit unit on dt.pk_unit=unit.pk_unit
+		left join BL_IP_DT ipdt on ipdt.pk_pv = pv.pk_pv and ipdt.PK_PDAPDT = dt.PK_PDAPDT
+		left join BL_IP_DT blipdt on blipdt.pk_pv = pv.pk_pv and blipdt.PK_CGIP = ipdt.PK_CGIP_BACK
+		left join 
+			(select  stk.pk_pd,sum(quan_min-quan_prep) quan_stk 
+				from pd_stock stk 
+				where  stk.pk_store=#{pkStore,jdbcType=VARCHAR}
+				and stk.flag_stop='0'
+            group by  stk.pk_pd)
+  		data on data.pk_pd=dt.pk_pd
+  		where 1 = 1
+		<if test="euDirect!=null and euDirect!=''">
+			and dt.eu_direct = #{euDirect,jdbcType=VARCHAR}
+		</if>
+  		<if test="pkPdaps!=null">
+			and dt.pk_pdap in
+			<foreach collection="pkPdaps" index="index" item="pkPdap"
+				open="(" separator="," close=")">
+				#{pkPdap}
+			</foreach>
+
+		</if>
+		and
+		dt.flag_stop='0' and
+		dt.flag_finish='0'
+		<if test="deCateWhereSql!=null and deCateWhereSql!=''">
+			and ${deCateWhereSql}
+		</if>
+		<if test="pkAppDeptNs!=null and pkAppDeptNs!=''">
+			and app.pk_dept_ap = #{pkAppDeptNs,jdbcType=VARCHAR}
+		</if>
+
+		order by pv.bed_no
+	</select>
+	<update id="saveStopApplyReason" parameterType="java.util.Map">
+		update ex_pd_apply_detail
+   			set flag_stop='1',    <!-- 停发标志 -->
+   				eu_result='0',
+       			dt_exdeptpdstop=#{dtExdeptpdstop,jdbcType=VARCHAR},<!-- 原因 -->
+       			reason_stop=#{reasonStop,jdbcType=VARCHAR},    <!-- 原因描述 -->
+       			pk_emp_stop=#{pkEmpStop,jdbcType=VARCHAR},    <!-- 停发人 -->
+       			name_emp_stop=#{nameEmpStop,jdbcType=VARCHAR}   <!--停发人姓名 -->
+ 		where pk_pdapdt in  <!-- 申请单明细 -->
+ 			<foreach collection="pkPdapDts" item="pkPdapDt" open="(" separator="," close=")">
+ 				#{pkPdapDt,jdbcType=VARCHAR}
+ 			</foreach>
+ 			and flag_stop='0' <!--未停 -->
+       		and flag_de='0' <!-- 未发 -->
+       		and nvl(flag_canc,'0')='0' <!-- 未取消 -->
+	</update>
+	
+	<select id="qryStopApply" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			dt.pk_pdapdt, pv.bed_no, pv.name_pi, pd.name name_pd, 
+       		fa.name factory,  pd.spec, unit.name unit,ord.ordsn_parent, 
+       		ord.dosage,unit_dos.name unit_dos,sup.name supply,freq.name freq,         
+       		dt.dt_exdeptpdstop, dt.reason_stop,dt.name_emp_stop,ord.pk_pres ,
+       		pres.pres_no,indept.name_dept ,doc.name pres_name,ord.name_emp_ord ,
+       		docPro.name properties_pres,stpdoc.name stop_reason_text,dt.quan_pack,hp.name hp_name
+  		from pv_encounter pv
+       		inner join ex_pd_apply_detail dt on pv.pk_pv=dt.pk_pv
+       		inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+       		inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+       		inner join bd_unit unit on dt.pk_unit=unit.pk_unit
+       		inner join cn_order ord on dt.pk_cnord=ord.pk_cnord
+       		left join bd_supply sup on ord.code_supply=sup.code
+       		left join bd_term_freq freq on ord.code_freq=freq.code
+       		left join bd_unit unit_dos on ord.pk_unit_dos=unit_dos.pk_unit
+       		inner join bd_ou_dept indept on ord.pk_dept=indept.pk_dept
+       		inner join bd_hp hp on hp.pk_hp =pv.pk_insu
+       		left join cn_prescription pres on pres.pk_pres=ord.pk_pres
+       		left join bd_defdoc doc on pres.dt_prestype = doc.code and doc.del_flag='0'  and  doc.code_defdoclist ='060101' 
+       		left join bd_defdoc docPro on pres.dt_properties = docPro.code and docPro.del_flag='0'  and  docPro.code_defdoclist ='060103' 
+       		left join bd_defdoc stpdoc on stpdoc.code=dt.dt_exdeptpdstop and stpdoc.code_defdoclist='120105'
+ 		where dt.pk_pdap in 
+ 			<foreach collection="pkPdaps" item="pkPdap" open="(" separator="," close=")">
+ 				#{pkPdap,jdbcType=VARCHAR}
+ 			</foreach> 
+ 			and dt.eu_direct='1' 
+ 			and dt.flag_stop='1'
+ 			<if test="isPres==null">
+ 				and dt.pk_pres is null
+ 			</if>
+ 			<if test="isPres!=null">
+ 				and dt.pk_pres is not null
+ 			</if>
+ 			and dt.eu_result in ('0','1')
+ 		order by ord.ordsn_parent
+	</select>
+	
+	<update id="cancelStopApply" parameterType="java.util.List">
+		update ex_pd_apply_detail
+   			set flag_stop='0',    <!--  停发标志 -->
+       			dt_exdeptpdstop=null, <!-- 原因 -->
+      			reason_stop=null,     <!-- 原因描述 -->
+       			pk_emp_stop=null,    <!--  停发人 -->
+       			name_emp_stop=null   <!--  停发人姓名 -->
+ 		where pk_pdapdt in    <!-- 申请单明细 -->
+ 			<foreach collection="list" item="pkPdapDt" open="(" separator="," close=")">
+ 				#{pkPdapDt,jdbcType=VARCHAR}
+ 			</foreach>
+ 			and flag_stop='1' <!--  停发 -->
+ 			and eu_result in ('0','1')
+       		and flag_de='0' <!-- 未发 -->
+       		and nvl(flag_canc,'0')='0' <!-- 未取消 -->
+	</update>
+	
+	<select id="qrySumPres" parameterType="java.util.Map" resultType="DynaBean">
+		select 
+			dt.pk_pd, pd.name name_pd, fa.name factory, pd.spec,
+      	 	dt.pk_unit, unit.name unit, sum(dt.quan_pack) quan_pack,
+       		dt.pack_size, stk.quan/dt.pack_size quan, dt.price,
+       		sum(dt.amount) amount
+	  	from ex_pd_apply_detail dt
+	       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+	       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+	       inner join bd_unit unit on dt.pk_unit=unit.pk_unit
+	       left outer join (select pk_pd,sum(quan_min-quan_prep) quan from pd_stock where pk_store=#{pkStore,jdbcType=VARCHAR} and flag_stop='0' group by pk_pd) stk on dt.pk_pd=stk.pk_pd
+ 	  	where dt.pk_pres in
+ 	  		<foreach collection="pkPreses" item="pkPres" open="(" separator="," close=")">
+ 	  			#{pkPres,jdbcType=VARCHAR}
+ 	  		</foreach>
+	  	group by dt.pk_pd,pd.name, fa.name, pd.spec, dt.pk_unit,
+       		unit.name,dt.pack_size,stk.quan,dt.price
+	
+	</select>
+	
+	<select id="qryExPdApplyList" parameterType="java.util.Map" resultType="DynaBean">
+		select
+		  ap.pk_pdap,
+		  ap.date_ap,
+		  ap.pk_dept_ap,
+		  dept.name_dept,
+		  ap.eu_print,
+		  ap.CODE_APPLY
+		from bd_ou_dept dept
+		  inner join ex_pd_apply ap on dept.pk_dept = ap.pk_dept_ap
+		where ap.pk_dept_de = #{pkDeptDe,jdbcType=VARCHAR}
+		    and ap.flag_finish = '0' and ap.flag_cancel = '0'
+		<if test='euDirect!=null and euDirect!=""'>
+			and ap.eu_direct=#{euDirect,jdbcType=VARCHAR}
+		</if>
+		<if test='dateStart!=null and dateStart!=""'>
+			and ap.date_ap &gt;= to_date(#{dateStart},'yyyy-MM-dd hh24:mi:ss')
+		</if>
+		<if test='dateEnd!=null and dateEnd!=""'>
+			and ap.date_ap &lt;= to_date(#{dateEnd},'yyyy-MM-dd hh24:mi:ss')
+		</if>
+		<if test='pkDeptAp!=null and pkDeptAp!=""'>
+			and ap.pk_dept_ap=#{pkDeptAp,jdbcType=VARCHAR}
+		</if>
+		<!-- 科室领药 -->
+		<if test='flagDept!=null and flagDept=="1" '>
+			and ap.eu_aptype in ('1','3')
+		</if>
+		<!-- 病区领药 -->
+		<if test='flagDept==null or flagDept=="0" '>
+			and ap.eu_aptype= '0'
+			and exists (select 1 from ex_pd_apply_detail dt where ap.pk_pdap=dt.pk_pdap and dt.flag_finish='0' and dt.eu_result in ('0','1') and dt.pk_pres is 
+			<if test='isPres!=null and isPres=="1"'>
+				not
+			</if>
+			null 
+			<if test='deCateWhereSql !=null and deCateWhereSql !=""'>
+				and ${deCateWhereSql} 
+			</if>
+			)
+		</if>
+		order by ap.pk_dept_ap,ap.date_ap
+	</select>
+	<select id="qryExOrderOccInfo" parameterType="java.util.Map" resultType="DynaBean">
+		 select pv.bed_no,
+		       pv.name_pi,
+		       ord.eu_always,
+		       occ.date_plan,
+		       ord.ordsn,
+		       ord.ordsn_parent,
+		       ord.name_ord name_pd,
+		       ord.spec,
+		       ord.quan quan_pack,
+		       unit.name unit_pack,
+		       ord.dosage,
+		       unitdos.name unit_dos,
+		       sup.name supply_name,
+		       freq.name name_freq,
+		       de.flag_pivas,
+		       ord.date_start
+		  from ex_order_occ occ
+		       inner join ex_pd_apply_detail ap on (occ.pk_pdapdt=ap.pk_pdapdt or occ.pk_pdback=ap.pk_pdapdt)
+		       inner join ex_pd_de de on ap.pk_pdapdt=de.pk_pdapdt
+		       inner join cn_order ord on occ.pk_cnord=ord.pk_cnord
+		       inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+		       inner join bd_unit unit on de.pk_unit=unit.pk_unit
+		       inner join bd_unit unitdos on ord.pk_unit_dos=unitdos.pk_unit
+		       left join  bd_supply sup on sup.code=ord.code_supply
+		       left join bd_term_freq freq on freq.code=ord.code_freq
+		where de.code_de=#{codeDe,jdbcType=VARCHAR} and pv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+		group by pv.bed_no,
+		       pv.name_pi,
+		       ord.eu_always,
+		       occ.date_plan,
+		       ord.ordsn,
+		       ord.ordsn_parent,
+		       ord.name_ord ,
+		       ord.spec,
+		       ord.quan ,
+		       unit.name ,
+		       ord.dosage,
+		       unitdos.name ,
+		       sup.name ,
+		       freq.name ,
+		       de.flag_pivas,
+		       ord.date_start
+		order by date_plan,ordsn_parent,ordsn
+	</select>
+	
+	<select id="qryPdExOrderInfo" parameterType="java.util.Map" resultType="DynaBean">
+		  select pv.bed_no,
+		       pv.name_pi,
+		       occ.date_plan,
+		       ord.name_ord name_pd,
+		       ord.spec,
+		       ord.quan quan_pack,
+		       unit.name unit_pack,
+		       ord.dosage,
+		       unitdos.name unit_dos,
+		       sup.name supply_name,
+		       freq.name name_freq,
+		       de.flag_pivas,
+			   de.eu_direct,
+			   de.date_de,
+			   ord.ordsn_parent,
+			   ord.ordsn
+		  from ex_order_occ occ
+		       inner join ex_pd_apply_detail ap on (occ.pk_pdapdt=ap.pk_pdapdt or occ.PK_PDBACK=ap.PK_PDAPDT)
+		       inner join ex_pd_de de on ap.PK_PDAPDT=de.PK_PDAPDT
+		       inner join cn_order ord on occ.pk_cnord=ord.pk_cnord
+		       inner join pv_encounter pv on ord.pk_pv=pv.pk_pv
+		       inner join bd_unit unit on de.pk_unit=unit.pk_unit
+		       inner join bd_unit unitdos on ord.pk_unit_dos=unitdos.pk_unit
+		       left join  bd_supply sup on sup.code=ord.code_supply
+		       left join bd_term_freq freq on freq.code=ord.code_freq
+		where de.pk_pdapdt=#{pkPdapdt,jdbcType=VARCHAR}
+		group  by pv.bed_no,
+		       pv.name_pi,
+		       occ.date_plan,
+		       ord.name_ord ,
+		       ord.spec,
+		       ord.quan ,
+		       unit.name ,
+		       ord.dosage,
+		       unitdos.name ,
+		       sup.name ,
+		       freq.name ,
+		       de.flag_pivas,
+			   de.eu_direct,
+			   de.date_de,
+			   ord.ordsn_parent,
+			   ord.ordsn
+		order by pv.bed_no,pv.name_pi, occ.date_plan,ord.ordsn_parent,ordsn
+	</select>
+	
+	<select id="queryIpReBackAppListByCDT" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT
+			ap.code_apply ,
+			ap.pk_pdap,
+			ap.date_ap,
+			ap.pk_dept_ap,
+			dept.name_dept
+		FROM bd_ou_dept dept
+			INNER JOIN ex_pd_apply ap ON dept.pk_dept = ap.pk_dept_ap
+		WHERE ap.eu_direct = -1 AND ap.eu_aptype = '0' AND ap.pk_dept_de = #{pkDeptDe,jdbcType=VARCHAR}
+					 AND ap.flag_finish = '0' AND ap.flag_cancel = '0' AND
+					nvl(ap.del_flag, '0') != '1'
+					<if test='dateStart!=null and dateStart!=""'>
+						AND ap.date_ap &gt;= to_date(#{dateStart,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')
+					</if>
+					<if test='dateEnd!=null and dateEnd!=""'>
+						AND ap.date_ap &lt;=to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss') 
+					</if>
+					<if test='pkDeptAp!=null and pkDeptAp!=""'>
+						AND ap.pk_dept_ap = #{pkDeptAp,jdbcType=VARCHAR}
+					</if>
+					<if test='codeAp!=null and codeAp!=""'>
+						and ap.code_apply like '%' || #{codeAp,jdbcType=VARCHAR} 
+					</if>
+					and  exists 
+					(select 1 from ex_pd_apply_detail dt 
+						where ap.pk_pdap=dt.pk_pdap and dt.flag_finish='0' 
+						and dt.flag_stop='0' and (dt.flag_canc='0' or dt.flag_canc is null)
+					)
+		ORDER BY ap.date_ap,ap.pk_dept_ap
+	</select>
+	<select id="qryPdApdtRelExInfo" parameterType="com.zebone.nhis.scm.ipdedrug.vo.IpDeDrugDto" resultType="DynaBean">
+		select
+			    dt.PK_PDAPDT,
+				ap.pk_dept_ap,
+				pv.DT_SEX,
+				pv.code_pv,
+				pv.pk_dept,
+				ap.pk_pdap,
+				ap.pk_org                                               pk_org_ap,
+                ap.CODE_APPLY,
+                ap.DATE_AP,
+				pv.bed_no,
+				pv.pk_pv,
+				pv.name_pi,
+				dt.pk_pd,
+				pd.code                                                 code_pd,
+				pd.name                                                 name_pd,
+				fac.name                                                factory,
+				ord.spec,
+				dt.pk_unit,
+				dtunit.name                                             unit,
+				sum(occ.quan_occ)                                       quan_pack_in,
+				<!-- sum(occ.quan_occ)                                actual_quan_pack, -->
+				(CASE de.quan_pack
+				 WHEN NULL
+					 THEN 0
+				 ELSE sum(de.quan_pack) END)                            quan_de,
+				<!-- sum(occ.quan_occ)*dt.pack_size                                      quan_min, -->
+				dt.pack_size,
+				pd.PACK_SIZE                                            pd_pack_size,
+				pd.EU_MUPUTYPE,
+                pd.flag_chrt,
+                pd.flag_tpn,
+				ord.ordsn,
+				ord.ordsn_parent,
+				ord.dosage,
+                ord.date_stop_chk                                       date_stop ,
+				dos.name                                                unit_dos,
+				sup.name                                                supply,
+				freq.name                                               freq,
+				stk.quan / dt.pack_size                                 quan,
+				dt.price,
+				<!-- dt.price*sum(occ.QUAN_OCC) 								amount, -->
+				dt.flag_emer,
+				dt.eu_detype,
+				dt.PK_CNORD,
+				dt.flag_pivas,
+				unit.name                                               unit_quan,
+				to_date(to_char(occ.date_plan, 'yyyymmdd'), 'yyyymmdd') date_occ,
+				dt.flag_self,
+				stk.flag_stop flag_stop_stk,
+				dt.quan_pack quan_rel,
+				(select count(1)
+         			from ex_order_occ occ1
+        	 	where occ1.pk_pdapdt=dt.pk_pdapdt and
+              		occ1.flag_canc='1'
+              	)  eu_status_occ
+				<if test="pkPddecate!=null and pkPddecate!=''">
+					,'${pkPddecate}' as pk_pddecate 
+				</if>
+				<if test="nameDecate!=null and nameDecate!=''">
+					,'${nameDecate}' as name_decate  
+				</if>
+				<if test="codeDecate!=null and codeDecate!=''">
+					,'${codeDecate}' as code_decate  
+				</if>
+		   from ex_order_occ occ
+		        inner join ex_pd_apply_detail dt on dt.pk_pdapdt = occ.pk_pdapdt
+		        inner join ex_pd_apply ap on ap.pk_pdap = dt.pk_pdap
+		        inner join cn_order ord on ord.pk_cnord = dt.pk_cnord
+		        inner join pv_encounter pv on pv.pk_pv = occ.pk_pv
+		        inner join bd_pd pd on pd.pk_pd = dt.pk_pd
+				left join bd_factory fac on fac.pk_factory=pd.pk_factory
+		        left join bd_unit dos on dos.pk_unit = ord.pk_unit_dos
+		        left join bd_supply sup on sup.code = ord.code_supply
+		        left join bd_term_freq freq on freq.code = ord.code_freq
+		        left join bd_unit unit on unit.pk_unit=occ.pk_unit
+		        left join bd_unit dtunit on dtunit.pk_unit = dt.pk_unit
+		        left outer join 
+		        (select pk_pd, sum(quan_min - quan_prep) quan,flag_stop 
+		        	from pd_stock
+				 	where pk_store =#{pkPdStock,jdbcType=VARCHAR}  
+				 	group by pk_pd,flag_stop
+				) stk on dt.pk_pd = stk.pk_pd
+				left outer join ex_pd_de de ON de.PK_PDAPDT = dt.PK_PDAPDT
+		where dt.pk_pdap in 
+			<foreach collection="pkPdaps" index="index" item="pkPdap"
+			open="(" separator="," close=")">
+			#{pkPdap}
+			</foreach>
+			and dt.flag_de = '0' 
+			and dt.eu_direct = '1' 
+			and dt.flag_stop = '0' 
+			and dt.flag_finish = '0'
+		    and (dt.flag_canc='0' or dt.flag_canc is null)
+		group by dt.pk_pdapdt, pv.name_pi, pv.bed_no, ord.ordsn, ord.ordsn_parent, pd.code, pd.name, ord.spec, ord.dosage,
+				dos.name, dt.price, dt.quan_pack, dt.amount, unit.name, to_date(to_char(occ.date_plan, 'yyyymmdd'), 'yyyymmdd'),
+				fac.NAME, sup.name, freq.NAME, stk.quan, dt.PACK_SIZE, dt.flag_self, ap.pk_dept_ap, pv.DT_SEX, pv.code_pv,
+				ap.PK_PDAP, ap.PK_ORG, pv.pk_pv, de.quan_pack, pd.PACK_SIZE, pd.EU_MUPUTYPE,dtunit.NAME,
+				dt.flag_emer,dt.eu_detype,dt.PK_CNORD,dt.flag_pivas,pv.pk_dept,dt.pk_pd,dt.pk_unit,stk.flag_stop,dt.quan_pack,ord.date_stop_chk,
+				pd.flag_chrt,pd.flag_tpn,ap.CODE_APPLY,ap.DATE_AP
+		order by pv.bed_no,ord.ordsn_parent, to_date(to_char(occ.date_plan,'yyyymmdd'),'yyyymmdd'),  ord.ordsn
+	</select>
+	
+	<select id="qryPivasPdExInfo" parameterType="java.util.List" resultType="DynaBean">
+		select
+			pv.bed_no,pv.name_pi,ord.eu_always,occ.date_plan,ord.ordsn,ord.ordsn_parent,
+			ord.name_ord name_pd ,ord.spec,ord.dosage,dos.name unit_dos,sup.name name_supply,freq.name name_freq,
+			occ.quan_occ quan_pack,occunit.name quan_unit
+		from ex_order_occ occ
+		inner join cn_order ord on ord.pk_cnord=occ.pk_cnord
+		inner join EX_PD_APPLY_DETAIL dt on dt.PK_PDAPDT=occ.PK_PDAPDT
+		inner join pv_encounter pv on pv.pk_pv=occ.pk_pv
+		left join bd_unit dos on dos.pk_unit=ord.pk_unit_dos
+		left join bd_supply sup on sup.code=ord.code_supply
+		left join bd_term_freq freq on freq.code=ord.code_freq
+		left join bd_unit occunit on occunit.pk_unit=occ.pk_unit
+		
+		where dt.pk_pdapdt in 
+			<foreach collection="list" index="index" open="(" close=")" item="item" separator=",">
+				#{item,jdbcType=VARCHAR}
+			</foreach>
+			and dt.flag_de='0' and dt.flag_finish='0'
+		order by pv.bed_no, occ.date_plan,ord.ORDSN_PARENT,ord.ordsn
+	</select>
+	<select id="qryBackDrugPivasInfo" parameterType="com.zebone.nhis.scm.ipdedrug.vo.IpDeDrugDto" resultType="DynaBean">
+		SELECT
+			dt.pk_pdapdt,
+			pv.bed_no,
+			pv.pk_pv,
+			pv.name_pi,
+			dt.pk_pd,
+			pd.name name_pd,
+			fac.name factory,
+			pd.spec,
+			dt.pk_unit,
+			unit.name               unit,
+			dt.batch_no,
+			dt.pack_size,
+			dt.price_cost,
+			dt.price,
+			dt.pk_cnord,
+			dt.date_expire,
+			dt.pk_pdap,
+			dt.eu_detype,
+			ap.pk_dept_ap,
+			ap.pk_org,
+			ord.eu_always,
+			occ.pk_exocc,
+			occ.date_plan,
+			occ.date_plan date_plan_dis,
+			ord.ordsn,
+			ord.ordsn_parent,
+			sum(occ.quan_occ) quan_pack_in,
+			ps.flag_in,
+			dt.pk_cgip,
+			occ.flag_canc eu_status_occ,
+			dt.quan_pack quan_rel			
+			<if test="pkPddecate!=null and pkPddecate!=''">
+				,'${pkPddecate}' as pk_pddecate 
+			</if>
+			<if test="nameDecate!=null and nameDecate!=''">
+				,'${nameDecate}' as name_decate  
+			</if>
+			<if test="codeDecate!=null and codeDecate!=''">
+				,'${codeDecate}' as code_decate  
+			</if>
+		FROM ex_order_occ occ
+			inner join ex_pd_apply_detail dt ON dt.pk_pdapdt = occ.pk_pdback
+			inner join ex_pd_apply ap on ap.pk_pdap=dt.pk_pdap
+			inner join cn_order ord ON ord.pk_cnord = dt.pk_cnord
+			inner join pv_encounter pv on pv.pk_pv = occ.pk_pv
+			inner join bd_pd pd on pd.pk_pd =dt.pk_pd
+			inner join bd_factory fac on fac.pk_factory=pd.pk_factory
+			left join bd_unit unit ON unit.pk_unit = dt.pk_unit
+			left outer join ex_pd_pivas ps ON occ.pk_exocc = ps.pk_exocc and dt.pk_pdapdt=ps.pk_pdapdt
+		WHERE dt.pk_pdap IN 
+			<foreach collection="pkPdaps" index="index" item="pkPdap"
+				open="(" separator="," close=")">
+				#{pkPdap}
+			</foreach>
+		   AND dt.eu_direct = '-1' 
+		   AND dt.flag_stop = '0' 
+		   AND dt.flag_finish = '0'
+		   and ap.flag_cancel='0'
+		GROUP BY
+			dt.pk_pdapdt,
+			pv.pk_pv,
+			dt.pk_pd,
+			pd.name,
+			pd.spec,
+			fac.name,
+			dt.pk_unit,
+			dt.batch_no,
+			dt.pack_size,
+			dt.price_cost,
+			dt.pk_cnord,
+			dt.date_expire,
+			dt.pk_pdap,
+			dt.eu_detype,
+			ap.pk_dept_ap,
+			ap.pk_org,
+			pv.name_pi,
+			pv.bed_no,
+			occ.date_plan,
+			occ.pk_exocc,
+			ord.ordsn,
+			ord.ordsn_parent,
+			dt.price,
+			dt.quan_pack,
+			dt.amount,
+			unit.name,
+			ord.eu_always,
+			ps.flag_in,
+			dt.pk_cgip,
+			occ.flag_canc
+		ORDER BY pv.bed_no, occ.date_plan, ord.ordsn_parent, ord.ordsn
+	</select> 
+	 
+	<select id="qryExPdApplyListBySum" parameterType="java.util.Map" resultType="DynaBean">
+		select
+		  max (ap.date_ap) date_ap,
+		  ap.pk_dept_ap,
+		  dept.name_dept
+		from bd_ou_dept dept
+		  inner join ex_pd_apply ap on dept.pk_dept = ap.pk_dept_ap
+		  inner join ex_pd_apply_detail dt on dt.pk_pdap = ap.pk_pdap
+		where ap.eu_direct = '1' and ap.pk_dept_de = #{pkDeptDe,jdbcType=VARCHAR}
+		    and ap.flag_finish = '0' and ap.flag_cancel = '0'
+		<if test='dateStart!=null and dateStart!=""'>
+			and ap.date_ap &gt;= to_date(#{dateStart},'yyyy-MM-dd hh24:mi:ss')
+		</if>
+		<if test='dateEnd!=null and dateEnd!=""'>
+			and ap.date_ap &lt;= to_date(#{dateEnd},'yyyy-MM-dd hh24:mi:ss')
+		</if>
+		<if test='pkDeptAp!=null and pkDeptAp!=""'>
+			and ap.pk_dept_ap=#{pkDeptAp,jdbcType=VARCHAR}
+		</if>
+		<!-- 科室领药 -->
+		<if test='flagDept!=null and flagDept=="1" '>
+			and ap.eu_aptype= '1'
+		</if>
+		<!-- 病区领药 -->
+		<if test='flagDept==null or flagDept=="0" '>
+			and ap.eu_aptype= '0'
+			and exists (select 1 from ex_pd_apply_detail dt where ap.pk_pdap=dt.pk_pdap and dt.flag_finish='0' and dt.eu_result in ('0','1') and dt.pk_pres is 
+			<if test='isPres!=null and isPres=="1"'>
+				not
+			</if>
+			null 
+			<if test='deCateWhereSql !=null and deCateWhereSql !=""'>
+				and ${deCateWhereSql} 
+			</if>
+			)
+		</if>
+		group by  ap.pk_dept_ap,  dept.name_dept
+		order by max(ap.date_ap) desc
+	</select>
+	
+	<select id="qryDrugDtApList" parameterType="java.util.Map" resultType="DynaBean">
+		select  dt.pk_pdapdt, 
+			pi.code_ip,
+			ap.pk_dept_ap, 
+			ap.code_apply,
+		 	pi.dt_sex,
+			pv.code_pv,
+			pv.pk_dept,
+		 	ap.pk_pdap, 
+			ap.pk_org pk_org_ap, 
+			pv.bed_no, 
+			pv.pk_pv,
+			pi.name_pi, 
+			dt.pk_pd, 
+			pd.name name_pd, 
+			fa.name factory,	
+		 	pd.spec, 
+			dt.pk_unit,
+			unit.name unit, 
+			dt.quan_pack, 
+			dt.quan_pack actual_quan_pack, 
+			(case de.quan_pack  when null then 0
+			 else sum(de.quan_pack) end
+			) quan_de, 
+			dt.quan_min, 
+			dt.pack_size , 
+			pd.pack_size pd_pack_size, 
+			pd.eu_muputype, 
+			ord.ordsn_parent, 
+			ord.ordsn,
+		 	ord.dosage, 
+			unit_dos.name unit_dos,
+			sup.name supply, 
+			freq.name freq, 
+			stk.quan / dt.pack_size quan, 
+       		dt.price,
+        	dt.flag_emer,	
+        	dt.amount,	
+			dt.eu_detype,	
+			dt.pk_cnord ,
+			dt.flag_pivas,
+			dt.flag_self,
+			ord.eu_always,
+			ap.pk_pdap,
+			ord.date_stop_chk date_stop,
+			ap.date_ap ,
+			ord.flag_stop_chk,
+			to_char(dt.date_occ,'yyyy-MM-dd') date_occ,
+			(select count(1) 
+         		from ex_order_occ occ 
+        	 where occ.pk_pdapdt=dt.pk_pdapdt and 
+              occ.flag_canc='1')  eu_status_occ,
+			case when stk.flag_stop='0' then '0' else '1' end flag_stop_stk
+			<if test="pkPddecate!=null and pkPddecate!=''">
+				,'${pkPddecate}' as pk_pddecate 
+			</if>
+			<if test="nameDecate!=null and nameDecate!=''">
+				,'${nameDecate}' as name_decate  
+			</if>
+			<if test="codeDecate!=null and codeDecate!=''">
+				,'${codeDecate}' as code_decate  
+			</if>
+		from pi_master pi
+		inner join pv_encounter pv on pi.pk_pi = pv.pk_pi
+		inner join ex_pd_apply_detail dt on pv.pk_pv = dt.pk_pv and dt.quan_min &gt; 0 
+		inner join ex_pd_apply ap  on ap.pk_pdap=dt.pk_pdap 
+		inner join bd_pd pd on dt.pk_pd = pd.pk_pd
+		inner join bd_factory fa on pd.pk_factory = fa.pk_factory
+		inner join bd_unit unit on dt.pk_unit = unit.pk_unit
+		inner join cn_order ord on dt.pk_cnord = ord.pk_cnord  
+		left join bd_supply sup on ord.code_supply = sup.code
+		inner join bd_term_freq freq on ord.code_freq = freq.code
+		inner join bd_unit unit_dos on ord.pk_unit_dos = unit_dos.pk_unit
+		left outer join (select pk_pd, sum(quan_min - quan_prep) quan,flag_stop from pd_stock
+			where pk_store = #{pkPdStock,jdbcType=VARCHAR} and flag_stop='0' group by pk_pd,flag_stop
+		) stk on dt.pk_pd = stk.pk_pd
+		left outer join ex_pd_de de on dt.pk_pdapdt = de.pk_pdapdt
+		where ap.pk_dept_ap in
+			<foreach collection="pkDeptApList" index="index" item="dept" open="(" separator="," close=")">
+				#{dept}
+			</foreach>
+			and ord.pk_pres is null
+			and dt.eu_direct = '1'
+			and dt.flag_stop = '0'
+			and dt.flag_finish = '0'
+			and (dt.flag_canc='0' or dt.flag_canc is null)
+			and dt.pk_org=#{pkOrg,jdbcType=VARCHAR}
+			and (dt.flag_self not in ('1') or dt.flag_pivas='1')<!-- 过滤掉非静配自备药 -->
+			<if test="pvIpCodes!=null">
+				and pv.code_pv in
+				<foreach collection="pvIpCodes" index="index" item="pvIpCode"
+					open="(" separator="," close=")">
+					#{pvIpCode}
+				</foreach>
+			</if>
+			and ap.flag_cancel='0'
+			and ap.flag_finish='0'
+			<if test="flagEmer!=null and flagEmer==1">
+				and dt.flag_emer= '1'
+			</if>
+			<if test="deCateWhereSql!=null and deCateWhereSql!=''">
+				and ${deCateWhereSql}
+			</if>
+			and ap.pk_dept_de=#{pkDept,jdbcType=VARCHAR}
+			<if test='dateStart!=null and dateStart!=""'>
+				and ap.date_ap &gt;= to_date(#{dateStart},'yyyy-MM-dd hh24:mi:ss')
+			</if>
+			<if test='dateEnd!=null and dateEnd!=""'>
+				and ap.date_ap &lt;= to_date(#{dateEnd},'yyyy-MM-dd hh24:mi:ss')
+			</if>
+		group by ap.pk_pdap, 
+		pi.code_ip,
+		dt.pk_pdapdt,
+		pv.bed_no,
+	    pv.pk_pv,
+	    pi.name_pi,
+	    dt.pk_pd,
+	    pd.name,
+	    pd.eu_muputype,
+	    fa.name,
+	    pd.spec,
+	    dt.pk_unit,
+	    unit.name,
+	    dt.quan_pack, 
+	    de.quan_pack, 
+	    dt.quan_min,
+	    dt.pack_size,
+	    pd.pack_size,
+	    ord.ordsn_parent,
+	    ord.ordsn,
+	    ord.dosage,
+	    unit_dos.name,
+	    sup.name,
+	    freq.name,
+	    stk.quan,
+       	dt.price,
+       	dt.amount,
+	    dt.eu_detype,
+	    ap.pk_dept_ap,
+	    ap.pk_org,
+	    ap.pk_pdap,
+	    dt.flag_emer,
+	    dt.pk_cnord,
+	    pi.dt_sex,
+	    pv.code_pv,
+	    pv.pk_dept,
+	    dt.flag_pivas,
+	    dt.flag_self,
+	    stk.flag_stop,
+	    ap.code_apply,
+	    ord.eu_always,
+	    to_char(dt.date_occ,'yyyy-MM-dd'),
+	    ap.date_ap,
+	    ord.date_stop_chk,
+	    ord.flag_stop_chk
+		order by ap.code_apply, pv.bed_no,ord.ordsn_parent,ord.ordsn
+	</select>
+	
+	<select id="qryPresDrugApList" parameterType="com.zebone.nhis.scm.ipdedrug.vo.IpDeDrugDto" resultType="DynaBean">
+		select 
+			pv.pk_dept,
+			pi.code_ip,
+	       	pv.code_pv,
+	       	pi.dt_sex, 
+			pres.pk_pres,
+			pres.pres_no,
+			pv.bed_no,
+			pv.pk_pv,
+			pi.name_pi,
+			pres.pk_dept,
+			dept.name_dept,
+			pres.name_emp_ord,
+			pi.pk_pi,
+			pd.name name_pd,
+			pd.pk_pd,
+			fa.name factory,
+			ord.spec,
+			ord.pk_cnord,
+			unit.name unit,
+			dt.pk_pdap,
+			dt.pk_pres,
+			dt.pk_unit,
+			dt.quan_pack,
+			dt.quan_min,
+			dt.pack_size,
+			pd.pack_size pd_pack_size,
+			dt.pk_pdapdt,
+			dt.date_expire,
+			dt.price_cost,
+			dt.pk_cgip,
+			dt.batch_no,
+			dt.eu_detype,
+			app.pk_dept_ap,
+			app.pk_org pk_org_ap,
+			ord.ordsn_parent,
+			ord.dosage,
+			unit_dos.name unit_dos,
+			doc.name as pres_name,
+			(case sup.name when null then herb.note_use
+				else sup.name end
+			) supply,
+			freq.name freq,
+			dt.flag_medout,
+			pres.dt_prestype,
+			docPro.name properties_pres,
+			ord.ords,
+			hp.name hp_name,
+			stk.quan / dt.pack_size quan,
+	        area.name_area,
+	        app.code_apply,
+	        to_char(dt.date_occ,'yyyy-MM-dd') date_occ
+		from ex_pd_apply_detail dt
+		inner join ex_pd_apply app on app.pk_pdap=dt.pk_pdap  
+		inner join bd_pd pd on dt.pk_pd = pd.pk_pd
+		inner join bd_factory fa on pd.pk_factory = fa.pk_factory
+		inner join bd_unit unit on dt.pk_unit = unit.pk_unit
+		inner join cn_order ord on dt.pk_cnord = ord.pk_cnord
+		left join bd_supply sup on ord.code_supply = sup.code and sup.del_flag='0' 
+		left join cn_ord_herb herb on dt.pk_pd=herb.pk_pd  and dt.pk_cnord=herb.pk_cnord   
+		inner join bd_term_freq freq on ord.code_freq = freq.code and freq.del_flag='0' 
+		left join bd_unit unit_dos on ord.pk_unit_dos = unit_dos.pk_unit 
+		inner join cn_prescription pres on pres.pk_pres = dt.pk_pres 
+		inner join bd_defdoc doc on pres.dt_prestype = doc.code and doc.del_flag='0'  and  doc.code_defdoclist ='060101' 
+		left join bd_defdoc docPro on pres.dt_properties = docPro.code and docPro.del_flag='0'  and  docPro.code_defdoclist ='060103' 
+		inner join bd_ou_dept dept on pres.pk_dept = dept.pk_dept
+		inner join pv_encounter pv on pres.pk_pv = pv.pk_pv
+		inner join pi_master pi on pv.pk_pi = pi.pk_pi
+		inner join bd_hp hp on hp.pk_hp=pv.pk_insu
+		left join bd_ou_org_area area on dept.PK_ORGAREA=area.pk_orgarea
+		left outer join (select pk_pd, sum(quan_min -quan_prep) quan from pd_stock
+		where pk_store = #{pkPdStock,jdbcType=VARCHAR}  group by pk_pd) stk
+		on dt.pk_pd = stk.pk_pd
+		where app.pk_dept_ap in
+		<foreach collection="pkDeptApList" index="index" item="pkDept" open="(" separator="," close=")">
+			#{pkDept}
+		</foreach>
+		and dt.flag_finish='0' and dt.flag_stop = '0'  
+		and (dt.flag_canc='0' or dt.flag_canc is null)
+		and pres.pk_org=#{pkOrg,jdbcType=VARCHAR} 
+	</select>
+	
+	<select id="qryStopApDtByDeptAp" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT
+			dt.pk_pdapdt,
+			pv.bed_no,
+			pv.name_pi,
+			pd.name       name_pd,
+			fa.name       factory,
+			pd.spec,
+			unit.name     unit,
+			ord.ordsn_parent,
+			ord.dosage,
+			unit_dos.name unit_dos,
+			sup.name      supply,
+			freq.name     freq,
+			dt.dt_exdeptpdstop,
+			dt.reason_stop,
+			dt.name_emp_stop,
+			ord.pk_pres,
+			pres.pres_no,
+			indept.name_dept,
+			doc.name      pres_name,
+			ord.name_emp_ord,
+			docPro.name   properties_pres,
+			stpdoc.name   stop_reason_text,
+			dt.quan_pack,
+			hp.name       hp_name,
+			ap.code_apply,
+			ap.DATE_AP,
+			ord.eu_always,
+			ord.ordsn,
+			ord.ordsn_parent
+		FROM pv_encounter pv
+       		inner join ex_pd_apply_detail dt on pv.pk_pv=dt.pk_pv
+       		inner join ex_pd_apply ap on ap.pk_pdap =dt.pk_pdap
+       		inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+       		inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+       		inner join bd_unit unit on dt.pk_unit=unit.pk_unit
+       		inner join cn_order ord on dt.pk_cnord=ord.pk_cnord
+       		inner join bd_supply sup on ord.code_supply=sup.code
+       		inner join bd_term_freq freq on ord.code_freq=freq.code
+       		inner join bd_unit unit_dos on ord.pk_unit_dos=unit_dos.pk_unit
+       		inner join bd_ou_dept indept on ord.pk_dept=indept.pk_dept
+       		inner join bd_hp hp on hp.pk_hp =pv.pk_insu
+       		left join cn_prescription pres on pres.pk_pres=ord.pk_pres
+       		left join bd_defdoc doc on pres.dt_prestype = doc.code and doc.del_flag='0'  and  doc.code_defdoclist ='060101' 
+       		left join bd_defdoc docPro on pres.dt_properties = docPro.code and docPro.del_flag='0'  and  docPro.code_defdoclist ='060103' 
+       		left join bd_defdoc stpdoc on stpdoc.code=dt.dt_exdeptpdstop and stpdoc.code_defdoclist='120105'
+ 		    <where>
+			<if test='pkDeptApList!=null'>
+				  ap.pk_dept_ap in
+				<foreach collection="pkDeptApList" item="pkDept" open="(" separator="," close=")">
+					#{pkDept,jdbcType=VARCHAR}
+				</foreach>
+			</if>
+		<if test='euDirect!=null and euDirect!=""'>
+			and dt.eu_direct=#{euDirect,jdbcType=VARCHAR}
+		</if>
+		    <if test='pkPdapList!=null'>
+				and ap.PK_PDAP in
+				<foreach collection="pkPdapList" item="pkPdap" open="(" separator="," close=")">
+					#{pkPdap,jdbcType=VARCHAR}
+				</foreach>
+			</if>
+ 			and dt.flag_stop='1'
+ 			and dt.eu_result in ('0','1')
+ 			<!-- and ap.eu_status='0' -->
+ 			and ap.flag_cancel='0'
+ 			and ap.pk_dept_de=#{pkDeptDe,jdbcType=VARCHAR}
+ 			<if test='dateStart!=null and dateStart!=""'>
+				and ap.date_ap &gt;= to_date(#{dateStart},'yyyymmddhh24miss')
+			</if>
+			<if test='dateEnd!=null and dateEnd!=""'>
+				and ap.date_ap &lt;= to_date(#{dateEnd},'yyyymmddhh24miss')
+			</if>
+			<if test="isPres==null">
+				and dt.pk_pres is null
+			</if>
+			<if test="isPres!=null">
+				and dt.pk_pres
+			</if>
+			</where>
+ 		order by ap.code_apply, ord.ordsn_parent,ord.ordsn
+	</select>
+	
+	<select id="queryAllApplyDrugList" resultType="com.zebone.nhis.scm.ipdedrug.vo.DrugApDeptVo" parameterType="java.util.Map">
+		select
+		  ap.date_ap,
+		  ap.pk_dept_ap,
+		  dept.name_dept
+		from bd_ou_dept dept
+		  inner join ex_pd_apply ap on dept.pk_dept = ap.pk_dept_ap
+		  inner join ex_pd_apply_detail dt on dt.pk_pdap=ap.pk_pdap
+		where  ap.pk_dept_de = #{pkDeptDe,jdbcType=VARCHAR}
+		    and ap.flag_finish = '0' and ap.flag_cancel = '0'
+		<if test='dateStart!=null and dateStart!=""'>
+			and ap.date_ap &gt;= to_date(#{dateStart},'yyyy-MM-dd hh24:mi:ss')
+		</if>
+		<if test='dateEnd!=null and dateEnd!=""'>
+			and ap.date_ap &lt;= to_date(#{dateEnd},'yyyy-MM-dd hh24:mi:ss')
+		</if>
+		<if test='pkDeptAp!=null and pkDeptAp!=""'>
+			and ap.pk_dept_ap=#{pkDeptAp,jdbcType=VARCHAR}
+		</if>
+		and ap.eu_aptype= '0'
+	    and dt.flag_finish='0' and dt.eu_result in ('0','1') 
+	    AND (((dt.pk_pres IS NULL OR dt.pk_pres = '') AND ap.eu_direct = 1) OR (ap.eu_direct = -1)) 
+		<if test='deCateWhereSql !=null and deCateWhereSql !=""'>
+			and ${deCateWhereSql} 
+		</if>
+	</select>
+	<select id="queryApDtDrugList" resultType="DynaBean" parameterType="java.util.Map">
+		select 
+			dt.pk_pdapdt,
+			ap.code_apply,
+			ap.eu_direct,
+			ap.date_ap,
+			ap.pk_dept_ap,
+			pi.dt_sex,
+			pi.code_ip,
+			pv.code_pv,
+			pv.pk_dept,
+			ap.pk_pdap,
+			ap.pk_org pk_org_ap,
+			pv.bed_no,
+			pv.pk_pv,
+			pi.name_pi,
+			dt.pk_pd,
+			pd.name name_pd,
+			fa.name factory,
+			pd.spec,
+			dt.pk_unit,
+			unit.name unit,
+			dt.quan_pack,
+			dt.quan_pack actual_quan_pack,
+			(case de.quan_pack 
+				when null then 0
+				else sum(de.quan_pack) end
+			) quan_de,
+			dt.quan_min,
+			dt.pack_size ,
+			pd.pack_size pd_pack_size,
+			pd.eu_muputype, 
+			ord.ordsn_parent,
+			ord.dosage,
+			ord.eu_always,
+			unit_dos.name unit_dos,
+			sup.name supply,
+			freq.name freq,
+			stk.quan / dt.pack_size quan,
+	        dt.price,
+	        dt.flag_emer,
+	        dt.amount,
+			dt.eu_detype,
+			dt.pk_cnord,
+			dt.flag_pivas,
+			dt.flag_self,
+			case when stk.flag_stop='0' then '0' else '1' end flag_stop_stk
+			<if test="pkPddecate!=null and pkPddecate!=''">
+				,'${pkPddecate}' as pk_pddecate 
+			</if>
+			<if test="nameDecate!=null and nameDecate!=''">
+				,'${nameDecate}' as name_decate  
+			</if>
+			<if test="codeDecate!=null and codeDecate!=''">
+				,'${codeDecate}' as code_decate  
+			</if>
+		from pi_master pi
+			inner join pv_encounter pv on pi.pk_pi = pv.pk_pi
+			inner join ex_pd_apply_detail dt on pv.pk_pv = dt.pk_pv and dt.quan_min &gt; 0 
+			inner join ex_pd_apply ap  on ap.pk_pdap=dt.pk_pdap 
+			inner join bd_pd pd on dt.pk_pd = pd.pk_pd
+			inner join bd_factory fa on pd.pk_factory = fa.pk_factory
+			inner join bd_unit unit on dt.pk_unit = unit.pk_unit
+			inner join cn_order ord on dt.pk_cnord = ord.pk_cnord  
+			left join bd_supply sup on ord.code_supply = sup.code
+			inner join bd_term_freq freq on ord.code_freq = freq.code
+			inner join bd_unit unit_dos on ord.pk_unit_dos = unit_dos.pk_unit
+			left outer join (select pk_pd, sum(quan_min - quan_prep) quan,flag_stop from pd_stock
+				where pk_store = #{pkPdStock,jdbcType=VARCHAR} and flag_stop='0' group by pk_pd,flag_stop
+			) stk on dt.pk_pd = stk.pk_pd
+			left outer join ex_pd_de de on dt.pk_pdapdt = de.pk_pdapdt
+		where ap.pk_dept_ap=#{pkDeptAp,jdbcType=VARCHAR}
+			and ord.pk_pres is null
+			and dt.eu_direct = '1'
+			and dt.flag_stop = '0'
+			and dt.flag_finish = '0'
+			and (dt.flag_canc='0' or dt.flag_canc is null)
+			and dt.pk_org=#{pkOrg,jdbcType=VARCHAR}
+			and (dt.pk_pres IS NULL OR dt.pk_pres = '')
+			and (dt.flag_self not in ('1') or dt.flag_pivas='1')
+			and ap.flag_finish='0' and ap.FLAG_CANCEL='0' and ap.EU_STATUS in('0','1') and ap.EU_APTYPE='0'
+			<if test='dateStart!=null and dateStart!=""'>
+				and ap.date_ap &gt;= to_date(#{dateStart},'yyyy-MM-dd hh24:mi:ss')
+			</if>
+			<if test='dateEnd!=null and dateEnd!=""'>
+				and ap.date_ap &lt;= to_date(#{dateEnd},'yyyy-MM-dd hh24:mi:ss')
+			</if>
+			<if test="deCateWhereSql!=null and deCateWhereSql!=''">
+				and ${deCateWhereSql}
+			</if>
+		group by 
+			dt.pk_pdapdt,
+			pi.code_ip,
+			pv.bed_no,
+		    pv.pk_pv,
+		    pi.name_pi,
+		    ap.code_apply,
+			ap.eu_direct,
+			ap.date_ap,
+		    dt.pk_pd,
+		    pd.name,
+		    pd.eu_muputype,
+		    fa.name,
+		    pd.spec,
+		    dt.pk_unit,
+		    unit.name,
+		    dt.quan_pack, 
+		    de.quan_pack, 
+		    dt.quan_min,
+		    dt.pack_size,
+		    pd.pack_size,
+		    ord.ordsn_parent,
+		    ord.dosage,
+		    ord.eu_always,
+		    unit_dos.name,
+		    sup.name,
+		    freq.name,
+		    stk.quan,
+	       	dt.price,
+	       	dt.amount,
+		    dt.eu_detype,
+		    ap.pk_dept_ap,
+		    ap.pk_org,
+		    ap.pk_pdap,
+		    dt.flag_emer,
+		    dt.pk_cnord,
+		    pi.dt_sex,
+		    pv.code_pv,
+		    pv.pk_dept,
+		    dt.flag_pivas,
+		    dt.flag_self,
+		    stk.flag_stop
+		order by pv.bed_no,ord.ordsn_parent
+	</select>
+
+	<select id="queryApDtretDrugList" resultType="DynaBean" parameterType="java.util.Map">
+		select dt.pk_pdapdt,
+			ap.code_apply,
+			ap.eu_direct,
+			pi.code_ip,
+			ap.date_ap,
+			pv.bed_no,<!-- 床号 -->
+			pv.pk_pv,
+			pi.name_pi,<!-- 患者姓名 -->
+			dt.pk_pd,<!-- 药品主键 -->
+			pd.name name_pd,<!-- 药品名称 -->
+			fa.name factory,<!-- 生产厂家名称 -->
+			pd.spec,<!-- 规格 -->
+			dt.pk_unit,
+			dt.pk_cgip,
+			unit.name unit,<!-- 单位 -->
+			dt.quan_pack * -1 quan_pack,<!-- 数量 -->
+			dt.batch_no,
+			dt.quan_min,<!-- 基本单位 -->
+			dt.pack_size,<!-- 包装量 -->
+			dt.price_cost,<!-- 成本价 -->
+			dt.price,<!-- 单价 -->
+			dt.pk_cnord,
+			dt.date_expire,
+			dt.pk_pdap,
+			dt.eu_detype,<!-- 发放类型 -->
+			dt.amount * -1 amount, <!-- 金额 -->
+			ap.pk_dept_ap,
+			ap.pk_org pk_org_ap ,
+			ord.ordsn_parent,
+			ord.dosage,
+			unit_dos.name                         unit_dos,
+			sup.name                              supply,
+			freq.name                             freq,
+			ord.eu_always,
+			ord.code_ordtype
+			<if test="pkPddecate!=null and pkPddecate!=''">
+				,'${pkPddecate}' as pk_pddecate 
+			</if>
+			<if test="nameDecate!=null and nameDecate!=''">
+				,'${nameDecate}' as name_decate  
+			</if>
+			<if test="codeDecate!=null and codeDecate!=''">
+				,'${codeDecate}' as code_decate  
+			</if>
+		from pi_master pi
+			inner join pv_encounter pv on pi.pk_pi = pv.pk_pi
+			inner join ex_pd_apply_detail dt on pv.pk_pv = dt.pk_pv
+			inner join ex_pd_apply ap  on ap.pk_pdap=dt.pk_pdap
+			inner join cn_order ord on ord.pk_cnord=dt.pk_cnord
+			inner join bd_pd pd on dt.pk_pd = pd.pk_pd
+			inner join bd_factory fa on pd.pk_factory =fa.pk_factory
+			inner join bd_unit unit on dt.pk_unit = unit.pk_unit
+		    LEFT JOIN bd_supply sup ON ord.code_supply = sup.code
+		    INNER JOIN bd_term_freq freq ON ord.code_freq = freq.code
+		    INNER JOIN bd_unit unit_dos ON ord.pk_unit_dos = unit_dos.pk_unit
+		where ap.PK_DEPT_AP=#{pkDeptAp,jdbcType=VARCHAR}
+	      	and ap.FLAG_CANCEL='0' and ap.FLAG_FINISH='0' and ap.EU_APTYPE='0' and ap.EU_STATUS in ('0','1')
+			and dt.eu_direct = '-1'
+			and dt.flag_stop = '0'
+			and dt.flag_finish = '0'
+			and (dt.flag_canc='0' or dt.flag_canc is null)
+			<if test='dateStart!=null and dateStart!=""'>
+				and ap.date_ap &gt;= to_date(#{dateStart},'yyyyMMddhh24miss')
+			</if>
+			<if test='dateEnd!=null and dateEnd!=""'>
+				and ap.date_ap &lt;= to_date(#{dateEnd},'yyyyMMddhh24miss')
+			</if>
+			<if test="deCateWhereSql!=null and deCateWhereSql!=''">
+				and ${deCateWhereSql}
+			</if>
+		order by pv.bed_no,ord.ordsn_parent
+	</select>
+	
+	<select id="queryDeDrugSumList" parameterType="com.zebone.nhis.scm.ipdedrug.vo.IpDeDrugDto" resultType="DynaBean">
+		select
+		  pd.NAME name_pd,
+		  fac.NAME factory,
+		  pd.SPEC,
+		  deunit.NAME unit,
+		  sum(de.QUAN_PACK*de.EU_DIRECT) quan_pack,
+		  de.PRICE ,
+		  sum(de.AMOUNT*de.EU_DIRECT) amount
+		from EX_PD_DE de
+		inner join BD_PD pd on de.PK_PD=pd.PK_PD
+		inner join BD_UNIT deunit on deunit.PK_UNIT=de.PK_UNIT
+		inner join BD_FACTORY fac on fac.PK_FACTORY=pd.PK_FACTORY
+		inner join EX_PD_APPLY_DETAIL apdt on apdt.PK_PDAPDT=de.PK_PDAPDT
+		inner join EX_PD_APPLY ap on ap.PK_PDAP=apdt.PK_PDAP
+		left join CN_PRESCRIPTION pres on pres.PK_PRES=apdt.PK_PRES
+		inner join PV_ENCOUNTER pv on pv.PK_PV=de.PK_PV
+		inner join PI_MASTER pi on pi.PK_PI=pv.PK_PI
+		left join BD_OU_EMPLOYEE emp on emp.PK_EMP=de.PK_EMP_DE
+		where
+		  de.PK_DEPT_DE=#{pkDept,jdbcType=VARCHAR}
+		  <if test='codeDe!=null and codeDe!="" and flagOfCodeDe!="1"'>
+		  	and de.CODE_DE like '%'||#{codeDe}
+		  </if>
+		  <if test='codeDe!=null and codeDe!="" and flagOfCodeDe=="1"'>
+		  	and de.CODE_DE = #{codeDe}
+		  </if>
+		  <if test="codeAp !=null and codeAp!=''">
+			and ap.code_apply like '%'||#{codeAp}
+		  </if>
+		  <if test='dateStart!=null and dateStart!=""'>
+		  	and de.DATE_DE &gt;=#{dateStart,javaType=java.util.Date}
+		  </if>
+		  <if test='dateEnd!=null and dateEnd!=""'>
+		   	and de.DATE_DE &lt;=#{dateEnd,javaType=java.util.Date}
+		  </if>
+		  <if test='pkAppDeptNs!=null and pkAppDeptNs!=""'>
+		  	and ap.PK_DEPT_AP=#{pkAppDeptNs,jdbcType=VARCHAR}
+		  </if>
+		  <if test='presNo!=null and presNo!=""'>
+		  	and pres.PRES_NO=#{presNo,jdbcType=VARCHAR}
+		  </if>
+		  <if test='codeIp!=null and codeIp!=""'>
+		  	and pi.code_ip=#{codeIp,jdbcType=VARCHAR}
+		  </if>
+		  <if test='namePi!=null and namePi!=""'>
+			and pi.NAME_PI=#{namePi,jdbcType=VARCHAR}
+		  </if>
+		  <if test='bedNo!=null and bedNo!=""'>
+		  	and pv.BED_NO=#{bedNo,jdbcType=VARCHAR}
+		  </if>
+		  <if test='namePd!=null and namePd!=""'>
+		  	 and (pd.NAME like '%' || #{namePd,jdbcType=VARCHAR} || '%' OR pd.spcode like '%' || #{namePd,jdbcType=VARCHAR} || '%')
+		  </if>
+		  <if test='flagPivas!=null and flagPivas!=""'>
+		  	 and de.FLAG_PIVAS=#{flagPivas,jdbcType=VARCHAR}
+		  </if>
+		  <if test='nameEmpDe!=null and nameEmpDe!=""'>
+		  	 and emp.NAME_EMP=#{nameEmpDe,jdbcType=VARCHAR}
+		  </if>
+		  <if test='euDirect!=null and euDirect!=""'>
+		  	 and de.EU_DIRECT=#{euDirect,jdbcType=VARCHAR}
+		  </if>
+		  <if test='euAptype!=null and euAptype!=""'>
+		  	 and ap.EU_APTYPE=#{euAptype,jdbcType=VARCHAR}
+		  </if>
+		  <if test='flagPrt!=null and flagPrt!=""'>
+		   	and de.FLAG_PRT=#{flagPrt,jdbcType=VARCHAR}
+		  </if>
+		GROUP BY pd.NAME,fac.NAME,pd.SPEC,deunit.NAME,de.PRICE
+		order by pd.NAME
+	</select>
+	
+	<select id="getUnfinishDrugAp" resultType="java.lang.Integer" parameterType="java.util.Map">
+		select
+		  count(1) 
+		from bd_ou_dept dept
+		  inner join ex_pd_apply ap on dept.pk_dept = ap.pk_dept_ap
+		where ap.eu_direct = '1' and ap.pk_dept_de = #{pkDeptDe,jdbcType=VARCHAR}
+		    and ap.flag_finish = '0' and ap.flag_cancel = '0'
+		<!-- 科室领药 -->
+		<if test='flagDept!=null and flagDept=="1" '>
+			and ap.eu_aptype= '1'
+		</if>
+		<!-- 病区领药 -->
+		<if test='flagDept==null or flagDept=="0" '>
+			and ap.eu_aptype= '0'
+			and exists (select 1 from ex_pd_apply_detail dt where ap.pk_pdap=dt.pk_pdap and dt.flag_finish='0' and dt.eu_result in ('0','1') and dt.pk_pres is 
+			<if test='isPres!=null and isPres=="1"'>
+				not
+			</if>
+			null 
+			)
+		</if>
+	</select>
+
+	<select id="queryExApplyForDept" resultType="DynaBean" parameterType="java.util.Map">
+		SELECT
+		  ap.pk_dept_ap,
+		  dept.NAME_DEPT name_dept_ap,
+		  ap.eu_aptype,
+		  ap.eu_direct,
+		  count(1)       num
+		FROM ex_pd_apply ap
+		  INNER JOIN bd_ou_dept dept ON dept.PK_DEPT = ap.PK_DEPT_AP
+		WHERE ap.pk_dept_de = #{pkDeptDe,jdbcType=VARCHAR}
+		     <if test='codeApply!=null and codeApply!=""'>
+		      	AND ap.code_apply like '%' ||#{codeApply,jdbcType=VARCHAR} || '%'
+		     </if>
+		     <if test='dateStart!=null and dateStart!=""'>
+		     	 AND ap.date_ap &gt;= to_date(#{dateStart,jdbcType=VARCHAR},'yyyyMMddhh24miss')
+		     </if>
+		     <if test='dateEnd!=null and dateEnd!=""'>
+		     	AND ap.date_ap &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyyMMddhh24miss')
+		     </if>
+		     <if test='euAptype!=null and euAptype!=""'>
+		     	AND ap.eu_aptype = #{euAptype,jdbcType=VARCHAR}
+		     </if>
+		     <if test='euStatus!=null and euStatus!=""'>
+		     	AND ap.eu_status = #{euStatus,jdbcType=VARCHAR}
+		     </if>
+		     <if test='euDirect!=null and euDirect!=""'>
+	       		and ap.eu_direct=#{euDirect,jdbcType=VARCHAR}
+		     </if>
+		     <if test='pkDeptAp!=null and pkDeptAp!=""'>
+		     	and ap.pk_dept_ap=#{pkDeptAp,jdbcType=VARCHAR}
+		     </if>
+		GROUP BY ap.pk_dept_ap,
+		  ap.eu_aptype,
+		  ap.eu_direct,
+		  dept.NAME_DEPT
+	</select>
+	
+	<select id="queryExApplyDtForDept" resultType="DynaBean" parameterType="java.util.Map">
+		select ap.code_apply,
+	       ap.date_ap,
+	       ord.EU_ALWAYS,
+	       pi.code_ip,
+	       pv.bed_no,
+	       pv.name_pi,
+	       dt.pk_pd,
+	       pd.name name_pd,
+	       pd.spec,     
+	       unit.NAME unit,   
+	       dt.price,     
+	       dt.quan_pack, 
+	       dt.amount,    
+	       to_char(dt.date_occ,'yyyy-MM-dd') date_occ,  
+	       dt.flag_de,
+	       dt.flag_stop,
+	       case when dt.pk_pres is null then '0' else '1' end is_pres,
+	       ord.ordsn_parent,
+	       ord.ordsn,
+	       pv.pk_pv,
+	       dt.flag_canc flag_cancel
+	  from ex_pd_apply ap
+	       inner join ex_pd_apply_detail dt on ap.pk_pdap=dt.pk_pdap
+	       left join CN_ORDER ord on ord.PK_CNORD=dt.PK_CNORD
+	       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+	       inner join pv_encounter pv on dt.pk_pv=pv.pk_pv
+	       inner join pi_master pi on pv.pk_pi=pi.pk_pi
+	       inner join bd_unit unit on unit.PK_UNIT=dt.PK_UNIT
+	 where ap.pk_dept_de=#{pkDeptDe,jdbcType=VARCHAR}
+	       and ap.pk_dept_ap=#{pkDeptAp,jdbcType=VARCHAR}
+	       <if test='codeApply!=null and codeApply!=""'>
+	       		and  ap.code_apply like '%' || #{codeApply,jdbcType=VARCHAR} || '%'
+	       </if>
+	       <if test='dateStart!=null and dateStart!=""'>
+		     	 AND ap.date_ap &gt;= to_date(#{dateStart,jdbcType=VARCHAR},'yyyyMMddhh24miss')
+		     </if>
+		     <if test='dateEnd!=null and dateEnd!=""'>
+		     	AND ap.date_ap &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyyMMddhh24miss')
+		     </if>
+		     <if test='euAptype!=null and euAptype!=""'>
+		     	AND ap.eu_aptype = #{euAptype,jdbcType=VARCHAR}
+		     </if>
+		     <if test='euStatus!=null and euStatus!=""'>
+		     	AND ap.eu_status = #{euStatus,jdbcType=VARCHAR}
+		     </if>
+		     <if test='euDirect!=null and euDirect!=""'>
+	       		and ap.eu_direct=#{euDirect,jdbcType=VARCHAR}
+		     </if>
+	</select>
+</mapper>

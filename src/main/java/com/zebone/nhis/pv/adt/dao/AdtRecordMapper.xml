@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pv.adt.dao.AdtRecordMapper">
+	
+
+	<select id="qryPvMessage" parameterType="java.lang.String" resultType="DynaBean">
+	     select pi.code_ip, pv.pk_pv, pv.name_pi,pv.dt_sex,sex.name name_sex,
+	     pv.date_begin,pv.pk_dept,dept.name_dept,
+	     pv.pk_dept_ns,ns.name_dept  name_dept_ns
+         from pv_encounter pv 
+             inner join pi_master pi on pi.pk_pi = pv.pk_pi and pi.del_flag='0' 
+             left join bd_defdoc sex on sex.code = pv.dt_sex and sex.code_defdoclist='000000' and sex.del_flag='0' 
+             left join bd_ou_dept dept on dept.pk_dept = pv.pk_dept and dept.del_flag='0' 
+             left join bd_ou_dept ns on ns.pk_dept = pv.pk_dept_ns and ns.del_flag='0'
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="codeIp != null and codeIp != ''">
+				pi.code_ip=#{codeIp,jdbcType=VARCHAR}
+			</if>
+		   <if test="pkPv != null and pkPv != ''">
+			   pv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+		   </if>
+		</trim>
+         order by pv.date_begin desc,pv.flag_in desc   
+	</select>
+	<select id="qryPvAdtRecord" parameterType="java.lang.String" resultType="DynaBean">
+		   select pv.pk_pv,
+		       pv.flag_in,
+		       adt.pk_adt,
+		       adt.pk_dept,
+		       dept.name_dept,
+		       ns.name_dept name_dept_ns,
+		       adt.pk_dept_ns,
+		       adt.date_begin,
+		       adt.date_end,
+		       adt.name_emp_end,
+		       adt.flag_admit,
+		       adt.flag_dis,
+		       adt.flag_none
+		  from pv_adt adt
+		       inner join pv_encounter pv on adt.pk_pv=pv.pk_pv and pv.del_flag='0' 
+		       inner join pi_master pi on pv.pk_pi=pi.pk_pi  and pi.del_flag='0' 
+		       left join bd_ou_dept dept on dept.pk_dept = adt.pk_dept and dept.del_flag='0'
+		       left join bd_ou_dept ns on ns.pk_dept = adt.pk_dept_ns and ns.del_flag='0'
+		 where pv.pk_pv=#{pkPv,jdbcType=VARCHAR} and
+		       pv.eu_pvtype='3' and
+		       pv.eu_status &lt; '9'
+		       and adt.del_flag='0'  
+		 order by adt.date_begin 
+	</select>
+	   
+</mapper>

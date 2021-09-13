@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.common.dao.BaseCodeMapper">
+
+
+	<select id="getWordcalendardate" resultType="com.zebone.nhis.common.module.base.bd.code.BdWorkcalendardate" parameterType="java.util.Map">
+		select * from BD_WORKCALENDARDATE
+		where del_flag = '0'
+		and PK_WORKCALENDAR = #{pkWorkcalendar,jdbcType=VARCHAR}
+		and to_char(calendardate,'YYYY-MM-DD') &gt;= #{beginDate,jdbcType=VARCHAR}
+		and to_char(calendardate,'YYYY-MM-DD') &lt;= #{endDate,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- <select id="getWordcalendardateOracle" resultType="com.zebone.nhis.common.module.base.bd.code.BdWorkcalendardate" parameterType="java.util.Map">
+		select * from BD_WORKCALENDARDATE
+		where del_flag = '0'
+		and PK_WORKCALENDAR = #{pkWorkcalendar,jdbcType=VARCHAR}
+		and substr(to_char(calendardate,'yyyy-MM-DD HH24:MI:SS'),1,10) &gt;= #{beginDate,jdbcType=VARCHAR}
+		and substr(to_char(calendardate,'yyyy-MM-DD HH24:MI:SS'),1,10) &lt;= #{endDate,jdbcType=VARCHAR}
+	</select> -->
+	
+	<select id="selectBdCodeDateslotByPk" resultType="com.zebone.nhis.common.module.base.bd.code.BdCodeDateslot" parameterType="java.lang.String">
+		select * from BD_CODE_DATESLOT
+		where PK_DATESLOT = #{_parameter,jdbcType=VARCHAR}
+		order by sortno
+	</select>
+	
+	<select id="listByDtDateslottype" resultType="com.zebone.nhis.common.module.base.bd.code.BdCodeDateslot" parameterType="java.lang.String">
+        select * from BD_CODE_DATESLOT
+        where DT_DATESLOTTYPE = #{_parameter,jdbcType=VARCHAR}
+        order by sortno
+    </select>
+	
+	
+	<select id="getBdCodeDateslotByPkForType" resultType="com.zebone.nhis.common.module.base.bd.code.BdCodeDateslot" parameterType="java.util.Set">
+		select * from BD_CODE_DATESLOT 
+		where dt_dateslottype in
+		( 
+		  select dt_dateslottype from BD_CODE_DATESLOT 
+		  where pk_dateslot in 
+		  <foreach item="item" index="index" collection="pks" open="("  
+            separator="," close=")">  
+            #{item}  
+          </foreach>
+		)
+		order by sortno
+	</select>
+	
+	<select id="findCntStd" resultType="java.lang.Integer" parameterType="java.util.Map">
+		select cnt_Std from SCH_RESOURCE_DT where PK_SCHRES = #{pkSchres,jdbcType=VARCHAR} and PK_DATESLOT = #{pkDateslot,jdbcType=VARCHAR}
+	</select>
+	
+	
+    
+</mapper>

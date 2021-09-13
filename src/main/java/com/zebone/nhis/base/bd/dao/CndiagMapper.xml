@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.base.bd.dao.CndiagMapper">
+
+	<!-- <resultMap type="com.zebone.nhis.common.module.base.bd.mk.BdCndiag" id="qryDiag">
+		<id column="pk_cndiag" jdbcType="CHAR" property="pkCndiag"/>
+		<result column="code_cd" jdbcType="VARCHAR2" property="codeCd"/>
+		<result column="name_cd" jdbcType="VARCHAR2" property="nameCd"/>
+		<result column="spcode" jdbcType="VARCHAR2" property="spcode"/>
+		<result column="d_code" jdbcType="VARCHAR2" property="dCode"/>
+		<result column="diagname" jdbcType="VARCHAR2" property="diagname"/>
+		<result column="cndiagtype" jdbcType="VARCHAR2" property="cndiagtype"/>
+		<collection property="bdCndiagAss" ofType="com.zebone.nhis.common.module.base.bd.mk.BdCndiagAs">
+			
+		</collection>
+	</resultMap> -->
+	
+	<select id="qryCndiag" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.base.bd.mk.BdCndiag">
+		select cd.pk_cndiag,
+	       cd.code_cd,
+	       cd.name_cd,
+	       cd.spcode,
+	       cd.d_code,
+	       cd.code_icd,
+	       diag.diagname,
+	       cate.name cndiagtype
+	  from bd_cndiag cd
+	       left outer join bd_term_diag diag on cd.pk_diag=diag.pk_diag
+	       left outer join bd_defdoc cate on cd.dt_cndiagtype=cate.code and cate.code_defdoclist='060017' and cate.del_flag='0'
+		 <where> 
+		 	cd.del_flag = '0' 
+		 	<if test="codeCd != null and codeCd !='' ">
+	 		and cd.code_cd like '${codeCd}%'
+	 		</if>
+	 		
+	 		<if test="nameCd != null and nameCd !='' "> 
+	 		and cd.name_cd like '%${nameCd}%'
+	       	</if> 
+	       	
+	       	<if test="dtCndiagtype != null and dtCndiagtype !='' ">
+	       	and cd.dt_cndiagtype=#{dtCndiagtype}
+	       </if> 
+	       
+	       <if test="diagCode != null and diagCode !='' ">
+	       and diag.diagcode like '${diagCode}%'
+	       </if>
+	       
+	       <if test="diagName != null and diagName !='' "> 
+	       and diag.diagName like '%${diagName}%'
+	       </if>
+		</where>
+		order by cd.pk_cndiag	
+	</select>
+	
+	<select id="qryAs" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.base.bd.mk.BdCndiagAs">
+	<!-- 临床诊断别名 -->
+	select als.pk_cndiagas, 
+	      als.pk_cndiag,    <!-- 关联临床诊断 -->
+	      als.alias,        <!-- 别名名称 -->
+	      als.spcode,      
+	      als.d_code        
+	  from bd_cndiag_as als
+	 where als.pk_cndiag=#{pkCndiag}
+		
+	</select>
+	
+	<select id="qryCndiagComt" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.base.bd.mk.BdCndiagComt">
+		select comt.pk_cndiagcomt,  
+	      comt.pk_cndiag,       
+	      comt.eu_comtype,      <!-- 备注类型 -->
+	      comt.sortno,          <!-- 序号 -->
+	      comt.eu_dttype,      	<!--  字典类型 -->
+	      comt.code_dt,         <!-- 预制字典编码 -->
+	      comt.name_ment,       <!-- 自定义字典名称 -->
+	      comt.flag_mand,       <!-- 必填 -->
+	      comt.flag_hidden,     <!-- 隐藏 -->
+	      comt.flag_rb          <!-- 单选 -->
+	from bd_cndiag_comt comt
+	 where comt.pk_cndiag=#{pkCndiag}
+		
+	</select>
+	
+	<select id="qryCndiagComp" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.base.bd.mk.BdCndiagComp">
+		<!-- 临床诊断并发症 -->
+	select comp.pk_cndiagcomp, <!--  并发症PK -->
+	      comp.pk_cndiag,      <!-- 关联临床诊断 -->
+	      comp.pk_cndiag_comp, <!-- 并发症 -->
+	      cd.name_cd,          <!-- 并发症名称 -->
+	      comp.name_comp       <!-- 并发症别称 -->
+	from bd_cndiag_comp comp
+	      left outer<!-- inner --> join bd_cndiag cd on comp.pk_cndiag_comp=cd.pk_cndiag 
+	 where comp.pk_cndiag=#{pkCndiag}
+		
+	</select>
+	
+	<select id="qrBdCndiagComtDt" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.base.bd.mk.BdCndiagComtDt">
+		select dt.pk_cndiagcomtdt,   <!-- 备注明细PK -->
+	      dt.pk_cndiagcomt,      <!-- 关联备注 -->
+	      dt.sortno,             <!-- 备注顺序 -->
+	      dt.val_comt,          <!--  备注值 -->
+	      dt.pk_diag,            <!-- 关联标准诊断 -->
+	      dt.code_icd,           <!-- ICD编码 -->
+	      diag.diagname,         
+	      dt.pk_diag_add,        
+	      dt.code_add,          
+	      add1.diagname add1,    
+	      dt.pk_diag_add2,       
+	      dt.code_add2,         
+	      add2.diagname         <!--  附加诊断名称 -->
+	from bd_cndiag_comt_dt dt
+	     left outer join bd_term_diag diag on dt.pk_diag=diag.pk_diag 
+	     left outer join bd_term_diag add1 on dt.pk_diag_add=add1.pk_diag
+	     left outer join bd_term_diag add2 on dt.pk_diag_add2=add2.pk_diag
+	 where dt.pk_cndiagcomt=#{pkCndiagcomt}
+		
+	</select>
+	
+	<delete id="delCndiag" parameterType="java.util.Map">
+		delete from bd_cndiag where pk_cndiag=#{pkCndiag}
+	</delete>
+	
+	<delete id="delAs" parameterType="java.util.Map">
+		delete from bd_cndiag_as where pk_cndiag=#{pkCndiag}
+	</delete>
+	
+	<delete id="delCndiagComt" parameterType="java.util.Map">
+		delete from bd_cndiag_comt where pk_cndiag=#{pkCndiag}
+	</delete>
+	
+	<delete id="delCndiagComp" parameterType="java.util.Map">
+		delete from bd_cndiag_comp where pk_cndiag=#{pkCndiag}
+	</delete>
+	
+	<delete id="delBdCndiagComtDt" parameterType="java.util.Map">
+		delete from bd_cndiag_comt_dt 
+		where exists (select 1 from bd_cndiag_comt 
+                where bd_cndiag_comt_dt.pk_cndiagcomt=bd_cndiag_comt.pk_cndiagcomt and 
+                      bd_cndiag_comt.pk_cndiag=#{pkCndiag})
+	</delete>
+	
+	<delete id="delDtByList" parameterType="java.util.Map">
+	delete from bd_cndiag_comt_dt where pk_cndiagcomt =#{pkCndiagcomt} and pk_cndiagcomtdt not in
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+	</delete>
+	
+	<delete id="delComtByList" parameterType="java.util.Map">
+	delete from bd_cndiag_comt where pk_cndiag=#{pkCndiag} and pk_cndiagcomt  not in
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+	</delete>
+	
+	<delete id="delCompByList" parameterType="java.util.Map">
+	delete from bd_cndiag_comp where pk_cndiag=#{pkCndiag} and pk_cndiagcomp not in
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+	</delete>
+	
+	<delete id="delAsByList" parameterType="java.util.Map">
+	delete from bd_cndiag_as where pk_cndiag=#{pkCndiag} and pk_cndiagas not in
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+	</delete>
+	
+	<select id="qryCndiagBypk" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.base.bd.mk.BdCndiag">
+	select cd.pk_cndiag,    
+        cd.code_cd,      
+        cd.name_cd,      
+        cd.spcode,       
+        cd.d_code,       
+        cd.dt_cndiagtype,
+        cd.pk_diag,      
+        cd.code_icd,     
+        diag.diagname,   
+        cd.pk_diag_add,  
+        cd.code_add,     
+        add1.diagname Diagaddname,   
+        cd.pk_diag_add2, 
+        cd.code_add2,    
+        add2.diagname as Diagadd2name,   
+        cd.flag_nomaj,
+        cd.eu_picd,
+        cd.code_picd,
+        cd.eu_oicd,
+        cd.code_oicd    
+   from bd_cndiag cd
+        left outer join bd_term_diag diag on cd.pk_diag=diag.pk_diag
+        left outer join bd_term_diag add1 on cd.pk_diag_add=add1.pk_diag
+        left outer join bd_term_diag add2 on cd.pk_diag_add2=add2.pk_diag
+  where cd.pk_cndiag=#{pkCndiag}
+	</select>
+	
+	<select id="qryCountName" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(1) from bd_cndiag where del_flag = '0' and name_cd = #{nameCd}
+		<if test="pkCndiag != null and pkCndiag != ''">
+		 and Pk_Cndiag != #{pkCndiag}
+		</if>
+	</select>
+	
+	<select id="qryCountCode" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(1) from bd_cndiag where del_flag = '0' and code_cd = #{codeCd}
+		<if test="pkCndiag != null and pkCndiag != ''">
+		 and Pk_Cndiag != #{pkCndiag}
+		</if>
+	</select>
+	
+	<delete id="delDtByComt" parameterType="java.lang.String">
+		delete from bd_cndiag_comt_dt where pk_cndiagcomt =#{pkCndiagcomt}
+	</delete>
+	
+	<select id="qryDtBylist" parameterType="java.util.List" resultType="com.zebone.nhis.common.module.base.bd.mk.BdCndiagComtDt">
+		select * from Bd_Cndiag_Comt_Dt where pk_cndiagcomt in
+		<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+	</select>
+	
+	<select id="getCodeCd" parameterType="java.lang.String" resultType="java.lang.Integer">
+		select count(1) from bd_cndiag where Code_Cd = #{codeCd}
+	</select>
+	
+	<delete id="delUnnecessaryDt">
+		DELETE 
+		FROM 
+			BD_CNDIAG_COMT_DT 
+		WHERE PK_CNDIAGCOMTDT IN
+		(SELECT DT.PK_CNDIAGCOMTDT FROM BD_CNDIAG_COMT_DT DT LEFT JOIN  BD_CNDIAG_COMT COMT ON DT.PK_CNDIAGCOMT=COMT.PK_CNDIAGCOMT WHERE COMT.PK_CNDIAGCOMT IS NULL)
+	</delete>
+	
+	<select id="qryCodeCd" resultType="java.lang.Integer">
+		SELECT MAX(CAST(CODE_CD AS INT)) from BD_CNDIAG 
+	</select>
+	
+	<select id="qryOpAfterDictionary" resultType="DynaBean" >
+		select 
+			doc.name valComt,
+			doc.memo codeIcd,
+			diag.pk_diag 
+		from bd_defdoc doc 
+		left join bd_term_diag diag on diag.diagcode = doc.memo 
+		where 
+			doc.code_defdoclist = '060018' 
+		order by doc.code 
+	</select>
+</mapper>

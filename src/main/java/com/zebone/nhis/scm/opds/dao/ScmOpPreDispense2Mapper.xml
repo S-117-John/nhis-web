@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.opds.dao.ScmOpPreDispense2Mapper">
+    <select id="qryLocalWinNo" parameterType="java.util.Map" resultType="DynaBean">
+        select pc.pk_deptunit,
+               du.code winno,
+               du.name name_pc
+        from bd_res_pc pc
+                     inner join bd_dept_unit du on pc.pk_deptunit = du.pk_deptunit
+        where pc.addr = #{namePc,jdbcType=VARCHAR}
+          and pc.flag_active = '1'
+          and du.eu_unittype = '1'
+          and du.eu_butype = '0'
+          and du.del_flag = '0'
+          and du.pk_dept = #{pkDept,jdbcType=VARCHAR}
+    </select>
+
+    <select id="qryUnMatchPres" parameterType="java.util.Map" resultType="DynaBean">
+        select pres.pk_presocc,
+        pv.code_pv,
+        pv.name_pi,
+        pv.dt_sex,
+        sex.name sex_text ,
+        pres.pres_no,
+        pv.date_begin,
+        st.date_st,
+        pres.eu_status,
+        pres.pk_dept_pres,
+        dept.name_dept name_dept_pres,
+        pres.name_emp_pres,
+        indiag.pk_diag,
+        indiag.desc_diag,
+        pres.winno_conf,
+        pres.note,
+        pres.date_reg,
+        pres.dt_prestype,
+        to_char(pres.ts,'yyyy-MM-dd HH24:mm:ss') ts,
+        pres.flag_preprint,
+        pres.name_emp_prep,
+        to_char(pres.date_prep,'yyyy-MM-dd HH24:mi:ss') date_prep,
+        pi.code_op,
+        st.code_st,
+        pres.pk_settle,
+        pres.sort_no
+        <include refid="com.zebone.nhis.scm.opds.dao.ScmOpDispense2Mapper.showSelfCloum"/>
+        from ex_pres_occ pres
+        inner join pv_encounter pv on pres.pk_pv=pv.pk_pv
+        inner join pi_master pi on pi.pk_pi=pv.pk_pi
+        inner join bl_settle st on pres.pk_settle=st.pk_settle
+        inner join bd_defdoc sex on sex.code_defdoclist='000000' and sex.code=pv.dt_sex
+        inner join bd_ou_dept dept on dept.pk_dept =pres.pk_dept_pres
+        left join (select desc_diag ,pk_pv,PK_DIAG from (select row_number() over(partition by pk_pv order by flag_maj
+        desc) cnt, diag.pk_pv,diag.desc_diag ,diag.pk_diag from pv_diag diag ) res where res.cnt = 1) indiag on
+        indiag.PK_PV=pres.PK_PV
+        where pres.pk_dept_ex=#{pkDept,jdbcType=VARCHAR} and
+        pres.flag_reg='1' and
+        pres.flag_prep='0' and
+        pres.flag_susp='0'
+        <if test="winnoPrep !=null and winnoPrep !=''">
+            and pres.winno_prep=#{winnoPrep,jdbcType=VARCHAR}
+        </if>
+        and pres.flag_cg='1' and
+        pres.flag_canc='0' and
+        pres.eu_status in ('0','1')
+        <if test="presNo!=null and presNo !=''">
+            and pres.pres_no = #{presNo,jdbcType=VARCHAR}
+        </if>
+        <if test="pkSettle !=null and pkSettle !=''">
+            and pres.pk_settle = #{pkSettle,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+    <select id="qryPresPivasCount" parameterType="java.util.Map" resultType="DynaBean">
+        select count(1) num, occ.pk_presocc
+        from ex_pres_occ_dt dt
+        inner join ex_pres_occ occ on occ.PK_PRESOCC = dt.PK_PRESOCC
+        inner join cn_order ord on ord.PK_CNORD = dt.PK_CNORD
+        inner join bd_supply sup on sup.CODE = ord.CODE_SUPPLY
+        inner join bd_supply_class bsc on bsc.PK_SUPPLYCATE = sup.PK_SUPPLYCATE
+        where bsc.EU_USECATE in ('2', '3')
+        and occ.flag_reg = '1'
+        and occ.flag_prep = '0'
+        and occ.flag_susp = '0'
+        and occ.flag_cg = '1'
+        and occ.flag_canc = '0'
+        and occ.eu_status='0'
+        and occ.PK_DEPT_EX = #{pkDept,jdbcType=VARCHAR}
+        <if test="winnoPrep !=null and winnoPrep !=''">
+            and occ.WINNO_PREP = #{winnoPrep,jdbcType=VARCHAR}
+        </if>
+        and occ.pk_presocc in
+        <foreach collection="pkPresocces" item="item" separator="," open="(" close=")" index="index">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+        group by occ.PK_PRESOCC
+    </select>
+    <select id="qryPresDetail" parameterType="java.util.Map" resultType="DynaBean">
+        select
+        dt.pk_presocc,
+        dt.pk_presoccdt,
+        dt.pk_pd,
+        dt.pack_size,
+        pd.name,
+        pd.pk_factory,
+        pd.spec,
+        dt.pk_unit,
+        dt.quan_cg,
+        dt.price,
+        dt.amount_cg,
+        ord.pk_unit_dos,
+        ord.code_supply,
+        freq.name code_freq,
+        ord.ordsn,
+        ord.ordsn_parent,
+        pds.posi_no,
+        fa.name factory_name,
+        unit.name unit_name,
+        occ.pres_no,
+        pv.name_pi,
+        pv.code_pv,
+        pi.code_op,
+        dept.name_dept name_dept_pres,
+        occ.name_emp_pres,
+        occ.dt_prestype,
+        pack.NAME pack_name,
+        min.NAME min_name,
+        bsc.eu_usecate,
+        pd.pack_size pack_size_pd,
+        case when ord.CODE_ORDTYPE='0103' then herbdoc.name else supply.name end supply_name,
+        case when ord.CODE_ORDTYPE='0103' then herb.quan else ord.dosage end dosage,
+        case when ord.CODE_ORDTYPE='0103' then herbunit.NAME else un.name end dosage_name,
+        case when ord.CODE_ORDTYPE='0103' then ord.ords else ord.DAYS end days,
+        ord.FLAG_SELF
+        FROM bd_pd pd INNER JOIN ex_pres_occ_dt dt ON pd.pk_pd = dt.pk_pd
+        INNER JOIN cn_order ord ON dt.pk_cnord = ord.pk_cnord
+        left join cn_ord_herb herb on herb.PK_CNORD=ord.pk_cnord and herb.PK_PD=dt.PK_PD
+        left join bd_unit herbunit on herbunit.PK_UNIT=herb.PK_UNIT
+        INNER JOIN bd_pd_store pds ON pd.pk_pd = pds.pk_pd
+        INNER JOIN ex_pres_occ occ ON occ.pk_presocc = dt.pk_presocc
+        INNER JOIN pv_encounter pv ON pv.pk_pv = occ.pk_pv
+        inner join PI_MASTER pi on pi.pk_pi = pv.pk_pi
+        LEFT JOIN bd_ou_dept dept ON dept.pk_dept = occ.pk_dept_pres
+        LEFT JOIN bd_factory fa ON fa.pk_factory = pd.pk_factory
+        LEFT JOIN bd_supply supply ON supply.code = ord.code_supply
+        left join bd_supply_class bsc on bsc.PK_SUPPLYCATE=supply.PK_SUPPLYCATE
+        LEFT JOIN bd_unit unit ON unit.pk_unit = dt.pk_unit
+        LEFT JOIN bd_unit un ON un.pk_unit = ord.pk_unit_dos
+        LEFT JOIN bd_term_freq freq ON freq.code = ord.code_freq
+        left join bd_unit pack on pack.PK_UNIT=pd.PK_UNIT_PACK
+        left join bd_unit min on min.PK_UNIT=pd.PK_UNIT_MIN
+        left join bd_defdoc herbdoc on herbdoc.CODE_DEFDOCLIST='030410' and herb.DT_HERBUSAGE=herbdoc.CODE
+        where pds.pk_dept=#{pkDept,jdbcType=CHAR} and
+        dt.pk_presocc in
+        <foreach collection="pkPresoccs" index="index" item="pkPresocc" open="(" close=")" separator=",">
+            #{pkPresocc,jdbcType=VARCHAR}
+        </foreach>
+        and (dt.quan_ret='0' or dt.quan_ret is null)
+    </select>
+
+    <select id="qryMatchPres" parameterType="java.util.Map" resultType="DynaBean">
+        select pres.pk_presocc,
+        pv.code_pv,
+        pv.name_pi,
+        pv.dt_sex,
+        sex.name sex_text,
+        pres.pres_no,
+        pv.date_begin,
+        st.date_st,
+        pres.eu_status,
+        pres.pk_dept_pres,
+        dept.name_dept name_dept_pres,
+        pres.name_emp_pres,
+        indiag.pk_diag,
+        indiag.desc_diag,
+        pres.winno_conf,
+        pres.note,
+        pres.dt_prestype,
+        to_char(pres.ts,'yyyy-MM-dd HH24:mm:ss') ts,
+        pres.flag_preprint,
+        pres.name_emp_prep,
+        to_char(pres.date_prep,'yyyy-MM-dd HH24:mi:ss') date_prep,
+        pi.code_op,
+        st.code_st
+        <include refid="com.zebone.nhis.scm.opds.dao.ScmOpDispense2Mapper.showSelfCloum"/>
+        from ex_pres_occ pres
+        inner join pv_encounter pv on pres.pk_pv=pv.pk_pv
+        inner join pi_master pi on pi.pk_pi=pv.pk_pi
+        inner join bl_settle st on pres.pk_settle=st.pk_settle
+        inner join bd_defdoc sex on sex.code_defdoclist='000000' and sex.code=pv.dt_sex
+        inner join bd_ou_dept dept on dept.pk_dept =pres.pk_dept_pres
+        left join (select desc_diag ,pk_pv,PK_DIAG from (select row_number() over(partition by pk_pv order by flag_maj
+        desc) cnt, diag.pk_pv,diag.desc_diag ,diag.pk_diag from pv_diag diag ) res where res.cnt = 1) indiag on
+        indiag.PK_PV=pres.PK_PV
+        where pres.pk_dept_ex=#{pkDept,jdbcType=VARCHAR} and
+        pres.flag_prep='1' and
+        pres.flag_conf='0' and
+        pres.flag_susp='0'
+        <if test="winnoPrep !=null and winnoPrep !=''">
+            and pres.winno_prep=#{winnoPrep,jdbcType=VARCHAR}
+        </if>
+        and pres.flag_canc='0'
+        and pres.date_prep &gt;=to_date(#{dateStart,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+        and pres.date_prep &lt;=to_date(#{dateEnd,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')
+    </select>
+
+    <select id="qryPresPending" parameterType="java.util.Map" resultType="DynaBean">
+        select pres.pk_presocc,
+        pv.code_pv,
+        pv.name_pi,
+        pv.dt_sex,
+        sex.name sex_text,
+        pres.pres_no,
+        pv.date_begin,
+        st.date_st,
+        pres.eu_status,
+        pres.pk_dept_pres,
+        dept.name_dept name_dept_pres,
+        pres.name_emp_pres,
+        indiag.pk_diag,
+        indiag.desc_diag,
+        pres.winno_conf,
+        pres.note,
+        pres.date_reg,
+        pres.dt_prestype,
+        to_char(pres.ts,'yyyy-MM-dd HH24:mm:ss') ts,
+        pres.flag_preprint,
+        pres.name_emp_prep,
+        to_char(pres.date_prep,'yyyy-MM-dd HH24:mi:ss') date_prep,
+        pi.code_ip,
+        st.code_st
+        <include refid="com.zebone.nhis.scm.opds.dao.ScmOpDispense2Mapper.showSelfCloum"/>
+        from ex_pres_occ pres
+        inner join pv_encounter pv on pres.pk_pv=pv.pk_pv
+        inner join pi_master pi on pi.pk_pi=pv.pk_pi
+        inner join bl_settle st on pres.pk_settle=st.pk_settle
+        inner join bd_defdoc sex on sex.code_defdoclist='000000' and sex.code=pv.dt_sex
+        inner join bd_ou_dept dept on dept.pk_dept =pres.pk_dept_pres
+        left join (select desc_diag ,pk_pv,PK_DIAG from (select row_number() over(partition by pk_pv order by flag_maj
+        desc) cnt, diag.pk_pv,diag.desc_diag ,diag.pk_diag from pv_diag diag ) res where res.cnt = 1) indiag on
+        indiag.PK_PV=pres.PK_PV
+        where pres.pk_dept_ex=#{pkDept,jdbcType=VARCHAR} and
+        pres.flag_prep='0' and
+        pres.flag_susp='1'
+        <if test="winnoPrep !=null and winnoPrep !=''">
+            and pres.winno_prep=#{winnoPrep,jdbcType=VARCHAR}
+        </if>
+        and pres.flag_reg='1' and
+        pres.flag_canc='0'
+    </select>
+
+    <select id="qryUserDepartment" parameterType="java.util.Map" resultType="DynaBean">
+        SELECT DISTINCT t.* FROM (
+        SELECT
+        a.pk_dept,
+        b.code_dept,
+        b.name_dept
+        FROM bd_ou_usrgrp_dept a
+        LEFT JOIN bd_ou_dept b ON a.pk_dept = b.pk_dept
+        LEFT JOIN bd_ou_org org ON org.pk_org = b.pk_org
+        WHERE a.pk_usrgrp =#{pkUsrGrp,jdbcType=VARCHAR} and b.pk_dept=#{pkDept,jdbcType=VARCHAR}
+        UNION SELECT
+        ugpdept.pk_dept,
+        dept.code_dept,
+        dept.name_dept
+        FROM bd_ou_user_usrgrp ugp LEFT OUTER JOIN BD_OU_USRGRP_DEPT ugpdept ON ugp.pk_usrgrp = ugpdept.pk_usrgrp
+        LEFT JOIN bd_ou_dept dept ON ugpdept.pk_dept = dept.pk_dept
+        LEFT JOIN bd_ou_org org ON org.pk_org = dept.pk_org
+        WHERE ugp.pk_user = #{pkUser,jdbcType=VARCHAR} AND ugp.del_flag = '0'  and dept.pk_dept=#{pkDept,jdbcType=VARCHAR}
+        ) t
+    </select>
+
+    <update id="updatePresPrintInfo" parameterType="java.util.Map">
+        update ex_pres_occ
+        set eu_status='1' ,
+        cnt_print=nvl(CNT_PRINT,0)+1
+        where pk_presocc in
+        <foreach collection="list" item="pkPresocc" open="(" separator="," close=")">
+            #{pkPresocc,jdbcType=VARCHAR}
+        </foreach>
+        and eu_status in ('0','1')
+    </update>
+
+    <update id="saveConfirmDosageInfo" parameterType="java.util.Map">
+        update ex_pres_occ
+        set eu_status='2',
+        flag_prep='1',
+        flag_susp='0',
+        date_prep=to_date(#{datePrep,jdbcType=VARCHAR},'YYYYMMDDHH24MISS'),
+        pk_emp_prep=#{pkEmp,jdbcType=VARCHAR},
+        <if test="codeBasket!=null and codeBasket !=''">
+            code_basket =#{codeBasket,jdbcType=VARCHAR},
+        </if>
+        name_emp_prep=#{nameEmp,jdbcType=VARCHAR}
+        where pk_presocc in
+        <foreach collection="pkPresoccs" item="pkPresocc" open="(" separator="," close=")">
+            #{pkPresocc,jdbcType=VARCHAR}
+        </foreach>
+        and eu_status in ('1','8','0')<!-- 未完成配药，和暂挂,生成的 -->
+        and flag_prep='0'
+        and flag_canc='0'
+    </update>
+
+    <update id="cancelPresDosageInfo" parameterType="java.util.Map">
+        update ex_pres_occ
+        set eu_status='1',
+        flag_prep='0',
+        date_prep=null,
+        pk_emp_prep=null,
+        name_emp_prep=null
+        where pk_presocc in
+        <foreach collection="pkPresoccs" item="pkPresocc" open="(" close=")" separator=",">
+            #{pkPresocc,jdbcType=VARCHAR}
+        </foreach>
+        and eu_status='2'
+        and pk_emp_prep=#{pkEmp,jdbcType=VARCHAR}
+    </update>
+
+    <update id="doPresPending" parameterType="java.util.Map">
+        update ex_pres_occ
+        set eu_status='8',
+        flag_susp='1'
+        where pk_presocc in
+        <foreach collection="list" item="pkPresocc" open="(" separator="," close=")">
+            #{pkPresocc,jdbcType=VARCHAR}
+        </foreach>
+        and flag_susp='0'
+        and flag_prep='0'
+    </update>
+
+    <select id="qryDosageFormInfo" parameterType="java.util.Map" resultType="DynaBean">
+        select distinct du.pk_deptunit,
+        du.code winno,
+        du.name name_pc
+        from bd_dept_unit du
+        <!-- inner join bd_dept_unit du on rl.pk_deptunit_rl=du.pk_deptunit -->
+        where du.pk_dept=#{pkDept,jdbcType=VARCHAR} and
+        du.eu_unittype='1'
+        and du.eu_butype=#{euButype,jdbcType=VARCHAR}
+        <if test="pkDeptunit!=null and pkDeptunit !=''">
+            and du.pk_deptunit &lt;&gt;#{pkDeptunit,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+    <update id="updateCodeBasketNull">
+        UPDATE EX_PRES_OCC
+        WITH (TABLOCKX)
+        SET CODE_BASKET=NULL
+        WHERE EU_STATUS = '2'
+        and FLAG_CONF = '0'
+        and PK_PV not in (
+        select PK_PV from EX_PRES_OCC where pk_presocc in
+        <foreach collection="pkPresoccs" item="pkPresocc" open="(" separator="," close=")">
+            #{pkPresocc,jdbcType=VARCHAR}
+        </foreach>
+        )
+        <if test="codeBasket!=null and codeBasket !=''">
+            and code_basket =#{codeBasket,jdbcType=VARCHAR}
+        </if>
+    </update>
+
+
+</mapper>

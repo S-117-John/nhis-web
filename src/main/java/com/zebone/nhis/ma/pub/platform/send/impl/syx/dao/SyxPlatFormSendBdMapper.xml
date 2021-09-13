@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.platform.send.impl.syx.dao.SyxPlatFormSendBdMapper">
+	<select id="getDdDefdocList" parameterType="java.lang.String" resultType="DynaBean">
+		select * from bd_defdoclist where code = #{codeDefdoclist}
+	</select>
+	<select id="getDdDefdocListByPk" parameterType="java.lang.String" resultType="DynaBean">
+		select * from bd_defdoclist where pk_defdoclist = #{pkDefdoclist}
+	</select>
+	<select id="qryDeptInfo" parameterType="java.lang.String" resultType="DynaBean">
+		SELECT
+      dept.code_dept,
+      dept.old_id,
+      dept.old_code,
+      dept.name_dept,
+      dept.pk_dept,
+      doc.code dept_type_code,
+      doc.name dept_type_name,
+      dept.name_place,
+      dept.telno_dept,
+      area.name_area, 
+      fat.OLD_ID fat_old_id,
+      fat.old_code fat_old_code ,
+      fat.CODE_DEPT fat_code_dept,
+      fat.NAME_DEPT fat_name_dept,
+      fat.PK_DEPT fat_pk_dept,
+      case dept.flag_active when '1' then 'active' 
+      else 'inactive' end flag_active
+      
+    FROM bd_ou_dept dept LEFT JOIN bd_ou_dept fat ON fat.pk_dept = dept.pk_father
+      left join bd_ou_dept_type depttype on depttype.PK_DEPT=dept.PK_DEPT
+      left join bd_ou_org_area area on dept.pk_orgarea = area.pk_orgarea
+		left JOIN bd_defdoc doc ON doc.code = depttype.dt_depttype AND code_defdoclist = '010202'
+			
+			where dept.pk_dept=#{pkDept,jdbcType=VARCHAR}
+	</select>
+	<select id="qryEmpInfoByDept" parameterType="java.lang.String" resultType="DynaBean">
+	 	select
+			emp.code_emp,
+			emp.old_id,
+			emp.old_code,
+			emp.name_emp,
+			dept.old_code,
+			dept.code_dept,
+			dept.name_dept
+		from bd_ou_employee emp left join bd_ou_empjob job on job.pk_emp = emp.pk_emp
+			left join bd_ou_dept dept on dept.pk_dept = job.pk_dept
+		where emp.pk_emp=#{pkEmp,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="selectDefdocsByList" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.base.bd.code.BdDefdoc">
+	    select code_defdoclist,name,code from bd_defdoc where del_flag = '1' and pk_defdoc in
+	    <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+           #{item}
+        </foreach> 
+	</select>
+	
+</mapper>

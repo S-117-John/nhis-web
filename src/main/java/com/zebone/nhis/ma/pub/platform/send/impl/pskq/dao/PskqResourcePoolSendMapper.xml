@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.platform.send.impl.pskq.dao.PskqResourcePoolSendMapper">
+
+	<select id="getPatiOpRegChargeInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select * from bl_settle 
+		where dt_sttype = '00'
+		 and pk_pv= #{pkPv} 
+		 and flag_canc #{flagCanc} 
+    </select>
+
+    <select id="getPatiOpRegInfo" parameterType="java.util.Map" resultType="DynaBean">
+		select
+		    'MB2C97281' org_uuid,
+   		    '南方医科大学深圳口腔医院' org_name,
+			'' pool_org_uuid,
+			dept.code_dept  org_dept_uuid,
+			'' pool_dept_uuid,
+			dept.name_dept org_dept_Name,
+			emp.code_emp  org_dept_emp_uuid,
+			'' pool_Dept_Emp_Uuid,
+			emp.name_emp org_Dept_Emp_Name,
+			'' doctor_type,
+			case when op.eu_regtype='1' then 1 else 99 end schedule_type,
+			case dateslot.code_dateslot when '0101' then 1 when '0102' then 2
+			 when '0202' then 4 when '0203' then 3 when '0301' then 9
+			 else 1 end time_part_type,
+			case when apptpv.eu_apptmode ='1' THEN 3 else
+			(case when op.eu_regtype='1' then 1 else 99 end ) end  order_res_type,
+			to_char(sch.date_work,'yyyy-MM-dd') sdate,
+			substr(dateslot.time_begin,0,5) time_Begin,
+			substr(dateslot.time_end,0,5) time_End,
+			'' order_Serial,
+			PV.code_pv his_Order_Id,
+			to_char(pv.date_reg,'yyyy-MM-dd HH:mm:ss') order_Apply_Time,
+			to_char(pv.ts,'yyyy-MM-dd HH:mm:ss') order_Edit_Time,
+			'' order_Form_IP,
+			'' order_Level,
+			pi.name_pi pname,
+			case pi.dt_sex  when '02'  then 1 when '03' then 2 else 0 end sex,
+			to_char(pi.birth_date,'yyyy-MM-dd') birthday,
+			case pi.dt_idtype when '01' then '1' when '10' then '3' when '13' then '6'
+			when '08' then '7'  when '03' then '8'  else '99' end idcard_Type,
+			PI.id_no idcard,
+			PI.insur_no insurance_Card,
+			'' medical_Card_Type,
+			'' medical_Card,
+			PI.CODE_PI patient_Id,
+			'' his_Offer_Passwd,
+			pi.mobile,
+			pi.addr_cur_dt home_addr,
+			'' country_Code,
+			'' nation_Code,
+			case when op.flag_first ='1' then 1 else 2  end  medical_Type,
+			'' condition,
+      		case when hp.code = '01' then 99 else 1 end  pay_Charge_Type,
+			99 cancel_Reason,
+			to_char(pv.date_cancel,'yyyy-MM-dd HH:mm:ss') cancel_Time,
+			case pv.eu_status when '0' then 2  when '9' then 5 else 4 end status,
+			'his' service_Uuid,
+			'江苏振邦' service_Name 
+		from PV_ENCOUNTER pv 
+		inner join pi_master pi on PI.pk_pi = PV.pk_pi
+		inner join pv_op op on OP.pk_pv = pv.pk_pv
+		left join BD_HP HP on HP.PK_HP=pv.PK_INSU
+		left join SCH_APPT_PV apptpv on apptpv.pk_pv=pv.pk_pv
+		left join SCH_APPT appt on appt.pk_schappt=apptpv.pk_schappt
+		left join BD_CODE_DATESLOT dateslot on dateslot.pk_dateslot = OP.pk_dateslot
+		left join SCH_SCH sch on SCH.pk_sch = op.pk_sch
+		left join bd_ou_dept dept on dept.pk_dept=op.pk_dept_pv
+		left join BD_OU_EMPLOYEE emp on emp.pk_emp=op.pk_emp_pv
+		where pv.eu_pvtype ='1' and pv.pk_pv= #{pkPv}    
+    </select>
+
+    <select id="getPatiAdtRegInfo" parameterType="java.util.Map" resultType="DynaBean">
+   		select 
+   			'MB2C97281' org_uuid,
+   		    '南方医科大学深圳口腔医院' org_name,
+			pi.code_ip  inpatient_no,
+			ip.ip_times  inpatient_times,
+			to_char(pv.date_begin,'yyyy-MM-dd hh:mm:ss')  admission_date,
+			pi.name_pi as pname,
+			case  pi.dt_sex  when '02'  then 1 when '03' then 2 else 0 end sex,
+			to_char(pi.birth_date,'yyyy-MM-dd') birthday,
+			case pi.dt_idtype when '01' then 1 when '10' then 3 when '13' then 6 
+			when '08' then 7  when '03' then 8  else 99 end idcard_type,
+			pi.id_no idcard,
+			pi.mobile,
+			pi.addr_cur_dt home_addr
+		from pv_encounter pv 
+		inner join pi_master pi on pi.pk_pi=pv.pk_pi
+		inner join  pv_ip ip on ip.pk_pv = pv.pk_pv
+		where pv.eu_pvtype ='3' and pv.pk_pv= #{pkPv}     
+    </select>
+    
+     <select id="getPatiHospInfo" parameterType="java.util.Map" resultType="DynaBean">
+   		select 
+   		    'MB2C97281' org_uuid,
+   		    '南方医科大学深圳口腔医院' org_name,
+			to_char(pv.date_begin,'yyyy-MM-dd hh:mm:ss')  discharge_date,
+			pi.code_ip  inpatient_no,
+			ip.ip_times  inpatient_times,
+			pi.name_pi as pname 
+		from pv_encounter pv 
+		inner join pi_master pi on pi.pk_pi=pv.pk_pi
+		inner join pv_ip ip on ip.pk_pv = pv.pk_pv
+		where pv.eu_pvtype ='3' and pv.pk_pv= #{pkPv}   
+    </select>
+    
+</mapper>

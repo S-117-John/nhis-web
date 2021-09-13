@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.pivas.dao.BdPivasMapper">
+<select id="findAllPivasBatchs" parameterType="java.lang.String" resultType="com.zebone.nhis.common.module.ex.pivas.conf.BdPivasBatch">
+	select * from bd_pivas_batch bt where bt.del_flag='0' and bt.pk_dept=#{pkDept,jdbcType=VARCHAR}
+</select>
+
+<select id="queryBdPivasPds" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.ex.pivas.conf.BdPivasPd">
+	select * from bd_pivas_pd where del_flag='0' and pk_org = #{pkOrg,jdbcType=VARCHAR}
+</select>
+
+<select id="queryBeImportedPds"  resultType="com.zebone.nhis.common.module.scm.pub.BdPd">
+	select distinct nvl(pk_pd,'空键') as pk_pd from bd_pivas_pd where del_flag='0'
+</select>
+
+<select id="queryPdsByCondition" parameterType="com.zebone.nhis.ex.pivas.vo.PdConditionParam" resultType="DynaBean">
+	select p.pk_pd,p.code,p.name,p.spec,f.name as factory_name from bd_pd p 
+	left join (select * from bd_factory where del_flag='0') f on f.pk_factory = p.pk_factory
+	where p.del_flag='0' 
+	<if test="dtPharm != null and dtPharm != ''">
+		and p.dt_pharm = #{dtPharm,jdbcType=VARCHAR} 
+	</if>
+	<if test="dtPois != null and dtPois != ''">
+		and p.dt_pois = #{dtPois,jdbcType=VARCHAR} 
+	</if>
+	<if test="dtAnti != null and dtAnti != ''">
+		and p.dt_anti = #{dtAnti,jdbcType=VARCHAR} 
+	</if>
+	<if test="flagTpn != null and flagTpn != ''">
+		and p.flag_tpn = #{flagTpn,jdbcType=CHAR} 
+	</if>
+	<if test="pkPdList != null and pkPdList.size()>0">
+		and p.pk_pd not in 
+		<foreach collection="pkPdList" index="index" item="item" open="(" separator="," close=")">
+			 #{item}
+		</foreach>
+	</if>
+</select>
+
+</mapper>

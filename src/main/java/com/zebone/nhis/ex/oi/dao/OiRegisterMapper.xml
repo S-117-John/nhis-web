@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ex.oi.dao.OiRegisterMapper">
+
+  <!-- 插入门诊处方信息到输液登记临时表 -->
+  <insert id="InsertOiRegisterTempList" parameterType="java.util.Map"> 
+        
+  </insert>
+  
+    <!-- 获得空闲座位列表 -->
+  <select id="getRegPlaceIvList" parameterType="java.util.Map" resultType="DynaBean"> 
+	   select 
+	   		* 
+	   from bd_place_iv 
+	   where del_flag = '0' and flag_active = '1' 
+	   and (eu_status = '0' and (pk_pi is null or pk_pi = '') or (eu_status = '1' and pk_pi = #{pkPi,jdbcType=VARCHAR} )) 
+	   and pk_deptiv = #{pkDeptiv,jdbcType=VARCHAR}
+  </select>   
+  
+  <!-- 获得未登记门诊患者输液登记列表 有注射 3、输液 4、皮试 0499、雾化 0201  的处方-->
+  <select id="getOiRegisterPatientList" parameterType="java.util.Map" resultType="DynaBean"> 
+    select 
+      a.pk_pi,
+      b.pk_pv,
+      a.name_pi,
+      a.birth_date,
+      sex.name sex,
+      a.code_pi,
+      b.code_pv,
+      b.date_begin,
+      b.age_pv,
+      d.pk_pres,
+      g.pres_no,
+      null pk_settle,
+      h.name name_idtype,
+      a.dt_idtype,
+      a.id_no,
+      hp.name hp,
+	  dept.name_dept, 
+      emp.name_emp  as name_emp_pv,    
+      sum(case when f.pk_cgop_back is null and f.flag_settle = '1' then 1 
+                    when f.pk_cgop_back is not null and f.flag_settle = '1' then -1 
+                    else 0 end) flag_settle
+    from cn_order d 
+    inner join pv_encounter b on d.pk_pi = b.pk_pi
+    inner join pv_op op on b.pk_pv=op.pk_pv 
+    inner join pi_master a on a.pk_pi = d.pk_pi and b.pk_pv = d.pk_pv 
+    inner join cn_prescription g on d.pk_pres = g.pk_pres
+    left outer join bd_ou_dept dept on b.pk_dept=dept.pk_dept
+    left outer join bd_defdoc sex on a.dt_sex=sex.code and sex.code_defdoclist='000000'
+    left outer join bd_defdoc h on a.dt_idtype = h.code and h.code_defdoclist = '000007'
+    left outer join bd_hp hp on b.pk_insu=hp.pk_hp
+    left outer join bd_ou_employee emp on b.pk_emp_phy = emp.pk_emp
+    inner join bd_supply e on d.code_supply = e.code
+    inner join bl_op_dt f on d.pk_pres = f.pk_pres
+    where d.pk_pres is not null and 
+      (1=1 
+      <if test="infuMode.indexOf('0') >= 0 ">
+        or e.dt_excardtype = '4' 
+      </if>
+      <if test="infuMode.indexOf('1') >= 0 ">
+        or e.dt_excardtype = '3' 
+      </if>
+      <if test="infuMode.indexOf('2') >= 0 ">
+        or d.code_supply = '0499'         
+      </if> 
+      <if test="infuMode.indexOf('3') >= 0 ">
+        or d.code_supply = '0201'      
+      </if>           
+      ) 
+       and (d.code_supply in ('0499', '0201') or e.dt_excardtype in ('3', '4')) 
+       and d.pk_cnord not in (select regdt.pk_cnord from ex_infusion_reg_dt regdt 
+                                      inner join ex_infusion_register reg on reg.pk_infureg = regdt.pk_infureg
+                                      where d.pk_pres = reg.pk_pres) 
+       and op.date_begin &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'YYYYMMDDHH24MISS') and 
+              op.date_begin &lt; to_date(#{dateEnd,jdbcType=VARCHAR},'YYYYMMDDHH24MISS')	
+       and b.pk_org =  #{pkOrg,jdbcType=VARCHAR}          
+    <if test ="qryMode == '0'.toString() ">
+      and (a.pk_pi = #{qryCode,jdbcType=VARCHAR} or a.id_no = #{qryCode,jdbcType=VARCHAR} or
+              a.insur_no = #{qryCode,jdbcType=VARCHAR} or g.pres_no = #{qryCode,jdbcType=VARCHAR})
+    </if>     
+    group by 
+      a.pk_pi,
+      b.pk_pv,
+      a.name_pi,
+      a.birth_date,
+      sex.name,
+      a.code_pi,
+      b.code_pv,
+      b.date_begin,
+      b.age_pv,
+      d.pk_pres,
+      g.pres_no,
+      h.name,
+      a.dt_idtype,
+      a.id_no,
+      hp.name,
+      dept.name_dept, 
+      emp.name_emp
+    having sum(case when f.pk_cgop_back is null and f.flag_settle = '1' then 1 
+                    when f.pk_cgop_back is not null and f.flag_settle = '1' then -1 
+                    else 0 end) > 0
+    order by g.pres_no              
+  </select>  
+    
+  <!-- //获得患者列表 -->
+  <select id="getPatientList" parameterType="java.util.Map" resultType="DynaBean"> 
+    select 
+      a.pk_pi,
+      b.pk_pv,
+      a.name_pi,
+      a.birth_date,
+      sex.name sex,
+      a.code_pi,
+      b.code_pv,
+      b.date_begin,
+      h.name name_idtype,
+          a.dt_idtype,
+          a.id_no
+    from pi_master a 
+    inner join pv_encounter b on a.pk_pi = b.pk_pi
+    inner join bd_ou_dept c on b.pk_dept = c.pk_dept
+    inner join bd_defdoc sex on a.dt_sex=sex.code and sex.code_defdoclist='000000'
+    left outer join bd_defdoc h on a.dt_idtype = h.code and h.code_defdoclist = '000007'
+        where b.name_pi like #{patientName,jdbcType=VARCHAR} 
+    order by b.code_pv desc        
+  </select> 
+    
+  <!-- //获得待登记处方列表 -->
+  <select id="getOrderList" parameterType="java.util.Map" resultType="DynaBean"> 
+		select 
+		       distinct
+		       ord.*,  
+		       unit.name unit,  --单位名称
+		       unit_dos.name unit_dos,--单位名称
+		       sup.name supply, --用法名称
+		       freq.name freq,  --频次名称
+		       pd.pk_unit_min, 
+		       pd.pk_unit_wt,  
+		       pd.pk_unit_vol, 
+		       pd.vol 
+		from cn_order ord
+		       left outer join bd_unit unit on ord.pk_unit_cg=unit.pk_unit
+		       left outer join bd_unit unit_dos on ord.pk_unit_dos=unit_dos.pk_unit
+		       left outer join bd_term_freq freq on ord.code_freq=freq.code
+		       left outer join bd_supply sup on ord.code_supply=sup.code
+		       left outer join bd_pd pd on ord.pk_ord=pd.pk_pd
+		 where 
+		           (1=1 
+      				<if test="infuMode.indexOf('0') >= 0 ">
+        				or sup.dt_excardtype = '4' 
+      				</if>
+      				<if test="infuMode.indexOf('1') >= 0 ">
+        				or sup.dt_excardtype = '3' 
+      				</if>
+      				<if test="infuMode.indexOf('2') >= 0 ">
+        				or ord.code_supply = '0499'         
+      				</if> 
+      				<if test="infuMode.indexOf('3') >= 0 ">
+        				or ord.code_supply = '0201'      
+      				</if>           
+      				)  and
+      		  (ord.code_supply in ('0499', '0201') or sup.dt_excardtype in ('3', '4')) and 
+		      ord.pk_cnord not in (select regdt.pk_cnord from ex_infusion_reg_dt regdt 
+                                      inner join ex_infusion_register reg on reg.pk_infureg = regdt.pk_infureg
+                                      where ord.pk_pres = reg.pk_pres) and
+		      ord.pk_pres=#{pkPres,jdbcType=VARCHAR}     
+  </select>     
+  <!-- //获得处方收费明细列表 -->
+  <select id="getPresChargeList" parameterType="java.util.Map" resultType="DynaBean"> 
+		select 
+             *
+		from bl_op_dt charge
+		where 
+		     charge.pk_pres=#{pkPres,jdbcType=VARCHAR} and
+		     pk_cnord in (select pk_cnord from cn_order ord left outer join bd_supply sup on ord.code_supply=sup.code 
+		                        where (ord.code_supply in ('0499', '0201') or sup.dt_excardtype in ('3', '4')) and
+		                                ord.pk_pres = #{pkPres,jdbcType=VARCHAR} and
+      									(1=1 
+      									<if test="infuMode.indexOf('0') >= 0 ">
+        									or sup.dt_excardtype = '4' 
+      									</if>
+      									<if test="infuMode.indexOf('1') >= 0 ">
+        									or sup.dt_excardtype = '3' 
+      									</if>
+      									<if test="infuMode.indexOf('2') >= 0 ">
+        									or ord.code_supply = '0499'         
+      									</if> 
+      									<if test="infuMode.indexOf('3') >= 0 ">
+        									or ord.code_supply = '0201'      
+      									</if>           
+      									) 
+      								)
+  </select>    
+  <!-- //获得处方收费明细列表 -->
+  <select id="getPresChargeVo" parameterType="java.util.Map" resultType="DynaBean"> 
+		select 
+             *
+		from bl_op_dt charge
+		where 
+		     charge.pk_cgop=#{pkCgop,jdbcType=VARCHAR}
+  </select>
+  <!-- 获得已登记门诊患者输液登记列表 -->
+  <select id="getRegisteredPatientList" parameterType="java.util.Map" resultType="DynaBean"> 
+    select 
+      a.pk_pi,
+      b.pk_pv,
+      a.name_pi,
+      a.birth_date,
+      sex.name sex,
+      a.code_pi,
+      b.code_pv,
+      b.date_begin,
+      b.age_pv,
+      d.pk_pres,
+      g.pres_no,
+      null pk_settle,
+      h.name name_idtype,
+      a.dt_idtype,
+      a.id_no,
+      hp.name hp,
+	  dept.name_dept, 
+      emp.name_emp  as name_emp_pv,
+      d.date_reg,
+      d.register_no,
+      d.pk_infureg
+    from ex_infusion_register d 
+    inner join pv_encounter b on d.pk_pi = b.pk_pi
+    inner join pi_master a on a.pk_pi = d.pk_pi and b.pk_pv = d.pk_pv 
+    inner join cn_prescription g on d.pk_pres = g.pk_pres
+    left outer join bd_ou_dept dept on b.pk_dept=dept.pk_dept
+    left outer join bd_defdoc sex on a.dt_sex=sex.code and sex.code_defdoclist='000000'
+    left outer join bd_defdoc h on a.dt_idtype = h.code and h.code_defdoclist = '000007'
+    left outer join bd_hp hp on b.pk_insu=hp.pk_hp
+    left outer join bd_ou_employee emp on b.pk_emp_phy = emp.pk_emp
+    inner join ex_infusion_reg_dt regdt on d.pk_infureg = regdt.pk_infureg and (
+      1 = 1 
+      <if test="infuMode.indexOf('0') >= 0 ">
+      	or regdt.eu_type = '0' 
+      </if>
+      <if test="infuMode.indexOf('1') >= 0 ">
+        or regdt.eu_type = '1' 
+      </if>
+      <if test="infuMode.indexOf('2') >= 0 ">
+        or regdt.eu_type = '2'      
+      </if> 
+      <if test="infuMode.indexOf('3') >= 0 ">
+       	or regdt.eu_type = '3'     
+      </if>           
+      )
+    where d.date_reg &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'YYYYMMDDHH24MISS') and 
+              d.date_reg &lt; to_date(#{dateEnd,jdbcType=VARCHAR},'YYYYMMDDHH24MISS') and
+              d.eu_status not in ('2', '9')  and
+              d.pk_org =  #{pkOrg,jdbcType=VARCHAR}   
+     <if test ="qryMode == '0'.toString() ">
+      and (a.pk_pi = #{qryCode,jdbcType=VARCHAR} or a.id_no = #{qryCode,jdbcType=VARCHAR} or
+              a.insur_no = #{qryCode,jdbcType=VARCHAR} or g.pres_no = #{qryCode,jdbcType=VARCHAR}) 
+     </if>
+    group by 
+      a.pk_pi,
+      b.pk_pv,
+      a.name_pi,
+      a.birth_date,
+      sex.name,
+      a.code_pi,
+      b.code_pv,
+      b.date_begin,
+      b.age_pv,
+      d.pk_pres,
+      g.pres_no,
+      h.name,
+      a.dt_idtype,
+      a.id_no,
+      hp.name,
+      dept.name_dept, 
+      emp.name_emp,
+      d.date_reg,
+      d.register_no,
+      d.pk_infureg
+    order by a.name_pi, g.pres_no           
+  </select>           
+</mapper>

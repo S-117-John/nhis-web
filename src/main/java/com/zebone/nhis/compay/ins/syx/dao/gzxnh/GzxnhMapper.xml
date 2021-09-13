@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.compay.ins.syx.dao.gzxnh.GzxnhMapper">
+	<select id="qryXnhCodePv" parameterType="java.lang.String"
+		resultType="java.lang.String">
+		select igvx.code_pv from ins_gzyb_visit_xnh igvx
+		inner join ins_gzyb_visit igv on igv.pk_visit=igvx.pk_visit
+		where
+		igvx.del_flag='0' and igv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+	</select>
+
+	<select id="qryXnhPiInfoByPkPv" parameterType="java.lang.String"
+		resultType="DynaBean">
+		select ixr.*,igvx.* from ins_gzyb_visit igv
+		inner join ins_xnh_refdoc ixr on ixr.pk_pv =igv.pk_pv
+		inner join ins_gzyb_visit_xnh igvx on igvx.pk_visit=igv.pk_visit
+		where
+		igv.del_flag='0' and ixr.del_flag='0' and igvx.del_flag='0' and
+		igv.pk_pv=#{pkPv,jdbcType=VARCHAR}
+        <if test="tyPe == '1'">
+			 and igv.EU_STATUS_ST='1'
+		</if>
+		 <if test="tyPe == '0'">
+			 and igv.EU_STATUS_ST='0'
+		</if>
+	</select>
+
+	<select id="qryXnhJsInfo" parameterType="java.lang.String"
+		resultType="DynaBean">
+		select igsx.* from ins_gzyb_st_xnh igsx
+		inner join ins_gzyb_st igs on igsx.pk_insst=igs.pk_insst and igs.del_flag='0'
+		where igs.pk_visit=#{pkVisit,jdbcType=VARCHAR} and igsx.del_flag='0'
+	</select>
+
+	<select id="qryBdItemAndOrderByPkPv" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.compay.ins.syx.vo.gzxnh.XnhBlipdtVo">
+		select distinct idt.PK_CGIP,idt.CODE_CG,idt.NAME_CG,idt.SPEC,idt.PK_UNIT,idt.PRICE,idt.AMOUNT,idt.QUAN,idt.NAME_EMP_APP,
+idt.DATE_HAP,idt.CREATE_TIME,idt.TS as MODITY_TIME,idt.AMOUNT_ADD,idt.RATIO_ADD,
+		invm.code as CODE_INVCATEITEM,
+		invm.name as NAME_INVCATEITEM,
+		item.code_hp as ITEM_CODE,
+		iitm.code_center as CODE_CENTER,
+		iitm.name_item as NAME_ITEM,
+		case when iitm.eu_staple in ('0','1') then idt.amount else 0 end as KBXAMOUNT,
+		item.dt_abrd as DT_ABRD,
+		item.name_abrd as NAME_ABRD,
+		case when iitm.eu_staple in ('0','1') then '1'
+		else '2' end as EU_STAPLE,
+		'' ds 
+		from bl_ip_dt idt
+		inner join (select itm.pk_item as
+		pk_item,code,name,spec,price,'9' as dt_abrd,'其他' as
+		name_abrd,itm.pk_itemcate as pk_itemcate,itm.code_hp as code_hp from
+		bd_item itm
+		union
+		select pd.pk_pd as pk_item,pd.code,pd.name,pd.spec,pd.price,
+		case when dt_abrd='01' then '1'
+		when dt_abrd='02' then '2'
+		when dt_abrd='03' then '3'
+		else '9' end as dt_abrd ,
+		case when dt_abrd='01' then '国产'
+		when dt_abrd='02' then '进口'
+		when dt_abrd='03' then '合资'
+		else '其他' end as name_abrd,pd.pk_itemcate
+		as pk_itemcate,pd.code_hp as code_hp from bd_pd pd
+		) item on
+		idt.pk_item=item.pk_item
+		left join (
+		select invc.pk_itemcate, invm.pk_invcateitem,invm.code,invm.name
+		from bd_invcate_itemcate invc
+		inner join bd_invcate_item invm on invm.pk_invcateitem=invc.pk_invcateitem
+		inner join bd_invcate inv on inv.pk_invcate=invm.pk_invcate where inv.name='国家新农合平台'
+		and inv.del_flag='0' and invm.del_flag='0' and invc.del_flag='0') invm on item.pk_itemcate=invm.pk_itemcate
+		left join (select distinct im.eu_hpdicttype,im.code_item, imap.code_center,
+		im.flag_rest,imap.code_hosp,im.eu_staple,im.name_item from ins_gzyb_item im
+		inner join ins_gzyb_itemmap imap on imap.code_center=im.code_item where im.flag_valid='1' and imap.flag_audit='1' and im.eu_hpdicttype='1' and imap.eu_hpdicttype='1' ) iitm
+		on iitm.code_hosp=item.code_hp 
+		where idt.flag_insu='0' and (idt.flag_settle='0' or idt.PK_SETTLE is null)
+		and idt.pk_pv=#{pkPv,jdbcType=VARCHAR} and idt.del_flag='0'
+	</select>
+
+	<select id="qryPreInpTempInfo" parameterType="java.lang.String"
+		resultType="DynaBean">
+		SELECT pv.DT_LEVEL_DISE as CodeStatusAdmit, pv.DT_OUTCOMES
+		as CodeStatusDis ,dm.CODE_INSDEPT as CodeDeptDis,dm.NAME_INSDEPT as NameDeptDis
+		FROM PV_IP pv INNER JOIN INS_DEPT_MAP dm on pv.PK_DEPT_ADMIT=dm.PK_DEPT
+		where dm.DEL_FLAG='0' and
+		pv.PK_PV=#{pkPv,jdbcType=VARCHAR}
+	</select>
+
+	<select id="qryPageHeaderVo" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.compay.ins.syx.vo.gzxnh.SettlePageHeaderVo">
+		select ixr.name_pi as NamePi,ixr.idno as Idno,ixr.birthday
+		as Birthday,igvx.name_pvorg as OrgName,
+		igvx.code_ip as CodeIp,igvx.date_admit as DateInt,igs.date_outp as DateOut,igs.date_st as DateCC,
+		igsx.amount as Amount,igsx.amt_kbx as AmtKbx,igsx.amt_sjbx as AmtSjbx,igsx.amt_bndljbx as AmtBngljbx,
+		igsx.amt_dbbxkbc as AmtDbbxkbc,igsx.amt_dbbxsjbc as AmtDbbxsjbc,
+		igsx.amt_df as AmtDf,igsx.amt_qfx as AmtQfx,igsx.amt_grzf as AmtGrzf,igsx.amt_fdx as AmtFdx,ixr.name_chs as NameChs,
+		ixr.name_chsh as NameChsh,ixr.name_chqx as NameChqx,
+		igvx.tel_rel as PaticontNumber,igsx.name_main_diag as NameMainDiag
+		from ins_xnh_refdoc ixr
+		inner join ins_gzyb_visit igv on ixr.pk_pv=igv.pk_pv
+		inner join ins_gzyb_visit_xnh igvx on igv.pk_visit=igvx.pk_visit
+		inner join ins_gzyb_st igs on igs.pk_pv=ixr.pk_pv
+		inner join ins_gzyb_st_xnh igsx on igs.pk_insst=igsx.pk_insst
+		where ixr.del_flag='0' and
+		igv.del_flag='0' and igvx.del_flag='0' and igs.del_flag='0' and
+		ixr.pk_pv=#{pkPv,jdbcType=VARCHAR}
+
+	</select>
+
+	<select id="qryPageDtVos" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.compay.ins.syx.vo.gzxnh.SettlePageDtVo">
+		select sum(case when iitm.eu_staple in ('0','1','2') then
+		idt.amount else 0 end ) as amt , sum(idt.amount_pi) as amtPi,itvm.code as code, itvm.name as name
+		from bl_ip_dt idt inner join (select pk_item ,code,name,spec,price,'9' as
+		dt_abrd,'其他' as name_abrd,pk_itemcate,code_hp from bd_item
+		union select pd.pk_pd as pk_item,pd.code,pd.name,pd.spec,pd.price, case
+		when dt_abrd='01' then '1' when dt_abrd='02' then '2' when
+		dt_abrd='03' then '3' else '9' end as dt_abrd,
+		case when dt_abrd='01' then '国产' when dt_abrd='02' then '进口' when
+		dt_abrd='03' then '合资' else '其他' end as name_abrd,pd.pk_itemcate,code_hp from
+		bd_pd pd ) item on idt.pk_item=item.pk_item
+		left join ( select invc.pk_itemcate,
+		invm.pk_invcateitem,invm.code,invm.name from bd_invcate_itemcate invc
+		inner join bd_invcate_item invm on
+		invm.pk_invcateitem=invc.pk_invcateitem
+		inner join bd_invcate inv on inv.pk_invcate=invm.pk_invcate where
+		inv.name='国家新农合平台'
+		and inv.del_flag='0' and invm.del_flag='0' and invc.del_flag='0') itvm on
+		item.pk_itemcate=itvm.pk_itemcate
+		left join (select distinct im.eu_hpdicttype,im.code_item, imap.code_center,
+		im.flag_rest,imap.code_hosp,im.eu_staple,im.name_item from ins_gzyb_item im
+		inner join ins_gzyb_itemmap imap on imap.code_center=im.code_item where im.flag_valid='1' and im.eu_hpdicttype='1' and imap.eu_hpdicttype='1' ) iitm
+		on iitm.code_hosp=item.code_hp 
+		where  idt.pk_pv=#{pkPv,jdbcType=VARCHAR}  and idt.del_flag='0'
+		group by itvm.code , itvm.name
+	</select>
+
+	<select id="qryXNhDeptVo" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.compay.ins.syx.vo.gzxnh.XnhDeptVo">
+		select CODE_INSDEPT ,NAME_INSDEPT from ins_dept_map where
+		pk_dept=#{pkeptadmit,jdbcType=VARCHAR} and DEL_FLAG='0'
+
+	</select>
+
+	<select id="queryShareAmount" parameterType="java.util.Map"
+		resultType="java.lang.String">
+		select sum(case when iitm.eu_staple in ('0','1') then
+		idt.amount else 0 end ) as amountpi
+		from bl_ip_dt idt inner join
+		(select pk_item ,code,name,spec,price,'9' as dt_abrd,'其他' as
+		name_abrd,pk_itemcate,code_hp from bd_item
+		union select pd.pk_pd as
+		pk_item,pd.code,pd.name,pd.spec,pd.price, case when dt_abrd='01' then
+		'1' when dt_abrd='02' then '2' when dt_abrd='03' then '3' else '9' end
+		as dt_abrd,
+		case when dt_abrd='01' then '国产' when dt_abrd='02' then
+		'进口' when dt_abrd='03' then '合资' else '其他' end as
+		name_abrd,pd.pk_itemcate,code_hp from bd_pd pd ) item on
+		idt.pk_item=item.pk_item
+		left join ( select invc.pk_itemcate,
+		invm.pk_invcateitem,invm.code,invm.name from bd_invcate_itemcate invc
+		inner join bd_invcate_item invm on
+		invm.pk_invcateitem=invc.pk_invcateitem
+		inner join bd_invcate inv on
+		inv.pk_invcate=invm.pk_invcate where inv.name='国家新农合平台'
+		and inv.del_flag='0' and invm.del_flag='0' and invc.del_flag='0') invm on
+		item.pk_itemcate=invm.pk_itemcate
+		left join (select distinct im.eu_hpdicttype,im.code_item, imap.code_center,
+		im.flag_rest,imap.code_hosp,im.eu_staple,im.name_item from ins_gzyb_item im
+		inner join ins_gzyb_itemmap imap on imap.code_center=im.code_item where im.flag_valid='1' and im.eu_hpdicttype='1' and imap.eu_hpdicttype='1' ) iitm
+		on iitm.code_hosp=item.code_hp 
+		where  idt.pk_pv=#{pkPv,jdbcType=VARCHAR} and (idt.flag_settle='0' or idt.PK_SETTLE is null) and idt.del_flag='0'
+	</select>
+
+	<select id="qryDiagVo" parameterType="java.lang.String"
+		resultType="com.zebone.nhis.compay.ins.syx.vo.gzxnh.DiagVo">
+		select a.DESC_DIAG as DescDiag ,a.CODE_ICD as CodeDiag from PV_DIAG a where a.DEL_FLAG='0' and a.FLAG_MAJ='1' and
+		a.PK_PV=#{pkPv,jdbcType=VARCHAR}
+	</select>
+</mapper>

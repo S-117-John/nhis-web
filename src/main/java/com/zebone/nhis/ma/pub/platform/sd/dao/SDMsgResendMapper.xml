@@ -1,0 +1,432 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.ma.pub.platform.sd.dao.SDMsgResendMapper">
+
+	<select id="queryOrder" parameterType="java.util.Map" resultType="DynaBean">
+		select
+			co.pk_cnord,co.eu_pvtype,co.pk_pv,co.pk_pi,co.code_ordtype,
+			co.eu_always,co.ordsn,co.ordsn_parent,co.pk_ord,co.code_ord,co.name_ord,
+			co.desc_ord,co.code_apply,co.code_freq,co.spec,co.dosage,co.pk_unit_dos,
+			co.quan,co.pk_unit,co.code_supply,co.quan_cg,co.pk_unit_cg,co.pack_size,
+			co.price_cg,co.note_supply,co.days,co.drip_speed,co.ords,co.flag_first,
+			co.last_num,co.pk_dept_exec,co.eu_status_ord,co.name_emp_ord,
+			co.flag_durg,co.flag_self,co.flag_note,co.flag_base,co.flag_bl,co.quan_bed,
+			co.pk_wg,co.pk_emp_input,co.name_emp_input,co.pk_emp_ord,co.note_ord,co.pk_dept_ns,
+			co.pk_emp_chk,co.name_emp_chk,co.pk_emp_stop,co.name_emp_stop,
+			co.flag_stop,co.pk_emp_stop_chk,co.name_emp_stop_chk,co.flag_stop_chk,
+			co.pk_emp_erase,co.name_emp_erase,co.flag_erase,co.pk_unit_dos,co.eu_st,
+			co.pk_emp_erase_chk,co.name_erase_chk,co.flag_erase_chk,
+			co.flag_cp,co.flag_doctor,co.infant_no,co.pk_event,co.flag_print,co.flag_medout,
+			co.eu_exctype,co.pk_ord_exc,co.flag_emer,co.flag_thera,co.flag_prev,co.flag_fit,
+			to_char(co.date_effe,'YYYYMMDDHH24MISS') date_effe,
+			to_char(co.date_start,'YYYYMMDDHH24MISS') date_start,
+			to_char(co.date_chk,'YYYYMMDDHH24MISS') date_chk,
+			to_char(co.date_last_ex,'YYYYMMDDHH24MISS') date_last_ex,
+			to_char(co.date_plan_ex,'YYYYMMDDHH24MISS') date_plan_ex,
+			to_char(co.date_stop,'YYYYMMDDHH24MISS') date_stop,
+			to_char(co.date_enter,'YYYYMMDDHH24MISS') date_enter,
+			to_char(co.date_sign,'YYYYMMDDHH24MISS') date_sign,
+			to_char(co.date_stop_chk,'YYYYMMDDHH24MISS') date_stop_chk,
+			to_char(co.date_erase,'YYYYMMDDHH24MISS') date_erase,
+			to_char(co.date_erase_chk,'YYYYMMDDHH24MISS') date_erase_chk
+		from cn_order co
+		where co.ordsn = #{ordsn,jdbcType=VARCHAR}
+	</select>
+	
+	    
+    <!-- 查询hl7保存消息信息 -->
+      <select id="queryMsgList" parameterType="java.util.Map" resultType="com.zebone.nhis.common.module.ma.msg.SysMsgRec">
+        SELECT
+            rec.pk_msg,
+            rec.pk_org,
+            rec.msg_id,
+            rec.msg_type,
+            rec.trans_type,
+            rec.trans_date,
+            rec.msg_content,
+            rec.sys_code,
+            rec.msg_status,
+            rec.err_txt,
+            rec.pk_emp,
+            rec.del_flag,
+            rec.remark,rec.creator,
+            rec.create_time,
+            rec.ts
+        FROM
+             sys_msg_rec rec
+        WHERE            
+            rec.del_flag !='1'
+            and rec.TRANS_TYPE ='send'
+            <if test="type != null and type != '' ">
+            	and rec.MSG_TYPE =#{type,jdbcType=VARCHAR}
+            </if>
+            <if test="status != null and status != '' ">
+            	and rec.MSG_STATUS =#{status,jdbcType=VARCHAR}
+		 	</if>
+            <if test="begin != null and begin != ''">
+		 		and rec.create_time &gt;= 
+		 		to_date(#{begin,jdbcType=VARCHAR},'YYYY-MM-DDHH24MISS')
+		 	</if>
+		 	<if test="end != null and end != ''">
+		 		and rec.create_time &lt;= 
+		 		to_date(#{end,jdbcType=VARCHAR},'YYYY-MM-DDHH24MISS')
+		 	</if>
+		 	<if test="begin == '' or end == '' ">
+		 		and to_char(rec.create_time,'YYYYMMDD') =  to_char(sysdate,'YYYYMMDD')
+		 	</if>
+            order by rec.create_time
+    </select>
+
+	<!-- 查询患者信息 -->
+	<select id="queryPatient" parameterType="java.util.Map" resultType="DynaBean">
+         SELECT
+		  pi.pk_pi,
+		  pi.code_pi,
+		  pi.code_op,
+		  pi.code_ip,
+		  pv.code_pv                                                          pat_no,
+		  pi.barcode,
+		  pi.pk_picate,
+		  pi.name_pi,
+		  pi.name_pi                                                          name,
+		  pi.photo_pi,
+		  pi.dt_idtype,
+		  pi.hic_no,
+		  pi.insur_no,
+		  (CASE pi.dt_idtype
+		   WHEN '01'
+		     THEN pi.id_no
+		   ELSE NULL END)                                                     id_no,
+		  pi.mpi,
+		  pi.flag_ehr,
+		  pi.dt_sex,
+		  zd_sex.name                                                         sex_name,
+		  zd_sex.spcode                                                       sex_spcode,
+		  to_char(pi.birth_date, 'YYYYMMDDHH24MISS')                          birth_date,
+		  pi.place_birth,
+		  pi.dt_marry,
+		  zd_marry.name                                                       marry_name,
+		  zd_marry.spcode                                                     marry_spcode,
+		  pi.dt_occu,
+		  zd_occu.name                                                        occu_name,
+		  zd_occu.spcode                                                      occu_spcode,
+		  pi.dt_country,
+		  zd_country.name                                                     country_name,
+		  zd_country.spcode                                                   country_spcode,
+		  pi.dt_nation,
+		  zd_nation.name                                                      nation_name,
+		  zd_nation.spcode                                                    nation_spcode,
+		  (CASE pi.dt_blood_abo
+		   WHEN NULL
+		     THEN ''
+		   ELSE substr(pi.dt_blood_abo, 0, 2) END)                            dt_blood_abo,
+		  pi.dt_blood_rh,
+		  zd_rh.name                                                          blood_rh_name,
+		  zd_rh.spcode                                                        rh_spcde,
+		  pi.dt_edu,
+		  pi.tel_no,
+		  pi.mobile,
+		  pi.wechat_no,
+		  pi.email,
+		  pi.unit_work,
+		  pi.tel_work,
+		  pi.postcode_work,
+		  pi.address,
+		  pi.name_rel,
+		  pi.dt_ralation,
+		  zd_rel.name                                                         ralation_name,
+		  pi.tel_rel,
+		  pi.addr_rel,
+		  pv.pk_pv,
+		  pv.pk_org,
+		  pv.code_pv,
+		  pv.eu_pvtype,
+		  to_char(pv.date_begin, 'YYYYMMDDHH24MISS')                          date_begin,
+		  to_char(pv.date_end, 'YYYYMMDDHH24MISS')                            date_end,
+		  to_char(pv.date_clinic, 'YYYYMMDDHH24MISS')                         date_clinic,
+		  to_char(pv.date_admit, 'YYYYMMDDHH24MISS')                          date_admit,
+		  to_char(pv.date_reg, 'YYYYMMDDHH24MISS')                            date_reg,
+		  pv.eu_status                                                        eu_status_pv,
+		  pv.flag_in,
+		  pv.name_pi                                                          name_pi_pv,
+		  pv.dt_sex                                                           dt_sex_pv,
+		  pv.age_pv,
+		  pv.pk_insu,
+		  bd_hp.code                                                          insu_code,
+		  bd_hp.name                                                          insu_name,
+		  pv.pk_picate,
+		  nvl(bd_hp.eu_hptype, 0)                                             eu_hptype,
+		  pv.address                                                          address_pv,
+		  pv.dt_marry                                                         dt_marry,
+		  pv.pk_dept,
+		  dept.name_dept,
+		  dept.code_dept,
+		  pv.pk_dept_ns,
+		  ns.name_dept                                                        name_dept_ns,
+		  ns.code_dept                                                        code_dept_ns,
+		  pv.pk_wg,
+		  pv.bed_no,
+		  pv.pk_emp_ns,
+		  pv.name_emp_ns,
+		  (SELECT code_emp
+		   FROM bd_ou_employee e
+		   WHERE e.pk_emp = pv.pk_emp_ns)                                  AS code_emp_ns,
+		  pv.pk_emp_tre,
+		  pv.name_emp_tre,
+		  emp_tre.code_emp                                                    code_emp_tre,
+		  pv.pk_emp_phy,
+		  pv.name_emp_phy,
+		  emp_phy.code_emp                                                    code_emp_phy,
+		  pv.pk_emp_reg,
+		  pv.name_emp_reg,
+		  pv.flag_settle,
+		  pv.eu_status_fp,
+		  pv.flag_cancel,
+		  pv.pk_emp_cancel,
+		  pv.name_emp_cancel,
+		  to_char(pv.date_cancel, 'YYYYMMDDHH24MISS')                         date_cancel,
+		  pv.creator                                                          creator_pv,
+		  pv.create_time                                                      create_time_pv,
+		  pv.modifier                                                         modifier_pv,
+		  pv.del_flag,
+		  pv.ts,
+		  pv_ip.pk_pvip,
+		  pv_ip.pk_ip_notice,
+		  pv_ip.ip_times,
+		  to_char(pv_ip.date_notice, 'YYYYMMDDHH24MISS')                      date_notice,
+		  pv_ip.flag_opt,
+		  pv_ip.dt_level_ns,
+		  ord_ns.name                                                         level_ns_name,
+		  pv_ip.dt_level_dise,
+		  zd_ld.name                                                          level_dise_name,
+		  pv_ip.dt_level_nutr,
+		  ord_nutr.name                                                       level_nutr_name,
+		  pv_ip.dt_outcomes,
+		  pv_ip.flag_infant                                                   flag_inf,
+		  pv_ip.quan_infant,
+		  pv_ip.eu_status_doc,
+		  to_char(pv_ip.date_commit_doc, 'YYYYMMDDHH24MISS')                  date_commit_doc,
+		  pv_ip.flag_ga,
+		  pv_ip.flag_ga_ns,
+		  pv_ip.dt_intype,
+		  pv_ip.dt_outtype,
+		  pv_ip.pk_dept_admit,
+		  pv_ip.pk_dept_dis,
+		  pv_ip.pk_dept_ns_admit,
+		  pv_ip.pk_dept_ns_dis,
+		  to_char(pv_ip.date_prest, 'YYYYMMDDHH24MISS')                       date_prest,
+		  pv_ip.flag_prest,
+		  pv_ip.pk_emp_prest,
+		  pv_ip.name_emp_prest,
+		  pi.addrcode_origin,
+		  pi.addr_origin,
+		  pi.addr_cur || nvl(pi.addr_cur_dt, '')                              addr_cur,
+		  pi.addrcode_cur,
+		  pi.addr_cur_dt,
+		  pi.postcode_cur,
+		  pi.addrcode_birth,
+		  pi.addr_birth,
+		  pi.postcode_regi,
+		  pi.addr_regi || nvl(pi.addr_regi_dt, '')                            addr_regi,
+		  pi.addr_regi_dt,
+		  (SELECT d.name
+		   FROM bd_defdoc d
+		   WHERE d.code_defdoclist = '000126' AND pv.dt_pvsource = d.code) AS dt_pvsource
+		FROM pv_encounter pv
+		  INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi
+		  LEFT JOIN bd_ou_dept dept ON pv.pk_dept = dept.pk_dept
+		  LEFT JOIN pv_ip ON pv.pk_pv = pv_ip.pk_pv
+		  LEFT JOIN bd_ou_dept ns ON pv.pk_dept_ns = ns.pk_dept
+		  LEFT JOIN bd_defdoc zd_sex ON pi.dt_sex = zd_sex.code AND zd_sex.code_defdoclist = '000000'
+		  LEFT JOIN bd_defdoc zd_nation ON pi.dt_nation = zd_nation.code AND zd_nation.code_defdoclist = '000003'
+		  LEFT JOIN bd_defdoc zd_country ON pi.dt_country = zd_country.code AND zd_country.code_defdoclist = '000009'
+		  LEFT JOIN bd_defdoc zd_occu ON pi.dt_occu = zd_occu.code AND zd_occu.code_defdoclist = '000010'
+		  LEFT JOIN bd_defdoc zd_marry ON pi.dt_marry = zd_marry.code AND zd_marry.code_defdoclist = '000006'
+		  LEFT JOIN bd_defdoc zd_abo ON pi.dt_blood_abo = zd_abo.code AND zd_abo.code_defdoclist = '000004'
+		  LEFT JOIN bd_defdoc zd_rh ON pi.dt_blood_rh = zd_rh.code AND zd_rh.code_defdoclist = '000005'
+		  LEFT JOIN bd_defdoc zd_rel ON pi.dt_ralation = zd_rel.code AND zd_rel.code_defdoclist = '000013'
+		  LEFT JOIN bd_defdoc zd_ld ON pv_ip.dt_level_dise = zd_ld.code AND zd_ld.code_defdoclist = '000202'
+		  LEFT JOIN bd_ord ord_ns ON pv_ip.dt_level_ns = ord_ns.code AND ord_ns.code_ordtype = '06'
+		  LEFT JOIN bd_ord ord_nutr ON pv_ip.dt_level_nutr = ord_nutr.code AND ord_nutr.code_ordtype = '13'
+		  LEFT JOIN bd_ou_employee emp_tre ON emp_tre.pk_emp = pv.pk_emp_tre
+		  LEFT JOIN bd_ou_employee emp_phy ON emp_phy.pk_emp = pv.pk_emp_phy
+		  LEFT JOIN bd_hp ON pv.pk_insu = bd_hp.pk_hp
+		where 1=1	
+   	    <if test="pkPv != null" >
+            and pv.pk_pv = #{pkPv,jdbcType=VARCHAR}
+        </if> 		
+   	    <if test="pkPi != null" >
+            and pv.pk_pi = #{pkPi,jdbcType=VARCHAR}
+            and (pv.eu_status = '0' or pv.eu_status = '1' or pv.eu_status='2' or pv.eu_status='3')
+        </if> 		
+   	    <if test="codePi != null" >
+            and pi.code_pi = #{codePi,jdbcType=VARCHAR}
+        </if> 		
+   	    <if test="codeIp != null" >
+            and pi.code_ip = #{codeIp,jdbcType=VARCHAR}
+        </if>
+       	<if test="codePv != null" >
+            and pv.code_pv = #{codePv,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+	<!-- 根据医嘱号查询医嘱信息 -->
+	<select id="queryOrderByOrdsn" parameterType="java.util.Map" resultType="DynaBean">
+		select
+			co.pk_cnord,co.eu_pvtype,co.pk_pv,co.pk_pi,co.code_ordtype,
+			co.eu_always,co.ordsn,co.ordsn_parent,co.pk_ord,co.code_ord,co.name_ord,
+			co.desc_ord,co.code_apply,co.code_freq,co.spec,co.dosage,co.pk_unit_dos,
+			co.quan,co.pk_unit,co.code_supply,co.quan_cg,co.pk_unit_cg,co.pack_size,
+			co.price_cg,co.note_supply,co.days,co.drip_speed,co.ords,co.flag_first,
+			co.last_num,co.pk_dept_exec,co.eu_status_ord,co.name_emp_ord,
+			co.flag_durg,co.flag_self,co.flag_note,co.flag_base,co.flag_bl,co.quan_bed,
+			co.pk_wg,co.pk_emp_input,co.name_emp_input,co.pk_emp_ord,co.note_ord,co.pk_dept_ns,
+			co.pk_emp_chk,co.name_emp_chk,co.pk_emp_stop,co.name_emp_stop,
+			co.flag_stop,co.pk_emp_stop_chk,co.name_emp_stop_chk,co.flag_stop_chk,
+			co.pk_emp_erase,co.name_emp_erase,co.flag_erase,co.pk_unit_dos,co.eu_st,
+			co.pk_emp_erase_chk,co.name_erase_chk,co.flag_erase_chk,
+			co.flag_cp,co.flag_doctor,co.infant_no,co.pk_event,co.flag_print,co.flag_medout,
+			co.eu_exctype,co.pk_ord_exc,co.flag_emer,co.flag_thera,co.flag_prev,co.flag_fit,
+			to_char(co.date_effe,'YYYYMMDDHH24MISS') date_effe,
+			to_char(co.date_start,'YYYYMMDDHH24MISS') date_start,
+			to_char(co.date_chk,'YYYYMMDDHH24MISS') date_chk,
+			to_char(co.date_last_ex,'YYYYMMDDHH24MISS') date_last_ex,
+			to_char(co.date_plan_ex,'YYYYMMDDHH24MISS') date_plan_ex,
+			to_char(co.date_stop,'YYYYMMDDHH24MISS') date_stop,
+			to_char(co.date_enter,'YYYYMMDDHH24MISS') date_enter,
+			to_char(co.date_sign,'YYYYMMDDHH24MISS') date_sign,
+			to_char(co.date_stop_chk,'YYYYMMDDHH24MISS') date_stop_chk,
+			to_char(co.date_erase,'YYYYMMDDHH24MISS') date_erase,
+			to_char(co.date_erase_chk,'YYYYMMDDHH24MISS') date_erase_chk
+		from cn_order co
+		where co.ordsn = #{ordsn,jdbcType=VARCHAR}
+	</select>
+
+
+	<!-- 根据查询患者手术信息 -->
+    <select id="queryOperationByOrdsn" parameterType="java.util.Map" resultType="DynaBean">
+        select cn.PK_CNORD,cn.PK_ORG,cn.EU_PVTYPE,cn.PK_PV,cn.PK_PI,cn.CODE_ORDTYPE,cn.EU_ALWAYS,cn.ORDSN,cn.ORDSN_PARENT,cn.PK_ORD,
+	      cn.CODE_ORD,cn.PK_PRES,cn.NAME_ORD,cn.DESC_ORD,cn.CODE_APPLY,cn.CODE_FREQ,cn.SPEC,cn.DOSAGE,cn.PK_UNIT_DOS,cn.QUAN,cn.PK_UNIT,
+	      cn.CODE_SUPPLY,cn.QUAN_CG,cn.PK_UNIT_CG,cn.PACK_SIZE,cn.PRICE_CG,cn.NOTE_SUPPLY,cn.DAYS,cn.DRIP_SPEED,cn.ORDS,cn.FLAG_FIRST,cn.LAST_NUM,
+	      cn.FLAG_DURG,cn.FLAG_SELF,cn.FLAG_NOTE,cn.FLAG_BASE,cn.FLAG_BL,cn.PK_DEPT,cn.PK_DEPT_NS,cn.PK_WG,cn.PK_EMP_INPUT,
+	      cn.NAME_EMP_INPUT,cn.PK_EMP_ORD,cn.NAME_EMP_ORD,cn.PK_EMP_CHK,cn.PK_ORG_EXEC,cn.PK_DEPT_EXEC,cn.EU_STATUS_ORD,cn.NAME_EMP_CHK,
+	      cn.PK_EMP_STOP_CHK,cn.NAME_EMP_STOP_CHK,cn.FLAG_ERASE,cn.PK_EMP_ERASE,cn.NAME_EMP_ERASE,cn.FLAG_STOP_CHK,
+	      cn.PK_EMP_STOP,cn.NAME_EMP_STOP,cn.FLAG_STOP,cn.PK_EMP_ERASE_CHK,cn.NAME_ERASE_CHK,cn.FLAG_ERASE_CHK,cn.FLAG_CP,cn.FLAG_DOCTOR,
+	      cn.FLAG_PRINT,cn.FLAG_MEDOUT,cn.EU_EXCTYPE,cn.PK_ORD_EXC,cn.FLAG_EMER,cn.FLAG_THERA,cn.FLAG_PREV,cn.FLAG_FIT,cn.QUAN_BED,
+	      cn.CREATE_TIME,cn.MODIFIER,cn.MODITY_TIME,cn.DEL_FLAG,cn.FLAG_SIGN,cn.SORT_IV,cn.TS,cn.FLAG_ITC,cn.EU_INTERN,cn.EU_ST,cn.DT_USAGENOTE,
+	      cn.FIRST_NUM,cn.FLAG_PIVAS,cn.DT_HERBUSAGE,cn.PK_CNORD_RL,cn.GROUPNO,cn.NOTE_ORD,cn.CREATOR,cn.INFANT_NO,cn.PK_EVENT,
+	      cn.QUAN_DISP,cn.RATIO_HP,cn.DESC_FIT,cn.PK_EMP_EX,cn.NAME_EMP_EX,cn.ORDSN_CHK,cn.CODE_SUPPLY_ADD,
+	      to_char(cn.DATE_STOP,'YYYYMMDDHH24MISS') DATE_STOP,
+	      to_char(cn.DATE_CHK,'YYYYMMDDHH24MISS') DATE_CHK,
+	      to_char(cn.DATE_LAST_EX,'YYYYMMDDHH24MISS') DATE_LAST_EX,
+	      to_char(cn.DATE_PLAN_EX,'YYYYMMDDHH24MISS') DATE_PLAN_EX,
+	      to_char(cn.DATE_EFFE,'YYYYMMDDHH24MISS') DATE_EFFE,
+	      to_char(cn.DATE_START,'YYYYMMDDHH24MISS') DATE_START,
+	      to_char(cn.DATE_ENTER,'YYYYMMDDHH24MISS') DATE_ENTER,
+	      to_char(cn.DATE_SIGN,'YYYYMMDDHH24MISS') DATE_SIGN,
+	      to_char(cn.DATE_ERASE,'YYYYMMDDHH24MISS') DATE_ERASE,
+	      to_char(cn.DATE_ERASE_CHK,'YYYYMMDDHH24MISS') DATE_ERASE_CHK,
+	      to_char(cn.DATE_STOP_CHK,'YYYYMMDDHH24MISS') DATE_STOP_CHK,
+	     
+	      op.PK_ORDOP,op.PK_ORG,op.PK_CNORD,op.EU_OPTYPE,op.PK_DIAG_PRE,op.DESC_DIAG_PRE,op.DT_OPLEVEL,op.PK_OP,
+	      op.DESC_OP,op.DESC_OP_SUB,op.PK_EMP_PHY_OP,op.NAME_EMP_PHY_OP,op.duration,op.DT_ANAE,
+	      op.PK_EMP_ANAE,op.NAME_EMP_ANAE,op.PK_EMP_ASIS,op.NAME_EMP_ASIS,op.PK_EMP_ASIS2,op.NAME_EMP_ASIS2,
+	      op.PK_EMP_ASIS3,op.NAME_EMP_ASIS3,op.PK_EMP_SCRUB,op.NAME_EMP_SCRUB,op.PK_EMP_CIRCUL,op.NAME_EMP_CRICUL,
+	      op.DT_OPBODY,op.PK_OPT,op.EU_STATUS,op.NOTE,op.CREATOR,op.CREATE_TIME,op.MODIFIER,op.MODITY_TIME,
+	      op.DEL_FLAG,op.TS,op.TICKETNO,op.FLAG_HEAD,op.PK_EMP_HEAD,op.NAME_EMP_HEAD,op.FLAG_AGAIN,op.DESC_ICJD,
+	      op.DESC_UNICJD,op.PURP_AGAIN,op.WEIGHT,op.DT_BLOOD_ABO,op.DT_BLOOD_RH,op.DESC_INFEC,op.PK_DEPT_ANAE,
+	      op.DESC_CPB,op.SPEC_EQUIPMENT,op.DT_INCITYPE,op.CNT_OP,op.FLAG_ED,op.FLAG_FINISH_ANAE,op.name_op,
+	      op.flag_carm.op.flag_frozen,
+	      to_char(op.DATE_CONFIRM_DEPT,'YYYYMMDDHH24MISS') DATE_CONFIRM_DEPT,
+	      to_char(op.DATE_BEGIN,'YYYYMMDDHH24MISS') DATE_BEGIN,
+	      to_char(op.DATE_CONFIRM,'YYYYMMDDHH24MISS') DATE_CONFIRM,
+		  to_char(op.DATE_PLAN,'YYYYMMDDHH24MISS') DATE_PLAN,
+		  to_char(op.DATE_APPLY,'YYYYMMDDHH24MISS') DATE_APPLY,
+		  to_char(op.DATE_HEAD,'YYYYMMDDHH24MISS') DATE_HEAD,
+		  (select d.old_id from bd_defdoc d where d.code_defdoclist='030302' and d.code=op.DT_ASALEVEL) DT_ASALEVEL,
+		  (select d.name from bd_defdoc d where d.code_defdoclist='030300' and d.code=op.DT_ANAE) anae_name, 
+	      (select d.old_id from bd_defdoc d where d.code_defdoclist='030307' and d.code=op.DT_ASEPSIS) dt_asepsis,
+	      ((select d.name from bd_defdoc d where d.code_defdoclist='030301' and d.code=op.DT_POSI)||'###'||op.note)  remark,
+	      ( (select d.name from cn_op_infect i left join bd_defdoc d on d.code=i.dt_infresult where d.code_defdoclist='060607' and i.dt_infect='04'and i.pk_cnord=op.pk_cnord)||'-'||
+	      	(select d.name from cn_op_infect i left join bd_defdoc d on d.code=i.dt_infresult where d.code_defdoclist='060607' and i.dt_infect='03'and i.pk_cnord=op.pk_cnord)||'-'||
+	        (select d.name from cn_op_infect i left join bd_defdoc d on d.code=i.dt_infresult where d.code_defdoclist='060607' and i.dt_infect='05'and i.pk_cnord=op.pk_cnord)||'-'||
+	        (select d.name from cn_op_infect i left join bd_defdoc d on d.code=i.dt_infresult where d.code_defdoclist='060607' and i.dt_infect='01'and i.pk_cnord=op.pk_cnord)||'-'||
+	        (select d.name from cn_op_infect i left join bd_defdoc d on d.code=i.dt_infresult where d.code_defdoclist='060607' and i.dt_infect='02'and i.pk_cnord=op.pk_cnord)
+	      ) dt_infresult
+		from cn_order cn,cn_op_apply op		
+        where cn.pk_cnord=op.pk_cnord 
+		and cn.ordsn = #{ordsn,jdbcType=VARCHAR}
+    </select>
+    
+    <!-- 查询检查信息 -->
+    <select id="queryLisByOrdsn" parameterType="java.util.Map" resultType="DynaBean">
+        select cn.PK_CNORD,cn.PK_ORG,cn.EU_PVTYPE,cn.PK_PV,cn.PK_PI,cn.CODE_ORDTYPE,cn.EU_ALWAYS,cn.ORDSN,cn.ORDSN_PARENT,cn.PK_ORD,
+	      cn.CODE_ORD,cn.PK_PRES,cn.NAME_ORD,cn.DESC_ORD,cn.CODE_APPLY,cn.CODE_FREQ,cn.SPEC,cn.DOSAGE,cn.PK_UNIT_DOS,cn.QUAN,cn.PK_UNIT,
+	      cn.CODE_SUPPLY,cn.QUAN_CG,cn.PK_UNIT_CG,cn.PACK_SIZE,cn.PRICE_CG,cn.NOTE_SUPPLY,cn.DAYS,cn.DRIP_SPEED,cn.ORDS,cn.FLAG_FIRST,cn.LAST_NUM,
+	      cn.FLAG_DURG,cn.FLAG_SELF,cn.FLAG_NOTE,cn.FLAG_BASE,cn.FLAG_BL,cn.PK_DEPT,cn.PK_DEPT_NS,cn.PK_WG,cn.PK_EMP_INPUT,
+	      cn.NAME_EMP_INPUT,cn.PK_EMP_ORD,cn.NAME_EMP_ORD,cn.PK_EMP_CHK,cn.PK_ORG_EXEC,cn.PK_DEPT_EXEC,cn.EU_STATUS_ORD,cn.NAME_EMP_CHK,
+	      cn.PK_EMP_STOP_CHK,cn.NAME_EMP_STOP_CHK,cn.FLAG_ERASE,cn.PK_EMP_ERASE,cn.NAME_EMP_ERASE,cn.FLAG_STOP_CHK,
+	      cn.PK_EMP_STOP,cn.NAME_EMP_STOP,cn.FLAG_STOP,cn.PK_EMP_ERASE_CHK,cn.NAME_ERASE_CHK,cn.FLAG_ERASE_CHK,cn.FLAG_CP,cn.FLAG_DOCTOR,
+	      cn.FLAG_PRINT,cn.FLAG_MEDOUT,cn.EU_EXCTYPE,cn.PK_ORD_EXC,cn.FLAG_EMER,cn.FLAG_THERA,cn.FLAG_PREV,cn.FLAG_FIT,cn.QUAN_BED,
+	      cn.CREATE_TIME,cn.MODIFIER,cn.MODITY_TIME,cn.DEL_FLAG,cn.FLAG_SIGN,cn.SORT_IV,cn.TS,cn.FLAG_ITC,cn.EU_INTERN,cn.EU_ST,cn.DT_USAGENOTE,
+	      cn.FIRST_NUM,cn.FLAG_PIVAS,cn.DT_HERBUSAGE,cn.PK_CNORD_RL,cn.GROUPNO,cn.NOTE_ORD,cn.CREATOR,cn.INFANT_NO,cn.PK_EVENT,
+	      cn.QUAN_DISP,cn.RATIO_HP,cn.DESC_FIT,cn.PK_EMP_EX,cn.NAME_EMP_EX,cn.ORDSN_CHK,cn.CODE_SUPPLY_ADD,
+	      to_char(cn.DATE_STOP,'YYYYMMDDHH24MISS') DATE_STOP,
+	      to_char(cn.DATE_CHK,'YYYYMMDDHH24MISS') DATE_CHK,
+	      to_char(cn.DATE_LAST_EX,'YYYYMMDDHH24MISS') DATE_LAST_EX,
+	      to_char(cn.DATE_PLAN_EX,'YYYYMMDDHH24MISS') DATE_PLAN_EX,
+	      to_char(cn.DATE_EFFE,'YYYYMMDDHH24MISS') DATE_EFFE,
+	      to_char(cn.DATE_START,'YYYYMMDDHH24MISS') DATE_START,
+	      to_char(cn.DATE_ENTER,'YYYYMMDDHH24MISS') DATE_ENTER,
+	      to_char(cn.DATE_SIGN,'YYYYMMDDHH24MISS') DATE_SIGN,
+	      to_char(cn.DATE_ERASE,'YYYYMMDDHH24MISS') DATE_ERASE,
+	      to_char(cn.DATE_ERASE_CHK,'YYYYMMDDHH24MISS') DATE_ERASE_CHK,
+	      to_char(cn.DATE_STOP_CHK,'YYYYMMDDHH24MISS') DATE_STOP_CHK,
+	     
+	      lis.PK_ORDLIS,lis.DESC_DIAG,lis.PURPOSE,lis.DT_SAMPTYPE,lis.DT_TUBETYPE,
+          lis.DT_COLTYPE,lis.SAMP_NO,lis.PK_DEPT_COL,lis.NOTE,lis.FLAG_PRT,
+          lis.EU_STATUS,lis.PK_EMP_COL,lis.NAME_EMP_COL,lis.FORM_APP,
+          to_char(lis.DATE_COL,'YYYYMMDDHH24MISS') DATE_COL,
+          to_char(lis.DATE_RPT,'YYYYMMDDHH24MISS') DATE_RPT,
+          to_char(lis.DATE_ACPT,'YYYYMMDDHH24MISS') DATE_ACPT
+		from cn_order cn,cn_lab_apply lis
+        where cn.pk_cnord=lis.pk_cnord and lis.DEL_FLAG ='0'
+		and cn.ordsn = #{ordsn,jdbcType=VARCHAR}
+    </select>
+    
+    <!-- 查询检验信息 -->
+   <select id="queryRisByOrdsn" parameterType="java.util.Map" resultType="DynaBean">
+        select cn.PK_CNORD,cn.PK_ORG,cn.EU_PVTYPE,cn.PK_PV,cn.PK_PI,cn.CODE_ORDTYPE,cn.EU_ALWAYS,cn.ORDSN,cn.ORDSN_PARENT,cn.PK_ORD,
+	      cn.CODE_ORD,cn.PK_PRES,cn.NAME_ORD,cn.DESC_ORD,cn.CODE_APPLY,cn.CODE_FREQ,cn.SPEC,cn.DOSAGE,cn.PK_UNIT_DOS,cn.QUAN,cn.PK_UNIT,
+	      cn.CODE_SUPPLY,cn.QUAN_CG,cn.PK_UNIT_CG,cn.PACK_SIZE,cn.PRICE_CG,cn.NOTE_SUPPLY,cn.DAYS,cn.DRIP_SPEED,cn.ORDS,cn.FLAG_FIRST,cn.LAST_NUM,
+	      cn.FLAG_DURG,cn.FLAG_SELF,cn.FLAG_NOTE,cn.FLAG_BASE,cn.FLAG_BL,cn.PK_DEPT,cn.PK_DEPT_NS,cn.PK_WG,cn.PK_EMP_INPUT,
+	      cn.NAME_EMP_INPUT,cn.PK_EMP_ORD,cn.NAME_EMP_ORD,cn.PK_EMP_CHK,cn.PK_ORG_EXEC,cn.PK_DEPT_EXEC,cn.EU_STATUS_ORD,cn.NAME_EMP_CHK,
+	      cn.PK_EMP_STOP_CHK,cn.NAME_EMP_STOP_CHK,cn.FLAG_ERASE,cn.PK_EMP_ERASE,cn.NAME_EMP_ERASE,cn.FLAG_STOP_CHK,
+	      cn.PK_EMP_STOP,cn.NAME_EMP_STOP,cn.FLAG_STOP,cn.PK_EMP_ERASE_CHK,cn.NAME_ERASE_CHK,cn.FLAG_ERASE_CHK,cn.FLAG_CP,cn.FLAG_DOCTOR,
+	      cn.FLAG_PRINT,cn.FLAG_MEDOUT,cn.EU_EXCTYPE,cn.PK_ORD_EXC,cn.FLAG_EMER,cn.FLAG_THERA,cn.FLAG_PREV,cn.FLAG_FIT,cn.QUAN_BED,
+	      cn.CREATE_TIME,cn.MODIFIER,cn.MODITY_TIME,cn.DEL_FLAG,cn.FLAG_SIGN,cn.SORT_IV,cn.TS,cn.FLAG_ITC,cn.EU_INTERN,cn.EU_ST,cn.DT_USAGENOTE,
+	      cn.FIRST_NUM,cn.FLAG_PIVAS,cn.DT_HERBUSAGE,cn.PK_CNORD_RL,cn.GROUPNO,cn.NOTE_ORD,cn.CREATOR,cn.INFANT_NO,cn.PK_EVENT,
+	      cn.QUAN_DISP,cn.RATIO_HP,cn.DESC_FIT,cn.PK_EMP_EX,cn.NAME_EMP_EX,cn.ORDSN_CHK,cn.CODE_SUPPLY_ADD,
+	      to_char(cn.DATE_STOP,'YYYYMMDDHH24MISS') DATE_STOP,
+	      to_char(cn.DATE_CHK,'YYYYMMDDHH24MISS') DATE_CHK,
+	      to_char(cn.DATE_LAST_EX,'YYYYMMDDHH24MISS') DATE_LAST_EX,
+	      to_char(cn.DATE_PLAN_EX,'YYYYMMDDHH24MISS') DATE_PLAN_EX,
+	      to_char(cn.DATE_EFFE,'YYYYMMDDHH24MISS') DATE_EFFE,
+	      to_char(cn.DATE_START,'YYYYMMDDHH24MISS') DATE_START,
+	      to_char(cn.DATE_ENTER,'YYYYMMDDHH24MISS') DATE_ENTER,
+	      to_char(cn.DATE_SIGN,'YYYYMMDDHH24MISS') DATE_SIGN,
+	      to_char(cn.DATE_ERASE,'YYYYMMDDHH24MISS') DATE_ERASE,
+	      to_char(cn.DATE_ERASE_CHK,'YYYYMMDDHH24MISS') DATE_ERASE_CHK,
+	      to_char(cn.DATE_STOP_CHK,'YYYYMMDDHH24MISS') DATE_STOP_CHK,
+	     
+          ris.pk_ordris,ris.dt_ristype,ris.desc_body,ris.purpose,ris.pk_msp,ris.ris_notice,ris.ticketno,
+          ris.eu_status,ris.flag_bed,ris.note,ris.pk_diag,ris.name_diag,ris.pk_emp_appo,ris.name_emp_appo,
+          ris.flag_print,ris.note_dise,ris.flag_fasting,ris.dt_patitrans,ris.form_app,ris.flag_print2,
+          to_char(ris.date_appo,'YYYYMMDDHH24MISS') date_appo,
+          to_char(ris.date_exam,'YYYYMMDDHH24MISS') date_exam
+		from cn_order cn,cn_ris_apply ris
+        where cn.pk_cnord=ris.pk_cnord and ris.DEL_FLAG ='0' 
+		and cn.ordsn = #{ordsn,jdbcType=VARCHAR}
+    </select>
+
+</mapper>

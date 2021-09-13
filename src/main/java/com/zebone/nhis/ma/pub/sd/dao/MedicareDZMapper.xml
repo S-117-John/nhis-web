@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.sd.dao.MedicareDZMapper">
+	<select id="queryHisMedicalInsSt" parameterType="java.util.HashMap" resultType="DynaBean">
+	<!-- Select case when st.pk_settle_canc is not null then insst.code_hpst_canc else insst.code_hpst end code_hpst, -->
+     Select case when st.pk_settle_canc is not null then insst.code_hpst_canc else insst.code_hpst end code_hpst,
+              insst.code_serialno,
+       city.aaz500 as                                                                             code_medino,
+       invoice.code_inv,
+       pi.code_ip,
+       pi.name_pi,
+       insst.pk_hp,
+       st.code_st,
+       st.amount_st,
+       case when st.AMOUNT_ST > 0 then inscity.amt_jjzf else -inscity.amt_jjzf end     amt_jjzf,
+       case when st.AMOUNT_ST > 0 then inscity.amt_grzhzf else -inscity.amt_grzhzf end amt_grzhzf,
+       case when st.AMOUNT_ST > 0 then inscity.amt_grzf else -inscity.amt_grzf end     amt_grzf,
+       pi.code_op,
+       st.dt_sttype,
+       st.DATE_ST,
+       st.PK_SETTLE,
+       case when ext.PK_SETTLE is null then '0' else '1' end      flag160,
+       visit.pvcode_ins
+	From ins_szyb_st insst
+         Inner Join bl_settle st on (st.PK_SETTLE = insst.PK_SETTLE or st.PK_SETTLE_CANC=insst.PK_SETTLE)
+         Inner Join ins_szyb_st_city inscity On inscity.pk_insst = insst.pk_insst
+         Inner Join ins_szyb_visit visit On visit.pk_visit = insst.pk_visit
+         Inner Join (select aaz500, pk_visit from ins_szyb_visit_city group by aaz500, pk_visit) city
+           On visit.pk_visit = city.pk_visit
+         left join (select stinv.PK_SETTLE, inv.CODE_INV
+                    from BL_ST_INV stinv
+                             inner join bl_invoice inv on stinv.pk_invoice = inv.PK_INVOICE and inv.FLAG_CANCEL = '0'
+                    group by stinv.PK_SETTLE, inv.CODE_INV
+                    ) invoice on invoice.PK_SETTLE = insst.PK_SETTLE
+         left join BL_EXT_PAY ext on ext.PK_SETTLE = st.PK_SETTLE and ext.FLAG_PAY = '1' and ext.amount > 0
+         Inner Join pi_master pi On pi.pk_pi = insst.pk_pi
+	Where st.del_flag = '0'
+	and to_char(st.date_st, 'yyyyMMdd') = #{dateSt,jdbcType=VARCHAR}
+	<if test="pkEmpSt != null and pkEmpSt != ''">
+         and st.pk_emp_st= #{pkEmpSt,jdbcType=VARCHAR}
+    </if>
+    <if test='euType != null and euType == "1"'>
+         and st.eu_pvtype in (1,2,4)
+    </if>
+     <if test='euType != null and euType == "2"'>
+         and st.eu_pvtype= '3'
+    </if>
+    order by insst.CODE_SERIALNO
+	</select> 
+</mapper>

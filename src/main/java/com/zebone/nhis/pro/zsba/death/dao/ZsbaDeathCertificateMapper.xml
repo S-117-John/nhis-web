@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.pro.zsba.death.dao.ZsbaDeathCertificateMapper">
+    <select id="getPiInformation" resultType="java.util.Map">
+        select pm.NAME_PI                                                  as theDeadName,
+               ID_NO                                                       as identityNumber,
+               BD.BA_CODE                                                  as theDeadGender,
+               DT_NATION                                                   as nation,
+               BIRTH_DATE                                                     birthDay,
+               B.BA_CODE                                                   as maritalStatus,
+               D.BA_CODE + '0'                                             as education,
+               BD2.BA_CODE                                                 as occupation,
+               PM.DT_COUNTRY                                                  gjdq,
+               case when BD3.BA_CODE = '99' then '99' else BD3.BA_CODE end as zjlb,
+               pm.ADDR_REGI_DT                                                hjdxxdz,
+               PM.ADDR_CUR_DT                                                 szsqczxxdz,
+               CODE_IP                                                        zyh,
+               pm.NAME_REL                                                    klxjsxm,
+               BD5.CODE_STD                                                as yszgx,
+               BD4.BA_CODE                                                    jssfzjlx,
+               pm.IDNO_REL                                                    jszjhm,
+               pm.ADDR_REL                                                    jszzhgzdw,
+               pm.TEL_REL                                                     jslxdh
+        from PI_MASTER PM
+                     inner join BD_DEFDOC BD on PM.DT_SEX = BD.CODE AND BD.CODE_DEFDOCLIST = '000000'
+                     left join BD_DEFDOC B on B.CODE = Pm.DT_MARRY and B.CODE_DEFDOCLIST = '000006'
+                     left join BD_DEFDOC D on D.CODE = Pm.DT_EDU and D.CODE_DEFDOCLIST = '000008'
+                     left join BD_DEFDOC BD2 on BD2.CODE = Pm.DT_OCCU and BD2.CODE_DEFDOCLIST = '000010'
+                     left join BD_DEFDOC BD3 on BD3.CODE = Pm.DT_IDTYPE and BD3.CODE_DEFDOCLIST = '000007'
+                     left join BD_DEFDOC BD5 on BD5.CODE = PM.DT_RALATION and BD5.CODE_DEFDOCLIST = '070200'
+                     left join BD_DEFDOC BD4 on BD4.CODE = Pm.DT_IDTYPE_REL and BD4.CODE_DEFDOCLIST = '000007'
+        where pm.PK_PI = #{pkPi,jdbcType=VARCHAR}
+    </select>
+    <select id="GetUserByPkRole" resultType="DynaBean">
+        select  distinct  BOU.CODE_USER  as userName,
+                 BOU.NAME_USER as realName,
+               BOE.WORKPHONE   as mobilePhone,
+               BOU.FLAG_ACTIVE as enabled
+        from BD_OU_USER_ROLE BOUR
+                     inner join BD_OU_USER BOU on BOUR.PK_USER = BOU.PK_USER
+                     inner join BD_OU_EMPLOYEE BOE on BOE.PK_EMP = BOU.PK_EMP
+        where BOUR.PK_ROLE =#{pkRole,jdbcType=VARCHAR}
+    </select>
+</mapper>

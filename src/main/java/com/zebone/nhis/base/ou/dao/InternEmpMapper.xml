@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.base.ou.dao.InternEmpMapper">
+
+	<select id = "seleInternEmpL"   parameterType="java.util.Map" resultType="DynaBean">
+		select emp.pk_emp, 
+       emp.code_emp, 
+       emp.name_emp, 
+       emp.dt_sex, 
+       sex.name sex, 
+       emp.birthday, 
+       emp.mobile, 
+       inn.DT_INTERNSRC, 
+       intern.name intern,
+       inn.EU_TEACHTYPE 
+  from bd_ou_employee emp
+       inner join bd_ou_emp_intern inn on emp.pk_emp=inn.pk_emp
+       inner join bd_defdoc sex on emp.dt_sex=sex.code and sex.code_defdoclist='000000'
+       left outer join bd_defdoc intern on inn.DT_INTERNSRC=intern.code and intern.code_defdoclist='010307'
+ <if test= "dtInternsrc !=null and dtInternsrc !=''">
+ where inn.DT_INTERNSRC = #{dtInternsrc,jdbcType=VARCHAR} 
+  </if>
+  <if test="codeEmp != null and codeEmp !=''">
+ 		and  emp.code_emp = #{codeEmp,jdbcType=VARCHAR}
+  </if>
+  <if test="nameEmp != null and nameEmp !=''">
+ and emp.name_emp like '%'||#{nameEmp,jdbcType=VARCHAR}||'%' 
+  </if>
+  <if test="dateBegin != null and dateBegin !=''">
+ and inn.DATE_BEGIN &gt;=#{dateBegin} 
+ </if>
+ <if test="dateEnd != null and dateEnd !=''">
+ and inn.DATE_END &lt;=#{dateEnd}
+ </if>
+	</select>
+
+</mapper>

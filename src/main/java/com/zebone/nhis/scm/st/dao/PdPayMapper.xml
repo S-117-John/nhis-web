@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.scm.st.dao.PdPayMapper">
+<select id="querySupplyerList" parameterType="java.util.Map" resultType="DynaBean">
+select spr.pk_supplyer,
+       spr.name,
+       spr.dt_bank,
+       spr.acc_no 
+  from bd_supplyer spr
+ where exists (select 1
+                 from pd_st st 
+                      inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst
+                      inner join bd_pd pd on pd.pk_pd=dt.pk_pd
+                where st.pk_org = #{pkOrg,jdbcType=CHAR} and spr.pk_supplyer=st.pk_supplyer and 
+                      st.flag_pay='0' and
+                      st.eu_direct='1' and
+                      st.flag_pu='1' and
+                      dt.flag_chk_rpt='1'
+                      and pd.dt_pdtype like '0%'
+               )
+</select>
+<select id="queryToPayList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdStDtVo">
+select dt.pk_pdstdt,
+       dt.pk_pdst,
+       pd.code as pdcode,
+       pd.name as pdname,
+       pd.spcode, 
+       pd.spec,
+       fa.name factory,
+       dt.receipt_no,
+       dt.amount_pay,
+       dt.note,
+       unit.name unit,
+       st.pk_supplyer  
+  from pd_st st
+       inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst
+       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+       left join bd_unit unit on unit.pk_unit = dt.pk_unit_pack
+ where st.pk_org = #{pkOrg,jdbcType=CHAR} and st.pk_supplyer=#{pkSupplyer,jdbcType=CHAR} and
+       dt.flag_chk_rpt='1' and
+       dt.flag_pay='0' and pd.dt_pdtype like '0%'
+       order by st.date_st  
+</select>
+<select id="queryPayList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.st.vo.PdPayVo">
+select 
+	   pay.bank_no,
+	   pay.pk_pdpay,
+       pay.pay_no,
+       pay.pk_supplyer,
+       spr.name spr,
+       pay.date_pay,
+       pay.dt_paymode,
+       paymode.name paymode,
+       pay.dt_bank,
+       bank.name bank,
+       pay.cert_no,
+       pay.amount_pay,
+       pay.pk_emp_pay,
+       pay.name_emp_pay,
+       pay.note
+  from pd_pay pay
+       inner join bd_supplyer spr on pay.pk_supplyer=spr.pk_supplyer
+       inner join bd_defdoc paymode on pay.dt_paymode=paymode.code and paymode.code_defdoclist='110100'
+       left outer join bd_defdoc bank on pay.dt_bank=bank.code and bank.code_defdoclist='040005'
+ where pay.pk_org = #{pkOrg,jdbcType=CHAR} 
+ 	   	and exists (select 1 from pd_st_detail dt inner join bd_pd pd on pd.pk_pd=dt.pk_pd where dt.pk_pdpay=pay.pk_pdpay  and pd.dt_pdtype like '0%')
+       <if test="payNo != null  and  payNo != ''">
+        and pay.pay_no = #{payNo,jdbcType=VARCHAR}
+       </if>
+       <if test="pkSupplyer != null  and  pkSupplyer != ''">
+         and pay.pk_supplyer = #{pkSupplyer,jdbcType=CHAR}
+       </if>
+       <if test="dtPaymode != null  and  dtPaymode != ''">
+         and pay.dt_paymode = #{dtPaymode,jdbcType=VARCHAR}
+       </if>
+       <if test="dtBank != null  and  dtBank != ''">
+         and pay.dt_bank = #{dtBank,jdbcType=VARCHAR}
+       </if>
+       <if test="certNo != null  and  certNo != ''">
+         and pay.cert_no = #{certNo,jdbcType=VARCHAR}
+       </if>
+      <if test="dateBegin != null  and  dateBegin != ''">
+         and pay.date_pay &gt;= to_date(#{dateBegin},'YYYYMMDDHH24MISS')
+       </if>
+       <if test="dateEnd != null  and  dateEnd != ''">
+         and pay.date_pay &lt;= to_date(#{dateEnd},'YYYYMMDDHH24MISS')
+       </if>
+       <if test="pkEmpPay != null  and  pkEmpPay != ''">
+         and pay.pk_emp_pay = #{pkEmpPay,jdbcType=CHAR}
+       </if>
+       order by pay.date_pay 
+</select>
+<select id="queryStDtList" parameterType="java.util.Map" resultType="com.zebone.nhis.scm.pub.vo.PdStDtVo">
+select dt.pk_pdstdt,
+       dt.pk_pdst,
+       pd.code as pdcode,
+       pd.name as pdname,
+       pd.spcode, 
+       pd.spec,
+       fa.name factory,
+       dt.receipt_no,
+       dt.amount_pay,
+       dt.note,
+       unit.name unit,
+       st.pk_supplyer  
+  from pd_st st
+       inner join pd_st_detail dt on st.pk_pdst=dt.pk_pdst 
+       inner join bd_pd pd on dt.pk_pd=pd.pk_pd
+       inner join bd_factory fa on pd.pk_factory=fa.pk_factory
+       LEFT JOIN bd_unit unit ON unit.pk_unit = dt.pk_unit_pack
+ where dt.pk_pdpay = #{pkPdpay,jdbcType=CHAR} and pd.dt_pdtype like '0%'
+  order by st.date_st 
+</select>
+</mapper>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.compay.ins.zsrm.dao.base.YbSpecialOperateMapper">
+    <select id="queryHisInfoByQgyb" resultType="com.zebone.nhis.compay.ins.zsrm.vo.base.HisInfo">
+        select iqv.mdtrt_id as yb_pk_reg, iqs.setl_id as yb_pk_settle,pv.pk_pv,iqs.pk_settle,pv.eu_status
+        from ins_qgyb_visit iqv
+        left join ins_qgyb_st iqs on iqv.pk_pv = iqs.pk_pv
+        left join pv_encounter pv on iqv.pk_pv = pv.pk_pv
+        where iqv.mdtrt_id = #{ybPkReg}
+    </select>
+    <select id="queryHisInfoByGsyb" resultType="com.zebone.nhis.compay.ins.zsrm.vo.base.HisInfo">
+        select isv.aaz218 as yb_pk_reg,pv.pk_pv,iss.pk_settle,pv.eu_status
+        from ins_sgsyb_visit isv
+        left join ins_sgsyb_st iss on isv.aaz218 = iss.aaz218
+        left join pv_encounter pv on pv.pk_pv = isv.pk_pv
+        where isv.aaz218=#{ybPkReg}
+    </select>
+</mapper>

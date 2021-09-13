@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zebone.nhis.webservice.syx.dao.PlatFormStopRegMapper">
+    <select id="stopReg" parameterType="com.zebone.nhis.webservice.syx.vo.platForm.StopRegReq"
+            resultType="com.zebone.nhis.webservice.syx.vo.platForm.StopRegRes">
+        
+        SELECT
+			'0' AS stopregid,
+			dept.code_dept deptid,
+			emp.code_emp doctorid,
+			to_char(sch.date_work,'yyyy-MM-dd') stopdate,
+			ds.code_dateslot timeid,
+			'' AS reason 
+		FROM
+			sch_sch sch 
+			INNER join bd_ou_dept dept ON sch.pk_dept = dept.pk_dept 
+			INNER join sch_resource res ON sch.pk_schres = res.pk_schres 
+			INNER join bd_code_dateslot ds ON sch.pk_dateslot = ds.pk_dateslot 
+			left outer join bd_ou_employee emp ON res.pk_emp = emp.pk_emp 
+		WHERE 
+			sch.flag_stop = '1' 
+			and sch.date_work &gt;= to_date(#{beginDate,jdbcType=VARCHAR},'yyyy-mm-dd HH24:mi:ss')
+			and sch.date_work &lt;= to_date(#{endDate,jdbcType=VARCHAR},'yyyy-mm-dd HH24:mi:ss')
+			<if test="deptId != null and deptId != ''">
+				and dept.code_dept = #{deptId,jdbcType=VARCHAR}   
+			</if>
+			<if test="doctorId != null and doctorId != ''">
+				and emp.code_emp = #{doctorId,jdbcType=VARCHAR} 
+			</if>			
+    </select>
+</mapper>

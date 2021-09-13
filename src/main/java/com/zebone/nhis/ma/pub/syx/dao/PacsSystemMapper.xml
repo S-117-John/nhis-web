@@ -1,0 +1,557 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zebone.nhis.ma.pub.syx.dao.PacsSystemMapper">
+
+	<select id="qryRequestForPacs" parameterType="java.util.Map" resultType="com.zebone.nhis.ma.pub.syx.vo.Tfunctionrequestforpacs">
+		SELECT
+			pi.CODE_PI as PatientID,
+			pi.NAME_PI as PatientName,
+			bh.NAME as PatientTypeListName,
+			CASE pi.DT_SEX WHEN '02' THEN '1'
+				WHEN '03' THEN '2'
+				ELSE '0' END as PatientSexFlag,
+			pi.BIRTH_DATE as PatientBirthDay,
+			pv.CODE_PV as InPatientID,
+			pi.CODE_IP as IPSeqNoText,
+			ip.IP_TIMES as IPTimes,
+			pv.BED_NO as SickBedNo,
+			'-1' as RegisterID,
+			'1900-01-01 0:00:00' as RegisterDate,
+			'-1' as SeqNo,
+			pi.MOBILE as Phone,
+			pv.ADDR_CUR || pv.ADDR_CUR_DT as Address,
+			CASE WHEN pv.POSTCODE_CUR is NULL THEN ' '
+    		ELSE pv.POSTCODE_CUR END as PostalCode,
+			case when substr(ADDR_ORIGIN, 0, 20) is null then '-' else substr(ADDR_ORIGIN, 0, 20) end as NativePlace,
+			'-1' as ManageNo,
+			cord.CODE_APPLY as FunctionRequestID,
+			emp.OLD_ID as RequestDoctorEmployeeID,
+			emp.OLD_CODE as RequestDoctorEmployeeNo,
+			cord.NAME_EMP_ORD as RequestDoctorEmployeeName,
+			deptapply.OLD_ID as RequestDepartmentID,
+			deptapply.OLD_CODE as RequestDepartmentNo,
+			deptapply.NAME_DEPT as RequestDepartmentName,
+			exdept.OLD_ID as ExamineDepartmentID,
+			exdept.OLD_CODE as ExamineDepartmentNo,
+			exdept.NAME_DEPT as ExamineDepartmentName,
+			CASE WHEN pdiag.CODE_ICD IS NULL THEN '0'
+    		ELSE pdiag.CODE_ICD END  as ICDCode,
+			CASE WHEN pdiag.NAME_DIAG IS NULL 
+			THEN CASE WHEN pdiag.DESC_DIAG IS NULL THEN '空' ELSE pdiag.DESC_DIAG END
+			ELSE pdiag.NAME_DIAG END as DiseaseName,
+			cord.FLAG_EMER as EmergencyFlag,
+			ris.EU_STATUS as StatusFlag,
+			'0' as Flag,
+			'1900-01-01 0:00:00' as ReceiveDateTime,
+			'1900-01-01 0:00:00' as ResultDateTime,
+			'2' as SourceFlag,
+			'0' as PacsFlag,
+			'' as TDRequestModelTypeDesc,
+			cord.DATE_START as RequestDateTime,
+			pi.CODE_OP as PatientCardNo,
+			' ' as PhysicalRegisterSeqno,
+			exocc.date_plan as RequestExecutiveDateTime,
+			cord.DATE_CHK as CollateDateTime,
+			'0' as PlatformFlag,
+			'0' as tempflag
+		FROM EX_ORDER_OCC exocc
+		INNER JOIN CN_ORDER cord ON cord.PK_CNORD=exocc.PK_CNORD
+		INNER JOIN PV_ENCOUNTER pv ON pv.PK_PV=exocc.PK_PV
+		INNER JOIN PI_MASTER pi ON pi.PK_PI=exocc.PK_PI
+		INNER JOIN BD_HP bh ON bh.PK_HP=pv.PK_INSU
+		INNER JOIN PV_IP ip ON ip.PK_PV=pv.PK_PV
+		INNER JOIN BD_OU_EMPLOYEE emp ON emp.PK_EMP=cord.PK_EMP_ORD
+		INNER JOIN BD_OU_DEPT deptapply ON deptapply.PK_DEPT=cord.PK_DEPT
+		INNER JOIN BD_OU_DEPT exdept ON exdept.PK_DEPT=exocc.PK_DEPT_OCC
+		LEFT JOIN PV_DIAG pdiag ON pdiag.PK_PV=pv.PK_PV and pdiag.FLAG_MAJ='1' AND pdiag.DEL_FLAG='0'
+		<!-- LEFT JOIN BD_TERM_DIAG diag ON pdiag.PK_DIAG=diag.PK_DIAG  -->
+		INNER JOIN CN_RIS_APPLY ris ON ris.PK_CNORD=cord.PK_CNORD
+		WHERE 1=1
+			AND exocc.FLAG_CANC='0'
+			AND exocc.EU_STATUS='1'
+			AND cord.ORDSN=cord.ORDSN_PARENT
+			AND cord.CODE_APPLY IS NOT NULL
+		<if test="pkExoccAllList != null">
+			AND exocc.PK_EXOCC in
+			<foreach item="item" index="index" collection="pkExoccAllList" open="("  
+	            separator="," close=")">  
+	            #{item}  
+	        </foreach>
+        </if>
+        <if test="pkCnordAllList != null">
+        	AND cord.PK_CNORD IN 
+			<foreach item="item" index="index" collection="pkCnordAllList" open="("  
+	            separator="," close=")">  
+	            #{item}  
+	        </foreach>
+        </if>
+	</select>
+	
+	<select id="qryOpRequestForPacs" parameterType="java.util.Map" resultType="com.zebone.nhis.ma.pub.syx.vo.Tfunctionrequestforpacs">
+		SELECT
+			pi.CODE_PI as PatientID,
+			pi.NAME_PI as PatientName,
+			bh.NAME as PatientTypeListName,
+			CASE pi.DT_SEX WHEN '02' THEN '1'
+				WHEN '03' THEN '2'
+				ELSE '0' END as PatientSexFlag,
+			pi.BIRTH_DATE as PatientBirthDay,
+			'-1' as InPatientID,
+			pi.CODE_IP as IPSeqNoText,
+			op.OP_TIMES as IPTimes,
+			' ' as SickBedNo,
+			'-2' as RegisterID,
+			to_char(pv.DATE_REG,'yyyy-MM-dd') || ' 00:00:00' as RegisterDate,
+			substr(pv.CODE_PV, 7, 5) as SeqNo,
+			pi.MOBILE as Phone,
+			case 
+			 when pv.ADDR_CUR || pv.ADDR_CUR_DT is null then '空' 
+			 else pv.ADDR_CUR || pv.ADDR_CUR_DT 
+			end as Address,
+			CASE WHEN pv.POSTCODE_CUR is NULL THEN '空'
+    		ELSE pv.POSTCODE_CUR END as PostalCode,
+			case when substr(ADDR_ORIGIN, 0, 20) is null then '-' else substr(ADDR_ORIGIN, 0, 20) end as NativePlace,
+			'-1' as ManageNo,
+			cord.CODE_APPLY as FunctionRequestID,
+			case 
+		   	 when emp.old_id is null then ' '
+		   	 else emp.old_id
+		    end as RequestDoctorEmployeeID,
+			case 
+			  when emp.old_code is null then ' '
+			  else emp.old_code
+			end as RequestDoctorEmployeeNo,
+			cord.NAME_EMP_ORD as RequestDoctorEmployeeName,
+			deptapply.OLD_ID as RequestDepartmentID,
+			deptapply.OLD_CODE as RequestDepartmentNo,
+			deptapply.NAME_DEPT as RequestDepartmentName,
+			exdept.OLD_ID as ExamineDepartmentID,
+			exdept.OLD_CODE as ExamineDepartmentNo,
+			exdept.NAME_DEPT as ExamineDepartmentName,
+			CASE WHEN pdiag.CODE_ICD IS NULL THEN '0'
+    		ELSE pdiag.CODE_ICD END  as ICDCode,
+			CASE WHEN pdiag.NAME_DIAG IS NULL 
+			THEN CASE WHEN pdiag.DESC_DIAG IS NULL THEN '空' ELSE pdiag.DESC_DIAG END
+			ELSE pdiag.NAME_DIAG END as DiseaseName,
+			cord.FLAG_EMER as EmergencyFlag,
+			ris.EU_STATUS as StatusFlag,
+			'0' as Flag,
+			'1900-01-01 0:00:00' as ReceiveDateTime,
+			'1900-01-01 0:00:00' as ResultDateTime,
+			'1' as SourceFlag,
+			'0' as PacsFlag,
+			'' as TDRequestModelTypeDesc,
+			cord.DATE_START as RequestDateTime,
+			pi.CODE_OP as PatientCardNo,
+			' ' as PhysicalRegisterSeqno,
+			to_char(cord.date_start,'yyyy-MM-dd HH24:mi:') || '00' as RequestExecutiveDateTime,
+			cord.DATE_CHK as CollateDateTime,
+			'0' as PlatformFlag,
+			'0' as tempflag
+		FROM CN_ORDER cord 
+		INNER JOIN PV_ENCOUNTER pv ON pv.PK_PV=cord.PK_PV
+		INNER JOIN PI_MASTER pi ON pi.PK_PI=cord.PK_PI
+		INNER JOIN BD_HP bh ON bh.PK_HP=pv.PK_INSU
+		INNER JOIN PV_OP op ON op.PK_PV=pv.PK_PV
+		INNER JOIN BD_OU_EMPLOYEE emp ON emp.PK_EMP=cord.PK_EMP_ORD
+		INNER JOIN BD_OU_DEPT deptapply ON deptapply.PK_DEPT=cord.PK_DEPT
+		INNER JOIN BD_OU_DEPT exdept ON exdept.PK_DEPT=cord.PK_DEPT_EXEC
+		LEFT JOIN PV_DIAG pdiag ON pdiag.PK_PV=pv.PK_PV and pdiag.FLAG_MAJ='1' AND pdiag.DEL_FLAG='0'
+		<!-- LEFT JOIN BD_TERM_DIAG diag ON pdiag.PK_DIAG=diag.PK_DIAG  -->
+		INNER JOIN CN_RIS_APPLY ris ON ris.PK_CNORD=cord.PK_CNORD
+		WHERE 1=1
+			AND cord.ORDSN=cord.ORDSN_PARENT
+			AND cord.CODE_APPLY IS NOT NULL
+        <if test="pkCnordAllList != null">
+        	AND cord.PK_CNORD IN 
+			<foreach item="item" index="index" collection="pkCnordAllList" open="("  
+	            separator="," close=")">  
+	            #{item}  
+	        </foreach>
+        </if>
+	</select>
+	
+	<select id="qryItemListForPacs" parameterType="java.util.Map" resultType="com.zebone.nhis.ma.pub.syx.vo.Tfunctionitemlistforpacs">
+		SELECT
+			cord.CODE_APPLY as FunctionRequestID,
+			bord.OLD_ID as ItemID,
+			bord.CODE as ItemNo,
+			bord.NAME as ItemDesc,
+			case WHEN sum(bi.PRICE) IS NULL THEN 0
+    		ELSE sum(bi.PRICE) END AS Amount,
+			'未确定' as FunctionPositionName
+		FROM EX_ORDER_OCC orocc
+		INNER JOIN CN_ORDER cord ON orocc.PK_CNORD=cord.PK_CNORD
+		INNER JOIN BD_ORD bord ON bord.PK_ORD = cord.PK_ORD
+		LEFT JOIN BD_ORD_ITEM boi ON boi.PK_ORD=bord.PK_ORD
+		LEFT JOIN BD_ITEM bi ON bi.PK_ITEM=boi.PK_ITEM
+		WHERE 1=1
+			AND orocc.FLAG_CANC='0'
+			AND orocc.EU_STATUS='1'
+			AND cord.CODE_APPLY IS NOT NULL
+		<if test="pkExoccAllList != null">
+			AND orocc.PK_EXOCC in
+			<foreach item="item" index="index" collection="pkExoccAllList" open="("  
+	            separator="," close=")">  
+	            #{item}  
+	        </foreach>
+        </if>
+        <if test="pkCnordAllList != null">
+        	AND cord.PK_CNORD IN 
+			<foreach item="item" index="index" collection="pkCnordAllList" open="("  
+	            separator="," close=")">  
+	            #{item}  
+	        </foreach>
+        </if>
+		GROUP BY cord.CODE_APPLY,bord.OLD_ID,bord.CODE,cord.DESC_ORD,bord.NAME
+	</select>
+	
+	<select id="qryOpItemListForPacs" parameterType="java.util.Map" resultType="com.zebone.nhis.ma.pub.syx.vo.Tfunctionitemlistforpacs">
+		SELECT
+			cord.CODE_APPLY as FunctionRequestID,
+			bord.OLD_ID as ItemID,
+			bord.CODE as ItemNo,
+			bord.NAME as ItemDesc,
+			case WHEN sum(bi.PRICE) IS NULL THEN 0
+    		ELSE sum(bi.PRICE) END AS Amount,
+			'未确定' as FunctionPositionName
+		FROM CN_ORDER cord 
+		INNER JOIN BD_ORD bord ON bord.PK_ORD = cord.PK_ORD
+		LEFT JOIN BD_ORD_ITEM boi ON boi.PK_ORD=bord.PK_ORD
+		LEFT JOIN BD_ITEM bi ON bi.PK_ITEM=boi.PK_ITEM
+		WHERE 1=1 
+			AND cord.CODE_APPLY IS NOT NULL 		
+        <if test="pkCnordAllList != null">
+        	AND cord.PK_CNORD IN 
+			<foreach item="item" index="index" collection="pkCnordAllList" open="("  
+	            separator="," close=")">  
+	            #{item}  
+	        </foreach>
+        </if>
+		GROUP BY cord.CODE_APPLY,bord.OLD_ID,bord.CODE,cord.DESC_ORD,bord.NAME
+	</select>
+	
+	<select id="qryRepeatApply" resultType="java.lang.String" parameterType="java.util.List">
+		SELECT FunctionRequestID
+		FROM tFunctionRequestForPACS 
+		WHERE FunctionRequestID in
+		<foreach item="item" index="index" collection="list" open="("  
+            separator="," close=")">  
+            #{item.functionrequestid}  
+        </foreach>
+	</select>
+	
+	<select id="qryItemRepeatApply" resultType="java.lang.String" parameterType="java.util.List">
+		SELECT FunctionRequestID
+		FROM tFunctionItemListForPACS 
+		WHERE FunctionRequestID in
+		<foreach item="item" index="index" collection="list" open="("  
+            separator="," close=")">  
+            #{item.functionrequestid}  
+        </foreach>
+	</select>
+	
+	<select id="qryLisApply" parameterType="java.lang.String" resultType="DynaBean">
+		SELECT
+              rq.ExamineRequestID as code_apply , 
+			  CASE rq.PatType when 'T' THEN  '体检'
+			    WHEN 'I' THEN '住院' ELSE '门诊' END  pvtype,  
+			  STUFF(
+			        (SELECT ',' + rqi.ItemSetDesc
+			         FROM tExamineItemSetListForIP rqi
+			         WHERE rqi.ExamineRequestID=rq.ExamineRequestID
+			         FOR xml path('')
+			        ),1,1,'') name_ord, 
+			rq.ExamineDepartmentName as name_dept_exec, 
+			rq.RequestDoctorEmployeeName as name_emp_ord, 
+			rq.RequestExecutiveDateTime as apply_date, 
+			rq.LisLableNo, 
+			rq.ResultDateTime as report_date,
+			rq.flag   
+       FROM  tExamineRequestForIP rq
+       where IPSeqNoText=#{codeIp,jdbcType=VARCHAR} and rq.CancleFlag='0' 
+       
+       union all
+		SELECT
+		           rq.ExamineRequestID as code_apply , 
+		  CASE rq.PatType when 'T' THEN  '体检'
+		    WHEN 'I' THEN '住院' ELSE '门诊' END  pvtype,  
+		  STUFF(
+		        (SELECT ',' + rqi.ItemSetDesc
+		         FROM tExamineItemSetListForIP rqi
+		         WHERE rqi.ExamineRequestID=rq.ExamineRequestID
+		         FOR xml path('')
+		        ),1,1,'') name_ord, 
+		rq.ExamineDepartmentName as name_dept_exec, 
+		rq.RequestDoctorEmployeeName as name_emp_ord, 
+		rq.RequestExecutiveDateTime as apply_date, 
+		rq.LisLableNo, 
+		rq.ResultDateTime as report_date,
+		rq.flag   
+       FROM  tExamineRequestForIP_bak rq
+       where IPSeqNoText=#{codeIp,jdbcType=VARCHAR} and rq.CancleFlag='0' 
+
+	</select>
+	
+	<select id="qryRisApply" parameterType="java.lang.String" resultType="DynaBean">
+		SELECT
+			rpt.FunctionRequestID as code_apply, 
+			CASE  rpt.SourceFlag WHEN '0' THEN ''
+			  WHEN '1' THEN '门诊'
+			    WHEN '2' THEN  '住院'
+			      WHEN '3' THEN '体检'
+			       ELSE '' END pvtype,
+			CASE 
+				WHEN ReportSubTitle is null THEN ReportSubTitle 
+				ELSE ReportType END name_ord, 
+			rpt.ExamineDepartmentName as name_dept_exec, 
+			rpt.RequestDoctorEmployeeName as name_emp_ord, 
+			rpt.ReceiveDateTime as apply_date, 
+			rpt.ResultDateTime, 
+			rpt.ReportDate as report_date, 
+			'' status, 
+			rpt.ExamDescEx seeDescEx,
+			rpt.ResultDescEx examDescEx, 
+			rpt.reportURL, 
+			rpt.imageURL 
+        FROM VMFunctionReport rpt
+        where IPSeqNoText=#{codeIp,jdbcType=VARCHAR}                 
+	</select>
+	
+	<select id="qryXnlApply" parameterType="java.lang.String" resultType="DynaBean">
+        SELECT
+			rpt.FunctionRequestID as code_apply, 
+			CASE  rpt.SourceFlag WHEN '0' THEN ''
+			  WHEN '1' THEN '门诊'
+			    WHEN '2' THEN  '住院'
+			      WHEN '3' THEN '体检'
+			       ELSE '' END pvtype, 
+			CASE 
+				WHEN ReportSubTitle is null THEN ReportSubTitle 
+				ELSE ReportType END name_ord, 
+			rpt.ExamineDepartmentName as name_dept_exec, 
+			rpt.RequestDoctorEmployeeName as name_emp_ord, 
+			rpt.ReceiveDateTime as apply_date, 
+			rpt.ResultDateTime, 
+			rpt.ReportDate as report_date, 
+			'' status, 
+			rpt.ExamDescEx seeDescEx, 
+			rpt.ResultDescEx examDescEx, 
+			rpt.reportURL, 
+			rpt.imageURL 
+        FROM VMFunctionReport rpt 
+        where IPSeqNoText=#{codeIp,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="qryXusApply" parameterType="java.lang.String" resultType="DynaBean">
+		SELECT
+			rpt.FunctionID as code_apply, 
+			CASE  rpt.SourceFlag WHEN '0' THEN ''
+			  WHEN '1' THEN '门诊'
+			    WHEN '2' THEN  '住院'
+			      WHEN '3' THEN '体检'
+			       ELSE '' END pvtype,
+			CASE 
+				WHEN ReportSubTitle is null THEN ReportSubTitle 
+				ELSE ReportType END name_ord, 
+			rpt.ExamineDepartmentName as name_dept_exec, 
+			rpt.RequestDoctorEmployeeName as name_emp_ord, 
+			rpt.ReceiveDateTime as apply_date, 
+			rpt.ResultDateTime, 
+			rpt.ReportDate as report_date, 
+			'' status, 
+			rpt.SeeDescEx seeDescEx,
+			rpt.ResultDescEx examDescEx, 
+			rpt.reportURL, 
+			rpt.imageURL 
+        FROM VMFunctionReport rpt
+        where IPSeqNoText=#{codeIp,jdbcType=VARCHAR}                 
+	</select>
+	
+	<select id="qryPaApply" parameterType="java.lang.String" resultType="DynaBean">
+		SELECT distinct 
+			rpt.检查号  as code_apply, 
+			rpt.Patient_Clase as pvtype, 
+			'病理'+ rpt.检查类别名称   as name_ord, 
+			'病理科'  as name_dept_exec, 
+			rpt.送检医师   as name_emp_ord, 
+			NULL ReceiveDateTime , 
+			rpt.检查日期   as apply_date, 
+			rpt.报告日期   as report_date , 
+			rpt.DiagnosisSatus  as status, 
+			rpt.肉眼所见   as SeeDescEx, 
+			rpt.Diagnosis as  ExamDescEx, 
+			'http://192.168.70.252/pathwebrpt/index.asp?blh='+rpt.检查号   as reportURL, 
+			'' as imageURL 
+      FROM v_getreport_TX rpt
+      where rpt.住院号=#{codeIp,jdbcType=VARCHAR} 
+      order by rpt.报告日期   desc
+	</select>
+	
+	<select id="qryNmApply" parameterType="java.lang.String" resultType="DynaBean">
+		SELECT
+			rpt.FunctionRequestID as code_apply, 
+			CASE  rpt.SourceFlag WHEN '0' THEN ''
+			  WHEN '1' THEN '门诊'
+			    WHEN '2' THEN  '住院'
+			      WHEN '3' THEN '体检' END pvtype, 
+			CASE 
+				WHEN ReportSubTitle is null THEN ReportSubTitle 
+				ELSE ReportType END name_ord, 
+			rpt.ExamineDepartmentName as name_dept_exec, 
+			rpt.RequestDoctorEmployeeName as name_emp_ord, 
+			rpt.ReceiveDateTime as apply_date, 
+			rpt.ResultDateTime, 
+			rpt.ReportDate as report_date  , 
+			CASE when isnull(rpt.VerifyDoc,'')='' THEN '未审核' ELSE '已审核'END status, 
+			rpt.SeeDescEx, 
+			  rpt.ExamDescEx, 
+			rpt.reportURL, 
+			rpt.imageURL 
+        FROM View_Zs rpt
+        where IPSeqNoText=#{codeIp,jdbcType=VARCHAR} 
+        order by rpt.ReportDate desc 
+	</select>
+	<select id="qryLisResult" parameterType="java.lang.String" resultType="DynaBean">
+		SELECT
+			'0' rownum, 
+			rpt.report_item_name, 
+			rpt.Result, 
+			rpt.Units, 
+			rpt.Reference_Range, 
+			rpt.report_item_code, 
+			rpt.Status 
+		FROM  V_EMR_Get_Lis_Report rpt
+		where rpt.TEST_NO=${lisLableNo}
+	</select>
+	
+	<select id="qryPkCnord" parameterType="java.util.List" resultType="java.lang.String">
+		SELECT PK_CNORD
+		FROM CN_ORDER 
+		WHERE CODE_APPLY IN 
+		<foreach item="item" index="index" collection="list" open="("  
+            separator="," close=")">  
+            #{item}  
+        </foreach>
+	</select>
+	
+	<update id="updateRisApply" parameterType="java.util.List">
+		UPDATE CN_RIS_APPLY SET
+			eu_status='3'
+		where PK_CNORD in 
+		<foreach item="item" index="index" collection="list" open="("  
+            separator="," close=")">  
+            #{item}  
+        </foreach>
+	</update>
+	
+	<select id="qryPatientList" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT
+			DISTINCT 
+			pv.name_pi,
+			pv.bed_no,
+			pi.code_ip,
+			pi.code_pi
+		FROM
+			pv_encounter pv 
+			INNER join pv_ip ip ON ip.pk_pv = pv.pk_pv 
+			INNER join pi_master pi ON pi.pk_pi = pv.pk_pi 
+		WHERE
+			pv.flag_in = '1' 
+			AND pv.eu_pvtype = '3' 
+			AND pv.pk_org = #{pkOrg}
+			AND pv.eu_status = '1' 
+			AND pv.del_flag = '0' 
+			<if test="pkDept != null and pkDept != ''">
+				AND pv.pk_dept = #{pkDept}
+			</if> 
+			<if test="pkDeptNs != null and pkDeptNs != ''">
+				AND pv.pk_dept_ns = #{pkDeptNs}
+			</if>
+	</select>
+	
+	<select id="qryLeavePatientList" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT DISTINCT
+			pv.name_pi,
+			pv.bed_no,
+			pi.code_ip,
+			pi.code_pi 
+		FROM
+			pv_encounter pv
+			INNER JOIN pi_master pi ON pv.pk_pi = pi.pk_pi AND pi.del_flag = '0' 
+			INNER JOIN pv_adt upd ON upd.pk_pv = pv.pk_pv AND upd.del_flag = '0' 
+		WHERE
+			pv.flag_cancel != '1' 
+			AND pv.del_flag = '0' 
+			AND pv.eu_pvtype = '3' 
+			AND pv.eu_status > 0 
+			AND pv.flag_in = '0' 
+			<if test="pkDept != null and pkDept != ''">
+				AND upd.pk_dept = #{pkDept}
+			</if> 
+			<if test="pkDeptNs != null and pkDeptNs != ''">
+				AND upd.pk_dept_ns = #{pkDeptNs}
+			</if>
+			<if test="dateBegin != null and dateBegin != ''">
+		      	 and pv.date_end &gt;= to_date(#{dateBegin,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')  
+			</if>
+			<if test="dateEnd !=null and dateEnd != ''">
+			     and pv.date_end &lt;= to_date(#{dateEnd,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss')  
+			</if>
+	</select>
+	
+	<select id="qryChangePatientList" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT
+			DISTINCT 
+			pv.name_pi,
+			pv.bed_no,
+			pi.code_ip,
+			pi.code_pi
+		FROM
+			pv_encounter pv 
+			INNER join pv_ip ip ON ip.pk_pv = pv.pk_pv 
+			INNER join pi_master pi ON pi.pk_pi = pv.pk_pi
+			INNER join pv_adt adt ON adt.pk_pv = pv.pk_pv
+			INNER join pv_adt adt1 ON adt.pk_adt_source = adt1.pk_adt
+		WHERE
+			pv.flag_in = '1' 
+			AND pv.eu_pvtype = '3' 
+			AND pv.pk_org = #{pkOrg}
+			AND pv.eu_status = '1' 
+			AND pv.del_flag = '0' 
+			AND adt.del_flag = '0' 
+			<if test="pkDept != null and pkDept != ''">
+				AND adt1.pk_dept = #{pkDept} 
+			</if> 
+			<if test="pkDeptNs != null and pkDeptNs != ''">
+				AND adt1.pk_dept_ns = #{pkDeptNs} 
+			</if>
+	</select>
+	
+	<select id="qryConsultationPatientList" parameterType="java.util.Map" resultType="DynaBean">
+		SELECT
+			DISTINCT 
+			pv.name_pi,
+			pv.bed_no,
+			pi.code_ip,
+			pi.code_pi
+		FROM
+			pv_encounter pv 
+			INNER join pv_ip ip ON ip.pk_pv = pv.pk_pv 
+			INNER join pi_master pi ON pi.pk_pi = pv.pk_pi
+			INNER join cn_order ord ON ord.pk_pv = pv.pk_pv
+			INNER join cn_consult_apply con on ord.pk_cnord = con.pk_cnord 
+       		INNER join cn_consult_response rep on con.pk_cons = rep.pk_cons  
+		WHERE
+			pv.flag_in = '1' 
+			AND pv.eu_pvtype = '3' 
+			AND pv.pk_org = #{pkOrg}
+			AND pv.eu_status = '1' 
+			AND pv.del_flag = '0' 
+			AND rep.del_flag = '0' 
+			<if test="pkDept != null and pkDept != ''">
+				AND rep.pk_dept_rep = #{pkDept}
+			</if> 
+	</select>
+	
+</mapper>
